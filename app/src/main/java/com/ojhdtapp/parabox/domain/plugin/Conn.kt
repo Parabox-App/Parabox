@@ -8,24 +8,27 @@ import dagger.hilt.android.qualifiers.ActivityContext
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.scopes.ActivityRetainedScoped
 import dagger.hilt.android.scopes.ActivityScoped
+import java.lang.Exception
 import javax.inject.Inject
 import javax.inject.Singleton
 
-class Conn(private val ctx: Context) {
-    init{
+class Conn(private val ctx: Context, private val pkg: String, private val cls: String) {
 
-    }
-
-    fun connect(pkg: String, cls: String) {
+    fun connect(): Boolean {
         val intent = Intent().apply {
             component = ComponentName(
                 pkg, cls
             )
         }
-        ctx.startService(intent)
+        return try {
+            ctx.startService(intent)
+            true
+        } catch (e: Exception) {
+            false
+        }
     }
 
-    fun isInstalled(pkg: String): Boolean {
+    fun isInstalled(): Boolean {
         var res = false
         val pkManager = ctx.packageManager
         try {

@@ -1,8 +1,5 @@
 package com.ojhdtapp.parabox.ui.message
 
-import android.content.ComponentName
-import android.content.Context
-import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,7 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
-fun MessagePage(modifier: Modifier = Modifier) {
+fun MessagePage(modifier: Modifier = Modifier, onConnectBtnClicked : () -> Unit) {
     val viewModel: MessagePageViewModel = hiltViewModel()
     val text by remember {
         mutableStateOf("Text")
@@ -30,12 +27,7 @@ fun MessagePage(modifier: Modifier = Modifier) {
             verticalArrangement = Arrangement.Center
         ) {
             Button(onClick = {
-                viewModel.onEvent(
-                    MessagePageUiEvent.OnConnectPlugin(
-                        "com.ojhdtapp.miraipluginforparabox",
-                        "com.ojhdtapp.miraipluginforparabox.domain.service.ConnService"
-                    )
-                )
+                onConnectBtnClicked()
             }, enabled = viewModel.pluginInstalledState.value) {
                 Text(text = "Connect")
             }

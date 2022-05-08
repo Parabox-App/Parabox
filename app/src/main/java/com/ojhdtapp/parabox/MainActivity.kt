@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -22,14 +23,21 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val viewModel: MessagePageViewModel by viewModels()
-        viewModel.pluginConnection = Conn(this)
-        viewModel.setPluginInstalledState(
-            viewModel.pluginConnection.isInstalled("com.ojhdtapp.miraipluginforparabox")
-        )
+
+        val pluginConn = Conn(
+            this,
+            "com.ojhdtapp.miraipluginforparabox",
+            "com.ojhdtapp.miraipluginforparabox.domain.service.ConnService"
+        ).also {
+            viewModel.setPluginInstalledState(
+                it.isInstalled()
+            )
+        }
         setContent {
             ParaboxTheme {
-                // A surface container using the 'background' color from the theme
-                MessagePage()
+                MessagePage() {
+                    pluginConn.connect()
+                }
             }
         }
     }
