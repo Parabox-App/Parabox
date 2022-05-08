@@ -3,26 +3,35 @@ package com.ojhdtapp.parabox.ui.message
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material.Button
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
-fun MessagePage(modifier: Modifier = Modifier, onConnectBtnClicked : () -> Unit) {
+fun MessagePage(
+    modifier: Modifier = Modifier,
+    onConnectBtnClicked: () -> Unit,
+    onSendBtnClicked: () -> Unit
+) {
     val viewModel: MessagePageViewModel = hiltViewModel()
-    val text by remember {
-        mutableStateOf("Text")
+    val scaffoldState = rememberScaffoldState()
+    LaunchedEffect(true) {
+        viewModel.uiEventFlow.collectLatest {
+            when (it) {
+                is MessagePageUiEvent.ShowSnackBar -> {
+                    scaffoldState.snackbarHostState.showSnackbar(it.message)
+                }
+            }
+        }
     }
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colors.background
+    Scaffold(
+        scaffoldState = scaffoldState
     ) {
         Column(
+            modifier = modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -31,8 +40,13 @@ fun MessagePage(modifier: Modifier = Modifier, onConnectBtnClicked : () -> Unit)
             }, enabled = viewModel.pluginInstalledState.value) {
                 Text(text = "Connect")
             }
-            Text(text = text)
+            Button(
+                onClick = { onSendBtnClicked() },
+                enabled = viewModel.sendAvailableState.value
+            ) {
+                Text(text = "Send")
+            }
+            Text(text = viewModel.message.value)
         }
-
     }
 }
