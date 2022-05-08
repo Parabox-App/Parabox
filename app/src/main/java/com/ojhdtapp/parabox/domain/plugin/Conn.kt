@@ -7,30 +7,25 @@ import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.*
 import android.util.Log
-import dagger.hilt.android.qualifiers.ActivityContext
-import dagger.hilt.android.qualifiers.ApplicationContext
-import dagger.hilt.android.scopes.ActivityRetainedScoped
-import dagger.hilt.android.scopes.ActivityScoped
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.lang.Exception
-import java.net.ConnectException
-import javax.inject.Inject
-import javax.inject.Singleton
 
 class Conn(private val ctx: Context, private val pkg: String, private val cls: String) {
     private var sMessenger: Messenger? = null
     private val cMessenger = Messenger(ConnHandler())
-    val connectionStatusFlow = MutableStateFlow<Boolean>(false)
+    private val _connectionStateFlow = MutableStateFlow<Boolean>(false)
+    val connectionStateFlow = _connectionStateFlow.asStateFlow()
 
-    var messageResFlow = MutableSharedFlow<String>()
+    private val _messageResFlow = MutableSharedFlow<String>()
+    val messageResFlow = _messageResFlow.asSharedFlow()
 
 
     fun send(str: String) {
-        if (sMessenger == null && !connect()) {
-            throw RemoteException("connect failed")
+        if (sMessenger == null) {
+            throw RemoteException("not connected")
         }
         try {
             sMessenger!!.send(Message().apply {
@@ -39,6 +34,7 @@ class Conn(private val ctx: Context, private val pkg: String, private val cls: S
                     putString("str", str)
                 }
             })
+            Log.d("parabox", "message $str sent")
         } catch (e: RemoteException) {
             e.printStackTrace()
         }
@@ -57,13 +53,15 @@ class Conn(private val ctx: Context, private val pkg: String, private val cls: S
                 intent,
                 object : ServiceConnection {
                     override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
+                        Log.d("parabox", "bind status: true")
                         sMessenger = Messenger(p1)
-                        connectionStatusFlow.value = true
+                        _connectionStateFlow.value = true
                     }
 
                     override fun onServiceDisconnected(p0: ComponentName?) {
+                        Log.d("parabox", "bind status: false")
                         sMessenger = null
-                        connectionStatusFlow.value = false
+                        _connectionStateFlow.value = false
                     }
 
                 },
@@ -91,7 +89,8 @@ class Conn(private val ctx: Context, private val pkg: String, private val cls: S
         override fun handleMessage(msg: Message) {
             super.handleMessage(msg)
             val receivedMsg = (msg.obj as Bundle).getString("str") ?: "message lost"
-            messageResFlow.tryEmit(receivedMsg)
+            Log.d("parabox", "message back from client: $receivedMsg")
+            _messageResFlow.tryEmit(receivedMsg)
         }
     }
 }

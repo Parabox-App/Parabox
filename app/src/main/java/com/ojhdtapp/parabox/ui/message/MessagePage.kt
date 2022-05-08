@@ -37,7 +37,7 @@ fun MessagePage(
         ) {
             Button(onClick = {
                 onConnectBtnClicked()
-            }, enabled = viewModel.pluginInstalledState.value) {
+            }, enabled = viewModel.pluginInstalledState.value && !viewModel.sendAvailableState.value) {
                 Text(text = "Connect")
             }
             Button(
