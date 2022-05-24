@@ -80,6 +80,10 @@ dependencies {
     androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_version"
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
 
+    // Lottie
+    def lottieVersion = "5.0.3"
+    implementation "com.airbnb.android:lottie-compose:$lottieVersion"
+
     // Compose Destinations
 //    implementation 'io.github.raamcosta.compose-destinations:core:1.5.6-beta'
     implementation 'io.github.raamcosta.compose-destinations:animations-core:1.5.6-beta'

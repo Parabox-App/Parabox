@@ -5,13 +5,18 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.Color
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.ojhdtapp.parabox.domain.plugin.Conn
 import com.ojhdtapp.parabox.ui.message.MessagePage
 import com.ojhdtapp.parabox.ui.message.MessagePageViewModel
-import com.ojhdtapp.parabox.ui.theme.ParaboxTheme
+import com.ojhdtapp.parabox.ui.theme.AppTheme
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -29,8 +34,17 @@ class MainActivity : ComponentActivity() {
                 it.isInstalled()
             )
         }
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {
-            ParaboxTheme {
+            val systemUiController = rememberSystemUiController()
+            val useDarkIcons = isSystemInDarkTheme()
+            SideEffect {
+                systemUiController.setSystemBarsColor(
+                    color = Color.Transparent,
+                    darkIcons = useDarkIcons
+                )
+            }
+            AppTheme() {
                 MessagePage(
                     onConnectBtnClicked = {
                         pluginConn.connect()
