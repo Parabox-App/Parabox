@@ -2,7 +2,9 @@ plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
     id 'kotlin-kapt'
+    id 'org.jetbrains.kotlin.plugin.parcelize'
     id 'dagger.hilt.android.plugin'
+    id 'com.google.devtools.ksp' version '1.6.21-1.0.5'
 }
 
 android {
@@ -10,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId "com.ojhdtapp.parabox"
-        minSdk 24
+        minSdk 26
         targetSdk 32
         versionCode 1
         versionName "1.0"
@@ -42,7 +44,24 @@ android {
     }
     packagingOptions {
         resources {
-            excludes += '/META-INF/{AL2.0,LGPL2.1}'
+            exclude '/META-INF/{AL2.0,LGPL2.1}'
+            exclude 'META-INF/DEPENDENCIES'
+            exclude 'META-INF/LICENSE'
+            exclude 'META-INF/LICENSE.md'
+            exclude 'META-INF/LICENSE-notice.md'
+            exclude 'META-INF/LICENSE.txt'
+            exclude 'META-INF/license.txt'
+            exclude 'META-INF/NOTICE'
+            exclude 'META-INF/NOTICE.txt'
+            exclude 'META-INF/notice.txt'
+            exclude("META-INF/*.kotlin_module")
+        }
+    }
+    applicationVariants.all { variant ->
+        kotlin.sourceSets {
+            getByName(variant.name) {
+                kotlin.srcDir("build/generated/ksp/${variant.name}/kotlin")
+            }
         }
     }
 }
@@ -61,6 +80,25 @@ dependencies {
     androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_version"
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
 
+    // Compose Destinations
+//    implementation 'io.github.raamcosta.compose-destinations:core:1.5.6-beta'
+    implementation 'io.github.raamcosta.compose-destinations:animations-core:1.5.6-beta'
+    ksp 'io.github.raamcosta.compose-destinations:ksp:1.5.6-beta'
+
+    // DataStore
+    implementation "androidx.datastore:datastore-preferences:1.0.0"
+
+    // Accompanist
+    implementation "com.google.accompanist:accompanist-systemuicontroller:0.24.9-beta"
+
+    // Navigation Compose
+    def nav_version = "2.4.2"
+    implementation "androidx.navigation:navigation-compose:$nav_version"
+
+    // m3
+    implementation "androidx.compose.material3:material3:1.0.0-alpha12"
+    implementation "androidx.compose.material3:material3-window-size-class:1.0.0-alpha12"
+
     // ViewModel
     def lifecycle_version = "2.5.0-beta01"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
@@ -74,7 +112,6 @@ dependencies {
     // Dagger - Hilt
     implementation 'com.google.dagger:hilt-android:2.41'
     kapt 'com.google.dagger:hilt-android-compiler:2.41'
-//    implementation 'androidx.hilt:hilt-lifecycle-viewmodel:1.0.0-alpha03'
     kapt 'androidx.hilt:hilt-compiler:1.0.0'
     implementation 'androidx.hilt:hilt-navigation-compose:1.0.0'
 

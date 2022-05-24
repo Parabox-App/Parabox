@@ -21,7 +21,7 @@ class MessagePageViewModel @Inject constructor(
             }
         }
     }
-
+    // emit to this when wanting toasting
     private val _uiEventFlow = MutableSharedFlow<MessagePageUiEvent>()
     val uiEventFlow = _uiEventFlow.asSharedFlow()
 
