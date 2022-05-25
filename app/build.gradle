@@ -103,6 +103,9 @@ dependencies {
     implementation "androidx.compose.material3:material3:1.0.0-alpha12"
     implementation "androidx.compose.material3:material3-window-size-class:1.0.0-alpha12"
 
+    // Chrome Custom Tab
+    implementation "androidx.browser:browser:1.4.0"
+
     // ViewModel
     def lifecycle_version = "2.5.0-beta01"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
