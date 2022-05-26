@@ -3,6 +3,7 @@ package com.ojhdtapp.parabox.ui.message
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,24 +30,27 @@ fun MessagePage(
     }
     Scaffold(
         scaffoldState = scaffoldState
-    ) {
-        Column(
-            modifier = modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Button(onClick = {
-                onConnectBtnClicked()
-            }, enabled = viewModel.pluginInstalledState.value && !viewModel.sendAvailableState.value) {
-                Text(text = "Connect")
-            }
-            Button(
-                onClick = { onSendBtnClicked() },
-                enabled = viewModel.sendAvailableState.value
-            ) {
-                Text(text = "Send")
-            }
-            Text(text = viewModel.message.value)
+    ) { paddingValues ->
+        LazyColumn(contentPadding = paddingValues) {
+
         }
+//        Column(
+//            modifier = modifier.fillMaxSize(),
+//            horizontalAlignment = Alignment.CenterHorizontally,
+//            verticalArrangement = Arrangement.Center
+//        ) {
+//            Button(onClick = {
+//                onConnectBtnClicked()
+//            }, enabled = viewModel.pluginInstalledState.value && !viewModel.sendAvailableState.value) {
+//                Text(text = "Connect")
+//            }
+//            Button(
+//                onClick = { onSendBtnClicked() },
+//                enabled = viewModel.sendAvailableState.value
+//            ) {
+//                Text(text = "Send")
+//            }
+//            Text(text = viewModel.message.value)
+//        }
     }
 }

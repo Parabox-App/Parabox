@@ -24,10 +24,8 @@ class MessagePageViewModel @Inject constructor(
     // emit to this when wanting toasting
     private val _uiEventFlow = MutableSharedFlow<MessagePageUiEvent>()
     val uiEventFlow = _uiEventFlow.asSharedFlow()
-
     private val _pluginInstalledState = mutableStateOf(false)
     val pluginInstalledState = _pluginInstalledState
-
     fun setPluginInstalledState(value: Boolean){
         _pluginInstalledState.value = value
     }

@@ -17,9 +17,11 @@ import com.ojhdtapp.parabox.domain.plugin.Conn
 import com.ojhdtapp.parabox.ui.message.MessagePage
 import com.ojhdtapp.parabox.ui.message.MessagePageViewModel
 import com.ojhdtapp.parabox.ui.theme.AppTheme
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
