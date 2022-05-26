@@ -3,15 +3,18 @@ package com.ojhdtapp.parabox.ui.message
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.ojhdtapp.parabox.domain.repository.MainRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class MessagePageViewModel @Inject constructor(
-
+    private val repository: MainRepository
 ) : ViewModel() {
     fun onEvent(event: MessagePageEvent){
         when(event){
@@ -21,6 +24,13 @@ class MessagePageViewModel @Inject constructor(
             }
         }
     }
+
+    fun testFun(){
+        viewModelScope.launch {
+            repository.receiveNewMessage()
+        }
+    }
+
     // emit to this when wanting toasting
     private val _uiEventFlow = MutableSharedFlow<MessagePageUiEvent>()
     val uiEventFlow = _uiEventFlow.asSharedFlow()
