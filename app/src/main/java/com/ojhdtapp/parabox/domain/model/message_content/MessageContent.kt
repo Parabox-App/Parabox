@@ -1,6 +1,13 @@
 package com.ojhdtapp.parabox.domain.model.message_content
 
-interface MessageContent {
+import android.os.Parcelable
+
+interface MessageContent : Parcelable {
+    companion object{
+        const val PLAIN_TEXT = 0
+        const val IMAGE = 1
+        const val AT = 2
+    }
     abstract fun getContentString() : String
 }
 

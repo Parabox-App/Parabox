@@ -1,3 +1,7 @@
 package com.ojhdtapp.parabox.domain.model
 
-data class PluginConnection(val connectionType: Int, val objectId: Int)
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
+
+@Parcelize
+data class PluginConnection(val connectionType: Int, val objectId: Int) : Parcelable

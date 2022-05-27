@@ -1,5 +1,7 @@
 package com.ojhdtapp.parabox.domain.repository
 
+import com.ojhdtapp.parabox.data.remote.dto.MessageDto
+
 interface MainRepository {
-    suspend fun receiveNewMessage()
+    suspend fun handleNewMessage(dto: MessageDto)
 }

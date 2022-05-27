@@ -4,20 +4,24 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ojhdtapp.parabox.data.remote.dto.MessageDto
+import com.ojhdtapp.parabox.domain.model.MessageProfile
+import com.ojhdtapp.parabox.domain.model.PluginConnection
+import com.ojhdtapp.parabox.domain.model.message_content.PlainText
 import com.ojhdtapp.parabox.domain.repository.MainRepository
+import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class MessagePageViewModel @Inject constructor(
-    private val repository: MainRepository
+    private val handleNewMessage: HandleNewMessage
 ) : ViewModel() {
-    fun onEvent(event: MessagePageEvent){
-        when(event){
+    fun onEvent(event: MessagePageEvent) {
+        when (event) {
 
             else -> {
 
@@ -25,9 +29,15 @@ class MessagePageViewModel @Inject constructor(
         }
     }
 
-    fun testFun(){
+    fun testFun() {
         viewModelScope.launch {
-            repository.receiveNewMessage()
+            handleNewMessage(
+                MessageDto(
+                    listOf(PlainText("Hello")), MessageProfile("Ojhdt", null),
+                    System.currentTimeMillis(),
+                    PluginConnection(1, 1)
+                )
+            )
         }
     }
 
@@ -36,21 +46,21 @@ class MessagePageViewModel @Inject constructor(
     val uiEventFlow = _uiEventFlow.asSharedFlow()
     private val _pluginInstalledState = mutableStateOf(false)
     val pluginInstalledState = _pluginInstalledState
-    fun setPluginInstalledState(value: Boolean){
+    fun setPluginInstalledState(value: Boolean) {
         _pluginInstalledState.value = value
     }
 
     private val _sendAvailableState = mutableStateOf<Boolean>(false)
-    val sendAvailableState : State<Boolean> = _sendAvailableState
+    val sendAvailableState: State<Boolean> = _sendAvailableState
 
-    fun setSendAvailableState(value : Boolean){
+    fun setSendAvailableState(value: Boolean) {
         _sendAvailableState.value = value
     }
 
     private val _message = mutableStateOf<String>("Text")
-    val message : State<String> = _message
+    val message: State<String> = _message
 
-    fun setMessage(value : String){
+    fun setMessage(value: String) {
         _message.value = value
     }
 }
