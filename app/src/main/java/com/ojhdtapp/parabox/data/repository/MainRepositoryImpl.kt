@@ -17,23 +17,8 @@ class MainRepositoryImpl @Inject constructor(
     private val database: AppDatabase
 ) : MainRepository {
     override suspend fun handleNewMessage(dto: MessageDto) {
-        database.messageDao.insertMessage(dto.toMessageEntity(1))
-        database.contactDao.insertContact(dto.toContactEntity(1))
-//        val message = Message(
-//            listOf(
-//                PlainText("Hello")
-//            ),
-//            MessageProfile("Ojhdt", null),
-//            System.currentTimeMillis()
-//        )
-//        database.messageDao.insertMessage(message.toMessageEntity(1))
-//        database.contactDao.insertContact(
-//            Contact(
-//                "Ojhdt",
-//                null, message.contents.getContentString(), PluginConnection(0, 0)
-//            ).toContactEntity(1)
-//        )
+        database.messageDao.insertMessage(dto.toMessageEntity())
+        database.contactDao.insertContact(dto.toContactEntity())
+        database.contactMessageCrossRefDao.insertNewContactMessageCrossRef(dto.getContactMessageCrossRef())
     }
 }
-
-//"$acc ${messageContent.getContentString()}"

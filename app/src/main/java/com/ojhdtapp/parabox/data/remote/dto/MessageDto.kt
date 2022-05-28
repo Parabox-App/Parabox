@@ -2,6 +2,7 @@ package com.ojhdtapp.parabox.data.remote.dto
 
 import android.os.Parcelable
 import com.ojhdtapp.parabox.data.local.entity.ContactEntity
+import com.ojhdtapp.parabox.data.local.entity.ContactMessageCrossRef
 import com.ojhdtapp.parabox.data.local.entity.MessageEntity
 import com.ojhdtapp.parabox.domain.model.MessageProfile
 import com.ojhdtapp.parabox.domain.model.PluginConnection
@@ -15,22 +16,29 @@ data class MessageDto(
     val timestamp: Long,
     val pluginConnection: PluginConnection
 ) : Parcelable {
-    fun toMessageEntity(id: Int): MessageEntity {
+    fun toContactEntity(): ContactEntity {
+        return ContactEntity(
+            name = profile.name,
+            avatar = profile.avatar,
+            latestMessage = contents.lastOrNull()?.getContentString() ?: "",
+            connection = pluginConnection,
+            contactId = pluginConnection.objectId
+        )
+    }
+
+    fun toMessageEntity(): MessageEntity {
         return MessageEntity(
             contents = contents,
             profile = profile,
             timestamp = timestamp,
-            messageId = id
+            messageId = System.currentTimeMillis().toInt()
         )
     }
 
-    fun toContactEntity(id: Int): ContactEntity {
-        return ContactEntity(
-            profile.name,
-            profile.avatar,
-            contents.lastOrNull()?.getContentString() ?: "",
-            pluginConnection,
-            id
+    fun getContactMessageCrossRef(): ContactMessageCrossRef {
+        return ContactMessageCrossRef(
+            pluginConnection.objectId,
+            System.currentTimeMillis().toInt()
         )
     }
 }

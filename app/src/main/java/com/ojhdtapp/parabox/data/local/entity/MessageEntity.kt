@@ -13,7 +13,7 @@ data class MessageEntity(
     @Embedded val profile: MessageProfile,
     val timestamp: Long,
     @PrimaryKey val messageId: Int,
-){
+) {
     fun toMessage() = Message(
         contents = contents,
         profile = profile,

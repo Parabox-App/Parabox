@@ -5,7 +5,7 @@ import com.ojhdtapp.parabox.data.local.entity.ContactEntity
 data class Contact(
     val name: String,
     val avatar: ByteArray?,
-    val latestMessage: String,
+    val latestMessage: String?,
     val connection: PluginConnection,
 ){
     fun toContactEntity(id: Int): ContactEntity{

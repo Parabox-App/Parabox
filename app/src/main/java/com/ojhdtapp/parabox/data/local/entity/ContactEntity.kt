@@ -11,7 +11,7 @@ import com.ojhdtapp.parabox.domain.model.PluginConnection
 data class ContactEntity(
     val name: String,
     val avatar: ByteArray?,
-    val latestMessage: String,
+    val latestMessage: String?,
     @Embedded val connection: PluginConnection,
     @PrimaryKey val contactId: Int
 ){
