@@ -13,11 +13,13 @@ data class ContactEntity(
     @Embedded val profile: MessageProfile,
     val latestMessage: Message?,
     @Embedded val connection: PluginConnection,
-    @PrimaryKey val contactId: Int
+    @PrimaryKey val contactId: Int,
+    val isHidden: Boolean = false
 ){
     fun toContact() = Contact(
         profile = profile,
         latestMessage = latestMessage,
-        connection = connection
+        connection = connection,
+        isHidden = isHidden
     )
 }

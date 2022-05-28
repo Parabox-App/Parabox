@@ -27,7 +27,7 @@ data class MessageDto(
                 timestamp = timestamp
             ),
             connection = pluginConnection,
-            contactId = pluginConnection.objectId
+            contactId = pluginConnection.objectId,
         )
     }
 

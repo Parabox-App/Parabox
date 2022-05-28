@@ -15,8 +15,14 @@ interface ContactDao {
     suspend fun insertContact(contact: ContactEntity)
 
     @Query("SELECT * FROM contactentity")
-    fun getAllContacts() : Flow<List<ContactEntity>>
+    fun getAllContacts(): Flow<List<ContactEntity>>
 
     @Query("SELECT * FROM contactentity WHERE latestMessage IS NOT NULL")
-    fun getMessagedContacts() : Flow<List<ContactEntity>>
+    fun getMessagedContacts(): Flow<List<ContactEntity>>
+
+    @Query("SELECT * FROM contactentity WHERE ishidden = TRUE")
+    fun getAllHiddenContacts(): Flow<List<ContactEntity>>
+
+    @Query("SELECT * FROM contactentity WHERE ishidden != TRUE")
+    fun getAllUnhiddenContacts(): Flow<List<ContactEntity>>
 }

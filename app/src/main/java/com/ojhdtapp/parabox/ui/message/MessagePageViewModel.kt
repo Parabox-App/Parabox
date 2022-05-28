@@ -11,6 +11,7 @@ import com.ojhdtapp.parabox.domain.model.message_content.PlainText
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
@@ -30,7 +31,7 @@ class MessagePageViewModel @Inject constructor(
     }
 
     fun testFun() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             handleNewMessage(
                 MessageDto(
                     listOf(PlainText("Hello")), MessageProfile("Ojhdt", null),
