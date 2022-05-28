@@ -8,7 +8,7 @@ interface MessageContent : Parcelable {
         const val IMAGE = 1
         const val AT = 2
     }
-    abstract fun getContentString() : String
+    fun getContentString() : String
 }
 
 fun List<MessageContent>.getContentString() : String{

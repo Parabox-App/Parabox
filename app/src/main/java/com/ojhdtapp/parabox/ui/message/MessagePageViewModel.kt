@@ -34,6 +34,7 @@ class MessagePageViewModel @Inject constructor(
             handleNewMessage(
                 MessageDto(
                     listOf(PlainText("Hello")), MessageProfile("Ojhdt", null),
+                    MessageProfile("Ojhdt", null),
                     System.currentTimeMillis(),
                     PluginConnection(1, 1)
                 )
