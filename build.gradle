@@ -1,7 +1,7 @@
 buildscript {
     ext {
 //        kotlin_version = "1.6.10"
-        compose_version = '1.2.0-beta02'
+        compose_version = '1.2.0-beta03'
     }
     dependencies {
         classpath 'com.google.dagger:hilt-android-gradle-plugin:2.38.1'

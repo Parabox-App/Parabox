@@ -15,6 +15,7 @@ data class MessageDto(
     val contents: List<MessageContent>,
     val profile: MessageProfile,
     val subjectProfile: MessageProfile,
+    val id:Int,
     val timestamp: Long,
     val pluginConnection: PluginConnection
 ) : Parcelable {
@@ -36,14 +37,14 @@ data class MessageDto(
             contents = contents,
             profile = profile,
             timestamp = timestamp,
-            messageId = System.currentTimeMillis().toInt()
+            messageId = id
         )
     }
 
     fun getContactMessageCrossRef(): ContactMessageCrossRef {
         return ContactMessageCrossRef(
             pluginConnection.objectId,
-            System.currentTimeMillis().toInt()
+            id
         )
     }
 }

@@ -1,26 +1,49 @@
 package com.ojhdtapp.parabox.ui.message
 
+import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.remote.dto.MessageDto
 import com.ojhdtapp.parabox.domain.model.MessageProfile
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.model.message_content.PlainText
 import com.ojhdtapp.parabox.domain.repository.MainRepository
+import com.ojhdtapp.parabox.domain.use_case.GetUngroupedContactList
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class MessagePageViewModel @Inject constructor(
-    private val handleNewMessage: HandleNewMessage
+    private val handleNewMessage: HandleNewMessage,
+    getUngroupedContactList: GetUngroupedContactList
 ) : ViewModel() {
+    init{
+        // Update Ungrouped Contacts
+        getUngroupedContactList().onEach {
+            Log.d("parabox", "contactList:${it}")
+            when(it){
+                is Resource.Loading -> {
+                    setUngroupedContactState(ungroupedContactState.value.copy(isLoading = true))
+                }
+                is Resource.Error -> {
+                    setUngroupedContactState(ungroupedContactState.value.copy(isLoading = false))
+                    _uiEventFlow.tryEmit(MessagePageUiEvent.ShowSnackBar(it.message!!))
+                }
+                is Resource.Success -> {
+                    setUngroupedContactState(ungroupedContactState.value.copy(isLoading = false, data = it.data!!))
+                }
+            }
+        }.catch {
+
+        }.launchIn(viewModelScope)
+    }
     fun onEvent(event: MessagePageEvent) {
         when (event) {
 
@@ -29,23 +52,33 @@ class MessagePageViewModel @Inject constructor(
             }
         }
     }
+    // emit to this when wanting toasting
+    private val _uiEventFlow = MutableSharedFlow<MessagePageUiEvent>()
+    val uiEventFlow = _uiEventFlow.asSharedFlow()
+
+    // Ungrouped Contact
+    private val _ungroupedContactState = mutableStateOf<UngroupedContactState>(UngroupedContactState())
+    val ungroupedContactState : State<UngroupedContactState> = _ungroupedContactState
+    fun setUngroupedContactState(value : UngroupedContactState){
+        _ungroupedContactState.value = value
+    }
 
     fun testFun() {
         viewModelScope.launch(Dispatchers.IO) {
             handleNewMessage(
                 MessageDto(
                     listOf(PlainText("Hello")), MessageProfile("Ojhdt", null),
-                    MessageProfile("Ojhdt", null),
+                    MessageProfile("Ojhdt-Group", null),
+                    System.currentTimeMillis().toInt(),
                     System.currentTimeMillis(),
-                    PluginConnection(1, 1)
+                    PluginConnection(1, System.currentTimeMillis().toInt())
                 )
             )
         }
     }
 
-    // emit to this when wanting toasting
-    private val _uiEventFlow = MutableSharedFlow<MessagePageUiEvent>()
-    val uiEventFlow = _uiEventFlow.asSharedFlow()
+
+
     private val _pluginInstalledState = mutableStateOf(false)
     val pluginInstalledState = _pluginInstalledState
     fun setPluginInstalledState(value: Boolean) {

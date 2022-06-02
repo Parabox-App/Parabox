@@ -9,6 +9,7 @@ import com.ojhdtapp.parabox.data.local.Converters
 import com.ojhdtapp.parabox.data.repository.MainRepositoryImpl
 import com.ojhdtapp.parabox.domain.plugin.Conn
 import com.ojhdtapp.parabox.domain.repository.MainRepository
+import com.ojhdtapp.parabox.domain.use_case.GetUngroupedContactList
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
 import com.ojhdtapp.parabox.domain.util.GsonParser
 import dagger.Module
@@ -29,7 +30,8 @@ object AppModule {
     fun provideAppDatabase(app: Application): AppDatabase =
         Room.databaseBuilder(
             app, AppDatabase::class.java,
-            "main_db")
+            "main_db"
+        )
             .addTypeConverter(Converters(GsonParser()))
             .build()
 
@@ -40,7 +42,13 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideHandleNewMessageUseCase(repository: MainRepository) : HandleNewMessage{
+    fun provideHandleNewMessageUseCase(repository: MainRepository): HandleNewMessage {
         return HandleNewMessage(repository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGetUngroupedContactListUseCase(repository: MainRepository): GetUngroupedContactList {
+        return GetUngroupedContactList(repository)
     }
 }

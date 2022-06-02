@@ -55,16 +55,18 @@ class MainActivity : ComponentActivity() {
             }
             AppTheme {
                 val viewModel = hiltViewModel<MessagePageViewModel>()
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
+                MessagePage()
+//                Box(
+//                    modifier = Modifier
+//                        .fillMaxSize(),
+//                    contentAlignment = Alignment.Center
+//                ) {
+//
+//                    Button(onClick = { viewModel.testFun() }) {
+//                        Text(text = "Do it")
+//                    }
+//                }
 
-                    Button(onClick = { viewModel.testFun() }) {
-                        Text(text = "Do it")
-                    }
-                }
 //                MessagePage(
 //                    onConnectBtnClicked = {
 //                        pluginConn.connect()

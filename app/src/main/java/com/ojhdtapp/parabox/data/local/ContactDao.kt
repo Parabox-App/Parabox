@@ -20,9 +20,9 @@ interface ContactDao {
     @Query("SELECT * FROM contactentity WHERE latestMessage IS NOT NULL")
     fun getMessagedContacts(): Flow<List<ContactEntity>>
 
-    @Query("SELECT * FROM contactentity WHERE ishidden = TRUE")
+    @Query("SELECT * FROM contactentity WHERE isHidden")
     fun getAllHiddenContacts(): Flow<List<ContactEntity>>
 
-    @Query("SELECT * FROM contactentity WHERE ishidden != TRUE")
+    @Query("SELECT * FROM contactentity WHERE NOT isHidden")
     fun getAllUnhiddenContacts(): Flow<List<ContactEntity>>
 }

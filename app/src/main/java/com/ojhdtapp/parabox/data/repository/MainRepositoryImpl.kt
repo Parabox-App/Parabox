@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.data.repository
 
+import android.util.Log
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.ContactEntity
@@ -25,33 +26,24 @@ class MainRepositoryImpl @Inject constructor(
     }
 
     override fun getAllHiddenContacts(): Flow<Resource<List<Contact>>> {
-//        return database.contactDao.getAllHiddenContacts().map { contactEntityList ->
-//            contactEntityList.map {
-//                it.toContact()
-//            }
-//        }
-        return flow {
-            emit(Resource.Loading())
-            emitAll(database.contactDao.getAllHiddenContacts().map { contactEntityList ->
+        return database.contactDao.getAllHiddenContacts()
+            .map<List<ContactEntity>, Resource<List<Contact>>> { contactEntityList ->
                 Resource.Success(contactEntityList.map {
                     it.toContact()
                 })
             }.catch {
-                Resource.Error<List<Contact>>("获取数据时发生错误")
-            })
+            emit(Resource.Error<List<Contact>>("获取数据时发生错误"))
         }
     }
 
     override fun getAllUnhiddenContacts(): Flow<Resource<List<Contact>>> {
-        return flow {
-            emit(Resource.Loading())
-            emitAll(database.contactDao.getAllUnhiddenContacts().map { contactEntityList ->
+        return database.contactDao.getAllUnhiddenContacts()
+            .map<List<ContactEntity>, Resource<List<Contact>>> { contactEntityList ->
                 Resource.Success(contactEntityList.map {
                     it.toContact()
                 })
             }.catch {
-                Resource.Error<List<Contact>>("获取数据时发生错误")
-            })
+            emit(Resource.Error<List<Contact>>("获取数据时发生错误"))
         }
     }
 }
