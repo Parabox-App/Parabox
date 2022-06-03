@@ -139,7 +139,7 @@ fun ContactItem(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.tertiaryContainer)
+                    .background(MaterialTheme.colorScheme.secondary)
             )
         } else {
             Image(

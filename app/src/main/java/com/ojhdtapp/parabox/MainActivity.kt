@@ -61,16 +61,11 @@ class MainActivity : ComponentActivity() {
             val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
             val fixedInsets = remember {
                 FixedInsets(
-                    statusBarHeight = systemBarsPadding.calculateTopPadding(),
-                    navigationBarsPadding = PaddingValues(
-                        bottom = systemBarsPadding.calculateBottomPadding(),
-                        start = systemBarsPadding.calculateStartPadding(LayoutDirection.Ltr),
-                        end = systemBarsPadding.calculateEndPadding(LayoutDirection.Ltr),
-                    ),
+                    statusBarHeight = systemBarsPadding.calculateTopPadding()
                 )
             }
             AppTheme {
-                CompositionLocalProvider(LocalFixedInsets provides fixedInsets ) {
+                CompositionLocalProvider(values = arrayOf(LocalFixedInsets provides fixedInsets) ) {
                     MessagePage()
                 }
                 val viewModel = hiltViewModel<MessagePageViewModel>()
