@@ -1,20 +1,22 @@
 package com.ojhdtapp.parabox
 
 import android.os.Bundle
+import androidx.compose.ui.unit.LayoutDirection
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
 import androidx.compose.material.Text
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.BeyondBoundsLayout
 import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -25,6 +27,8 @@ import com.ojhdtapp.parabox.domain.plugin.Conn
 import com.ojhdtapp.parabox.ui.message.MessagePage
 import com.ojhdtapp.parabox.ui.message.MessagePageViewModel
 import com.ojhdtapp.parabox.ui.theme.AppTheme
+import com.ojhdtapp.parabox.ui.util.FixedInsets
+import com.ojhdtapp.parabox.ui.util.LocalFixedInsets
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -50,12 +54,26 @@ class MainActivity : ComponentActivity() {
             SideEffect {
                 systemUiController.setSystemBarsColor(
                     color = Color.Transparent,
-                    darkIcons = useDarkIcons
+                    darkIcons = !useDarkIcons
+                )
+            }
+
+            val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
+            val fixedInsets = remember {
+                FixedInsets(
+                    statusBarHeight = systemBarsPadding.calculateTopPadding(),
+                    navigationBarsPadding = PaddingValues(
+                        bottom = systemBarsPadding.calculateBottomPadding(),
+                        start = systemBarsPadding.calculateStartPadding(LayoutDirection.Ltr),
+                        end = systemBarsPadding.calculateEndPadding(LayoutDirection.Ltr),
+                    ),
                 )
             }
             AppTheme {
+                CompositionLocalProvider(LocalFixedInsets provides fixedInsets ) {
+                    MessagePage()
+                }
                 val viewModel = hiltViewModel<MessagePageViewModel>()
-                MessagePage()
 //                Box(
 //                    modifier = Modifier
 //                        .fillMaxSize(),

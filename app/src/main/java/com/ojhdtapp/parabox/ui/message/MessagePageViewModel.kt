@@ -62,6 +62,13 @@ class MessagePageViewModel @Inject constructor(
         _ungroupedContactState.value = value
     }
 
+    private val _searchText = mutableStateOf<String>("")
+    val searchText : State<String> = _searchText
+
+    fun setSearchText(value : String){
+        _searchText.value = value
+    }
+
     fun testFun() {
         viewModelScope.launch(Dispatchers.IO) {
             handleNewMessage(

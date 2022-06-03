@@ -4,6 +4,7 @@ package com.ojhdtapp.parabox.ui.message
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -27,7 +28,7 @@ import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.message_content.getContentString
 import kotlinx.coroutines.flow.collectLatest
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun MessagePage(
     modifier: Modifier = Modifier,
@@ -45,12 +46,19 @@ fun MessagePage(
     }
     Scaffold(
         modifier = modifier,
-        snackbarHost = { SnackbarHost(hostState = snackBarHostState) }
+        snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
+        topBar = { SearchAppBar(text = viewModel.searchText.value, onTextChange = viewModel::setSearchText)}
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier.padding(horizontal = 16.dp),
             contentPadding = paddingValues
         ) {
+//            stickyHeader {
+//                SearchAppBar(
+//                    text = viewModel.searchText.value,
+//                    onTextChange = viewModel::setSearchText
+//                )
+//            }
             item {
                 Text(
                     text = "${viewModel.ungroupedContactState.value.isLoading}",
