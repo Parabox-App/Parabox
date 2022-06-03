@@ -14,15 +14,18 @@ interface ContactDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertContact(contact: ContactEntity)
 
-    @Query("SELECT * FROM contactentity")
+    @Query("SELECT * FROM contact_entity WHERE contactId = :id LIMIT 1")
+    fun getContactById(id:Int):ContactEntity?
+
+    @Query("SELECT * FROM contact_entity")
     fun getAllContacts(): Flow<List<ContactEntity>>
 
-    @Query("SELECT * FROM contactentity WHERE latestMessage IS NOT NULL")
+    @Query("SELECT * FROM contact_entity WHERE latestMessage IS NOT NULL")
     fun getMessagedContacts(): Flow<List<ContactEntity>>
 
-    @Query("SELECT * FROM contactentity WHERE isHidden")
+    @Query("SELECT * FROM contact_entity WHERE isHidden")
     fun getAllHiddenContacts(): Flow<List<ContactEntity>>
 
-    @Query("SELECT * FROM contactentity WHERE NOT isHidden")
+    @Query("SELECT * FROM contact_entity WHERE NOT isHidden")
     fun getAllUnhiddenContacts(): Flow<List<ContactEntity>>
 }

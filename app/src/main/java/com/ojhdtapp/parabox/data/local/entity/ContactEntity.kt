@@ -8,10 +8,12 @@ import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.MessageProfile
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 
-@Entity
+@Entity(tableName = "contact_entity")
 data class ContactEntity(
     @Embedded val profile: MessageProfile,
-    val latestMessage: Message?,
+    val latestMessage: String?,
+    val latestMessageTimestamp: Long?,
+    val unreadMessagesNum: Int = 0,
     @Embedded val connection: PluginConnection,
     @PrimaryKey val contactId: Int,
     val isHidden: Boolean = false
@@ -19,6 +21,8 @@ data class ContactEntity(
     fun toContact() = Contact(
         profile = profile,
         latestMessage = latestMessage,
+        latestMessageTimestamp = latestMessageTimestamp,
+        unreadMessagesNum = unreadMessagesNum,
         connection = connection,
         isHidden = isHidden
     )

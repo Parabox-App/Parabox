@@ -4,7 +4,9 @@ import com.ojhdtapp.parabox.data.local.entity.ContactEntity
 
 data class Contact(
     val profile: MessageProfile,
-    val latestMessage: Message?,
+    val latestMessage: String?,
+    val latestMessageTimestamp: Long?,
+    val unreadMessagesNum: Int = 0,
     val connection: PluginConnection,
     val isHidden : Boolean = false
 ){
@@ -12,6 +14,8 @@ data class Contact(
         return ContactEntity(
             profile = profile,
             latestMessage = latestMessage,
+            latestMessageTimestamp = latestMessageTimestamp,
+            unreadMessagesNum = unreadMessagesNum,
             connection = connection,
             contactId = id,
             isHidden = isHidden

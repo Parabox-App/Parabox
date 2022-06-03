@@ -14,14 +14,14 @@ interface ContactMessageCrossRefDao {
     fun deleteNewContactMessageCrossRef(crossRef: ContactMessageCrossRef)
 
     @Transaction
-    @Query("SELECT * FROM contactentity")
+    @Query("SELECT * FROM contact_entity")
     fun getAllContactWithMessages() : List<ContactWithMessagesEntity>
 
     @Transaction
-    @Query("SELECT * FROM contactentity WHERE contactid = :contactId")
+    @Query("SELECT * FROM contact_entity WHERE contactId = :contactId")
     fun getSpecifiedContactWithMessages(contactId: Int) : List<ContactWithMessagesEntity>
 
     @Transaction
-    @Query("SELECT * FROM contactentity WHERE contactid IN (:contactIds)")
+    @Query("SELECT * FROM contact_entity WHERE contactId IN (:contactIds)")
     fun getSpecifiedListOfContactWithMessages(contactIds: List<Int>) : List<ContactWithMessagesEntity>
 }

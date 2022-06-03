@@ -7,7 +7,7 @@ import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.MessageProfile
 import com.ojhdtapp.parabox.domain.model.message_content.MessageContent
 
-@Entity
+@Entity(tableName = "message_entity")
 data class MessageEntity(
     val contents: List<MessageContent>,
     @Embedded val profile: MessageProfile,

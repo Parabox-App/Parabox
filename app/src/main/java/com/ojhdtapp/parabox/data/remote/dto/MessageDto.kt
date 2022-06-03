@@ -8,6 +8,7 @@ import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.MessageProfile
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.model.message_content.MessageContent
+import com.ojhdtapp.parabox.domain.model.message_content.getContentString
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
@@ -15,18 +16,16 @@ data class MessageDto(
     val contents: List<MessageContent>,
     val profile: MessageProfile,
     val subjectProfile: MessageProfile,
-    val id:Int,
+    val id: Int,
     val timestamp: Long,
     val pluginConnection: PluginConnection
 ) : Parcelable {
     fun toContactEntity(): ContactEntity {
         return ContactEntity(
             profile = subjectProfile,
-            latestMessage = Message(
-                contents = emptyList(),
-                profile = profile,
-                timestamp = timestamp
-            ),
+            latestMessage = contents.getContentString(),
+            latestMessageTimestamp = timestamp,
+            unreadMessagesNum = 0,
             connection = pluginConnection,
             contactId = pluginConnection.objectId,
         )
