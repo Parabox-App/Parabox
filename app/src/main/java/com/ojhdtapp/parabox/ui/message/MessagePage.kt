@@ -147,7 +147,7 @@ fun ContactItem(
                 color = MaterialTheme.colorScheme.onSecondaryContainer
             )
             Text(
-                text = contact.latestMessage ?: "",
+                text = contact.latestMessage?.content ?: "",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSecondaryContainer
             )
@@ -156,7 +156,7 @@ fun ContactItem(
             horizontalAlignment = Alignment.End,
             verticalArrangement = Arrangement.SpaceAround
         ) {
-            Text(text = contact.latestMessageTimestamp?.toTimeUntilNow() ?: "", style = MaterialTheme.typography.labelMedium)
+            Text(text = contact.latestMessage?.timestamp?.toTimeUntilNow() ?: "", style = MaterialTheme.typography.labelMedium)
             Spacer(modifier = Modifier.height(8.dp))
             Box(
                 modifier = Modifier

@@ -5,7 +5,7 @@ import com.ojhdtapp.parabox.domain.model.message_content.MessageContent
 
 data class Message(
     val contents: List<MessageContent>,
-    val profile: MessageProfile,
+    val profile: Profile,
     val timestamp: Long
 ) {
     fun toMessageEntity(id: Int): MessageEntity {

@@ -7,10 +7,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.remote.dto.MessageDto
-import com.ojhdtapp.parabox.domain.model.MessageProfile
+import com.ojhdtapp.parabox.domain.model.Profile
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.model.message_content.PlainText
-import com.ojhdtapp.parabox.domain.repository.MainRepository
 import com.ojhdtapp.parabox.domain.use_case.GetUngroupedContactList
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -67,8 +66,8 @@ class MessagePageViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             handleNewMessage(
                 MessageDto(
-                    listOf(PlainText("Hello")), MessageProfile("Ojhdt", null),
-                    MessageProfile("Ojhdt-Group", null),
+                    listOf(PlainText("Hello")), Profile("Ojhdt", null),
+                    Profile("Ojhdt-Group", null),
                     System.currentTimeMillis().toInt(),
                     System.currentTimeMillis(),
                     PluginConnection(1, System.currentTimeMillis().toInt())

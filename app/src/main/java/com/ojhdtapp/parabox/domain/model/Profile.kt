@@ -4,7 +4,7 @@ import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
-data class MessageProfile(
+data class Profile(
     val name: String,
     val avatar: ByteArray?
 ) : Parcelable {
@@ -12,7 +12,7 @@ data class MessageProfile(
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as MessageProfile
+        other as Profile
 
         if (name != other.name) return false
         if (avatar != null) {
