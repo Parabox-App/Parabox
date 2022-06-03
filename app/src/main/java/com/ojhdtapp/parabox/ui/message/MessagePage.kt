@@ -61,7 +61,9 @@ fun MessagePage(
                 ContactItem(
                     contact = item,
                     isFirst = index == 0,
-                    isLast = index == (viewModel.ungroupedContactState.value.data.size - 1).coerceAtLeast(0)
+                    isLast = index == (viewModel.ungroupedContactState.value.data.size - 1).coerceAtLeast(
+                        0
+                    )
                 ) {
 
                 }
@@ -120,7 +122,8 @@ fun ContactItem(
             .background(background.value)
             .clickable { onClick() }
             .padding(16.dp)
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min),
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (contact.profile.avatar == null) {
@@ -140,12 +143,17 @@ fun ContactItem(
                 contentDescription = "avatar"
             )
         }
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
+        Spacer(modifier = Modifier.width(16.dp))
+        Column(modifier = Modifier
+            .weight(1f)
+            .fillMaxHeight(), verticalArrangement = Arrangement.Top) {
+            Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = contact.profile.name,
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSecondaryContainer
             )
+            Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = contact.latestMessage?.content ?: "",
                 style = MaterialTheme.typography.bodyMedium,
@@ -153,19 +161,31 @@ fun ContactItem(
             )
         }
         Column(
+            modifier = Modifier.fillMaxHeight(),
             horizontalAlignment = Alignment.End,
-            verticalArrangement = Arrangement.SpaceAround
+            verticalArrangement = Arrangement.Top
         ) {
-            Text(text = contact.latestMessage?.timestamp?.toTimeUntilNow() ?: "", style = MaterialTheme.typography.labelMedium)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = contact.latestMessage?.timestamp?.toTimeUntilNow() ?: "",
+                style = MaterialTheme.typography.labelMedium
+            )
             Spacer(modifier = Modifier.height(8.dp))
-            Box(
-                modifier = Modifier
-                    .size(16.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(text = "1", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimary)
+            val unreadMessagesNum = contact.latestMessage?.unreadMessagesNum ?: 0
+            if (unreadMessagesNum != 0) {
+                Box(
+                    modifier = Modifier
+                        .height(16.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.primary),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "$unreadMessagesNum",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
             }
         }
     }
