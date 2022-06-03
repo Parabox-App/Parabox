@@ -19,6 +19,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -26,6 +27,7 @@ import com.ojhdtapp.parabox.core.util.toAvatarBitmap
 import com.ojhdtapp.parabox.core.util.toTimeUntilNow
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.message_content.getContentString
+import com.valentinilk.shimmer.*
 import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -35,6 +37,7 @@ fun MessagePage(
 ) {
     val viewModel: MessagePageViewModel = hiltViewModel()
     val snackBarHostState = remember { SnackbarHostState() }
+    val shimmerInstance = rememberShimmer(shimmerBounds = ShimmerBounds.View)
     LaunchedEffect(true) {
         viewModel.uiEventFlow.collectLatest {
             when (it) {
@@ -47,18 +50,17 @@ fun MessagePage(
     Scaffold(
         modifier = modifier,
         snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
-        topBar = { SearchAppBar(text = viewModel.searchText.value, onTextChange = viewModel::setSearchText)}
+        topBar = {
+            SearchAppBar(
+                text = viewModel.searchText.value,
+                onTextChange = viewModel::setSearchText
+            )
+        }
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier.padding(horizontal = 16.dp),
             contentPadding = paddingValues
         ) {
-//            stickyHeader {
-//                SearchAppBar(
-//                    text = viewModel.searchText.value,
-//                    onTextChange = viewModel::setSearchText
-//                )
-//            }
             item {
                 Text(
                     text = "${viewModel.ungroupedContactState.value.isLoading}",
@@ -67,12 +69,17 @@ fun MessagePage(
             }
             val ungroupedContactList = viewModel.ungroupedContactState.value.data
             itemsIndexed(items = ungroupedContactList) { index, item ->
+                var loading by remember {
+                    mutableStateOf(false)
+                }
                 ContactItem(
                     contact = item,
                     isFirst = index == 0,
-                    isLast = index == ungroupedContactList.lastIndex
+                    isLast = index == ungroupedContactList.lastIndex,
+                    isLoading = loading,
+                    shimmer = shimmerInstance
                 ) {
-
+                    loading = !loading
                 }
                 if (index < ungroupedContactList.lastIndex)
                     Spacer(modifier = Modifier.height(3.dp))
@@ -111,6 +118,8 @@ fun ContactItem(
     isFirst: Boolean = false,
     isLast: Boolean = false,
     isTop: Boolean = false,
+    isLoading: Boolean = true,
+    shimmer: Shimmer? = null,
     onClick: () -> Unit
 ) {
     val topRadius = animateDpAsState(targetValue = if (isFirst) 28.dp else 0.dp)
@@ -135,12 +144,22 @@ fun ContactItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (contact.profile.avatar == null) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.secondary)
-            )
+            if (isLoading) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .shimmer(shimmer)
+                        .background(MaterialTheme.colorScheme.secondary)
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.secondary)
+                )
+            }
         } else {
             Image(
                 modifier = Modifier
@@ -158,47 +177,67 @@ fun ContactItem(
                 .fillMaxHeight(), verticalArrangement = Arrangement.Top
         ) {
             Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = contact.profile.name,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                maxLines = 1
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = contact.latestMessage?.content ?: "",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                maxLines = 1
-            )
-        }
-        Column(
-            modifier = Modifier.fillMaxHeight(),
-            horizontalAlignment = Alignment.End,
-            verticalArrangement = Arrangement.Top
-        ) {
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = contact.latestMessage?.timestamp?.toTimeUntilNow() ?: "",
-                style = MaterialTheme.typography.labelMedium
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            val unreadMessagesNum = contact.latestMessage?.unreadMessagesNum ?: 0
-            if (unreadMessagesNum != 0) {
+            if (isLoading) {
                 Box(
                     modifier = Modifier
-                        .height(16.dp)
-                        .defaultMinSize(minWidth = 16.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.primary)
-                        .padding(horizontal = 4.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "$unreadMessagesNum",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
+                        .size(48.dp, 22.dp)
+                        .shimmer(shimmer)
+                        .background(MaterialTheme.colorScheme.secondary)
+                )
+            } else {
+                Text(
+                    text = contact.profile.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    maxLines = 1
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            if (isLoading) {
+                Box(
+                    modifier = Modifier
+                        .size(112.dp, 18.dp)
+                        .shimmer(shimmer)
+                        .background(MaterialTheme.colorScheme.secondary)
+                )
+            } else {
+                Text(
+                    text = contact.latestMessage?.content ?: "",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    maxLines = 1
+                )
+            }
+        }
+        if (!isLoading) {
+            Column(
+                modifier = Modifier.fillMaxHeight(),
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.Top
+            ) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = contact.latestMessage?.timestamp?.toTimeUntilNow() ?: "",
+                    style = MaterialTheme.typography.labelMedium
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                val unreadMessagesNum = contact.latestMessage?.unreadMessagesNum ?: 0
+                if (unreadMessagesNum != 0) {
+                    Box(
+                        modifier = Modifier
+                            .height(16.dp)
+                            .defaultMinSize(minWidth = 16.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.colorScheme.primary)
+                            .padding(horizontal = 4.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "$unreadMessagesNum",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
                 }
             }
         }
