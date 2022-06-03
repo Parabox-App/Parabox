@@ -23,17 +23,26 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.ojhdtapp.parabox.core.util.toAvatarBitmap
 import com.ojhdtapp.parabox.core.util.toTimeUntilNow
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.message_content.getContentString
+import com.ramcosta.composedestinations.DestinationsNavHost
+import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.RootNavGraph
+import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.valentinilk.shimmer.*
 import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@RootNavGraph(start = true)
+@Destination
 @Composable
 fun MessagePage(
     modifier: Modifier = Modifier,
+    navigator: DestinationsNavigator,
 ) {
     val viewModel: MessagePageViewModel = hiltViewModel()
     val snackBarHostState = remember { SnackbarHostState() }
@@ -55,6 +64,9 @@ fun MessagePage(
                 text = viewModel.searchText.value,
                 onTextChange = viewModel::setSearchText
             )
+        },
+        bottomBar = {
+            com.ojhdtapp.parabox.ui.util.NavigationBar(navController = navController)
         }
     ) { paddingValues ->
         LazyColumn(
@@ -62,32 +74,55 @@ fun MessagePage(
             contentPadding = paddingValues
         ) {
             item {
+                Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "${viewModel.ungroupedContactState.value.isLoading}",
-                    style = MaterialTheme.typography.displayLarge
+                    text = "未编组",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary
                 )
+                Spacer(modifier = Modifier.height(8.dp))
             }
-            val ungroupedContactList = viewModel.ungroupedContactState.value.data
-            itemsIndexed(items = ungroupedContactList) { index, item ->
-                var loading by remember {
-                    mutableStateOf(false)
+            if (viewModel.ungroupedContactState.value.isLoading) {
+                itemsIndexed(listOf(null, null, null, null)) { index, _ ->
+                    ContactItem(
+                        contact = null,
+                        isFirst = index == 0,
+                        isLast = index == 3,
+                        isLoading = true
+                    ) {}
                 }
-                ContactItem(
-                    contact = item,
-                    isFirst = index == 0,
-                    isLast = index == ungroupedContactList.lastIndex,
-                    isLoading = loading,
-                    shimmer = shimmerInstance
-                ) {
-                    loading = !loading
+            } else {
+                val ungroupedContactList = viewModel.ungroupedContactState.value.data
+                itemsIndexed(items = ungroupedContactList) { index, item ->
+                    var loading by remember {
+                        mutableStateOf(false)
+                    }
+                    ContactItem(
+                        contact = item,
+                        isFirst = index == 0,
+                        isLast = index == ungroupedContactList.lastIndex,
+                        isLoading = loading,
+                        shimmer = shimmerInstance
+                    ) {
+                        loading = !loading
+                    }
+                    if (index < ungroupedContactList.lastIndex)
+                        Spacer(modifier = Modifier.height(3.dp))
                 }
-                if (index < ungroupedContactList.lastIndex)
-                    Spacer(modifier = Modifier.height(3.dp))
             }
             item {
                 Button(onClick = { viewModel.testFun() }) {
                     Text(text = "Do it")
                 }
+            }
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "其他",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(8.dp))
             }
         }
 //        Column(
@@ -114,7 +149,7 @@ fun MessagePage(
 @Composable
 fun ContactItem(
     modifier: Modifier = Modifier,
-    contact: Contact,
+    contact: Contact?,
     isFirst: Boolean = false,
     isLast: Boolean = false,
     isTop: Boolean = false,
@@ -143,32 +178,32 @@ fun ContactItem(
             .height(IntrinsicSize.Min),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (contact.profile.avatar == null) {
-            if (isLoading) {
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .shimmer(shimmer)
+                    .background(MaterialTheme.colorScheme.secondary)
+            )
+        } else {
+            if (contact?.profile?.avatar == null) {
                 Box(
                     modifier = Modifier
                         .size(48.dp)
                         .clip(CircleShape)
-                        .shimmer(shimmer)
                         .background(MaterialTheme.colorScheme.secondary)
                 )
             } else {
-                Box(
+                Image(
                     modifier = Modifier
+                        .clip(RoundedCornerShape(24.dp))
                         .size(48.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.secondary)
+                        .background(MaterialTheme.colorScheme.tertiaryContainer),
+                    bitmap = contact.profile.avatar.toAvatarBitmap(),
+                    contentDescription = "avatar"
                 )
             }
-        } else {
-            Image(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(24.dp))
-                    .size(48.dp)
-                    .background(MaterialTheme.colorScheme.tertiaryContainer),
-                bitmap = contact.profile.avatar.toAvatarBitmap(),
-                contentDescription = "avatar"
-            )
         }
         Spacer(modifier = Modifier.width(16.dp))
         Column(
@@ -186,7 +221,7 @@ fun ContactItem(
                 )
             } else {
                 Text(
-                    text = contact.profile.name,
+                    text = contact?.profile?.name ?: "会话名称",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                     maxLines = 1
@@ -202,7 +237,7 @@ fun ContactItem(
                 )
             } else {
                 Text(
-                    text = contact.latestMessage?.content ?: "",
+                    text = contact?.latestMessage?.content ?: "",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                     maxLines = 1
@@ -217,11 +252,11 @@ fun ContactItem(
             ) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = contact.latestMessage?.timestamp?.toTimeUntilNow() ?: "",
+                    text = contact?.latestMessage?.timestamp?.toTimeUntilNow() ?: "",
                     style = MaterialTheme.typography.labelMedium
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                val unreadMessagesNum = contact.latestMessage?.unreadMessagesNum ?: 0
+                val unreadMessagesNum = contact?.latestMessage?.unreadMessagesNum ?: 0
                 if (unreadMessagesNum != 0) {
                     Box(
                         modifier = Modifier

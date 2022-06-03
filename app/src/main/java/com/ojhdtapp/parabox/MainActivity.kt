@@ -22,13 +22,17 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.ojhdtapp.parabox.domain.plugin.Conn
+import com.ojhdtapp.parabox.ui.NavGraphs
 import com.ojhdtapp.parabox.ui.message.MessagePage
 import com.ojhdtapp.parabox.ui.message.MessagePageViewModel
 import com.ojhdtapp.parabox.ui.theme.AppTheme
 import com.ojhdtapp.parabox.ui.util.FixedInsets
 import com.ojhdtapp.parabox.ui.util.LocalFixedInsets
+import com.ramcosta.composedestinations.DestinationsNavHost
+import com.ramcosta.composedestinations.annotation.NavGraph
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -49,6 +53,7 @@ class MainActivity : ComponentActivity() {
 //        }
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {
+            // System Ui
             val systemUiController = rememberSystemUiController()
             val useDarkIcons = isSystemInDarkTheme()
             SideEffect {
@@ -58,15 +63,19 @@ class MainActivity : ComponentActivity() {
                 )
             }
 
+            // System Bars
             val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
             val fixedInsets = remember {
                 FixedInsets(
                     statusBarHeight = systemBarsPadding.calculateTopPadding()
                 )
             }
+
+            // Destination
+            val navController = rememberNavController()
             AppTheme {
                 CompositionLocalProvider(values = arrayOf(LocalFixedInsets provides fixedInsets) ) {
-                    MessagePage()
+                    DestinationsNavHost(navGraph = NavGraphs.root)
                 }
                 val viewModel = hiltViewModel<MessagePageViewModel>()
 //                Box(

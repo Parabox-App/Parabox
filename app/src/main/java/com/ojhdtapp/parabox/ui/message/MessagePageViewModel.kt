@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.remote.dto.MessageDto
+import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Profile
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.model.message_content.PlainText
@@ -23,26 +24,36 @@ class MessagePageViewModel @Inject constructor(
     private val handleNewMessage: HandleNewMessage,
     getUngroupedContactList: GetUngroupedContactList
 ) : ViewModel() {
-    init{
+    init {
         // Update Ungrouped Contacts
         getUngroupedContactList().onEach {
             Log.d("parabox", "contactList:${it}")
-            when(it){
+            when (it) {
                 is Resource.Loading -> {
-                    setUngroupedContactState(ungroupedContactState.value.copy(isLoading = true))
+                    setUngroupedContactState(
+                        ungroupedContactState.value.copy(
+                            isLoading = true,
+                        )
+                    )
                 }
                 is Resource.Error -> {
                     setUngroupedContactState(ungroupedContactState.value.copy(isLoading = false))
                     _uiEventFlow.tryEmit(MessagePageUiEvent.ShowSnackBar(it.message!!))
                 }
                 is Resource.Success -> {
-                    setUngroupedContactState(ungroupedContactState.value.copy(isLoading = false, data = it.data!!))
+                    setUngroupedContactState(
+                        ungroupedContactState.value.copy(
+                            isLoading = false,
+                            data = it.data!!
+                        )
+                    )
                 }
             }
         }.catch {
 
         }.launchIn(viewModelScope)
     }
+
     fun onEvent(event: MessagePageEvent) {
         when (event) {
 
@@ -51,21 +62,23 @@ class MessagePageViewModel @Inject constructor(
             }
         }
     }
+
     // emit to this when wanting toasting
     private val _uiEventFlow = MutableSharedFlow<MessagePageUiEvent>()
     val uiEventFlow = _uiEventFlow.asSharedFlow()
 
     // Ungrouped Contact
-    private val _ungroupedContactState = mutableStateOf<UngroupedContactState>(UngroupedContactState())
-    val ungroupedContactState : State<UngroupedContactState> = _ungroupedContactState
-    fun setUngroupedContactState(value : UngroupedContactState){
+    private val _ungroupedContactState =
+        mutableStateOf<UngroupedContactState>(UngroupedContactState())
+    val ungroupedContactState: State<UngroupedContactState> = _ungroupedContactState
+    fun setUngroupedContactState(value: UngroupedContactState) {
         _ungroupedContactState.value = value
     }
 
     private val _searchText = mutableStateOf<String>("")
-    val searchText : State<String> = _searchText
+    val searchText: State<String> = _searchText
 
-    fun setSearchText(value : String){
+    fun setSearchText(value: String) {
         _searchText.value = value
     }
 
@@ -73,7 +86,8 @@ class MessagePageViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             handleNewMessage(
                 MessageDto(
-                    listOf(PlainText("Hello at ${System.currentTimeMillis()}")), Profile("Ojhdt", null),
+                    listOf(PlainText("Hello at ${System.currentTimeMillis()}")),
+                    Profile("Ojhdt", null),
                     Profile("Ojhdt-Group", null),
                     System.currentTimeMillis().toInt(),
                     System.currentTimeMillis(),
@@ -82,7 +96,6 @@ class MessagePageViewModel @Inject constructor(
             )
         }
     }
-
 
 
     private val _pluginInstalledState = mutableStateOf(false)
