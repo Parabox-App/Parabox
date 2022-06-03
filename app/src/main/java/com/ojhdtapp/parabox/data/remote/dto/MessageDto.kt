@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.data.remote.dto
 
 import android.os.Parcelable
+import com.ojhdtapp.parabox.data.local.ContactDao
 import com.ojhdtapp.parabox.data.local.entity.ContactEntity
 import com.ojhdtapp.parabox.data.local.entity.ContactMessageCrossRef
 import com.ojhdtapp.parabox.data.local.entity.MessageEntity
@@ -20,12 +21,15 @@ data class MessageDto(
     val timestamp: Long,
     val pluginConnection: PluginConnection
 ) : Parcelable {
-    fun toContactEntity(): ContactEntity {
+    suspend fun toContactEntityWithUnreadMessagesNumUpdate(dao: ContactDao): ContactEntity {
         return ContactEntity(
             profile = subjectProfile,
-            latestMessage = LatestMessage(contents.getContentString(),
-            timestamp,
-            0),
+            latestMessage = LatestMessage(
+                contents.getContentString(),
+                timestamp,
+                (dao.getContactById(pluginConnection.objectId)?.latestMessage?.unreadMessagesNum
+                    ?: 0) + 1
+            ),
             connection = pluginConnection,
             contactId = pluginConnection.objectId,
         )

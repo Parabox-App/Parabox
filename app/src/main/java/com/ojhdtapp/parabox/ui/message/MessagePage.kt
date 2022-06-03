@@ -57,17 +57,17 @@ fun MessagePage(
                     style = MaterialTheme.typography.displayLarge
                 )
             }
-            itemsIndexed(items = viewModel.ungroupedContactState.value.data) { index, item ->
+            val ungroupedContactList = viewModel.ungroupedContactState.value.data
+            itemsIndexed(items = ungroupedContactList) { index, item ->
                 ContactItem(
                     contact = item,
                     isFirst = index == 0,
-                    isLast = index == (viewModel.ungroupedContactState.value.data.size - 1).coerceAtLeast(
-                        0
-                    )
+                    isLast = index == ungroupedContactList.lastIndex
                 ) {
 
                 }
-                Spacer(modifier = Modifier.height(3.dp))
+                if (index < ungroupedContactList.lastIndex)
+                    Spacer(modifier = Modifier.height(3.dp))
             }
             item {
                 Button(onClick = { viewModel.testFun() }) {
@@ -144,20 +144,24 @@ fun ContactItem(
             )
         }
         Spacer(modifier = Modifier.width(16.dp))
-        Column(modifier = Modifier
-            .weight(1f)
-            .fillMaxHeight(), verticalArrangement = Arrangement.Top) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(), verticalArrangement = Arrangement.Top
+        ) {
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = contact.profile.name,
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                maxLines = 1
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = contact.latestMessage?.content ?: "",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                maxLines = 1
             )
         }
         Column(
@@ -176,8 +180,10 @@ fun ContactItem(
                 Box(
                     modifier = Modifier
                         .height(16.dp)
+                        .defaultMinSize(minWidth = 16.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.primary),
+                        .background(MaterialTheme.colorScheme.primary)
+                        .padding(horizontal = 4.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(

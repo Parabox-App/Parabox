@@ -66,11 +66,11 @@ class MessagePageViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             handleNewMessage(
                 MessageDto(
-                    listOf(PlainText("Hello")), Profile("Ojhdt", null),
+                    listOf(PlainText("Hello at ${System.currentTimeMillis()}")), Profile("Ojhdt", null),
                     Profile("Ojhdt-Group", null),
                     System.currentTimeMillis().toInt(),
                     System.currentTimeMillis(),
-                    PluginConnection(1, System.currentTimeMillis().toInt())
+                    PluginConnection(1, 1)
                 )
             )
         }

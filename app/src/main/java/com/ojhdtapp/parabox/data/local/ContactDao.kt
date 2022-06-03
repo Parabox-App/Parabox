@@ -15,7 +15,7 @@ interface ContactDao {
     suspend fun insertContact(contact: ContactEntity)
 
     @Query("SELECT * FROM contact_entity WHERE contactId = :id LIMIT 1")
-    fun getContactById(id:Int):ContactEntity?
+    suspend fun getContactById(id:Int):ContactEntity?
 
     @Query("SELECT * FROM contact_entity")
     fun getAllContacts(): Flow<List<ContactEntity>>

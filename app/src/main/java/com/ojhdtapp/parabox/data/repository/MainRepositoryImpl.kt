@@ -14,7 +14,7 @@ class MainRepositoryImpl @Inject constructor(
 ) : MainRepository {
     override suspend fun handleNewMessage(dto: MessageDto) {
         database.messageDao.insertMessage(dto.toMessageEntity())
-        database.contactDao.insertContact(dto.toContactEntity())
+        database.contactDao.insertContact(dto.toContactEntityWithUnreadMessagesNumUpdate(database.contactDao))
         database.contactMessageCrossRefDao.insertNewContactMessageCrossRef(dto.getContactMessageCrossRef())
     }
 
