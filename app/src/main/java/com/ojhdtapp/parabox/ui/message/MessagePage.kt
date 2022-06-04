@@ -43,6 +43,7 @@ import kotlinx.coroutines.flow.collectLatest
 fun MessagePage(
     modifier: Modifier = Modifier,
     navigator: DestinationsNavigator,
+    navController: NavController,
 ) {
     val viewModel: MessagePageViewModel = hiltViewModel()
     val snackBarHostState = remember { SnackbarHostState() }
@@ -66,7 +67,9 @@ fun MessagePage(
             )
         },
         bottomBar = {
-            com.ojhdtapp.parabox.ui.util.NavigationBar(navController = navController)
+            com.ojhdtapp.parabox.ui.util.NavigationBar(
+                navController = navController
+            )
         }
     ) { paddingValues ->
         LazyColumn(
@@ -90,6 +93,8 @@ fun MessagePage(
                         isLast = index == 3,
                         isLoading = true
                     ) {}
+                    if (index < 3)
+                        Spacer(modifier = Modifier.height(3.dp))
                 }
             } else {
                 val ungroupedContactList = viewModel.ungroupedContactState.value.data

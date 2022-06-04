@@ -67,27 +67,20 @@ class MainActivity : ComponentActivity() {
             val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
             val fixedInsets = remember {
                 FixedInsets(
-                    statusBarHeight = systemBarsPadding.calculateTopPadding()
+                    statusBarHeight = systemBarsPadding.calculateTopPadding(),
+                    navigationBarHeight = systemBarsPadding.calculateBottomPadding()
                 )
             }
 
             // Destination
             val navController = rememberNavController()
             AppTheme {
-                CompositionLocalProvider(values = arrayOf(LocalFixedInsets provides fixedInsets) ) {
-                    DestinationsNavHost(navGraph = NavGraphs.root)
+                CompositionLocalProvider(values = arrayOf(LocalFixedInsets provides fixedInsets)) {
+                    DestinationsNavHost(
+                        navGraph = NavGraphs.root,
+                        navController = navController
+                    )
                 }
-                val viewModel = hiltViewModel<MessagePageViewModel>()
-//                Box(
-//                    modifier = Modifier
-//                        .fillMaxSize(),
-//                    contentAlignment = Alignment.Center
-//                ) {
-//
-//                    Button(onClick = { viewModel.testFun() }) {
-//                        Text(text = "Do it")
-//                    }
-//                }
 
 //                MessagePage(
 //                    onConnectBtnClicked = {
