@@ -2,12 +2,12 @@ package com.ojhdtapp.parabox.ui.message
 
 import android.util.Log
 import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.remote.dto.MessageDto
-import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Profile
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.model.message_content.PlainText
@@ -47,6 +47,9 @@ class MessagePageViewModel @Inject constructor(
                             data = it.data!!
                         )
                     )
+                    setMessageBadge(it.data.sumOf { contact ->
+                        contact.latestMessage?.unreadMessagesNum ?: 0
+                    })
                 }
             }
         }.catch {
@@ -80,6 +83,16 @@ class MessagePageViewModel @Inject constructor(
 
     fun setSearchText(value: String) {
         _searchText.value = value
+    }
+
+    private val _messageBadge = mutableStateOf<Int>(
+        ungroupedContactState.value.data.sumOf {
+            it.latestMessage?.unreadMessagesNum ?: 0
+        }
+    )
+    val messageBadge: State<Int> = _messageBadge
+    fun setMessageBadge(value: Int) {
+        _messageBadge.value = value
     }
 
     fun testFun() {

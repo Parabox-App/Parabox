@@ -77,7 +77,9 @@ fun MessagePage(
         },
         bottomBar = {
             com.ojhdtapp.parabox.ui.util.NavigationBar(
-                navController = navController
+                navController = navController,
+                messageBadge = viewModel.messageBadge.value,
+                onSelfItemClick = {},
             )
         },
         floatingActionButton = {
@@ -90,7 +92,7 @@ fun MessagePage(
                     )
                 },
                 expanded = expandedFab,
-                onClick = { /*TODO*/ })
+                onClick = { viewModel.testFun() })
         },
     ) { paddingValues ->
         LazyColumn(
@@ -135,11 +137,6 @@ fun MessagePage(
                     }
                     if (index < ungroupedContactList.lastIndex)
                         Spacer(modifier = Modifier.height(3.dp))
-                }
-            }
-            item {
-                Button(onClick = { viewModel.testFun() }) {
-                    Text(text = "Do it")
                 }
             }
             item {
@@ -285,21 +282,22 @@ fun ContactItem(
                 Spacer(modifier = Modifier.height(8.dp))
                 val unreadMessagesNum = contact?.latestMessage?.unreadMessagesNum ?: 0
                 if (unreadMessagesNum != 0) {
-                    Box(
-                        modifier = Modifier
-                            .height(16.dp)
-                            .defaultMinSize(minWidth = 16.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(MaterialTheme.colorScheme.primary)
-                            .padding(horizontal = 4.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "$unreadMessagesNum",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    }
+                    Badge(containerColor = MaterialTheme.colorScheme.primary){ Text(text = "$unreadMessagesNum")}
+//                    Box(
+//                        modifier = Modifier
+//                            .height(16.dp)
+//                            .defaultMinSize(minWidth = 16.dp)
+//                            .clip(RoundedCornerShape(8.dp))
+//                            .background(MaterialTheme.colorScheme.primary)
+//                            .padding(horizontal = 4.dp),
+//                        contentAlignment = Alignment.Center
+//                    ) {
+//                        Text(
+//                            text = "$unreadMessagesNum",
+//                            style = MaterialTheme.typography.labelSmall,
+//                            color = MaterialTheme.colorScheme.onPrimary
+//                        )
+//                    }
                 }
             }
         }

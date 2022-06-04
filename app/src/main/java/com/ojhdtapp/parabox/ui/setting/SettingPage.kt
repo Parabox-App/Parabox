@@ -18,7 +18,11 @@ fun SettingPage(
     navController: NavController
 ) {
     Scaffold(modifier = modifier,
-        bottomBar = { com.ojhdtapp.parabox.ui.util.NavigationBar(navController = navController) }) {
+        bottomBar = {
+            com.ojhdtapp.parabox.ui.util.NavigationBar(
+                navController = navController,
+                onSelfItemClick = {})
+        }) {
         LazyColumn(contentPadding = it) {
 
         }

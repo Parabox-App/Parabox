@@ -19,7 +19,7 @@ fun FilePage(
     navController: NavController
 ) {
     Scaffold(modifier = modifier,
-        bottomBar = { NavigationBar(navController = navController) }) {
+        bottomBar = { NavigationBar(navController = navController, onSelfItemClick = {}) }) {
         LazyColumn(contentPadding = it) {
 
         }
