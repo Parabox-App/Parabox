@@ -12,8 +12,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.rememberScaffoldState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -46,8 +49,14 @@ fun MessagePage(
     navController: NavController,
 ) {
     val viewModel: MessagePageViewModel = hiltViewModel()
+    val listState = rememberLazyListState()
     val snackBarHostState = remember { SnackbarHostState() }
     val shimmerInstance = rememberShimmer(shimmerBounds = ShimmerBounds.View)
+    val expandedFab by remember {
+        derivedStateOf {
+            listState.firstVisibleItemIndex == 0
+        }
+    }
     LaunchedEffect(true) {
         viewModel.uiEventFlow.collectLatest {
             when (it) {
@@ -70,10 +79,23 @@ fun MessagePage(
             com.ojhdtapp.parabox.ui.util.NavigationBar(
                 navController = navController
             )
-        }
+        },
+        floatingActionButton = {
+            ExtendedFloatingActionButton(
+                text = { Text(text = "发起会话") },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Outlined.Add,
+                        contentDescription = "new contact"
+                    )
+                },
+                expanded = expandedFab,
+                onClick = { /*TODO*/ })
+        },
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier.padding(horizontal = 16.dp),
+            state = listState,
             contentPadding = paddingValues
         ) {
             item {
