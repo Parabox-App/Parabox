@@ -42,8 +42,8 @@ fun SearchAppBar(
     val statusBarHeight = WindowInsets.systemBars.asPaddingValues().calculateTopPadding()
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
-    LaunchedEffect(isActivated){
-        if(isActivated) focusRequester.requestFocus()
+    LaunchedEffect(isActivated) {
+        if (isActivated) focusRequester.requestFocus()
         else keyboardController?.hide()
     }
     Box(
@@ -62,58 +62,60 @@ fun SearchAppBar(
                     animateDpAsState(targetValue = if (isActivated) 0.dp else 8.dp).value
                 )
             ),
-        contentAlignment = Alignment.BottomCenter
     ) {
-        Box(
+        Surface(
             modifier = Modifier
                 .fillMaxSize()
                 .clip(RoundedCornerShape(animateIntAsState(targetValue = if (isActivated) 0 else 50).value))
-                .background(MaterialTheme.colorScheme.secondaryContainer)
                 .clickable { isActivated = true },
-            contentAlignment = Alignment.BottomCenter
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 3.dp
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(animateDpAsState(targetValue = if (isActivated) 64.dp else 48.dp).value),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = { isActivated = !isActivated },
-                ) {
-                    Icon(
-                        imageVector = if (isActivated) Icons.Outlined.ArrowBack else Icons.Outlined.Search,
-                        contentDescription = "search",
-                        tint = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-                }
-                BasicTextField(
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+                Row(
                     modifier = Modifier
-                        .weight(1f)
-                        .focusRequester(focusRequester),
-                    value = text,
-                    onValueChange = onTextChange,
-                    enabled = isActivated,
-                    textStyle = MaterialTheme.typography.bodyLarge,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(
-                        onDone = {keyboardController?.hide()}),
-                    singleLine = true,
-                    decorationBox = { innerTextField ->
-                        if (text.isEmpty()) {
-                            Text(text = "搜索会话")
-                        }
-                        innerTextField()
-                    }
-                )
-                AnimatedVisibility(visible = !isActivated) {
-                    IconButton(onClick = { /*TODO*/ }) {
-                        Box(
-                            modifier = Modifier
-                                .size(30.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.secondary)
+                        .fillMaxWidth()
+                        .height(animateDpAsState(targetValue = if (isActivated) 64.dp else 48.dp).value)
+                        .align(Alignment.BottomCenter),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = { isActivated = !isActivated },
+                    ) {
+                        Icon(
+                            imageVector = if (isActivated) Icons.Outlined.ArrowBack else Icons.Outlined.Search,
+                            contentDescription = "search",
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer
                         )
+                    }
+                    BasicTextField(
+                        modifier = Modifier
+                            .weight(1f)
+                            .focusRequester(focusRequester),
+                        value = text,
+                        onValueChange = onTextChange,
+                        enabled = isActivated,
+                        textStyle = MaterialTheme.typography.bodyLarge,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(
+                            onDone = { keyboardController?.hide() }),
+                        singleLine = true,
+                        decorationBox = { innerTextField ->
+                            if (text.isEmpty()) {
+                                Text(text = "搜索会话", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            innerTextField()
+                        }
+                    )
+                    AnimatedVisibility(visible = !isActivated) {
+                        IconButton(onClick = { /*TODO*/ }) {
+                            Box(
+                                modifier = Modifier
+                                    .size(30.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.secondary)
+                            )
+                        }
                     }
                 }
             }
