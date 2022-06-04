@@ -6,6 +6,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
+import com.ojhdtapp.parabox.ui.MainScreenSharedViewModel
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
@@ -15,12 +16,14 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 fun SettingPage(
     modifier: Modifier = Modifier,
     navigator: DestinationsNavigator,
-    navController: NavController
+    navController: NavController,
+    sharedViewModel: MainScreenSharedViewModel
 ) {
     Scaffold(modifier = modifier,
         bottomBar = {
             com.ojhdtapp.parabox.ui.util.NavigationBar(
                 navController = navController,
+                messageBadge = sharedViewModel.messageBadge.value,
                 onSelfItemClick = {})
         }) {
         LazyColumn(contentPadding = it) {

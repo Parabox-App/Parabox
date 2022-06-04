@@ -32,6 +32,7 @@ import com.ojhdtapp.parabox.core.util.toAvatarBitmap
 import com.ojhdtapp.parabox.core.util.toTimeUntilNow
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.message_content.getContentString
+import com.ojhdtapp.parabox.ui.MainScreenSharedViewModel
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
@@ -47,6 +48,7 @@ fun MessagePage(
     modifier: Modifier = Modifier,
     navigator: DestinationsNavigator,
     navController: NavController,
+    sharedViewModel: MainScreenSharedViewModel,
 ) {
     val viewModel: MessagePageViewModel = hiltViewModel()
     val listState = rememberLazyListState()
@@ -63,6 +65,9 @@ fun MessagePage(
                 is MessagePageUiEvent.ShowSnackBar -> {
                     snackBarHostState.showSnackbar(it.message)
                 }
+                is MessagePageUiEvent.UpdateMessageBadge -> {
+                    sharedViewModel.setMessageBadge(it.value)
+                }
             }
         }
     }
@@ -78,7 +83,7 @@ fun MessagePage(
         bottomBar = {
             com.ojhdtapp.parabox.ui.util.NavigationBar(
                 navController = navController,
-                messageBadge = viewModel.messageBadge.value,
+                messageBadge = sharedViewModel.messageBadge.value,
                 onSelfItemClick = {},
             )
         },

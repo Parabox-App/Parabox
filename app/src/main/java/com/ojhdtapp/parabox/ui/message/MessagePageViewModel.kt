@@ -2,7 +2,6 @@ package com.ojhdtapp.parabox.ui.message
 
 import android.util.Log
 import androidx.compose.runtime.State
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -38,7 +37,7 @@ class MessagePageViewModel @Inject constructor(
                 }
                 is Resource.Error -> {
                     setUngroupedContactState(ungroupedContactState.value.copy(isLoading = false))
-                    _uiEventFlow.tryEmit(MessagePageUiEvent.ShowSnackBar(it.message!!))
+                    _uiEventFlow.emit(MessagePageUiEvent.ShowSnackBar(it.message!!))
                 }
                 is Resource.Success -> {
                     setUngroupedContactState(
@@ -47,13 +46,13 @@ class MessagePageViewModel @Inject constructor(
                             data = it.data!!
                         )
                     )
-                    setMessageBadge(it.data.sumOf { contact ->
+                    updateMessageBadge(it.data.sumOf { contact ->
                         contact.latestMessage?.unreadMessagesNum ?: 0
                     })
                 }
             }
         }.catch {
-
+            _uiEventFlow.emit(MessagePageUiEvent.ShowSnackBar("获取数据时发生错误"))
         }.launchIn(viewModelScope)
     }
 
@@ -85,14 +84,8 @@ class MessagePageViewModel @Inject constructor(
         _searchText.value = value
     }
 
-    private val _messageBadge = mutableStateOf<Int>(
-        ungroupedContactState.value.data.sumOf {
-            it.latestMessage?.unreadMessagesNum ?: 0
-        }
-    )
-    val messageBadge: State<Int> = _messageBadge
-    fun setMessageBadge(value: Int) {
-        _messageBadge.value = value
+    suspend fun updateMessageBadge(value: Int) {
+        _uiEventFlow.emit(MessagePageUiEvent.UpdateMessageBadge(value))
     }
 
     fun testFun() {

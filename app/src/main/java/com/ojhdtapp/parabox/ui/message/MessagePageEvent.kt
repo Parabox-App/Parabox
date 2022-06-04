@@ -8,4 +8,5 @@ sealed class MessagePageEvent {
 // VM 2 Ui
 sealed class MessagePageUiEvent{
     data class ShowSnackBar(val message:String) : MessagePageUiEvent()
+    data class UpdateMessageBadge(val value: Int): MessagePageUiEvent()
 }

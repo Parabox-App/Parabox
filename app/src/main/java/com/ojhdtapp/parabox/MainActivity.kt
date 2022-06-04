@@ -25,6 +25,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.ojhdtapp.parabox.domain.plugin.Conn
+import com.ojhdtapp.parabox.ui.MainScreenSharedViewModel
 import com.ojhdtapp.parabox.ui.NavGraphs
 import com.ojhdtapp.parabox.ui.message.MessagePage
 import com.ojhdtapp.parabox.ui.message.MessagePageViewModel
@@ -33,6 +34,7 @@ import com.ojhdtapp.parabox.ui.util.FixedInsets
 import com.ojhdtapp.parabox.ui.util.LocalFixedInsets
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.annotation.NavGraph
+import com.ramcosta.composedestinations.navigation.dependency
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -78,7 +80,10 @@ class MainActivity : ComponentActivity() {
                 CompositionLocalProvider(values = arrayOf(LocalFixedInsets provides fixedInsets)) {
                     DestinationsNavHost(
                         navGraph = NavGraphs.root,
-                        navController = navController
+                        navController = navController,
+                        dependenciesContainerBuilder = {
+                            dependency(hiltViewModel<MainScreenSharedViewModel>(this@MainActivity))
+                        }
                     )
                 }
 
