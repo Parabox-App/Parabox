@@ -1,4 +1,4 @@
-package com.ojhdtapp.parabox.ui.message
+package com.ojhdtapp.parabox.ui.util
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
@@ -22,19 +22,19 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import com.ojhdtapp.parabox.ui.util.LocalFixedInsets
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun SearchAppBar(
     modifier: Modifier = Modifier,
 //    isActivated: Boolean = false,
     text: String,
-    onTextChange: (text: String) -> Unit
+    onTextChange: (text: String) -> Unit,
+    placeholder: String,
 ) {
     var isActivated by remember {
         mutableStateOf(false)
@@ -93,16 +93,19 @@ fun SearchAppBar(
                             .weight(1f)
                             .focusRequester(focusRequester),
                         value = text,
-                        onValueChange = onTextChange,
+                        onValueChange = { onTextChange(it.trim()) },
                         enabled = isActivated,
-                        textStyle = MaterialTheme.typography.bodyLarge,
+                        textStyle = MaterialTheme.typography.bodyLarge.merge(TextStyle(color = MaterialTheme.colorScheme.onSurface)),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(
                             onDone = { keyboardController?.hide() }),
                         singleLine = true,
                         decorationBox = { innerTextField ->
                             if (text.isEmpty()) {
-                                Text(text = "搜索会话", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(
+                                    text = placeholder,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
                             innerTextField()
                         }
