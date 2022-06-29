@@ -112,22 +112,23 @@ fun MessagePage(
         },
     ) { paddingValues ->
         LazyColumn(
-            modifier = Modifier.padding(horizontal = 16.dp),
+//            modifier = Modifier.padding(horizontal = 16.dp),
             state = listState,
             contentPadding = paddingValues
         ) {
             item {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "未编组",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+                Box(modifier = Modifier.padding(16.dp, 8.dp)){
+                    Text(
+                        text = "未编组",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
             if (viewModel.ungroupedContactState.value.isLoading) {
                 itemsIndexed(listOf(null, null, null, null)) { index, _ ->
                     ContactItem(
+                        modifier = Modifier.padding(horizontal = 16.dp),
                         contact = null,
                         topRadius = 28.dp,
                         bottomRadius = 28.dp,
@@ -158,7 +159,7 @@ fun MessagePage(
                     val bottomRadius by animateDpAsState(targetValue = if (isLast) 28.dp else 0.dp)
                     SwipeToDismiss(
                         state = dismissState,
-                        modifier = Modifier.animateItemPlacement(),
+                        modifier = Modifier.padding(horizontal = 16.dp).animateItemPlacement(),
                         background = {
                             val direction = dismissState.dismissDirection ?: return@SwipeToDismiss
                             val arrangement = when (direction) {
@@ -206,13 +207,13 @@ fun MessagePage(
                 }
             }
             item {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "其他",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+                Box(modifier = Modifier.padding(16.dp, 8.dp)){
+                    Text(
+                        text = "其他",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
 //        Column(
