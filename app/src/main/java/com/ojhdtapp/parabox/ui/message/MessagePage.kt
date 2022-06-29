@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.DoNotDisturb
 import androidx.compose.material3.*
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -145,7 +146,7 @@ fun MessagePage(
                     }
                     val dismissState = rememberDismissState(
                         confirmStateChange = {
-                            if (it == DismissValue.Default) {
+                            if (it == DismissValue.DismissedToEnd || it == DismissValue.DismissedToStart) {
                                 viewModel.showSnackBar("Dismiss triggered")
                             }
                             true
@@ -157,8 +158,14 @@ fun MessagePage(
                     val bottomRadius by animateDpAsState(targetValue = if (isLast) 28.dp else 0.dp)
                     SwipeToDismiss(
                         state = dismissState,
+                        modifier = Modifier.animateItemPlacement(),
                         background = {
-                            Box(
+                            val direction = dismissState.dismissDirection ?: return@SwipeToDismiss
+                            val arrangement = when (direction) {
+                                DismissDirection.StartToEnd -> Arrangement.Start
+                                DismissDirection.EndToStart -> Arrangement.End
+                            }
+                            Row(
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .clip(
@@ -170,9 +177,15 @@ fun MessagePage(
                                         )
                                     )
                                     .background(MaterialTheme.colorScheme.primary)
-                            )
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = arrangement
+                            ){
+                                Icon(imageVector = Icons.Outlined.DoNotDisturb, contentDescription = "not disturb", tint = MaterialTheme.colorScheme.onPrimary)
+                            }
                         },
-                        directions = setOf(DismissDirection.EndToStart)
+                        directions = setOf(DismissDirection.EndToStart, DismissDirection.StartToEnd),
+                        dismissThresholds = {dismissDirection -> androidx.compose.material.FractionalThreshold(0.65f) }
                     ) {
                         ContactItem(
                             contact = item,
