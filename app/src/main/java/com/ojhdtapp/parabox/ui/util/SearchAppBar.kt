@@ -196,6 +196,9 @@ fun SelectContentField(
         Text(text = selectedNum, style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.weight(1f))
         IconButton(onClick = { /*TODO*/ }) {
+            Icon(imageVector = Icons.Outlined.Group, contentDescription = "group")
+        }
+        IconButton(onClick = { /*TODO*/ }) {
             Icon(imageVector = Icons.Outlined.Archive, contentDescription = "archive")
         }
         IconButton(onClick = { /*TODO*/ }) {

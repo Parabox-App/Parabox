@@ -12,13 +12,21 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -33,7 +41,10 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.valentinilk.shimmer.*
 import kotlinx.coroutines.flow.collectLatest
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(
+    ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
+    ExperimentalMaterialApi::class
+)
 @RootNavGraph(start = true)
 @Destination
 @Composable
@@ -117,8 +128,8 @@ fun MessagePage(
                 itemsIndexed(listOf(null, null, null, null)) { index, _ ->
                     ContactItem(
                         contact = null,
-                        isFirst = index == 0,
-                        isLast = index == 3,
+                        topRadius = 28.dp,
+                        bottomRadius = 28.dp,
                         isLoading = true,
                         onClick = {},
                         onLongClick = {}
@@ -132,21 +143,53 @@ fun MessagePage(
                     var loading by remember {
                         mutableStateOf(false)
                     }
-                    ContactItem(
-                        contact = item,
-                        isFirst = index == 0,
-                        isLast = index == ungroupedContactList.lastIndex,
-                        isLoading = loading,
-                        shimmer = shimmerInstance,
-                        onClick = {
-                            loading = !loading
-                        },
-                        onLongClick = {
-                            searchBarActivateState = SearchAppBar.SELECT
+                    val dismissState = rememberDismissState(
+                        confirmStateChange = {
+                            if (it == DismissValue.Default) {
+                                viewModel.showSnackBar("Dismiss triggered")
+                            }
+                            true
                         }
                     )
-                    if (index < ungroupedContactList.lastIndex)
-                        Spacer(modifier = Modifier.height(3.dp))
+                    val isFirst = index == 0
+                    val isLast = index == ungroupedContactList.lastIndex
+                    val topRadius by animateDpAsState(targetValue = if (isFirst) 28.dp else 0.dp)
+                    val bottomRadius by animateDpAsState(targetValue = if (isLast) 28.dp else 0.dp)
+                    SwipeToDismiss(
+                        state = dismissState,
+                        background = {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(
+                                        RoundedCornerShape(
+                                            topStart = topRadius,
+                                            topEnd = topRadius,
+                                            bottomEnd = bottomRadius,
+                                            bottomStart = bottomRadius
+                                        )
+                                    )
+                                    .background(MaterialTheme.colorScheme.primary)
+                            )
+                        },
+                        directions = setOf(DismissDirection.EndToStart)
+                    ) {
+                        ContactItem(
+                            contact = item,
+                            topRadius = topRadius,
+                            bottomRadius = bottomRadius,
+                            isLoading = loading,
+                            shimmer = shimmerInstance,
+                            onClick = {
+                                loading = !loading
+                            },
+                            onLongClick = {
+                                searchBarActivateState = SearchAppBar.SELECT
+                            }
+                        )
+                        if (index < ungroupedContactList.lastIndex)
+                            Spacer(modifier = Modifier.height(3.dp))
+                    }
                 }
             }
             item {
@@ -185,26 +228,26 @@ fun MessagePage(
 fun ContactItem(
     modifier: Modifier = Modifier,
     contact: Contact?,
-    isFirst: Boolean = false,
-    isLast: Boolean = false,
+    topRadius: Dp,
+    bottomRadius: Dp,
+//    isFirst: Boolean = false,
+//    isLast: Boolean = false,
     isTop: Boolean = false,
     isLoading: Boolean = true,
     shimmer: Shimmer? = null,
     onClick: () -> Unit,
     onLongClick: () -> Unit
 ) {
-    val topRadius = animateDpAsState(targetValue = if (isFirst) 28.dp else 0.dp)
-    val bottomRadius = animateDpAsState(targetValue = if (isLast) 28.dp else 0.dp)
     val background =
         animateColorAsState(targetValue = if (isTop) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer)
     Row(
         modifier = modifier
             .clip(
                 RoundedCornerShape(
-                    topStart = topRadius.value,
-                    topEnd = topRadius.value,
-                    bottomEnd = bottomRadius.value,
-                    bottomStart = bottomRadius.value
+                    topStart = topRadius,
+                    topEnd = topRadius,
+                    bottomEnd = bottomRadius,
+                    bottomStart = bottomRadius
                 )
             )
             .background(background.value)

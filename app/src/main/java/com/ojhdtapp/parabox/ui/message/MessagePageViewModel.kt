@@ -69,6 +69,12 @@ class MessagePageViewModel @Inject constructor(
     private val _uiEventFlow = MutableSharedFlow<MessagePageUiEvent>()
     val uiEventFlow = _uiEventFlow.asSharedFlow()
 
+    fun showSnackBar(message: String) {
+        viewModelScope.launch {
+            _uiEventFlow.emit(MessagePageUiEvent.ShowSnackBar(message = message))
+        }
+    }
+
     // Ungrouped Contact
     private val _ungroupedContactState =
         mutableStateOf<UngroupedContactState>(UngroupedContactState())
