@@ -12,8 +12,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,27 +22,33 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+
+object SearchAppBar {
+    const val NONE = 0
+    const val SEARCH = 1
+    const val SELECT = 2
+}
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun SearchAppBar(
     modifier: Modifier = Modifier,
-//    isActivated: Boolean = false,
+    activateState: Int = SearchAppBar.NONE,
+    onActivateStateChanged: (value: Int) -> Unit,
     text: String,
     onTextChange: (text: String) -> Unit,
     placeholder: String,
 ) {
-    var isActivated by remember {
-        mutableStateOf(false)
-    }
+    val isActivated = activateState != SearchAppBar.NONE
     val statusBarHeight = WindowInsets.systemBars.asPaddingValues().calculateTopPadding()
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
-    LaunchedEffect(isActivated) {
-        if (isActivated) focusRequester.requestFocus()
+    LaunchedEffect(activateState) {
+        if (activateState == SearchAppBar.SEARCH) focusRequester.requestFocus()
         else keyboardController?.hide()
     }
     Box(
@@ -67,61 +72,134 @@ fun SearchAppBar(
             modifier = Modifier
                 .fillMaxSize()
                 .clip(RoundedCornerShape(animateIntAsState(targetValue = if (isActivated) 0 else 50).value))
-                .clickable { isActivated = true },
+                .clickable {
+                    if (activateState == SearchAppBar.NONE)
+                        onActivateStateChanged(SearchAppBar.SEARCH)
+                },
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = 3.dp
         ) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(animateDpAsState(targetValue = if (isActivated) 64.dp else 48.dp).value)
-                        .align(Alignment.BottomCenter),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(
-                        onClick = { isActivated = !isActivated },
-                    ) {
-                        Icon(
-                            imageVector = if (isActivated) Icons.Outlined.ArrowBack else Icons.Outlined.Search,
-                            contentDescription = "search",
-                            tint = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
-                    }
-                    BasicTextField(
-                        modifier = Modifier
-                            .weight(1f)
-                            .focusRequester(focusRequester),
-                        value = text,
-                        onValueChange = { onTextChange(it.trim()) },
-                        enabled = isActivated,
-                        textStyle = MaterialTheme.typography.bodyLarge.merge(TextStyle(color = MaterialTheme.colorScheme.onSurface)),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(
-                            onDone = { keyboardController?.hide() }),
-                        singleLine = true,
-                        decorationBox = { innerTextField ->
-                            if (text.isEmpty()) {
-                                Text(
-                                    text = placeholder,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            innerTextField()
-                        }
+                if (activateState == SearchAppBar.SELECT) {
+                    SelectContentField(
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                        isActivated = isActivated,
+                        onActivateStateChanged = onActivateStateChanged,
+                        selectedNum = "1"
                     )
-                    AnimatedVisibility(visible = !isActivated) {
-                        IconButton(onClick = { /*TODO*/ }) {
-                            Box(
-                                modifier = Modifier
-                                    .size(30.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.secondary)
-                            )
-                        }
-                    }
+                } else {
+                    SearchContentField(
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                        isActivated = isActivated,
+                        onActivateStateChanged = onActivateStateChanged,
+                        placeholder = placeholder,
+                        focusRequester = focusRequester,
+                        text = text,
+                        onTextChange = onTextChange,
+                        keyboardController = keyboardController
+                    )
                 }
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+fun SearchContentField(
+    modifier: Modifier = Modifier,
+    isActivated: Boolean,
+    onActivateStateChanged: (value: Int) -> Unit,
+    placeholder: String,
+    focusRequester: FocusRequester,
+    text: String,
+    onTextChange: (text: String) -> Unit,
+    keyboardController: SoftwareKeyboardController?
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(animateDpAsState(targetValue = if (isActivated) 64.dp else 48.dp).value),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(
+            onClick = {
+                onActivateStateChanged(
+                    if (isActivated) SearchAppBar.NONE else SearchAppBar.SEARCH
+                )
+            },
+        ) {
+            Icon(
+                imageVector = if (isActivated) Icons.Outlined.ArrowBack else Icons.Outlined.Search,
+                contentDescription = "search",
+                tint = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+        }
+        BasicTextField(
+            modifier = Modifier
+                .weight(1f)
+                .focusRequester(focusRequester),
+            value = text,
+            onValueChange = { onTextChange(it.trim()) },
+            enabled = isActivated,
+            textStyle = MaterialTheme.typography.bodyLarge.merge(TextStyle(color = MaterialTheme.colorScheme.onSurface)),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(
+                onDone = { keyboardController?.hide() }),
+            singleLine = true,
+            decorationBox = { innerTextField ->
+                if (text.isEmpty()) {
+                    Text(
+                        text = placeholder,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                innerTextField()
+            }
+        )
+        AnimatedVisibility(visible = !isActivated) {
+            IconButton(onClick = { /*TODO*/ }) {
+                Box(
+                    modifier = Modifier
+                        .size(30.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.secondary)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SelectContentField(
+    modifier: Modifier = Modifier,
+    isActivated: Boolean,
+    onActivateStateChanged: (value: Int) -> Unit,
+    selectedNum: String,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(animateDpAsState(targetValue = if (isActivated) 64.dp else 48.dp).value),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(
+            onClick = { onActivateStateChanged(SearchAppBar.NONE) },
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Close,
+                contentDescription = "close",
+                tint = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(text = selectedNum, style = MaterialTheme.typography.titleMedium)
+        Spacer(modifier = Modifier.weight(1f))
+        IconButton(onClick = { /*TODO*/ }) {
+            Icon(imageVector = Icons.Outlined.Archive, contentDescription = "archive")
+        }
+        IconButton(onClick = { /*TODO*/ }) {
+            Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = "more")
         }
     }
 }

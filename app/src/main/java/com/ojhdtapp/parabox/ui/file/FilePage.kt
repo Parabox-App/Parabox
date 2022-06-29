@@ -6,9 +6,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -31,6 +29,9 @@ fun FilePage(
     val viewModel: FilePageViewModel = hiltViewModel()
     val listState = rememberLazyListState()
     val snackBarHostState = remember { SnackbarHostState() }
+    var searchBarState by remember {
+        mutableStateOf(SearchAppBar.NONE)
+    }
     LaunchedEffect(key1 = true) {
         viewModel.uiEventFlow.collectLatest {
             when (it) {
@@ -46,7 +47,9 @@ fun FilePage(
             SearchAppBar(
                 text = viewModel.searchText.value,
                 onTextChange = viewModel::setSearchText,
-                placeholder = "搜索文件"
+                placeholder = "搜索文件",
+                activateState = searchBarState,
+                onActivateStateChanged = { searchBarState = it }
             )
         },
         bottomBar = {

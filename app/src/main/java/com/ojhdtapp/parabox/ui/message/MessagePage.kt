@@ -4,10 +4,8 @@ package com.ojhdtapp.parabox.ui.message
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -54,6 +52,9 @@ fun MessagePage(
             listState.firstVisibleItemIndex == 0
         }
     }
+    var searchBarActivateState by remember {
+        mutableStateOf(SearchAppBar.NONE)
+    }
     LaunchedEffect(true) {
         viewModel.uiEventFlow.collectLatest {
             when (it) {
@@ -73,7 +74,9 @@ fun MessagePage(
             SearchAppBar(
                 text = viewModel.searchText.value,
                 onTextChange = viewModel::setSearchText,
-                placeholder = "搜索会话"
+                placeholder = "搜索会话",
+                activateState = searchBarActivateState,
+                onActivateStateChanged = { searchBarActivateState = it }
             )
         },
         bottomBar = {
@@ -116,8 +119,10 @@ fun MessagePage(
                         contact = null,
                         isFirst = index == 0,
                         isLast = index == 3,
-                        isLoading = true
-                    ) {}
+                        isLoading = true,
+                        onClick = {},
+                        onLongClick = {}
+                    )
                     if (index < 3)
                         Spacer(modifier = Modifier.height(3.dp))
                 }
@@ -132,10 +137,14 @@ fun MessagePage(
                         isFirst = index == 0,
                         isLast = index == ungroupedContactList.lastIndex,
                         isLoading = loading,
-                        shimmer = shimmerInstance
-                    ) {
-                        loading = !loading
-                    }
+                        shimmer = shimmerInstance,
+                        onClick = {
+                            loading = !loading
+                        },
+                        onLongClick = {
+                            searchBarActivateState = SearchAppBar.SELECT
+                        }
+                    )
                     if (index < ungroupedContactList.lastIndex)
                         Spacer(modifier = Modifier.height(3.dp))
                 }
@@ -171,6 +180,7 @@ fun MessagePage(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ContactItem(
     modifier: Modifier = Modifier,
@@ -180,7 +190,8 @@ fun ContactItem(
     isTop: Boolean = false,
     isLoading: Boolean = true,
     shimmer: Shimmer? = null,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLongClick: () -> Unit
 ) {
     val topRadius = animateDpAsState(targetValue = if (isFirst) 28.dp else 0.dp)
     val bottomRadius = animateDpAsState(targetValue = if (isLast) 28.dp else 0.dp)
@@ -197,7 +208,16 @@ fun ContactItem(
                 )
             )
             .background(background.value)
-            .clickable { onClick() }
+            .combinedClickable(
+                interactionSource = remember {
+                    MutableInteractionSource()
+                },
+                indication = LocalIndication.current,
+                enabled = true,
+                onLongClick = onLongClick,
+                onClick = onClick
+            )
+//            .clickable { onClick() }
             .padding(16.dp)
             .fillMaxWidth()
             .height(IntrinsicSize.Min),
@@ -238,9 +258,10 @@ fun ContactItem(
         ) {
             Spacer(modifier = Modifier.height(2.dp))
             if (isLoading) {
+                Spacer(modifier = Modifier.height(4.dp))
                 Box(
                     modifier = Modifier
-                        .size(48.dp, 22.dp)
+                        .size(48.dp, 18.dp)
                         .shimmer(shimmer)
                         .background(MaterialTheme.colorScheme.secondary)
                 )
@@ -254,9 +275,10 @@ fun ContactItem(
             }
             Spacer(modifier = Modifier.height(4.dp))
             if (isLoading) {
+                Spacer(modifier = Modifier.height(4.dp))
                 Box(
                     modifier = Modifier
-                        .size(112.dp, 18.dp)
+                        .size(112.dp, 10.dp)
                         .shimmer(shimmer)
                         .background(MaterialTheme.colorScheme.secondary)
                 )
@@ -283,7 +305,7 @@ fun ContactItem(
                 Spacer(modifier = Modifier.height(8.dp))
                 val unreadMessagesNum = contact?.latestMessage?.unreadMessagesNum ?: 0
                 if (unreadMessagesNum != 0) {
-                    Badge(containerColor = MaterialTheme.colorScheme.primary){ Text(text = "$unreadMessagesNum")}
+                    Badge(containerColor = MaterialTheme.colorScheme.primary) { Text(text = "$unreadMessagesNum") }
 //                    Box(
 //                        modifier = Modifier
 //                            .height(16.dp)
