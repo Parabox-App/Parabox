@@ -2,6 +2,7 @@ package com.ojhdtapp.parabox.ui.message
 
 import android.util.Log
 import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -92,6 +93,22 @@ class MessagePageViewModel @Inject constructor(
 
     suspend fun updateMessageBadge(value: Int) {
         _uiEventFlow.emit(MessagePageUiEvent.UpdateMessageBadge(value))
+    }
+
+    private val _selectedContactIdStateList = mutableStateListOf<Int>()
+    val selectedContactIdStateList = _selectedContactIdStateList
+    fun addItemToSelectedContactIdStateList(value: Int) {
+        if (_selectedContactIdStateList.contains(value)) return
+        _selectedContactIdStateList.add(value)
+    }
+
+    fun removeItemFromSelectedContactIdStateList(value: Int) {
+        if (!_selectedContactIdStateList.contains(value)) return
+        _selectedContactIdStateList.remove(value)
+    }
+
+    fun clearSelectedContactIdStateList() {
+        _selectedContactIdStateList.clear()
     }
 
     fun testFun() {

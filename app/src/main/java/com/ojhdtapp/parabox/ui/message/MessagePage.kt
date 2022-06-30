@@ -2,7 +2,8 @@
 
 package com.ojhdtapp.parabox.ui.message
 
-import androidx.compose.animation.animateColorAsState
+import android.transition.Fade
+import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -16,6 +17,7 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.DoNotDisturb
+import androidx.compose.material.icons.outlined.Done
 import androidx.compose.material3.*
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -88,7 +90,11 @@ fun MessagePage(
                 onTextChange = viewModel::setSearchText,
                 placeholder = "搜索会话",
                 activateState = searchBarActivateState,
-                onActivateStateChanged = { searchBarActivateState = it }
+                onActivateStateChanged = {
+                    searchBarActivateState = it
+                    viewModel.clearSelectedContactIdStateList()
+                },
+                selectedNum = "${viewModel.selectedContactIdStateList.size}"
             )
         },
         bottomBar = {
@@ -117,7 +123,7 @@ fun MessagePage(
             contentPadding = paddingValues
         ) {
             item {
-                Box(modifier = Modifier.padding(16.dp, 8.dp)){
+                Box(modifier = Modifier.padding(16.dp, 8.dp)) {
                     Text(
                         text = "未编组",
                         style = MaterialTheme.typography.labelLarge,
@@ -157,9 +163,13 @@ fun MessagePage(
                     val isLast = index == ungroupedContactList.lastIndex
                     val topRadius by animateDpAsState(targetValue = if (isFirst) 28.dp else 0.dp)
                     val bottomRadius by animateDpAsState(targetValue = if (isLast) 28.dp else 0.dp)
+                    val isSelected =
+                        viewModel.selectedContactIdStateList.contains(item.connection.objectId)
                     SwipeToDismiss(
                         state = dismissState,
-                        modifier = Modifier.padding(horizontal = 16.dp).animateItemPlacement(),
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp)
+                            .animateItemPlacement(),
                         background = {
                             val direction = dismissState.dismissDirection ?: return@SwipeToDismiss
                             val arrangement = when (direction) {
@@ -181,24 +191,37 @@ fun MessagePage(
                                     .padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = arrangement
-                            ){
-                                Icon(imageVector = Icons.Outlined.DoNotDisturb, contentDescription = "not disturb", tint = MaterialTheme.colorScheme.onPrimary)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.DoNotDisturb,
+                                    contentDescription = "not disturb",
+                                    tint = MaterialTheme.colorScheme.onPrimary
+                                )
                             }
                         },
-                        directions = setOf(DismissDirection.EndToStart, DismissDirection.StartToEnd),
-                        dismissThresholds = {dismissDirection -> androidx.compose.material.FractionalThreshold(0.65f) }
+                        directions = setOf(
+                            DismissDirection.EndToStart,
+                            DismissDirection.StartToEnd
+                        ),
+                        dismissThresholds = { dismissDirection ->
+                            androidx.compose.material.FractionalThreshold(
+                                0.65f
+                            )
+                        }
                     ) {
                         ContactItem(
                             contact = item,
                             topRadius = topRadius,
                             bottomRadius = bottomRadius,
                             isLoading = loading,
+                            isSelected = isSelected,
                             shimmer = shimmerInstance,
                             onClick = {
                                 loading = !loading
                             },
                             onLongClick = {
                                 searchBarActivateState = SearchAppBar.SELECT
+                                viewModel.addItemToSelectedContactIdStateList(item.connection.objectId)
                             }
                         )
                         if (index < ungroupedContactList.lastIndex)
@@ -207,7 +230,7 @@ fun MessagePage(
                 }
             }
             item {
-                Box(modifier = Modifier.padding(16.dp, 8.dp)){
+                Box(modifier = Modifier.padding(16.dp, 8.dp)) {
                     Text(
                         text = "其他",
                         style = MaterialTheme.typography.labelLarge,
@@ -248,6 +271,7 @@ fun ContactItem(
 //    isLast: Boolean = false,
     isTop: Boolean = false,
     isLoading: Boolean = true,
+    isSelected: Boolean = false,
     shimmer: Shimmer? = null,
     onClick: () -> Unit,
     onLongClick: () -> Unit
@@ -289,22 +313,40 @@ fun ContactItem(
                     .background(MaterialTheme.colorScheme.secondary)
             )
         } else {
-            if (contact?.profile?.avatar == null) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.secondary)
-                )
-            } else {
-                Image(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(24.dp))
-                        .size(48.dp)
-                        .background(MaterialTheme.colorScheme.tertiaryContainer),
-                    bitmap = contact.profile.avatar.toAvatarBitmap(),
-                    contentDescription = "avatar"
-                )
+            Crossfade(targetState = isSelected) {
+                if (it) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(24.dp))
+                            .size(48.dp)
+                            .background(MaterialTheme.colorScheme.primary)
+                    ) {
+                        Icon(
+                            modifier = Modifier.align(Alignment.Center),
+                            imageVector = Icons.Outlined.Done,
+                            contentDescription = "selected",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                } else {
+                    if (contact?.profile?.avatar == null) {
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.secondary)
+                        )
+                    } else {
+                        Image(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(24.dp))
+                                .size(48.dp)
+                                .background(MaterialTheme.colorScheme.tertiaryContainer),
+                            bitmap = contact.profile.avatar.toAvatarBitmap(),
+                            contentDescription = "avatar"
+                        )
+                    }
+                }
             }
         }
         Spacer(modifier = Modifier.width(16.dp))

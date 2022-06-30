@@ -1,6 +1,8 @@
 package com.ojhdtapp.parabox.ui.util
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.foundation.background
@@ -42,6 +44,7 @@ fun SearchAppBar(
     text: String,
     onTextChange: (text: String) -> Unit,
     placeholder: String,
+    selectedNum: String = "0"
 ) {
     val isActivated = activateState != SearchAppBar.NONE
     val statusBarHeight = WindowInsets.systemBars.asPaddingValues().calculateTopPadding()
@@ -85,7 +88,7 @@ fun SearchAppBar(
                         modifier = Modifier.align(Alignment.BottomCenter),
                         isActivated = isActivated,
                         onActivateStateChanged = onActivateStateChanged,
-                        selectedNum = "1"
+                        selectedNum = selectedNum
                     )
                 } else {
                     SearchContentField(
@@ -170,6 +173,7 @@ fun SearchContentField(
     }
 }
 
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun SelectContentField(
     modifier: Modifier = Modifier,
@@ -193,7 +197,9 @@ fun SelectContentField(
             )
         }
         Spacer(modifier = Modifier.width(12.dp))
-        Text(text = selectedNum, style = MaterialTheme.typography.titleMedium)
+        AnimatedContent(targetState = selectedNum) { num ->
+            Text(text = num, style = MaterialTheme.typography.titleMedium)
+        }
         Spacer(modifier = Modifier.weight(1f))
         IconButton(onClick = { /*TODO*/ }) {
             Icon(imageVector = Icons.Outlined.Group, contentDescription = "group")
