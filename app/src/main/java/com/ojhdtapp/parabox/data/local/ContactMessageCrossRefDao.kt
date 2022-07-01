@@ -4,6 +4,7 @@ import androidx.room.*
 import com.ojhdtapp.parabox.data.local.entity.ContactEntity
 import com.ojhdtapp.parabox.data.local.entity.ContactMessageCrossRef
 import com.ojhdtapp.parabox.data.local.entity.ContactWithMessagesEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ContactMessageCrossRefDao {
@@ -19,9 +20,9 @@ interface ContactMessageCrossRefDao {
 
     @Transaction
     @Query("SELECT * FROM contact_entity WHERE contactId = :contactId")
-    fun getSpecifiedContactWithMessages(contactId: Int) : List<ContactWithMessagesEntity>
+    fun getSpecifiedContactWithMessages(contactId: Int) : Flow<ContactWithMessagesEntity>
 
     @Transaction
     @Query("SELECT * FROM contact_entity WHERE contactId IN (:contactIds)")
-    fun getSpecifiedListOfContactWithMessages(contactIds: List<Int>) : List<ContactWithMessagesEntity>
+    fun getSpecifiedListOfContactWithMessages(contactIds: List<Int>) : Flow<List<ContactWithMessagesEntity>>
 }

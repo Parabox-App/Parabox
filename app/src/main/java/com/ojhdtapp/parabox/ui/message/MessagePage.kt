@@ -69,6 +69,7 @@ fun MessagePage(
     var searchBarActivateState by remember {
         mutableStateOf(SearchAppBar.NONE)
     }
+    val ungroupedContactState = viewModel.ungroupedContactStateFlow.collectAsState()
     LaunchedEffect(true) {
         viewModel.uiEventFlow.collectLatest {
             when (it) {
@@ -122,8 +123,10 @@ fun MessagePage(
             state = listState,
             contentPadding = paddingValues
         ) {
-            item {
-                Box(modifier = Modifier.padding(16.dp, 8.dp)) {
+            item(key = "ungrouped") {
+                Box(modifier = Modifier
+                    .padding(16.dp, 8.dp)
+                    .animateItemPlacement()) {
                     Text(
                         text = "未编组",
                         style = MaterialTheme.typography.labelLarge,
@@ -131,10 +134,15 @@ fun MessagePage(
                     )
                 }
             }
-            if (viewModel.ungroupedContactState.value.isLoading) {
-                itemsIndexed(listOf(null, null, null, null)) { index, _ ->
+
+            if (ungroupedContactState.value.isLoading) {
+                itemsIndexed(
+                    items = listOf(null, null, null, null),
+                    key = { index, _ -> index }) { index, _ ->
                     ContactItem(
-                        modifier = Modifier.padding(horizontal = 16.dp),
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp)
+                            .animateItemPlacement(),
                         contact = null,
                         topRadius = 28.dp,
                         bottomRadius = 28.dp,
@@ -146,8 +154,10 @@ fun MessagePage(
                         Spacer(modifier = Modifier.height(3.dp))
                 }
             } else {
-                val ungroupedContactList = viewModel.ungroupedContactState.value.data
-                itemsIndexed(items = ungroupedContactList) { index, item ->
+                val ungroupedContactList = ungroupedContactState.value.data
+                itemsIndexed(
+                    items = ungroupedContactList,
+                    key = { _, item -> item.connection.objectId }) { index, item ->
                     var loading by remember {
                         mutableStateOf(false)
                     }
@@ -217,11 +227,15 @@ fun MessagePage(
                             isSelected = isSelected,
                             shimmer = shimmerInstance,
                             onClick = {
-                                loading = !loading
+                                if (searchBarActivateState == SearchAppBar.SELECT) {
+                                    viewModel.addOrRemoveItemOfSelectedContactIdStateList(item.connection.objectId)
+                                } else {
+                                    loading = !loading
+                                }
                             },
                             onLongClick = {
                                 searchBarActivateState = SearchAppBar.SELECT
-                                viewModel.addItemToSelectedContactIdStateList(item.connection.objectId)
+                                viewModel.addOrRemoveItemOfSelectedContactIdStateList(item.connection.objectId)
                             }
                         )
                         if (index < ungroupedContactList.lastIndex)
@@ -229,8 +243,10 @@ fun MessagePage(
                     }
                 }
             }
-            item {
-                Box(modifier = Modifier.padding(16.dp, 8.dp)) {
+            item(key = "other") {
+                Box(modifier = Modifier
+                    .padding(16.dp, 8.dp)
+                    .animateItemPlacement()) {
                     Text(
                         text = "其他",
                         style = MaterialTheme.typography.labelLarge,
