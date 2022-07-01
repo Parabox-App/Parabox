@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.message
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -9,9 +10,12 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.*
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ojhdtapp.parabox.domain.model.Contact
+import com.ojhdtapp.parabox.domain.model.Message
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
@@ -24,12 +28,32 @@ fun ChatPage(
     navController: NavController,
     contact: Contact,
 ) {
+    val viewModel: MessagePageViewModel = hiltViewModel()
+    val messageState = viewModel.messageStateFlow.collectAsState().value
+    Crossfade(targetState = messageState.state) {
+        when (it) {
+            MessageState.NULL -> {
+                NullChatPage()
+            }
+            MessageState.ERROR -> {
+                ErrorChatPage {}
+            }
+            MessageState.LOADING or MessageState.SUCCESS -> {
+                NormalChatPage(messageState = messageState)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NormalChatPage(modifier: Modifier = Modifier, messageState: MessageState) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarScrollState())
     Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             SmallTopAppBar(
-                title = { Text(text = contact.profile.name) },
+                title = { Text(text = messageState.profile?.name ?: "会话") },
                 navigationIcon = {
                     IconButton(onClick = { /*TODO*/ }) {
                         Icon(imageVector = Icons.Outlined.ArrowBack, contentDescription = "back")
@@ -52,4 +76,14 @@ fun ChatPage(
 
         }
     }
+}
+
+@Composable
+fun ErrorChatPage(modifier: Modifier = Modifier, onRetry: () -> Unit) {
+    TODO("Not yet implemented")
+}
+
+@Composable
+fun NullChatPage(modifier: Modifier = Modifier) {
+    TODO("Not yet implemented")
 }

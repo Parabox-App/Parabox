@@ -20,6 +20,7 @@ import com.ojhdtapp.parabox.domain.use_case.GetUngroupedMessages
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -84,12 +85,6 @@ class MessagePageViewModel @Inject constructor(
     }
 
     // Ungrouped Contact
-//    private val _ungroupedContactState =
-//        mutableStateOf<UngroupedContactState>(UngroupedContactState())
-//    val ungroupedContactState: State<UngroupedContactState> = _ungroupedContactState
-//    fun setUngroupedContactState(value: UngroupedContactState) {
-//        _ungroupedContactState.value = value
-//    }
     private val _ungroupedContactStateFlow: StateFlow<UngroupedContactState> =
         getUngroupedContactList()
             .filter {
@@ -142,11 +137,22 @@ class MessagePageViewModel @Inject constructor(
     }
 
     // Messages
-    private val _messageState = mutableStateOf<MessageState>(MessageState())
-    val messageState: State<MessageState> = _messageState
-    fun setMessageState(value: MessageState) {
-        _messageState.value = value
+    private val _messageStateFlow = MutableStateFlow(MessageState())
+    val messageStateFlow: StateFlow<MessageState> = _messageStateFlow.asStateFlow()
+    private var messageJob: Job? = null
+    fun receiveAndUpdateMessageFromContact(contact: Contact){
+        messageJob?.cancel()
+        messageJob = viewModelScope.launch {
+            getUngroupedMessages(contact = contact).collectLatest {
+                _messageStateFlow.value = when(it){
+                    is Resource.Loading -> MessageState(MessageState.LOADING, contact.profile)
+                    is Resource.Error -> MessageState(MessageState.ERROR, contact.profile)
+                    is Resource.Success -> MessageState(MessageState.SUCCESS, contact.profile ,it.data)
+                }
+            }
+        }
     }
+
 //    private val messageStateFlow = MutableStateFlow<ContactWithMessages>()
 //    suspend fun getUngroupedMessage(contactId: Int){
 //        getUngroupedMessages(contactId).onEach {

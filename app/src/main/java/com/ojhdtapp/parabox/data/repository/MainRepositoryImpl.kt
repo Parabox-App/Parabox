@@ -65,6 +65,7 @@ class MainRepositoryImpl @Inject constructor(
 //            }
     }
 
+    @OptIn(FlowPreview::class)
     override fun getSpecifiedListOfContactWithMessages(contactIds: List<Int>): Flow<Resource<List<ContactWithMessages>>> {
         return flow<Resource<List<ContactWithMessages>>> {
             emit(Resource.Loading())
