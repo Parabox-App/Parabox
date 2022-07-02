@@ -34,6 +34,7 @@ import com.ojhdtapp.parabox.core.util.toDescriptiveTime
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.ui.util.MessageNavGraph
+import com.ojhdtapp.parabox.ui.util.clearFocusOnKeyboardDismiss
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.delay
@@ -251,7 +252,7 @@ fun EditArea(
                                 .fillMaxWidth()
                                 .onFocusEvent {
                                     if (it.isFocused) scope.launch { delay(200); relocation.bringIntoView() }
-                                },
+                                }.clearFocusOnKeyboardDismiss(),
                             value = inputText,
                             onValueChange = {
                                 if (it.length > 6) shouldToolbarShrink = true

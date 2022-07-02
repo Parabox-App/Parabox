@@ -139,7 +139,8 @@ fun SearchContentField(
         BasicTextField(
             modifier = Modifier
                 .weight(1f)
-                .focusRequester(focusRequester),
+                .focusRequester(focusRequester)
+                .clearFocusOnKeyboardDismiss(),
             value = text,
             onValueChange = { onTextChange(it.trim()) },
             enabled = isActivated,
