@@ -79,10 +79,11 @@ fun NormalChatPage(
     val topAppBarColor = TopAppBarDefaults.smallTopAppBarColors().containerColor(scrollFraction)
     // Bottom Sheet
     val navigationBarHeight = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
-    var changedTextFieldHeight by remember{
+    var changedTextFieldHeight by remember {
         mutableStateOf(0)
     }
-    val peakHeight = navigationBarHeight + 88.dp + with(LocalDensity.current){changedTextFieldHeight.toDp()}
+    val peakHeight =
+        navigationBarHeight + 88.dp + with(LocalDensity.current) { changedTextFieldHeight.toDp() }
 
     BottomSheetScaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -110,8 +111,7 @@ fun NormalChatPage(
             )
         },
         sheetContent = {
-            EditArea(onTextFieldHeightChange = {px ->
-                Log.d("parabox", "changed: $px")
+            EditArea(onTextFieldHeightChange = { px ->
                 changedTextFieldHeight = px
             }, onSend = {})
         },
@@ -166,7 +166,11 @@ fun TimeDivider(modifier: Modifier = Modifier, timestamp: Long) {
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun EditArea(modifier: Modifier = Modifier, onSend: (text: String) -> Unit, onTextFieldHeightChange: (height: Int) -> Unit) {
+fun EditArea(
+    modifier: Modifier = Modifier,
+    onSend: (text: String) -> Unit,
+    onTextFieldHeightChange: (height: Int) -> Unit
+) {
     var inputText by remember {
         mutableStateOf("")
     }
@@ -184,14 +188,20 @@ fun EditArea(modifier: Modifier = Modifier, onSend: (text: String) -> Unit, onTe
                 .fillMaxWidth()
                 .height(250.dp)
         ) {
+            val relocation = remember { BringIntoViewRequester() }
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .defaultMinSize(minHeight = 88.dp)
+                    .bringIntoViewRequester(relocation)
                     .padding(16.dp),
                 verticalAlignment = Alignment.Bottom
             ) {
-                Crossfade(modifier = Modifier.padding(vertical = 4.dp),targetState = shouldToolbarShrink) {
+
+                Crossfade(
+                    modifier = Modifier.padding(vertical = 4.dp),
+                    targetState = shouldToolbarShrink
+                ) {
                     if (it) {
                         IconButton(onClick = { shouldToolbarShrink = false }) {
                             Icon(
@@ -224,8 +234,8 @@ fun EditArea(modifier: Modifier = Modifier, onSend: (text: String) -> Unit, onTe
                     shape = RoundedCornerShape(24.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant,
                     onClick = {}
-                    ) {
-                    val originalBoxHeight = with(LocalDensity.current){
+                ) {
+                    val originalBoxHeight = with(LocalDensity.current) {
                         24.dp.toPx().toInt()
                     }
                     Box(
@@ -235,10 +245,10 @@ fun EditArea(modifier: Modifier = Modifier, onSend: (text: String) -> Unit, onTe
                             .onSizeChanged { onTextFieldHeightChange(it.height - originalBoxHeight) },
                         contentAlignment = Alignment.CenterStart
                     ) {
-                        val relocation = remember { BringIntoViewRequester() }
                         val scope = rememberCoroutineScope()
                         BasicTextField(
-                            modifier = Modifier.fillMaxWidth().bringIntoViewRequester(relocation)
+                            modifier = Modifier
+                                .fillMaxWidth()
                                 .onFocusEvent {
                                     if (it.isFocused) scope.launch { delay(200); relocation.bringIntoView() }
                                 },
@@ -265,8 +275,9 @@ fun EditArea(modifier: Modifier = Modifier, onSend: (text: String) -> Unit, onTe
                     enter = slideInHorizontally { width -> width },
                     exit = slideOutHorizontally { width -> width }
                 ) {
-                    FloatingActionButton(onClick = { /*TODO*/ },
-                    modifier = Modifier.padding(start = 16.dp),
+                    FloatingActionButton(
+                        onClick = { /*TODO*/ },
+                        modifier = Modifier.padding(start = 16.dp),
                     ) {
                         Icon(imageVector = Icons.Outlined.Send, contentDescription = "send")
                     }
