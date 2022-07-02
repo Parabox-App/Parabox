@@ -96,10 +96,15 @@ class MessagePageViewModel @Inject constructor(
             .map<Resource<List<Contact>>, UngroupedContactState> {
                 when (it) {
                     is Resource.Loading -> UngroupedContactState()
-                    is Resource.Success -> UngroupedContactState(
-                        isLoading = false,
-                        data = it.data ?: emptyList()
-                    )
+                    is Resource.Success -> {
+                        _uiEventFlow.emit(MessagePageUiEvent.UpdateMessageBadge(it.data!!.fold(0) { acc, contact ->
+                            acc + (contact.latestMessage?.unreadMessagesNum ?: 0)
+                        }))
+                        UngroupedContactState(
+                            isLoading = false,
+                            data = it.data ?: emptyList()
+                        )
+                    }
                     is Resource.Error -> UngroupedContactState(isLoading = false)
                 }
             }.stateIn(
@@ -140,15 +145,26 @@ class MessagePageViewModel @Inject constructor(
     private val _messageStateFlow = MutableStateFlow(MessageState())
     val messageStateFlow: StateFlow<MessageState> = _messageStateFlow.asStateFlow()
     private var messageJob: Job? = null
-    fun receiveAndUpdateMessageFromContact(contact: Contact){
+    fun receiveAndUpdateMessageFromContact(contact: Contact) {
         messageJob?.cancel()
         messageJob = viewModelScope.launch {
             getUngroupedMessages(contact = contact).collectLatest {
                 Log.d("parabox", it.toString())
-                _messageStateFlow.value = when(it){
-                    is Resource.Loading -> MessageState(state = MessageState.LOADING, profile = contact.profile)
-                    is Resource.Error -> MessageState(state = MessageState.ERROR, profile = contact.profile, message = it.message)
-                    is Resource.Success -> MessageState(state = MessageState.SUCCESS, profile = contact.profile ,data = it.data)
+                _messageStateFlow.value = when (it) {
+                    is Resource.Loading -> MessageState(
+                        state = MessageState.LOADING,
+                        profile = contact.profile
+                    )
+                    is Resource.Error -> MessageState(
+                        state = MessageState.ERROR,
+                        profile = contact.profile,
+                        message = it.message
+                    )
+                    is Resource.Success -> MessageState(
+                        state = MessageState.SUCCESS,
+                        profile = contact.profile,
+                        data = it.data
+                    )
                 }
             }
         }

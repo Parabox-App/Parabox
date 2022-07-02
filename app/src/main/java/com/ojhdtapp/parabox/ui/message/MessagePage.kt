@@ -3,6 +3,7 @@
 package com.ojhdtapp.parabox.ui.message
 
 import android.transition.Fade
+import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.*
@@ -38,6 +39,7 @@ import com.ojhdtapp.parabox.core.util.toTimeUntilNow
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.ui.MainScreenSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.ChatPageDestination
+import com.ojhdtapp.parabox.ui.util.MessageNavGraph
 import com.ojhdtapp.parabox.ui.util.SearchAppBar
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
@@ -49,16 +51,17 @@ import kotlinx.coroutines.flow.collectLatest
     ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
     ExperimentalMaterialApi::class
 )
-@RootNavGraph(start = true)
 @Destination
+@MessageNavGraph(start = true)
 @Composable
 fun MessagePage(
     modifier: Modifier = Modifier,
     navigator: DestinationsNavigator,
     navController: NavController,
+    viewModel: MessagePageViewModel,
     sharedViewModel: MainScreenSharedViewModel,
 ) {
-    val viewModel: MessagePageViewModel = hiltViewModel()
+//    val viewModel: MessagePageViewModel = hiltViewModel()
     val listState = rememberLazyListState()
     val snackBarHostState = remember { SnackbarHostState() }
     val shimmerInstance = rememberShimmer(shimmerBounds = ShimmerBounds.View)

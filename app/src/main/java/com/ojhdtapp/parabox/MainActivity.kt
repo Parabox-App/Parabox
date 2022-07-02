@@ -82,6 +82,12 @@ class MainActivity : ComponentActivity() {
                         navGraph = NavGraphs.root,
                         navController = navController,
                         dependenciesContainerBuilder = {
+                            dependency(NavGraphs.message){
+                                val parentEntry = remember(navBackStackEntry){
+                                    navController.getBackStackEntry(NavGraphs.message.route)
+                                }
+                                hiltViewModel<MessagePageViewModel>(parentEntry)
+                            }
                             dependency(hiltViewModel<MainScreenSharedViewModel>(this@MainActivity))
                         }
                     )

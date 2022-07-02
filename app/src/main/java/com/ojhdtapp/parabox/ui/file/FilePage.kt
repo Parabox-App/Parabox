@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ojhdtapp.parabox.ui.MainScreenSharedViewModel
+import com.ojhdtapp.parabox.ui.util.FileNavGraph
 import com.ojhdtapp.parabox.ui.util.NavigationBar
 import com.ojhdtapp.parabox.ui.util.SearchAppBar
 import com.ramcosta.composedestinations.annotation.Destination
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Destination
+@FileNavGraph(start = true)
 @Composable
 fun FilePage(
     modifier: Modifier = Modifier,

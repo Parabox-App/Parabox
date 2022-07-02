@@ -25,18 +25,21 @@ import androidx.navigation.NavController
 import com.ojhdtapp.parabox.core.util.toDescriptiveTime
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Message
+import com.ojhdtapp.parabox.ui.util.MessageNavGraph
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
 @OptIn(ExperimentalMaterial3Api::class)
+@MessageNavGraph(start = false)
 @Destination
 @Composable
 fun ChatPage(
     modifier: Modifier = Modifier,
     navigator: DestinationsNavigator,
     navController: NavController,
+    viewModel: MessagePageViewModel
 ) {
-    val viewModel: MessagePageViewModel = hiltViewModel()
+//    val viewModel: MessagePageViewModel = hiltViewModel()
     val messageState = viewModel.messageStateFlow.collectAsState().value
     Crossfade(targetState = messageState.state) {
         when (it) {

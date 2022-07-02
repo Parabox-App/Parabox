@@ -7,11 +7,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import com.ojhdtapp.parabox.ui.MainScreenSharedViewModel
+import com.ojhdtapp.parabox.ui.util.SettingNavGraph
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Destination
+@SettingNavGraph(start = true)
 @Composable
 fun SettingPage(
     modifier: Modifier = Modifier,
