@@ -21,6 +21,7 @@ import com.ojhdtapp.parabox.ui.startAppDestination
 import androidx.compose.material3.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.ojhdtapp.parabox.ui.NavGraph
 import com.ramcosta.composedestinations.navigation.navigate
 import com.ramcosta.composedestinations.navigation.popUpTo
@@ -55,7 +56,8 @@ fun NavigationBar(
             containerColor = MaterialTheme.colorScheme.surface,
         ) {
             NavigationDestination.values().forEach { destination ->
-                val isCurrentDestOnBackStack = navController.isRouteOnBackStack(destination.graph)
+                val isCurrentDestOnBackStack = navController.appCurrentDestinationAsState().value in destination.graph.destinations
+//                val isCurrentDestOnBackStack = navController.isRouteOnBackStack(destination.graph)
                 NavigationBarItem(
                     selected = isCurrentDestOnBackStack,
                     onClick = {

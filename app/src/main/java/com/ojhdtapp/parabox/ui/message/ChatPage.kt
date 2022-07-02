@@ -1,11 +1,14 @@
 package com.ojhdtapp.parabox.ui.message
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.Crossfade
-import androidx.compose.animation.animateContentSize
+import android.util.Log
+import androidx.compose.animation.*
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.BottomSheetScaffold
@@ -17,8 +20,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -28,6 +36,8 @@ import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.ui.util.MessageNavGraph
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @MessageNavGraph(start = false)
@@ -49,8 +59,8 @@ fun ChatPage(
             MessageState.ERROR -> {
                 ErrorChatPage(errMessage = messageState.message ?: "请重试") {}
             }
-            MessageState.LOADING or MessageState.SUCCESS -> {
-                NormalChatPage(messageState = messageState)
+            MessageState.LOADING, MessageState.SUCCESS -> {
+                NormalChatPage(navigator = navigator, messageState = messageState)
             }
         }
     }
@@ -58,15 +68,32 @@ fun ChatPage(
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
-fun NormalChatPage(modifier: Modifier = Modifier, messageState: MessageState) {
+fun NormalChatPage(
+    modifier: Modifier = Modifier,
+    navigator: DestinationsNavigator,
+    messageState: MessageState
+) {
+    // Top AppBar
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarScrollState())
+    val scrollFraction = scrollBehavior.scrollFraction
+    val topAppBarColor = TopAppBarDefaults.smallTopAppBarColors().containerColor(scrollFraction)
+    // Bottom Sheet
+    val navigationBarHeight = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
+    var changedTextFieldHeight by remember{
+        mutableStateOf(0)
+    }
+    val peakHeight = navigationBarHeight + 88.dp + with(LocalDensity.current){changedTextFieldHeight.toDp()}
+
     BottomSheetScaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             SmallTopAppBar(
+                modifier = Modifier
+                    .background(color = topAppBarColor.value)
+                    .statusBarsPadding(),
                 title = { Text(text = messageState.profile?.name ?: "会话") },
                 navigationIcon = {
-                    IconButton(onClick = { /*TODO*/ }) {
+                    IconButton(onClick = { navigator.navigateUp() }) {
                         Icon(imageVector = Icons.Outlined.ArrowBack, contentDescription = "back")
                     }
                 },
@@ -83,10 +110,19 @@ fun NormalChatPage(modifier: Modifier = Modifier, messageState: MessageState) {
             )
         },
         sheetContent = {
-            EditArea(){}
-        }) {
+            EditArea(onTextFieldHeightChange = {px ->
+                Log.d("parabox", "changed: $px")
+                changedTextFieldHeight = px
+            }, onSend = {})
+        },
+        sheetBackgroundColor = MaterialTheme.colorScheme.surface,
+        sheetPeekHeight = peakHeight,
+        sheetElevation = 3.dp
+    ) {
         LazyColumn(modifier = Modifier.padding(it)) {
-
+            item {
+                Text(text = "aaa")
+            }
         }
     }
 }
@@ -128,8 +164,9 @@ fun TimeDivider(modifier: Modifier = Modifier, timestamp: Long) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun EditArea(modifier: Modifier = Modifier, onSend: (text: String) -> Unit) {
+fun EditArea(modifier: Modifier = Modifier, onSend: (text: String) -> Unit, onTextFieldHeightChange: (height: Int) -> Unit) {
     var inputText by remember {
         mutableStateOf("")
     }
@@ -138,69 +175,104 @@ fun EditArea(modifier: Modifier = Modifier, onSend: (text: String) -> Unit) {
     }
     Surface(
         modifier = modifier
-            .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+//            .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
             .background(MaterialTheme.colorScheme.surface),
         tonalElevation = 3.dp
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(250.dp)
         ) {
-            Crossfade(targetState = shouldToolbarShrink) {
-                if (it) {
-                    Row() {
-                        IconButton(onClick = { /*TODO*/ }) {
-                            Icon(
-                                imageVector = Icons.Outlined.AddCircleOutline,
-                                contentDescription = "more"
-                            )
-                        }
-                        IconButton(onClick = { /*TODO*/ }) {
-                            Icon(
-                                imageVector = Icons.Outlined.EmojiEmotions,
-                                contentDescription = "emoji"
-                            )
-                        }
-                    }
-                } else {
-                    IconButton(onClick = { shouldToolbarShrink = false }) {
-                        Icon(
-                            imageVector = Icons.Outlined.NavigateNext,
-                            contentDescription = "expand"
-                        )
-                    }
-                }
-            }
-            Surface(
+            Row(
                 modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .animateContentSize()
+                    .fillMaxWidth()
+                    .defaultMinSize(minHeight = 88.dp)
+                    .padding(16.dp),
+                verticalAlignment = Alignment.Bottom
             ) {
-                BasicTextField(value = inputText, onValueChange = {
-                    if(it.length > 6) shouldToolbarShrink = true
-                    inputText = it },
-                    enabled = true,
-                    textStyle = MaterialTheme.typography.bodyLarge,
-                    decorationBox = { innerTextField ->
-                        if (inputText.isEmpty()) {
-                            Text(
-                                text = "输入内容",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                Crossfade(modifier = Modifier.padding(vertical = 4.dp),targetState = shouldToolbarShrink) {
+                    if (it) {
+                        IconButton(onClick = { shouldToolbarShrink = false }) {
+                            Icon(
+                                imageVector = Icons.Outlined.NavigateNext,
+                                contentDescription = "expand"
                             )
                         }
-                        innerTextField()
-                    })
-            }
-            AnimatedVisibility(visible = !inputText.isNullOrEmpty()) {
-//                OutlinedButton(onClick = {onSend(inputText)}) {
-//                    Text(text = "发送")
-//                }
-                FloatingActionButton(onClick = { /*TODO*/ }) {
-                    Icon(imageVector = Icons.Outlined.Send, contentDescription = "send")
+                    } else {
+                        Row() {
+                            IconButton(onClick = { /*TODO*/ }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.AddCircleOutline,
+                                    contentDescription = "more"
+                                )
+                            }
+                            IconButton(onClick = { /*TODO*/ }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.EmojiEmotions,
+                                    contentDescription = "emoji"
+                                )
+                            }
+                        }
+                    }
+                }
+                Surface(
+                    modifier = Modifier
+                        .weight(1f)
+                        .animateContentSize()
+                        .padding(bottom = 4.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    onClick = {}
+                    ) {
+                    val originalBoxHeight = with(LocalDensity.current){
+                        24.dp.toPx().toInt()
+                    }
+                    Box(
+                        modifier = Modifier
+                            .defaultMinSize(minHeight = 48.dp)
+                            .padding(12.dp)
+                            .onSizeChanged { onTextFieldHeightChange(it.height - originalBoxHeight) },
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        val relocation = remember { BringIntoViewRequester() }
+                        val scope = rememberCoroutineScope()
+                        BasicTextField(
+                            modifier = Modifier.fillMaxWidth().bringIntoViewRequester(relocation)
+                                .onFocusEvent {
+                                    if (it.isFocused) scope.launch { delay(200); relocation.bringIntoView() }
+                                },
+                            value = inputText,
+                            onValueChange = {
+                                if (it.length > 6) shouldToolbarShrink = true
+                                else if (it.isEmpty()) shouldToolbarShrink = false
+                                inputText = it
+                            },
+                            enabled = true,
+                            textStyle = MaterialTheme.typography.bodyLarge,
+                            decorationBox = { innerTextField ->
+                                if (inputText.isEmpty()) {
+                                    Text(
+                                        text = "输入内容",
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                innerTextField()
+                            })
+                    }
+                }
+                AnimatedVisibility(visible = !inputText.isNullOrEmpty(),
+                    enter = slideInHorizontally { width -> width },
+                    exit = slideOutHorizontally { width -> width }
+                ) {
+                    FloatingActionButton(onClick = { /*TODO*/ },
+                    modifier = Modifier.padding(start = 16.dp),
+                    ) {
+                        Icon(imageVector = Icons.Outlined.Send, contentDescription = "send")
+                    }
                 }
             }
+
         }
     }
 }
