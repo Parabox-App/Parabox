@@ -21,18 +21,22 @@ import com.ojhdtapp.parabox.ui.startAppDestination
 import androidx.compose.material3.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.ojhdtapp.parabox.ui.NavGraph
 import com.ramcosta.composedestinations.navigation.navigate
+import com.ramcosta.composedestinations.navigation.popUpTo
 import com.ramcosta.composedestinations.spec.DirectionDestinationSpec
+import com.ramcosta.composedestinations.utils.isRouteOnBackStack
 
 enum class NavigationDestination(
-    val direction: DirectionDestinationSpec,
+//    val direction: DirectionDestinationSpec,
+    val graph: NavGraph,
     val icon: ImageVector,
     val iconSelected: ImageVector,
     val label: String,
 ) {
-    Message(MessagePageDestination, Icons.Outlined.Chat, Icons.Default.Chat, "会话"),
-    File(FilePageDestination, Icons.Outlined.WorkOutline, Icons.Default.Work, "工作"),
-    Setting(SettingPageDestination, Icons.Outlined.Settings, Icons.Default.Settings, "设置")
+    Message(NavGraphs.message, Icons.Outlined.Chat, Icons.Default.Chat, "会话"),
+    File(NavGraphs.file, Icons.Outlined.WorkOutline, Icons.Default.Work, "工作"),
+    Setting(NavGraphs.setting, Icons.Outlined.Settings, Icons.Default.Settings, "设置")
 }
 
 @Composable
@@ -43,39 +47,50 @@ fun NavigationBar(
     settingBadge: Boolean = false,
     onSelfItemClick: () -> Unit,
 ) {
-    val currentDestination: Destination =
-        navController.appCurrentDestinationAsState().value ?: NavGraphs.root.startAppDestination
+//    val currentDestination: Destination =
+//        navController.appCurrentDestinationAsState().value ?: NavGraphs.root.startAppDestination
     Column() {
         NavigationBar(
             modifier = modifier,
             containerColor = MaterialTheme.colorScheme.surface,
         ) {
             NavigationDestination.values().forEach { destination ->
+                val isCurrentDestOnBackStack = navController.isRouteOnBackStack(destination.graph)
                 NavigationBarItem(
-                    selected = currentDestination == destination.direction,
+                    selected = isCurrentDestOnBackStack,
                     onClick = {
-                        if (currentDestination == destination.direction) {
-                            onSelfItemClick()
-                        } else {
-                            navController.navigate(destination.direction) {
+//                        if (currentDestination == destination.direction) {
+//                            onSelfItemClick()
+//                        } else {
+//                            navController.navigate(destination.direction) {
+//                                launchSingleTop = true
+//                            }
+//                        }
+                        if (isCurrentDestOnBackStack) onSelfItemClick()
+                        else {
+                            navController.navigate(destination.graph) {
+                                popUpTo(NavGraphs.root) {
+                                    saveState = true
+                                }
                                 launchSingleTop = true
+                                restoreState = true
                             }
                         }
                     },
                     icon = {
                         BadgedBox(badge = {
-                            if (destination.direction == MessagePageDestination && messageBadge != 0)
+                            if (destination.graph == NavGraphs.message && messageBadge != 0)
                                 Badge { Text(text = "$messageBadge") }
-                            else if (destination.direction == SettingPageDestination && settingBadge)
+                            else if (destination.graph == NavGraphs.setting && settingBadge)
                                 Badge()
                         }) {
                             Icon(
-                                imageVector = if (currentDestination == destination.direction) destination.iconSelected else destination.icon,
+                                imageVector = if (isCurrentDestOnBackStack) destination.iconSelected else destination.icon,
                                 contentDescription = destination.label
                             )
                         }
                     },
-                    label = { Text(text = destination.label) },
+                    label = { Text(text = destination.label, style = MaterialTheme.typography.labelLarge) },
                     alwaysShowLabel = false
                 )
             }
