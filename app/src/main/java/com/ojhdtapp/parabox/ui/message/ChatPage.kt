@@ -35,7 +35,6 @@ fun ChatPage(
     modifier: Modifier = Modifier,
     navigator: DestinationsNavigator,
     navController: NavController,
-    contact: Contact,
 ) {
     val viewModel: MessagePageViewModel = hiltViewModel()
     val messageState = viewModel.messageStateFlow.collectAsState().value
@@ -96,7 +95,7 @@ fun ErrorChatPage(modifier: Modifier = Modifier, errMessage: String, onRetry: ()
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(text = errMessage, style = MaterialTheme.typography.bodyMedium)
+        Text(text = errMessage, style = MaterialTheme.typography.bodyLarge)
         OutlinedButton(onClick = onRetry) {
             Text(text = "重试")
         }
@@ -110,7 +109,7 @@ fun NullChatPage(modifier: Modifier = Modifier) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(text = "选择会话", style = MaterialTheme.typography.bodyMedium)
+        Text(text = "选择会话", style = MaterialTheme.typography.bodyLarge)
     }
 }
 

@@ -37,6 +37,7 @@ import com.ojhdtapp.parabox.core.util.toAvatarBitmap
 import com.ojhdtapp.parabox.core.util.toTimeUntilNow
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.ui.MainScreenSharedViewModel
+import com.ojhdtapp.parabox.ui.destinations.ChatPageDestination
 import com.ojhdtapp.parabox.ui.util.SearchAppBar
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
@@ -230,7 +231,8 @@ fun MessagePage(
                                 if (searchBarActivateState == SearchAppBar.SELECT) {
                                     viewModel.addOrRemoveItemOfSelectedContactIdStateList(item.connection.objectId)
                                 } else {
-                                    loading = !loading
+                                    viewModel.receiveAndUpdateMessageFromContact(item)
+                                    navigator.navigate(ChatPageDestination)
                                 }
                             },
                             onLongClick = {

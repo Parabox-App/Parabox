@@ -144,6 +144,7 @@ class MessagePageViewModel @Inject constructor(
         messageJob?.cancel()
         messageJob = viewModelScope.launch {
             getUngroupedMessages(contact = contact).collectLatest {
+                Log.d("parabox", it.toString())
                 _messageStateFlow.value = when(it){
                     is Resource.Loading -> MessageState(state = MessageState.LOADING, profile = contact.profile)
                     is Resource.Error -> MessageState(state = MessageState.ERROR, profile = contact.profile, message = it.message)
