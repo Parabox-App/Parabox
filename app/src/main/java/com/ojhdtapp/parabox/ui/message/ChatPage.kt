@@ -17,9 +17,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.*
+import androidx.compose.material3.FloatingActionButtonDefaults.elevation
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onSizeChanged
@@ -252,7 +254,8 @@ fun EditArea(
                                 .fillMaxWidth()
                                 .onFocusEvent {
                                     if (it.isFocused) scope.launch { delay(200); relocation.bringIntoView() }
-                                }.clearFocusOnKeyboardDismiss(),
+                                }
+                                .clearFocusOnKeyboardDismiss(),
                             value = inputText,
                             onValueChange = {
                                 if (it.length > 6) shouldToolbarShrink = true
@@ -273,12 +276,18 @@ fun EditArea(
                     }
                 }
                 AnimatedVisibility(visible = !inputText.isNullOrEmpty(),
-                    enter = slideInHorizontally { width -> width },
-                    exit = slideOutHorizontally { width -> width }
+//                    enter = slideInHorizontally { width -> width },
+//                    exit = slideOutHorizontally { width -> width }
+                    enter = expandHorizontally() { width -> 0 },
+                    exit = shrinkHorizontally() { width -> 0 }
                 ) {
                     FloatingActionButton(
                         onClick = { /*TODO*/ },
                         modifier = Modifier.padding(start = 16.dp),
+                        elevation = elevation(
+                            defaultElevation = 0.dp,
+                            pressedElevation = 0.dp
+                        )
                     ) {
                         Icon(imageVector = Icons.Outlined.Send, contentDescription = "send")
                     }
