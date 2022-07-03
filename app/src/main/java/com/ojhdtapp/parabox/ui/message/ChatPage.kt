@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,9 +24,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.onFocusEvent
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -35,6 +39,7 @@ import androidx.navigation.NavController
 import com.ojhdtapp.parabox.core.util.toDescriptiveTime
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Message
+import com.ojhdtapp.parabox.domain.model.message_content.getContentString
 import com.ojhdtapp.parabox.ui.util.MessageNavGraph
 import com.ojhdtapp.parabox.ui.util.clearFocusOnKeyboardDismiss
 import com.ramcosta.composedestinations.annotation.Destination
@@ -53,7 +58,7 @@ fun ChatPage(
     viewModel: MessagePageViewModel
 ) {
 //    val viewModel: MessagePageViewModel = hiltViewModel()
-    val messageState = viewModel.messageStateFlow.collectAsState().value
+    val messageState by viewModel.messageStateFlow.collectAsState()
     Crossfade(targetState = messageState.state) {
         when (it) {
             MessageState.NULL -> {
@@ -85,9 +90,11 @@ fun NormalChatPage(
     var changedTextFieldHeight by remember {
         mutableStateOf(0)
     }
-    val peakHeight =
-        navigationBarHeight + 88.dp + with(LocalDensity.current) { changedTextFieldHeight.toDp() }
+//    val peakHeight =
+//        navigationBarHeight + 88.dp + with(LocalDensity.current) { changedTextFieldHeight.toDp() }
 
+    //temp
+    val peakHeight = navigationBarHeight + 88.dp
     BottomSheetScaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -122,9 +129,18 @@ fun NormalChatPage(
         sheetPeekHeight = peakHeight,
         sheetElevation = 3.dp
     ) {
-        LazyColumn(modifier = Modifier.padding(it)) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surface),
+            contentPadding = it
+        ) {
+            val messageList = messageState.data!!.messages
+//            items(items = messageList, key = {item -> item.timestamp }){ message ->
+//                Text(text = message.contents.getContentString())
+//            }
             item {
-                Text(text = "aaa")
+                Text(text = "aaaaaaaaaa")
             }
         }
     }
@@ -238,9 +254,11 @@ fun EditArea(
                     color = MaterialTheme.colorScheme.surfaceVariant,
                     onClick = {}
                 ) {
-                    val originalBoxHeight = with(LocalDensity.current) {
-                        24.dp.toPx().toInt()
-                    }
+//                    val originalBoxHeight = with(LocalDensity.current) {
+//                        24.dp.toPx().toInt()
+//                    }
+                    //temp
+                    val originalBoxHeight = 56
                     Box(
                         modifier = Modifier
                             .defaultMinSize(minHeight = 48.dp)
@@ -263,7 +281,7 @@ fun EditArea(
                                 inputText = it
                             },
                             enabled = true,
-                            textStyle = MaterialTheme.typography.bodyLarge,
+                            textStyle = MaterialTheme.typography.bodyLarge.merge(TextStyle(color = MaterialTheme.colorScheme.onSurface)),
                             decorationBox = { innerTextField ->
                                 if (inputText.isEmpty()) {
                                     Text(
@@ -272,7 +290,9 @@ fun EditArea(
                                     )
                                 }
                                 innerTextField()
-                            })
+                            },
+                            cursorBrush = SolidColor(value = MaterialTheme.colorScheme.primary)
+                        )
                     }
                 }
                 AnimatedVisibility(visible = !inputText.isNullOrEmpty(),

@@ -21,6 +21,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
@@ -157,7 +158,8 @@ fun SearchContentField(
                     )
                 }
                 innerTextField()
-            }
+            },
+            cursorBrush = SolidColor(value = MaterialTheme.colorScheme.primary)
         )
         AnimatedVisibility(visible = !isActivated) {
             IconButton(onClick = { /*TODO*/ }) {
