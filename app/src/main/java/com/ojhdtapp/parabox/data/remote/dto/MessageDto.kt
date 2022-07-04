@@ -30,7 +30,7 @@ data class MessageDto(
                 (dao.getContactById(pluginConnection.objectId)?.latestMessage?.unreadMessagesNum
                     ?: 0) + 1
             ),
-            connection = pluginConnection,
+            connections = listOf(pluginConnection),
             contactId = pluginConnection.objectId,
         )
     }

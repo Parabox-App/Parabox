@@ -11,6 +11,6 @@ class GetUngroupedMessages @Inject constructor(
     val repository: MainRepository
 ) {
     operator fun invoke(contact: Contact): Flow<Resource<ContactWithMessages>> {
-        return repository.getSpecifiedContactWithMessages(contact.connection.objectId)
+        return repository.getSpecifiedContactWithMessages(contact.connections.first().objectId)
     }
 }

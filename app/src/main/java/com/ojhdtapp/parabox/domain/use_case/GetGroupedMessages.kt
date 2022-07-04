@@ -13,14 +13,20 @@ class GetGroupedMessages @Inject constructor(
     val repository: MainRepository
 ) {
     operator fun invoke(contact: Contact): Flow<Resource<ContactWithMessages>> {
-        return repository.getSpecifiedListOfContactWithMessages(listOf(contact.connection.objectId))
+        return repository.getSpecifiedListOfContactWithMessages(contact.connections.fold(
+            mutableListOf<Int>()
+        ) { acc, pluginConnection ->
+            acc.add(pluginConnection.objectId)
+            acc
+        })
             .map<Resource<List<ContactWithMessages>>, Resource<ContactWithMessages>> { contactWithMessagesList ->
                 Resource.Success(
-                    ContactWithMessages(contact = contact,
+                    ContactWithMessages(
+                        contact = contact,
                         messages = contactWithMessagesList.data?.fold(initial = mutableListOf<Message>()) { acc, contactWithMessages ->
                             acc.addAll(contactWithMessages.messages)
                             acc
-                        }?.toList()?: emptyList<Message>()
+                        }?.toList() ?: emptyList<Message>()
                     )
                 )
             }

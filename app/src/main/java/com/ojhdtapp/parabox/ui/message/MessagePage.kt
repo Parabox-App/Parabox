@@ -161,7 +161,7 @@ fun MessagePage(
                 val ungroupedContactList = ungroupedContactState.value.data
                 itemsIndexed(
                     items = ungroupedContactList,
-                    key = { _, item -> item.connection.objectId }) { index, item ->
+                    key = { _, item -> item.connections.first().objectId }) { index, item ->
                     var loading by remember {
                         mutableStateOf(false)
                     }

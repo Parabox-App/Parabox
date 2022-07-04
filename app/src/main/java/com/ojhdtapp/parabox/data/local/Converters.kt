@@ -4,6 +4,7 @@ import androidx.room.ProvidedTypeConverter
 import androidx.room.TypeConverter
 import com.google.gson.reflect.TypeToken
 import com.ojhdtapp.parabox.domain.model.Message
+import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.model.message_content.At
 import com.ojhdtapp.parabox.domain.model.message_content.Image
 import com.ojhdtapp.parabox.domain.model.message_content.MessageContent
@@ -69,6 +70,22 @@ class Converters(
             }
         }
         return str.toString()
+    }
+
+    @TypeConverter
+    fun fromPluginConnectionListJson(json: String): List<PluginConnection> {
+        return jsonParser.fromJson<ArrayList<PluginConnection>>(
+            json,
+            object : TypeToken<ArrayList<PluginConnection>>() {}.type
+        ) ?: emptyList()
+    }
+
+    @TypeConverter
+    fun toPluginConnectionListJson(pluginConnectionList: List<PluginConnection>): String {
+        return jsonParser.toJson(
+            pluginConnectionList,
+            object : TypeToken<ArrayList<PluginConnection>>() {}.type
+        ) ?: "[]"
     }
 
     private fun getJsonWithMessageContentTypeJudged(messageContent: MessageContent): String {
