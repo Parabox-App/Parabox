@@ -1,7 +1,6 @@
 package com.ojhdtapp.parabox.domain.model
 
 import com.ojhdtapp.parabox.domain.model.chat.ChatBlock
-import com.ojhdtapp.parabox.domain.model.chat.TimeBlock
 import com.ojhdtapp.parabox.domain.model.message_content.MessageContent
 
 data class ContactWithMessages(

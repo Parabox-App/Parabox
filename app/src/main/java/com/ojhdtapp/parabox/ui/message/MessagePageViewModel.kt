@@ -142,6 +142,7 @@ class MessagePageViewModel @Inject constructor(
     }
 
     // Messages
+    // Tips: Do Not use contacts from response.
     private val _messageStateFlow = MutableStateFlow(MessageState())
     val messageStateFlow: StateFlow<MessageState> = _messageStateFlow.asStateFlow()
     private var messageJob: Job? = null

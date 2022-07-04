@@ -2,14 +2,17 @@ package com.ojhdtapp.parabox.ui.message
 
 import android.util.Log
 import androidx.compose.animation.*
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.BottomSheetScaffold
@@ -39,7 +42,8 @@ import androidx.navigation.NavController
 import com.ojhdtapp.parabox.core.util.toDescriptiveTime
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Message
-import com.ojhdtapp.parabox.domain.model.message_content.getContentString
+import com.ojhdtapp.parabox.domain.model.chat.ChatBlock
+import com.ojhdtapp.parabox.domain.model.message_content.*
 import com.ojhdtapp.parabox.ui.util.MessageNavGraph
 import com.ojhdtapp.parabox.ui.util.clearFocusOnKeyboardDismiss
 import com.ramcosta.composedestinations.annotation.Destination
@@ -139,12 +143,8 @@ fun NormalChatPage(
                 item {
                     TimeDivider(timestamp = timestamp)
                 }
-                items(items = chatBlockList) { chatBlockList ->
-                    Column() {
-                        chatBlockList.content.forEach {
-                            Text(text = it.getContentString())
-                        }
-                    }
+                items(items = chatBlockList) { chatBlock ->
+                    ChatBlock(data = chatBlock, sentByMe = true)
                 }
             }
         }
@@ -182,9 +182,127 @@ fun TimeDivider(modifier: Modifier = Modifier, timestamp: Long) {
         modifier = modifier.height(32.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Divider(modifier = Modifier.weight(1f))
-        Text(text = timestamp.toDescriptiveTime())
-        Divider(modifier = Modifier.weight(1f))
+        Divider(
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 16.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant
+        )
+        Text(
+            text = timestamp.toDescriptiveTime(),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Divider(
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 16.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant
+        )
+    }
+}
+
+@Composable
+fun ChatBlock(modifier: Modifier = Modifier, data: ChatBlock, sentByMe: Boolean) {
+    Row(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = if (sentByMe) Arrangement.End else Arrangement.Start
+    ) {
+        if (sentByMe) {
+            ChatBlockMessages(data = data, sentByMe = sentByMe)
+            Spacer(modifier = Modifier.width(8.dp))
+            ChatBlockAvatar()
+        } else {
+            ChatBlockAvatar()
+            Spacer(modifier = Modifier.width(8.dp))
+            ChatBlockMessages(data = data, sentByMe = sentByMe)
+        }
+    }
+}
+
+@Composable
+fun ChatBlockAvatar(modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier.size(36.dp),
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.primary
+    ) {
+
+    }
+}
+
+@Composable
+fun ChatBlockMessages(data: ChatBlock, sentByMe: Boolean) {
+    Column(
+        horizontalAlignment = if(sentByMe) Alignment.End else Alignment.Start
+    ) {
+        Text(
+            text = data.profile.name,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        data.content.forEachIndexed { index, messageContents ->
+            Spacer(modifier = Modifier.height(2.dp))
+            SingleMessage(
+                contents = messageContents,
+                sentByMe = sentByMe,
+                isFirst = index == 0,
+                isLast = index == data.content.size - 1,
+                onClick = {},
+                onLongClick = {})
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun SingleMessage(
+    modifier: Modifier = Modifier,
+    contents: List<MessageContent>,
+    sentByMe: Boolean,
+    isFirst: Boolean,
+    isLast: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit
+) {
+    val topStartRadius by animateDpAsState(targetValue = if (sentByMe || isFirst) 24.dp else 0.dp)
+    val topEndRadius by animateDpAsState(targetValue = if (!sentByMe || isFirst) 24.dp else 0.dp)
+    val bottomStartRadius by animateDpAsState(targetValue = if (sentByMe || isLast) 24.dp else 0.dp)
+    val bottomEndRadius by animateDpAsState(targetValue = if (!sentByMe || isLast) 24.dp else 0.dp)
+    Column(
+        modifier = modifier
+            .clip(
+                RoundedCornerShape(
+                    topStart = topStartRadius,
+                    topEnd = topEndRadius,
+                    bottomStart = bottomStartRadius,
+                    bottomEnd = bottomEndRadius
+                )
+            )
+            .background(
+                if (sentByMe) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
+            )
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            .padding(horizontal = 12.dp, vertical = 12.dp)
+    ) {
+        contents.forEach {
+            when (it) {
+                is At -> Text(
+                    text = it.getContentString(),
+                    color = if (sentByMe) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                is PlainText -> Text(
+                    text = it.getContentString() + "$isFirst" + "$isLast",
+                    color = if (sentByMe) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                is Image -> Text(
+                    text = it.getContentString(),
+                    color = if (sentByMe) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            }
+        }
     }
 }
 
