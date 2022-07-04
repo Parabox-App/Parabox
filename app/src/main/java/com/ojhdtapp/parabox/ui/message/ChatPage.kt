@@ -46,6 +46,7 @@ import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.chat.ChatBlock
 import com.ojhdtapp.parabox.domain.model.message_content.*
 import com.ojhdtapp.parabox.ui.util.MessageNavGraph
+import com.ojhdtapp.parabox.ui.util.SharedAxisZTransition
 import com.ojhdtapp.parabox.ui.util.clearFocusOnKeyboardDismiss
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -54,9 +55,9 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @MessageNavGraph(start = false)
-@Destination
+@Destination(style = SharedAxisZTransition::class)
 @Composable
-fun ChatPage(
+fun AnimatedVisibilityScope.ChatPage(
     modifier: Modifier = Modifier,
     navigator: DestinationsNavigator,
     navController: NavController,
