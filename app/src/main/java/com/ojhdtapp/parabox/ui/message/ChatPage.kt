@@ -28,6 +28,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onSizeChanged
@@ -144,8 +145,11 @@ fun NormalChatPage(
                     TimeDivider(timestamp = timestamp)
                 }
                 items(items = chatBlockList) { chatBlock ->
-                    ChatBlock(data = chatBlock, sentByMe = true)
+                    ChatBlock(modifier = Modifier.fillMaxWidth() ,data = chatBlock, sentByMe = false)
                 }
+            }
+            item{
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
@@ -179,7 +183,7 @@ fun NullChatPage(modifier: Modifier = Modifier) {
 @Composable
 fun TimeDivider(modifier: Modifier = Modifier, timestamp: Long) {
     Row(
-        modifier = modifier.height(32.dp),
+        modifier = modifier.height(48.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Divider(
@@ -206,18 +210,19 @@ fun TimeDivider(modifier: Modifier = Modifier, timestamp: Long) {
 fun ChatBlock(modifier: Modifier = Modifier, data: ChatBlock, sentByMe: Boolean) {
     Row(
         modifier = modifier
-            .fillMaxSize()
             .padding(horizontal = 16.dp),
-        horizontalArrangement = if (sentByMe) Arrangement.End else Arrangement.Start
+//        horizontalArrangement = if (sentByMe) Arrangement.End else Arrangement.Start
     ) {
         if (sentByMe) {
-            ChatBlockMessages(data = data, sentByMe = sentByMe)
+            Spacer(modifier = Modifier.width(48.dp))
+            ChatBlockMessages( modifier = Modifier.weight(1f),data = data, sentByMe = sentByMe)
             Spacer(modifier = Modifier.width(8.dp))
             ChatBlockAvatar()
         } else {
             ChatBlockAvatar()
             Spacer(modifier = Modifier.width(8.dp))
-            ChatBlockMessages(data = data, sentByMe = sentByMe)
+            ChatBlockMessages(modifier = Modifier.weight(1f),data = data, sentByMe = sentByMe)
+            Spacer(modifier = Modifier.width(48.dp))
         }
     }
 }
@@ -234,14 +239,15 @@ fun ChatBlockAvatar(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun ChatBlockMessages(data: ChatBlock, sentByMe: Boolean) {
+fun ChatBlockMessages(modifier: Modifier = Modifier, data: ChatBlock, sentByMe: Boolean) {
     Column(
+        modifier = modifier,
         horizontalAlignment = if(sentByMe) Alignment.End else Alignment.Start
     ) {
         Text(
             text = data.profile.name,
             style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurface
+            color = MaterialTheme.colorScheme.primary
         )
         data.content.forEachIndexed { index, messageContents ->
             Spacer(modifier = Modifier.height(2.dp))
@@ -294,7 +300,7 @@ fun SingleMessage(
                     color = if (sentByMe) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
                 )
                 is PlainText -> Text(
-                    text = it.getContentString() + "$isFirst" + "$isLast",
+                    text = it.getContentString(),
                     color = if (sentByMe) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
                 )
                 is Image -> Text(
