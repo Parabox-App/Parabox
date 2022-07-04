@@ -14,7 +14,7 @@ class GetGroupedMessages @Inject constructor(
 ) {
     operator fun invoke(contact: Contact): Flow<Resource<ContactWithMessages>> {
         return repository.getSpecifiedListOfContactWithMessages(contact.connections.fold(
-            mutableListOf<Int>()
+            mutableListOf<Long>()
         ) { acc, pluginConnection ->
             acc.add(pluginConnection.objectId)
             acc

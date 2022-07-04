@@ -20,9 +20,9 @@ interface ContactMessageCrossRefDao {
 
     @Transaction
     @Query("SELECT * FROM contact_entity WHERE contactId = :contactId")
-    fun getSpecifiedContactWithMessages(contactId: Int) : Flow<ContactWithMessagesEntity>
+    fun getSpecifiedContactWithMessages(contactId: Long) : Flow<ContactWithMessagesEntity>
 
     @Transaction
     @Query("SELECT * FROM contact_entity WHERE contactId IN (:contactIds)")
-    fun getSpecifiedListOfContactWithMessages(contactIds: List<Int>) : Flow<List<ContactWithMessagesEntity>>
+    fun getSpecifiedListOfContactWithMessages(contactIds: List<Long>) : Flow<List<ContactWithMessagesEntity>>
 }

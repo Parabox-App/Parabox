@@ -3,12 +3,15 @@ package com.ojhdtapp.parabox.data.repository
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.ContactEntity
+import com.ojhdtapp.parabox.data.local.entity.ContactMessageCrossRef
 import com.ojhdtapp.parabox.data.local.entity.ContactWithMessagesEntity
 import com.ojhdtapp.parabox.data.remote.dto.MessageDto
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.ContactWithMessages
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
 import javax.inject.Inject
 
@@ -16,9 +19,20 @@ class MainRepositoryImpl @Inject constructor(
     private val database: AppDatabase
 ) : MainRepository {
     override suspend fun handleNewMessage(dto: MessageDto) {
-        database.messageDao.insertMessage(dto.toMessageEntity())
-        database.contactDao.insertContact(dto.toContactEntityWithUnreadMessagesNumUpdate(database.contactDao))
-        database.contactMessageCrossRefDao.insertNewContactMessageCrossRef(dto.getContactMessageCrossRef())
+        coroutineScope {
+            val messageIdDeferred = async<Long> {
+                database.messageDao.insertMessage(dto.toMessageEntity())
+            }
+            val contactIdDeferred = async<Long> {
+                database.contactDao.insertContact(dto.toContactEntityWithUnreadMessagesNumUpdate(database.contactDao))
+            }
+            database.contactMessageCrossRefDao.insertNewContactMessageCrossRef(
+                ContactMessageCrossRef(contactId = contactIdDeferred.await(), messageId = messageIdDeferred.await())
+            )
+        }
+//        database.messageDao.insertMessage(dto.toMessageEntity())
+//        database.contactDao.insertContact(dto.toContactEntityWithUnreadMessagesNumUpdate(database.contactDao))
+//        database.contactMessageCrossRefDao.insertNewContactMessageCrossRef(dto.getContactMessageCrossRef())
     }
 
     override fun getAllHiddenContacts(): Flow<Resource<List<Contact>>> {
@@ -44,7 +58,7 @@ class MainRepositoryImpl @Inject constructor(
     }
 
     @OptIn(FlowPreview::class)
-    override fun getSpecifiedContactWithMessages(contactId: Int): Flow<Resource<ContactWithMessages>> {
+    override fun getSpecifiedContactWithMessages(contactId: Long): Flow<Resource<ContactWithMessages>> {
         return flow<Resource<ContactWithMessages>> {
             emit(Resource.Loading())
         }.flatMapConcat {
@@ -66,7 +80,7 @@ class MainRepositoryImpl @Inject constructor(
     }
 
     @OptIn(FlowPreview::class)
-    override fun getSpecifiedListOfContactWithMessages(contactIds: List<Int>): Flow<Resource<List<ContactWithMessages>>> {
+    override fun getSpecifiedListOfContactWithMessages(contactIds: List<Long>): Flow<Resource<List<ContactWithMessages>>> {
         return flow<Resource<List<ContactWithMessages>>> {
             emit(Resource.Loading())
         }.flatMapConcat {

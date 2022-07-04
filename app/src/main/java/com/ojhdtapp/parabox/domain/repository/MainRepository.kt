@@ -10,6 +10,6 @@ interface MainRepository {
     suspend fun handleNewMessage(dto: MessageDto)
     fun getAllHiddenContacts(): Flow<Resource<List<Contact>>>
     fun getAllUnhiddenContacts(): Flow<Resource<List<Contact>>>
-    fun getSpecifiedContactWithMessages(contactId: Int): Flow<Resource<ContactWithMessages>>
-    fun getSpecifiedListOfContactWithMessages(contactIds: List<Int>): Flow<Resource<List<ContactWithMessages>>>
+    fun getSpecifiedContactWithMessages(contactId: Long): Flow<Resource<ContactWithMessages>>
+    fun getSpecifiedListOfContactWithMessages(contactIds: List<Long>): Flow<Resource<List<ContactWithMessages>>>
 }

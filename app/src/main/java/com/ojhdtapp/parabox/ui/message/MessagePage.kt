@@ -161,7 +161,7 @@ fun MessagePage(
                 val ungroupedContactList = ungroupedContactState.value.data
                 itemsIndexed(
                     items = ungroupedContactList,
-                    key = { _, item -> item.connections.first().objectId }) { index, item ->
+                    key = { _, item -> item.contactId }) { index, item ->
                     var loading by remember {
                         mutableStateOf(false)
                     }
@@ -178,7 +178,7 @@ fun MessagePage(
                     val topRadius by animateDpAsState(targetValue = if (isFirst) 28.dp else 0.dp)
                     val bottomRadius by animateDpAsState(targetValue = if (isLast) 28.dp else 0.dp)
                     val isSelected =
-                        viewModel.selectedContactIdStateList.contains(item.connection.objectId)
+                        viewModel.selectedContactIdStateList.contains(item.contactId)
                     SwipeToDismiss(
                         state = dismissState,
                         modifier = Modifier
@@ -232,7 +232,7 @@ fun MessagePage(
                             shimmer = shimmerInstance,
                             onClick = {
                                 if (searchBarActivateState == SearchAppBar.SELECT) {
-                                    viewModel.addOrRemoveItemOfSelectedContactIdStateList(item.connection.objectId)
+                                    viewModel.addOrRemoveItemOfSelectedContactIdStateList(item.contactId)
                                 } else {
                                     viewModel.receiveAndUpdateMessageFromContact(item)
                                     navigator.navigate(ChatPageDestination)
@@ -240,7 +240,7 @@ fun MessagePage(
                             },
                             onLongClick = {
                                 searchBarActivateState = SearchAppBar.SELECT
-                                viewModel.addOrRemoveItemOfSelectedContactIdStateList(item.connection.objectId)
+                                viewModel.addOrRemoveItemOfSelectedContactIdStateList(item.contactId)
                             }
                         )
                         if (index < ungroupedContactList.lastIndex)

@@ -12,10 +12,10 @@ import kotlinx.coroutines.flow.Flow
 interface ContactDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertContact(contact: ContactEntity)
+    suspend fun insertContact(contact: ContactEntity): Long
 
     @Query("SELECT * FROM contact_entity WHERE contactId = :id LIMIT 1")
-    suspend fun getContactById(id:Int):ContactEntity?
+    suspend fun getContactById(id: Long): ContactEntity?
 
     @Query("SELECT * FROM contact_entity")
     fun getAllContacts(): Flow<List<ContactEntity>>

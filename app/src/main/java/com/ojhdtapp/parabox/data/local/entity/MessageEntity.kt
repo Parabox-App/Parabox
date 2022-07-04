@@ -12,11 +12,12 @@ data class MessageEntity(
     val contents: List<MessageContent>,
     @Embedded val profile: Profile,
     val timestamp: Long,
-    @PrimaryKey val messageId: Int,
+    @PrimaryKey(autoGenerate = true) val messageId: Long = 0,
 ) {
     fun toMessage() = Message(
         contents = contents,
         profile = profile,
-        timestamp = timestamp
+        timestamp = timestamp,
+        messageId = messageId
     )
 }

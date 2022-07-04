@@ -6,7 +6,7 @@ import androidx.room.Entity
 @Entity(primaryKeys = ["contactId", "messageId"])
 data class ContactMessageCrossRef(
     @ColumnInfo(index = true)
-    val contactId: Int,
+    val contactId: Long,
     @ColumnInfo(index = true)
-    val messageId: Int,
+    val messageId: Long,
 )

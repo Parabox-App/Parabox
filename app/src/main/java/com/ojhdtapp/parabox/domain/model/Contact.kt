@@ -6,15 +6,15 @@ data class Contact(
     val profile: Profile,
     val latestMessage: LatestMessage?,
     val connections: List<PluginConnection>,
+    val contactId: Long,
     val isHidden : Boolean = false
 ){
     // Unused
-    fun toContactEntity(id: Int): ContactEntity{
+    fun toContactEntity(): ContactEntity{
         return ContactEntity(
             profile = profile,
             latestMessage = latestMessage,
             connections = connections,
-            contactId = id,
             isHidden = isHidden
         )
     }

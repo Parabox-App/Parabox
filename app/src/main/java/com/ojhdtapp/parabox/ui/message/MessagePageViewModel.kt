@@ -127,9 +127,9 @@ class MessagePageViewModel @Inject constructor(
     }
 
     // Selection
-    private val _selectedContactIdStateList = mutableStateListOf<Int>()
+    private val _selectedContactIdStateList = mutableStateListOf<Long>()
     val selectedContactIdStateList = _selectedContactIdStateList
-    fun addOrRemoveItemOfSelectedContactIdStateList(value: Int) {
+    fun addOrRemoveItemOfSelectedContactIdStateList(value: Long) {
         if (!_selectedContactIdStateList.contains(value)) {
             _selectedContactIdStateList.add(value)
         } else {
@@ -184,7 +184,6 @@ class MessagePageViewModel @Inject constructor(
                     listOf(PlainText("Hello at ${System.currentTimeMillis()}")),
                     Profile("Ojhdt", null),
                     Profile("Ojhdt-Group", null),
-                    System.currentTimeMillis().toInt(),
                     System.currentTimeMillis(),
                     PluginConnection(1, 1)
                 )
