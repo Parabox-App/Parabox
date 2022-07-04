@@ -162,7 +162,7 @@ class MessagePageViewModel @Inject constructor(
                     is Resource.Success -> MessageState(
                         state = MessageState.SUCCESS,
                         profile = contact.profile,
-                        data = it.data
+                        data = it.data!!.toTimedMessages()
                     )
                 }
             }

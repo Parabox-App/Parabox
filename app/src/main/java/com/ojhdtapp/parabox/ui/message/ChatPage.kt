@@ -135,12 +135,17 @@ fun NormalChatPage(
                 .background(MaterialTheme.colorScheme.surface),
             contentPadding = it
         ) {
-            val messageList = messageState.data!!.messages
-//            items(items = messageList, key = {item -> item.timestamp }){ message ->
-//                Text(text = message.contents.getContentString())
-//            }
-            item {
-                Text(text = "aaaaaaaaaa")
+            messageState.data!!.forEach { (timestamp, chatBlockList) ->
+                item {
+                    TimeDivider(timestamp = timestamp)
+                }
+                items(items = chatBlockList) { chatBlockList ->
+                    Column() {
+                        chatBlockList.content.forEach {
+                            Text(text = it.getContentString())
+                        }
+                    }
+                }
             }
         }
     }

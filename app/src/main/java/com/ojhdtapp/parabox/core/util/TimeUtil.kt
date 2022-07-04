@@ -34,7 +34,7 @@ fun Long.toDescriptiveTime():String{
         in 604800000 until 31536000000 -> SimpleDateFormat("M'月'd'日'").format(Date(this))
         else -> SimpleDateFormat("yyyy'年'M'月'd'日'").format(Date(this))
     }
-    val timeString = SimpleDateFormat("H:m").format(Date(this))
+    val timeString = SimpleDateFormat("H:mm").format(Date(this))
     return "$dateString $timeString"
 }
 

@@ -44,7 +44,6 @@ data class ContactWithMessages(
             messageItemList.add(message.contents)
             if (messagesAtSimilarTime.size - 1 == index) {
                 chatBlockList.add(ChatBlock(currentProfile!!, messageItemList))
-                messageItemList.clear()
             }
         }
         return chatBlockList
