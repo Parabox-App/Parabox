@@ -256,7 +256,7 @@ fun ChatBlockMessages(modifier: Modifier = Modifier, data: ChatBlock, sentByMe: 
                 contents = messageContents,
                 sentByMe = sentByMe,
                 isFirst = index == 0,
-                isLast = index == data.content.size - 1,
+                isLast = index == data.content.lastIndex,
                 onClick = {},
                 onLongClick = {})
         }

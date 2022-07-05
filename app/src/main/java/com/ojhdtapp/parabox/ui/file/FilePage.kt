@@ -51,7 +51,9 @@ fun FilePage(
                 onTextChange = viewModel::setSearchText,
                 placeholder = "搜索文件",
                 activateState = searchBarState,
-                onActivateStateChanged = { searchBarState = it }
+                onActivateStateChanged = { searchBarState = it },
+                isGroupActionAvailable = false,
+                onGroupAction = {}
             )
         },
         bottomBar = {

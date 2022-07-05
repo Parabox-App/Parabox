@@ -43,7 +43,9 @@ fun SearchAppBar(
     text: String,
     onTextChange: (text: String) -> Unit,
     placeholder: String,
-    selectedNum: String = "0"
+    selectedNum: String = "0",
+    isGroupActionAvailable: Boolean = false,
+    onGroupAction: () -> Unit
 ) {
     val isActivated = activateState != SearchAppBar.NONE
     val statusBarHeight = WindowInsets.systemBars.asPaddingValues().calculateTopPadding()
@@ -87,7 +89,9 @@ fun SearchAppBar(
                         modifier = Modifier.align(Alignment.BottomCenter),
                         isActivated = isActivated,
                         onActivateStateChanged = onActivateStateChanged,
-                        selectedNum = selectedNum
+                        selectedNum = selectedNum,
+                        isGroupActionAvailable = isGroupActionAvailable,
+                        onGroupAction = onGroupAction
                     )
                 } else {
                     SearchContentField(
@@ -181,6 +185,8 @@ fun SelectContentField(
     isActivated: Boolean,
     onActivateStateChanged: (value: Int) -> Unit,
     selectedNum: String,
+    isGroupActionAvailable: Boolean,
+    onGroupAction: () -> Unit
 ) {
     Row(
         modifier = modifier
@@ -220,8 +226,12 @@ fun SelectContentField(
             Text(text = num, style = MaterialTheme.typography.titleMedium)
         }
         Spacer(modifier = Modifier.weight(1f))
-        IconButton(onClick = { /*TODO*/ }) {
-            Icon(imageVector = Icons.Outlined.Group, contentDescription = "group")
+        Crossfade(targetState = isGroupActionAvailable) {
+            if (it) {
+                IconButton(onClick = onGroupAction) {
+                    Icon(imageVector = Icons.Outlined.Group, contentDescription = "group")
+                }
+            }
         }
         IconButton(onClick = { /*TODO*/ }) {
             Icon(imageVector = Icons.Outlined.Archive, contentDescription = "archive")

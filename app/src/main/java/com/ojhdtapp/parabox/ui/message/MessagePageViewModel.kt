@@ -81,8 +81,8 @@ class MessagePageViewModel @Inject constructor(
         }
     }
 
-    // Ungrouped Contact
-    private val _ungroupedContactStateFlow: StateFlow<UngroupedContactState> =
+    // Contact
+    private val _contactStateFlow: StateFlow<ContactState> =
         getContacts()
             .filter {
                 if (it is Resource.Error) {
@@ -90,26 +90,26 @@ class MessagePageViewModel @Inject constructor(
                     return@filter false
                 } else true
             }
-            .map<Resource<List<Contact>>, UngroupedContactState> {
+            .map<Resource<List<Contact>>, ContactState> {
                 when (it) {
-                    is Resource.Loading -> UngroupedContactState()
+                    is Resource.Loading -> ContactState()
                     is Resource.Success -> {
                         _uiEventFlow.emit(MessagePageUiEvent.UpdateMessageBadge(it.data!!.fold(0) { acc, contact ->
                             acc + (contact.latestMessage?.unreadMessagesNum ?: 0)
                         }))
-                        UngroupedContactState(
+                        ContactState(
                             isLoading = false,
                             data = it.data ?: emptyList()
                         )
                     }
-                    is Resource.Error -> UngroupedContactState(isLoading = false)
+                    is Resource.Error -> ContactState(isLoading = false)
                 }
             }.stateIn(
-                initialValue = UngroupedContactState(),
+                initialValue = ContactState(),
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5000)
             )
-    val ungroupedContactStateFlow get() = _ungroupedContactStateFlow
+    val contactStateFlow get() = _contactStateFlow
 
     // Search
     private val _searchText = mutableStateOf<String>("")
@@ -184,6 +184,34 @@ class MessagePageViewModel @Inject constructor(
                     Profile("Ojhdt-Group", null),
                     System.currentTimeMillis(),
                     PluginConnection(1, 1)
+                )
+            )
+        }
+    }
+
+    fun testFun2(){
+        viewModelScope.launch(Dispatchers.IO) {
+            handleNewMessage(
+                MessageDto(
+                    listOf(PlainText("Hi at ${System.currentTimeMillis()}")),
+                    Profile("Cool", null),
+                    Profile("资源群", null),
+                    System.currentTimeMillis(),
+                    PluginConnection(1, 2)
+                )
+            )
+        }
+    }
+
+    fun testFun3(){
+        viewModelScope.launch(Dispatchers.IO) {
+            handleNewMessage(
+                MessageDto(
+                    listOf(PlainText("Goodbye at ${System.currentTimeMillis()}")),
+                    Profile("Steven", null),
+                    Profile("课程群", null),
+                    System.currentTimeMillis(),
+                    PluginConnection(1, 3)
                 )
             )
         }

@@ -2,8 +2,6 @@
 
 package com.ojhdtapp.parabox.ui.message
 
-import android.transition.Fade
-import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.*
@@ -32,7 +30,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ojhdtapp.parabox.core.util.toAvatarBitmap
 import com.ojhdtapp.parabox.core.util.toTimeUntilNow
@@ -42,7 +39,6 @@ import com.ojhdtapp.parabox.ui.destinations.ChatPageDestination
 import com.ojhdtapp.parabox.ui.util.MessageNavGraph
 import com.ojhdtapp.parabox.ui.util.SearchAppBar
 import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.valentinilk.shimmer.*
 import kotlinx.coroutines.flow.collectLatest
@@ -73,7 +69,7 @@ fun MessagePage(
     var searchBarActivateState by remember {
         mutableStateOf(SearchAppBar.NONE)
     }
-    val ungroupedContactState = viewModel.ungroupedContactStateFlow.collectAsState()
+    val contactState by viewModel.contactStateFlow.collectAsState()
     LaunchedEffect(true) {
         viewModel.uiEventFlow.collectLatest {
             when (it) {
@@ -99,7 +95,9 @@ fun MessagePage(
                     searchBarActivateState = it
                     viewModel.clearSelectedContactIdStateList()
                 },
-                selectedNum = "${viewModel.selectedContactIdStateList.size}"
+                selectedNum = "${viewModel.selectedContactIdStateList.size}",
+                isGroupActionAvailable = viewModel.selectedContactIdStateList.size > 1,
+                onGroupAction = {}
             )
         },
         bottomBar = {
@@ -119,7 +117,7 @@ fun MessagePage(
                     )
                 },
                 expanded = expandedFab,
-                onClick = { viewModel.testFun() })
+                onClick = { })
         },
     ) { paddingValues ->
         LazyColumn(
@@ -128,9 +126,11 @@ fun MessagePage(
             contentPadding = paddingValues
         ) {
             item(key = "ungrouped") {
-                Box(modifier = Modifier
-                    .padding(16.dp, 8.dp)
-                    .animateItemPlacement()) {
+                Box(
+                    modifier = Modifier
+                        .padding(16.dp, 8.dp)
+                        .animateItemPlacement()
+                ) {
                     Text(
                         text = "未编组",
                         style = MaterialTheme.typography.labelLarge,
@@ -139,7 +139,7 @@ fun MessagePage(
                 }
             }
 
-            if (ungroupedContactState.value.isLoading) {
+            if (contactState.isLoading) {
                 itemsIndexed(
                     items = listOf(null, null, null, null),
                     key = { index, _ -> index }) { index, _ ->
@@ -158,9 +158,8 @@ fun MessagePage(
                         Spacer(modifier = Modifier.height(3.dp))
                 }
             } else {
-                val ungroupedContactList = ungroupedContactState.value.data
                 itemsIndexed(
-                    items = ungroupedContactList,
+                    items = contactState.data,
                     key = { _, item -> item.contactId }) { index, item ->
                     var loading by remember {
                         mutableStateOf(false)
@@ -174,7 +173,7 @@ fun MessagePage(
                         }
                     )
                     val isFirst = index == 0
-                    val isLast = index == ungroupedContactList.lastIndex
+                    val isLast = index == contactState.data.lastIndex
                     val topRadius by animateDpAsState(targetValue = if (isFirst) 28.dp else 0.dp)
                     val bottomRadius by animateDpAsState(targetValue = if (isLast) 28.dp else 0.dp)
                     val isSelected =
@@ -243,15 +242,17 @@ fun MessagePage(
                                 viewModel.addOrRemoveItemOfSelectedContactIdStateList(item.contactId)
                             }
                         )
-                        if (index < ungroupedContactList.lastIndex)
-                            Spacer(modifier = Modifier.height(3.dp))
                     }
+                    if (index < contactState.data.lastIndex)
+                        Spacer(modifier = Modifier.height(2.dp))
                 }
             }
             item(key = "other") {
-                Box(modifier = Modifier
-                    .padding(16.dp, 8.dp)
-                    .animateItemPlacement()) {
+                Box(
+                    modifier = Modifier
+                        .padding(16.dp, 8.dp)
+                        .animateItemPlacement()
+                ) {
                     Text(
                         text = "其他",
                         style = MaterialTheme.typography.labelLarge,
@@ -259,7 +260,23 @@ fun MessagePage(
                     )
                 }
             }
+            item(key = null) {
+                androidx.compose.material3.OutlinedButton(onClick = { viewModel.testFun() }) {
+                    Text(text = "btn1")
+                }
+            }
+            item(key = null) {
+                androidx.compose.material3.OutlinedButton(onClick = { viewModel.testFun2() }) {
+                    Text(text = "btn2")
+                }
+            }
+            item(key = null) {
+                androidx.compose.material3.OutlinedButton(onClick = { viewModel.testFun3() }) {
+                    Text(text = "btn3")
+                }
+            }
         }
+    }
 //        Column(
 //            modifier = modifier.fillMaxSize(),
 //            horizontalAlignment = Alignment.CenterHorizontally,
@@ -278,7 +295,6 @@ fun MessagePage(
 //            }
 //            Text(text = viewModel.message.value)
 //        }
-    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
