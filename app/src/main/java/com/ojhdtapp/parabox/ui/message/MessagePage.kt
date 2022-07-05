@@ -36,6 +36,7 @@ import com.ojhdtapp.parabox.core.util.toTimeUntilNow
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.ui.MainScreenSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.ChatPageDestination
+import com.ojhdtapp.parabox.ui.util.GroupActionDialog
 import com.ojhdtapp.parabox.ui.util.MessageNavGraph
 import com.ojhdtapp.parabox.ui.util.SearchAppBar
 import com.ramcosta.composedestinations.annotation.Destination
@@ -82,6 +83,12 @@ fun MessagePage(
             }
         }
     }
+    var showGroupActionDialogState by remember {
+        mutableStateOf(false)
+    }
+    GroupActionDialog(showDialog = showGroupActionDialogState, onDismiss = {
+        showGroupActionDialogState = false
+    }, onConfirm = {})
     Scaffold(
         modifier = modifier,
         snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
@@ -97,7 +104,9 @@ fun MessagePage(
                 },
                 selectedNum = "${viewModel.selectedContactIdStateList.size}",
                 isGroupActionAvailable = viewModel.selectedContactIdStateList.size > 1,
-                onGroupAction = {}
+                onGroupAction = {
+                    showGroupActionDialogState = true
+                }
             )
         },
         bottomBar = {
