@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
-class GetGroupedMessages @Inject constructor(
+class GetMessages @Inject constructor(
     val repository: MainRepository
 ) {
     operator fun invoke(contact: Contact): Flow<Resource<ContactWithMessages>> {
@@ -26,7 +26,7 @@ class GetGroupedMessages @Inject constructor(
                         messages = contactWithMessagesList.data?.fold(initial = mutableListOf<Message>()) { acc, contactWithMessages ->
                             acc.addAll(contactWithMessages.messages)
                             acc
-                        }?.toList() ?: emptyList<Message>()
+                        }?.sortedBy { it.timestamp }?.toList() ?: emptyList<Message>()
                     )
                 )
             }

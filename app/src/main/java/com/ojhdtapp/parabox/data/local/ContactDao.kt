@@ -17,6 +17,9 @@ interface ContactDao {
     @Query("SELECT * FROM contact_entity WHERE contactId = :id LIMIT 1")
     suspend fun getContactById(id: Long): ContactEntity?
 
+    @Query("SELECT * FROM contact_entity WHERE contactId IN (:ids)")
+    suspend fun getContactByIds(ids: List<Long>): List<ContactEntity>
+
     @Query("SELECT * FROM contact_entity")
     fun getAllContacts(): Flow<List<ContactEntity>>
 

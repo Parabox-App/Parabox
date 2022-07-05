@@ -1,22 +1,19 @@
 package com.ojhdtapp.parabox.ui.message
 
-import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.remote.dto.MessageDto
 import com.ojhdtapp.parabox.domain.model.Contact
-import com.ojhdtapp.parabox.domain.model.ContactWithMessages
 import com.ojhdtapp.parabox.domain.model.Profile
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.model.message_content.PlainText
-import com.ojhdtapp.parabox.domain.use_case.GetGroupedMessages
-import com.ojhdtapp.parabox.domain.use_case.GetUngroupedContactList
-import com.ojhdtapp.parabox.domain.use_case.GetUngroupedMessages
+import com.ojhdtapp.parabox.domain.use_case.GetMessages
+import com.ojhdtapp.parabox.domain.use_case.GetContacts
+import com.ojhdtapp.parabox.domain.use_case.GetSenderMessagesOnly
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -28,9 +25,9 @@ import javax.inject.Inject
 @HiltViewModel
 class MessagePageViewModel @Inject constructor(
     private val handleNewMessage: HandleNewMessage,
-    getUngroupedContactList: GetUngroupedContactList,
-    val getUngroupedMessages: GetUngroupedMessages,
-    val getGroupedMessages: GetGroupedMessages,
+    getContacts: GetContacts,
+    val getSenderMessagesOnly: GetSenderMessagesOnly,
+    val getMessages: GetMessages,
 ) : ViewModel() {
     init {
         // Update Ungrouped Contacts
@@ -86,7 +83,7 @@ class MessagePageViewModel @Inject constructor(
 
     // Ungrouped Contact
     private val _ungroupedContactStateFlow: StateFlow<UngroupedContactState> =
-        getUngroupedContactList()
+        getContacts()
             .filter {
                 if (it is Resource.Error) {
                     _uiEventFlow.emit(MessagePageUiEvent.ShowSnackBar(it.message!!))
@@ -149,7 +146,7 @@ class MessagePageViewModel @Inject constructor(
     fun receiveAndUpdateMessageFromContact(contact: Contact) {
         messageJob?.cancel()
         messageJob = viewModelScope.launch {
-            getUngroupedMessages(contact = contact).collectLatest {
+            getMessages(contact = contact).collectLatest {
                 _messageStateFlow.value = when (it) {
                     is Resource.Loading -> MessageState(
                         state = MessageState.LOADING,
@@ -167,6 +164,7 @@ class MessagePageViewModel @Inject constructor(
                     )
                 }
             }
+
         }
     }
 

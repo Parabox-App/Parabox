@@ -7,7 +7,7 @@ import com.ojhdtapp.parabox.domain.repository.MainRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
-class GetUngroupedMessages @Inject constructor(
+class GetSenderMessagesOnly @Inject constructor(
     val repository: MainRepository
 ) {
     operator fun invoke(contact: Contact): Flow<Resource<ContactWithMessages>> {
