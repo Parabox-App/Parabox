@@ -26,7 +26,7 @@ class MainRepositoryImpl @Inject constructor(
             val contactIdDeferred = async<Long> {
                 database.contactDao.insertContact(dto.toContactEntityWithUnreadMessagesNumUpdate(database.contactDao))
             }
-            database.contactMessageCrossRefDao.insertNewContactMessageCrossRef(
+            database.contactMessageCrossRefDao.insertContactMessageCrossRef(
                 ContactMessageCrossRef(contactId = contactIdDeferred.await(), messageId = messageIdDeferred.await())
             )
         }

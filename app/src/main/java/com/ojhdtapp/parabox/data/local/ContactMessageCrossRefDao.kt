@@ -9,10 +9,10 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ContactMessageCrossRefDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    fun insertNewContactMessageCrossRef(crossRef: ContactMessageCrossRef)
+    fun insertContactMessageCrossRef(crossRef: ContactMessageCrossRef)
 
     @Delete
-    fun deleteNewContactMessageCrossRef(crossRef: ContactMessageCrossRef)
+    fun deleteContactMessageCrossRef(crossRef: ContactMessageCrossRef)
 
     @Transaction
     @Query("SELECT * FROM contact_entity")

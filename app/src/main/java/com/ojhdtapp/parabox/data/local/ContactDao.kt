@@ -1,10 +1,7 @@
 package com.ojhdtapp.parabox.data.local
 
-import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
-import com.ojhdtapp.parabox.data.local.entity.ContactEntity
+import androidx.room.*
+import com.ojhdtapp.parabox.data.local.entity.*
 import com.ojhdtapp.parabox.domain.model.Contact
 import kotlinx.coroutines.flow.Flow
 
@@ -31,4 +28,18 @@ interface ContactDao {
 
     @Query("SELECT * FROM contact_entity WHERE NOT isHidden")
     fun getAllUnhiddenContacts(): Flow<List<ContactEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    fun insertContactPluginConnectionCrossRef(crossRef: ContactPluginConnectionCrossRef)
+
+    @Delete
+    fun deleteContactPluginConnectionCrossRef(crossRef: ContactPluginConnectionCrossRef)
+
+    @Transaction
+    @Query("SELECT * FROM contact_entity WHERE contactId = :contactId")
+    fun getContactWithPluginConnections(contactId: Long): List<ContactWithPluginConnections>
+
+    @Transaction
+    @Query("SELECT * FROM plugin_connection_entity WHERE objectId = :objectId")
+    fun getPluginConnectionWithContacts(objectId: Long): List<PluginConnectionWithContacts>
 }
