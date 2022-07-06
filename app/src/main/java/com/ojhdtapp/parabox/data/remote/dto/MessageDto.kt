@@ -10,6 +10,8 @@ import com.ojhdtapp.parabox.domain.model.Profile
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.model.message_content.MessageContent
 import com.ojhdtapp.parabox.domain.model.message_content.getContentString
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
@@ -26,11 +28,13 @@ data class MessageDto(
             latestMessage = LatestMessage(
                 contents.getContentString(),
                 timestamp,
-                (dao.getContactById(pluginConnection.objectId)?.latestMessage?.unreadMessagesNum
+                (withContext(Dispatchers.IO) {
+                    dao.getContactById(pluginConnection.objectId)?.latestMessage?.unreadMessagesNum
+                }
                     ?: 0) + 1
             ),
-            connections = listOf(pluginConnection),
-            contactId = pluginConnection.objectId
+            contactId = pluginConnection.objectId,
+            senderId = pluginConnection.objectId
         )
     }
 

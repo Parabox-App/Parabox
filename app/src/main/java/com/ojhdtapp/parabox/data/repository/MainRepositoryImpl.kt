@@ -4,10 +4,12 @@ import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.ContactEntity
 import com.ojhdtapp.parabox.data.local.entity.ContactMessageCrossRef
+import com.ojhdtapp.parabox.data.local.entity.ContactPluginConnectionCrossRef
 import com.ojhdtapp.parabox.data.local.entity.ContactWithMessagesEntity
 import com.ojhdtapp.parabox.data.remote.dto.MessageDto
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.ContactWithMessages
+import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.async
@@ -24,10 +26,26 @@ class MainRepositoryImpl @Inject constructor(
                 database.messageDao.insertMessage(dto.toMessageEntity())
             }
             val contactIdDeferred = async<Long> {
-                database.contactDao.insertContact(dto.toContactEntityWithUnreadMessagesNumUpdate(database.contactDao))
+                database.contactDao.insertContact(
+                    dto.toContactEntityWithUnreadMessagesNumUpdate(
+                        database.contactDao
+                    )
+                )
             }
+            val pluginConnectionDeferred = async<Long> {
+                database.contactDao.insertPluginConnection(dto.pluginConnection.toPluginConnectionEntity())
+            }
+            database.contactDao.insertContactPluginConnectionCrossRef(
+                ContactPluginConnectionCrossRef(
+                    contactId = contactIdDeferred.await(),
+                    objectId = pluginConnectionDeferred.await()
+                )
+            )
             database.contactMessageCrossRefDao.insertContactMessageCrossRef(
-                ContactMessageCrossRef(contactId = contactIdDeferred.await(), messageId = messageIdDeferred.await())
+                ContactMessageCrossRef(
+                    contactId = contactIdDeferred.await(),
+                    messageId = messageIdDeferred.await()
+                )
             )
         }
 //        database.messageDao.insertMessage(dto.toMessageEntity())
@@ -40,7 +58,7 @@ class MainRepositoryImpl @Inject constructor(
             .map<List<ContactEntity>, Resource<List<Contact>>> { contactEntityList ->
                 Resource.Success(contactEntityList.map {
                     it.toContact()
-                }.sortedByDescending { it.latestMessage?.timestamp?:0 })
+                }.sortedByDescending { it.latestMessage?.timestamp ?: 0 })
             }.catch {
                 emit(Resource.Error<List<Contact>>("获取数据时发生错误"))
             }
@@ -51,9 +69,16 @@ class MainRepositoryImpl @Inject constructor(
             .map<List<ContactEntity>, Resource<List<Contact>>> { contactEntityList ->
                 Resource.Success(contactEntityList.map {
                     it.toContact()
-                }.sortedByDescending { it.latestMessage?.timestamp?:0 })
+                }.sortedByDescending { it.latestMessage?.timestamp ?: 0 })
             }.catch {
                 emit(Resource.Error<List<Contact>>("获取数据时发生错误"))
+            }
+    }
+
+    override fun getPluginConnectionObjectIdListByContactId(contactId: Long): List<Long> {
+        return database.contactDao.getContactPluginConnectionCrossRefsByContactId(contactId = contactId)
+            .map {
+                it.objectId
             }
     }
 
@@ -66,8 +91,8 @@ class MainRepositoryImpl @Inject constructor(
                 .map<ContactWithMessagesEntity, Resource<ContactWithMessages>> {
                     Resource.Success(it.toContactWithMessages())
                 }.catch {
-                emit(Resource.Error<ContactWithMessages>("获取数据时发生错误"))
-            }
+                    emit(Resource.Error<ContactWithMessages>("获取数据时发生错误"))
+                }
         }
 //        return database.contactMessageCrossRefDao.getSpecifiedContactWithMessages(contactId)
 //            .map<List<ContactWithMessagesEntity>, Resource<List<ContactWithMessages>>> { contactWithMessagesEntityList ->

@@ -5,8 +5,8 @@ import com.ojhdtapp.parabox.data.local.entity.ContactEntity
 data class Contact(
     val profile: Profile,
     val latestMessage: LatestMessage?,
-    val connections: List<PluginConnection>,
     val contactId: Long,
+    val senderId: Long,
     val isHidden : Boolean = false
 ){
     // Unused
@@ -14,8 +14,9 @@ data class Contact(
         return ContactEntity(
             profile = profile,
             latestMessage = latestMessage,
-            connections = connections,
-            isHidden = isHidden
+            senderId = senderId,
+            contactId = contactId,
+            isHidden = isHidden,
         )
     }
 }

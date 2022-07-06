@@ -3,6 +3,7 @@ package com.ojhdtapp.parabox.data.local
 import androidx.room.*
 import com.ojhdtapp.parabox.data.local.entity.*
 import com.ojhdtapp.parabox.domain.model.Contact
+import com.ojhdtapp.parabox.domain.model.PluginConnection
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -30,10 +31,22 @@ interface ContactDao {
     fun getAllUnhiddenContacts(): Flow<List<ContactEntity>>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
+    fun insertPluginConnection(pluginConnection: PluginConnectionEntity) : Long
+
+    @Delete
+    fun deletePluginConnection(pluginConnection: PluginConnectionEntity)
+
+    @Query("SELECT * FROM plugin_connection_entity WHERE objectId = :objectId")
+    fun getPluginConnectionById(objectId: Long): PluginConnectionEntity
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insertContactPluginConnectionCrossRef(crossRef: ContactPluginConnectionCrossRef)
 
     @Delete
     fun deleteContactPluginConnectionCrossRef(crossRef: ContactPluginConnectionCrossRef)
+
+    @Query("SELECT * FROM contact_plugin_connection_cross_ref WHERE contactId = :contactId")
+    fun getContactPluginConnectionCrossRefsByContactId(contactId: Long): List<ContactPluginConnectionCrossRef>
 
     @Transaction
     @Query("SELECT * FROM contact_entity WHERE contactId = :contactId")

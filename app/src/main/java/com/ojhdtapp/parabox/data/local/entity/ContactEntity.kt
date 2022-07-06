@@ -13,15 +13,15 @@ import com.ojhdtapp.parabox.domain.model.PluginConnection
 data class ContactEntity(
     @Embedded val profile: Profile,
     @Embedded val latestMessage: LatestMessage?,
-    val connections: List<PluginConnection>,
+    val senderId: Long,
     val isHidden: Boolean = false,
     @PrimaryKey(autoGenerate = true) val contactId: Long = 0,
 ){
     fun toContact() = Contact(
         profile = profile,
         latestMessage = latestMessage,
-        connections = connections,
         isHidden = isHidden,
-        contactId = contactId
+        contactId = contactId,
+        senderId = senderId
     )
 }
