@@ -7,6 +7,7 @@ import com.ojhdtapp.parabox.data.local.Converters
 import com.ojhdtapp.parabox.data.repository.MainRepositoryImpl
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import com.ojhdtapp.parabox.domain.use_case.GetContacts
+import com.ojhdtapp.parabox.domain.use_case.GetGroupInfoPack
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
 import com.ojhdtapp.parabox.domain.util.GsonParser
 import dagger.Module
@@ -41,7 +42,13 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideGetUngroupedContactListUseCase(repository: MainRepository): GetContacts {
+    fun provideGetContactListUseCase(repository: MainRepository): GetContacts {
         return GetContacts(repository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGetGroupInfoPackUseCase(repository: MainRepository): GetGroupInfoPack {
+        return GetGroupInfoPack(repository)
     }
 }

@@ -36,7 +36,6 @@ import com.ojhdtapp.parabox.core.util.toTimeUntilNow
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.ui.MainScreenSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.ChatPageDestination
-import com.ojhdtapp.parabox.ui.util.GroupActionDialog
 import com.ojhdtapp.parabox.ui.util.MessageNavGraph
 import com.ojhdtapp.parabox.ui.util.SearchAppBar
 import com.ramcosta.composedestinations.annotation.Destination
@@ -87,7 +86,7 @@ fun MessagePage(
         mutableStateOf(false)
     }
     GroupActionDialog(showDialog = showGroupActionDialogState,
-        data = viewModel.groupInfoState.value, onDismiss = {
+        state = viewModel.groupInfoState.value, onDismiss = {
         showGroupActionDialogState = false
     }, onConfirm = {})
     Scaffold(

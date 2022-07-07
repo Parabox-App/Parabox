@@ -134,25 +134,33 @@ class MessagePageViewModel @Inject constructor(
         }
     }
 
-    private val _groupInfoState = mutableStateOf<Resource<GroupInfoPack>>(Resource.Loading())
-    val groupInfoState: State<Resource<GroupInfoPack>> = _groupInfoState
+    private val _groupInfoState = mutableStateOf<GroupInfoState>(GroupInfoState())
+    val groupInfoState: State<GroupInfoState> = _groupInfoState
     private var groupInfoJob: Job? = null
     fun getGroupInfoPack() {
         groupInfoJob?.cancel()
         if (selectedContactIdStateList.isEmpty()) {
-            _groupInfoState.value = Resource.Error("未选择待编组项")
+            _groupInfoState.value =
+                GroupInfoState(state = GroupInfoState.ERROR, message = "未选择待编组项")
         } else {
             groupInfoJob = getGroupInfoPack(selectedContactIdStateList.toList()).onEach {
-                _groupInfoState.value = it
+                _groupInfoState.value = GroupInfoState(
+                    state = when (it) {
+                        is Resource.Error -> GroupInfoState.ERROR
+                        is Resource.Loading -> GroupInfoState.LOADING
+                        is Resource.Success -> GroupInfoState.SUCCESS
+                    }, resource = it.data?.toGroupEditResource(), message = it.message
+                )
             }.launchIn(viewModelScope)
         }
     }
+
     fun clearSelectedContactIdStateList() {
         _selectedContactIdStateList.clear()
     }
 
     // Messages
-    // Tips: Do Not use contacts from response.
+// Tips: Do Not use contacts from response.
     private val _messageStateFlow = MutableStateFlow(MessageState())
     val messageStateFlow: StateFlow<MessageState> = _messageStateFlow.asStateFlow()
     private var messageJob: Job? = null
@@ -188,7 +196,7 @@ class MessagePageViewModel @Inject constructor(
 //        }
 //    }
 
-    //
+//
 
     fun testFun() {
         viewModelScope.launch(Dispatchers.IO) {
