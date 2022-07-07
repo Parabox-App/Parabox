@@ -2,13 +2,11 @@ package com.ojhdtapp.parabox.data.repository
 
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.local.AppDatabase
-import com.ojhdtapp.parabox.data.local.entity.ContactEntity
-import com.ojhdtapp.parabox.data.local.entity.ContactMessageCrossRef
-import com.ojhdtapp.parabox.data.local.entity.ContactPluginConnectionCrossRef
-import com.ojhdtapp.parabox.data.local.entity.ContactWithMessagesEntity
+import com.ojhdtapp.parabox.data.local.entity.*
 import com.ojhdtapp.parabox.data.remote.dto.MessageDto
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.ContactWithMessages
+import com.ojhdtapp.parabox.domain.model.GroupInfoPack
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import kotlinx.coroutines.FlowPreview
@@ -118,5 +116,18 @@ class MainRepositoryImpl @Inject constructor(
                     emit(Resource.Error<List<ContactWithMessages>>("获取数据时发生错误"))
                 }
         }
+    }
+
+    override fun getGroupInfoPack(contactIds: List<Long>): GroupInfoPack? {
+        val contactList = mutableListOf<Contact>()
+        val pluginConnectionList = mutableListOf<PluginConnection>()
+        database.contactDao.getContactWithPluginConnectionsByList(contactIds).forEach {
+            contactList.add(it.contact.toContact())
+            pluginConnectionList.addAll(it.pluginConnectionList.map { it.toPluginConnection() })
+        }
+        return if (contactList.isEmpty() || pluginConnectionList.isEmpty()) null else GroupInfoPack(
+            contacts = contactList,
+            pluginConnectionsDistinct = pluginConnectionList.distinct()
+        )
     }
 }

@@ -53,6 +53,10 @@ interface ContactDao {
     fun getContactWithPluginConnections(contactId: Long): List<ContactWithPluginConnections>
 
     @Transaction
+    @Query("SELECT * FROM contact_entity WHERE contactId IN (:contactIds)")
+    fun getContactWithPluginConnectionsByList(contactIds: List<Long>): List<ContactWithPluginConnections>
+
+    @Transaction
     @Query("SELECT * FROM plugin_connection_entity WHERE objectId = :objectId")
-    fun getPluginConnectionWithContacts(objectId: Long): List<PluginConnectionWithContacts>
+    suspend fun getPluginConnectionWithContacts(objectId: Long): List<PluginConnectionWithContacts>
 }

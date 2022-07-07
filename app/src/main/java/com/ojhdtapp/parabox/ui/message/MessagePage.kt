@@ -86,7 +86,8 @@ fun MessagePage(
     var showGroupActionDialogState by remember {
         mutableStateOf(false)
     }
-    GroupActionDialog(showDialog = showGroupActionDialogState, onDismiss = {
+    GroupActionDialog(showDialog = showGroupActionDialogState,
+        data = viewModel.groupInfoState.value, onDismiss = {
         showGroupActionDialogState = false
     }, onConfirm = {})
     Scaffold(
@@ -105,6 +106,7 @@ fun MessagePage(
                 selectedNum = "${viewModel.selectedContactIdStateList.size}",
                 isGroupActionAvailable = viewModel.selectedContactIdStateList.size > 1,
                 onGroupAction = {
+                    viewModel.getGroupInfoPack()
                     showGroupActionDialogState = true
                 }
             )

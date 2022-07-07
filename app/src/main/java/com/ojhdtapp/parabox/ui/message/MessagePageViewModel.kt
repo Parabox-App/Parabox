@@ -9,13 +9,11 @@ import androidx.lifecycle.viewModelScope
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.remote.dto.MessageDto
 import com.ojhdtapp.parabox.domain.model.Contact
+import com.ojhdtapp.parabox.domain.model.GroupInfoPack
 import com.ojhdtapp.parabox.domain.model.Profile
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.model.message_content.PlainText
-import com.ojhdtapp.parabox.domain.use_case.GetMessages
-import com.ojhdtapp.parabox.domain.use_case.GetContacts
-import com.ojhdtapp.parabox.domain.use_case.GetSenderMessagesOnly
-import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
+import com.ojhdtapp.parabox.domain.use_case.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -29,6 +27,7 @@ class MessagePageViewModel @Inject constructor(
     getContacts: GetContacts,
     val getSenderMessagesOnly: GetSenderMessagesOnly,
     val getMessages: GetMessages,
+    val getGroupInfoPack: GetGroupInfoPack,
 ) : ViewModel() {
     init {
         // Update Ungrouped Contacts
@@ -135,6 +134,19 @@ class MessagePageViewModel @Inject constructor(
         }
     }
 
+    private val _groupInfoState = mutableStateOf<Resource<GroupInfoPack>>(Resource.Loading())
+    val groupInfoState: State<Resource<GroupInfoPack>> = _groupInfoState
+    private var groupInfoJob: Job? = null
+    fun getGroupInfoPack() {
+        groupInfoJob?.cancel()
+        if (selectedContactIdStateList.isEmpty()) {
+            _groupInfoState.value = Resource.Error("未选择待编组项")
+        } else {
+            groupInfoJob = getGroupInfoPack(selectedContactIdStateList.toList()).onEach {
+                _groupInfoState.value = it
+            }.launchIn(viewModelScope)
+        }
+    }
     fun clearSelectedContactIdStateList() {
         _selectedContactIdStateList.clear()
     }
@@ -146,7 +158,7 @@ class MessagePageViewModel @Inject constructor(
     private var messageJob: Job? = null
     fun receiveAndUpdateMessageFromContact(contact: Contact) {
         messageJob?.cancel()
-        messageJob = viewModelScope.launch {
+        messageJob = viewModelScope.launch(Dispatchers.IO) {
             getMessages(contact = contact).collectLatest {
                 _messageStateFlow.value = when (it) {
                     is Resource.Loading -> MessageState(
@@ -176,6 +188,8 @@ class MessagePageViewModel @Inject constructor(
 //        }
 //    }
 
+    //
+
     fun testFun() {
         viewModelScope.launch(Dispatchers.IO) {
             handleNewMessage(
@@ -190,7 +204,7 @@ class MessagePageViewModel @Inject constructor(
         }
     }
 
-    fun testFun2(){
+    fun testFun2() {
         viewModelScope.launch(Dispatchers.IO) {
             handleNewMessage(
                 MessageDto(
@@ -204,7 +218,7 @@ class MessagePageViewModel @Inject constructor(
         }
     }
 
-    fun testFun3(){
+    fun testFun3() {
         viewModelScope.launch(Dispatchers.IO) {
             handleNewMessage(
                 MessageDto(
