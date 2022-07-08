@@ -133,6 +133,12 @@ class MessagePageViewModel @Inject constructor(
             _selectedContactIdStateList.remove(value)
         }
     }
+    private val _showGroupActionDialogState = mutableStateOf<Boolean>(false)
+    val showGroupActionDialogState : State<Boolean> = _showGroupActionDialogState
+
+    fun setShowGroupActionDialogState(value : Boolean){
+        _showGroupActionDialogState.value = value
+    }
 
     private val _groupInfoState = mutableStateOf<GroupInfoState>(GroupInfoState())
     val groupInfoState: State<GroupInfoState> = _groupInfoState

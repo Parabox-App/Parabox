@@ -1,17 +1,21 @@
 package com.ojhdtapp.parabox.ui.message
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.Crossfade
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
@@ -25,10 +29,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.ojhdtapp.parabox.core.util.Resource
+import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
@@ -38,7 +47,7 @@ fun GroupActionDialog(
     showDialog: Boolean,
     state: GroupInfoState,
     onDismiss: () -> Unit,
-    onConfirm: () -> Unit
+    onConfirm: (result: Contact?) -> Unit
 ) {
     if (showDialog) {
         Dialog(
@@ -64,7 +73,7 @@ fun GroupActionDialog(
                             },
                             actions = {
                                 TextButton(
-                                    onClick = onConfirm,
+                                    onClick = onConfirm(),
                                     enabled = state.state == GroupInfoState.SUCCESS
                                 ) {
                                     Text(text = "保存")
@@ -103,13 +112,27 @@ fun GroupActionDialog(
 fun GroupEditForm(
     modifier: Modifier = Modifier,
     paddingValues: PaddingValues,
-    resource: GroupEditResource
+    resource: GroupEditResource,
 ) {
     var name by remember {
         mutableStateOf("")
     }
-    var selectedPluginConnection = remember {
-        mutableStateListOf<PluginConnection>()
+
+    var shouldShowAvatarSelector by remember {
+        mutableStateOf(false)
+    }
+
+    val selectedPluginConnection = remember {
+        mutableStateListOf<PluginConnection>().apply {
+            addAll(resource.pluginConnections)
+        }
+    }
+    var pluginConnectionNotSelectedError by remember{
+        mutableStateOf(false)
+    }
+
+    var selectedSenderId by remember {
+        mutableStateOf(resource.pluginConnections.firstOrNull()?.objectId)
     }
 
     LazyColumn(
@@ -133,7 +156,9 @@ fun GroupEditForm(
                         .size(48.dp)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.primary)
-                        .clickable { })
+                        .clickable {
+                            shouldShowAvatarSelector = !shouldShowAvatarSelector
+                        })
                 Spacer(modifier = Modifier.width(16.dp))
                 OutlinedTextField(
                     modifier = Modifier.weight(1f),
@@ -181,24 +206,137 @@ fun GroupEditForm(
             }
         }
         item {
-            OutlinedCard() {
-                Column() {
-                    resource.pluginConnections.forEach { conn ->
-                        var checked by remember {
-                            mutableStateOf(false)
+            AnimatedVisibility(
+                visible = shouldShowAvatarSelector,
+//                enter = slideInVertically(),
+//                exit = slideOutVertically()
+            ) {
+                Card(shape = RoundedCornerShape(24.dp)) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                            .horizontalScroll(rememberScrollState())
+                    ) {
+                        resource.avatar.forEach {
+                            AsyncImage(
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(it)
+                                    .crossfade(true)
+                                    .build(),
+                                contentDescription = "Avatar Selection",
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(CircleShape)
+                                    .clickable {
+                                        shouldShowAvatarSelector = false
+                                    }
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
                         }
-                        Row(modifier = Modifier.fillMaxWidth().clickable { checked = !checked }.padding(8.dp),
-                        verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primaryContainer)
+                                .clickable {
+                                }, contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Add,
+                                contentDescription = "Add Avatar",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        item {
+            Card(shape = RoundedCornerShape(24.dp)) {
+                Column() {
+                    Text(
+                        modifier = Modifier.padding(16.dp),
+                        text = "消息源",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+                        text = "以下列出可用消息来源。\n勾选以将该来源应用于新建会话。",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    resource.pluginConnections.forEach { conn ->
+                        Row(modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                if (selectedPluginConnection.contains(conn)) {
+                                    selectedPluginConnection.remove(conn)
+                                } else {
+                                    selectedPluginConnection.add(conn)
+                                }
+                            }
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically) {
                             Checkbox(
-                                checked = checked,
+                                checked = selectedPluginConnection.contains(conn),
                                 onCheckedChange = {
-                                    checked = !checked
-//                                    if (it) {
-//                                        selectedPluginConnection.add(conn)
-//                                    } else {
-//                                        selectedPluginConnection.remove(conn)
-//                                    }
+                                    if (selectedPluginConnection.contains(conn)) {
+                                        selectedPluginConnection.remove(conn)
+                                    } else {
+                                        selectedPluginConnection.add(conn)
+                                    }
                                 })
+                            Text(text = "${conn.connectionType} - ${conn.objectId}")
+                        }
+                    }
+                    AnimatedVisibility(visible = pluginConnectionNotSelectedError) {
+                        Text(
+                            modifier = Modifier.padding(16.dp),
+                            text = "请至少保留一个消息源",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
+        }
+
+        item {
+            Card(shape = RoundedCornerShape(24.dp)) {
+                Column() {
+                    Text(
+                        modifier = Modifier.padding(16.dp),
+                        text = "默认发送出口",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+                        text = "以下列出可用消息发送出口，消息将默认尝试从该出口发送。\n该选项可稍后再作更改。",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    resource.pluginConnections.forEach { conn ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .selectable(
+                                    selected = selectedSenderId == conn.objectId,
+                                    onClick = {
+                                        selectedSenderId = conn.objectId
+                                    },
+                                    role = Role.RadioButton
+                                )
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                modifier = Modifier.padding(12.dp),
+                                selected = selectedSenderId == conn.objectId,
+                                onClick = null
+                            )
                             Text(text = "${conn.connectionType} - ${conn.objectId}")
                         }
                     }

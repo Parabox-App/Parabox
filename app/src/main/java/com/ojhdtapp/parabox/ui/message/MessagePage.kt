@@ -82,12 +82,9 @@ fun MessagePage(
             }
         }
     }
-    var showGroupActionDialogState by remember {
-        mutableStateOf(false)
-    }
-    GroupActionDialog(showDialog = showGroupActionDialogState,
+    GroupActionDialog(showDialog = viewModel.showGroupActionDialogState.value,
         state = viewModel.groupInfoState.value, onDismiss = {
-        showGroupActionDialogState = false
+        viewModel.setShowGroupActionDialogState(false)
     }, onConfirm = {})
     Scaffold(
         modifier = modifier,
@@ -106,7 +103,7 @@ fun MessagePage(
                 isGroupActionAvailable = viewModel.selectedContactIdStateList.size > 1,
                 onGroupAction = {
                     viewModel.getGroupInfoPack()
-                    showGroupActionDialogState = true
+                    viewModel.setShowGroupActionDialogState(true)
                 }
             )
         },
