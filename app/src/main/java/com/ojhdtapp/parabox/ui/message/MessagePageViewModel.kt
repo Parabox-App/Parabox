@@ -28,6 +28,7 @@ class MessagePageViewModel @Inject constructor(
     val getSenderMessagesOnly: GetSenderMessagesOnly,
     val getMessages: GetMessages,
     val getGroupInfoPack: GetGroupInfoPack,
+    val groupNewContact: GroupNewContact,
 ) : ViewModel() {
     init {
         // Update Ungrouped Contacts
@@ -133,10 +134,10 @@ class MessagePageViewModel @Inject constructor(
             _selectedContactIdStateList.remove(value)
         }
     }
-    private val _showGroupActionDialogState = mutableStateOf<Boolean>(false)
-    val showGroupActionDialogState : State<Boolean> = _showGroupActionDialogState
 
-    fun setShowGroupActionDialogState(value : Boolean){
+    private var _showGroupActionDialogState = mutableStateOf<Boolean>(false)
+    val showGroupActionDialogState: State<Boolean> = _showGroupActionDialogState
+    fun setShowGroupActionDialogState(value: Boolean) {
         _showGroupActionDialogState.value = value
     }
 
@@ -160,6 +161,36 @@ class MessagePageViewModel @Inject constructor(
             }.launchIn(viewModelScope)
         }
     }
+
+    fun groupContact(
+        name: String,
+        pluginConnections: List<PluginConnection>,
+        senderId: Long,
+    ) {
+        groupInfoJob?.cancel()
+        groupNewContact(name, pluginConnections, senderId).onEach {
+            _groupInfoState.value = GroupInfoState(
+                state = when (it) {
+                    is Resource.Error -> GroupInfoState.ERROR
+                    is Resource.Loading -> GroupInfoState.LOADING
+                    is Resource.Success -> GroupInfoState.NULL
+                }, resource = null
+            )
+            if (it is Resource.Success) {
+                _showGroupActionDialogState.value = false
+                _uiEventFlow.emit(MessagePageUiEvent.ShowSnackBar("会话编组成功"))
+            }
+        }.launchIn(viewModelScope)
+    }
+
+//    fun aa(
+//        name: String,
+//        pluginConnections: List<PluginConnection>,
+//        sendId: Long
+//    ) {
+//        groupInfoJob?.cancel()
+//        groupInfoJob = groupNewContact(name, pluginConnections, sendId)
+//    }
 
     fun clearSelectedContactIdStateList() {
         _selectedContactIdStateList.clear()

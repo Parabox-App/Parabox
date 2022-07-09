@@ -17,4 +17,5 @@ interface MainRepository {
     fun getSpecifiedContactWithMessages(contactId: Long): Flow<Resource<ContactWithMessages>>
     fun getSpecifiedListOfContactWithMessages(contactIds: List<Long>): Flow<Resource<List<ContactWithMessages>>>
     fun getGroupInfoPack(contactIds: List<Long>): GroupInfoPack?
+    suspend fun groupNewContact(name: String, pluginConnections: List<PluginConnection>, senderId: Long) : Boolean
 }

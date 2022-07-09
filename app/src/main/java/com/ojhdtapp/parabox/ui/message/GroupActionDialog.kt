@@ -39,6 +39,7 @@ import coil.request.ImageRequest
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.PluginConnection
+import com.ojhdtapp.parabox.domain.model.Profile
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -47,8 +48,32 @@ fun GroupActionDialog(
     showDialog: Boolean,
     state: GroupInfoState,
     onDismiss: () -> Unit,
-    onConfirm: (result: Contact?) -> Unit
+    onConfirm: (name: String, pluginConnections: List<PluginConnection>, senderId: Long) -> Unit
 ) {
+    var name by remember {
+        mutableStateOf("")
+    }
+
+    var nameError by remember {
+        mutableStateOf(false)
+    }
+
+    var shouldShowAvatarSelector by remember {
+        mutableStateOf(false)
+    }
+
+    val selectedPluginConnection = remember(state) {
+        mutableStateListOf<PluginConnection>().apply {
+            state.resource?.let { addAll(it.pluginConnections) }
+        }
+    }
+    var pluginConnectionNotSelectedError by remember {
+        mutableStateOf(false)
+    }
+
+    var selectedSenderId by remember(state) {
+        mutableStateOf(state.resource?.pluginConnections?.firstOrNull()?.objectId)
+    }
     if (showDialog) {
         Dialog(
             onDismissRequest = onDismiss, properties = DialogProperties(
@@ -73,7 +98,21 @@ fun GroupActionDialog(
                             },
                             actions = {
                                 TextButton(
-                                    onClick = onConfirm(),
+                                    onClick = {
+                                        if (name.isBlank()) {
+                                            nameError = true
+                                        }
+                                        if (selectedPluginConnection.isEmpty()) {
+                                            pluginConnectionNotSelectedError = true
+                                        }
+                                        if (name.isNotBlank() && selectedPluginConnection.isNotEmpty() && selectedSenderId != null) {
+                                            onConfirm(
+                                                name,
+                                                selectedPluginConnection.toList(),
+                                                selectedSenderId!!
+                                            )
+                                        }
+                                    },
                                     enabled = state.state == GroupInfoState.SUCCESS
                                 ) {
                                     Text(text = "保存")
@@ -97,7 +136,21 @@ fun GroupActionDialog(
                         }
                         GroupInfoState.SUCCESS -> GroupEditForm(
                             paddingValues = it,
-                            resource = state.resource!!
+                            resource = state.resource!!,
+                            name = name,
+                            nameError = nameError,
+                            shouldShowAvatarSelector = shouldShowAvatarSelector,
+                            selectedPluginConnection = selectedPluginConnection,
+                            pluginConnectionNotSelectedError = pluginConnectionNotSelectedError,
+                            selectedSenderId = selectedSenderId,
+                            onNameChange = {
+                                name = it
+                                nameError = false
+                            },
+                            onAvatarSelectorTrigger = { shouldShowAvatarSelector = it },
+                            onSelectedPluginConnectionAdd = { selectedPluginConnection.add(it) },
+                            onSelectedPluginConnectionRemove = { selectedPluginConnection.remove(it) },
+                            onSelectedSenderIdChange = { selectedSenderId = it }
                         )
                     }
 
@@ -113,27 +166,18 @@ fun GroupEditForm(
     modifier: Modifier = Modifier,
     paddingValues: PaddingValues,
     resource: GroupEditResource,
+    name: String,
+    nameError: Boolean,
+    shouldShowAvatarSelector: Boolean,
+    selectedPluginConnection: List<PluginConnection>,
+    pluginConnectionNotSelectedError: Boolean,
+    selectedSenderId: Long?,
+    onNameChange: (value: String) -> Unit,
+    onAvatarSelectorTrigger: (value: Boolean) -> Unit,
+    onSelectedPluginConnectionAdd: (target: PluginConnection) -> Unit,
+    onSelectedPluginConnectionRemove: (target: PluginConnection) -> Unit,
+    onSelectedSenderIdChange: (value: Long) -> Unit
 ) {
-    var name by remember {
-        mutableStateOf("")
-    }
-
-    var shouldShowAvatarSelector by remember {
-        mutableStateOf(false)
-    }
-
-    val selectedPluginConnection = remember {
-        mutableStateListOf<PluginConnection>().apply {
-            addAll(resource.pluginConnections)
-        }
-    }
-    var pluginConnectionNotSelectedError by remember{
-        mutableStateOf(false)
-    }
-
-    var selectedSenderId by remember {
-        mutableStateOf(resource.pluginConnections.firstOrNull()?.objectId)
-    }
 
     LazyColumn(
         modifier = Modifier
@@ -157,17 +201,19 @@ fun GroupEditForm(
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.primary)
                         .clickable {
-                            shouldShowAvatarSelector = !shouldShowAvatarSelector
+                            onAvatarSelectorTrigger(!shouldShowAvatarSelector)
                         })
                 Spacer(modifier = Modifier.width(16.dp))
                 OutlinedTextField(
                     modifier = Modifier.weight(1f),
                     value = name, onValueChange = {
-                        name = it
+                        onNameChange(it)
                     },
                     label = { Text(text = "会话名称") },
+                    isError = nameError,
                     keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
                     keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                    singleLine = true,
                     trailingIcon = {
                         var expanded by remember {
                             mutableStateOf(false)
@@ -196,13 +242,21 @@ fun GroupEditForm(
                                 onDismissRequest = { expanded = false }) {
                                 resource.name.forEach {
                                     DropdownMenuItem(text = { Text(text = it) }, onClick = {
-                                        name = it
+                                        onNameChange(it)
                                         expanded = false
                                     })
                                 }
                             }
                         }
                     })
+            }
+            AnimatedVisibility(visible = nameError) {
+                Text(
+                    modifier = Modifier.padding(start = 64.dp),
+                    text = "请输入会话名称",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.error
+                )
             }
         }
         item {
@@ -229,7 +283,7 @@ fun GroupEditForm(
                                     .size(48.dp)
                                     .clip(CircleShape)
                                     .clickable {
-                                        shouldShowAvatarSelector = false
+                                        onAvatarSelectorTrigger(false)
                                     }
                             )
                             Spacer(modifier = Modifier.width(16.dp))
@@ -272,9 +326,9 @@ fun GroupEditForm(
                             .fillMaxWidth()
                             .clickable {
                                 if (selectedPluginConnection.contains(conn)) {
-                                    selectedPluginConnection.remove(conn)
+                                    onSelectedPluginConnectionRemove(conn)
                                 } else {
-                                    selectedPluginConnection.add(conn)
+                                    onSelectedPluginConnectionAdd(conn)
                                 }
                             }
                             .padding(horizontal = 8.dp, vertical = 4.dp),
@@ -283,9 +337,9 @@ fun GroupEditForm(
                                 checked = selectedPluginConnection.contains(conn),
                                 onCheckedChange = {
                                     if (selectedPluginConnection.contains(conn)) {
-                                        selectedPluginConnection.remove(conn)
+                                        onSelectedPluginConnectionRemove(conn)
                                     } else {
-                                        selectedPluginConnection.add(conn)
+                                        onSelectedPluginConnectionAdd(conn)
                                     }
                                 })
                             Text(text = "${conn.connectionType} - ${conn.objectId}")
@@ -325,7 +379,7 @@ fun GroupEditForm(
                                 .selectable(
                                     selected = selectedSenderId == conn.objectId,
                                     onClick = {
-                                        selectedSenderId = conn.objectId
+                                        onSelectedSenderIdChange(conn.objectId)
                                     },
                                     role = Role.RadioButton
                                 )

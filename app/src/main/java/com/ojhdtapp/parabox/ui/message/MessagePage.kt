@@ -85,7 +85,7 @@ fun MessagePage(
     GroupActionDialog(showDialog = viewModel.showGroupActionDialogState.value,
         state = viewModel.groupInfoState.value, onDismiss = {
         viewModel.setShowGroupActionDialogState(false)
-    }, onConfirm = {})
+    }, onConfirm = viewModel::groupContact)
     Scaffold(
         modifier = modifier,
         snackbarHost = { SnackbarHost(hostState = snackBarHostState) },

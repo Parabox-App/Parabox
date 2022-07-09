@@ -4,14 +4,9 @@ import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.*
 import com.ojhdtapp.parabox.data.remote.dto.MessageDto
-import com.ojhdtapp.parabox.domain.model.Contact
-import com.ojhdtapp.parabox.domain.model.ContactWithMessages
-import com.ojhdtapp.parabox.domain.model.GroupInfoPack
-import com.ojhdtapp.parabox.domain.model.PluginConnection
+import com.ojhdtapp.parabox.domain.model.*
 import com.ojhdtapp.parabox.domain.repository.MainRepository
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import javax.inject.Inject
 
@@ -129,5 +124,40 @@ class MainRepositoryImpl @Inject constructor(
             contacts = contactList,
             pluginConnectionsDistinct = pluginConnectionList.distinct()
         )
+    }
+
+    override suspend fun groupNewContact(
+        name: String,
+        pluginConnections: List<PluginConnection>,
+        senderId: Long
+    ): Boolean {
+        return coroutineScope {
+            withContext(Dispatchers.IO) {
+                try {
+                    val contactEntity = ContactEntity(
+                        profile = Profile(
+                            name = name,
+                            avatar = null,
+                        ),
+                        latestMessage = null,
+                        senderId = senderId
+                    )
+                    val contactId = database.contactDao.insertContact(contactEntity)
+                    pluginConnections.forEach { conn ->
+                        database.contactDao.insertContactPluginConnectionCrossRef(
+                            ContactPluginConnectionCrossRef(
+                                contactId = contactId,
+                                objectId = conn.objectId
+                            )
+                        )
+                    }
+                    true
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    false
+                }
+
+            }
+        }
     }
 }
