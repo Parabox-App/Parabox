@@ -28,12 +28,14 @@ class MainRepositoryImpl @Inject constructor(
             val pluginConnectionDeferred = async<Long> {
                 database.contactDao.insertPluginConnection(dto.pluginConnection.toPluginConnectionEntity())
             }
-            database.contactDao.insertContactPluginConnectionCrossRef(
-                ContactPluginConnectionCrossRef(
-                    contactId = contactIdDeferred.await(),
-                    objectId = pluginConnectionDeferred.await()
+            if (pluginConnectionDeferred.await() != -1L) {
+                database.contactDao.insertContactPluginConnectionCrossRef(
+                    ContactPluginConnectionCrossRef(
+                        contactId = contactIdDeferred.await(),
+                        objectId = pluginConnectionDeferred.await()
+                    )
                 )
-            )
+            }
             database.contactMessageCrossRefDao.insertContactMessageCrossRef(
                 ContactMessageCrossRef(
                     contactId = contactIdDeferred.await(),

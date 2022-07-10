@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.domain.model
 
+import android.util.Log
 import com.ojhdtapp.parabox.domain.model.chat.ChatBlock
 import com.ojhdtapp.parabox.domain.model.message_content.MessageContent
 
@@ -36,7 +37,7 @@ data class ContactWithMessages(
             if (currentProfile == null || message.profile == currentProfile) {
                 currentProfile = message.profile
             } else {
-                chatBlockList.add(ChatBlock(currentProfile!!, messageItemList))
+                chatBlockList.add(ChatBlock(currentProfile!!, messageItemList.toList()))
                 currentProfile = message.profile
                 messageItemList.clear()
             }
