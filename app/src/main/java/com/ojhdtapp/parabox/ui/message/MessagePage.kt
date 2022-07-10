@@ -66,9 +66,6 @@ fun MessagePage(
             listState.firstVisibleItemIndex == 0
         }
     }
-    var searchBarActivateState by remember {
-        mutableStateOf(SearchAppBar.NONE)
-    }
     val contactState by viewModel.contactStateFlow.collectAsState()
     LaunchedEffect(true) {
         viewModel.uiEventFlow.collectLatest {
@@ -94,9 +91,9 @@ fun MessagePage(
                 text = viewModel.searchText.value,
                 onTextChange = viewModel::setSearchText,
                 placeholder = "搜索会话",
-                activateState = searchBarActivateState,
+                activateState = viewModel.searchBarActivateState.value,
                 onActivateStateChanged = {
-                    searchBarActivateState = it
+                    viewModel.setSearchBarActivateState(it)
                     viewModel.clearSelectedContactIdStateList()
                 },
                 selectedNum = "${viewModel.selectedContactIdStateList.size}",
@@ -237,7 +234,7 @@ fun MessagePage(
                             isSelected = isSelected,
                             shimmer = shimmerInstance,
                             onClick = {
-                                if (searchBarActivateState == SearchAppBar.SELECT) {
+                                if (viewModel.searchBarActivateState.value == SearchAppBar.SELECT) {
                                     viewModel.addOrRemoveItemOfSelectedContactIdStateList(item.contactId)
                                 } else {
                                     viewModel.receiveAndUpdateMessageFromContact(item)
@@ -245,7 +242,7 @@ fun MessagePage(
                                 }
                             },
                             onLongClick = {
-                                searchBarActivateState = SearchAppBar.SELECT
+                                viewModel.setSearchBarActivateState(SearchAppBar.SELECT)
                                 viewModel.addOrRemoveItemOfSelectedContactIdStateList(item.contactId)
                             }
                         )

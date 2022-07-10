@@ -14,6 +14,7 @@ import com.ojhdtapp.parabox.domain.model.Profile
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.model.message_content.PlainText
 import com.ojhdtapp.parabox.domain.use_case.*
+import com.ojhdtapp.parabox.ui.util.SearchAppBar
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -113,6 +114,11 @@ class MessagePageViewModel @Inject constructor(
     val contactStateFlow get() = _contactStateFlow
 
     // Search
+    private val _searchBarActivateState = mutableStateOf<Int>(SearchAppBar.NONE)
+    val searchBarActivateState : State<Int> = _searchBarActivateState
+    fun setSearchBarActivateState(value : Int){
+        _searchBarActivateState.value = value
+    }
     private val _searchText = mutableStateOf<String>("")
     val searchText: State<String> = _searchText
     fun setSearchText(value: String) {
@@ -178,6 +184,8 @@ class MessagePageViewModel @Inject constructor(
             )
             if (it is Resource.Success) {
                 _showGroupActionDialogState.value = false
+                setSearchBarActivateState(SearchAppBar.NONE)
+                clearSelectedContactIdStateList()
                 _uiEventFlow.emit(MessagePageUiEvent.ShowSnackBar("会话编组成功"))
             }
         }.launchIn(viewModelScope)
