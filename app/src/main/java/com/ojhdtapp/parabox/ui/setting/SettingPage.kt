@@ -23,10 +23,7 @@ fun SettingPage(
 ) {
     Scaffold(modifier = modifier,
         bottomBar = {
-            com.ojhdtapp.parabox.ui.util.NavigationBar(
-                navController = navController,
-                messageBadge = sharedViewModel.messageBadge.value,
-                onSelfItemClick = {})
+
         }) {
         LazyColumn(contentPadding = it) {
 

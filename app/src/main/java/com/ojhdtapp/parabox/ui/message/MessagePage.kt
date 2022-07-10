@@ -24,6 +24,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,6 +58,7 @@ fun MessagePage(
     navController: NavController,
     viewModel: MessagePageViewModel,
     sharedViewModel: MainScreenSharedViewModel,
+    sizeClass: WindowSizeClass
 ) {
 //    val viewModel: MessagePageViewModel = hiltViewModel()
     val listState = rememberLazyListState()
@@ -81,8 +84,9 @@ fun MessagePage(
     }
     GroupActionDialog(showDialog = viewModel.showGroupActionDialogState.value,
         state = viewModel.groupInfoState.value, onDismiss = {
-        viewModel.setShowGroupActionDialogState(false)
-    }, onConfirm = viewModel::groupContact)
+            viewModel.setShowGroupActionDialogState(false)
+        }, onConfirm = viewModel::groupContact
+    )
     Scaffold(
         modifier = modifier,
         snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
@@ -105,23 +109,21 @@ fun MessagePage(
             )
         },
         bottomBar = {
-            com.ojhdtapp.parabox.ui.util.NavigationBar(
-                navController = navController,
-                messageBadge = sharedViewModel.messageBadge.value,
-                onSelfItemClick = {},
-            )
+
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                text = { Text(text = "发起会话") },
-                icon = {
-                    Icon(
-                        imageVector = Icons.Outlined.Add,
-                        contentDescription = "new contact"
-                    )
-                },
-                expanded = expandedFab,
-                onClick = { })
+            if (sizeClass.widthSizeClass != WindowWidthSizeClass.Medium) {
+                ExtendedFloatingActionButton(
+                    text = { Text(text = "发起会话") },
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Outlined.Add,
+                            contentDescription = "new contact"
+                        )
+                    },
+                    expanded = expandedFab,
+                    onClick = { })
+            }
         },
     ) { paddingValues ->
         LazyColumn(

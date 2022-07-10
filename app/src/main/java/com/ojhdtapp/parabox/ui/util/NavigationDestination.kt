@@ -19,6 +19,8 @@ import com.ojhdtapp.parabox.ui.destinations.MessagePageDestination
 import com.ojhdtapp.parabox.ui.destinations.SettingPageDestination
 import com.ojhdtapp.parabox.ui.startAppDestination
 import androidx.compose.material3.*
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -27,6 +29,7 @@ import com.ramcosta.composedestinations.navigation.navigate
 import com.ramcosta.composedestinations.navigation.popUpTo
 import com.ramcosta.composedestinations.spec.DirectionDestinationSpec
 import com.ramcosta.composedestinations.utils.isRouteOnBackStack
+import kotlinx.coroutines.launch
 
 enum class NavigationDestination(
 //    val direction: DirectionDestinationSpec,
@@ -56,7 +59,8 @@ fun NavigationBar(
             containerColor = MaterialTheme.colorScheme.surface,
         ) {
             NavigationDestination.values().forEach { destination ->
-                val isCurrentDestOnBackStack = navController.appCurrentDestinationAsState().value in destination.graph.destinations
+                val isCurrentDestOnBackStack =
+                    navController.appCurrentDestinationAsState().value in destination.graph.destinations
 //                val isCurrentDestOnBackStack = navController.isRouteOnBackStack(destination.graph)
                 NavigationBarItem(
                     selected = isCurrentDestOnBackStack,
@@ -92,7 +96,12 @@ fun NavigationBar(
                             )
                         }
                     },
-                    label = { Text(text = destination.label, style = MaterialTheme.typography.labelLarge) },
+                    label = {
+                        Text(
+                            text = destination.label,
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    },
                     alwaysShowLabel = false
                 )
             }
@@ -109,6 +118,120 @@ fun NavigationBar(
                             .calculateBottomPadding()
                     )
             )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NavigationDrawer(
+    modifier: Modifier = Modifier,
+    navController: NavController,
+    messageBadge: Int = 0,
+    settingBadge: Boolean = false,
+    onSelfItemClick: () -> Unit
+) {
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+    ModalNavigationDrawer(
+        modifier = modifier.statusBarsPadding(),
+        drawerContent = {
+            NavigationDestination.values().forEach { destination ->
+                val isCurrentDestOnBackStack =
+                    navController.appCurrentDestinationAsState().value in destination.graph.destinations
+                NavigationDrawerItem(
+                    icon = {
+                        BadgedBox(badge = {
+                            if (destination.graph == NavGraphs.message && messageBadge != 0)
+                                Badge { Text(text = "$messageBadge") }
+                            else if (destination.graph == NavGraphs.setting && settingBadge)
+                                Badge()
+                        }) {
+                            Icon(
+                                imageVector = if (isCurrentDestOnBackStack) destination.iconSelected else destination.icon,
+                                contentDescription = destination.label
+                            )
+                        }
+                    },
+                    label = { Text(text = destination.label) },
+                    selected = isCurrentDestOnBackStack,
+                    onClick = {
+                        if (isCurrentDestOnBackStack) onSelfItemClick()
+                        else {
+                            navController.navigate(destination.graph) {
+                                popUpTo(NavGraphs.root) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    })
+            }
+        }) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(text = if (drawerState.isClosed) ">>> Swipe >>>" else "<<< Swipe <<<")
+            Spacer(Modifier.height(20.dp))
+            Button(onClick = { scope.launch { drawerState.open() } }) {
+                Text("Click to open")
+            }
+        }
+    }
+}
+
+@Composable
+fun NavigationRail(
+    modifier: Modifier = Modifier,
+    navController: NavController,
+    messageBadge: Int = 0,
+    settingBadge: Boolean = false,
+    onSelfItemClick: () -> Unit
+) {
+    NavigationRail(
+        modifier = modifier.statusBarsPadding(),
+    ) {
+        FloatingActionButton(onClick = { /*TODO*/ }) {
+            
+        }
+        NavigationDestination.values().forEach { destination ->
+            val isCurrentDestOnBackStack =
+                navController.appCurrentDestinationAsState().value in destination.graph.destinations
+            NavigationRailItem(selected = isCurrentDestOnBackStack, onClick = {
+                if (isCurrentDestOnBackStack) onSelfItemClick()
+                else {
+                    navController.navigate(destination.graph) {
+                        popUpTo(NavGraphs.root) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            },
+                icon = {
+                    BadgedBox(badge = {
+                        if (destination.graph == NavGraphs.message && messageBadge != 0)
+                            Badge { Text(text = "$messageBadge") }
+                        else if (destination.graph == NavGraphs.setting && settingBadge)
+                            Badge()
+                    }) {
+                        Icon(
+                            imageVector = if (isCurrentDestOnBackStack) destination.iconSelected else destination.icon,
+                            contentDescription = destination.label
+                        )
+                    }
+                },
+                label = {
+                    Text(
+                        text = destination.label,
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                })
         }
     }
 }

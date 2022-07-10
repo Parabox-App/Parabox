@@ -191,15 +191,6 @@ class MessagePageViewModel @Inject constructor(
         }.launchIn(viewModelScope)
     }
 
-//    fun aa(
-//        name: String,
-//        pluginConnections: List<PluginConnection>,
-//        sendId: Long
-//    ) {
-//        groupInfoJob?.cancel()
-//        groupInfoJob = groupNewContact(name, pluginConnections, sendId)
-//    }
-
     fun clearSelectedContactIdStateList() {
         _selectedContactIdStateList.clear()
     }

@@ -11,7 +11,12 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
+import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
@@ -50,7 +55,10 @@ import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    @OptIn(ExperimentalAnimationApi::class, ExperimentalMaterialNavigationApi::class)
+    @OptIn(
+        ExperimentalAnimationApi::class, ExperimentalMaterialNavigationApi::class,
+        ExperimentalMaterial3WindowSizeClassApi::class
+    )
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -98,22 +106,49 @@ class MainActivity : ComponentActivity() {
 //                    )
                 )
             )
+
+            // Screen Sizes
+            val sizeClass = calculateWindowSizeClass(activity = this)
+            Log.d("parabox", sizeClass.widthSizeClass.toString())
             AppTheme {
                 CompositionLocalProvider(values = arrayOf(LocalFixedInsets provides fixedInsets)) {
-                    DestinationsNavHost(
-                        navGraph = NavGraphs.root,
-                        engine = navHostEngine,
-                        navController = navController,
-                        dependenciesContainerBuilder = {
-                            dependency(NavGraphs.message){
-                                val parentEntry = remember(navBackStackEntry){
-                                    navController.getBackStackEntry(NavGraphs.message.route)
-                                }
-                                hiltViewModel<MessagePageViewModel>(parentEntry)
+                    Column() {
+                        val sharedViewModel =
+                            hiltViewModel<MainScreenSharedViewModel>(this@MainActivity)
+                        Row(modifier = Modifier.weight(1f)) {
+                            if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) {
+                                com.ojhdtapp.parabox.ui.util.NavigationDrawer(navController = navController,
+                                    messageBadge = sharedViewModel.messageBadge.value,
+                                    onSelfItemClick = {})
+                            } else if (sizeClass.widthSizeClass == WindowWidthSizeClass.Medium) {
+                                com.ojhdtapp.parabox.ui.util.NavigationRail(navController = navController,
+                                    messageBadge = sharedViewModel.messageBadge.value,
+                                    onSelfItemClick = {})
                             }
-                            dependency(hiltViewModel<MainScreenSharedViewModel>(this@MainActivity))
+                            DestinationsNavHost(
+                                navGraph = NavGraphs.root,
+                                engine = navHostEngine,
+                                navController = navController,
+                                dependenciesContainerBuilder = {
+                                    dependency(NavGraphs.message) {
+                                        val parentEntry = remember(navBackStackEntry) {
+                                            navController.getBackStackEntry(NavGraphs.message.route)
+                                        }
+                                        hiltViewModel<MessagePageViewModel>(parentEntry)
+                                    }
+                                    dependency(sharedViewModel)
+                                    dependency(sizeClass)
+                                }
+                            )
                         }
-                    )
+                        if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
+                            com.ojhdtapp.parabox.ui.util.NavigationBar(
+                                navController = navController,
+                                messageBadge = sharedViewModel.messageBadge.value,
+                                onSelfItemClick = {},
+                            )
+                        }
+                    }
                 }
 
 //                MessagePage(

@@ -57,11 +57,7 @@ fun FilePage(
             )
         },
         bottomBar = {
-            NavigationBar(
-                navController = navController,
-                messageBadge = sharedViewModel.messageBadge.value,
-                onSelfItemClick = {
-                })
+
         }) {
         LazyColumn(contentPadding = it, state = listState) {
 
