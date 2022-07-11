@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.BeyondBoundsLayout
+import androidx.compose.ui.zIndex
 import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -36,6 +37,10 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.ojhdtapp.parabox.domain.plugin.Conn
 import com.ojhdtapp.parabox.ui.MainScreenSharedViewModel
 import com.ojhdtapp.parabox.ui.NavGraphs
+import com.ojhdtapp.parabox.ui.appCurrentDestinationAsState
+import com.ojhdtapp.parabox.ui.destinations.FilePageDestination
+import com.ojhdtapp.parabox.ui.destinations.MessagePageDestination
+import com.ojhdtapp.parabox.ui.destinations.SettingPageDestination
 import com.ojhdtapp.parabox.ui.message.MessagePage
 import com.ojhdtapp.parabox.ui.message.MessagePageViewModel
 import com.ojhdtapp.parabox.ui.theme.AppTheme
@@ -109,44 +114,53 @@ class MainActivity : ComponentActivity() {
 
             // Screen Sizes
             val sizeClass = calculateWindowSizeClass(activity = this)
-            Log.d("parabox", sizeClass.widthSizeClass.toString())
             AppTheme {
                 CompositionLocalProvider(values = arrayOf(LocalFixedInsets provides fixedInsets)) {
-                    Column() {
-                        val sharedViewModel =
-                            hiltViewModel<MainScreenSharedViewModel>(this@MainActivity)
-                        Row(modifier = Modifier.weight(1f)) {
-                            if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) {
-                                com.ojhdtapp.parabox.ui.util.NavigationDrawer(navController = navController,
-                                    messageBadge = sharedViewModel.messageBadge.value,
-                                    onSelfItemClick = {})
-                            } else if (sizeClass.widthSizeClass == WindowWidthSizeClass.Medium) {
-                                com.ojhdtapp.parabox.ui.util.NavigationRail(navController = navController,
-                                    messageBadge = sharedViewModel.messageBadge.value,
-                                    onSelfItemClick = {})
-                            }
-                            DestinationsNavHost(
-                                navGraph = NavGraphs.root,
-                                engine = navHostEngine,
-                                navController = navController,
-                                dependenciesContainerBuilder = {
-                                    dependency(NavGraphs.message) {
-                                        val parentEntry = remember(navBackStackEntry) {
-                                            navController.getBackStackEntry(NavGraphs.message.route)
-                                        }
-                                        hiltViewModel<MessagePageViewModel>(parentEntry)
-                                    }
-                                    dependency(sharedViewModel)
-                                    dependency(sizeClass)
+
+                    val sharedViewModel =
+                        hiltViewModel<MainScreenSharedViewModel>(this@MainActivity)
+                    com.ojhdtapp.parabox.ui.util.NavigationDrawer(
+                        navController = navController,
+                        messageBadge = sharedViewModel.messageBadge.value,
+                        onSelfItemClick = {}) {
+                        Column() {
+                            Row(modifier = Modifier.weight(1f)) {
+//                              if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) { }
+                                if (sizeClass.widthSizeClass == WindowWidthSizeClass.Medium) {
+                                    com.ojhdtapp.parabox.ui.util.NavigationRail(
+                                        navController = navController,
+                                        messageBadge = sharedViewModel.messageBadge.value,
+                                        onSelfItemClick = {})
                                 }
-                            )
-                        }
-                        if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
-                            com.ojhdtapp.parabox.ui.util.NavigationBar(
-                                navController = navController,
-                                messageBadge = sharedViewModel.messageBadge.value,
-                                onSelfItemClick = {},
-                            )
+                                DestinationsNavHost(
+                                    navGraph = NavGraphs.root,
+                                    engine = navHostEngine,
+                                    navController = navController,
+                                    dependenciesContainerBuilder = {
+                                        dependency(NavGraphs.message) {
+                                            val parentEntry = remember(navBackStackEntry) {
+                                                navController.getBackStackEntry(NavGraphs.message.route)
+                                            }
+                                            hiltViewModel<MessagePageViewModel>(parentEntry)
+                                        }
+                                        dependency(sharedViewModel)
+                                        dependency(sizeClass)
+                                    }
+                                )
+
+                            }
+                            if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact && navController.appCurrentDestinationAsState().value in listOf(
+                                    MessagePageDestination,
+                                    FilePageDestination,
+                                    SettingPageDestination
+                                )
+                            ) {
+                                com.ojhdtapp.parabox.ui.util.NavigationBar(
+                                    navController = navController,
+                                    messageBadge = sharedViewModel.messageBadge.value,
+                                    onSelfItemClick = {},
+                                )
+                            }
                         }
                     }
                 }

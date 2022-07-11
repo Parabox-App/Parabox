@@ -22,6 +22,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.ojhdtapp.parabox.ui.NavGraph
@@ -129,13 +130,15 @@ fun NavigationDrawer(
     navController: NavController,
     messageBadge: Int = 0,
     settingBadge: Boolean = false,
-    onSelfItemClick: () -> Unit
+    onSelfItemClick: () -> Unit,
+    content: @Composable () -> Unit,
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     ModalNavigationDrawer(
-        modifier = modifier.statusBarsPadding(),
+        drawerState = drawerState,
         drawerContent = {
+            Spacer(modifier = Modifier.statusBarsPadding())
             NavigationDestination.values().forEach { destination ->
                 val isCurrentDestOnBackStack =
                     navController.appCurrentDestinationAsState().value in destination.graph.destinations
@@ -169,18 +172,7 @@ fun NavigationDrawer(
                     })
             }
         }) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(text = if (drawerState.isClosed) ">>> Swipe >>>" else "<<< Swipe <<<")
-            Spacer(Modifier.height(20.dp))
-            Button(onClick = { scope.launch { drawerState.open() } }) {
-                Text("Click to open")
-            }
-        }
+        content()
     }
 }
 
@@ -194,25 +186,39 @@ fun NavigationRail(
 ) {
     NavigationRail(
         modifier = modifier.statusBarsPadding(),
-    ) {
-        FloatingActionButton(onClick = { /*TODO*/ }) {
-            
+        header = {
+            IconButton(onClick = { /*TODO*/ }) {
+                Icon(imageVector = Icons.Outlined.Menu, contentDescription = "menu")
+            }
+            FloatingActionButton(
+//                modifier = Modifier.padding(top = 16.dp),
+                onClick = { /*TODO*/ },
+                elevation = FloatingActionButtonDefaults.elevation(
+                    defaultElevation = 0.dp,
+                    pressedElevation = 0.dp
+                )
+            ) {
+                Icon(imageVector = Icons.Outlined.Add, contentDescription = "add")
+            }
         }
+    ) {
+        Spacer(modifier = Modifier.height(48.dp))
         NavigationDestination.values().forEach { destination ->
             val isCurrentDestOnBackStack =
                 navController.appCurrentDestinationAsState().value in destination.graph.destinations
-            NavigationRailItem(selected = isCurrentDestOnBackStack, onClick = {
-                if (isCurrentDestOnBackStack) onSelfItemClick()
-                else {
-                    navController.navigate(destination.graph) {
-                        popUpTo(NavGraphs.root) {
-                            saveState = true
+            NavigationRailItem(
+                selected = isCurrentDestOnBackStack, onClick = {
+                    if (isCurrentDestOnBackStack) onSelfItemClick()
+                    else {
+                        navController.navigate(destination.graph) {
+                            popUpTo(NavGraphs.root) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
                         }
-                        launchSingleTop = true
-                        restoreState = true
                     }
-                }
-            },
+                },
                 icon = {
                     BadgedBox(badge = {
                         if (destination.graph == NavGraphs.message && messageBadge != 0)

@@ -54,7 +54,7 @@ class MainRepositoryImpl @Inject constructor(
                 Resource.Success(contactEntityList.map {
                     it.toContact()
                 }.sortedByDescending { it.latestMessage?.timestamp ?: 0 })
-            }.catch {
+            }.catch() {
                 emit(Resource.Error<List<Contact>>("获取数据时发生错误"))
             }
     }
