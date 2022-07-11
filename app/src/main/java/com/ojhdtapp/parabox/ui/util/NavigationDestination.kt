@@ -131,12 +131,13 @@ fun NavigationDrawer(
     messageBadge: Int = 0,
     settingBadge: Boolean = false,
     onSelfItemClick: () -> Unit,
+    drawerState: DrawerState = rememberDrawerState(initialValue = DrawerValue.Closed),
+    gesturesEnabled: Boolean = true,
     content: @Composable () -> Unit,
 ) {
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
     ModalNavigationDrawer(
         drawerState = drawerState,
+        gesturesEnabled = gesturesEnabled,
         drawerContent = {
             Spacer(modifier = Modifier.statusBarsPadding())
             NavigationDestination.values().forEach { destination ->
@@ -182,17 +183,19 @@ fun NavigationRail(
     navController: NavController,
     messageBadge: Int = 0,
     settingBadge: Boolean = false,
-    onSelfItemClick: () -> Unit
+    onSelfItemClick: () -> Unit,
+    onMenuClick: () -> Unit,
+    onFABClick: () -> Unit
 ) {
     NavigationRail(
         modifier = modifier.statusBarsPadding(),
         header = {
-            IconButton(onClick = { /*TODO*/ }) {
+            IconButton(onClick = onMenuClick) {
                 Icon(imageVector = Icons.Outlined.Menu, contentDescription = "menu")
             }
             FloatingActionButton(
 //                modifier = Modifier.padding(top = 16.dp),
-                onClick = { /*TODO*/ },
+                onClick = onFABClick,
                 elevation = FloatingActionButtonDefaults.elevation(
                     defaultElevation = 0.dp,
                     pressedElevation = 0.dp
