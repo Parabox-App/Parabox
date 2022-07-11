@@ -97,73 +97,36 @@ class MainActivity : ComponentActivity() {
                 )
             }
 
-            // Destination
-            val navController = rememberAnimatedNavController()
-            val navHostEngine = rememberAnimatedNavHostEngine(
+            val mainNavController = rememberAnimatedNavController()
+            val mainNavHostEngine = rememberAnimatedNavHostEngine(
                 navHostContentAlignment = Alignment.TopCenter,
                 rootDefaultAnimations = RootNavGraphDefaultAnimations(),
                 defaultAnimationsForNestedNavGraph = mapOf(
-//                    NavGraphs.message to NestedNavGraphDefaultAnimations(
-//                        enterTransition = { scaleIn(tween(200), 0.9f) + fadeIn(tween(200)) },
-//                        exitTransition = { scaleOut(tween(200), 1.1f) + fadeOut(tween(200)) },
-//                        popEnterTransition = {scaleIn(tween(200), 1.1f) + fadeIn(tween(200))},
-//                        popExitTransition = {scaleOut(tween(200), 0.9f) + fadeOut(tween(200))}
-//                    )
+                    NavGraphs.root to NestedNavGraphDefaultAnimations(
+                        enterTransition = { scaleIn(tween(200), 0.9f) + fadeIn(tween(200)) },
+                        exitTransition = { scaleOut(tween(200), 1.1f) + fadeOut(tween(200)) },
+                        popEnterTransition = {scaleIn(tween(200), 1.1f) + fadeIn(tween(200))},
+                        popExitTransition = {scaleOut(tween(200), 0.9f) + fadeOut(tween(200))}
+                    )
                 )
             )
 
             // Screen Sizes
             val sizeClass = calculateWindowSizeClass(activity = this)
-            val shouldShowNav = navController.appCurrentDestinationAsState().value in listOf(
-                MessagePageDestination,
-                FilePageDestination,
-                SettingPageDestination
-            )
+//            val shouldShowNav = menuNavController.appCurrentDestinationAsState().value in listOf(
+//                MessagePageDestination,
+//                FilePageDestination,
+//                SettingPageDestination
+//            )
             AppTheme {
                 CompositionLocalProvider(values = arrayOf(LocalFixedInsets provides fixedInsets)) {
+                    DestinationsNavHost(navGraph = NavGraphs.root,
+                    engine = mainNavHostEngine,
+                    navController = mainNavController,
+                    dependenciesContainerBuilder = {
+                        dependency(sizeClass)
+                    })
 
-                    val sharedViewModel =
-                        hiltViewModel<MainScreenSharedViewModel>(this@MainActivity)
-                    com.ojhdtapp.parabox.ui.util.NavigationDrawer(
-                        navController = navController,
-                        messageBadge = sharedViewModel.messageBadge.value,
-                        onSelfItemClick = {}) {
-                        Column() {
-                            Row(modifier = Modifier.weight(1f)) {
-//                              if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) { }
-                                if (sizeClass.widthSizeClass == WindowWidthSizeClass.Medium && shouldShowNav) {
-                                    com.ojhdtapp.parabox.ui.util.NavigationRail(
-                                        navController = navController,
-                                        messageBadge = sharedViewModel.messageBadge.value,
-                                        onSelfItemClick = {})
-                                }
-                                DestinationsNavHost(
-                                    navGraph = NavGraphs.root,
-                                    engine = navHostEngine,
-                                    navController = navController,
-                                    dependenciesContainerBuilder = {
-                                        dependency(NavGraphs.message) {
-                                            val parentEntry = remember(navBackStackEntry) {
-                                                navController.getBackStackEntry(NavGraphs.message.route)
-                                            }
-                                            hiltViewModel<MessagePageViewModel>(parentEntry)
-                                        }
-                                        dependency(sharedViewModel)
-                                        dependency(sizeClass)
-                                    }
-                                )
-
-                            }
-                            if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact && shouldShowNav
-                            ) {
-                                com.ojhdtapp.parabox.ui.util.NavigationBar(
-                                    navController = navController,
-                                    messageBadge = sharedViewModel.messageBadge.value,
-                                    onSelfItemClick = {},
-                                )
-                            }
-                        }
-                    }
                 }
 
 //                MessagePage(

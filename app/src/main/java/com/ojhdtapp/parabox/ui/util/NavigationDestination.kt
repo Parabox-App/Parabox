@@ -76,7 +76,7 @@ fun NavigationBar(
                         if (isCurrentDestOnBackStack) onSelfItemClick()
                         else {
                             navController.navigate(destination.graph) {
-                                popUpTo(NavGraphs.root) {
+                                popUpTo(NavGraphs.menu) {
                                     saveState = true
                                 }
                                 launchSingleTop = true
@@ -162,7 +162,7 @@ fun NavigationDrawer(
                         if (isCurrentDestOnBackStack) onSelfItemClick()
                         else {
                             navController.navigate(destination.graph) {
-                                popUpTo(NavGraphs.root) {
+                                popUpTo(NavGraphs.menu) {
                                     saveState = true
                                 }
                                 launchSingleTop = true
@@ -211,7 +211,7 @@ fun NavigationRail(
                     if (isCurrentDestOnBackStack) onSelfItemClick()
                     else {
                         navController.navigate(destination.graph) {
-                            popUpTo(NavGraphs.root) {
+                            popUpTo(NavGraphs.menu) {
                                 saveState = true
                             }
                             launchSingleTop = true
