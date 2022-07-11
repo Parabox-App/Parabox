@@ -37,12 +37,10 @@ import androidx.navigation.NavController
 import com.ojhdtapp.parabox.core.util.toAvatarBitmap
 import com.ojhdtapp.parabox.core.util.toTimeUntilNow
 import com.ojhdtapp.parabox.domain.model.Contact
-import com.ojhdtapp.parabox.ui.MainScreenSharedViewModel
-import com.ojhdtapp.parabox.ui.util.MenuNavGraph
+import com.ojhdtapp.parabox.ui.menu.MenuSharedViewModel
 import com.ojhdtapp.parabox.ui.util.MessageNavGraph
 import com.ojhdtapp.parabox.ui.util.SearchAppBar
 import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.valentinilk.shimmer.*
 import kotlinx.coroutines.flow.collectLatest
@@ -59,7 +57,7 @@ fun MessagePage(
     navigator: DestinationsNavigator,
     navController: NavController,
 //    viewModel: MessagePageViewModel,
-    sharedViewModel: MainScreenSharedViewModel,
+    sharedViewModel: MenuSharedViewModel,
     sizeClass: WindowSizeClass
 ) {
     val viewModel: MessagePageViewModel = hiltViewModel()

@@ -10,9 +10,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.ojhdtapp.parabox.ui.MainScreenSharedViewModel
+import com.ojhdtapp.parabox.ui.menu.MenuSharedViewModel
 import com.ojhdtapp.parabox.ui.util.FileNavGraph
-import com.ojhdtapp.parabox.ui.util.NavigationBar
 import com.ojhdtapp.parabox.ui.util.SearchAppBar
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -26,7 +25,7 @@ fun FilePage(
     modifier: Modifier = Modifier,
     navigator: DestinationsNavigator,
     navController: NavController,
-    sharedViewModel: MainScreenSharedViewModel
+    sharedViewModel: MenuSharedViewModel
 ) {
     val viewModel: FilePageViewModel = hiltViewModel()
     val listState = rememberLazyListState()

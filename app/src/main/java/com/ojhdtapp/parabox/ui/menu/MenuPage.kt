@@ -1,4 +1,4 @@
-package com.ojhdtapp.parabox.ui.main
+package com.ojhdtapp.parabox.ui.menu
 
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.Column
@@ -7,17 +7,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
-import com.ojhdtapp.parabox.ui.MainScreenSharedViewModel
 import com.ojhdtapp.parabox.ui.NavGraphs
-import com.ojhdtapp.parabox.ui.message.MessagePageViewModel
-import com.ojhdtapp.parabox.ui.util.MenuNavGraph
 import com.ojhdtapp.parabox.ui.util.NavigationBar
 import com.ojhdtapp.parabox.ui.util.NavigationRail
 import com.ramcosta.composedestinations.DestinationsNavHost
@@ -54,7 +50,7 @@ fun MenuPage(
     )
 // Shared View Model
     val sharedViewModel =
-        hiltViewModel<MainScreenSharedViewModel>()
+        hiltViewModel<MenuSharedViewModel>()
     com.ojhdtapp.parabox.ui.util.NavigationDrawer(
         modifier = modifier.fillMaxSize(),
         navController = menuNavController,

@@ -6,7 +6,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
-import com.ojhdtapp.parabox.ui.MainScreenSharedViewModel
+import com.ojhdtapp.parabox.ui.menu.MenuSharedViewModel
 import com.ojhdtapp.parabox.ui.util.SettingNavGraph
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -19,7 +19,7 @@ fun SettingPage(
     modifier: Modifier = Modifier,
     navigator: DestinationsNavigator,
     navController: NavController,
-    sharedViewModel: MainScreenSharedViewModel
+    sharedViewModel: MenuSharedViewModel
 ) {
     Scaffold(modifier = modifier,
         bottomBar = {
