@@ -114,6 +114,11 @@ class MainActivity : ComponentActivity() {
 
             // Screen Sizes
             val sizeClass = calculateWindowSizeClass(activity = this)
+            val shouldShowNav = navController.appCurrentDestinationAsState().value in listOf(
+                MessagePageDestination,
+                FilePageDestination,
+                SettingPageDestination
+            )
             AppTheme {
                 CompositionLocalProvider(values = arrayOf(LocalFixedInsets provides fixedInsets)) {
 
@@ -126,7 +131,7 @@ class MainActivity : ComponentActivity() {
                         Column() {
                             Row(modifier = Modifier.weight(1f)) {
 //                              if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) { }
-                                if (sizeClass.widthSizeClass == WindowWidthSizeClass.Medium) {
+                                if (sizeClass.widthSizeClass == WindowWidthSizeClass.Medium && shouldShowNav) {
                                     com.ojhdtapp.parabox.ui.util.NavigationRail(
                                         navController = navController,
                                         messageBadge = sharedViewModel.messageBadge.value,
@@ -149,11 +154,7 @@ class MainActivity : ComponentActivity() {
                                 )
 
                             }
-                            if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact && navController.appCurrentDestinationAsState().value in listOf(
-                                    MessagePageDestination,
-                                    FilePageDestination,
-                                    SettingPageDestination
-                                )
+                            if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact && shouldShowNav
                             ) {
                                 com.ojhdtapp.parabox.ui.util.NavigationBar(
                                     navController = navController,
