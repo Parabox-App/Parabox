@@ -15,6 +15,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.*
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -45,9 +47,12 @@ fun SearchAppBar(
     placeholder: String,
     selectedNum: String = "0",
     isGroupActionAvailable: Boolean = false,
-    onGroupAction: () -> Unit
+    onGroupAction: () -> Unit,
+    sizeClass: WindowSizeClass,
+    onMenuClick: () -> Unit,
 ) {
     val isActivated = activateState != SearchAppBar.NONE
+    val isExpanded = sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded
     val statusBarHeight = WindowInsets.systemBars.asPaddingValues().calculateTopPadding()
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -102,7 +107,9 @@ fun SearchAppBar(
                         focusRequester = focusRequester,
                         text = text,
                         onTextChange = onTextChange,
-                        keyboardController = keyboardController
+                        keyboardController = keyboardController,
+                        isExpanded = isExpanded,
+                        onMenuClick = onMenuClick,
                     )
                 }
             }
@@ -120,7 +127,9 @@ fun SearchContentField(
     focusRequester: FocusRequester,
     text: String,
     onTextChange: (text: String) -> Unit,
-    keyboardController: SoftwareKeyboardController?
+    keyboardController: SoftwareKeyboardController?,
+    isExpanded: Boolean,
+    onMenuClick: () -> Unit
 ) {
     Row(
         modifier = modifier
@@ -130,13 +139,21 @@ fun SearchContentField(
     ) {
         IconButton(
             onClick = {
-                onActivateStateChanged(
-                    if (isActivated) SearchAppBar.NONE else SearchAppBar.SEARCH
-                )
+                if (isExpanded) {
+                    if (isActivated) {
+                        onActivateStateChanged(SearchAppBar.NONE)
+                    } else {
+                        onMenuClick()
+                    }
+                } else {
+                    onActivateStateChanged(
+                        if (isActivated) SearchAppBar.NONE else SearchAppBar.SEARCH
+                    )
+                }
             },
         ) {
             Icon(
-                imageVector = if (isActivated) Icons.Outlined.ArrowBack else Icons.Outlined.Search,
+                imageVector = if (isActivated) Icons.Outlined.ArrowBack else (if (isExpanded) Icons.Outlined.Menu else Icons.Outlined.Search),
                 contentDescription = "search",
                 tint = MaterialTheme.colorScheme.onSecondaryContainer
             )

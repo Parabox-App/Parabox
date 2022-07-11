@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
@@ -75,6 +76,7 @@ fun MenuPage(
 //                              if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) { }
                 if (sizeClass.widthSizeClass == WindowWidthSizeClass.Medium) {
                     NavigationRail(
+                        modifier = Modifier.zIndex(1f),
                         navController = menuNavController,
                         messageBadge = sharedViewModel.messageBadge.value,
                         onSelfItemClick = {},
@@ -97,6 +99,7 @@ fun MenuPage(
 //                            hiltViewModel<MessagePageViewModel>(parentEntry)
 //                        }
                         dependency(sharedViewModel)
+                        dependency(drawerState)
                         dependency(sizeClass)
                     }
                 )

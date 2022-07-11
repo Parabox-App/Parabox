@@ -22,6 +22,7 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.*
 import androidx.compose.material3.FloatingActionButtonDefaults.elevation
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
@@ -58,24 +59,25 @@ import kotlinx.coroutines.launch
 @RootNavGraph(start = false)
 @Destination
 @Composable
-fun AnimatedVisibilityScope.ChatPage(
+fun ChatPage(
     modifier: Modifier = Modifier,
     navigator: DestinationsNavigator,
     navController: NavController,
-    viewModel: MessagePageViewModel
+    messageState: MessageState,
+    sizeClass: WindowSizeClass
 ) {
 //    val viewModel: MessagePageViewModel = hiltViewModel()
-    val messageState by viewModel.messageStateFlow.collectAsState()
+//    val messageState by viewModel.messageStateFlow.collectAsState()
     Crossfade(targetState = messageState.state) {
         when (it) {
             MessageState.NULL -> {
-                NullChatPage()
+                NullChatPage(modifier = modifier)
             }
             MessageState.ERROR -> {
-                ErrorChatPage(errMessage = messageState.message ?: "请重试") {}
+                ErrorChatPage(modifier = modifier,errMessage = messageState.message ?: "请重试") {}
             }
             MessageState.LOADING, MessageState.SUCCESS -> {
-                NormalChatPage(navigator = navigator, messageState = messageState)
+                NormalChatPage(modifier = modifier,navigator = navigator, messageState = messageState)
             }
         }
     }
@@ -116,7 +118,7 @@ fun NormalChatPage(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /*TODO*/ }) {
+                    IconButton(onClick = {  }) {
                         Icon(imageVector = Icons.Outlined.Search, contentDescription = "search")
 
                     }

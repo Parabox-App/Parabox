@@ -18,6 +18,7 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.DoNotDisturb
 import androidx.compose.material.icons.outlined.Done
 import androidx.compose.material3.*
+import androidx.compose.material3.DrawerState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -30,8 +31,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ojhdtapp.parabox.core.util.toAvatarBitmap
@@ -44,6 +47,7 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.valentinilk.shimmer.*
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 @OptIn(
     ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
@@ -56,9 +60,9 @@ fun MessagePage(
     modifier: Modifier = Modifier,
     navigator: DestinationsNavigator,
     navController: NavController,
-//    viewModel: MessagePageViewModel,
     sharedViewModel: MenuSharedViewModel,
-    sizeClass: WindowSizeClass
+    sizeClass: WindowSizeClass,
+    drawerState: DrawerState
 ) {
     val viewModel: MessagePageViewModel = hiltViewModel()
     val listState = rememberLazyListState()
@@ -70,6 +74,7 @@ fun MessagePage(
         }
     }
     val contactState by viewModel.contactStateFlow.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
     LaunchedEffect(true) {
         viewModel.uiEventFlow.collectLatest {
             when (it) {
@@ -82,207 +87,231 @@ fun MessagePage(
             }
         }
     }
-    GroupActionDialog(showDialog = viewModel.showGroupActionDialogState.value,
-        state = viewModel.groupInfoState.value, onDismiss = {
-            viewModel.setShowGroupActionDialogState(false)
-        }, onConfirm = viewModel::groupContact
-    )
-    Scaffold(
-        modifier = modifier,
-        snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
-        topBar = {
-            SearchAppBar(
-                text = viewModel.searchText.value,
-                onTextChange = viewModel::setSearchText,
-                placeholder = "搜索会话",
-                activateState = viewModel.searchBarActivateState.value,
-                onActivateStateChanged = {
-                    viewModel.setSearchBarActivateState(it)
-                    viewModel.clearSelectedContactIdStateList()
-                },
-                selectedNum = "${viewModel.selectedContactIdStateList.size}",
-                isGroupActionAvailable = viewModel.selectedContactIdStateList.size > 1,
-                onGroupAction = {
-                    viewModel.getGroupInfoPack()
-                    viewModel.setShowGroupActionDialogState(true)
-                }
-            )
-        },
-        bottomBar = {
-
-        },
-        floatingActionButton = {
-            if (sizeClass.widthSizeClass != WindowWidthSizeClass.Medium) {
-                ExtendedFloatingActionButton(
-                    text = { Text(text = "发起会话") },
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Outlined.Add,
-                            contentDescription = "new contact"
-                        )
+    Row() {
+        // Left
+        GroupActionDialog(
+            showDialog = viewModel.showGroupActionDialogState.value,
+            state = viewModel.groupInfoState.value, onDismiss = {
+                viewModel.setShowGroupActionDialogState(false)
+            }, onConfirm = viewModel::groupContact
+        )
+        Scaffold(
+            modifier = modifier
+                .weight(1f)
+                .shadow(8.dp)
+                .zIndex(1f),
+            snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
+            topBar = {
+                SearchAppBar(
+                    text = viewModel.searchText.value,
+                    onTextChange = viewModel::setSearchText,
+                    placeholder = "搜索会话",
+                    activateState = viewModel.searchBarActivateState.value,
+                    onActivateStateChanged = {
+                        viewModel.setSearchBarActivateState(it)
+                        viewModel.clearSelectedContactIdStateList()
                     },
-                    expanded = expandedFab,
-                    onClick = { })
-            }
-        },
-    ) { paddingValues ->
-        LazyColumn(
-//            modifier = Modifier.padding(horizontal = 16.dp),
-            state = listState,
-            contentPadding = paddingValues
-        ) {
-            item(key = "ungrouped") {
-                Box(
-                    modifier = Modifier
-                        .padding(16.dp, 8.dp)
-                        .animateItemPlacement()
-                ) {
-                    Text(
-                        text = "未编组",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-
-            if (contactState.isLoading) {
-                itemsIndexed(
-                    items = listOf(null, null, null, null),
-                    key = { index, _ -> index }) { index, _ ->
-                    ContactItem(
-                        modifier = Modifier
-                            .padding(horizontal = 16.dp)
-                            .animateItemPlacement(),
-                        contact = null,
-                        topRadius = 28.dp,
-                        bottomRadius = 28.dp,
-                        isLoading = true,
-                        onClick = {},
-                        onLongClick = {}
-                    )
-                    if (index < 3)
-                        Spacer(modifier = Modifier.height(3.dp))
-                }
-            } else {
-                itemsIndexed(
-                    items = contactState.data,
-                    key = { _, item -> item.contactId }) { index, item ->
-                    var loading by remember {
-                        mutableStateOf(false)
+                    selectedNum = "${viewModel.selectedContactIdStateList.size}",
+                    isGroupActionAvailable = viewModel.selectedContactIdStateList.size > 1,
+                    onGroupAction = {
+                        viewModel.getGroupInfoPack()
+                        viewModel.setShowGroupActionDialogState(true)
+                    },
+                    sizeClass = sizeClass,
+                    onMenuClick = {
+                        coroutineScope.launch {
+                            drawerState.open()
+                        }
                     }
-                    val dismissState = rememberDismissState(
-                        confirmStateChange = {
-                            if (it == DismissValue.DismissedToEnd || it == DismissValue.DismissedToStart) {
-                                viewModel.showSnackBar("Dismiss triggered")
-                            }
-                            true
-                        }
-                    )
-                    val isFirst = index == 0
-                    val isLast = index == contactState.data.lastIndex
-                    val topRadius by animateDpAsState(targetValue = if (isFirst) 28.dp else 0.dp)
-                    val bottomRadius by animateDpAsState(targetValue = if (isLast) 28.dp else 0.dp)
-                    val isSelected =
-                        viewModel.selectedContactIdStateList.contains(item.contactId)
-                    SwipeToDismiss(
-                        state = dismissState,
-                        modifier = Modifier
-                            .padding(horizontal = 16.dp)
-                            .animateItemPlacement(),
-                        background = {
-                            val direction = dismissState.dismissDirection ?: return@SwipeToDismiss
-                            val arrangement = when (direction) {
-                                DismissDirection.StartToEnd -> Arrangement.Start
-                                DismissDirection.EndToStart -> Arrangement.End
-                            }
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(
-                                        RoundedCornerShape(
-                                            topStart = topRadius,
-                                            topEnd = topRadius,
-                                            bottomEnd = bottomRadius,
-                                            bottomStart = bottomRadius
-                                        )
-                                    )
-                                    .background(MaterialTheme.colorScheme.primary)
-                                    .padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = arrangement
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.DoNotDisturb,
-                                    contentDescription = "not disturb",
-                                    tint = MaterialTheme.colorScheme.onPrimary
-                                )
-                            }
-                        },
-                        directions = setOf(
-                            DismissDirection.EndToStart,
-                            DismissDirection.StartToEnd
-                        ),
-                        dismissThresholds = { dismissDirection ->
-                            androidx.compose.material.FractionalThreshold(
-                                0.65f
+                )
+            },
+            bottomBar = {
+
+            },
+            floatingActionButton = {
+                if (sizeClass.widthSizeClass != WindowWidthSizeClass.Medium) {
+                    ExtendedFloatingActionButton(
+                        text = { Text(text = "发起会话") },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Outlined.Add,
+                                contentDescription = "new contact"
                             )
-                        }
+                        },
+                        expanded = expandedFab,
+                        onClick = { })
+                }
+            },
+        ) { paddingValues ->
+            LazyColumn(
+//            modifier = Modifier.padding(horizontal = 16.dp),
+                state = listState,
+                contentPadding = paddingValues
+            ) {
+                item(key = "ungrouped") {
+                    Box(
+                        modifier = Modifier
+                            .padding(16.dp, 8.dp)
+                            .animateItemPlacement()
                     ) {
+                        Text(
+                            text = "未编组",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
+                if (contactState.isLoading) {
+                    itemsIndexed(
+                        items = listOf(null, null, null, null),
+                        key = { index, _ -> index }) { index, _ ->
                         ContactItem(
-                            contact = item,
-                            topRadius = topRadius,
-                            bottomRadius = bottomRadius,
-                            isLoading = loading,
-                            isSelected = isSelected,
-                            shimmer = shimmerInstance,
-                            onClick = {
-                                if (viewModel.searchBarActivateState.value == SearchAppBar.SELECT) {
-                                    viewModel.addOrRemoveItemOfSelectedContactIdStateList(item.contactId)
-                                } else {
-                                    viewModel.receiveAndUpdateMessageFromContact(item)
-                                    TODO("navigate")
+                            modifier = Modifier
+                                .padding(horizontal = 16.dp)
+                                .animateItemPlacement(),
+                            contact = null,
+                            topRadius = 28.dp,
+                            bottomRadius = 28.dp,
+                            isLoading = true,
+                            onClick = {},
+                            onLongClick = {}
+                        )
+                        if (index < 3)
+                            Spacer(modifier = Modifier.height(3.dp))
+                    }
+                } else {
+                    itemsIndexed(
+                        items = contactState.data,
+                        key = { _, item -> item.contactId }) { index, item ->
+                        var loading by remember {
+                            mutableStateOf(false)
+                        }
+                        val dismissState = rememberDismissState(
+                            confirmStateChange = {
+                                if (it == DismissValue.DismissedToEnd || it == DismissValue.DismissedToStart) {
+                                    viewModel.showSnackBar("Dismiss triggered")
+                                }
+                                true
+                            }
+                        )
+                        val isFirst = index == 0
+                        val isLast = index == contactState.data.lastIndex
+                        val topRadius by animateDpAsState(targetValue = if (isFirst) 28.dp else 0.dp)
+                        val bottomRadius by animateDpAsState(targetValue = if (isLast) 28.dp else 0.dp)
+                        val isSelected =
+                            viewModel.selectedContactIdStateList.contains(item.contactId)
+                        SwipeToDismiss(
+                            state = dismissState,
+                            modifier = Modifier
+                                .padding(horizontal = 16.dp)
+                                .animateItemPlacement(),
+                            background = {
+                                val direction =
+                                    dismissState.dismissDirection ?: return@SwipeToDismiss
+                                val arrangement = when (direction) {
+                                    DismissDirection.StartToEnd -> Arrangement.Start
+                                    DismissDirection.EndToStart -> Arrangement.End
+                                }
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(
+                                            RoundedCornerShape(
+                                                topStart = topRadius,
+                                                topEnd = topRadius,
+                                                bottomEnd = bottomRadius,
+                                                bottomStart = bottomRadius
+                                            )
+                                        )
+                                        .background(MaterialTheme.colorScheme.primary)
+                                        .padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = arrangement
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.DoNotDisturb,
+                                        contentDescription = "not disturb",
+                                        tint = MaterialTheme.colorScheme.onPrimary
+                                    )
                                 }
                             },
-                            onLongClick = {
-                                viewModel.setSearchBarActivateState(SearchAppBar.SELECT)
-                                viewModel.addOrRemoveItemOfSelectedContactIdStateList(item.contactId)
+                            directions = setOf(
+                                DismissDirection.EndToStart,
+                                DismissDirection.StartToEnd
+                            ),
+                            dismissThresholds = { dismissDirection ->
+                                androidx.compose.material.FractionalThreshold(
+                                    0.65f
+                                )
                             }
+                        ) {
+                            ContactItem(
+                                contact = item,
+                                topRadius = topRadius,
+                                bottomRadius = bottomRadius,
+                                isLoading = loading,
+                                isSelected = isSelected,
+                                shimmer = shimmerInstance,
+                                onClick = {
+                                    if (viewModel.searchBarActivateState.value == SearchAppBar.SELECT) {
+                                        viewModel.addOrRemoveItemOfSelectedContactIdStateList(item.contactId)
+                                    } else {
+                                        viewModel.receiveAndUpdateMessageFromContact(item)
+                                    }
+                                },
+                                onLongClick = {
+                                    viewModel.setSearchBarActivateState(SearchAppBar.SELECT)
+                                    viewModel.addOrRemoveItemOfSelectedContactIdStateList(item.contactId)
+                                }
+                            )
+                        }
+                        if (index < contactState.data.lastIndex)
+                            Spacer(modifier = Modifier.height(2.dp))
+                    }
+                }
+                item(key = "other") {
+                    Box(
+                        modifier = Modifier
+                            .padding(16.dp, 8.dp)
+                            .animateItemPlacement()
+                    ) {
+                        Text(
+                            text = "其他",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
-                    if (index < contactState.data.lastIndex)
-                        Spacer(modifier = Modifier.height(2.dp))
                 }
-            }
-            item(key = "other") {
-                Box(
-                    modifier = Modifier
-                        .padding(16.dp, 8.dp)
-                        .animateItemPlacement()
-                ) {
-                    Text(
-                        text = "其他",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                item(key = null) {
+                    androidx.compose.material3.OutlinedButton(onClick = { viewModel.testFun() }) {
+                        Text(text = "btn1")
+                    }
                 }
-            }
-            item(key = null) {
-                androidx.compose.material3.OutlinedButton(onClick = { viewModel.testFun() }) {
-                    Text(text = "btn1")
+                item(key = null) {
+                    androidx.compose.material3.OutlinedButton(onClick = { viewModel.testFun2() }) {
+                        Text(text = "btn2")
+                    }
                 }
-            }
-            item(key = null) {
-                androidx.compose.material3.OutlinedButton(onClick = { viewModel.testFun2() }) {
-                    Text(text = "btn2")
-                }
-            }
-            item(key = null) {
-                androidx.compose.material3.OutlinedButton(onClick = { viewModel.testFun3() }) {
-                    Text(text = "btn3")
+                item(key = null) {
+                    androidx.compose.material3.OutlinedButton(onClick = { viewModel.testFun3() }) {
+                        Text(text = "btn3")
+                    }
                 }
             }
         }
+        // Right
+        if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) {
+            ChatPage(
+                modifier = Modifier.width(560.dp),
+                navigator = navigator,
+                navController = navController,
+                messageState = viewModel.messageStateFlow.collectAsState().value,
+                sizeClass = sizeClass
+            )
+        }
     }
+
 //        Column(
 //            modifier = modifier.fillMaxSize(),
 //            horizontalAlignment = Alignment.CenterHorizontally,

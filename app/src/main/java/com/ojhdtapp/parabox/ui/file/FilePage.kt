@@ -2,10 +2,8 @@ package com.ojhdtapp.parabox.ui.file
 
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.*
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -16,6 +14,7 @@ import com.ojhdtapp.parabox.ui.util.SearchAppBar
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Destination
@@ -25,7 +24,9 @@ fun FilePage(
     modifier: Modifier = Modifier,
     navigator: DestinationsNavigator,
     navController: NavController,
-    sharedViewModel: MenuSharedViewModel
+    sharedViewModel: MenuSharedViewModel,
+    sizeClass: WindowSizeClass,
+    drawerState: DrawerState
 ) {
     val viewModel: FilePageViewModel = hiltViewModel()
     val listState = rememberLazyListState()
@@ -33,6 +34,7 @@ fun FilePage(
     var searchBarState by remember {
         mutableStateOf(SearchAppBar.NONE)
     }
+    val coroutineScope = rememberCoroutineScope()
     LaunchedEffect(key1 = true) {
         viewModel.uiEventFlow.collectLatest {
             when (it) {
@@ -52,7 +54,11 @@ fun FilePage(
                 activateState = searchBarState,
                 onActivateStateChanged = { searchBarState = it },
                 isGroupActionAvailable = false,
-                onGroupAction = {}
+                onGroupAction = {},
+                sizeClass = sizeClass,
+                onMenuClick = {coroutineScope.launch {
+                    drawerState.open()
+                }}
             )
         },
         bottomBar = {
