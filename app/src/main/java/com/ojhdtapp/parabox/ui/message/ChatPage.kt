@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.material3.*
 import androidx.compose.material3.FloatingActionButtonDefaults.elevation
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
@@ -64,20 +65,32 @@ fun ChatPage(
     navigator: DestinationsNavigator,
     navController: NavController,
     messageState: MessageState,
-    sizeClass: WindowSizeClass
+    sizeClass: WindowSizeClass,
+    onBackClick: () -> Unit
 ) {
 //    val viewModel: MessagePageViewModel = hiltViewModel()
 //    val messageState by viewModel.messageStateFlow.collectAsState()
+    val isExpanded = sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded
     Crossfade(targetState = messageState.state) {
         when (it) {
             MessageState.NULL -> {
                 NullChatPage(modifier = modifier)
             }
             MessageState.ERROR -> {
-                ErrorChatPage(modifier = modifier,errMessage = messageState.message ?: "请重试") {}
+                ErrorChatPage(modifier = modifier, errMessage = messageState.message ?: "请重试") {}
             }
             MessageState.LOADING, MessageState.SUCCESS -> {
-                NormalChatPage(modifier = modifier,navigator = navigator, messageState = messageState)
+                NormalChatPage(
+                    modifier = modifier,
+                    navigator = navigator,
+                    messageState = messageState,
+                    sizeClass = sizeClass,
+                    onBackClick = {
+                        if(isExpanded){
+                            onBackClick()
+                        }
+                    }
+                )
             }
         }
     }
@@ -88,7 +101,9 @@ fun ChatPage(
 fun NormalChatPage(
     modifier: Modifier = Modifier,
     navigator: DestinationsNavigator,
-    messageState: MessageState
+    messageState: MessageState,
+    sizeClass: WindowSizeClass,
+    onBackClick: () -> Unit,
 ) {
     // Top AppBar
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarScrollState())
@@ -113,12 +128,12 @@ fun NormalChatPage(
                     .statusBarsPadding(),
                 title = { Text(text = messageState.profile?.name ?: "会话") },
                 navigationIcon = {
-                    IconButton(onClick = { navigator.navigateUp() }) {
+                    IconButton(onClick = onBackClick) {
                         Icon(imageVector = Icons.Outlined.ArrowBack, contentDescription = "back")
                     }
                 },
                 actions = {
-                    IconButton(onClick = {  }) {
+                    IconButton(onClick = { }) {
                         Icon(imageVector = Icons.Outlined.Search, contentDescription = "search")
 
                     }
@@ -144,15 +159,19 @@ fun NormalChatPage(
                 .background(MaterialTheme.colorScheme.surface),
             contentPadding = it
         ) {
-            messageState.data!!.forEach { (timestamp, chatBlockList) ->
+            messageState.data?.forEach { (timestamp, chatBlockList) ->
                 item {
                     TimeDivider(timestamp = timestamp)
                 }
                 items(items = chatBlockList) { chatBlock ->
-                    ChatBlock(modifier = Modifier.fillMaxWidth() ,data = chatBlock, sentByMe = false)
+                    ChatBlock(
+                        modifier = Modifier.fillMaxWidth(),
+                        data = chatBlock,
+                        sentByMe = false
+                    )
                 }
             }
-            item{
+            item {
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
@@ -219,13 +238,13 @@ fun ChatBlock(modifier: Modifier = Modifier, data: ChatBlock, sentByMe: Boolean)
     ) {
         if (sentByMe) {
             Spacer(modifier = Modifier.width(48.dp))
-            ChatBlockMessages( modifier = Modifier.weight(1f),data = data, sentByMe = sentByMe)
+            ChatBlockMessages(modifier = Modifier.weight(1f), data = data, sentByMe = sentByMe)
             Spacer(modifier = Modifier.width(8.dp))
             ChatBlockAvatar()
         } else {
             ChatBlockAvatar()
             Spacer(modifier = Modifier.width(8.dp))
-            ChatBlockMessages(modifier = Modifier.weight(1f),data = data, sentByMe = sentByMe)
+            ChatBlockMessages(modifier = Modifier.weight(1f), data = data, sentByMe = sentByMe)
             Spacer(modifier = Modifier.width(48.dp))
         }
     }
@@ -246,7 +265,7 @@ fun ChatBlockAvatar(modifier: Modifier = Modifier) {
 fun ChatBlockMessages(modifier: Modifier = Modifier, data: ChatBlock, sentByMe: Boolean) {
     Column(
         modifier = modifier,
-        horizontalAlignment = if(sentByMe) Alignment.End else Alignment.Start
+        horizontalAlignment = if (sentByMe) Alignment.End else Alignment.Start
     ) {
         Text(
             text = data.profile.name,

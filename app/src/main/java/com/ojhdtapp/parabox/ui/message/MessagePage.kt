@@ -252,6 +252,7 @@ fun MessagePage(
                                 bottomRadius = bottomRadius,
                                 isLoading = loading,
                                 isSelected = isSelected,
+                                isEditing = item.contactId == viewModel.editingContact.value,
                                 shimmer = shimmerInstance,
                                 onClick = {
                                     if (viewModel.searchBarActivateState.value == SearchAppBar.SELECT) {
@@ -307,7 +308,8 @@ fun MessagePage(
                 navigator = navigator,
                 navController = navController,
                 messageState = viewModel.messageStateFlow.collectAsState().value,
-                sizeClass = sizeClass
+                sizeClass = sizeClass,
+                onBackClick = viewModel::cancelMessage
             )
         }
     }
@@ -344,12 +346,19 @@ fun ContactItem(
     isTop: Boolean = false,
     isLoading: Boolean = true,
     isSelected: Boolean = false,
+    isEditing: Boolean = false,
     shimmer: Shimmer? = null,
     onClick: () -> Unit,
     onLongClick: () -> Unit
 ) {
     val background =
-        animateColorAsState(targetValue = if (isTop) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer)
+        animateColorAsState(
+            targetValue = if (isEditing) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                if (isTop) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
+            }
+        )
     Row(
         modifier = modifier
             .clip(
