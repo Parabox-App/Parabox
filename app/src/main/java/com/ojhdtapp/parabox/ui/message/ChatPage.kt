@@ -10,6 +10,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
@@ -86,7 +87,7 @@ fun ChatPage(
                     messageState = messageState,
                     sizeClass = sizeClass,
                     onBackClick = {
-                        if(isExpanded){
+                        if (isExpanded) {
                             onBackClick()
                         }
                     }
@@ -105,6 +106,7 @@ fun NormalChatPage(
     sizeClass: WindowSizeClass,
     onBackClick: () -> Unit,
 ) {
+    val coroutineScope = rememberCoroutineScope()
     // Top AppBar
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarScrollState())
     val scrollFraction = scrollBehavior.scrollFraction
@@ -116,9 +118,15 @@ fun NormalChatPage(
     }
 //    val peakHeight =
 //        navigationBarHeight + 88.dp + with(LocalDensity.current) { changedTextFieldHeight.toDp() }
-
     //temp
     val peakHeight = navigationBarHeight + 88.dp
+    // List Scroll && To Latest FAB
+    val scrollState = rememberLazyListState()
+    val fabExtended by remember {
+        derivedStateOf {
+            scrollState.firstVisibleItemIndex == 0
+        }
+    }
     BottomSheetScaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -144,6 +152,25 @@ fun NormalChatPage(
                 scrollBehavior = scrollBehavior
             )
         },
+        floatingActionButton = {
+            AnimatedVisibility(
+                visible = fabExtended,
+                enter = slideInHorizontally { it * 2 }  // slide in from the right
+                , exit = slideOutHorizontally { it * 2 } // slide out to the right
+            ) {
+                FloatingActionButton(onClick = {
+                    coroutineScope.launch {
+                        scrollState.animateScrollToItem(messageState.data?.size ?: 0)
+                    }
+                }, modifier = Modifier.offset(y = (-42).dp)) {
+                    Icon(
+                        imageVector = Icons.Outlined.ArrowDownward,
+                        contentDescription = "to_latest"
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.size(1.dp))
+        },
         sheetContent = {
             EditArea(onTextFieldHeightChange = { px ->
                 changedTextFieldHeight = px
@@ -157,6 +184,7 @@ fun NormalChatPage(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.surface),
+            state = scrollState,
             contentPadding = it
         ) {
             messageState.data?.forEach { (timestamp, chatBlockList) ->
