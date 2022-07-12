@@ -19,6 +19,8 @@ import androidx.navigation.NavController
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.ojhdtapp.parabox.ui.NavGraphs
+import com.ojhdtapp.parabox.ui.destinations.MessagePageDestination
+import com.ojhdtapp.parabox.ui.message.MessagePage
 import com.ojhdtapp.parabox.ui.util.NavigationBar
 import com.ojhdtapp.parabox.ui.util.NavigationRail
 import com.ramcosta.composedestinations.DestinationsNavHost
@@ -26,6 +28,7 @@ import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultA
 import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
+import com.ramcosta.composedestinations.manualcomposablecalls.composable
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.dependency
 import kotlinx.coroutines.launch
@@ -102,7 +105,17 @@ fun MenuPage(
                         dependency(drawerState)
                         dependency(sizeClass)
                     }
-                )
+                ){
+                    composable(MessagePageDestination){
+                        MessagePage(
+                            navigator = destinationsNavigator,
+                            mainNavController = navController,
+                            sharedViewModel = sharedViewModel,
+                            sizeClass = sizeClass,
+                            drawerState = drawerState
+                        )
+                    }
+                }
             }
             if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact
             ) {

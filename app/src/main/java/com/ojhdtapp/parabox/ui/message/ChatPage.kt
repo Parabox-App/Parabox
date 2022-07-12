@@ -57,6 +57,7 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @RootNavGraph(start = false)
 @Destination
@@ -64,11 +65,11 @@ import kotlinx.coroutines.launch
 fun ChatPage(
     modifier: Modifier = Modifier,
     navigator: DestinationsNavigator,
-    navController: NavController,
     messageState: MessageState,
     sizeClass: WindowSizeClass,
     onBackClick: () -> Unit
 ) {
+
 //    val viewModel: MessagePageViewModel = hiltViewModel()
 //    val messageState by viewModel.messageStateFlow.collectAsState()
     val isExpanded = sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded
