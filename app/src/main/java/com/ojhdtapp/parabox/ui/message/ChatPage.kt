@@ -48,6 +48,7 @@ import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.chat.ChatBlock
 import com.ojhdtapp.parabox.domain.model.message_content.*
+import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.util.MessageNavGraph
 import com.ojhdtapp.parabox.ui.util.SharedAxisZTransition
 import com.ojhdtapp.parabox.ui.util.clearFocusOnKeyboardDismiss
@@ -65,14 +66,13 @@ import kotlinx.coroutines.launch
 fun ChatPage(
     modifier: Modifier = Modifier,
     navigator: DestinationsNavigator,
-    messageState: MessageState,
+    mainNavController: NavController,
+    mainSharedViewModel: MainSharedViewModel,
     sizeClass: WindowSizeClass,
-    onBackClick: () -> Unit
 ) {
 
 //    val viewModel: MessagePageViewModel = hiltViewModel()
-//    val messageState by viewModel.messageStateFlow.collectAsState()
-    val isExpanded = sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded
+    val messageState by mainSharedViewModel.messageStateFlow.collectAsState()
     Crossfade(targetState = messageState.state) {
         when (it) {
             MessageState.NULL -> {
@@ -88,8 +88,10 @@ fun ChatPage(
                     messageState = messageState,
                     sizeClass = sizeClass,
                     onBackClick = {
-                        if (isExpanded) {
-                            onBackClick()
+                        if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) {
+                            mainSharedViewModel.cancelMessage()
+                        } else {
+                            mainNavController.navigateUp()
                         }
                     }
                 )

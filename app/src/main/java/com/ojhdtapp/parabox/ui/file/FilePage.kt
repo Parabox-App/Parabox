@@ -8,6 +8,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.menu.MenuSharedViewModel
 import com.ojhdtapp.parabox.ui.util.FileNavGraph
 import com.ojhdtapp.parabox.ui.util.SearchAppBar
@@ -24,7 +25,7 @@ fun FilePage(
     modifier: Modifier = Modifier,
     navigator: DestinationsNavigator,
     navController: NavController,
-    sharedViewModel: MenuSharedViewModel,
+    mainSharedViewModel: MainSharedViewModel,
     sizeClass: WindowSizeClass,
     drawerState: DrawerState
 ) {

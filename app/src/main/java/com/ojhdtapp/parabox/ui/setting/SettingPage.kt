@@ -7,6 +7,7 @@ import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
+import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.menu.MenuSharedViewModel
 import com.ojhdtapp.parabox.ui.util.SettingNavGraph
 import com.ramcosta.composedestinations.annotation.Destination
@@ -20,7 +21,7 @@ fun SettingPage(
     modifier: Modifier = Modifier,
     navigator: DestinationsNavigator,
     navController: NavController,
-    sharedViewModel: MenuSharedViewModel,
+    mainSharedViewModel: MainSharedViewModel,
     sizeClass: WindowSizeClass
 ) {
     Scaffold(modifier = modifier,

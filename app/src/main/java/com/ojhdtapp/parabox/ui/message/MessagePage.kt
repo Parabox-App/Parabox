@@ -41,6 +41,7 @@ import androidx.navigation.NavController
 import com.ojhdtapp.parabox.core.util.toAvatarBitmap
 import com.ojhdtapp.parabox.core.util.toTimeUntilNow
 import com.ojhdtapp.parabox.domain.model.Contact
+import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.ChatPageDestination
 import com.ojhdtapp.parabox.ui.menu.MenuSharedViewModel
 import com.ojhdtapp.parabox.ui.util.MessageNavGraph
@@ -63,7 +64,7 @@ fun MessagePage(
     modifier: Modifier = Modifier,
     navigator: DestinationsNavigator,
     mainNavController: NavController,
-    sharedViewModel: MenuSharedViewModel,
+    mainSharedViewModel: MainSharedViewModel,
     sizeClass: WindowSizeClass,
     drawerState: DrawerState
 ) {
@@ -85,7 +86,7 @@ fun MessagePage(
                     snackBarHostState.showSnackbar(it.message)
                 }
                 is MessagePageUiEvent.UpdateMessageBadge -> {
-                    sharedViewModel.setMessageBadge(it.value)
+                    mainSharedViewModel.setMessageBadge(it.value)
                 }
             }
         }
@@ -255,16 +256,15 @@ fun MessagePage(
                                 bottomRadius = bottomRadius,
                                 isLoading = loading,
                                 isSelected = isSelected,
-                                isEditing = item.contactId == viewModel.editingContact.value,
+                                isEditing = item.contactId == mainSharedViewModel.editingContact.value,
                                 shimmer = shimmerInstance,
                                 onClick = {
                                     if (viewModel.searchBarActivateState.value == SearchAppBar.SELECT) {
                                         viewModel.addOrRemoveItemOfSelectedContactIdStateList(item.contactId)
                                     } else {
-                                        if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) {
-                                            viewModel.receiveAndUpdateMessageFromContact(item)
-                                        } else {
-                                            mainNavController.navigate(ChatPageDestination(messageState = viewModel.messageStateFlow.value,sizeClass = sizeClass))
+                                            mainSharedViewModel.receiveAndUpdateMessageFromContact(item, sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded)
+                                        if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
+                                            mainNavController.navigate(ChatPageDestination)
                                         }
                                     }
                                 },
@@ -313,9 +313,9 @@ fun MessagePage(
             ChatPage(
                 modifier = Modifier.width(560.dp),
                 navigator = navigator,
-                messageState = viewModel.messageStateFlow.collectAsState().value,
-                sizeClass = sizeClass,
-                onBackClick = viewModel::cancelMessage
+                mainNavController = mainNavController,
+                mainSharedViewModel = mainSharedViewModel,
+                sizeClass = sizeClass
             )
         }
     }

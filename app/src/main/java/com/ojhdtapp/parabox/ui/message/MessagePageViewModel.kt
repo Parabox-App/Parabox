@@ -195,45 +195,6 @@ class MessagePageViewModel @Inject constructor(
         _selectedContactIdStateList.clear()
     }
 
-    // Messages
-// Tips: Do Not use contacts from response.
-    private val _messageStateFlow = MutableStateFlow(MessageState())
-    val messageStateFlow: StateFlow<MessageState> = _messageStateFlow.asStateFlow()
-    private val _editingContact = mutableStateOf<Long?>(null)
-    val editingContact : State<Long?> = _editingContact
-    private var messageJob: Job? = null
-    fun receiveAndUpdateMessageFromContact(contact: Contact) {
-        messageJob?.cancel()
-        _editingContact.value = contact.contactId
-        messageJob = viewModelScope.launch(Dispatchers.IO) {
-            getMessages(contact = contact).collectLatest {
-                _messageStateFlow.value = when (it) {
-                    is Resource.Loading -> MessageState(
-                        state = MessageState.LOADING,
-                        profile = contact.profile
-                    )
-                    is Resource.Error -> MessageState(
-                        state = MessageState.ERROR,
-                        profile = contact.profile,
-                        message = it.message
-                    )
-                    is Resource.Success -> MessageState(
-                        state = MessageState.SUCCESS,
-                        profile = contact.profile,
-                        data = it.data!!.toTimedMessages()
-                    )
-                }
-            }
-
-        }
-    }
-
-    fun cancelMessage(){
-        messageJob?.cancel()
-        _editingContact.value = null
-        _messageStateFlow.value = MessageState()
-    }
-
 //    private val messageStateFlow = MutableStateFlow<ContactWithMessages>()
 //    suspend fun getUngroupedMessage(contactId: Int){
 //        getUngroupedMessages(contactId).onEach {

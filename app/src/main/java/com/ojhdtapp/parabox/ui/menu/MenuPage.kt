@@ -18,6 +18,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
+import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.NavGraphs
 import com.ojhdtapp.parabox.ui.destinations.MessagePageDestination
 import com.ojhdtapp.parabox.ui.message.MessagePage
@@ -44,6 +45,7 @@ fun MenuPage(
     modifier: Modifier = Modifier,
     navigator: DestinationsNavigator,
     navController: NavController,
+    mainSharedViewModel: MainSharedViewModel,
     sizeClass: WindowSizeClass
 ) {
     // Destination
@@ -60,7 +62,7 @@ fun MenuPage(
 //                    )
         )
     )
-    // Shared View Model
+    // Menu Shared View Model (Not Used)
     val sharedViewModel =
         hiltViewModel<MenuSharedViewModel>()
     // Drawer
@@ -69,7 +71,7 @@ fun MenuPage(
     com.ojhdtapp.parabox.ui.util.NavigationDrawer(
         modifier = modifier.fillMaxSize(),
         navController = menuNavController,
-        messageBadge = sharedViewModel.messageBadge.value,
+        messageBadge = mainSharedViewModel.messageBadge.value,
         onSelfItemClick = {},
         drawerState = drawerState,
         gesturesEnabled = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact,
@@ -81,7 +83,7 @@ fun MenuPage(
                     NavigationRail(
                         modifier = Modifier.zIndex(1f),
                         navController = menuNavController,
-                        messageBadge = sharedViewModel.messageBadge.value,
+                        messageBadge = mainSharedViewModel.messageBadge.value,
                         onSelfItemClick = {},
                         onMenuClick = {
                             coroutineScope.launch {
@@ -101,7 +103,7 @@ fun MenuPage(
 //                            }
 //                            hiltViewModel<MessagePageViewModel>(parentEntry)
 //                        }
-                        dependency(sharedViewModel)
+                        dependency(mainSharedViewModel)
                         dependency(drawerState)
                         dependency(sizeClass)
                     }
@@ -110,7 +112,7 @@ fun MenuPage(
                         MessagePage(
                             navigator = destinationsNavigator,
                             mainNavController = navController,
-                            sharedViewModel = sharedViewModel,
+                            mainSharedViewModel = mainSharedViewModel,
                             sizeClass = sizeClass,
                             drawerState = drawerState
                         )
@@ -121,7 +123,7 @@ fun MenuPage(
             ) {
                 NavigationBar(
                     navController = menuNavController,
-                    messageBadge = sharedViewModel.messageBadge.value,
+                    messageBadge = mainSharedViewModel.messageBadge.value,
                     onSelfItemClick = {},
                 )
             }

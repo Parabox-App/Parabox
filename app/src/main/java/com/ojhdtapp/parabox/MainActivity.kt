@@ -15,9 +15,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.core.view.WindowCompat
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.NavGraphs
 import com.ojhdtapp.parabox.ui.theme.AppTheme
 import com.ojhdtapp.parabox.ui.util.FixedInsets
@@ -81,6 +84,8 @@ class MainActivity : ComponentActivity() {
                     )
                 )
             )
+            // Shared ViewModel
+            val mainSharedViewModel = hiltViewModel<MainSharedViewModel>(this)
 
             // Screen Sizes
             val sizeClass = calculateWindowSizeClass(activity = this)
@@ -95,6 +100,7 @@ class MainActivity : ComponentActivity() {
                     engine = mainNavHostEngine,
                     navController = mainNavController,
                     dependenciesContainerBuilder = {
+                        dependency(mainSharedViewModel)
                         dependency(sizeClass)
                     })
 
