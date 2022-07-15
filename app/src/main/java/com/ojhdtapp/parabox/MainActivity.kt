@@ -79,10 +79,10 @@ class MainActivity : ComponentActivity() {
 //                    exitTransition = { slideOutHorizontally { -it }},
 //                    popEnterTransition = { slideInHorizontally { -it }},
 //                    popExitTransition = { slideOutHorizontally { it }},
-                    enterTransition = { fadeIn(tween(2000)) + scaleIn(tween(2000), 0.9f) },
-                    exitTransition = { fadeOut(tween(2000)) + scaleOut(tween(2000), 1.1f) },
-                    popEnterTransition = { fadeIn(tween(2000)) + scaleIn(tween(2000), 1.1f) },
-                    popExitTransition = { fadeOut(tween(2000)) + scaleOut(tween(2000), 0.9f) }
+                    enterTransition = { fadeIn(tween(300)) + scaleIn(tween(300), 0.9f) },
+                    exitTransition = { fadeOut(tween(300)) + scaleOut(tween(300), 1.1f) },
+                    popEnterTransition = { fadeIn(tween(450)) + scaleIn(tween(450), 1.1f) },
+                    popExitTransition = { fadeOut(tween(450)) + scaleOut(tween(450), 0.9f) }
                 ),
                 defaultAnimationsForNestedNavGraph = mapOf()
             )

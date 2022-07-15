@@ -2,9 +2,13 @@
 
 package com.ojhdtapp.parabox.ui.message
 
+import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -32,7 +36,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.core.os.bundleOf
@@ -52,6 +59,8 @@ import com.ramcosta.composedestinations.navigation.navigate
 import com.valentinilk.shimmer.*
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
+import kotlin.math.roundToLong
 
 @OptIn(
     ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
@@ -193,62 +202,29 @@ fun MessagePage(
                         }
                         val dismissState = rememberDismissState(
                             confirmStateChange = {
+                                Log.d("parabox", it.toString())
                                 if (it == DismissValue.DismissedToEnd || it == DismissValue.DismissedToStart) {
                                     viewModel.showSnackBar("Dismiss triggered")
                                 }
                                 true
                             }
                         )
+                        val swipeableState = rememberSwipeableState(initialValue = false)
                         val isFirst = index == 0
                         val isLast = index == contactState.data.lastIndex
-                        val topRadius by animateDpAsState(targetValue = if (isFirst) 28.dp else 0.dp)
-                        val bottomRadius by animateDpAsState(targetValue = if (isLast) 28.dp else 0.dp)
+                        val isDragging = swipeableState.offset.value.roundToInt() != 0
+                        val topRadius by animateDpAsState(targetValue = if (isDragging || isFirst) 28.dp else 0.dp)
+                        val bottomRadius by animateDpAsState(targetValue = if (isDragging || isLast) 28.dp else 0.dp)
                         val isSelected =
                             viewModel.selectedContactIdStateList.contains(item.contactId)
-                        SwipeToDismiss(
-                            state = dismissState,
+                        SwipeableContact(
                             modifier = Modifier
                                 .padding(horizontal = 16.dp)
                                 .animateItemPlacement(),
-                            background = {
-                                val direction =
-                                    dismissState.dismissDirection ?: return@SwipeToDismiss
-                                val arrangement = when (direction) {
-                                    DismissDirection.StartToEnd -> Arrangement.Start
-                                    DismissDirection.EndToStart -> Arrangement.End
-                                }
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .clip(
-                                            RoundedCornerShape(
-                                                topStart = topRadius,
-                                                topEnd = topRadius,
-                                                bottomEnd = bottomRadius,
-                                                bottomStart = bottomRadius
-                                            )
-                                        )
-                                        .background(MaterialTheme.colorScheme.primary)
-                                        .padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = arrangement
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.DoNotDisturb,
-                                        contentDescription = "not disturb",
-                                        tint = MaterialTheme.colorScheme.onPrimary
-                                    )
-                                }
-                            },
-                            directions = setOf(
-                                DismissDirection.EndToStart,
-                                DismissDirection.StartToEnd
-                            ),
-                            dismissThresholds = { dismissDirection ->
-                                androidx.compose.material.FractionalThreshold(
-                                    0.65f
-                                )
-                            }
+                            state = swipeableState,
+                            topRadius = topRadius,
+                            bottomRadius = bottomRadius,
+                            extraSpace = 16.dp
                         ) {
                             ContactItem(
                                 contact = item,
@@ -262,7 +238,10 @@ fun MessagePage(
                                     if (viewModel.searchBarActivateState.value == SearchAppBar.SELECT) {
                                         viewModel.addOrRemoveItemOfSelectedContactIdStateList(item.contactId)
                                     } else {
-                                            mainSharedViewModel.receiveAndUpdateMessageFromContact(item, sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded)
+                                        mainSharedViewModel.receiveAndUpdateMessageFromContact(
+                                            item,
+                                            sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded
+                                        )
                                         if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
                                             mainNavController.navigate(ChatPageDestination)
                                         }
@@ -274,6 +253,85 @@ fun MessagePage(
                                 }
                             )
                         }
+//                        SwipeToDismiss(
+//                            state = dismissState,
+//                            modifier = Modifier
+//                                .padding(horizontal = 16.dp)
+//                                .animateItemPlacement()
+//                                .draggable(
+//                                    orientation = Orientation.Horizontal,
+//                                    state = rememberDraggableState { delta ->
+//                                        Log.d("parabox", "$delta")
+//                                        isDragging = true
+//                                    }
+//                                ),
+//                            background = {
+//                                val direction =
+//                                    dismissState.dismissDirection ?: return@SwipeToDismiss
+//                                val arrangement = when (direction) {
+//                                    DismissDirection.StartToEnd -> Arrangement.Start
+//                                    DismissDirection.EndToStart -> Arrangement.End
+//                                }
+//                                Row(
+//                                    modifier = Modifier
+//                                        .fillMaxSize()
+//                                        .clip(
+//                                            RoundedCornerShape(
+//                                                topStart = topRadius,
+//                                                topEnd = topRadius,
+//                                                bottomEnd = bottomRadius,
+//                                                bottomStart = bottomRadius
+//                                            )
+//                                        )
+//                                        .background(MaterialTheme.colorScheme.primary)
+//                                        .padding(16.dp),
+//                                    verticalAlignment = Alignment.CenterVertically,
+//                                    horizontalArrangement = arrangement
+//                                ) {
+//                                    Icon(
+//                                        imageVector = Icons.Outlined.DoNotDisturb,
+//                                        contentDescription = "not disturb",
+//                                        tint = MaterialTheme.colorScheme.onPrimary
+//                                    )
+//                                }
+//                            },
+//                            directions = setOf(
+//                                DismissDirection.EndToStart,
+//                                DismissDirection.StartToEnd
+//                            ),
+//                            dismissThresholds = { dismissDirection ->
+//                                androidx.compose.material.FractionalThreshold(
+//                                    0.65f
+//                                )
+//                            }
+//                        ) {
+//                            ContactItem(
+//                                contact = item,
+//                                topRadius = topRadius,
+//                                bottomRadius = bottomRadius,
+//                                isLoading = loading,
+//                                isSelected = isSelected,
+//                                isEditing = item.contactId == mainSharedViewModel.editingContact.value,
+//                                shimmer = shimmerInstance,
+//                                onClick = {
+//                                    if (viewModel.searchBarActivateState.value == SearchAppBar.SELECT) {
+//                                        viewModel.addOrRemoveItemOfSelectedContactIdStateList(item.contactId)
+//                                    } else {
+//                                        mainSharedViewModel.receiveAndUpdateMessageFromContact(
+//                                            item,
+//                                            sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded
+//                                        )
+//                                        if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
+//                                            mainNavController.navigate(ChatPageDestination)
+//                                        }
+//                                    }
+//                                },
+//                                onLongClick = {
+//                                    viewModel.setSearchBarActivateState(SearchAppBar.SELECT)
+//                                    viewModel.addOrRemoveItemOfSelectedContactIdStateList(item.contactId)
+//                                }
+//                            )
+//                        }
                         if (index < contactState.data.lastIndex)
                             Spacer(modifier = Modifier.height(2.dp))
                     }
@@ -338,6 +396,62 @@ fun MessagePage(
 //            }
 //            Text(text = viewModel.message.value)
 //        }
+}
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun SwipeableContact(
+    modifier: Modifier = Modifier,
+    state: androidx.compose.material.SwipeableState<Boolean>,
+    topRadius: Dp,
+    bottomRadius: Dp,
+    extraSpace: Dp? = 0.dp,
+    content: @Composable () -> Unit
+) = BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
+    val extraSpaceInt = with(LocalDensity.current) {
+        extraSpace?.toPx() ?: 0f
+    }
+    val width = constraints.maxWidth.toFloat() + extraSpaceInt
+    val anchors = mapOf(0f to false, -width to true)
+    val offset = state.offset.value
+    Box(
+        modifier = Modifier.swipeable(
+            state = state,
+            anchors = anchors,
+            thresholds = { _, _ -> androidx.compose.material.FractionalThreshold(0.5f) },
+            orientation = Orientation.Horizontal
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Max)
+                .clip(
+                    RoundedCornerShape(
+                        topStart = topRadius,
+                        topEnd = topRadius,
+                        bottomEnd = bottomRadius,
+                        bottomStart = bottomRadius
+                    )
+                )
+                .background(MaterialTheme.colorScheme.primary)
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.End
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.DoNotDisturb,
+                contentDescription = "not disturb",
+                tint = MaterialTheme.colorScheme.onPrimary
+            )
+        }
+        Box(
+            modifier = Modifier.offset(offset = { IntOffset(x = offset.roundToInt(), y = 0) }),
+            contentAlignment = Alignment.Center
+        ) {
+            content()
+        }
+    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
