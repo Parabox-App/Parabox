@@ -20,7 +20,9 @@ import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.NavGraphs
+import com.ojhdtapp.parabox.ui.destinations.FilePageDestination
 import com.ojhdtapp.parabox.ui.destinations.MessagePageDestination
+import com.ojhdtapp.parabox.ui.file.FilePage
 import com.ojhdtapp.parabox.ui.message.MessagePage
 import com.ojhdtapp.parabox.ui.util.NavigationBar
 import com.ojhdtapp.parabox.ui.util.NavigationRail
@@ -110,6 +112,15 @@ fun MenuPage(
                 ){
                     composable(MessagePageDestination){
                         MessagePage(
+                            navigator = destinationsNavigator,
+                            mainNavController = navController,
+                            mainSharedViewModel = mainSharedViewModel,
+                            sizeClass = sizeClass,
+                            drawerState = drawerState
+                        )
+                    }
+                    composable(FilePageDestination){
+                        FilePage(
                             navigator = destinationsNavigator,
                             mainNavController = navController,
                             mainSharedViewModel = mainSharedViewModel,

@@ -74,15 +74,17 @@ class MainActivity : ComponentActivity() {
             val mainNavController = rememberAnimatedNavController()
             val mainNavHostEngine = rememberAnimatedNavHostEngine(
                 navHostContentAlignment = Alignment.TopCenter,
-                rootDefaultAnimations = RootNavGraphDefaultAnimations(),
-                defaultAnimationsForNestedNavGraph = mapOf(
-                    NavGraphs.root to NestedNavGraphDefaultAnimations(
-                        enterTransition = { scaleIn(tween(200), 0.9f) + fadeIn(tween(200)) },
-                        exitTransition = { scaleOut(tween(200), 1.1f) + fadeOut(tween(200)) },
-                        popEnterTransition = {scaleIn(tween(200), 1.1f) + fadeIn(tween(200))},
-                        popExitTransition = {scaleOut(tween(200), 0.9f) + fadeOut(tween(200))}
-                    )
-                )
+                rootDefaultAnimations = RootNavGraphDefaultAnimations(
+//                    enterTransition = { slideInHorizontally { it }},
+//                    exitTransition = { slideOutHorizontally { -it }},
+//                    popEnterTransition = { slideInHorizontally { -it }},
+//                    popExitTransition = { slideOutHorizontally { it }},
+                    enterTransition = { fadeIn(tween(2000)) + scaleIn(tween(2000), 0.9f) },
+                    exitTransition = { fadeOut(tween(2000)) + scaleOut(tween(2000), 1.1f) },
+                    popEnterTransition = { fadeIn(tween(2000)) + scaleIn(tween(2000), 1.1f) },
+                    popExitTransition = { fadeOut(tween(2000)) + scaleOut(tween(2000), 0.9f) }
+                ),
+                defaultAnimationsForNestedNavGraph = mapOf()
             )
             // Shared ViewModel
             val mainSharedViewModel = hiltViewModel<MainSharedViewModel>(this)
@@ -97,12 +99,12 @@ class MainActivity : ComponentActivity() {
             AppTheme {
                 CompositionLocalProvider(values = arrayOf(LocalFixedInsets provides fixedInsets)) {
                     DestinationsNavHost(navGraph = NavGraphs.root,
-                    engine = mainNavHostEngine,
-                    navController = mainNavController,
-                    dependenciesContainerBuilder = {
-                        dependency(mainSharedViewModel)
-                        dependency(sizeClass)
-                    })
+                        engine = mainNavHostEngine,
+                        navController = mainNavController,
+                        dependenciesContainerBuilder = {
+                            dependency(mainSharedViewModel)
+                            dependency(sizeClass)
+                        })
 
                 }
 
