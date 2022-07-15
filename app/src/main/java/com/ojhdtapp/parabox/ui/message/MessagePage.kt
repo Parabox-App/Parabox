@@ -34,6 +34,7 @@ import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.layout.onSizeChanged
@@ -61,6 +62,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
+import kotlin.math.sqrt
 
 @OptIn(
     ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
@@ -214,7 +216,9 @@ fun MessagePage(
                         val isLast = index == contactState.data.lastIndex
                         val isDragging = swipeableState.offset.value.roundToInt() != 0
                         val topRadius by animateDpAsState(targetValue = if (isDragging || isFirst) 28.dp else 0.dp)
+                        val bgTopRadius by animateDpAsState(targetValue = if (isFirst) 28.dp else 0.dp)
                         val bottomRadius by animateDpAsState(targetValue = if (isDragging || isLast) 28.dp else 0.dp)
+                        val bgBottomRadius by animateDpAsState(targetValue = if (isLast) 28.dp else 0.dp)
                         val isSelected =
                             viewModel.selectedContactIdStateList.contains(item.contactId)
                         SwipeableContact(
@@ -222,8 +226,8 @@ fun MessagePage(
                                 .padding(horizontal = 16.dp)
                                 .animateItemPlacement(),
                             state = swipeableState,
-                            topRadius = topRadius,
-                            bottomRadius = bottomRadius,
+                            topRadius = bgTopRadius,
+                            bottomRadius = bgBottomRadius,
                             extraSpace = 16.dp
                         ) {
                             ContactItem(
@@ -414,18 +418,20 @@ fun SwipeableContact(
     val width = constraints.maxWidth.toFloat() + extraSpaceInt
     val anchors = mapOf(0f to false, -width to true)
     val offset = state.offset.value
+    val animationProcess = sqrt((-offset * 2 / width).coerceIn(0f, 1f))
     Box(
-        modifier = Modifier.swipeable(
-            state = state,
-            anchors = anchors,
-            thresholds = { _, _ -> androidx.compose.material.FractionalThreshold(0.5f) },
-            orientation = Orientation.Horizontal
-        )
+        modifier = Modifier
+            .height(IntrinsicSize.Min)
+            .swipeable(
+                state = state,
+                anchors = anchors,
+                thresholds = { _, _ -> androidx.compose.material.FractionalThreshold(0.5f) },
+                orientation = Orientation.Horizontal
+            )
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(IntrinsicSize.Max)
+                .fillMaxSize()
                 .clip(
                     RoundedCornerShape(
                         topStart = topRadius,
@@ -439,11 +445,24 @@ fun SwipeableContact(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.End
         ) {
-            Icon(
-                imageVector = Icons.Outlined.DoNotDisturb,
-                contentDescription = "not disturb",
-                tint = MaterialTheme.colorScheme.onPrimary
-            )
+            Row(
+                modifier = Modifier
+                    .offset(x = 32.dp * (1f - animationProcess))
+                    .alpha(animationProcess),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "隐藏该会话",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Icon(
+                    imageVector = Icons.Outlined.DoNotDisturb,
+                    contentDescription = "not disturb",
+                    tint = MaterialTheme.colorScheme.onPrimary
+                )
+            }
         }
         Box(
             modifier = Modifier.offset(offset = { IntOffset(x = offset.roundToInt(), y = 0) }),
