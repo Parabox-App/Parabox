@@ -202,8 +202,8 @@ class MessagePageViewModel @Inject constructor(
         tempContactIdForHiddenCancellation = contactId
         updateHiddenStateJob = viewModelScope.launch(Dispatchers.IO) {
 //            delay(0)
+//            _uiEventFlow.emit(MessagePageUiEvent.ShowSnackBar("会话已暂时隐藏", "取消"))
             updateContactHiddenState(contactId, true)
-            _uiEventFlow.emit(MessagePageUiEvent.ShowSnackBar("会话已暂时隐藏", "取消"))
         }
     }
     fun cancelContactHidden(){

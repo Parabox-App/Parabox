@@ -4,7 +4,9 @@ package com.ojhdtapp.parabox.ui.message
 
 import android.util.Log
 import androidx.compose.animation.*
+import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
@@ -60,6 +62,8 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.navigate
 import com.valentinilk.shimmer.*
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -93,15 +97,17 @@ fun MessagePage(
     val contactState by viewModel.contactStateFlow.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     LaunchedEffect(true) {
-        viewModel.uiEventFlow.collectLatest {
+        viewModel.uiEventFlow.collectLatest { it ->
             when (it) {
                 is MessagePageUiEvent.ShowSnackBar -> {
-                    val res = snackBarHostState.showSnackbar(it.message, it.label)
-                    when(res){
-                        SnackbarResult.ActionPerformed -> {
-                            viewModel.cancelContactHidden()
+                    snackBarHostState.showSnackbar(it.message, it.label).also { result ->
+                        when (result) {
+                            SnackbarResult.ActionPerformed -> {
+                                viewModel.cancelContactHidden()
+                            }
+                            SnackbarResult.Dismissed -> {}
+                            else -> {}
                         }
-                        SnackbarResult.Dismissed -> {}
                     }
                 }
                 is MessagePageUiEvent.UpdateMessageBadge -> {
@@ -206,11 +212,22 @@ fun MessagePage(
                 } else {
                     itemsIndexed(
                         items = contactState.data,
-                        key = { _, item -> item.contactId }) { index, item ->
+                        key = { _, item -> item.contactId }
+                    ) { index, item ->
                         var loading by remember {
                             mutableStateOf(false)
                         }
-                        val swipeableState = rememberSwipeableState(initialValue = false)
+                        val swipeableState = rememberSwipeableState(initialValue = false,
+                            confirmStateChange = {
+                                if (it) {
+                                    coroutineScope.launch {
+                                        snackBarHostState.showSnackbar("会话已暂时隐藏", "取消")
+                                        delay(2000)
+                                        viewModel.setContactHidden(item.contactId)
+                                    }
+                                }
+                                true
+                            })
                         val isFirst = index == 0
                         val isLast = index == contactState.data.lastIndex
                         val isDragging = swipeableState.offset.value.roundToInt() != 0
@@ -228,7 +245,7 @@ fun MessagePage(
                             topRadius = bgTopRadius,
                             bottomRadius = bgBottomRadius,
                             extraSpace = 16.dp,
-                            onTrigger = {viewModel.setContactHidden(item.contactId)}
+                            triggered = swipeableState.currentValue,
                         ) {
                             ContactItem(
                                 contact = item,
@@ -331,12 +348,9 @@ fun SwipeableContact(
     topRadius: Dp,
     bottomRadius: Dp,
     extraSpace: Dp? = 0.dp,
-    onTrigger: () -> Unit,
+    triggered: Boolean = false,
     content: @Composable () -> Unit
 ) = BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
-    if(state.direction == 0f && state.currentValue){
-        onTrigger()
-    }
     val extraSpaceInt = with(LocalDensity.current) {
         extraSpace?.toPx() ?: 0f
     }
@@ -344,56 +358,64 @@ fun SwipeableContact(
     val anchors = mapOf(0f to false, -width to true)
     val offset = state.offset.value
     val animationProcess = sqrt((-offset * 2 / width).coerceIn(0f, 1f))
-    Box(
-        modifier = Modifier
-            .height(IntrinsicSize.Min)
-            .swipeable(
-                state = state,
-                anchors = anchors,
-                thresholds = { _, _ -> androidx.compose.material.FractionalThreshold(0.5f) },
-                orientation = Orientation.Horizontal
-            )
+    AnimatedVisibility(
+        visible = !triggered,
+        enter = EnterTransition.None,
+        exit = shrinkVertically(
+//            animationSpec = spring()
+        ),
     ) {
-        Row(
+        Box(
             modifier = Modifier
-                .fillMaxSize()
-                .clip(
-                    RoundedCornerShape(
-                        topStart = topRadius,
-                        topEnd = topRadius,
-                        bottomEnd = bottomRadius,
-                        bottomStart = bottomRadius
-                    )
+                .height(IntrinsicSize.Min)
+                .swipeable(
+                    state = state,
+                    anchors = anchors,
+                    thresholds = { _, _ -> androidx.compose.material.FractionalThreshold(0.5f) },
+                    orientation = Orientation.Horizontal
                 )
-                .background(MaterialTheme.colorScheme.primary)
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.End
         ) {
             Row(
                 modifier = Modifier
-                    .offset(x = 32.dp * (1f - animationProcess))
-                    .alpha(animationProcess),
-                verticalAlignment = Alignment.CenterVertically
+                    .fillMaxSize()
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = topRadius,
+                            topEnd = topRadius,
+                            bottomEnd = bottomRadius,
+                            bottomStart = bottomRadius
+                        )
+                    )
+                    .background(MaterialTheme.colorScheme.primary)
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.End
             ) {
-                Text(
-                    text = "隐藏该会话",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Icon(
-                    imageVector = Icons.Outlined.RemoveCircleOutline,
-                    contentDescription = "not disturb",
-                    tint = MaterialTheme.colorScheme.onPrimary
-                )
+                Row(
+                    modifier = Modifier
+                        .offset(x = 32.dp * (1f - animationProcess))
+                        .alpha(animationProcess),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "隐藏该会话",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(
+                        imageVector = Icons.Outlined.RemoveCircleOutline,
+                        contentDescription = "not disturb",
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
             }
-        }
-        Box(
-            modifier = Modifier.offset(offset = { IntOffset(x = offset.roundToInt(), y = 0) }),
-            contentAlignment = Alignment.Center
-        ) {
-            content()
+            Box(
+                modifier = Modifier.offset(offset = { IntOffset(x = offset.roundToInt(), y = 0) }),
+                contentAlignment = Alignment.Center
+            ) {
+                content()
+            }
         }
     }
 }
