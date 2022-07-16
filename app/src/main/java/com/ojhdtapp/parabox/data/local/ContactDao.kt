@@ -9,8 +9,11 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ContactDao {
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertContact(contact: ContactEntity): Long
+
+    @Update
+    fun updateContact(contacts: List<ContactEntity>)
 
     @Update(entity = ContactEntity::class)
     fun updateHiddenState(obj: ContactHiddenStateUpdate)
@@ -54,15 +57,18 @@ interface ContactDao {
     @Query("SELECT * FROM contact_plugin_connection_cross_ref WHERE contactId = :contactId")
     fun getContactPluginConnectionCrossRefsByContactId(contactId: Long): List<ContactPluginConnectionCrossRef>
 
+    @Query("SELECT * FROM contact_plugin_connection_cross_ref WHERE objectId = :objectId")
+    fun getContactPluginConnectionCrossRefsByObjectId(objectId: Long): List<ContactPluginConnectionCrossRef>
+
     @Transaction
-    @Query("SELECT * FROM contact_entity WHERE contactId = :contactId")
-    fun getContactWithPluginConnections(contactId: Long): List<ContactWithPluginConnections>
+    @Query("SELECT * FROM contact_entity WHERE contactId = :contactId LIMIT 1")
+    fun getContactWithPluginConnections(contactId: Long): ContactWithPluginConnections
 
     @Transaction
     @Query("SELECT * FROM contact_entity WHERE contactId IN (:contactIds)")
     fun getContactWithPluginConnectionsByList(contactIds: List<Long>): List<ContactWithPluginConnections>
 
     @Transaction
-    @Query("SELECT * FROM plugin_connection_entity WHERE objectId = :objectId")
-    suspend fun getPluginConnectionWithContacts(objectId: Long): List<PluginConnectionWithContacts>
+    @Query("SELECT * FROM plugin_connection_entity WHERE objectId = :objectId LIMIT 1")
+    fun getPluginConnectionWithContacts(objectId: Long): PluginConnectionWithContacts
 }

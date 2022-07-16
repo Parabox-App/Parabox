@@ -38,6 +38,20 @@ data class MessageDto(
         )
     }
 
+    fun toContactEntity(): ContactEntity {
+        return ContactEntity(
+            profile = subjectProfile,
+            latestMessage = LatestMessage(
+                content = contents.getContentString(),
+                timestamp = timestamp,
+                unreadMessagesNum = 0
+            ),
+            contactId = pluginConnection.objectId,
+            senderId = pluginConnection.objectId,
+            isHidden = false
+        )
+    }
+
     fun toMessageEntity(): MessageEntity {
         return MessageEntity(
             contents = contents,

@@ -245,7 +245,8 @@ fun MessagePage(
                             state = swipeableState,
                             topRadius = bgTopRadius,
                             bottomRadius = bgBottomRadius,
-                            extraSpace = 16.dp
+                            extraSpace = 16.dp,
+                            enabled = !isSelected,
                         ) {
                             ContactItem(
                                 contact = item,
@@ -348,6 +349,7 @@ fun SwipeableContact(
     topRadius: Dp,
     bottomRadius: Dp,
     extraSpace: Dp? = 0.dp,
+    enabled: Boolean,
     content: @Composable () -> Unit
 ) = BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
     val extraSpaceInt = with(LocalDensity.current) {
@@ -365,7 +367,8 @@ fun SwipeableContact(
                 state = state,
                 anchors = anchors,
                 thresholds = { _, _ -> androidx.compose.material.FractionalThreshold(0.5f) },
-                orientation = Orientation.Horizontal
+                orientation = Orientation.Horizontal,
+                enabled = enabled
             )
     ) {
         Row(

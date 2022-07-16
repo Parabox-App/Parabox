@@ -6,6 +6,7 @@ import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.*
 import com.ojhdtapp.parabox.data.remote.dto.MessageDto
 import com.ojhdtapp.parabox.domain.model.*
+import com.ojhdtapp.parabox.domain.model.message_content.getContentString
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -21,28 +22,51 @@ class MainRepositoryImpl @Inject constructor(
             }
             val contactIdDeferred = async<Long> {
                 database.contactDao.insertContact(
-                    dto.toContactEntityWithUnreadMessagesNumUpdate(
-                        database.contactDao
-                    )
+//                    dto.toContactEntityWithUnreadMessagesNumUpdate(
+//                        database.contactDao
+//                    )
+                    dto.toContactEntity()
                 )
             }
             val pluginConnectionDeferred = async<Long> {
                 database.contactDao.insertPluginConnection(dto.pluginConnection.toPluginConnectionEntity())
             }
+//            database.contactDao.updateHiddenState(ContactHiddenStateUpdate(dto.pluginConnection.objectId, false))
             if (pluginConnectionDeferred.await() != -1L) {
                 database.contactDao.insertContactPluginConnectionCrossRef(
                     ContactPluginConnectionCrossRef(
-                        contactId = contactIdDeferred.await(),
+                        contactId = dto.pluginConnection.objectId,
                         objectId = pluginConnectionDeferred.await()
                     )
                 )
             }
             database.contactMessageCrossRefDao.insertContactMessageCrossRef(
                 ContactMessageCrossRef(
-                    contactId = contactIdDeferred.await(),
+                    contactId = dto.pluginConnection.objectId,
                     messageId = messageIdDeferred.await()
                 )
             )
+//            database.contactDao.getContactPluginConnectionCrossRefsByObjectId(dto.pluginConnection.objectId)
+//                .map {
+//                    ContactHiddenStateUpdate(contactId = it.contactId, isHidden = false)
+//                }.let {
+//                    database.contactDao.updateHiddenState(it)
+//                }
+
+
+            // Update Avatar or Anything Else Here
+            database.contactDao.getPluginConnectionWithContacts(dto.pluginConnection.objectId).let {
+                database.contactDao.updateContact(it.contactList.map {
+                    it.copy(
+                        latestMessage = LatestMessage(
+                            content = dto.contents.getContentString(),
+                            timestamp = dto.timestamp,
+                            unreadMessagesNum = (it.latestMessage?.unreadMessagesNum ?: 0) + 1
+                        ),
+                        isHidden = false
+                    )
+                })
+            }
         }
 //        database.messageDao.insertMessage(dto.toMessageEntity())
 //        database.contactDao.insertContact(dto.toContactEntityWithUnreadMessagesNumUpdate(database.contactDao))

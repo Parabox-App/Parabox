@@ -264,7 +264,7 @@ fun TimeDivider(modifier: Modifier = Modifier, timestamp: Long) {
 fun ChatBlock(modifier: Modifier = Modifier, data: ChatBlock, sentByMe: Boolean) {
     Row(
         modifier = modifier
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 16.dp, vertical = 4.dp),
 //        horizontalArrangement = if (sentByMe) Arrangement.End else Arrangement.Start
     ) {
         if (sentByMe) {
