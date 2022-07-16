@@ -29,6 +29,7 @@ import androidx.compose.material3.DrawerState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -213,7 +214,11 @@ fun MessagePage(
                             confirmStateChange = {
                                 if (it) {
                                     coroutineScope.launch {
-                                        snackBarHostState.showSnackbar("会话已暂时隐藏", "取消")
+                                        snackBarHostState.showSnackbar(
+                                            message = "会话已暂时隐藏",
+                                            actionLabel = "取消",
+                                            duration = SnackbarDuration.Short
+                                        )
                                             .also { result ->
                                                 when (result) {
                                                     SnackbarResult.ActionPerformed -> {
@@ -246,7 +251,7 @@ fun MessagePage(
                             topRadius = bgTopRadius,
                             bottomRadius = bgBottomRadius,
                             extraSpace = 16.dp,
-                            enabled = !isSelected,
+                            enabled = viewModel.searchBarActivateState.value == SearchAppBar.NONE,
                         ) {
                             ContactItem(
                                 contact = item,
@@ -255,14 +260,16 @@ fun MessagePage(
                                 isLoading = loading,
                                 isSelected = isSelected,
                                 isEditing = item.contactId == mainSharedViewModel.editingContact.value,
+                                isExpanded = sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded,
                                 shimmer = shimmerInstance,
                                 onClick = {
                                     if (viewModel.searchBarActivateState.value == SearchAppBar.SELECT) {
                                         viewModel.addOrRemoveItemOfSelectedContactIdStateList(item.contactId)
                                     } else {
                                         mainSharedViewModel.receiveAndUpdateMessageFromContact(
-                                            item,
-                                            sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded
+                                            contact = item,
+                                            shouldSelect = true
+//                                            sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded
                                         )
                                         if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
                                             mainNavController.navigate(ChatPageDestination)
@@ -428,13 +435,14 @@ fun ContactItem(
     isLoading: Boolean = true,
     isSelected: Boolean = false,
     isEditing: Boolean = false,
+    isExpanded: Boolean = false,
     shimmer: Shimmer? = null,
     onClick: () -> Unit,
     onLongClick: () -> Unit
 ) {
     val background =
         animateColorAsState(
-            targetValue = if (isEditing) {
+            targetValue = if (isEditing && isExpanded) {
                 MaterialTheme.colorScheme.primaryContainer
             } else {
                 if (isTop) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
