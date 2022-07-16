@@ -100,15 +100,7 @@ fun MessagePage(
         viewModel.uiEventFlow.collectLatest { it ->
             when (it) {
                 is MessagePageUiEvent.ShowSnackBar -> {
-                    snackBarHostState.showSnackbar(it.message, it.label).also { result ->
-                        when (result) {
-                            SnackbarResult.ActionPerformed -> {
-                                viewModel.cancelContactHidden()
-                            }
-                            SnackbarResult.Dismissed -> {}
-                            else -> {}
-                        }
-                    }
+                    snackBarHostState.showSnackbar(it.message, it.label)
                 }
                 is MessagePageUiEvent.UpdateMessageBadge -> {
                     mainSharedViewModel.setMessageBadge(it.value)
@@ -222,6 +214,15 @@ fun MessagePage(
                                 if (it) {
                                     coroutineScope.launch {
                                         snackBarHostState.showSnackbar("会话已暂时隐藏", "取消")
+                                            .also { result ->
+                                                when (result) {
+                                                    SnackbarResult.ActionPerformed -> {
+                                                        viewModel.cancelContactHidden()
+                                                    }
+                                                    SnackbarResult.Dismissed -> {}
+                                                    else -> {}
+                                                }
+                                            }
                                     }
                                     viewModel.setContactHidden(item.contactId)
                                 }
