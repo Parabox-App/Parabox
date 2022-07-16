@@ -18,6 +18,7 @@ import com.ojhdtapp.parabox.ui.util.SearchAppBar
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -26,10 +27,9 @@ import javax.inject.Inject
 class MessagePageViewModel @Inject constructor(
     private val handleNewMessage: HandleNewMessage,
     getContacts: GetContacts,
-    val getSenderMessagesOnly: GetSenderMessagesOnly,
-    val getMessages: GetMessages,
     val getGroupInfoPack: GetGroupInfoPack,
     val groupNewContact: GroupNewContact,
+    val updateContactHiddenState: UpdateContactHiddenState,
 ) : ViewModel() {
     init {
         // Update Ungrouped Contacts
@@ -115,10 +115,11 @@ class MessagePageViewModel @Inject constructor(
 
     // Search
     private val _searchBarActivateState = mutableStateOf<Int>(SearchAppBar.NONE)
-    val searchBarActivateState : State<Int> = _searchBarActivateState
-    fun setSearchBarActivateState(value : Int){
+    val searchBarActivateState: State<Int> = _searchBarActivateState
+    fun setSearchBarActivateState(value: Int) {
         _searchBarActivateState.value = value
     }
+
     private val _searchText = mutableStateOf<String>("")
     val searchText: State<String> = _searchText
     fun setSearchText(value: String) {
@@ -195,14 +196,23 @@ class MessagePageViewModel @Inject constructor(
         _selectedContactIdStateList.clear()
     }
 
-//    private val messageStateFlow = MutableStateFlow<ContactWithMessages>()
-//    suspend fun getUngroupedMessage(contactId: Int){
-//        getUngroupedMessages(contactId).onEach {
-//
-//        }
-//    }
-
-//
+    var updateHiddenStateJob: Job? = null
+    var tempContactIdForHiddenCancellation : Long? = null
+    fun setContactHidden(contactId: Long) {
+        tempContactIdForHiddenCancellation = contactId
+        updateHiddenStateJob = viewModelScope.launch(Dispatchers.IO) {
+//            delay(0)
+            updateContactHiddenState(contactId, true)
+            _uiEventFlow.emit(MessagePageUiEvent.ShowSnackBar("会话已暂时隐藏", "取消"))
+        }
+    }
+    fun cancelContactHidden(){
+        viewModelScope.launch(Dispatchers.IO) {
+            tempContactIdForHiddenCancellation?.let{
+                updateContactHiddenState(it, false)
+            }
+        }
+    }
 
     fun testFun() {
         viewModelScope.launch(Dispatchers.IO) {

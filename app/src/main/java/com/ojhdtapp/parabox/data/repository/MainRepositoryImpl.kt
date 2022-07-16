@@ -49,6 +49,10 @@ class MainRepositoryImpl @Inject constructor(
 //        database.contactMessageCrossRefDao.insertNewContactMessageCrossRef(dto.getContactMessageCrossRef())
     }
 
+    override fun updateContactHiddenState(id: Long, value: Boolean) {
+        database.contactDao.updateHiddenState(ContactHiddenStateUpdate(id, value))
+    }
+
     override fun getAllHiddenContacts(): Flow<Resource<List<Contact>>> {
         return database.contactDao.getAllHiddenContacts()
             .map<List<ContactEntity>, Resource<List<Contact>>> { contactEntityList ->

@@ -1,9 +1,6 @@
 package com.ojhdtapp.parabox.data.local.entity
 
-import androidx.room.Embedded
-import androidx.room.Entity
-import androidx.room.Index
-import androidx.room.PrimaryKey
+import androidx.room.*
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.LatestMessage
 import com.ojhdtapp.parabox.domain.model.Profile
@@ -25,3 +22,10 @@ data class ContactEntity(
         senderId = senderId
     )
 }
+@Entity
+data class ContactHiddenStateUpdate(
+    @ColumnInfo(name = "contactId")
+    val contactId: Long,
+    @ColumnInfo(name = "isHidden")
+    val isHidden: Boolean
+)

@@ -6,10 +6,7 @@ import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.Converters
 import com.ojhdtapp.parabox.data.repository.MainRepositoryImpl
 import com.ojhdtapp.parabox.domain.repository.MainRepository
-import com.ojhdtapp.parabox.domain.use_case.GetContacts
-import com.ojhdtapp.parabox.domain.use_case.GetGroupInfoPack
-import com.ojhdtapp.parabox.domain.use_case.GroupNewContact
-import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
+import com.ojhdtapp.parabox.domain.use_case.*
 import com.ojhdtapp.parabox.domain.util.GsonParser
 import dagger.Module
 import dagger.Provides
@@ -57,5 +54,11 @@ object AppModule {
     @Singleton
     fun provideGroupNewContactUseCase(repository: MainRepository): GroupNewContact {
         return GroupNewContact(repository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUpdateContactHiddenStateUseCase(repository: MainRepository): UpdateContactHiddenState {
+        return UpdateContactHiddenState(repository)
     }
 }

@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.DoNotDisturb
 import androidx.compose.material.icons.outlined.Done
+import androidx.compose.material.icons.outlined.RemoveCircleOutline
 import androidx.compose.material3.*
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.Icon
@@ -28,6 +29,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
@@ -94,7 +96,13 @@ fun MessagePage(
         viewModel.uiEventFlow.collectLatest {
             when (it) {
                 is MessagePageUiEvent.ShowSnackBar -> {
-                    snackBarHostState.showSnackbar(it.message)
+                    val res = snackBarHostState.showSnackbar(it.message, it.label)
+                    when(res){
+                        SnackbarResult.ActionPerformed -> {
+                            viewModel.cancelContactHidden()
+                        }
+                        SnackbarResult.Dismissed -> {}
+                    }
                 }
                 is MessagePageUiEvent.UpdateMessageBadge -> {
                     mainSharedViewModel.setMessageBadge(it.value)
@@ -202,15 +210,6 @@ fun MessagePage(
                         var loading by remember {
                             mutableStateOf(false)
                         }
-                        val dismissState = rememberDismissState(
-                            confirmStateChange = {
-                                Log.d("parabox", it.toString())
-                                if (it == DismissValue.DismissedToEnd || it == DismissValue.DismissedToStart) {
-                                    viewModel.showSnackBar("Dismiss triggered")
-                                }
-                                true
-                            }
-                        )
                         val swipeableState = rememberSwipeableState(initialValue = false)
                         val isFirst = index == 0
                         val isLast = index == contactState.data.lastIndex
@@ -228,7 +227,8 @@ fun MessagePage(
                             state = swipeableState,
                             topRadius = bgTopRadius,
                             bottomRadius = bgBottomRadius,
-                            extraSpace = 16.dp
+                            extraSpace = 16.dp,
+                            onTrigger = {viewModel.setContactHidden(item.contactId)}
                         ) {
                             ContactItem(
                                 contact = item,
@@ -257,85 +257,6 @@ fun MessagePage(
                                 }
                             )
                         }
-//                        SwipeToDismiss(
-//                            state = dismissState,
-//                            modifier = Modifier
-//                                .padding(horizontal = 16.dp)
-//                                .animateItemPlacement()
-//                                .draggable(
-//                                    orientation = Orientation.Horizontal,
-//                                    state = rememberDraggableState { delta ->
-//                                        Log.d("parabox", "$delta")
-//                                        isDragging = true
-//                                    }
-//                                ),
-//                            background = {
-//                                val direction =
-//                                    dismissState.dismissDirection ?: return@SwipeToDismiss
-//                                val arrangement = when (direction) {
-//                                    DismissDirection.StartToEnd -> Arrangement.Start
-//                                    DismissDirection.EndToStart -> Arrangement.End
-//                                }
-//                                Row(
-//                                    modifier = Modifier
-//                                        .fillMaxSize()
-//                                        .clip(
-//                                            RoundedCornerShape(
-//                                                topStart = topRadius,
-//                                                topEnd = topRadius,
-//                                                bottomEnd = bottomRadius,
-//                                                bottomStart = bottomRadius
-//                                            )
-//                                        )
-//                                        .background(MaterialTheme.colorScheme.primary)
-//                                        .padding(16.dp),
-//                                    verticalAlignment = Alignment.CenterVertically,
-//                                    horizontalArrangement = arrangement
-//                                ) {
-//                                    Icon(
-//                                        imageVector = Icons.Outlined.DoNotDisturb,
-//                                        contentDescription = "not disturb",
-//                                        tint = MaterialTheme.colorScheme.onPrimary
-//                                    )
-//                                }
-//                            },
-//                            directions = setOf(
-//                                DismissDirection.EndToStart,
-//                                DismissDirection.StartToEnd
-//                            ),
-//                            dismissThresholds = { dismissDirection ->
-//                                androidx.compose.material.FractionalThreshold(
-//                                    0.65f
-//                                )
-//                            }
-//                        ) {
-//                            ContactItem(
-//                                contact = item,
-//                                topRadius = topRadius,
-//                                bottomRadius = bottomRadius,
-//                                isLoading = loading,
-//                                isSelected = isSelected,
-//                                isEditing = item.contactId == mainSharedViewModel.editingContact.value,
-//                                shimmer = shimmerInstance,
-//                                onClick = {
-//                                    if (viewModel.searchBarActivateState.value == SearchAppBar.SELECT) {
-//                                        viewModel.addOrRemoveItemOfSelectedContactIdStateList(item.contactId)
-//                                    } else {
-//                                        mainSharedViewModel.receiveAndUpdateMessageFromContact(
-//                                            item,
-//                                            sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded
-//                                        )
-//                                        if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
-//                                            mainNavController.navigate(ChatPageDestination)
-//                                        }
-//                                    }
-//                                },
-//                                onLongClick = {
-//                                    viewModel.setSearchBarActivateState(SearchAppBar.SELECT)
-//                                    viewModel.addOrRemoveItemOfSelectedContactIdStateList(item.contactId)
-//                                }
-//                            )
-//                        }
                         if (index < contactState.data.lastIndex)
                             Spacer(modifier = Modifier.height(2.dp))
                     }
@@ -410,8 +331,12 @@ fun SwipeableContact(
     topRadius: Dp,
     bottomRadius: Dp,
     extraSpace: Dp? = 0.dp,
+    onTrigger: () -> Unit,
     content: @Composable () -> Unit
 ) = BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
+    if(state.direction == 0f && state.currentValue){
+        onTrigger()
+    }
     val extraSpaceInt = with(LocalDensity.current) {
         extraSpace?.toPx() ?: 0f
     }
@@ -458,7 +383,7 @@ fun SwipeableContact(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Icon(
-                    imageVector = Icons.Outlined.DoNotDisturb,
+                    imageVector = Icons.Outlined.RemoveCircleOutline,
                     contentDescription = "not disturb",
                     tint = MaterialTheme.colorScheme.onPrimary
                 )

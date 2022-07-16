@@ -12,6 +12,12 @@ interface ContactDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertContact(contact: ContactEntity): Long
 
+    @Update(entity = ContactEntity::class)
+    fun updateHiddenState(obj: ContactHiddenStateUpdate)
+
+    @Update(entity = ContactEntity::class)
+    fun updateHiddenState(objList: List<ContactHiddenStateUpdate>)
+
     @Query("SELECT * FROM contact_entity WHERE contactId = :id LIMIT 1")
     suspend fun getContactById(id: Long): ContactEntity?
 
@@ -31,7 +37,7 @@ interface ContactDao {
     fun getAllUnhiddenContacts(): Flow<List<ContactEntity>>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    fun insertPluginConnection(pluginConnection: PluginConnectionEntity) : Long
+    fun insertPluginConnection(pluginConnection: PluginConnectionEntity): Long
 
     @Delete
     fun deletePluginConnection(pluginConnection: PluginConnectionEntity)
