@@ -197,18 +197,19 @@ class MessagePageViewModel @Inject constructor(
     }
 
     var updateHiddenStateJob: Job? = null
-    var tempContactIdForHiddenCancellation : Long? = null
+    var tempContactIdForHiddenCancellation: Long? = null
     fun setContactHidden(contactId: Long) {
         tempContactIdForHiddenCancellation = contactId
         updateHiddenStateJob = viewModelScope.launch(Dispatchers.IO) {
-//            delay(0)
 //            _uiEventFlow.emit(MessagePageUiEvent.ShowSnackBar("会话已暂时隐藏", "取消"))
+            delay(200)
             updateContactHiddenState(contactId, true)
         }
     }
-    fun cancelContactHidden(){
-        viewModelScope.launch(Dispatchers.IO) {
-            tempContactIdForHiddenCancellation?.let{
+
+    fun cancelContactHidden() {
+        tempContactIdForHiddenCancellation?.let {
+            viewModelScope.launch(Dispatchers.IO) {
                 updateContactHiddenState(it, false)
             }
         }
