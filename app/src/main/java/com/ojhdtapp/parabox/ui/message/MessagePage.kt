@@ -226,8 +226,6 @@ fun MessagePage(
                             topRadius = 28.dp,
                             bottomRadius = 28.dp,
                             isLoading = true,
-                            onClick = {},
-                            onLongClick = {}
                         )
                         if (index < 3)
                             Spacer(modifier = Modifier.height(3.dp))
@@ -307,6 +305,10 @@ fun MessagePage(
                                     }
                                 },
                                 onLongClick = {
+                                    viewModel.setSearchBarActivateState(SearchAppBar.SELECT)
+                                    viewModel.addOrRemoveItemOfSelectedContactStateList(item)
+                                },
+                                onAvatarClick = {
                                     viewModel.setSearchBarActivateState(SearchAppBar.SELECT)
                                     viewModel.addOrRemoveItemOfSelectedContactStateList(item)
                                 }
@@ -467,8 +469,9 @@ fun ContactItem(
     isEditing: Boolean = false,
     isExpanded: Boolean = false,
     shimmer: Shimmer? = null,
-    onClick: () -> Unit,
-    onLongClick: () -> Unit
+    onClick: () -> Unit = {},
+    onLongClick: () -> Unit = {},
+    onAvatarClick: () -> Unit = {},
 ) {
     val background =
         animateColorAsState(
@@ -535,13 +538,15 @@ fun ContactItem(
                                 .size(48.dp)
                                 .clip(CircleShape)
                                 .background(MaterialTheme.colorScheme.secondary)
+                                .clickable { onAvatarClick() }
                         )
                     } else {
                         Image(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(24.dp))
                                 .size(48.dp)
-                                .background(MaterialTheme.colorScheme.tertiaryContainer),
+                                .background(MaterialTheme.colorScheme.tertiaryContainer)
+                                .clickable { onAvatarClick() },
                             bitmap = contact.profile.avatar.toAvatarBitmap(),
                             contentDescription = "avatar"
                         )

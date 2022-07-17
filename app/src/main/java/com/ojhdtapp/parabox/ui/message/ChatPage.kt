@@ -284,7 +284,7 @@ fun ChatBlock(modifier: Modifier = Modifier, data: ChatBlock, sentByMe: Boolean)
 @Composable
 fun ChatBlockAvatar(modifier: Modifier = Modifier) {
     Surface(
-        modifier = modifier.size(36.dp),
+        modifier = modifier.size(42.dp),
         shape = CircleShape,
         color = MaterialTheme.colorScheme.primary
     ) {

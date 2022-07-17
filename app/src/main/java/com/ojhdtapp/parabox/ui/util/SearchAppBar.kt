@@ -253,7 +253,7 @@ fun SelectContentField(
                 }
             } else if (it == 1) {
                 IconButton(onClick = onEditAction) {
-                    Icon(imageVector = Icons.Outlined.Edit, contentDescription = "edit")
+                    Icon(imageVector = Icons.Outlined.Info, contentDescription = "info")
                 }
             } else {
 

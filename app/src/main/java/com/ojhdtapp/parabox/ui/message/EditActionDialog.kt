@@ -41,7 +41,7 @@ fun EditActionDialog(
 ) {
     if (showDialog) {
         var name by remember {
-            mutableStateOf(contact?.profile?.name ?: "Test")
+            mutableStateOf(contact?.profile?.name ?: "")
         }
         var nameError by remember {
             mutableStateOf(false)
@@ -164,6 +164,15 @@ fun EditActionDialog(
                                         }
                                     })
                             }
+                        }
+                        item {
+                            Text(modifier = Modifier.padding(horizontal = 16.dp) ,text = "标签", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                        }
+                        item {
+                            Divider(modifier = Modifier.padding(horizontal = 16.dp))
+                        }
+                        item {
+                            Text(modifier = Modifier.padding(horizontal = 16.dp) ,text = "配置项", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                         }
                     }
                 }
