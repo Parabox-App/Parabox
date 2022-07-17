@@ -77,6 +77,7 @@ fun MenuPage(
         onSelfItemClick = {},
         drawerState = drawerState,
         gesturesEnabled = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact,
+        sizeClass = sizeClass
     ) {
         Column() {
             Row(modifier = Modifier.weight(1f)) {

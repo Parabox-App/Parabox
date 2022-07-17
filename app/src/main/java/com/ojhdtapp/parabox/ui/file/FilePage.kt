@@ -56,8 +56,6 @@ fun FilePage(
                 placeholder = "搜索文件",
                 activateState = searchBarState,
                 onActivateStateChanged = { searchBarState = it },
-                isGroupActionAvailable = false,
-                onGroupAction = {},
                 sizeClass = sizeClass,
                 onMenuClick = {coroutineScope.launch {
                     drawerState.open()

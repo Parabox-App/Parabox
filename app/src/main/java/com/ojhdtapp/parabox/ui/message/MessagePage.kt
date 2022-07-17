@@ -20,10 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.DoNotDisturb
-import androidx.compose.material.icons.outlined.Done
-import androidx.compose.material.icons.outlined.RemoveCircleOutline
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.Icon
@@ -113,10 +110,18 @@ fun MessagePage(
         // Left
         GroupActionDialog(
             showDialog = viewModel.showGroupActionDialogState.value,
-            state = viewModel.groupInfoState.value, onDismiss = {
+            state = viewModel.groupInfoState.value,
+            sizeClass = sizeClass,
+            onDismiss = {
                 viewModel.setShowGroupActionDialogState(false)
             }, onConfirm = viewModel::groupContact
         )
+        EditActionDialog(
+            showDialog = viewModel.showEditActionDialogState.value,
+            contact = ,
+            sizeClass = sizeClass,
+            onDismiss = { viewModel.setShowEditActionDialogState(false) },
+            onConfirm = {})
         Scaffold(
             modifier = modifier
                 .weight(1f)
@@ -133,12 +138,15 @@ fun MessagePage(
                         viewModel.setSearchBarActivateState(it)
                         viewModel.clearSelectedContactIdStateList()
                     },
-                    selectedNum = "${viewModel.selectedContactIdStateList.size}",
-                    isGroupActionAvailable = viewModel.selectedContactIdStateList.size > 1,
+                    selectedNum = viewModel.selectedContactIdStateList.size,
                     onGroupAction = {
                         viewModel.getGroupInfoPack()
                         viewModel.setShowGroupActionDialogState(true)
                     },
+                    onEditAction = {
+                        viewModel.setShowEditActionDialogState(true)
+                    },
+                    onExpandAction = {},
                     sizeClass = sizeClass,
                     onMenuClick = {
                         coroutineScope.launch {
@@ -170,15 +178,60 @@ fun MessagePage(
                 state = listState,
                 contentPadding = paddingValues
             ) {
-                item(key = "ungrouped") {
+                item(key = "tag") {
+                    Row(
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .weight(1f)
+                                .horizontalScroll((rememberScrollState()))
+                        ) {
+                            viewModel.contactTagStateFlow.collectAsState().value.forEach {
+                                FilterChip(
+                                    modifier = Modifier
+                                        .padding(end = 8.dp)
+                                        .animateContentSize(),
+                                    selected = viewModel.selectedContactTagStateList.contains(it),
+                                    onClick = {
+                                        viewModel.addOrRemoveItemOfSelectedContactTagStateList(
+                                            it
+                                        )
+                                    },
+                                    label = { Text(it) },
+                                    leadingIcon = {
+                                    },
+                                    selectedIcon = {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Done,
+                                            contentDescription = "",
+                                            modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                        )
+                                    }
+                                )
+                            }
+                        }
+                        androidx.compose.material3.IconButton(onClick = { /*TODO*/ }) {
+                            Icon(
+                                modifier = Modifier.size(20.dp),
+                                imageVector = Icons.Outlined.Edit,
+                                contentDescription = "edit_tag",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+
+                item(key = "main") {
                     Box(
                         modifier = Modifier
                             .padding(16.dp, 8.dp)
                             .animateItemPlacement()
                     ) {
                         Text(
-                            text = "未编组",
-                            style = MaterialTheme.typography.labelLarge,
+                            text = "主要",
+                            style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -294,7 +347,7 @@ fun MessagePage(
                     ) {
                         Text(
                             text = "其他",
-                            style = MaterialTheme.typography.labelLarge,
+                            style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
                     }

@@ -19,6 +19,8 @@ import com.ojhdtapp.parabox.ui.destinations.MessagePageDestination
 import com.ojhdtapp.parabox.ui.destinations.SettingPageDestination
 import com.ojhdtapp.parabox.ui.startAppDestination
 import androidx.compose.material3.*
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -133,6 +135,7 @@ fun NavigationDrawer(
     onSelfItemClick: () -> Unit,
     drawerState: DrawerState = rememberDrawerState(initialValue = DrawerValue.Closed),
     gesturesEnabled: Boolean = true,
+    sizeClass: WindowSizeClass,
     content: @Composable () -> Unit,
 ) {
     ModalNavigationDrawer(
@@ -140,37 +143,39 @@ fun NavigationDrawer(
         gesturesEnabled = gesturesEnabled,
         drawerContent = {
             Spacer(modifier = Modifier.statusBarsPadding())
-            NavigationDestination.values().forEach { destination ->
-                val isCurrentDestOnBackStack =
-                    navController.appCurrentDestinationAsState().value in destination.graph.destinations
-                NavigationDrawerItem(
-                    icon = {
-                        BadgedBox(badge = {
-                            if (destination.graph == NavGraphs.message && messageBadge != 0)
-                                Badge { Text(text = "$messageBadge") }
-                            else if (destination.graph == NavGraphs.setting && settingBadge)
-                                Badge()
-                        }) {
-                            Icon(
-                                imageVector = if (isCurrentDestOnBackStack) destination.iconSelected else destination.icon,
-                                contentDescription = destination.label
-                            )
-                        }
-                    },
-                    label = { Text(text = destination.label) },
-                    selected = isCurrentDestOnBackStack,
-                    onClick = {
-                        if (isCurrentDestOnBackStack) onSelfItemClick()
-                        else {
-                            navController.navigate(destination.graph) {
-                                popUpTo(NavGraphs.menu) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
+            if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) {
+                NavigationDestination.values().forEach { destination ->
+                    val isCurrentDestOnBackStack =
+                        navController.appCurrentDestinationAsState().value in destination.graph.destinations
+                    NavigationDrawerItem(
+                        icon = {
+                            BadgedBox(badge = {
+                                if (destination.graph == NavGraphs.message && messageBadge != 0)
+                                    Badge { Text(text = "$messageBadge") }
+                                else if (destination.graph == NavGraphs.setting && settingBadge)
+                                    Badge()
+                            }) {
+                                Icon(
+                                    imageVector = if (isCurrentDestOnBackStack) destination.iconSelected else destination.icon,
+                                    contentDescription = destination.label
+                                )
                             }
-                        }
-                    })
+                        },
+                        label = { Text(text = destination.label) },
+                        selected = isCurrentDestOnBackStack,
+                        onClick = {
+                            if (isCurrentDestOnBackStack) onSelfItemClick()
+                            else {
+                                navController.navigate(destination.graph) {
+                                    popUpTo(NavGraphs.menu) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                        })
+                }
             }
         }) {
         content()
@@ -190,7 +195,7 @@ fun NavigationRail(
     NavigationRail(
         modifier = modifier,
         header = {
-            IconButton(modifier = Modifier.statusBarsPadding(),onClick = onMenuClick) {
+            IconButton(modifier = Modifier.statusBarsPadding(), onClick = onMenuClick) {
                 Icon(imageVector = Icons.Outlined.Menu, contentDescription = "menu")
             }
             FloatingActionButton(

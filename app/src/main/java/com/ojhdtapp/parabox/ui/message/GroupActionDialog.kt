@@ -24,6 +24,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.material3.*
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -47,6 +49,7 @@ fun GroupActionDialog(
     modifier: Modifier = Modifier,
     showDialog: Boolean,
     state: GroupInfoState,
+    sizeClass: WindowSizeClass,
     onDismiss: () -> Unit,
     onConfirm: (name: String, pluginConnections: List<PluginConnection>, senderId: Long) -> Unit
 ) {
@@ -79,7 +82,7 @@ fun GroupActionDialog(
             onDismissRequest = onDismiss, properties = DialogProperties(
                 dismissOnBackPress = true,
                 dismissOnClickOutside = true,
-                usePlatformDefaultWidth = false
+                usePlatformDefaultWidth = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact
             )
         ) {
             Surface(modifier = modifier.fillMaxSize(), shape = RoundedCornerShape(16.dp)) {
@@ -250,7 +253,11 @@ fun GroupEditForm(
                         }
                     })
             }
-            AnimatedVisibility(visible = nameError) {
+            AnimatedVisibility(
+                visible = nameError,
+                enter = expandVertically(),
+                exit = shrinkVertically()
+            ) {
                 Text(
                     modifier = Modifier.padding(start = 64.dp),
                     text = "请输入会话名称",
@@ -262,6 +269,8 @@ fun GroupEditForm(
         item {
             AnimatedVisibility(
                 visible = shouldShowAvatarSelector,
+                enter = expandVertically(),
+                exit = shrinkVertically()
 //                enter = slideInVertically(),
 //                exit = slideOutVertically()
             ) {
@@ -345,7 +354,11 @@ fun GroupEditForm(
                             Text(text = "${conn.connectionType} - ${conn.objectId}")
                         }
                     }
-                    AnimatedVisibility(visible = pluginConnectionNotSelectedError) {
+                    AnimatedVisibility(
+                        visible = pluginConnectionNotSelectedError,
+                        enter = expandVertically(),
+                        exit = shrinkVertically()
+                    ) {
                         Text(
                             modifier = Modifier.padding(16.dp),
                             text = "请至少保留一个消息源",
@@ -396,6 +409,7 @@ fun GroupEditForm(
                     }
                 }
             }
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

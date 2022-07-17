@@ -141,6 +141,9 @@ class MessagePageViewModel @Inject constructor(
             _selectedContactIdStateList.remove(value)
         }
     }
+    fun clearSelectedContactIdStateList() {
+        _selectedContactIdStateList.clear()
+    }
 
     private var _showGroupActionDialogState = mutableStateOf<Boolean>(false)
     val showGroupActionDialogState: State<Boolean> = _showGroupActionDialogState
@@ -192,10 +195,6 @@ class MessagePageViewModel @Inject constructor(
         }.launchIn(viewModelScope)
     }
 
-    fun clearSelectedContactIdStateList() {
-        _selectedContactIdStateList.clear()
-    }
-
     var updateHiddenStateJob: Job? = null
     var tempContactIdForHiddenCancellation: Long? = null
     fun setContactHidden(contactId: Long) {
@@ -206,13 +205,41 @@ class MessagePageViewModel @Inject constructor(
             updateContactHiddenState(contactId, true)
         }
     }
-
     fun cancelContactHidden() {
         tempContactIdForHiddenCancellation?.let {
             viewModelScope.launch(Dispatchers.IO) {
                 updateContactHiddenState(it, false)
             }
         }
+    }
+
+    // Edit Dialog
+    private var _showEditActionDialogState = mutableStateOf<Boolean>(false)
+    val showEditActionDialogState: State<Boolean> = _showEditActionDialogState
+    fun setShowEditActionDialogState(value: Boolean) {
+        _showEditActionDialogState.value = value
+    }
+
+    // Tag
+    private val _contactTagStateFlow = flow<List<String>> {
+        emit(listOf<String>("tag1", "tag2", "tag3"))
+    }.stateIn(
+        initialValue = emptyList<String>(),
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000)
+    )
+    val contactTagStateFlow get() = _contactTagStateFlow
+    private val _selectedContactTagStateList = mutableStateListOf<String>()
+    val selectedContactTagStateList = _selectedContactTagStateList
+    fun addOrRemoveItemOfSelectedContactTagStateList(value: String) {
+        if (!_selectedContactTagStateList.contains(value)) {
+            _selectedContactTagStateList.add(value)
+        } else {
+            _selectedContactTagStateList.remove(value)
+        }
+    }
+    fun clearSelectedContactTagStateList() {
+        _selectedContactTagStateList.clear()
     }
 
     fun testFun() {

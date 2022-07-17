@@ -45,9 +45,10 @@ fun SearchAppBar(
     text: String,
     onTextChange: (text: String) -> Unit,
     placeholder: String,
-    selectedNum: String = "0",
-    isGroupActionAvailable: Boolean = false,
-    onGroupAction: () -> Unit,
+    selectedNum: Int = 0,
+    onGroupAction: () -> Unit = {},
+    onEditAction: () -> Unit = {},
+    onExpandAction: () -> Unit = {},
     sizeClass: WindowSizeClass,
     onMenuClick: () -> Unit,
 ) {
@@ -95,8 +96,9 @@ fun SearchAppBar(
                         isActivated = isActivated,
                         onActivateStateChanged = onActivateStateChanged,
                         selectedNum = selectedNum,
-                        isGroupActionAvailable = isGroupActionAvailable,
-                        onGroupAction = onGroupAction
+                        onGroupAction = onGroupAction,
+                        onEditAction = onEditAction,
+                        onExpandAction = onExpandAction
                     )
                 } else {
                     SearchContentField(
@@ -201,9 +203,10 @@ fun SelectContentField(
     modifier: Modifier = Modifier,
     isActivated: Boolean,
     onActivateStateChanged: (value: Int) -> Unit,
-    selectedNum: String,
-    isGroupActionAvailable: Boolean,
-    onGroupAction: () -> Unit
+    selectedNum: Int,
+    onGroupAction: () -> Unit,
+    onEditAction: () -> Unit,
+    onExpandAction: () -> Unit,
 ) {
     Row(
         modifier = modifier
@@ -221,7 +224,7 @@ fun SelectContentField(
             )
         }
         Spacer(modifier = Modifier.width(12.dp))
-        AnimatedContent(targetState = selectedNum,
+        AnimatedContent(targetState = selectedNum.toString(),
             transitionSpec = {
                 // Compare the incoming number with the previous number.
                 if (targetState > initialState) {
@@ -243,17 +246,20 @@ fun SelectContentField(
             Text(text = num, style = MaterialTheme.typography.titleMedium)
         }
         Spacer(modifier = Modifier.weight(1f))
-        Crossfade(targetState = isGroupActionAvailable) {
-            if (it) {
+        Crossfade(targetState = selectedNum) {
+            if (it > 1) {
                 IconButton(onClick = onGroupAction) {
                     Icon(imageVector = Icons.Outlined.Group, contentDescription = "group")
                 }
+            } else if (it == 1) {
+                IconButton(onClick = onEditAction) {
+                    Icon(imageVector = Icons.Outlined.Edit, contentDescription = "edit")
+                }
+            } else {
+
             }
         }
-        IconButton(onClick = { /*TODO*/ }) {
-            Icon(imageVector = Icons.Outlined.Archive, contentDescription = "archive")
-        }
-        IconButton(onClick = { /*TODO*/ }) {
+        IconButton(onClick = onExpandAction) {
             Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = "more")
         }
     }
