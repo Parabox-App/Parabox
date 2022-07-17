@@ -1,6 +1,5 @@
 package com.ojhdtapp.parabox.ui.message
 
-import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -9,7 +8,6 @@ import androidx.lifecycle.viewModelScope
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.remote.dto.MessageDto
 import com.ojhdtapp.parabox.domain.model.Contact
-import com.ojhdtapp.parabox.domain.model.GroupInfoPack
 import com.ojhdtapp.parabox.domain.model.Profile
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.model.message_content.PlainText
@@ -132,17 +130,17 @@ class MessagePageViewModel @Inject constructor(
     }
 
     // Selection
-    private val _selectedContactIdStateList = mutableStateListOf<Long>()
-    val selectedContactIdStateList = _selectedContactIdStateList
-    fun addOrRemoveItemOfSelectedContactIdStateList(value: Long) {
-        if (!_selectedContactIdStateList.contains(value)) {
-            _selectedContactIdStateList.add(value)
+    private val _selectedContactStateList = mutableStateListOf<Contact>()
+    val selectedContactStateList = _selectedContactStateList
+    fun addOrRemoveItemOfSelectedContactStateList(value: Contact) {
+        if (!_selectedContactStateList.contains(value)) {
+            _selectedContactStateList.add(value)
         } else {
-            _selectedContactIdStateList.remove(value)
+            _selectedContactStateList.remove(value)
         }
     }
-    fun clearSelectedContactIdStateList() {
-        _selectedContactIdStateList.clear()
+    fun clearSelectedContactStateList() {
+        _selectedContactStateList.clear()
     }
 
     private var _showGroupActionDialogState = mutableStateOf<Boolean>(false)
@@ -156,11 +154,11 @@ class MessagePageViewModel @Inject constructor(
     private var groupInfoJob: Job? = null
     fun getGroupInfoPack() {
         groupInfoJob?.cancel()
-        if (selectedContactIdStateList.isEmpty()) {
+        if (selectedContactStateList.isEmpty()) {
             _groupInfoState.value =
                 GroupInfoState(state = GroupInfoState.ERROR, message = "未选择待编组项")
         } else {
-            groupInfoJob = getGroupInfoPack(selectedContactIdStateList.toList()).onEach {
+            groupInfoJob = getGroupInfoPack(selectedContactStateList.map { it.contactId }.toList()).onEach {
                 _groupInfoState.value = GroupInfoState(
                     state = when (it) {
                         is Resource.Error -> GroupInfoState.ERROR
@@ -189,7 +187,7 @@ class MessagePageViewModel @Inject constructor(
             if (it is Resource.Success) {
                 _showGroupActionDialogState.value = false
                 setSearchBarActivateState(SearchAppBar.NONE)
-                clearSelectedContactIdStateList()
+                clearSelectedContactStateList()
                 _uiEventFlow.emit(MessagePageUiEvent.ShowSnackBar("会话编组成功"))
             }
         }.launchIn(viewModelScope)
@@ -222,7 +220,7 @@ class MessagePageViewModel @Inject constructor(
 
     // Tag
     private val _contactTagStateFlow = flow<List<String>> {
-        emit(listOf<String>("tag1", "tag2", "tag3"))
+        emit(listOf<String>("tag1", "tag2", "tag3","tag4","tag5","tag6","tag7","tag8"))
     }.stateIn(
         initialValue = emptyList<String>(),
         scope = viewModelScope,

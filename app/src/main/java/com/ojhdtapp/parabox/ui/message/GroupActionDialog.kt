@@ -53,33 +53,36 @@ fun GroupActionDialog(
     onDismiss: () -> Unit,
     onConfirm: (name: String, pluginConnections: List<PluginConnection>, senderId: Long) -> Unit
 ) {
-    var name by remember {
-        mutableStateOf("")
-    }
-
-    var nameError by remember {
-        mutableStateOf(false)
-    }
-
-    var shouldShowAvatarSelector by remember {
-        mutableStateOf(false)
-    }
-
-    val selectedPluginConnection = remember(state) {
-        mutableStateListOf<PluginConnection>().apply {
-            state.resource?.let { addAll(it.pluginConnections) }
-        }
-    }
-    var pluginConnectionNotSelectedError by remember {
-        mutableStateOf(false)
-    }
-
-    var selectedSenderId by remember(state) {
-        mutableStateOf(state.resource?.pluginConnections?.firstOrNull()?.objectId)
-    }
     if (showDialog) {
+        var name by remember {
+            mutableStateOf("")
+        }
+
+        var nameError by remember {
+            mutableStateOf(false)
+        }
+
+        var shouldShowAvatarSelector by remember {
+            mutableStateOf(false)
+        }
+
+        val selectedPluginConnection = remember(state) {
+            mutableStateListOf<PluginConnection>().apply {
+                state.resource?.let { addAll(it.pluginConnections) }
+            }
+        }
+        var pluginConnectionNotSelectedError by remember {
+            mutableStateOf(false)
+        }
+
+        var selectedSenderId by remember(state) {
+            mutableStateOf(state.resource?.pluginConnections?.firstOrNull()?.objectId)
+        }
         Dialog(
-            onDismissRequest = onDismiss, properties = DialogProperties(
+            onDismissRequest = {
+                name = ""
+                onDismiss()
+            }, properties = DialogProperties(
                 dismissOnBackPress = true,
                 dismissOnClickOutside = true,
                 usePlatformDefaultWidth = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact
@@ -91,7 +94,10 @@ fun GroupActionDialog(
                         SmallTopAppBar(title = { Text(text = "编组会话") },
                             navigationIcon = {
                                 IconButton(
-                                    onClick = onDismiss
+                                    onClick = {
+                                        name = ""
+                                        onDismiss()
+                                    }
                                 ) {
                                     Icon(
                                         imageVector = Icons.Outlined.Close,
