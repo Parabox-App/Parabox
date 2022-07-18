@@ -174,6 +174,18 @@ fun MessagePage(
                             .horizontalScroll((rememberScrollState()))
                     ) {
                         Spacer(modifier = Modifier.width(16.dp))
+                        if (viewModel.contactTagStateFlow.collectAsState().value.isNotEmpty()) {
+                            FilterChip(modifier = Modifier
+                                .padding(end = 8.dp)
+                                .animateContentSize(), selected = false, onClick = { /*TODO*/ },
+                                label = {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Tune,
+                                        contentDescription = "",
+                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                    )
+                                })
+                        }
                         viewModel.contactTagStateFlow.collectAsState().value.forEach {
                             FilterChip(
                                 modifier = Modifier

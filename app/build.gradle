@@ -101,7 +101,9 @@ dependencies {
     implementation "androidx.datastore:datastore-preferences:1.0.0"
 
     // Accompanist
-    implementation "com.google.accompanist:accompanist-systemuicontroller:0.24.9-beta"
+    def acc_version = "0.24.13-rc"
+    implementation "com.google.accompanist:accompanist-systemuicontroller:$acc_version"
+    implementation "com.google.accompanist:accompanist-flowlayout:$acc_version"
 
     // Navigation Compose
     def nav_version = "2.5.0"
@@ -122,7 +124,7 @@ dependencies {
 
     // Coroutine Lifecycle Scopes
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1"
-    implementation"org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1"
 
     // Dagger - Hilt
     implementation 'com.google.dagger:hilt-android:2.41'

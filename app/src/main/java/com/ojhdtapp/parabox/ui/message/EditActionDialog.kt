@@ -3,19 +3,17 @@ package com.ojhdtapp.parabox.ui.message
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.*
-import androidx.compose.material3.TopAppBarDefaults.smallTopAppBarColors
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
@@ -23,20 +21,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.core.util.FormUtil
 import com.ojhdtapp.parabox.core.util.toDescriptiveTime
 import com.ojhdtapp.parabox.domain.model.Contact
+import com.ojhdtapp.parabox.ui.util.HashTagEditor
 import com.ojhdtapp.parabox.ui.util.clearFocusOnKeyboardDismiss
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -100,25 +102,25 @@ fun EditActionDialog(
                                 contentDescription = "background",
                                 contentScale = ContentScale.Crop
                             )
-                            SmallTopAppBar(
-                                title = { Text(text = "会话信息") },
-                                navigationIcon = {
-                                    IconButton(
-                                        onClick = {
-                                            name = ""
-                                            onDismiss()
-                                        }
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.Close,
-                                            contentDescription = "close"
-                                        )
-                                    }
-                                },
-                                colors = smallTopAppBarColors(
-                                    containerColor = Color.Transparent
-                                )
-                            )
+//                            SmallTopAppBar(
+//                                title = { Text(text = "会话信息") },
+//                                navigationIcon = {
+//                                    IconButton(
+//                                        onClick = {
+//                                            name = ""
+//                                            onDismiss()
+//                                        }
+//                                    ) {
+//                                        Icon(
+//                                            imageVector = Icons.Outlined.Close,
+//                                            contentDescription = "close"
+//                                        )
+//                                    }
+//                                },
+//                                colors = smallTopAppBarColors(
+//                                    containerColor = Color.Transparent
+//                                )
+//                            )
                             Box(
                                 modifier = Modifier
                                     .align(Alignment.BottomStart)
@@ -216,91 +218,80 @@ fun EditActionDialog(
                         }
                     }
                     item {
-                        Text(
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            text = "标签",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary
+                        val text = TextFieldValue()
+                        var hashTagText by remember {
+                            mutableStateOf("")
+                        }
+                        var hashTagError by remember {
+                            mutableStateOf<String>("")
+                        }
+                        var hashTagShouldShowError by remember {
+                            mutableStateOf(false)
+                        }
+                        val hashTagList = remember {
+                            mutableStateListOf<String>()
+                        }
+                        val hashTagLazyListState = rememberLazyListState()
+                        val coroutineScope = rememberCoroutineScope()
+                        val hashTagFocusRequester = remember { FocusRequester() }
+                        val hashTagInteraction = remember { MutableInteractionSource() }
+                        val rowInteraction = remember { MutableInteractionSource() }
+                        HashTagEditor(
+                            textFieldValue = hashTagText,
+                            enabled = isEditing,
+                            onValueChanged = {
+                                hashTagShouldShowError = false
+                                val values = FormUtil.splitPerSpaceOrNewLine(it)
+
+                                if (values.size >= 2) {
+                                    if (!FormUtil.checkTagMinimumCharacter(values[0])) {
+                                        hashTagError = "标签应至少包含两个字符"
+                                        hashTagShouldShowError = true
+                                    } else if (!FormUtil.checkTagMaximumCharacter(values[0])) {
+                                        hashTagError = "标签长度不应超过50"
+                                        hashTagShouldShowError = true
+                                    } else if (hashTagList.contains(values[0])) {
+                                        hashTagError = "该标签已存在"
+                                        hashTagShouldShowError = true
+                                    }
+
+                                    if (!hashTagShouldShowError) {
+                                        hashTagList.add(values[0])
+                                        hashTagText = ""
+                                        if (hashTagList.isNotEmpty()) {
+                                            coroutineScope.launch {
+                                                hashTagLazyListState.animateScrollToItem(hashTagList.lastIndex)
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    hashTagText = it
+                                }
+                            },
+                            lazyListState = hashTagLazyListState,
+                            focusRequester = hashTagFocusRequester,
+                            textFieldInteraction = hashTagInteraction,
+                            rowInteraction = rowInteraction,
+                            errorMessage = hashTagError,
+                            shouldShowError = hashTagShouldShowError,
+                            listOfChips = hashTagList,
+                            innerModifier = Modifier.onKeyEvent {
+                                if (it.key.keyCode == Key.Backspace.keyCode) {
+                                    hashTagList.removeLastOrNull()
+                                }
+                                false
+                            },
+                            onChipClick = { chipIndex ->
+                                if (hashTagList.isNotEmpty()) {
+                                    hashTagList.removeAt(chipIndex)
+                                }
+                            },
+                            isCompact = isCompact
                         )
                     }
-//                        item {
-//                            val focusRequester = remember { FocusRequester() }
-//                            val focusManager = LocalFocusManager.current
-//                            Row(
-//                                modifier = Modifier.padding(horizontal = 16.dp),
-//                                verticalAlignment = Alignment.CenterVertically
-//                            ) {
-//                                Box(
-//                                    modifier = Modifier
-//                                        .size(48.dp)
-//                                        .clip(CircleShape)
-//                                        .background(MaterialTheme.colorScheme.primary)
-//                                        .clickable {
-//                                            shouldShowAvatarSelector = !shouldShowAvatarSelector
-//                                        })
-//                                Spacer(modifier = Modifier.width(16.dp))
-//                                OutlinedTextField(
-//                                    modifier = Modifier.weight(1f),
-//                                    value = name, onValueChange = {
-//                                        name = it
-//                                        nameError = false
-//                                    },
-//                                    label = { Text(text = "会话名称") },
-//                                    isError = nameError,
-//                                    keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-//                                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-//                                    singleLine = true,
-//                                    trailingIcon = {
-//                                        var expanded by remember {
-//                                            mutableStateOf(false)
-//                                        }
-//                                        Box(
-//                                            modifier = Modifier
-//                                                .wrapContentSize(Alignment.TopEnd)
-//                                        ) {
-//
-//                                            IconButton(onClick = { expanded = !expanded }) {
-//                                                Crossfade(targetState = expanded) {
-//                                                    if (it) {
-//                                                        Icon(
-//                                                            imageVector = Icons.Outlined.ExpandLess,
-//                                                            contentDescription = "Shrink"
-//                                                        )
-//                                                    } else {
-//                                                        Icon(
-//                                                            imageVector = Icons.Outlined.ExpandMore,
-//                                                            contentDescription = "Expand"
-//                                                        )
-//                                                    }
-//                                                }
-//                                            }
-//                                            DropdownMenu(
-//                                                expanded = expanded,
-//                                                onDismissRequest = { expanded = false }) {
-//                                                contact?.profile?.name?.let {
-//                                                    DropdownMenuItem(
-//                                                        text = { Text(text = it) },
-//                                                        onClick = {
-//                                                            name = it
-//                                                            expanded = false
-//                                                        })
-//                                                }
-//                                            }
-//                                        }
-//                                    })
-//                            }
-//                        }
-//                        item {
-//                            Text(modifier = Modifier.padding(horizontal = 16.dp) ,text = "标签", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-//                        }
-//                        item {
-//                            Divider(modifier = Modifier.padding(horizontal = 16.dp))
-//                        }
-//                        item {
-//                            Text(modifier = Modifier.padding(horizontal = 16.dp) ,text = "配置项", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-//                        }
                 }
             }
         }
     }
 }
+
