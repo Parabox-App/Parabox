@@ -1,7 +1,7 @@
 package com.ojhdtapp.parabox.ui.message
 
 import android.util.Log
-import androidx.compose.animation.Crossfade
+import androidx.compose.animation.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -157,7 +157,6 @@ fun EditActionDialog(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Box(
-                                    modifier = Modifier.padding(bottom = 4.dp),
                                     contentAlignment = Alignment.CenterStart
                                 ) {
                                     BasicTextField(
@@ -176,7 +175,8 @@ fun EditActionDialog(
                                             if (name.isEmpty()) {
                                                 Text(
                                                     text = "会话名",
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    style = MaterialTheme.typography.titleLarge
                                                 )
                                             }
                                             innerTextField()
@@ -185,7 +185,19 @@ fun EditActionDialog(
                                         enabled = isEditing
                                     )
                                 }
+                                AnimatedVisibility(
+                                    visible = isEditing,
+                                    enter = expandVertically(),
+                                    exit = shrinkVertically()
+                                ) {
+                                    Text(
+                                        text = "点击编辑会话名",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                                 Text(
+                                    modifier = Modifier.padding(top = 4.dp),
                                     text = contact?.latestMessage?.timestamp?.toDescriptiveTime()
                                         ?.let { "最近一次发言于$it" } ?: "无最近发言记录",
                                     style = MaterialTheme.typography.labelLarge,
