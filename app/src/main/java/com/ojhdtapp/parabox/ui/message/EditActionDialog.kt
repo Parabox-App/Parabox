@@ -81,6 +81,21 @@ fun EditActionDialog(
                 modifier = modifier.fillMaxSize(),
                 shape = RoundedCornerShape(16.dp)
             ) {
+                var hashTagText by remember {
+                    mutableStateOf("")
+                }
+                var hashTagError by remember {
+                    mutableStateOf<String>("")
+                }
+                var hashTagShouldShowError by remember {
+                    mutableStateOf(false)
+                }
+                val hashTagList = remember {
+                    mutableStateListOf<String>()
+                }
+                var onConfirmDelete by remember {
+                    mutableStateOf(false)
+                }
                 LazyColumn(
                 ) {
                     item {
@@ -206,7 +221,12 @@ fun EditActionDialog(
                             }
                             Crossfade(targetState = isEditing) {
                                 if (it) {
-                                    OutlinedButton(onClick = { isEditing = !isEditing }) {
+                                    OutlinedButton(onClick = { if(!isEditing) {
+                                        isEditing = true
+                                    }else{
+
+                                    }
+                                    }) {
                                         Icon(
                                             Icons.Outlined.Done,
                                             contentDescription = "done",
@@ -231,21 +251,7 @@ fun EditActionDialog(
                         }
                     }
                     item {
-                        var hashTagText by remember {
-                            mutableStateOf("")
-                        }
-                        var hashTagError by remember {
-                            mutableStateOf<String>("")
-                        }
-                        var hashTagShouldShowError by remember {
-                            mutableStateOf(false)
-                        }
-                        val hashTagList = remember {
-                            mutableStateListOf<String>()
-                        }
-                        var onConfirmDelete by remember {
-                            mutableStateOf(false)
-                        }
+
                         val hashTagLazyListState = rememberLazyListState()
                         val hashTagFocusRequester = remember { FocusRequester() }
                         val hashTagInteraction = remember { MutableInteractionSource() }

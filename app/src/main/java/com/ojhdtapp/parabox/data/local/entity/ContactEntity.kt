@@ -12,6 +12,7 @@ data class ContactEntity(
     @Embedded val latestMessage: LatestMessage?,
     val senderId: Long,
     val isHidden: Boolean = false,
+    val tags: List<String>,
     @PrimaryKey(autoGenerate = true) val contactId: Long = 0,
 ){
     fun toContact() = Contact(
@@ -19,7 +20,8 @@ data class ContactEntity(
         latestMessage = latestMessage,
         isHidden = isHidden,
         contactId = contactId,
-        senderId = senderId
+        senderId = senderId,
+        tags = tags
     )
 }
 @Entity

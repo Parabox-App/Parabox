@@ -22,6 +22,8 @@ data class MessageDto(
     val timestamp: Long,
     val pluginConnection: PluginConnection
 ) : Parcelable {
+
+    //Unused
     suspend fun toContactEntityWithUnreadMessagesNumUpdate(dao: ContactDao): ContactEntity {
         return ContactEntity(
             profile = subjectProfile,
@@ -34,7 +36,8 @@ data class MessageDto(
                     ?: 0) + 1
             ),
             contactId = pluginConnection.objectId,
-            senderId = pluginConnection.objectId
+            senderId = pluginConnection.objectId,
+            tags = emptyList()
         )
     }
 
@@ -48,7 +51,8 @@ data class MessageDto(
             ),
             contactId = pluginConnection.objectId,
             senderId = pluginConnection.objectId,
-            isHidden = false
+            isHidden = false,
+            tags = emptyList()
         )
     }
 

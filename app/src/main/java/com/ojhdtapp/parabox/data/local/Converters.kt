@@ -140,4 +140,20 @@ class Converters(
             object : TypeToken<Message>() {}.type
         ) ?: ""
     }
+
+    @TypeConverter
+    fun fromTagsJson(json: String): List<String> {
+        return jsonParser.fromJson<List<String>>(
+            json,
+            object : TypeToken<List<String>>() {}.type
+        )!!
+    }
+
+    @TypeConverter
+    fun toTagsJson(tags: List<String>): String {
+        return jsonParser.toJson(
+            tags,
+            object : TypeToken<List<String>>() {}.type
+        ) ?: ""
+    }
 }

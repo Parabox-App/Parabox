@@ -10,6 +10,7 @@ data class Contact(
     val latestMessage: LatestMessage?,
     val contactId: Long,
     val senderId: Long,
+    val tags: List<String>,
     val isHidden : Boolean = false
 ) : Parcelable{
     // Unused
@@ -20,6 +21,7 @@ data class Contact(
             senderId = senderId,
             contactId = contactId,
             isHidden = isHidden,
+            tags = tags
         )
     }
 }

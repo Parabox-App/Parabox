@@ -171,7 +171,8 @@ class MainRepositoryImpl @Inject constructor(
                             avatar = null,
                         ),
                         latestMessage = null,
-                        senderId = senderId
+                        senderId = senderId,
+                        tags = emptyList()
                     )
                     val contactId = database.contactDao.insertContact(contactEntity)
                     pluginConnections.forEach { conn ->
