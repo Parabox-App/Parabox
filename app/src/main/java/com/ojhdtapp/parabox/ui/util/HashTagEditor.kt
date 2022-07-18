@@ -1,10 +1,7 @@
 package com.ojhdtapp.parabox.ui.util
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -64,6 +61,7 @@ fun HashTagEditor(
     listOfChips: SnapshotStateList<String>,
     onChipClick: (Int) -> Unit,
     isCompact: Boolean = true,
+    onConfirmDelete: Boolean = false,
 ) {
     val focusManager = LocalFocusManager.current
     val keyboardManager = LocalSoftwareKeyboardController.current
@@ -109,7 +107,8 @@ fun HashTagEditor(
                     innerModifier = innerModifier,
                     emphasizePlaceHolder = false,
                     onChipClick = onChipClick,
-                    isCompact = isCompact
+                    isCompact = isCompact,
+                    onConfirmDelete = onConfirmDelete,
                 )
             }
 
@@ -145,16 +144,19 @@ fun TextFieldContent(
     emphasizePlaceHolder: Boolean = false,
     innerModifier: Modifier,
     onChipClick: (Int) -> Unit,
-    isCompact: Boolean
+    isCompact: Boolean,
+    onConfirmDelete: Boolean,
 ) {
     Box {
         val isFocused = textFieldInteraction.collectIsFocusedAsState()
         val borderWidth = animateDpAsState(targetValue = if (enabled) 2.dp else 0.dp)
         if (textFieldValue.isEmpty() && listOfChips.isEmpty()) {
             Text(
-                modifier = Modifier.padding(
-                    horizontal = if (isCompact) 16.dp else 32.dp,
-                ).align(alignment = Alignment.CenterStart),
+                modifier = Modifier
+                    .padding(
+                        horizontal = if (isCompact) 16.dp else 32.dp,
+                    )
+                    .align(alignment = Alignment.CenterStart),
                 text = if (enabled) "要添加标签，请于此处输入后敲击空格或换行符" else "暂无标签",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -181,14 +183,21 @@ fun TextFieldContent(
             )
         ) {
             itemsIndexed(items = listOfChips, key = { index, item -> item }) { index, item ->
-                AssistChip(modifier = Modifier.animateItemPlacement(),
-                    onClick = { onChipClick(index) },
+                FilterChip(modifier = Modifier.animateItemPlacement(),
+                    onClick = { if (enabled) onChipClick(index) },
+                    selected = index == listOfChips.lastIndex && onConfirmDelete,
                     trailingIcon = {
-                        Icon(
-                            imageVector = Icons.Outlined.Close,
-                            contentDescription = "close",
-                            modifier = Modifier.size(ChipDefaults.LeadingIconSize)
-                        )
+                        AnimatedVisibility(
+                            visible = enabled,
+                            enter = expandHorizontally(),
+                            exit = shrinkHorizontally()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Close,
+                                contentDescription = "close",
+                                modifier = Modifier.size(ChipDefaults.LeadingIconSize)
+                            )
+                        }
                     },
                     label = { Text(text = item) })
             }

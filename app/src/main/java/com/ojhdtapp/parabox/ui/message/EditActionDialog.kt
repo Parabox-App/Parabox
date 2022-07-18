@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.message
 
+import android.util.Log
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -231,6 +232,9 @@ fun EditActionDialog(
                         val hashTagList = remember {
                             mutableStateListOf<String>()
                         }
+                        var onConfirmDelete by remember {
+                            mutableStateOf(false)
+                        }
                         val hashTagLazyListState = rememberLazyListState()
                         val coroutineScope = rememberCoroutineScope()
                         val hashTagFocusRequester = remember { FocusRequester() }
@@ -240,10 +244,10 @@ fun EditActionDialog(
                             textFieldValue = hashTagText,
                             enabled = isEditing,
                             onValueChanged = {
-                                hashTagShouldShowError = false
                                 val values = FormUtil.splitPerSpaceOrNewLine(it)
 
                                 if (values.size >= 2) {
+                                    onConfirmDelete = false
                                     if (!FormUtil.checkTagMinimumCharacter(values[0])) {
                                         hashTagError = "标签应至少包含两个字符"
                                         hashTagShouldShowError = true
@@ -253,6 +257,8 @@ fun EditActionDialog(
                                     } else if (hashTagList.contains(values[0])) {
                                         hashTagError = "该标签已存在"
                                         hashTagShouldShowError = true
+                                    } else {
+                                        hashTagShouldShowError = false
                                     }
 
                                     if (!hashTagShouldShowError) {
@@ -276,8 +282,13 @@ fun EditActionDialog(
                             shouldShowError = hashTagShouldShowError,
                             listOfChips = hashTagList,
                             innerModifier = Modifier.onKeyEvent {
-                                if (it.key.keyCode == Key.Backspace.keyCode) {
-                                    hashTagList.removeLastOrNull()
+                                if (it.key.keyCode == Key.Backspace.keyCode && hashTagText.isBlank()) {
+                                    if (onConfirmDelete) {
+                                        hashTagList.removeLastOrNull()
+                                        onConfirmDelete = false
+                                    } else {
+                                        onConfirmDelete = true
+                                    }
                                 }
                                 false
                             },
@@ -286,7 +297,8 @@ fun EditActionDialog(
                                     hashTagList.removeAt(chipIndex)
                                 }
                             },
-                            isCompact = isCompact
+                            isCompact = isCompact,
+                            onConfirmDelete = onConfirmDelete
                         )
                     }
                 }
