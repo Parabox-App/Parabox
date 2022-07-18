@@ -219,7 +219,6 @@ fun EditActionDialog(
                         }
                     }
                     item {
-                        val text = TextFieldValue()
                         var hashTagText by remember {
                             mutableStateOf("")
                         }
@@ -236,7 +235,6 @@ fun EditActionDialog(
                             mutableStateOf(false)
                         }
                         val hashTagLazyListState = rememberLazyListState()
-                        val coroutineScope = rememberCoroutineScope()
                         val hashTagFocusRequester = remember { FocusRequester() }
                         val hashTagInteraction = remember { MutableInteractionSource() }
                         val rowInteraction = remember { MutableInteractionSource() }
@@ -264,11 +262,6 @@ fun EditActionDialog(
                                     if (!hashTagShouldShowError) {
                                         hashTagList.add(values[0])
                                         hashTagText = ""
-                                        if (hashTagList.isNotEmpty()) {
-                                            coroutineScope.launch {
-                                                hashTagLazyListState.animateScrollToItem(hashTagList.lastIndex)
-                                            }
-                                        }
                                     }
                                 } else {
                                     hashTagText = it

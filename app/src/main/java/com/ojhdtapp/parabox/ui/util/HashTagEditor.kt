@@ -22,6 +22,7 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Error
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -37,6 +38,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.flowlayout.FlowRow
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -150,6 +153,7 @@ fun TextFieldContent(
     Box {
         val isFocused = textFieldInteraction.collectIsFocusedAsState()
         val borderWidth = animateDpAsState(targetValue = if (enabled) 2.dp else 0.dp)
+        val coroutineScope = rememberCoroutineScope()
         if (textFieldValue.isEmpty() && listOfChips.isEmpty()) {
             Text(
                 modifier = Modifier
@@ -205,7 +209,15 @@ fun TextFieldContent(
                 BasicTextField(
                     enabled = enabled,
                     value = textFieldValue,
-                    onValueChange = onValueChanged,
+                    onValueChange = {
+                        onValueChanged(it)
+                        if (listOfChips.isNotEmpty()) {
+                            coroutineScope.launch {
+                                delay(200)
+                                lazyListState.animateScrollToItem(listOfChips.lastIndex)
+                            }
+                        }
+                    },
                     modifier = innerModifier
                         .focusRequester(focusRequester)
                         .width(IntrinsicSize.Min),
