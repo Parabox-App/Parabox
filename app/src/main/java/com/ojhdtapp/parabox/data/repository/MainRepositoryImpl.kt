@@ -77,6 +77,22 @@ class MainRepositoryImpl @Inject constructor(
         database.contactDao.updateHiddenState(ContactHiddenStateUpdate(id, value))
     }
 
+    override fun updateContactProfileAndTag(id: Long, profile: Profile, tags: List<String>) {
+        database.contactDao.updateProfileAndTag(ContactProfileAndTagUpdate(id, profile.name, profile.avatar, tags))
+    }
+
+    override fun getContactTags(): Flow<List<Tag>> {
+        return database.tagDao.queryAllTags().map { it.map { it.toTag() } }
+    }
+
+    override fun deleteContactTag(value: String) {
+        database.tagDao.deleteTagByValue(value)
+    }
+
+    override fun addContactTag(value: String) {
+        database.tagDao.insertTag(TagEntity(value))
+    }
+
     override fun getAllHiddenContacts(): Flow<Resource<List<Contact>>> {
         return database.contactDao.getAllHiddenContacts()
             .map<List<ContactEntity>, Resource<List<Contact>>> { contactEntityList ->

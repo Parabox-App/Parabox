@@ -58,7 +58,12 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideUpdateContactHiddenStateUseCase(repository: MainRepository): UpdateContactHiddenState {
-        return UpdateContactHiddenState(repository)
+    fun provideUpdateContactUseCase(repository: MainRepository): UpdateContact {
+        return UpdateContact(repository)
+    }
+    @Provides
+    @Singleton
+    fun provideTagControlUseCase(repository: MainRepository): TagControl {
+        return TagControl(repository)
     }
 }

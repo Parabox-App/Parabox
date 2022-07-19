@@ -31,3 +31,15 @@ data class ContactHiddenStateUpdate(
     @ColumnInfo(name = "isHidden")
     val isHidden: Boolean
 )
+
+@Entity
+data class ContactProfileAndTagUpdate(
+    @ColumnInfo(name = "contactId")
+    val contactId: Long,
+    @ColumnInfo(name = "name")
+    val name: String,
+    @ColumnInfo(name = "avatar")
+    val avatar: ByteArray?,
+    @ColumnInfo(name = "tags")
+    val tags: List<String>,
+)

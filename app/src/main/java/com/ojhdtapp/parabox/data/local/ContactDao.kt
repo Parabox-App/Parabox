@@ -21,6 +21,9 @@ interface ContactDao {
     @Update(entity = ContactEntity::class)
     fun updateHiddenState(objList: List<ContactHiddenStateUpdate>)
 
+    @Update(entity = ContactEntity::class)
+    fun updateProfileAndTag(obj: ContactProfileAndTagUpdate)
+
     @Query("SELECT * FROM contact_entity WHERE contactId = :id LIMIT 1")
     suspend fun getContactById(id: Long): ContactEntity?
 

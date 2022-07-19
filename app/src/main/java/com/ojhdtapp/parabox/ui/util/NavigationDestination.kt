@@ -148,6 +148,7 @@ fun NavigationDrawer(
                     val isCurrentDestOnBackStack =
                         navController.appCurrentDestinationAsState().value in destination.graph.destinations
                     NavigationDrawerItem(
+                        modifier = Modifier.height(48.dp).padding(horizontal = 12.dp),
                         icon = {
                             BadgedBox(badge = {
                                 if (destination.graph == NavGraphs.message && messageBadge != 0)
@@ -161,7 +162,7 @@ fun NavigationDrawer(
                                 )
                             }
                         },
-                        label = { Text(text = destination.label) },
+                        label = { Text(text = destination.label, style = MaterialTheme.typography.labelLarge) },
                         selected = isCurrentDestOnBackStack,
                         onClick = {
                             if (isCurrentDestOnBackStack) onSelfItemClick()

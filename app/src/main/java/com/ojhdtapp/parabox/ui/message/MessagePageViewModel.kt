@@ -10,6 +10,7 @@ import com.ojhdtapp.parabox.data.remote.dto.MessageDto
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Profile
 import com.ojhdtapp.parabox.domain.model.PluginConnection
+import com.ojhdtapp.parabox.domain.model.Tag
 import com.ojhdtapp.parabox.domain.model.message_content.PlainText
 import com.ojhdtapp.parabox.domain.use_case.*
 import com.ojhdtapp.parabox.ui.util.SearchAppBar
@@ -27,7 +28,8 @@ class MessagePageViewModel @Inject constructor(
     getContacts: GetContacts,
     val getGroupInfoPack: GetGroupInfoPack,
     val groupNewContact: GroupNewContact,
-    val updateContactHiddenState: UpdateContactHiddenState,
+    val updateContact: UpdateContact,
+    val tagControl: TagControl,
 ) : ViewModel() {
     init {
         // Update Ungrouped Contacts
@@ -139,6 +141,7 @@ class MessagePageViewModel @Inject constructor(
             _selectedContactStateList.remove(value)
         }
     }
+
     fun clearSelectedContactStateList() {
         _selectedContactStateList.clear()
     }
@@ -158,15 +161,16 @@ class MessagePageViewModel @Inject constructor(
             _groupInfoState.value =
                 GroupInfoState(state = GroupInfoState.ERROR, message = "未选择待编组项")
         } else {
-            groupInfoJob = getGroupInfoPack(selectedContactStateList.map { it.contactId }.toList()).onEach {
-                _groupInfoState.value = GroupInfoState(
-                    state = when (it) {
-                        is Resource.Error -> GroupInfoState.ERROR
-                        is Resource.Loading -> GroupInfoState.LOADING
-                        is Resource.Success -> GroupInfoState.SUCCESS
-                    }, resource = it.data?.toGroupEditResource(), message = it.message
-                )
-            }.launchIn(viewModelScope)
+            groupInfoJob =
+                getGroupInfoPack(selectedContactStateList.map { it.contactId }.toList()).onEach {
+                    _groupInfoState.value = GroupInfoState(
+                        state = when (it) {
+                            is Resource.Error -> GroupInfoState.ERROR
+                            is Resource.Loading -> GroupInfoState.LOADING
+                            is Resource.Success -> GroupInfoState.SUCCESS
+                        }, resource = it.data?.toGroupEditResource(), message = it.message
+                    )
+                }.launchIn(viewModelScope)
         }
     }
 
@@ -200,13 +204,14 @@ class MessagePageViewModel @Inject constructor(
         updateHiddenStateJob = viewModelScope.launch(Dispatchers.IO) {
 //            _uiEventFlow.emit(MessagePageUiEvent.ShowSnackBar("会话已暂时隐藏", "取消"))
             delay(200)
-            updateContactHiddenState(contactId, true)
+            updateContact.hiddenState(contactId, true)
         }
     }
+
     fun cancelContactHidden() {
         tempContactIdForHiddenCancellation?.let {
             viewModelScope.launch(Dispatchers.IO) {
-                updateContactHiddenState(it, false)
+                updateContact.hiddenState(it, false)
             }
         }
     }
@@ -219,23 +224,40 @@ class MessagePageViewModel @Inject constructor(
     }
 
     // Tag
-    private val _contactTagStateFlow = flow<List<String>> {
-        emit(listOf<String>("tag1", "tag2", "tag3","tag4","tag5","tag6","tag7","tag8"))
-    }.stateIn(
-        initialValue = emptyList<String>(),
+    private val _tagEditing = mutableStateOf<Boolean>(false)
+    val tagEditing: State<Boolean> = _tagEditing
+    fun setTagEditing(value: Boolean) {
+        _tagEditing.value = value
+    }
+
+    private val _contactTagStateFlow = tagControl.get().stateIn(
+        initialValue = emptyList(),
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000)
     )
     val contactTagStateFlow get() = _contactTagStateFlow
-    private val _selectedContactTagStateList = mutableStateListOf<String>()
+    fun addContactTag(value: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            tagControl.add(value)
+        }
+    }
+
+    fun deleteContactTag(value: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            tagControl.delete(value)
+        }
+    }
+
+    private val _selectedContactTagStateList = mutableStateListOf<Tag>()
     val selectedContactTagStateList = _selectedContactTagStateList
-    fun addOrRemoveItemOfSelectedContactTagStateList(value: String) {
+    fun addOrRemoveItemOfSelectedContactTagStateList(value: Tag) {
         if (!_selectedContactTagStateList.contains(value)) {
             _selectedContactTagStateList.add(value)
         } else {
             _selectedContactTagStateList.remove(value)
         }
     }
+
     fun clearSelectedContactTagStateList() {
         _selectedContactTagStateList.clear()
     }
