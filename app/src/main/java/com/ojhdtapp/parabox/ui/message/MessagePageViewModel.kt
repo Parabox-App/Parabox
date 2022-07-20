@@ -248,9 +248,9 @@ class MessagePageViewModel @Inject constructor(
         }
     }
 
-    private val _selectedContactTagStateList = mutableStateListOf<Tag>()
+    private val _selectedContactTagStateList = mutableStateListOf<String>()
     val selectedContactTagStateList = _selectedContactTagStateList
-    fun addOrRemoveItemOfSelectedContactTagStateList(value: Tag) {
+    fun addOrRemoveItemOfSelectedContactTagStateList(value: String) {
         if (!_selectedContactTagStateList.contains(value)) {
             _selectedContactTagStateList.add(value)
         } else {

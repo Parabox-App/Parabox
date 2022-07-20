@@ -3,6 +3,7 @@ package com.ojhdtapp.parabox.ui.util
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -19,6 +20,7 @@ import androidx.compose.material.ChipDefaults
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Done
 import androidx.compose.material.icons.outlined.Error
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -30,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -48,10 +51,11 @@ fun HashTagEditor(
     enabled: Boolean,
     textFieldValue: String,
     onValueChanged: (String) -> Unit,
+    placeHolder: String = "",
+    placeHolderWhenEnabled: String = "",
     lazyListState: LazyListState,
     focusRequester: FocusRequester,
     textFieldInteraction: MutableInteractionSource,
-    readOnly: Boolean = false,
     message: String = "",
     errorMessage: String = "",
     shouldShowError: Boolean = false,
@@ -62,9 +66,12 @@ fun HashTagEditor(
     innerModifier: Modifier = Modifier,
     rowInteraction: MutableInteractionSource,
     listOfChips: SnapshotStateList<String>,
+    selectedListOfChips: List<String> = emptyList(),
     onChipClick: (Int) -> Unit,
+    onChipClickWhenEnabled: (Int) -> Unit,
     isCompact: Boolean = true,
     onConfirmDelete: Boolean = false,
+    stickyChips: @Composable RowScope.() -> Unit = {}
 ) {
     val focusManager = LocalFocusManager.current
     val keyboardManager = LocalSoftwareKeyboardController.current
@@ -100,18 +107,21 @@ fun HashTagEditor(
                     enabled = enabled,
                     textFieldValue = textFieldValue,
                     onValueChanged = onValueChanged,
+                    placeHolder = placeHolder,
+                    placeHolderWhenEnabled = placeHolderWhenEnabled,
                     lazyListState = lazyListState,
                     focusRequester = focusRequester,
                     textFieldInteraction = textFieldInteraction,
-                    readOnly = readOnly,
                     keyboardOptions = keyboardOptions,
                     focusManager = focusManager,
                     listOfChips = listOfChips,
+                    selectedListOfChips = selectedListOfChips,
                     innerModifier = innerModifier,
-                    emphasizePlaceHolder = false,
                     onChipClick = onChipClick,
+                    onChipClickWhenEnabled = onChipClickWhenEnabled,
                     isCompact = isCompact,
                     onConfirmDelete = onConfirmDelete,
+                    stickyChips = stickyChips
                 )
             }
 
@@ -137,35 +147,25 @@ fun TextFieldContent(
     enabled: Boolean,
     textFieldValue: String,
     onValueChanged: (String) -> Unit,
+    placeHolder: String,
+    placeHolderWhenEnabled: String,
     lazyListState: LazyListState,
     focusRequester: FocusRequester,
     textFieldInteraction: MutableInteractionSource,
-    readOnly: Boolean,
     keyboardOptions: KeyboardOptions,
     focusManager: FocusManager,
     listOfChips: SnapshotStateList<String>,
-    emphasizePlaceHolder: Boolean = false,
+    selectedListOfChips: List<String>,
     innerModifier: Modifier,
     onChipClick: (Int) -> Unit,
+    onChipClickWhenEnabled: (Int) -> Unit,
     isCompact: Boolean,
     onConfirmDelete: Boolean,
+    stickyChips: @Composable() (RowScope.() -> Unit),
 ) {
     Box {
         val isFocused = textFieldInteraction.collectIsFocusedAsState()
-        val borderWidth = animateDpAsState(targetValue = if (enabled) 2.dp else 0.dp)
         val coroutineScope = rememberCoroutineScope()
-        if (textFieldValue.isEmpty() && listOfChips.isEmpty()) {
-            Text(
-                modifier = Modifier
-                    .padding(
-                        horizontal = if (isCompact) 16.dp else 32.dp,
-                    )
-                    .align(alignment = Alignment.CenterStart),
-                text = if (enabled) "要添加标签，请于此处输入后敲击空格或换行符" else "暂无标签",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
 
         LazyRow(
             modifier = Modifier
@@ -186,9 +186,14 @@ fun TextFieldContent(
                 end = 64.dp
             )
         ) {
+            item {
+                Row() {
+                    stickyChips()
+                }
+            }
             itemsIndexed(items = listOfChips, key = { index, item -> item }) { index, item ->
                 FilterChip(modifier = Modifier.animateItemPlacement(),
-                    onClick = { if (enabled) onChipClick(index) },
+                    onClick = { if (enabled) onChipClickWhenEnabled(index) else onChipClick(index) },
                     selected = index == listOfChips.lastIndex && onConfirmDelete,
                     trailingIcon = {
                         AnimatedVisibility(
@@ -200,6 +205,15 @@ fun TextFieldContent(
                                 imageVector = Icons.Outlined.Close,
                                 contentDescription = "close",
                                 modifier = Modifier.size(ChipDefaults.LeadingIconSize)
+                            )
+                        }
+                    },
+                    selectedIcon = {
+                        if (!enabled) {
+                            Icon(
+                                imageVector = Icons.Outlined.Done,
+                                contentDescription = "",
+                                modifier = Modifier.size(FilterChipDefaults.IconSize)
                             )
                         }
                     },
@@ -220,10 +234,20 @@ fun TextFieldContent(
                     },
                     modifier = innerModifier
                         .focusRequester(focusRequester)
-                        .width(IntrinsicSize.Min),
+//                        .width(IntrinsicSize.Min)
+                    ,
                     singleLine = false,
                     textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
                     decorationBox = { innerTextField ->
+                        if (textFieldValue.isEmpty() && listOfChips.isEmpty()) {
+                            Text(
+                                modifier = Modifier
+                                    .align(alignment = Alignment.CenterStart),
+                                text = if (enabled) placeHolderWhenEnabled else placeHolder,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                         Row(
                             modifier = Modifier
                                 .wrapContentWidth()
@@ -247,7 +271,6 @@ fun TextFieldContent(
                     },
                     interactionSource = textFieldInteraction,
                     cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                    readOnly = readOnly,
                     keyboardOptions = keyboardOptions,
                     keyboardActions = KeyboardActions(
                         onDone = {

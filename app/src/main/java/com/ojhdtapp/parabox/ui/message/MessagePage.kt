@@ -190,8 +190,7 @@ fun MessagePage(
                     var onConfirmDelete by remember {
                         mutableStateOf(false)
                     }
-//                    val isEditing = viewModel.tagEditing.value
-                    val isEditing = true
+                    val isEditing = viewModel.tagEditing.value
                     val hashTagLazyListState = rememberLazyListState()
                     val hashTagFocusRequester = remember { FocusRequester() }
                     val hashTagInteraction = remember { MutableInteractionSource() }
@@ -236,6 +235,7 @@ fun MessagePage(
                                 hashTagText = it
                             }
                         },
+                        placeHolderWhenEnabled = "新增筛选标签",
                         lazyListState = hashTagLazyListState,
                         focusRequester = hashTagFocusRequester,
                         textFieldInteraction = hashTagInteraction,
@@ -243,6 +243,7 @@ fun MessagePage(
                         errorMessage = hashTagError,
                         shouldShowError = hashTagShouldShowError,
                         listOfChips = hashTagList,
+                        selectedListOfChips = viewModel.selectedContactTagStateList,
                         innerModifier = Modifier.onKeyEvent {
                             if (it.key.keyCode == Key.Backspace.keyCode && hashTagText.isBlank()) {
                                 if (onConfirmDelete) {
@@ -256,17 +257,33 @@ fun MessagePage(
                             }
                             false
                         },
-                        onChipClick = { chipIndex ->
+                        onChipClick = {},
+                        onChipClickWhenEnabled = { chipIndex ->
                             if (viewModel.contactTagStateFlow.value.isNotEmpty()) {
                                 hashTagList.getOrNull(chipIndex)?.let {
-
                                     viewModel.deleteContactTag(it)
                                 }
                             }
                         },
                         isCompact = true,
                         onConfirmDelete = onConfirmDelete
-                    )
+                    ) {
+                        FilterChip(modifier = Modifier
+                            .animateContentSize(), selected = false, onClick = {
+                            viewModel.setTagEditing(!isEditing)
+                            hashTagText = ""
+                            hashTagError = ""
+                            hashTagShouldShowError = false
+                            onConfirmDelete = false
+                        },
+                            label = {
+                                Icon(
+                                    imageVector = Icons.Outlined.Tune,
+                                    contentDescription = "",
+                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                )
+                            })
+                    }
 //                    Row(
 //                        modifier = Modifier
 //                            .padding(vertical = 8.dp)

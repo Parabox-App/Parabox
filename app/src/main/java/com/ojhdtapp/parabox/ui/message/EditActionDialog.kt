@@ -285,6 +285,8 @@ fun EditActionDialog(
                                     hashTagText = it
                                 }
                             },
+                            placeHolder = "暂无标签",
+                            placeHolderWhenEnabled = "要添加标签，请于此处输入后敲击空格或换行符",
                             lazyListState = hashTagLazyListState,
                             focusRequester = hashTagFocusRequester,
                             textFieldInteraction = hashTagInteraction,
@@ -303,7 +305,8 @@ fun EditActionDialog(
                                 }
                                 false
                             },
-                            onChipClick = { chipIndex ->
+                            onChipClick = {},
+                            onChipClickWhenEnabled = { chipIndex ->
                                 if (hashTagList.isNotEmpty()) {
                                     hashTagList.removeAt(chipIndex)
                                 }

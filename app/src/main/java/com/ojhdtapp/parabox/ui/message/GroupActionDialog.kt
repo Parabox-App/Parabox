@@ -31,8 +31,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalTextInputService
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
@@ -42,6 +44,7 @@ import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.model.Profile
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -200,6 +203,12 @@ fun GroupEditForm(
         item {
             val focusRequester = remember { FocusRequester() }
             val focusManager = LocalFocusManager.current
+            val inputService = LocalTextInputService.current
+            LaunchedEffect(Unit) {
+                delay(300)
+                inputService?.showSoftwareKeyboard()
+                focusRequester.requestFocus()
+            }
             BackHandler(enabled = true) {
                 focusManager.clearFocus()
             }
@@ -214,7 +223,7 @@ fun GroupEditForm(
                         })
                 Spacer(modifier = Modifier.width(16.dp))
                 OutlinedTextField(
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).focusRequester(focusRequester),
                     value = name, onValueChange = {
                         onNameChange(it)
                     },
