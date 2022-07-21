@@ -235,7 +235,7 @@ fun MessagePage(
                                 hashTagText = it
                             }
                         },
-                        placeHolderWhenEnabled = "新增筛选标签",
+                        placeHolderWhenEnabled = "新建自定义标签筛选",
                         lazyListState = hashTagLazyListState,
                         focusRequester = hashTagFocusRequester,
                         textFieldInteraction = hashTagInteraction,
@@ -257,7 +257,13 @@ fun MessagePage(
                             }
                             false
                         },
-                        onChipClick = {},
+                        onChipClick = { chipIndex ->
+                            if (viewModel.contactTagStateFlow.value.isNotEmpty()) {
+                                hashTagList.getOrNull(chipIndex)?.let {
+                                    viewModel.addOrRemoveItemOfSelectedContactTagStateList(it)
+                                }
+                            }
+                        },
                         onChipClickWhenEnabled = { chipIndex ->
                             if (viewModel.contactTagStateFlow.value.isNotEmpty()) {
                                 hashTagList.getOrNull(chipIndex)?.let {
@@ -268,6 +274,19 @@ fun MessagePage(
                         isCompact = true,
                         onConfirmDelete = onConfirmDelete
                     ) {
+                        FilterChip(modifier = Modifier.animateContentSize(),
+                            selected = false,
+                            onClick = {},
+                            selectedIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.Done,
+                                    contentDescription = "",
+                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                )
+
+                            },
+                            label = { Text(text = "未读") })
+                        androidx.compose.material3.Divider(modifier = Modifier.height(IntrinsicSize.Max))
                         FilterChip(modifier = Modifier
                             .animateContentSize(), selected = false, onClick = {
                             viewModel.setTagEditing(!isEditing)

@@ -1,10 +1,7 @@
 package com.ojhdtapp.parabox.ui.util
 
 import androidx.compose.animation.*
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -12,7 +9,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -21,7 +17,6 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Done
-import androidx.compose.material.icons.outlined.Error
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -32,15 +27,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.google.accompanist.flowlayout.FlowRow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -66,12 +58,12 @@ fun HashTagEditor(
     innerModifier: Modifier = Modifier,
     rowInteraction: MutableInteractionSource,
     listOfChips: SnapshotStateList<String>,
-    selectedListOfChips: List<String> = emptyList(),
+    selectedListOfChips: SnapshotStateList<String>?,
     onChipClick: (Int) -> Unit,
     onChipClickWhenEnabled: (Int) -> Unit,
     isCompact: Boolean = true,
     onConfirmDelete: Boolean = false,
-    stickyChips: @Composable RowScope.() -> Unit = {}
+    stickyChips: @Composable() (RowScope.() -> Unit)? = null
 ) {
     val focusManager = LocalFocusManager.current
     val keyboardManager = LocalSoftwareKeyboardController.current
@@ -155,13 +147,13 @@ fun TextFieldContent(
     keyboardOptions: KeyboardOptions,
     focusManager: FocusManager,
     listOfChips: SnapshotStateList<String>,
-    selectedListOfChips: List<String>,
+    selectedListOfChips: SnapshotStateList<String>?,
     innerModifier: Modifier,
     onChipClick: (Int) -> Unit,
     onChipClickWhenEnabled: (Int) -> Unit,
     isCompact: Boolean,
     onConfirmDelete: Boolean,
-    stickyChips: @Composable() (RowScope.() -> Unit),
+    stickyChips: @Composable() (RowScope.() -> Unit)?,
 ) {
     Box {
         val isFocused = textFieldInteraction.collectIsFocusedAsState()
@@ -183,24 +175,37 @@ fun TextFieldContent(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(
                 start = if (isCompact) 16.dp else 32.dp,
-                end = 64.dp
+                end = 0.dp
             )
         ) {
-            item {
-                Row() {
-                    stickyChips()
+            stickyChips?.also {
+                item {
+                    Row() {
+                        it()
+                    }
                 }
             }
             itemsIndexed(items = listOfChips, key = { index, item -> item }) { index, item ->
-                FilterChip(modifier = Modifier.animateItemPlacement(),
+                FilterChip(modifier = Modifier
+                    .animateItemPlacement()
+                    .animateContentSize(),
                     onClick = { if (enabled) onChipClickWhenEnabled(index) else onChipClick(index) },
-                    selected = index == listOfChips.lastIndex && onConfirmDelete,
+                    selected = if (enabled) (index == listOfChips.lastIndex && onConfirmDelete) else selectedListOfChips?.contains(
+                        item
+                    ) ?: false,
                     trailingIcon = {
-                        AnimatedVisibility(
-                            visible = enabled,
-                            enter = expandHorizontally(),
-                            exit = shrinkHorizontally()
-                        ) {
+//                        AnimatedVisibility(
+//                            visible = enabled,
+//                            enter = expandHorizontally(),
+//                            exit = shrinkHorizontally()
+//                        ) {
+//                            Icon(
+//                                imageVector = Icons.Outlined.Close,
+//                                contentDescription = "close",
+//                                modifier = Modifier.size(ChipDefaults.LeadingIconSize)
+//                            )
+//                        }
+                        if (enabled) {
                             Icon(
                                 imageVector = Icons.Outlined.Close,
                                 contentDescription = "close",

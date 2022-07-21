@@ -223,7 +223,7 @@ class MessagePageViewModel @Inject constructor(
         _showEditActionDialogState.value = value
     }
 
-    // Tag
+    // Tag & Filter
     private val _tagEditing = mutableStateOf<Boolean>(false)
     val tagEditing: State<Boolean> = _tagEditing
     fun setTagEditing(value: Boolean) {

@@ -1,6 +1,5 @@
 package com.ojhdtapp.parabox.ui.message
 
-import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -29,7 +28,6 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -39,7 +37,6 @@ import com.ojhdtapp.parabox.core.util.toDescriptiveTime
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.ui.util.HashTagEditor
 import com.ojhdtapp.parabox.ui.util.clearFocusOnKeyboardDismiss
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -294,6 +291,7 @@ fun EditActionDialog(
                             errorMessage = hashTagError,
                             shouldShowError = hashTagShouldShowError,
                             listOfChips = hashTagList,
+                            selectedListOfChips = null,
                             innerModifier = Modifier.onKeyEvent {
                                 if (it.key.keyCode == Key.Backspace.keyCode && hashTagText.isBlank()) {
                                     if (onConfirmDelete) {
