@@ -208,6 +208,9 @@ fun SelectContentField(
     onEditAction: () -> Unit,
     onExpandAction: () -> Unit,
 ) {
+    var expanded by remember {
+        mutableStateOf(false)
+    }
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -259,8 +262,36 @@ fun SelectContentField(
 
             }
         }
-        IconButton(onClick = onExpandAction) {
-            Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = "more")
+        Crossfade(targetState = selectedNum) {
+            if (it >= 1) {
+                Box(
+                    modifier = Modifier
+                        .wrapContentSize(Alignment.TopStart)
+                ) {
+                    IconButton(onClick = { expanded = !expanded }) {
+                        Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = "more")
+                    }
+                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        DropdownMenuItem(
+                            text = { Text(text = "置顶") },
+                            onClick = { expanded = false })
+                        DropdownMenuItem(
+                            text = { Text(text = "隐藏会话") },
+                            onClick = { expanded = false })
+                        DropdownMenuItem(
+                            text = { Text(text = "标记为未读") },
+                            onClick = { expanded = false })
+                        if (selectedNum == 1){
+                            DropdownMenuItem(
+                                text = { Text(text = "快速添加标签") },
+                                onClick = { expanded = false })
+                            DropdownMenuItem(
+                                text = { Text(text = "详细信息") },
+                                onClick = { expanded = false })
+                        }
+                    }
+                }
+            }
         }
     }
 }
