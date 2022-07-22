@@ -10,7 +10,6 @@ import com.ojhdtapp.parabox.data.remote.dto.MessageDto
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Profile
 import com.ojhdtapp.parabox.domain.model.PluginConnection
-import com.ojhdtapp.parabox.domain.model.Tag
 import com.ojhdtapp.parabox.domain.model.message_content.PlainText
 import com.ojhdtapp.parabox.domain.use_case.*
 import com.ojhdtapp.parabox.ui.util.SearchAppBar
@@ -84,8 +83,12 @@ class MessagePageViewModel @Inject constructor(
     }
 
     // Contact
+    private val _contactRefreshFlow = MutableStateFlow<Long>(0L)
     private val _contactStateFlow: StateFlow<ContactState> =
         getContacts()
+            .combine(_contactRefreshFlow){ contacts, refresh ->
+                contacts
+            }
             .filter {
                 if (it is Resource.Error) {
                     _uiEventFlow.emit(MessagePageUiEvent.ShowSnackBar(it.message!!))
@@ -101,7 +104,13 @@ class MessagePageViewModel @Inject constructor(
                         }))
                         ContactState(
                             isLoading = false,
-                            data = it.data ?: emptyList()
+                            data = it.data.filter {
+                                typeFilter.value.contactCheck(it)
+                                        && readFilter.value.contactCheck(it)
+                                        && if (selectedContactTagStateList.isNotEmpty()) {
+                                    (selectedContactTagStateList intersect it.tags.toSet()).isNotEmpty()
+                                } else true
+                            } ?: emptyList()
                         )
                     }
                     is Resource.Error -> ContactState(isLoading = false)
@@ -112,6 +121,12 @@ class MessagePageViewModel @Inject constructor(
                 started = SharingStarted.WhileSubscribed(5000)
             )
     val contactStateFlow get() = _contactStateFlow
+
+    fun refreshContactStateFlow(){
+        viewModelScope.launch {
+            _contactRefreshFlow.emit(System.currentTimeMillis())
+        }
+    }
 
     // Search
     private val _searchBarActivateState = mutableStateOf<Int>(SearchAppBar.NONE)
@@ -256,10 +271,26 @@ class MessagePageViewModel @Inject constructor(
         } else {
             _selectedContactTagStateList.remove(value)
         }
+        refreshContactStateFlow()
     }
 
     fun clearSelectedContactTagStateList() {
         _selectedContactTagStateList.clear()
+        refreshContactStateFlow()
+    }
+
+    private val _readFilter = mutableStateOf<ContactReadFilterState>(ContactReadFilterState.All())
+    val readFilter: State<ContactReadFilterState> = _readFilter
+    fun setReadFilter(value: ContactReadFilterState) {
+        _readFilter.value = value
+        refreshContactStateFlow()
+    }
+
+    private val _typeFilter = mutableStateOf<ContactTypeFilterState>(ContactTypeFilterState.All())
+    val typeFilter: State<ContactTypeFilterState> = _typeFilter
+    fun setTypeFilter(value: ContactTypeFilterState) {
+        _typeFilter.value = value
+        refreshContactStateFlow()
     }
 
     fun testFun() {

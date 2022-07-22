@@ -235,7 +235,7 @@ fun MessagePage(
                                 hashTagText = it
                             }
                         },
-                        placeHolderWhenEnabled = "新建自定义标签筛选",
+                        placeHolderWhenEnabled = "自定义标签筛选",
                         lazyListState = hashTagLazyListState,
                         focusRequester = hashTagFocusRequester,
                         textFieldInteraction = hashTagInteraction,
@@ -274,9 +274,81 @@ fun MessagePage(
                         isCompact = true,
                         onConfirmDelete = onConfirmDelete
                     ) {
-                        FilterChip(modifier = Modifier.animateContentSize(),
-                            selected = false,
-                            onClick = {},
+                        var showDropDownMenu by remember {
+                            mutableStateOf(false)
+                        }
+                        androidx.compose.material3.FilterChip(
+                            modifier = Modifier
+                                .animateContentSize()
+                                .padding(end = 8.dp),
+                            selected = viewModel.typeFilter.value !is ContactTypeFilterState.All,
+                            onClick = { showDropDownMenu = !showDropDownMenu },
+                            enabled = !isEditing,
+                            selectedIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.Done,
+                                    contentDescription = "",
+                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                )
+
+                            },
+                            trailingIcon = {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .wrapContentSize(Alignment.TopEnd)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.ExpandMore,
+                                        contentDescription = "expand",
+                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                    )
+                                    androidx.compose.material3.DropdownMenu(
+                                        expanded = showDropDownMenu,
+                                        onDismissRequest = { showDropDownMenu = false }
+                                    ) {
+                                        androidx.compose.material3.DropdownMenuItem(
+                                            text = { Text("全部") },
+                                            onClick = {
+                                                viewModel.setTypeFilter(
+                                                    ContactTypeFilterState.All()
+                                                )
+                                                showDropDownMenu = false
+                                            },
+                                        )
+                                        androidx.compose.material3.DropdownMenuItem(
+                                            text = { Text("已编组") },
+                                            onClick = {
+                                                viewModel.setTypeFilter(
+                                                    ContactTypeFilterState.Grouped()
+                                                )
+                                                showDropDownMenu = false
+                                            },
+                                        )
+                                        androidx.compose.material3.DropdownMenuItem(
+                                            text = { Text("未编组") },
+                                            onClick = {
+                                                viewModel.setTypeFilter(
+                                                    ContactTypeFilterState.Ungrouped()
+                                                )
+                                                showDropDownMenu = false
+                                            },
+                                        )
+                                    }
+                                }
+                            },
+                            label = { Text(text = viewModel.typeFilter.value.label) }
+                        )
+                        FilterChip(modifier = Modifier
+                            .animateContentSize()
+                            .padding(end = 8.dp),
+                            selected = viewModel.readFilter.value is ContactReadFilterState.Unread,
+                            onClick = {
+                                viewModel.setReadFilter(
+                                    if (viewModel.readFilter.value is ContactReadFilterState.Unread) ContactReadFilterState.All() else ContactReadFilterState.Unread()
+                                )
+                            },
+                            enabled = !isEditing,
                             selectedIcon = {
                                 Icon(
                                     imageVector = Icons.Outlined.Done,
@@ -286,7 +358,6 @@ fun MessagePage(
 
                             },
                             label = { Text(text = "未读") })
-                        androidx.compose.material3.Divider(modifier = Modifier.height(IntrinsicSize.Max))
                         FilterChip(modifier = Modifier
                             .animateContentSize(), selected = false, onClick = {
                             viewModel.setTagEditing(!isEditing)
@@ -294,6 +365,7 @@ fun MessagePage(
                             hashTagError = ""
                             hashTagShouldShowError = false
                             onConfirmDelete = false
+                            viewModel.clearSelectedContactTagStateList()
                         },
                             label = {
                                 Icon(
