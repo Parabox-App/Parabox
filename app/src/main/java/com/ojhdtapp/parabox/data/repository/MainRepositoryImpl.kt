@@ -77,6 +77,10 @@ class MainRepositoryImpl @Inject constructor(
         database.contactDao.updateHiddenState(ContactHiddenStateUpdate(id, value))
     }
 
+    override fun updateContactTag(id: Long, tag: List<String>) {
+        database.contactDao.updateTag(ContactTagUpdate(id, tag))
+    }
+
     override fun updateContactProfileAndTag(id: Long, profile: Profile, tags: List<String>) {
         database.contactDao.updateProfileAndTag(ContactProfileAndTagUpdate(id, profile.name, profile.avatar, tags))
     }
@@ -91,6 +95,10 @@ class MainRepositoryImpl @Inject constructor(
 
     override fun addContactTag(value: String) {
         database.tagDao.insertTag(TagEntity(value))
+    }
+
+    override fun checkContactTag(value: String): Boolean {
+        return database.tagDao.hasTag(value)
     }
 
     override fun getAllHiddenContacts(): Flow<Resource<List<Contact>>> {

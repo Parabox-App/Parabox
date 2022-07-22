@@ -118,6 +118,18 @@ fun MessagePage(
             sizeClass = sizeClass,
             onDismiss = { viewModel.setShowEditActionDialogState(false) },
             onConfirm = {})
+        TagEditAlertDialog(
+            showDialog = viewModel.showTagEditAlertDialogState.value,
+            contact = viewModel.selectedContactStateList.firstOrNull(),
+            sizeClass = sizeClass,
+            onDismiss = { viewModel.setShowTagEditAlertDialogState(false) },
+            onConfirm = { id: Long, tags: List<String> ->
+                viewModel.setContactTag(id, tags)
+                viewModel.addContactTag(tags)
+                viewModel.setShowTagEditAlertDialogState(false)
+                viewModel.clearSelectedContactStateList()
+            }
+        )
         Scaffold(
             modifier = modifier
                 .weight(1f)
@@ -141,6 +153,9 @@ fun MessagePage(
                     },
                     onEditAction = {
                         viewModel.setShowEditActionDialogState(true)
+                    },
+                    onNewTagAction = {
+                        viewModel.setShowTagEditAlertDialogState(true)
                     },
                     onExpandAction = {},
                     sizeClass = sizeClass,
@@ -271,7 +286,7 @@ fun MessagePage(
                                 }
                             }
                         },
-                        isCompact = true,
+                        padding = HashTagEditor.PADDING_SMALL,
                         onConfirmDelete = onConfirmDelete
                     ) {
                         var showDropDownMenu by remember {
@@ -658,7 +673,7 @@ fun SwipeableContact(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Icon(
-                    imageVector = Icons.Outlined.RemoveCircleOutline,
+                    imageVector = Icons.Outlined.HideSource,
                     contentDescription = "not disturb",
                     tint = MaterialTheme.colorScheme.onPrimary
                 )

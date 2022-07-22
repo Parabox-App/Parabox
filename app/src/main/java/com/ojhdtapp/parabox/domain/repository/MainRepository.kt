@@ -10,10 +10,12 @@ import kotlinx.coroutines.flow.Flow
 interface MainRepository {
     suspend fun handleNewMessage(dto: MessageDto)
     fun updateContactHiddenState(id: Long, value: Boolean)
+    fun updateContactTag(id: Long, tag: List<String>)
     fun updateContactProfileAndTag(id: Long, profile: Profile, tags: List<String>)
     fun getContactTags(): Flow<List<Tag>>
     fun deleteContactTag(value: String)
     fun addContactTag(value: String)
+    fun checkContactTag(value: String): Boolean
     fun getAllHiddenContacts(): Flow<Resource<List<Contact>>>
     fun getAllUnhiddenContacts(): Flow<Resource<List<Contact>>>
     fun getPluginConnectionObjectIdListByContactId(contactId: Long): List<Long>

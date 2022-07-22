@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import coil.request.Tags
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.remote.dto.MessageDto
 import com.ojhdtapp.parabox.domain.model.Contact
@@ -86,7 +87,7 @@ class MessagePageViewModel @Inject constructor(
     private val _contactRefreshFlow = MutableStateFlow<Long>(0L)
     private val _contactStateFlow: StateFlow<ContactState> =
         getContacts()
-            .combine(_contactRefreshFlow){ contacts, refresh ->
+            .combine(_contactRefreshFlow) { contacts, refresh ->
                 contacts
             }
             .filter {
@@ -122,7 +123,7 @@ class MessagePageViewModel @Inject constructor(
             )
     val contactStateFlow get() = _contactStateFlow
 
-    fun refreshContactStateFlow(){
+    fun refreshContactStateFlow() {
         viewModelScope.launch {
             _contactRefreshFlow.emit(System.currentTimeMillis())
         }
@@ -231,11 +232,24 @@ class MessagePageViewModel @Inject constructor(
         }
     }
 
+    fun setContactTag(contactId: Long, tags: List<String>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            updateContact.tag(contactId, tags)
+        }
+    }
+
     // Edit Dialog
     private var _showEditActionDialogState = mutableStateOf<Boolean>(false)
     val showEditActionDialogState: State<Boolean> = _showEditActionDialogState
     fun setShowEditActionDialogState(value: Boolean) {
         _showEditActionDialogState.value = value
+    }
+
+    // Tag Dialog
+    private val _showTagEditAlertDialogState = mutableStateOf<Boolean>(false)
+    val showTagEditAlertDialogState: State<Boolean> = _showTagEditAlertDialogState
+    fun setShowTagEditAlertDialogState(value: Boolean) {
+        _showTagEditAlertDialogState.value = value
     }
 
     // Tag & Filter
@@ -254,6 +268,15 @@ class MessagePageViewModel @Inject constructor(
     fun addContactTag(value: String) {
         viewModelScope.launch(Dispatchers.IO) {
             tagControl.add(value)
+        }
+    }
+
+    fun addContactTag(value: List<String>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            value.forEach {
+                if (!tagControl.has(it))
+                    tagControl.add(it)
+            }
         }
     }
 

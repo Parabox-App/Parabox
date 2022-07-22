@@ -9,6 +9,9 @@ interface TagDao {
     @Insert
     fun insertTag(tag: TagEntity): Long
 
+    @Query("SELECT EXISTS(SELECT * FROM tag_entity WHERE value = :tag)")
+    fun hasTag(tag: String): Boolean
+
     @Insert
     fun insertAllTags(tags: List<TagEntity>)
 

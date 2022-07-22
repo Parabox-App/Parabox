@@ -36,6 +36,12 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+object HashTagEditor {
+    const val PADDING_NONE = 0
+    const val PADDING_SMALL = 1
+    const val PAdding_MEDIUM = 2
+}
+
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun HashTagEditor(
@@ -61,7 +67,7 @@ fun HashTagEditor(
     selectedListOfChips: SnapshotStateList<String>?,
     onChipClick: (Int) -> Unit,
     onChipClickWhenEnabled: (Int) -> Unit,
-    isCompact: Boolean = true,
+    padding: Int = HashTagEditor.PADDING_SMALL,
     onConfirmDelete: Boolean = false,
     stickyChips: @Composable() (RowScope.() -> Unit)? = null
 ) {
@@ -111,7 +117,7 @@ fun HashTagEditor(
                     innerModifier = innerModifier,
                     onChipClick = onChipClick,
                     onChipClickWhenEnabled = onChipClickWhenEnabled,
-                    isCompact = isCompact,
+                    padding = padding,
                     onConfirmDelete = onConfirmDelete,
                     stickyChips = stickyChips
                 )
@@ -119,7 +125,12 @@ fun HashTagEditor(
 
             ErrorSection(
                 modifier = Modifier.padding(
-                    horizontal = if (isCompact) 16.dp else 32.dp,
+                    horizontal = when (padding) {
+                        HashTagEditor.PADDING_NONE -> 0.dp
+                        HashTagEditor.PADDING_SMALL -> 16.dp
+                        HashTagEditor.PAdding_MEDIUM -> 32.dp
+                        else -> 0.dp
+                    }
                 ),
                 message = message,
                 errorMessage = errorMessage,
@@ -151,7 +162,7 @@ fun TextFieldContent(
     innerModifier: Modifier,
     onChipClick: (Int) -> Unit,
     onChipClickWhenEnabled: (Int) -> Unit,
-    isCompact: Boolean,
+    padding: Int,
     onConfirmDelete: Boolean,
     stickyChips: @Composable() (RowScope.() -> Unit)?,
 ) {
@@ -174,7 +185,12 @@ fun TextFieldContent(
             state = lazyListState,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(
-                start = if (isCompact) 16.dp else 32.dp,
+                start = when (padding) {
+                    HashTagEditor.PADDING_NONE -> 0.dp
+                    HashTagEditor.PADDING_SMALL -> 16.dp
+                    HashTagEditor.PAdding_MEDIUM -> 32.dp
+                    else -> 0.dp
+                },
                 end = 0.dp
             )
         ) {
@@ -233,7 +249,8 @@ fun TextFieldContent(
                         if (listOfChips.isNotEmpty()) {
                             coroutineScope.launch {
                                 delay(200)
-                                lazyListState.animateScrollToItem(listOfChips.lastIndex)
+                                if (listOfChips.isNotEmpty())
+                                    lazyListState.animateScrollToItem(listOfChips.lastIndex)
                             }
                         }
                     },

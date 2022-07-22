@@ -49,6 +49,7 @@ fun SearchAppBar(
     onGroupAction: () -> Unit = {},
     onEditAction: () -> Unit = {},
     onExpandAction: () -> Unit = {},
+    onNewTagAction: () -> Unit = {},
     sizeClass: WindowSizeClass,
     onMenuClick: () -> Unit,
 ) {
@@ -98,6 +99,7 @@ fun SearchAppBar(
                         selectedNum = selectedNum,
                         onGroupAction = onGroupAction,
                         onEditAction = onEditAction,
+                        onNewTagAction = onNewTagAction,
                         onExpandAction = onExpandAction
                     )
                 } else {
@@ -205,6 +207,7 @@ fun SelectContentField(
     onActivateStateChanged: (value: Int) -> Unit,
     selectedNum: Int,
     onGroupAction: () -> Unit,
+    onNewTagAction: () -> Unit,
     onEditAction: () -> Unit,
     onExpandAction: () -> Unit,
 ) {
@@ -268,26 +271,65 @@ fun SelectContentField(
                     modifier = Modifier
                         .wrapContentSize(Alignment.TopStart)
                 ) {
-                    IconButton(onClick = { expanded = !expanded }) {
+                    IconButton(onClick = {
+                        onExpandAction()
+                        expanded = !expanded
+                    }) {
                         Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = "more")
                     }
                     DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                         DropdownMenuItem(
                             text = { Text(text = "置顶") },
-                            onClick = { expanded = false })
+                            onClick = { expanded = false },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Outlined.Flag,
+                                    contentDescription = null
+                                )
+                            })
                         DropdownMenuItem(
                             text = { Text(text = "隐藏会话") },
-                            onClick = { expanded = false })
+                            onClick = { expanded = false },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Outlined.HideSource,
+                                    contentDescription = null
+                                )
+                            })
                         DropdownMenuItem(
                             text = { Text(text = "标记为未读") },
-                            onClick = { expanded = false })
-                        if (selectedNum == 1){
+                            onClick = { expanded = false },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Outlined.MarkChatUnread,
+                                    contentDescription = null
+                                )
+                            })
+                        if (selectedNum == 1) {
                             DropdownMenuItem(
                                 text = { Text(text = "快速添加标签") },
-                                onClick = { expanded = false })
+                                onClick = {
+                                    onNewTagAction()
+                                    expanded = false
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.NewLabel,
+                                        contentDescription = null
+                                    )
+                                })
                             DropdownMenuItem(
                                 text = { Text(text = "详细信息") },
-                                onClick = { expanded = false })
+                                onClick = {
+                                    onEditAction()
+                                    expanded = false
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.Info,
+                                        contentDescription = null
+                                    )
+                                })
                         }
                     }
                 }

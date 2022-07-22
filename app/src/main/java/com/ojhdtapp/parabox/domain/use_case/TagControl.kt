@@ -19,4 +19,8 @@ class TagControl @Inject constructor(
     fun delete(value: String) {
         repository.deleteContactTag(value)
     }
+
+    fun has(value: String): Boolean {
+        return repository.checkContactTag(value)
+    }
 }

@@ -14,4 +14,8 @@ class UpdateContact @Inject constructor(
     fun profileAndTag(id: Long, profile: Profile, tags: List<String>) {
         repository.updateContactProfileAndTag(id, profile, tags)
     }
+
+    fun tag(id: Long, tags: List<String>) {
+        repository.updateContactTag(id, tags)
+    }
 }

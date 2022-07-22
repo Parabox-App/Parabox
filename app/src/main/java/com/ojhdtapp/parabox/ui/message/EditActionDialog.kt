@@ -218,11 +218,12 @@ fun EditActionDialog(
                             }
                             Crossfade(targetState = isEditing) {
                                 if (it) {
-                                    OutlinedButton(onClick = { if(!isEditing) {
-                                        isEditing = true
-                                    }else{
+                                    OutlinedButton(onClick = {
+                                        if (!isEditing) {
+                                            isEditing = true
+                                        } else {
 
-                                    }
+                                        }
                                     }) {
                                         Icon(
                                             Icons.Outlined.Done,
@@ -309,7 +310,7 @@ fun EditActionDialog(
                                     hashTagList.removeAt(chipIndex)
                                 }
                             },
-                            isCompact = isCompact,
+                            padding = if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) HashTagEditor.PADDING_SMALL else HashTagEditor.PAdding_MEDIUM,
                             onConfirmDelete = onConfirmDelete
                         )
                     }
