@@ -77,6 +77,14 @@ class MainRepositoryImpl @Inject constructor(
         database.contactDao.updateHiddenState(ContactHiddenStateUpdate(id, value))
     }
 
+    override fun updateContactPinnedState(id: Long, value: Boolean) {
+        database.contactDao.updatePinnedState(ContactPinnedStateUpdate(id, value))
+    }
+
+    override fun updateContactNotificationState(id: Long, value: Boolean) {
+        database.contactDao.updateNotificationState(ContactNotificationStateUpdate(id, value))
+    }
+
     override fun updateContactTag(id: Long, tag: List<String>) {
         database.contactDao.updateTag(ContactTagUpdate(id, tag))
     }

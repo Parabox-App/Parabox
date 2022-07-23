@@ -117,7 +117,19 @@ fun MessagePage(
             contact = viewModel.selectedContactStateList.firstOrNull(),
             sizeClass = sizeClass,
             onDismiss = { viewModel.setShowEditActionDialogState(false) },
-            onConfirm = {})
+            onConfirm = {},
+            onEvent = {
+                when (it) {
+                    is EditActionDialogEvent.ProfileAndTagUpdate -> {}
+                    is EditActionDialogEvent.EnableNotificationStateUpdate -> {
+                        viewModel.setContactNotification(it.contactId, it.value)
+                    }
+                    is EditActionDialogEvent.PinnedStateUpdate -> {
+                        viewModel.setContactPinned(it.contactId, it.value)
+                    }
+                }
+            }
+        )
         TagEditAlertDialog(
             showDialog = viewModel.showTagEditAlertDialogState.value,
             contact = viewModel.selectedContactStateList.firstOrNull(),

@@ -238,6 +238,18 @@ class MessagePageViewModel @Inject constructor(
         }
     }
 
+    fun setContactPinned(contactId: Long, pinned: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            updateContact.pinnedState(contactId, pinned)
+        }
+    }
+
+    fun setContactNotification(contactId: Long, enableNotification: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            updateContact.notificationState(contactId, enableNotification)
+        }
+    }
+
     // Edit Dialog
     private var _showEditActionDialogState = mutableStateOf<Boolean>(false)
     val showEditActionDialogState: State<Boolean> = _showEditActionDialogState

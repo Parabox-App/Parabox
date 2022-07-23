@@ -12,6 +12,8 @@ data class ContactEntity(
     @Embedded val latestMessage: LatestMessage?,
     val senderId: Long,
     val isHidden: Boolean = false,
+    val isPinned : Boolean = false,
+    val enableNotifications : Boolean = true,
     val tags: List<String>,
     @PrimaryKey(autoGenerate = true) val contactId: Long = 0,
 ){
@@ -19,6 +21,8 @@ data class ContactEntity(
         profile = profile,
         latestMessage = latestMessage,
         isHidden = isHidden,
+        isPinned = isPinned,
+        enableNotifications = enableNotifications,
         contactId = contactId,
         senderId = senderId,
         tags = tags
@@ -50,4 +54,20 @@ data class ContactTagUpdate(
     val contactId: Long,
     @ColumnInfo(name = "tags")
     val tags: List<String>,
+)
+
+@Entity
+data class ContactPinnedStateUpdate(
+    @ColumnInfo(name = "contactId")
+    val contactId: Long,
+    @ColumnInfo(name = "isPinned")
+    val isPinned: Boolean,
+)
+
+@Entity
+data class ContactNotificationStateUpdate(
+    @ColumnInfo(name = "contactId")
+    val contactId: Long,
+    @ColumnInfo(name = "enableNotifications")
+    val enableNotifications: Boolean,
 )

@@ -11,7 +11,9 @@ data class Contact(
     val contactId: Long,
     val senderId: Long,
     val tags: List<String>,
-    val isHidden : Boolean = false
+    val isHidden : Boolean = false,
+    val isPinned : Boolean = false,
+    val enableNotifications : Boolean = true,
 ) : Parcelable{
     // Unused
     fun toContactEntity(): ContactEntity{
@@ -21,6 +23,8 @@ data class Contact(
             senderId = senderId,
             contactId = contactId,
             isHidden = isHidden,
+            isPinned = isPinned,
+            enableNotifications = enableNotifications,
             tags = tags
         )
     }

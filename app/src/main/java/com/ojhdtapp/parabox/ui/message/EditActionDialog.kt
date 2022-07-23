@@ -36,6 +36,7 @@ import com.ojhdtapp.parabox.core.util.FormUtil
 import com.ojhdtapp.parabox.core.util.toDescriptiveTime
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.ui.util.HashTagEditor
+import com.ojhdtapp.parabox.ui.util.SwitchPreference
 import com.ojhdtapp.parabox.ui.util.clearFocusOnKeyboardDismiss
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
@@ -46,7 +47,8 @@ fun EditActionDialog(
     contact: Contact?,
     sizeClass: WindowSizeClass,
     onDismiss: () -> Unit,
-    onConfirm: () -> Unit
+    onConfirm: () -> Unit,
+    onEvent: (event: EditActionDialogEvent) -> Unit
 ) {
     if (showDialog) {
         val isCompact = sizeClass.widthSizeClass == WindowWidthSizeClass.Compact
@@ -312,6 +314,48 @@ fun EditActionDialog(
                             },
                             padding = if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) HashTagEditor.PADDING_SMALL else HashTagEditor.PAdding_MEDIUM,
                             onConfirmDelete = onConfirmDelete
+                        )
+                    }
+                    item {
+                        Divider(
+                            modifier = Modifier.padding(horizontal = if (isCompact) 16.dp else 32.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    }
+                    item {
+                        SwitchPreference(
+                            title = "新消息通知",
+                            subtitleOn = "开启",
+                            subtitleOff = "关闭",
+                            initialChecked = contact?.enableNotifications ?: false,
+                            onCheckedChange = {
+                                contact?.contactId?.let { id ->
+                                    onEvent(
+                                        EditActionDialogEvent.EnableNotificationStateUpdate(
+                                            id, it
+                                        )
+                                    )
+                                }
+                            },
+                            enabled = contact != null
+                        )
+                    }
+                    item{
+                        SwitchPreference(
+                            title = "置顶聊天",
+                            subtitleOn = "开启",
+                            subtitleOff = "关闭",
+                            initialChecked = contact?.isPinned ?: false,
+                            onCheckedChange = {
+                                contact?.contactId?.let { id ->
+                                    onEvent(
+                                        EditActionDialogEvent.PinnedStateUpdate(
+                                            id, it
+                                        )
+                                    )
+                                }
+                            },
+                            enabled = contact != null
                         )
                     }
                 }

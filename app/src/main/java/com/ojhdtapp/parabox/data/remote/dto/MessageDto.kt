@@ -52,6 +52,8 @@ data class MessageDto(
             contactId = pluginConnection.objectId,
             senderId = pluginConnection.objectId,
             isHidden = false,
+            isPinned = false,
+            enableNotifications = true,
             tags = emptyList()
         )
     }

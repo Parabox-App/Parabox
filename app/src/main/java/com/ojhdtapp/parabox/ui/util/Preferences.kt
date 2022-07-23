@@ -5,10 +5,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.PopupProperties
 import com.ojhdtapp.parabox.ui.theme.fontSize
 
 @Composable
@@ -27,13 +25,23 @@ fun PreferencesCategory(modifier: Modifier = Modifier, text: String) {
 fun SwitchPreference(
     modifier: Modifier = Modifier,
     title: String,
-    subtitle: String? = null,
-    checked: Boolean,
-    onCheckedChange: (value: Boolean) -> Unit
+    subtitleOn: String? = null,
+    subtitleOff: String? = null,
+    initialChecked: Boolean,
+    onCheckedChange: (value: Boolean) -> Unit,
+    enabled: Boolean = true,
 ) {
+    var checked by remember {
+        mutableStateOf(initialChecked)
+    }
     Row(
         modifier = modifier
-            .clickable { onCheckedChange(!checked) }
+            .clickable {
+                if (enabled) {
+                    checked = !checked
+                    onCheckedChange(!initialChecked)
+                }
+            }
             .padding(24.dp, 16.dp)
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -45,17 +53,32 @@ fun SwitchPreference(
                 style = MaterialTheme.typography.titleLarge,
                 fontSize = MaterialTheme.fontSize.title
             )
-            subtitle?.let {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
+            if (checked) {
+
+                subtitleOn?.let {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            } else {
+                subtitleOff?.let {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
             }
         }
         Spacer(modifier = Modifier.width(48.dp))
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
+        Switch(checked = checked, onCheckedChange = {
+            onCheckedChange(it)
+            checked = !checked
+        }, enabled = enabled)
     }
 }
 
@@ -138,3 +161,38 @@ fun <T> SimpleMenuPreference(
         }
     }
 }
+
+//@Composable
+//fun SwitchPreference(
+//    modifier: Modifier = Modifier,
+//    checked: Boolean,
+//    onCheckedChange: (Boolean) -> Unit,
+//    title: String,
+//    descriptionOn: String? = null,
+//    descriptionOff: String? = null,
+//    enabled: Boolean = true,
+//    horizontalPadding: Dp = 16.dp
+//) {
+//    Row(
+//        modifier = modifier
+//            .fillMaxWidth()
+//            .clickable {
+//                onCheckedChange(!checked)
+//            }.padding(horizontalPadding),
+//        verticalAlignment = Alignment.CenterVertically
+//    ) {
+//        Column(modifier = Modifier.weight(1f)) {
+//            Text(text = title, style = MaterialTheme.typography.titleMedium)
+//            if (checked) {
+//                descriptionOn?.let {
+//                    Text(text = it, style = MaterialTheme.typography.bodyMedium)
+//                }
+//            } else {
+//                descriptionOff?.let {
+//                    Text(text = it, style = MaterialTheme.typography.bodyMedium)
+//                }
+//            }
+//        }
+//        Switch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
+//    }
+//}

@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.Flow
 interface MainRepository {
     suspend fun handleNewMessage(dto: MessageDto)
     fun updateContactHiddenState(id: Long, value: Boolean)
+    fun updateContactPinnedState(id: Long, value: Boolean)
+    fun updateContactNotificationState(id: Long, value: Boolean)
     fun updateContactTag(id: Long, tag: List<String>)
     fun updateContactProfileAndTag(id: Long, profile: Profile, tags: List<String>)
     fun getContactTags(): Flow<List<Tag>>

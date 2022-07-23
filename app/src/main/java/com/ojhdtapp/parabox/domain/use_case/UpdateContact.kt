@@ -18,4 +18,12 @@ class UpdateContact @Inject constructor(
     fun tag(id: Long, tags: List<String>) {
         repository.updateContactTag(id, tags)
     }
+
+    fun pinnedState(id: Long, value: Boolean) {
+        repository.updateContactPinnedState(id, value)
+    }
+
+    fun notificationState(id: Long, value: Boolean) {
+        repository.updateContactNotificationState(id, value)
+    }
 }
