@@ -114,7 +114,7 @@ fun MessagePage(
         )
         EditActionDialog(
             showDialog = viewModel.showEditActionDialogState.value,
-            contact = viewModel.selectedContactStateList.firstOrNull(),
+            contact = contactState.data.findLast { it.contactId == viewModel.selectedContactStateList.firstOrNull() },
             sizeClass = sizeClass,
             onDismiss = { viewModel.setShowEditActionDialogState(false) },
             onConfirm = {},
@@ -132,7 +132,7 @@ fun MessagePage(
         )
         TagEditAlertDialog(
             showDialog = viewModel.showTagEditAlertDialogState.value,
-            contact = viewModel.selectedContactStateList.firstOrNull(),
+            contact = contactState.data.findLast { it.contactId == viewModel.selectedContactStateList.firstOrNull() },
             sizeClass = sizeClass,
             onDismiss = { viewModel.setShowTagEditAlertDialogState(false) },
             onConfirm = { id: Long, tags: List<String> ->
@@ -515,7 +515,7 @@ fun MessagePage(
                         val bottomRadius by animateDpAsState(targetValue = if (isDragging || isLast) 28.dp else 0.dp)
                         val bgBottomRadius by animateDpAsState(targetValue = if (isLast) 28.dp else 0.dp)
                         val isSelected =
-                            viewModel.selectedContactStateList.contains(item)
+                            viewModel.selectedContactStateList.contains(item.contactId)
                         SwipeableContact(
                             modifier = Modifier
                                 .padding(horizontal = 16.dp)
@@ -538,7 +538,7 @@ fun MessagePage(
                                 shimmer = shimmerInstance,
                                 onClick = {
                                     if (viewModel.searchBarActivateState.value == SearchAppBar.SELECT) {
-                                        viewModel.addOrRemoveItemOfSelectedContactStateList(item)
+                                        viewModel.addOrRemoveItemOfSelectedContactStateList(item.contactId)
                                     } else {
                                         mainSharedViewModel.receiveAndUpdateMessageFromContact(
                                             contact = item,
@@ -552,11 +552,11 @@ fun MessagePage(
                                 },
                                 onLongClick = {
                                     viewModel.setSearchBarActivateState(SearchAppBar.SELECT)
-                                    viewModel.addOrRemoveItemOfSelectedContactStateList(item)
+                                    viewModel.addOrRemoveItemOfSelectedContactStateList(item.contactId)
                                 },
                                 onAvatarClick = {
                                     viewModel.setSearchBarActivateState(SearchAppBar.SELECT)
-                                    viewModel.addOrRemoveItemOfSelectedContactStateList(item)
+                                    viewModel.addOrRemoveItemOfSelectedContactStateList(item.contactId)
                                 }
                             )
                         }

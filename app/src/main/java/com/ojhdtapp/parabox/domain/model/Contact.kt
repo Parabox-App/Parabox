@@ -15,13 +15,13 @@ data class Contact(
     val isPinned: Boolean = false,
     val enableNotifications: Boolean = true,
 ) : Parcelable {
-    override fun equals(other: Any?): Boolean {
-        return if (other is Contact) {
-            contactId == other.contactId
-        } else {
-            super.equals(other)
-        }
-    }
+//    override fun equals(other: Any?): Boolean {
+//        return if (other is Contact) {
+//            contactId == other.contactId
+//        } else {
+//            super.equals(other)
+//        }
+//    }
 
     // Unused
     fun toContactEntity(): ContactEntity {
