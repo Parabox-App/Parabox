@@ -120,7 +120,10 @@ fun MessagePage(
             onConfirm = {},
             onEvent = {
                 when (it) {
-                    is EditActionDialogEvent.ProfileAndTagUpdate -> {}
+                    is EditActionDialogEvent.ProfileAndTagUpdate -> {
+                        viewModel.setContactProfileAndTag(it.contactId, it.profile, it.tags)
+                        viewModel.addContactTag(it.tags)
+                    }
                     is EditActionDialogEvent.EnableNotificationStateUpdate -> {
                         viewModel.setContactNotification(it.contactId, it.value)
                     }

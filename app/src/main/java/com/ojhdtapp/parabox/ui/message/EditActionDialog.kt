@@ -35,6 +35,7 @@ import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.FormUtil
 import com.ojhdtapp.parabox.core.util.toDescriptiveTime
 import com.ojhdtapp.parabox.domain.model.Contact
+import com.ojhdtapp.parabox.domain.model.Profile
 import com.ojhdtapp.parabox.ui.util.HashTagEditor
 import com.ojhdtapp.parabox.ui.util.SwitchPreference
 import com.ojhdtapp.parabox.ui.util.clearFocusOnKeyboardDismiss
@@ -66,6 +67,7 @@ fun EditActionDialog(
         var shouldShowAvatarSelector by remember {
             mutableStateOf(false)
         }
+
         Dialog(
             onDismissRequest = {
                 name = ""
@@ -95,6 +97,11 @@ fun EditActionDialog(
                 var onConfirmDelete by remember {
                     mutableStateOf(false)
                 }
+                LaunchedEffect(key1 = true, block = {
+                    contact?.tags?.also {
+                        hashTagList.addAll(it)
+                    }
+                })
                 LazyColumn(
                 ) {
                     item {
@@ -178,7 +185,10 @@ fun EditActionDialog(
                                             .fillMaxWidth()
                                             .clearFocusOnKeyboardDismiss(),
                                         value = name,
-                                        onValueChange = { name = it },
+                                        onValueChange = {
+                                            nameError = false
+                                            name = it
+                                        },
                                         singleLine = true,
                                         textStyle = MaterialTheme.typography.titleLarge.merge(
                                             TextStyle(
@@ -200,15 +210,23 @@ fun EditActionDialog(
                                     )
                                 }
                                 AnimatedVisibility(
-                                    visible = isEditing,
+                                    visible = isEditing || nameError,
                                     enter = expandVertically(),
                                     exit = shrinkVertically()
                                 ) {
-                                    Text(
-                                        text = "点击编辑会话名",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
+                                    if (nameError) {
+                                        Text(
+                                            text = "会话名不可为空",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.error
+                                        )
+                                    } else {
+                                        Text(
+                                            text = "点击编辑会话名",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
                                 }
                                 Text(
                                     modifier = Modifier.padding(top = 4.dp),
@@ -221,10 +239,22 @@ fun EditActionDialog(
                             Crossfade(targetState = isEditing) {
                                 if (it) {
                                     OutlinedButton(onClick = {
-                                        if (!isEditing) {
-                                            isEditing = true
+                                        if (name.isEmpty()) {
+                                            nameError = true
                                         } else {
-
+                                            contact?.also {
+                                                onEvent(
+                                                    EditActionDialogEvent.ProfileAndTagUpdate(
+                                                        contactId = it.contactId,
+                                                        profile = Profile(
+                                                            name = name,
+                                                            avatar = null
+                                                        ),
+                                                        tags = hashTagList.toList()
+                                                    )
+                                                )
+                                                isEditing = false
+                                            }
                                         }
                                     }) {
                                         Icon(
@@ -257,6 +287,7 @@ fun EditActionDialog(
                         val hashTagInteraction = remember { MutableInteractionSource() }
                         val rowInteraction = remember { MutableInteractionSource() }
                         HashTagEditor(
+                            modifier = Modifier.padding(bottom = 8.dp),
                             textFieldValue = hashTagText,
                             enabled = isEditing,
                             onValueChanged = {
@@ -340,7 +371,7 @@ fun EditActionDialog(
                             enabled = contact != null
                         )
                     }
-                    item{
+                    item {
                         SwitchPreference(
                             title = "置顶聊天",
                             subtitleOn = "开启",

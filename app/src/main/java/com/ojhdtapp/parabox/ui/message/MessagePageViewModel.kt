@@ -251,6 +251,12 @@ class MessagePageViewModel @Inject constructor(
         }
     }
 
+    fun setContactProfileAndTag(contactId: Long, profile: Profile, tags: List<String>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            updateContact.profileAndTag(contactId, profile, tags)
+        }
+    }
+
     // Edit Dialog
     private var _showEditActionDialogState = mutableStateOf<Boolean>(false)
     val showEditActionDialogState: State<Boolean> = _showEditActionDialogState

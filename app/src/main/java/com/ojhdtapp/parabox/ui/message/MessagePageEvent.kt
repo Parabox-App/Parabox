@@ -14,7 +14,7 @@ sealed class MessagePageUiEvent {
 }
 
 sealed class EditActionDialogEvent {
-    data class ProfileAndTagUpdate(val profile: Profile, val tags: List<String>) :
+    data class ProfileAndTagUpdate(val contactId: Long, val profile: Profile, val tags: List<String>) :
         EditActionDialogEvent()
 
     data class EnableNotificationStateUpdate(val contactId: Long, val value: Boolean) :
