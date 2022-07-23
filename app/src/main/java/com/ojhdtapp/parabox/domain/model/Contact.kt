@@ -11,12 +11,20 @@ data class Contact(
     val contactId: Long,
     val senderId: Long,
     val tags: List<String>,
-    val isHidden : Boolean = false,
-    val isPinned : Boolean = false,
-    val enableNotifications : Boolean = true,
-) : Parcelable{
+    val isHidden: Boolean = false,
+    val isPinned: Boolean = false,
+    val enableNotifications: Boolean = true,
+) : Parcelable {
+    override fun equals(other: Any?): Boolean {
+        return if (other is Contact) {
+            contactId == other.contactId
+        } else {
+            super.equals(other)
+        }
+    }
+
     // Unused
-    fun toContactEntity(): ContactEntity{
+    fun toContactEntity(): ContactEntity {
         return ContactEntity(
             profile = profile,
             latestMessage = latestMessage,
