@@ -236,46 +236,101 @@ fun EditActionDialog(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                            Crossfade(targetState = isEditing) {
-                                if (it) {
-                                    OutlinedButton(onClick = {
-                                        if (name.isEmpty()) {
-                                            nameError = true
-                                        } else {
-                                            contact?.also {
-                                                onEvent(
-                                                    EditActionDialogEvent.ProfileAndTagUpdate(
-                                                        contactId = it.contactId,
-                                                        profile = Profile(
-                                                            name = name,
-                                                            avatar = null
-                                                        ),
-                                                        tags = hashTagList.toList()
-                                                    )
-                                                )
-                                                isEditing = false
-                                            }
+                            if (isCompact) {
+                                Crossfade(targetState = isEditing) {
+                                    if (it) {
+                                        FloatingActionButton(
+                                            onClick = {
+                                                if (name.isEmpty()) {
+                                                    nameError = true
+                                                } else {
+                                                    contact?.also {
+                                                        onEvent(
+                                                            EditActionDialogEvent.ProfileAndTagUpdate(
+                                                                contactId = it.contactId,
+                                                                profile = Profile(
+                                                                    name = name,
+                                                                    avatar = null
+                                                                ),
+                                                                tags = hashTagList.toList()
+                                                            )
+                                                        )
+                                                        isEditing = false
+                                                    }
+                                                }
+                                            },
+                                            elevation = FloatingActionButtonDefaults.elevation(
+                                                defaultElevation = 0.dp,
+                                                pressedElevation = 0.dp
+                                            )
+                                        ) {
+                                            Icon(
+                                                Icons.Outlined.Save,
+                                                contentDescription = "save",
+                                                modifier = Modifier.size(ButtonDefaults.IconSize),
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
                                         }
-                                    }) {
-                                        Icon(
-                                            Icons.Outlined.Done,
-                                            contentDescription = "done",
-                                            modifier = Modifier.size(ButtonDefaults.IconSize)
-                                        )
-                                        Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                                        Text("保存更改")
-                                    }
-                                } else {
-                                    Button(onClick = { isEditing = !isEditing }) {
-                                        Icon(
-                                            Icons.Outlined.Edit,
-                                            contentDescription = "edit",
-                                            modifier = Modifier.size(ButtonDefaults.IconSize)
-                                        )
-                                        Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                                        Text("编辑信息")
-                                    }
+                                    } else {
+                                        FloatingActionButton(
+                                            onClick = { isEditing = !isEditing },
+                                            elevation = FloatingActionButtonDefaults.elevation(
+                                                defaultElevation = 0.dp,
+                                                pressedElevation = 0.dp
+                                            )
+                                        ) {
+                                            Icon(
+                                                Icons.Outlined.Edit,
+                                                contentDescription = "edit",
+                                                modifier = Modifier.size(ButtonDefaults.IconSize),
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
 
+                                    }
+                                }
+                            } else {
+                                Crossfade(targetState = isEditing) {
+                                    if (it) {
+                                        OutlinedButton(onClick = {
+                                            if (name.isEmpty()) {
+                                                nameError = true
+                                            } else {
+                                                contact?.also {
+                                                    onEvent(
+                                                        EditActionDialogEvent.ProfileAndTagUpdate(
+                                                            contactId = it.contactId,
+                                                            profile = Profile(
+                                                                name = name,
+                                                                avatar = null
+                                                            ),
+                                                            tags = hashTagList.toList()
+                                                        )
+                                                    )
+                                                    isEditing = false
+                                                }
+                                            }
+                                        }) {
+                                            Icon(
+                                                Icons.Outlined.Save,
+                                                contentDescription = "save",
+                                                modifier = Modifier.size(ButtonDefaults.IconSize)
+                                            )
+                                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                                            Text("保存更改")
+                                        }
+                                    } else {
+                                        Button(onClick = { isEditing = !isEditing }) {
+                                            Icon(
+                                                Icons.Outlined.Edit,
+                                                contentDescription = "edit",
+                                                modifier = Modifier.size(ButtonDefaults.IconSize)
+                                            )
+                                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                                            Text("编辑信息")
+                                        }
+
+                                    }
                                 }
                             }
                         }
@@ -357,7 +412,7 @@ fun EditActionDialog(
                         SwitchPreference(
                             title = "新消息通知",
                             subtitleOn = "开启",
-                            subtitleOff = "关闭",
+                            subtitleOff = "你将不会收到新消息通知",
                             initialChecked = contact?.enableNotifications ?: false,
                             onCheckedChange = {
                                 contact?.contactId?.let { id ->
@@ -368,14 +423,15 @@ fun EditActionDialog(
                                     )
                                 }
                             },
-                            enabled = contact != null
+                            enabled = contact != null,
+                            horizontalPadding = if (isCompact) 24.dp else 32.dp,
                         )
                     }
                     item {
                         SwitchPreference(
                             title = "置顶聊天",
-                            subtitleOn = "开启",
-                            subtitleOff = "关闭",
+                            subtitleOn = "该聊天将始终固定于列表顶部",
+                            subtitleOff = "不置顶该聊天",
                             initialChecked = contact?.isPinned ?: false,
                             onCheckedChange = {
                                 contact?.contactId?.let { id ->
@@ -386,7 +442,27 @@ fun EditActionDialog(
                                     )
                                 }
                             },
-                            enabled = contact != null
+                            enabled = contact != null,
+                            horizontalPadding = if (isCompact) 24.dp else 32.dp,
+                        )
+                    }
+                    item {
+                        SwitchPreference(
+                            title = "归档",
+                            subtitleOn = "归档后，你将不会收到新消息通知",
+                            subtitleOff = "禁用",
+                            initialChecked = contact?.isPinned ?: false,
+                            onCheckedChange = {
+                                contact?.contactId?.let { id ->
+                                    onEvent(
+                                        EditActionDialogEvent.PinnedStateUpdate(
+                                            id, it
+                                        )
+                                    )
+                                }
+                            },
+                            enabled = contact != null,
+                            horizontalPadding = if (isCompact) 24.dp else 32.dp,
                         )
                     }
                 }

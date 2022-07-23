@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ojhdtapp.parabox.ui.theme.fontSize
 
@@ -31,6 +32,7 @@ fun SwitchPreference(
     initialChecked: Boolean,
     onCheckedChange: (value: Boolean) -> Unit,
     enabled: Boolean = true,
+    horizontalPadding: Dp = 24.dp
 ) {
     var checked by remember {
         mutableStateOf(initialChecked)
@@ -43,7 +45,7 @@ fun SwitchPreference(
                     onCheckedChange(!initialChecked)
                 }
             }
-            .padding(24.dp, 16.dp)
+            .padding(horizontalPadding, 16.dp)
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically

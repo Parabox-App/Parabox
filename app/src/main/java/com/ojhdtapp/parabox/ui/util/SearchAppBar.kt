@@ -50,6 +50,7 @@ fun SearchAppBar(
     onEditAction: () -> Unit = {},
     onExpandAction: () -> Unit = {},
     onNewTagAction: () -> Unit = {},
+    onArchiveAction: () -> Unit = {},
     sizeClass: WindowSizeClass,
     onMenuClick: () -> Unit,
 ) {
@@ -302,6 +303,15 @@ fun SelectContentField(
                             leadingIcon = {
                                 Icon(
                                     Icons.Outlined.MarkChatUnread,
+                                    contentDescription = null
+                                )
+                            })
+                        DropdownMenuItem(
+                            text = { Text(text = "归档") },
+                            onClick = { expanded = false },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Outlined.Archive,
                                     contentDescription = null
                                 )
                             })
