@@ -149,13 +149,13 @@ class MessagePageViewModel @Inject constructor(
     }
 
     // Selection
-    private val _selectedContactStateList = mutableStateListOf<Long>()
+    private val _selectedContactStateList = mutableStateListOf<Contact>()
     val selectedContactStateList = _selectedContactStateList
-    fun addOrRemoveItemOfSelectedContactStateList(value: Long) {
-        if (!_selectedContactStateList.contains(value)) {
+    fun addOrRemoveItemOfSelectedContactStateList(value: Contact) {
+        if (!_selectedContactStateList.map{it.contactId}.contains(value.contactId)) {
             _selectedContactStateList.add(value)
         } else {
-            _selectedContactStateList.remove(value)
+            _selectedContactStateList.remove(_selectedContactStateList.findLast { it.contactId == value.contactId })
         }
     }
 
@@ -179,7 +179,7 @@ class MessagePageViewModel @Inject constructor(
                 GroupInfoState(state = GroupInfoState.ERROR, message = "未选择待编组项")
         } else {
             groupInfoJob =
-                getGroupInfoPack(selectedContactStateList.toList()).onEach {
+                getGroupInfoPack(selectedContactStateList.map{it.contactId}.toList()).onEach {
                     _groupInfoState.value = GroupInfoState(
                         state = when (it) {
                             is Resource.Error -> GroupInfoState.ERROR
