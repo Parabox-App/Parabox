@@ -18,6 +18,7 @@ import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.draw.clip
@@ -29,6 +30,7 @@ import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import com.ojhdtapp.parabox.domain.model.Contact
 
 object SearchAppBar {
     const val NONE = 0
@@ -45,12 +47,15 @@ fun SearchAppBar(
     text: String,
     onTextChange: (text: String) -> Unit,
     placeholder: String,
-    selectedNum: Int = 0,
+    selection: SnapshotStateList<Contact> = mutableStateListOf(),
     onGroupAction: () -> Unit = {},
     onEditAction: () -> Unit = {},
     onExpandAction: () -> Unit = {},
     onNewTagAction: () -> Unit = {},
-    onArchiveAction: () -> Unit = {},
+    onHideAction: () -> Unit = {},
+    onPinAction: (value: Boolean) -> Unit = {},
+    onArchiveAction: (value: Boolean) -> Unit = {},
+    onMarkAsReadAction: (read: Boolean) -> Unit = {},
     sizeClass: WindowSizeClass,
     onMenuClick: () -> Unit,
 ) {
@@ -97,11 +102,15 @@ fun SearchAppBar(
                         modifier = Modifier.align(Alignment.BottomCenter),
                         isActivated = isActivated,
                         onActivateStateChanged = onActivateStateChanged,
-                        selectedNum = selectedNum,
+                        selection = selection,
                         onGroupAction = onGroupAction,
                         onEditAction = onEditAction,
                         onNewTagAction = onNewTagAction,
-                        onExpandAction = onExpandAction
+                        onExpandAction = onExpandAction,
+                        onPinAction = onPinAction,
+                        onHideAction = onHideAction,
+                        onArchiveAction = onArchiveAction,
+                        onMarkAsReadAction = onMarkAsReadAction
                     )
                 } else {
                     SearchContentField(
@@ -206,11 +215,15 @@ fun SelectContentField(
     modifier: Modifier = Modifier,
     isActivated: Boolean,
     onActivateStateChanged: (value: Int) -> Unit,
-    selectedNum: Int,
+    selection: List<Contact>,
     onGroupAction: () -> Unit,
     onNewTagAction: () -> Unit,
     onEditAction: () -> Unit,
     onExpandAction: () -> Unit,
+    onHideAction: () -> Unit = {},
+    onPinAction: (value: Boolean) -> Unit = {},
+    onArchiveAction: (value: Boolean) -> Unit = {},
+    onMarkAsReadAction: (read: Boolean) -> Unit = {},
 ) {
     var expanded by remember {
         mutableStateOf(false)
@@ -231,7 +244,7 @@ fun SelectContentField(
             )
         }
         Spacer(modifier = Modifier.width(12.dp))
-        AnimatedContent(targetState = selectedNum.toString(),
+        AnimatedContent(targetState = selection.size.toString(),
             transitionSpec = {
                 // Compare the incoming number with the previous number.
                 if (targetState > initialState) {
@@ -253,7 +266,7 @@ fun SelectContentField(
             Text(text = num, style = MaterialTheme.typography.titleMedium)
         }
         Spacer(modifier = Modifier.weight(1f))
-        Crossfade(targetState = selectedNum) {
+        Crossfade(targetState = selection.size) {
             if (it > 1) {
                 IconButton(onClick = onGroupAction) {
                     Icon(imageVector = Icons.Outlined.Group, contentDescription = "group")
@@ -266,7 +279,7 @@ fun SelectContentField(
 
             }
         }
-        Crossfade(targetState = selectedNum) {
+        Crossfade(targetState = selection.size) {
             if (it >= 1) {
                 Box(
                     modifier = Modifier
@@ -279,43 +292,99 @@ fun SelectContentField(
                         Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = "more")
                     }
                     DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                        DropdownMenuItem(
-                            text = { Text(text = "置顶") },
-                            onClick = { expanded = false },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Outlined.Flag,
-                                    contentDescription = null
-                                )
-                            })
+                        if (selection.map { it.isPinned }.contains(false)) {
+                            DropdownMenuItem(
+                                text = { Text(text = if (selection.size <= 1) "置顶" else "全部置顶") },
+                                onClick = {
+                                    onPinAction(true)
+                                    expanded = false },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.Flag,
+                                        contentDescription = null
+                                    )
+                                })
+                        } else {
+                            DropdownMenuItem(
+                                text = { Text(text = if (selection.size <= 1) "取消置顶" else "全部取消置顶") },
+                                onClick = {
+                                    onPinAction(false)
+                                    expanded = false },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.Flag,
+                                        contentDescription = null
+                                    )
+                                })
+                        }
                         DropdownMenuItem(
                             text = { Text(text = "隐藏会话") },
-                            onClick = { expanded = false },
+                            onClick = {
+                                onHideAction()
+                                expanded = false },
                             leadingIcon = {
                                 Icon(
                                     Icons.Outlined.HideSource,
                                     contentDescription = null
                                 )
                             })
-                        DropdownMenuItem(
-                            text = { Text(text = "标记为未读") },
-                            onClick = { expanded = false },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Outlined.MarkChatUnread,
-                                    contentDescription = null
-                                )
-                            })
-                        DropdownMenuItem(
-                            text = { Text(text = "归档") },
-                            onClick = { expanded = false },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Outlined.Archive,
-                                    contentDescription = null
-                                )
-                            })
-                        if (selectedNum == 1) {
+                        if (selection.map<Contact, Boolean> {
+                                (it.latestMessage?.unreadMessagesNum?.compareTo(
+                                    0
+                                ) ?: 0) > 0
+                            }.contains(false)) {
+                            DropdownMenuItem(
+                                text = { Text(text = "标记为未读") },
+                                onClick = {
+                                    onMarkAsReadAction(false)
+                                    expanded = false },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.MarkChatUnread,
+                                        contentDescription = null
+                                    )
+                                })
+                        } else {
+                            DropdownMenuItem(
+                                text = { Text(text = "标记为已读") },
+                                onClick = {
+                                    onMarkAsReadAction(true)
+                                    expanded = false },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.MarkChatRead,
+                                        contentDescription = null
+                                    )
+                                })
+                        }
+                        if (selection.map { it.isArchived }.contains(false)) {
+
+                            DropdownMenuItem(
+                                text = { Text(text = if (selection.size <= 1) "归档" else "全部归档") },
+                                onClick = {
+                                    onArchiveAction(true)
+                                    expanded = false },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.Archive,
+                                        contentDescription = null
+                                    )
+                                })
+                        } else {
+
+                            DropdownMenuItem(
+                                text = { Text(text = if (selection.size <= 1)"取消归档" else "全部取消归档") },
+                                onClick = {
+                                    onArchiveAction(false)
+                                    expanded = false },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.Unarchive,
+                                        contentDescription = null
+                                    )
+                                })
+                        }
+                        if (selection.size == 1) {
                             DropdownMenuItem(
                                 text = { Text(text = "快速添加标签") },
                                 onClick = {

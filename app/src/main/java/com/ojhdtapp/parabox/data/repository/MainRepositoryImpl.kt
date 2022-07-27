@@ -85,12 +85,27 @@ class MainRepositoryImpl @Inject constructor(
         database.contactDao.updateNotificationState(ContactNotificationStateUpdate(id, value))
     }
 
+    override fun updateContactArchivedState(id: Long, value: Boolean) {
+        database.contactDao.updateArchivedState(ContactArchivedStateUpdate(id, value))
+    }
+
     override fun updateContactTag(id: Long, tag: List<String>) {
         database.contactDao.updateTag(ContactTagUpdate(id, tag))
     }
 
     override fun updateContactProfileAndTag(id: Long, profile: Profile, tags: List<String>) {
-        database.contactDao.updateProfileAndTag(ContactProfileAndTagUpdate(id, profile.name, profile.avatar, tags))
+        database.contactDao.updateProfileAndTag(
+            ContactProfileAndTagUpdate(
+                id,
+                profile.name,
+                profile.avatar,
+                tags
+            )
+        )
+    }
+
+    override fun updateContactUnreadMessagesNum(id: Long, value: Int) {
+        database.contactDao.updateUnreadMessagesNum(ContactUnreadMessagesNumUpdate(id, value))
     }
 
     override fun getContactTags(): Flow<List<Tag>> {

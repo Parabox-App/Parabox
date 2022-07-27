@@ -21,4 +21,6 @@ sealed class EditActionDialogEvent {
         EditActionDialogEvent()
 
     data class PinnedStateUpdate(val contactId: Long, val value: Boolean) : EditActionDialogEvent()
+
+    data class ArchivedStateUpdate(val contactId: Long, val value: Boolean): EditActionDialogEvent()
 }

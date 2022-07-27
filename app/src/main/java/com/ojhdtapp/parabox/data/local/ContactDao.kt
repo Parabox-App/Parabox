@@ -23,12 +23,21 @@ interface ContactDao {
 
     @Update(entity = ContactEntity::class)
     fun updateProfileAndTag(obj: ContactProfileAndTagUpdate)
+
     @Update(entity = ContactEntity::class)
     fun updateTag(obj: ContactTagUpdate)
+
     @Update(entity = ContactEntity::class)
     fun updatePinnedState(obj: ContactPinnedStateUpdate)
+
     @Update(entity = ContactEntity::class)
     fun updateNotificationState(obj: ContactNotificationStateUpdate)
+
+    @Update(entity = ContactEntity::class)
+    fun updateArchivedState(obj: ContactArchivedStateUpdate)
+
+    @Update(entity = ContactEntity::class)
+    fun updateUnreadMessagesNum(obj: ContactUnreadMessagesNumUpdate)
 
     @Query("SELECT * FROM contact_entity WHERE contactId = :id LIMIT 1")
     suspend fun getContactById(id: Long): ContactEntity?

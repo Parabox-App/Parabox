@@ -451,11 +451,11 @@ fun EditActionDialog(
                             title = "归档",
                             subtitleOn = "归档后，你将不会收到新消息通知",
                             subtitleOff = "禁用",
-                            initialChecked = contact?.isPinned ?: false,
+                            initialChecked = contact?.isArchived ?: false,
                             onCheckedChange = {
                                 contact?.contactId?.let { id ->
                                     onEvent(
-                                        EditActionDialogEvent.PinnedStateUpdate(
+                                        EditActionDialogEvent.ArchivedStateUpdate(
                                             id, it
                                         )
                                     )

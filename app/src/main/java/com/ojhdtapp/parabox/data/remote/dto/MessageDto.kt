@@ -53,6 +53,7 @@ data class MessageDto(
             senderId = pluginConnection.objectId,
             isHidden = false,
             isPinned = false,
+            isArchived = false,
             enableNotifications = true,
             tags = emptyList()
         )

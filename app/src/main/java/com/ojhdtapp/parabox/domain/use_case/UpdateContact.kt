@@ -26,4 +26,12 @@ class UpdateContact @Inject constructor(
     fun notificationState(id: Long, value: Boolean) {
         repository.updateContactNotificationState(id, value)
     }
+
+    fun archivedState(id: Long, value: Boolean){
+        repository.updateContactArchivedState(id, value)
+    }
+
+    fun unreadMessagesNum(id: Long, value: Int){
+        repository.updateContactUnreadMessagesNum(id, value)
+    }
 }

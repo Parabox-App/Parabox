@@ -152,7 +152,7 @@ class MessagePageViewModel @Inject constructor(
     private val _selectedContactStateList = mutableStateListOf<Contact>()
     val selectedContactStateList = _selectedContactStateList
     fun addOrRemoveItemOfSelectedContactStateList(value: Contact) {
-        if (!_selectedContactStateList.map{it.contactId}.contains(value.contactId)) {
+        if (!_selectedContactStateList.map { it.contactId }.contains(value.contactId)) {
             _selectedContactStateList.add(value)
         } else {
             _selectedContactStateList.remove(_selectedContactStateList.findLast { it.contactId == value.contactId })
@@ -179,7 +179,7 @@ class MessagePageViewModel @Inject constructor(
                 GroupInfoState(state = GroupInfoState.ERROR, message = "未选择待编组项")
         } else {
             groupInfoJob =
-                getGroupInfoPack(selectedContactStateList.map{it.contactId}.toList()).onEach {
+                getGroupInfoPack(selectedContactStateList.map { it.contactId }.toList()).onEach {
                     _groupInfoState.value = GroupInfoState(
                         state = when (it) {
                             is Resource.Error -> GroupInfoState.ERROR
@@ -215,9 +215,10 @@ class MessagePageViewModel @Inject constructor(
     }
 
     var updateHiddenStateJob: Job? = null
-    var tempContactIdForHiddenCancellation: Long? = null
+    var tempContactIdForHiddenCancellation = mutableListOf<Long>()
     fun setContactHidden(contactId: Long) {
-        tempContactIdForHiddenCancellation = contactId
+        tempContactIdForHiddenCancellation.clear()
+        tempContactIdForHiddenCancellation.add(contactId)
         updateHiddenStateJob = viewModelScope.launch(Dispatchers.IO) {
 //            _uiEventFlow.emit(MessagePageUiEvent.ShowSnackBar("会话已暂时隐藏", "取消"))
             delay(200)
@@ -225,10 +226,24 @@ class MessagePageViewModel @Inject constructor(
         }
     }
 
+    fun setContactHidden(contactIds: List<Long>) {
+        tempContactIdForHiddenCancellation.clear()
+        tempContactIdForHiddenCancellation.addAll(contactIds)
+        updateHiddenStateJob = viewModelScope.launch(Dispatchers.IO) {
+//            _uiEventFlow.emit(MessagePageUiEvent.ShowSnackBar("会话已暂时隐藏", "取消"))
+            delay(200)
+            contactIds.forEach {
+                updateContact.hiddenState(it, true)
+            }
+        }
+    }
+
     fun cancelContactHidden() {
-        tempContactIdForHiddenCancellation?.let {
+        if (tempContactIdForHiddenCancellation.isNotEmpty()) {
             viewModelScope.launch(Dispatchers.IO) {
-                updateContact.hiddenState(it, false)
+                tempContactIdForHiddenCancellation.forEach {
+                    updateContact.hiddenState(it, false)
+                }
             }
         }
     }
@@ -245,15 +260,73 @@ class MessagePageViewModel @Inject constructor(
         }
     }
 
+    fun setContactPinned(contactIds: List<Long>, pinned: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            contactIds.forEach {
+                updateContact.pinnedState(it, pinned)
+            }
+        }
+    }
+
     fun setContactNotification(contactId: Long, enableNotification: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
             updateContact.notificationState(contactId, enableNotification)
         }
     }
 
+    fun setContactNotification(contactIds: List<Long>, enableNotification: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            contactIds.forEach {
+                updateContact.notificationState(it, enableNotification)
+            }
+        }
+    }
+
     fun setContactProfileAndTag(contactId: Long, profile: Profile, tags: List<String>) {
         viewModelScope.launch(Dispatchers.IO) {
             updateContact.profileAndTag(contactId, profile, tags)
+        }
+    }
+
+    fun setContactArchived(contactId: Long, isArchived: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            updateContact.archivedState(contactId, isArchived)
+        }
+    }
+
+    fun setContactArchived(contactIds: List<Long>, isArchived: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            contactIds.forEach {
+                updateContact.archivedState(it, isArchived)
+            }
+        }
+    }
+
+    fun clearContactUnreadNum(contactId: Long) {
+        viewModelScope.launch(Dispatchers.IO) {
+            updateContact.unreadMessagesNum(contactId, 0)
+        }
+    }
+
+    fun clearContactUnreadNum(contactIds: List<Long>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            contactIds.forEach {
+                updateContact.unreadMessagesNum(it, 0)
+            }
+        }
+    }
+
+    fun restoreContactUnreadNum(contactId: Long) {
+        viewModelScope.launch(Dispatchers.IO) {
+            updateContact.unreadMessagesNum(contactId, 1)
+        }
+    }
+
+    fun restoreContactUnreadNum(contactIds: List<Long>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            contactIds.forEach {
+                updateContact.unreadMessagesNum(it, 1)
+            }
         }
     }
 

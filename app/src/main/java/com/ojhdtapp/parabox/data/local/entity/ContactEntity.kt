@@ -13,6 +13,7 @@ data class ContactEntity(
     val senderId: Long,
     val isHidden: Boolean = false,
     val isPinned : Boolean = false,
+    val isArchived: Boolean = false,
     val enableNotifications : Boolean = true,
     val tags: List<String>,
     @PrimaryKey(autoGenerate = true) val contactId: Long = 0,
@@ -70,4 +71,20 @@ data class ContactNotificationStateUpdate(
     val contactId: Long,
     @ColumnInfo(name = "enableNotifications")
     val enableNotifications: Boolean,
+)
+
+@Entity
+data class ContactArchivedStateUpdate(
+    @ColumnInfo(name = "contactId")
+    val contactId: Long,
+    @ColumnInfo(name = "isArchived")
+    val isArchived: Boolean,
+)
+
+@Entity
+data class ContactUnreadMessagesNumUpdate(
+    @ColumnInfo(name = "contactId")
+    val contactId: Long,
+    @ColumnInfo(name = "unreadMessagesNum")
+    val unreadMessagesNum: Int,
 )

@@ -114,7 +114,7 @@ fun MessagePage(
         )
         EditActionDialog(
             showDialog = viewModel.showEditActionDialogState.value,
-            contact = contactState.data.findLast { it.contactId == viewModel.selectedContactStateList.firstOrNull()?.contactId},
+            contact = contactState.data.findLast { it.contactId == viewModel.selectedContactStateList.firstOrNull()?.contactId },
             sizeClass = sizeClass,
             onDismiss = { viewModel.setShowEditActionDialogState(false) },
             onConfirm = {},
@@ -129,6 +129,9 @@ fun MessagePage(
                     }
                     is EditActionDialogEvent.PinnedStateUpdate -> {
                         viewModel.setContactPinned(it.contactId, it.value)
+                    }
+                    is EditActionDialogEvent.ArchivedStateUpdate -> {
+                        viewModel.setContactArchived(it.contactId, it.value)
                     }
                 }
             }
@@ -161,7 +164,7 @@ fun MessagePage(
                         viewModel.setSearchBarActivateState(it)
                         viewModel.clearSelectedContactStateList()
                     },
-                    selectedNum = viewModel.selectedContactStateList.size,
+                    selection = viewModel.selectedContactStateList,
                     onGroupAction = {
                         viewModel.getGroupInfoPack()
                         viewModel.setShowGroupActionDialogState(true)
@@ -171,6 +174,29 @@ fun MessagePage(
                     },
                     onNewTagAction = {
                         viewModel.setShowTagEditAlertDialogState(true)
+                    },
+                    onHideAction = {
+                        viewModel.setContactHidden(
+                            viewModel.selectedContactStateList.toList().map { it.contactId })
+                    },
+                    onPinAction = {
+                        viewModel.setContactPinned(
+                            viewModel.selectedContactStateList.toList().map { it.contactId }, it
+                        )
+                    },
+                    onArchiveAction = {
+                        viewModel.setContactArchived(
+                            viewModel.selectedContactStateList.toList().map { it.contactId }, it
+                        )
+                    },
+                    onMarkAsReadAction = {
+                        if (it) {
+                            viewModel.clearContactUnreadNum(
+                                viewModel.selectedContactStateList.toList().map { it.contactId })
+                        } else {
+                            viewModel.restoreContactUnreadNum(
+                                viewModel.selectedContactStateList.toList().map { it.contactId })
+                        }
                     },
                     onExpandAction = {},
                     sizeClass = sizeClass,
@@ -518,7 +544,8 @@ fun MessagePage(
                         val bottomRadius by animateDpAsState(targetValue = if (isDragging || isLast) 28.dp else 0.dp)
                         val bgBottomRadius by animateDpAsState(targetValue = if (isLast) 28.dp else 0.dp)
                         val isSelected =
-                            viewModel.selectedContactStateList.map{it.contactId}.contains(item.contactId)
+                            viewModel.selectedContactStateList.map { it.contactId }
+                                .contains(item.contactId)
                         SwipeableContact(
                             modifier = Modifier
                                 .padding(horizontal = 16.dp)
