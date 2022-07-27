@@ -112,7 +112,7 @@ class MessagePageViewModel @Inject constructor(
                                         && if (selectedContactTagStateList.isNotEmpty()) {
                                     (selectedContactTagStateList intersect it.tags.toSet()).isNotEmpty()
                                 } else true
-                            } ?: emptyList()
+                            }.sortedByDescending { it.isPinned }
                         )
                     }
                     is Resource.Error -> ContactState(isLoading = false)

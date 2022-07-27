@@ -476,16 +476,22 @@ fun MessagePage(
                 }
 
                 item(key = "main") {
-                    Box(
-                        modifier = Modifier
-                            .padding(16.dp, 8.dp)
-                            .animateItemPlacement()
+                    AnimatedVisibility(
+                        visible = contactState.data.isNotEmpty(),
+                        enter = expandVertically(),
+                        exit = shrinkVertically()
                     ) {
-                        Text(
-                            text = "主要",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                        Box(
+                            modifier = Modifier
+                                .padding(16.dp, 8.dp)
+                                .animateItemPlacement()
+                        ) {
+                            Text(
+                                text = "主要",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 }
 
@@ -561,6 +567,7 @@ fun MessagePage(
                                 contact = item,
                                 topRadius = topRadius,
                                 bottomRadius = bottomRadius,
+                                isTop = item.isPinned,
                                 isLoading = loading,
                                 isSelected = isSelected,
                                 isEditing = item.contactId == mainSharedViewModel.editingContact.value,
@@ -570,6 +577,7 @@ fun MessagePage(
                                     if (viewModel.searchBarActivateState.value == SearchAppBar.SELECT) {
                                         viewModel.addOrRemoveItemOfSelectedContactStateList(item)
                                     } else {
+                                        viewModel.clearContactUnreadNum(item.contactId)
                                         mainSharedViewModel.receiveAndUpdateMessageFromContact(
                                             contact = item,
                                             shouldSelect = true
@@ -749,16 +757,23 @@ fun ContactItem(
     onLongClick: () -> Unit = {},
     onAvatarClick: () -> Unit = {},
 ) {
-    val background =
-        animateColorAsState(
-            targetValue = if (isEditing && isExpanded) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else {
-                if (isTop) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
-            }
-        )
-    Row(
-        modifier = modifier
+    val backgroundColor by
+    animateColorAsState(
+        targetValue = if (isEditing && isExpanded) {
+            MaterialTheme.colorScheme.primaryContainer
+        } else {
+            if (isTop) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
+        }
+    )
+    val textColor by animateColorAsState(
+        targetValue = if (isEditing && isExpanded) {
+            MaterialTheme.colorScheme.onPrimaryContainer
+        } else {
+            if (isTop) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+        }
+    )
+    androidx.compose.material3.Surface(
+        modifier = Modifier
             .clip(
                 RoundedCornerShape(
                     topStart = topRadius,
@@ -767,125 +782,128 @@ fun ContactItem(
                     bottomStart = bottomRadius
                 )
             )
-            .background(background.value)
-            .combinedClickable(
-                interactionSource = remember {
-                    MutableInteractionSource()
-                },
-                indication = LocalIndication.current,
-                enabled = true,
-                onLongClick = onLongClick,
-                onClick = onClick
-            )
-//            .clickable { onClick() }
-            .padding(16.dp)
-            .fillMaxWidth()
-            .height(IntrinsicSize.Min),
-        verticalAlignment = Alignment.CenterVertically
+            .fillMaxSize(),
+        color = backgroundColor,
+        tonalElevation = 3.dp
     ) {
-        if (isLoading) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .shimmer(shimmer)
-                    .background(MaterialTheme.colorScheme.secondary)
-            )
-        } else {
-            Crossfade(targetState = isSelected) {
-                if (it) {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(24.dp))
-                            .size(48.dp)
-                            .background(MaterialTheme.colorScheme.primary)
-                    ) {
-                        Icon(
-                            modifier = Modifier.align(Alignment.Center),
-                            imageVector = Icons.Outlined.Done,
-                            contentDescription = "selected",
-                            tint = MaterialTheme.colorScheme.onPrimary
-                        )
-                    }
-                } else {
-                    if (contact?.profile?.avatar == null) {
+        Row(
+            modifier = modifier
+//            .background(backgroundColor)
+                .padding(16.dp)
+                .combinedClickable(
+                    interactionSource = remember {
+                        MutableInteractionSource()
+                    },
+                    indication = LocalIndication.current,
+                    enabled = true,
+                    onLongClick = onLongClick,
+                    onClick = onClick
+                ),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (isLoading) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .shimmer(shimmer)
+                        .background(MaterialTheme.colorScheme.secondary)
+                )
+            } else {
+                Crossfade(targetState = isSelected) {
+                    if (it) {
                         Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.secondary)
-                                .clickable { onAvatarClick() }
-                        )
-                    } else {
-                        Image(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(24.dp))
                                 .size(48.dp)
-                                .background(MaterialTheme.colorScheme.tertiaryContainer)
-                                .clickable { onAvatarClick() },
-                            bitmap = contact.profile.avatar.toAvatarBitmap(),
-                            contentDescription = "avatar"
-                        )
+                                .background(MaterialTheme.colorScheme.primary)
+                        ) {
+                            Icon(
+                                modifier = Modifier.align(Alignment.Center),
+                                imageVector = Icons.Outlined.Done,
+                                contentDescription = "selected",
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                    } else {
+                        if (contact?.profile?.avatar == null) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.secondary)
+                                    .clickable { onAvatarClick() }
+                            )
+                        } else {
+                            Image(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(24.dp))
+                                    .size(48.dp)
+                                    .background(MaterialTheme.colorScheme.tertiaryContainer)
+                                    .clickable { onAvatarClick() },
+                                bitmap = contact.profile.avatar.toAvatarBitmap(),
+                                contentDescription = "avatar"
+                            )
+                        }
                     }
                 }
             }
-        }
-        Spacer(modifier = Modifier.width(16.dp))
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight(), verticalArrangement = Arrangement.Top
-        ) {
-            Spacer(modifier = Modifier.height(2.dp))
-            if (isLoading) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Box(
-                    modifier = Modifier
-                        .size(48.dp, 18.dp)
-                        .shimmer(shimmer)
-                        .background(MaterialTheme.colorScheme.secondary)
-                )
-            } else {
-                Text(
-                    text = contact?.profile?.name ?: "会话名称",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    maxLines = 1
-                )
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-            if (isLoading) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Box(
-                    modifier = Modifier
-                        .size(112.dp, 10.dp)
-                        .shimmer(shimmer)
-                        .background(MaterialTheme.colorScheme.secondary)
-                )
-            } else {
-                Text(
-                    text = contact?.latestMessage?.content ?: "",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    maxLines = 1
-                )
-            }
-        }
-        if (!isLoading) {
+            Spacer(modifier = Modifier.width(16.dp))
             Column(
-                modifier = Modifier.fillMaxHeight(),
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.Top
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(), verticalArrangement = Arrangement.Top
             ) {
+                Spacer(modifier = Modifier.height(2.dp))
+                if (isLoading) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp, 18.dp)
+                            .shimmer(shimmer)
+                            .background(MaterialTheme.colorScheme.secondary)
+                    )
+                } else {
+                    Text(
+                        text = contact?.profile?.name ?: "会话名称",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = textColor,
+                        maxLines = 1
+                    )
+                }
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = contact?.latestMessage?.timestamp?.toTimeUntilNow() ?: "",
-                    style = MaterialTheme.typography.labelMedium
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                val unreadMessagesNum = contact?.latestMessage?.unreadMessagesNum ?: 0
-                if (unreadMessagesNum != 0) {
-                    Badge(containerColor = MaterialTheme.colorScheme.primary) { Text(text = "$unreadMessagesNum") }
+                if (isLoading) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Box(
+                        modifier = Modifier
+                            .size(112.dp, 10.dp)
+                            .shimmer(shimmer)
+                            .background(MaterialTheme.colorScheme.secondary)
+                    )
+                } else {
+                    Text(
+                        text = contact?.latestMessage?.content ?: "",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = textColor,
+                        maxLines = 1
+                    )
+                }
+            }
+            if (!isLoading) {
+                Column(
+                    modifier = Modifier.fillMaxHeight(),
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.Top
+                ) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = contact?.latestMessage?.timestamp?.toTimeUntilNow() ?: "",
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    val unreadMessagesNum = contact?.latestMessage?.unreadMessagesNum ?: 0
+                    if (unreadMessagesNum != 0) {
+                        Badge(containerColor = MaterialTheme.colorScheme.primary) { Text(text = "$unreadMessagesNum") }
 //                    Box(
 //                        modifier = Modifier
 //                            .height(16.dp)
@@ -901,6 +919,7 @@ fun ContactItem(
 //                            color = MaterialTheme.colorScheme.onPrimary
 //                        )
 //                    }
+                    }
                 }
             }
         }
