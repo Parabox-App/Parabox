@@ -86,6 +86,7 @@ class MainRepositoryImpl @Inject constructor(
     }
 
     override fun updateContactArchivedState(id: Long, value: Boolean) {
+        Log.d("parabox", "$id:$value")
         database.contactDao.updateArchivedState(ContactArchivedStateUpdate(id, value))
     }
 

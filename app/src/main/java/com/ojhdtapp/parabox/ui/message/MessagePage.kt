@@ -176,6 +176,22 @@ fun MessagePage(
                         viewModel.setShowTagEditAlertDialogState(true)
                     },
                     onHideAction = {
+                        coroutineScope.launch {
+                            snackBarHostState.showSnackbar(
+                                message = "会话已暂时隐藏",
+                                actionLabel = "取消",
+                                duration = SnackbarDuration.Short
+                            )
+                                .also { result ->
+                                    when (result) {
+                                        SnackbarResult.ActionPerformed -> {
+                                            viewModel.cancelContactHidden()
+                                        }
+                                        SnackbarResult.Dismissed -> {}
+                                        else -> {}
+                                    }
+                                }
+                        }
                         viewModel.setContactHidden(
                             viewModel.selectedContactStateList.toList().map { it.contactId })
                     },
@@ -497,7 +513,7 @@ fun MessagePage(
 
                 if (contactState.isLoading) {
                     itemsIndexed(
-                        items = listOf(null, null, null, null),
+                        items = listOf(null, null, null, null, null, null, null, null),
                         key = { index, _ -> index }) { index, _ ->
                         ContactItem(
                             modifier = Modifier
@@ -577,26 +593,31 @@ fun MessagePage(
                                     if (viewModel.searchBarActivateState.value == SearchAppBar.SELECT) {
                                         viewModel.addOrRemoveItemOfSelectedContactStateList(item)
                                     } else {
-                                        viewModel.clearContactUnreadNum(item.contactId)
-                                        mainSharedViewModel.receiveAndUpdateMessageFromContact(
-                                            contact = item,
-                                            shouldSelect = true
+                                        if (viewModel.searchBarActivateState.value != SearchAppBar.ARCHIVE_SELECT) {
+                                            viewModel.clearContactUnreadNum(item.contactId)
+                                            mainSharedViewModel.receiveAndUpdateMessageFromContact(
+                                                contact = item,
+                                                shouldSelect = true
 //                                            sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded
-                                        )
-                                        if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
-                                            mainNavController.navigate(ChatPageDestination)
+                                            )
+                                            if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
+                                                mainNavController.navigate(ChatPageDestination)
+                                            }
                                         }
                                     }
                                 },
                                 onLongClick = {
-                                    viewModel.setSearchBarActivateState(SearchAppBar.SELECT)
-                                    viewModel.addOrRemoveItemOfSelectedContactStateList(item)
-                                },
-                                onAvatarClick = {
+                                    if (viewModel.searchBarActivateState.value != SearchAppBar.ARCHIVE_SELECT) {
+                                        viewModel.setSearchBarActivateState(SearchAppBar.SELECT)
+                                        viewModel.addOrRemoveItemOfSelectedContactStateList(item)
+                                    }
+                                }
+                            ) {
+                                if (viewModel.searchBarActivateState.value != SearchAppBar.ARCHIVE_SELECT) {
                                     viewModel.setSearchBarActivateState(SearchAppBar.SELECT)
                                     viewModel.addOrRemoveItemOfSelectedContactStateList(item)
                                 }
-                            )
+                            }
                         }
                         if (index < contactState.data.lastIndex)
                             Spacer(modifier = Modifier.height(2.dp))
@@ -613,6 +634,86 @@ fun MessagePage(
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
+                    }
+                }
+                item(key = "archived") {
+                    val archivedContact = contactState.data.filter { it.isArchived }
+                        .sortedByDescending { it.latestMessage?.timestamp ?: 0 }
+                    if (archivedContact.isNotEmpty()) {
+                        val swipeableState = rememberSwipeableState(initialValue = false,
+                            confirmStateChange = {
+                                if (it) {
+                                    coroutineScope.launch {
+                                        snackBarHostState.showSnackbar(
+                                            message = "会话已暂时隐藏",
+                                            actionLabel = "取消",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                            .also { result ->
+                                                when (result) {
+                                                    SnackbarResult.ActionPerformed -> {
+                                                        TODO("show again")
+                                                    }
+                                                    SnackbarResult.Dismissed -> {}
+                                                    else -> {}
+                                                }
+                                            }
+                                    }
+                                    TODO("remove item")
+                                }
+                                true
+                            })
+                        SwipeableContact(
+                            modifier = Modifier
+                                .padding(horizontal = 16.dp)
+                                .animateItemPlacement()
+                                .animateContentSize(),
+                            state = swipeableState,
+                            topRadius = 28.dp, bottomRadius = 28.dp,
+                            enabled = viewModel.searchBarActivateState.value == SearchAppBar.NONE
+                        ) {
+                            ContactItem(
+                                contact = null,
+                                icon = {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Archive,
+                                        contentDescription = "archived",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                },
+                                title = "已归档会话",
+                                subTitle = "${archivedContact.firstOrNull()?.profile?.name}: ${archivedContact.firstOrNull()?.latestMessage?.content}",
+                                timestamp = archivedContact.firstOrNull()?.latestMessage?.timestamp,
+                                unreadMessagesNum = archivedContact.fold(0) { acc, contact ->
+                                    acc + (contact.latestMessage?.unreadMessagesNum ?: 0)
+                                },
+                                topRadius = 28.dp,
+                                bottomRadius = 28.dp,
+                                isTop = false,
+                                isLoading = false,
+                                isSelected = viewModel.searchBarActivateState.value == SearchAppBar.ARCHIVE_SELECT,
+                                isEditing = false,
+                                isExpanded = sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded,
+                                shimmer = shimmerInstance,
+                                onClick = {
+                                    if (viewModel.searchBarActivateState.value == SearchAppBar.SELECT) {
+
+                                        if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
+                                        }
+
+                                    }
+                                },
+                                onLongClick = {
+                                    if (viewModel.searchBarActivateState.value != SearchAppBar.SELECT) {
+                                        viewModel.setSearchBarActivateState(SearchAppBar.ARCHIVE_SELECT)
+                                    }
+                                }
+                            ) {
+                                if (viewModel.searchBarActivateState.value != SearchAppBar.SELECT) {
+                                    viewModel.setSearchBarActivateState(SearchAppBar.ARCHIVE_SELECT)
+                                }
+                            }
+                        }
                     }
                 }
                 item(key = null) {
@@ -743,6 +844,11 @@ fun SwipeableContact(
 fun ContactItem(
     modifier: Modifier = Modifier,
     contact: Contact?,
+    icon: @Composable() (() -> Unit)? = null,
+    title: String? = null,
+    subTitle: String? = null,
+    timestamp: Long? = null,
+    unreadMessagesNum: Int? = null,
     topRadius: Dp,
     bottomRadius: Dp,
 //    isFirst: Boolean = false,
@@ -773,7 +879,7 @@ fun ContactItem(
         }
     )
     androidx.compose.material3.Surface(
-        modifier = Modifier
+        modifier = modifier
             .clip(
                 RoundedCornerShape(
                     topStart = topRadius,
@@ -782,23 +888,23 @@ fun ContactItem(
                     bottomStart = bottomRadius
                 )
             )
-            .fillMaxSize(),
+            .fillMaxSize()
+            .combinedClickable(
+                interactionSource = remember {
+                    MutableInteractionSource()
+                },
+                indication = LocalIndication.current,
+                enabled = true,
+                onLongClick = onLongClick,
+                onClick = onClick
+            ),
         color = backgroundColor,
         tonalElevation = 3.dp
     ) {
         Row(
-            modifier = modifier
+            modifier = Modifier
 //            .background(backgroundColor)
-                .padding(16.dp)
-                .combinedClickable(
-                    interactionSource = remember {
-                        MutableInteractionSource()
-                    },
-                    indication = LocalIndication.current,
-                    enabled = true,
-                    onLongClick = onLongClick,
-                    onClick = onClick
-                ),
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (isLoading) {
@@ -826,7 +932,18 @@ fun ContactItem(
                             )
                         }
                     } else {
-                        if (contact?.profile?.avatar == null) {
+                        if (icon != null) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primaryContainer)
+                                    .clickable { onAvatarClick() },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                icon()
+                            }
+                        } else if (contact?.profile?.avatar == null) {
                             Box(
                                 modifier = Modifier
                                     .size(48.dp)
@@ -865,7 +982,7 @@ fun ContactItem(
                     )
                 } else {
                     Text(
-                        text = contact?.profile?.name ?: "会话名称",
+                        text = title ?: contact?.profile?.name ?: "会话名称",
                         style = MaterialTheme.typography.titleMedium,
                         color = textColor,
                         maxLines = 1
@@ -882,7 +999,7 @@ fun ContactItem(
                     )
                 } else {
                     Text(
-                        text = contact?.latestMessage?.content ?: "",
+                        text = subTitle ?: contact?.latestMessage?.content ?: "",
                         style = MaterialTheme.typography.bodyMedium,
                         color = textColor,
                         maxLines = 1
@@ -897,11 +1014,12 @@ fun ContactItem(
                 ) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = contact?.latestMessage?.timestamp?.toTimeUntilNow() ?: "",
+                        text = (timestamp?:contact?.latestMessage?.timestamp)?.toTimeUntilNow() ?: "",
                         style = MaterialTheme.typography.labelMedium
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    val unreadMessagesNum = contact?.latestMessage?.unreadMessagesNum ?: 0
+                    val unreadMessagesNum =
+                        unreadMessagesNum ?: contact?.latestMessage?.unreadMessagesNum ?: 0
                     if (unreadMessagesNum != 0) {
                         Badge(containerColor = MaterialTheme.colorScheme.primary) { Text(text = "$unreadMessagesNum") }
 //                    Box(

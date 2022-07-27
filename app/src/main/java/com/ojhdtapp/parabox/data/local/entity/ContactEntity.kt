@@ -23,6 +23,7 @@ data class ContactEntity(
         latestMessage = latestMessage,
         isHidden = isHidden,
         isPinned = isPinned,
+        isArchived = isArchived,
         enableNotifications = enableNotifications,
         contactId = contactId,
         senderId = senderId,

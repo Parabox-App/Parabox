@@ -36,6 +36,7 @@ object SearchAppBar {
     const val NONE = 0
     const val SEARCH = 1
     const val SELECT = 2
+    const val ARCHIVE_SELECT = 3
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -97,34 +98,46 @@ fun SearchAppBar(
             tonalElevation = 3.dp
         ) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-                if (activateState == SearchAppBar.SELECT) {
-                    SelectContentField(
-                        modifier = Modifier.align(Alignment.BottomCenter),
-                        isActivated = isActivated,
-                        onActivateStateChanged = onActivateStateChanged,
-                        selection = selection,
-                        onGroupAction = onGroupAction,
-                        onEditAction = onEditAction,
-                        onNewTagAction = onNewTagAction,
-                        onExpandAction = onExpandAction,
-                        onPinAction = onPinAction,
-                        onHideAction = onHideAction,
-                        onArchiveAction = onArchiveAction,
-                        onMarkAsReadAction = onMarkAsReadAction
-                    )
-                } else {
-                    SearchContentField(
-                        modifier = Modifier.align(Alignment.BottomCenter),
-                        isActivated = isActivated,
-                        onActivateStateChanged = onActivateStateChanged,
-                        placeholder = placeholder,
-                        focusRequester = focusRequester,
-                        text = text,
-                        onTextChange = onTextChange,
-                        keyboardController = keyboardController,
-                        isExpanded = isExpanded,
-                        onMenuClick = onMenuClick,
-                    )
+                when (activateState) {
+                    SearchAppBar.SELECT -> {
+                        SelectContentField(
+                            modifier = Modifier.align(Alignment.BottomCenter),
+                            isActivated = isActivated,
+                            onActivateStateChanged = onActivateStateChanged,
+                            selection = selection,
+                            onGroupAction = onGroupAction,
+                            onEditAction = onEditAction,
+                            onNewTagAction = onNewTagAction,
+                            onExpandAction = onExpandAction,
+                            onPinAction = onPinAction,
+                            onHideAction = onHideAction,
+                            onArchiveAction = onArchiveAction,
+                            onMarkAsReadAction = onMarkAsReadAction
+                        )
+                    }
+                    SearchAppBar.SEARCH, SearchAppBar.NONE -> {
+                        SearchContentField(
+                            modifier = Modifier.align(Alignment.BottomCenter),
+                            isActivated = isActivated,
+                            onActivateStateChanged = onActivateStateChanged,
+                            placeholder = placeholder,
+                            focusRequester = focusRequester,
+                            text = text,
+                            onTextChange = onTextChange,
+                            keyboardController = keyboardController,
+                            isExpanded = isExpanded,
+                            onMenuClick = onMenuClick,
+                        )
+                    }
+                    SearchAppBar.ARCHIVE_SELECT -> {
+                        SelectSpecContentField(
+                            modifier = Modifier.align(Alignment.BottomCenter),
+                            isActivated = isActivated,
+                            onActivateStateChanged = onActivateStateChanged,
+                            onHideAction = {}
+                        )
+                    }
+                    else -> {}
                 }
             }
         }
@@ -196,7 +209,11 @@ fun SearchContentField(
             },
             cursorBrush = SolidColor(value = MaterialTheme.colorScheme.primary)
         )
-        AnimatedVisibility(visible = !isActivated) {
+        AnimatedVisibility(
+            visible = !isActivated,
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
             IconButton(onClick = { /*TODO*/ }) {
                 Box(
                     modifier = Modifier
@@ -297,7 +314,8 @@ fun SelectContentField(
                                 text = { Text(text = if (selection.size <= 1) "置顶" else "全部置顶") },
                                 onClick = {
                                     onPinAction(true)
-                                    expanded = false },
+                                    expanded = false
+                                },
                                 leadingIcon = {
                                     Icon(
                                         Icons.Outlined.Flag,
@@ -309,7 +327,8 @@ fun SelectContentField(
                                 text = { Text(text = if (selection.size <= 1) "取消置顶" else "全部取消置顶") },
                                 onClick = {
                                     onPinAction(false)
-                                    expanded = false },
+                                    expanded = false
+                                },
                                 leadingIcon = {
                                     Icon(
                                         Icons.Outlined.Flag,
@@ -321,7 +340,8 @@ fun SelectContentField(
                             text = { Text(text = "隐藏会话") },
                             onClick = {
                                 onHideAction()
-                                expanded = false },
+                                expanded = false
+                            },
                             leadingIcon = {
                                 Icon(
                                     Icons.Outlined.HideSource,
@@ -337,7 +357,8 @@ fun SelectContentField(
                                 text = { Text(text = "标记为未读") },
                                 onClick = {
                                     onMarkAsReadAction(false)
-                                    expanded = false },
+                                    expanded = false
+                                },
                                 leadingIcon = {
                                     Icon(
                                         Icons.Outlined.MarkChatUnread,
@@ -349,7 +370,8 @@ fun SelectContentField(
                                 text = { Text(text = "标记为已读") },
                                 onClick = {
                                     onMarkAsReadAction(true)
-                                    expanded = false },
+                                    expanded = false
+                                },
                                 leadingIcon = {
                                     Icon(
                                         Icons.Outlined.MarkChatRead,
@@ -363,7 +385,8 @@ fun SelectContentField(
                                 text = { Text(text = if (selection.size <= 1) "归档" else "全部归档") },
                                 onClick = {
                                     onArchiveAction(true)
-                                    expanded = false },
+                                    expanded = false
+                                },
                                 leadingIcon = {
                                     Icon(
                                         Icons.Outlined.Archive,
@@ -373,10 +396,11 @@ fun SelectContentField(
                         } else {
 
                             DropdownMenuItem(
-                                text = { Text(text = if (selection.size <= 1)"取消归档" else "全部取消归档") },
+                                text = { Text(text = if (selection.size <= 1) "取消归档" else "全部取消归档") },
                                 onClick = {
                                     onArchiveAction(false)
-                                    expanded = false },
+                                    expanded = false
+                                },
                                 leadingIcon = {
                                     Icon(
                                         Icons.Outlined.Unarchive,
@@ -412,6 +436,64 @@ fun SelectContentField(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun SelectSpecContentField(
+    modifier: Modifier = Modifier,
+    isActivated: Boolean,
+    onActivateStateChanged: (value: Int) -> Unit,
+    onHideAction: () -> Unit = {},
+) {
+    var expanded by remember {
+        mutableStateOf(false)
+    }
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(animateDpAsState(targetValue = if (isActivated) 64.dp else 48.dp).value),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(
+            onClick = { onActivateStateChanged(SearchAppBar.NONE) },
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Close,
+                contentDescription = "close",
+                tint = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+        }
+        Spacer(modifier = Modifier.weight(1f))
+        IconButton(onClick = { onHideAction() }) {
+            Icon(
+                Icons.Outlined.HideSource,
+                contentDescription = null
+            )
+        }
+        Box(
+            modifier = Modifier
+                .wrapContentSize(Alignment.TopStart)
+        ) {
+            IconButton(onClick = {
+                expanded = !expanded
+            }) {
+                Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = "more")
+            }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                DropdownMenuItem(
+                    text = { Text(text = "移出所有归档") },
+                    onClick = {
+                        expanded = false
+                    },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Outlined.Unarchive,
+                            contentDescription = null
+                        )
+                    })
             }
         }
     }
