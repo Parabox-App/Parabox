@@ -696,11 +696,10 @@ fun MessagePage(
                                 isExpanded = sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded,
                                 shimmer = shimmerInstance,
                                 onClick = {
-                                    if (viewModel.searchBarActivateState.value == SearchAppBar.SELECT) {
-
-                                        if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
-                                        }
-
+                                    if (viewModel.searchBarActivateState.value == SearchAppBar.ARCHIVE_SELECT) {
+                                        viewModel.setSearchBarActivateState(SearchAppBar.NONE)
+                                    }
+                                    if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
                                     }
                                 },
                                 onLongClick = {
@@ -711,6 +710,8 @@ fun MessagePage(
                             ) {
                                 if (viewModel.searchBarActivateState.value != SearchAppBar.SELECT) {
                                     viewModel.setSearchBarActivateState(SearchAppBar.ARCHIVE_SELECT)
+                                } else if (viewModel.searchBarActivateState.value == SearchAppBar.ARCHIVE_SELECT) {
+                                    viewModel.setSearchBarActivateState(SearchAppBar.NONE)
                                 }
                             }
                         }
@@ -1014,7 +1015,8 @@ fun ContactItem(
                 ) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = (timestamp?:contact?.latestMessage?.timestamp)?.toTimeUntilNow() ?: "",
+                        text = (timestamp ?: contact?.latestMessage?.timestamp)?.toTimeUntilNow()
+                            ?: "",
                         style = MaterialTheme.typography.labelMedium
                     )
                     Spacer(modifier = Modifier.height(8.dp))
