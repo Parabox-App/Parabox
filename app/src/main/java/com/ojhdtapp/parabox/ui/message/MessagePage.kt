@@ -194,16 +194,22 @@ fun MessagePage(
                         }
                         viewModel.setContactHidden(
                             viewModel.selectedContactStateList.toList().map { it.contactId })
+                        viewModel.setSearchBarActivateState(SearchAppBar.NONE)
+                        viewModel.clearSelectedContactStateList()
                     },
                     onPinAction = {
                         viewModel.setContactPinned(
                             viewModel.selectedContactStateList.toList().map { it.contactId }, it
                         )
+                        viewModel.setSearchBarActivateState(SearchAppBar.NONE)
+                        viewModel.clearSelectedContactStateList()
                     },
                     onArchiveAction = {
                         viewModel.setContactArchived(
                             viewModel.selectedContactStateList.toList().map { it.contactId }, it
                         )
+                        viewModel.setSearchBarActivateState(SearchAppBar.NONE)
+                        viewModel.clearSelectedContactStateList()
                     },
                     onMarkAsReadAction = {
                         if (it) {
@@ -213,6 +219,8 @@ fun MessagePage(
                             viewModel.restoreContactUnreadNum(
                                 viewModel.selectedContactStateList.toList().map { it.contactId })
                         }
+                        viewModel.setSearchBarActivateState(SearchAppBar.NONE)
+                        viewModel.clearSelectedContactStateList()
                     },
                     onExpandAction = {},
                     sizeClass = sizeClass,
@@ -867,14 +875,14 @@ fun ContactItem(
     val backgroundColor by
     animateColorAsState(
         targetValue = if (isEditing && isExpanded) {
-            MaterialTheme.colorScheme.primaryContainer
+            MaterialTheme.colorScheme.secondaryContainer
         } else {
             if (isTop) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
         }
     )
     val textColor by animateColorAsState(
         targetValue = if (isEditing && isExpanded) {
-            MaterialTheme.colorScheme.onPrimaryContainer
+            MaterialTheme.colorScheme.onSecondaryContainer
         } else {
             if (isTop) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
         }
