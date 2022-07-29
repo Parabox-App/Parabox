@@ -22,6 +22,7 @@ interface MainRepository {
     fun checkContactTag(value: String): Boolean
     fun getAllHiddenContacts(): Flow<Resource<List<Contact>>>
     fun getAllUnhiddenContacts(): Flow<Resource<List<Contact>>>
+    fun getArchivedContacts() : Flow<Resource<List<Contact>>>
     fun getPluginConnectionObjectIdListByContactId(contactId: Long): List<Long>
     fun getSpecifiedContactWithMessages(contactId: Long): Flow<Resource<ContactWithMessages>>
     fun getSpecifiedListOfContactWithMessages(contactIds: List<Long>): Flow<Resource<List<ContactWithMessages>>>

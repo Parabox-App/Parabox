@@ -31,6 +31,7 @@ class MessagePageViewModel @Inject constructor(
     val groupNewContact: GroupNewContact,
     val updateContact: UpdateContact,
     val tagControl: TagControl,
+    val getArchivedContacts: GetArchivedContacts,
 ) : ViewModel() {
     init {
         // Update Ungrouped Contacts
@@ -129,6 +130,37 @@ class MessagePageViewModel @Inject constructor(
                 started = SharingStarted.WhileSubscribed(5000)
             )
     val contactStateFlow get() = _contactStateFlow
+
+    private val _archivedContactStateFlow: StateFlow<List<Contact>> =
+        getArchivedContacts().filter {
+            if (it is Resource.Error) {
+                _uiEventFlow.emit(MessagePageUiEvent.ShowSnackBar(it.message!!))
+                return@filter false
+            } else true
+        }.map<Resource<List<Contact>>, List<Contact>> {
+            when(it){
+                is Resource.Loading -> emptyList()
+                is Resource.Success -> {
+                    showArchiveContact()
+                    it.data!!
+                }
+                else -> emptyList()
+            }
+        }.stateIn(
+            initialValue = emptyList<Contact>(),
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000)
+        )
+    val archivedContactStateFlow get() = _archivedContactStateFlow
+
+    private val _archivedContactHidden = mutableStateOf<Boolean>(false)
+    val archivedContactHidden : State<Boolean> = _archivedContactHidden
+    fun hideArchiveContact(){
+        _archivedContactHidden.value = true
+    }
+    fun showArchiveContact(){
+        _archivedContactHidden.value = false
+    }
 
     fun refreshContactStateFlow() {
         viewModelScope.launch {

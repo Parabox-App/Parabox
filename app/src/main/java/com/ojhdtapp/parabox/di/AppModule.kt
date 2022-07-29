@@ -66,4 +66,9 @@ object AppModule {
     fun provideTagControlUseCase(repository: MainRepository): TagControl {
         return TagControl(repository)
     }
+    @Provides
+    @Singleton
+    fun provideGetArchivedContactsUseCase(repository: MainRepository): GetArchivedContacts{
+        return GetArchivedContacts(repository)
+    }
 }

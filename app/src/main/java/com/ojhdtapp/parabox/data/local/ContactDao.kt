@@ -51,6 +51,9 @@ interface ContactDao {
     @Query("SELECT * FROM contact_entity WHERE content IS NOT NULL")
     fun getMessagedContacts(): Flow<List<ContactEntity>>
 
+    @Query("SELECT * FROM contact_entity WHERE isArchived")
+    fun getArchivedContacts(): Flow<List<ContactEntity>>
+
     @Query("SELECT * FROM contact_entity WHERE isHidden")
     fun getAllHiddenContacts(): Flow<List<ContactEntity>>
 

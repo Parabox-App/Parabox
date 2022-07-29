@@ -9,6 +9,8 @@ class MessagePageState {
 }
 
 data class ContactState(val isLoading: Boolean = true, val data: List<Contact> = emptyList())
+
+data class ArchivedContactState(val isHidden: Boolean = false, val data: List<Contact> = emptyList())
 data class MessageState(
     val state: Int = MessageState.NULL,
     val profile: Profile? = null,

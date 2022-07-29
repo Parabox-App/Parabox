@@ -147,6 +147,17 @@ class MainRepositoryImpl @Inject constructor(
             }
     }
 
+    override fun getArchivedContacts(): Flow<Resource<List<Contact>>> {
+        return database.contactDao.getArchivedContacts()
+            .map<List<ContactEntity>, Resource<List<Contact>>> { contactEntityList ->
+                Resource.Success(contactEntityList.map {
+                    it.toContact()
+                }.sortedByDescending { it.latestMessage?.timestamp ?: 0 })
+            }.catch {
+                emit(Resource.Error<List<Contact>>("获取数据时发生错误"))
+            }
+    }
+
     override fun getPluginConnectionObjectIdListByContactId(contactId: Long): List<Long> {
         return database.contactDao.getContactPluginConnectionCrossRefsByContactId(contactId = contactId)
             .map {

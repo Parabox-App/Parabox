@@ -62,6 +62,7 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.navigate
 import com.valentinilk.shimmer.*
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -92,6 +93,7 @@ fun MessagePage(
         }
     }
     val contactState by viewModel.contactStateFlow.collectAsState()
+    val archivedContact by viewModel.archivedContactStateFlow.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     LaunchedEffect(true) {
         viewModel.uiEventFlow.collectLatest { it ->
@@ -273,6 +275,7 @@ fun MessagePage(
                         paddingValues,
                         viewModel,
                         contactState,
+                        archivedContact,
                         coroutineScope,
                         snackBarHostState,
                         mainSharedViewModel,
@@ -295,6 +298,7 @@ fun MessagePage(
                         Modifier,
                         paddingValues,
                         viewModel,
+                        archivedContact,
                         coroutineScope,
                         snackBarHostState,
                         mainSharedViewModel,
@@ -350,6 +354,7 @@ fun RowScope.MessageArea(
     paddingValues: PaddingValues,
     viewModel: MessagePageViewModel,
     contactState: ContactState,
+    archivedContact: List<Contact>,
     coroutineScope: CoroutineScope,
     snackBarHostState: SnackbarHostState,
     mainSharedViewModel: MainSharedViewModel,
@@ -753,9 +758,7 @@ fun RowScope.MessageArea(
             }
         }
         item(key = "archived") {
-            val archivedContact = contactState.data.filter { it.isArchived }
-                .sortedByDescending { it.latestMessage?.timestamp ?: 0 }
-            if (archivedContact.isNotEmpty()) {
+            if (!viewModel.archivedContactHidden.value && archivedContact.isNotEmpty()) {
                 val swipeableState = rememberSwipeableState(initialValue = false,
                     confirmStateChange = {
                         if (it) {
@@ -768,14 +771,17 @@ fun RowScope.MessageArea(
                                     .also { result ->
                                         when (result) {
                                             SnackbarResult.ActionPerformed -> {
-                                                TODO("show again")
+                                                viewModel.showArchiveContact()
                                             }
                                             SnackbarResult.Dismissed -> {}
                                             else -> {}
                                         }
                                     }
                             }
-                            TODO("remove item")
+                            coroutineScope.launch {
+                                delay(200)
+                                viewModel.hideArchiveContact()
+                            }
                         }
                         true
                     })
@@ -879,6 +885,7 @@ fun RowScope.ArchiveArea(
     modifier: Modifier = Modifier,
     paddingValues: PaddingValues,
     viewModel: MessagePageViewModel,
+    archivedContact: List<Contact>,
     coroutineScope: CoroutineScope,
     snackBarHostState: SnackbarHostState,
     mainSharedViewModel: MainSharedViewModel,
@@ -890,7 +897,59 @@ fun RowScope.ArchiveArea(
         modifier = modifier.fillMaxSize(),
         contentPadding = paddingValues
     ) {
-
+        itemsIndexed(
+            items = archivedContact,
+            key = { _, item -> item.contactId }
+        ){ index, item ->
+            val isFirst = index == 0
+            val isLast = index == archivedContact.lastIndex
+            val topRadius by animateDpAsState(targetValue = if (isFirst) 28.dp else 0.dp)
+            val bottomRadius by animateDpAsState(targetValue = if (isLast) 28.dp else 0.dp)
+            val isSelected =
+                viewModel.selectedContactStateList.map { it.contactId }
+                    .contains(item.contactId)
+            ContactItem(
+                contact = item,
+                topRadius = topRadius,
+                bottomRadius = bottomRadius,
+                isTop = false,
+                isLoading = false,
+                isSelected = isSelected,
+                isEditing = item.contactId == mainSharedViewModel.editingContact.value,
+                isExpanded = sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded,
+                shimmer = shimmerInstance,
+                onClick = {
+                    if (viewModel.searchBarActivateState.value == SearchAppBar.SELECT) {
+                        viewModel.addOrRemoveItemOfSelectedContactStateList(item)
+                    } else {
+                        if (viewModel.searchBarActivateState.value != SearchAppBar.ARCHIVE_SELECT) {
+                            viewModel.clearContactUnreadNum(item.contactId)
+                            mainSharedViewModel.receiveAndUpdateMessageFromContact(
+                                contact = item,
+                                shouldSelect = true
+//                                            sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded
+                            )
+                            if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
+                                mainNavController.navigate(ChatPageDestination)
+                            }
+                        }
+                    }
+                },
+                onLongClick = {
+                    if (viewModel.searchBarActivateState.value != SearchAppBar.ARCHIVE_SELECT) {
+                        viewModel.setSearchBarActivateState(SearchAppBar.SELECT)
+                        viewModel.addOrRemoveItemOfSelectedContactStateList(item)
+                    }
+                }
+            ) {
+                if (viewModel.searchBarActivateState.value != SearchAppBar.ARCHIVE_SELECT) {
+                    viewModel.setSearchBarActivateState(SearchAppBar.SELECT)
+                    viewModel.addOrRemoveItemOfSelectedContactStateList(item)
+                }
+            }
+        if (index < archivedContact.lastIndex)
+            Spacer(modifier = Modifier.height(2.dp))
+        }
     }
 }
 
