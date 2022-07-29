@@ -84,6 +84,12 @@ class MessagePageViewModel @Inject constructor(
         }
     }
 
+    private val _areaState = mutableStateOf<Int>(AreaState.MessageArea)
+    val areaState : State<Int> = _areaState
+    fun setAreaState(value : Int){
+        _areaState.value = value
+    }
+
     // Contact
     private val _contactRefreshFlow = MutableStateFlow<Long>(0L)
     private val _contactStateFlow: StateFlow<ContactState> =

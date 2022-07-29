@@ -60,3 +60,11 @@ data class GroupEditResource(
     val avatar: List<ByteArray>,
     val pluginConnections: List<PluginConnection>
 )
+
+class AreaState{
+    companion object{
+        const val MessageArea = 0
+        const val SearchArea = 1
+        const val ArchiveArea = 2
+    }
+}

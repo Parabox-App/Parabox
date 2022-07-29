@@ -37,6 +37,7 @@ object SearchAppBar {
     const val SEARCH = 1
     const val SELECT = 2
     const val ARCHIVE_SELECT = 3
+    const val ARCHIVE = 4
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -133,6 +134,15 @@ fun SearchAppBar(
                         SelectSpecContentField(
                             modifier = Modifier.align(Alignment.BottomCenter),
                             isActivated = isActivated,
+                            onActivateStateChanged = onActivateStateChanged,
+                            onHideAction = {}
+                        )
+                    }
+                    SearchAppBar.ARCHIVE -> {
+                        PageContentField(
+                            modifier = Modifier.align(Alignment.BottomCenter),
+                            isActivated = isActivated,
+                            headerText = "归档",
                             onActivateStateChanged = onActivateStateChanged,
                             onHideAction = {}
                         )
@@ -314,6 +324,7 @@ fun SelectContentField(
                                 text = { Text(text = if (selection.size <= 1) "置顶" else "全部置顶") },
                                 onClick = {
                                     onPinAction(true)
+                                    onActivateStateChanged(SearchAppBar.NONE)
                                     expanded = false
                                 },
                                 leadingIcon = {
@@ -327,6 +338,7 @@ fun SelectContentField(
                                 text = { Text(text = if (selection.size <= 1) "取消置顶" else "全部取消置顶") },
                                 onClick = {
                                     onPinAction(false)
+                                    onActivateStateChanged(SearchAppBar.NONE)
                                     expanded = false
                                 },
                                 leadingIcon = {
@@ -340,6 +352,7 @@ fun SelectContentField(
                             text = { Text(text = "隐藏会话") },
                             onClick = {
                                 onHideAction()
+                                onActivateStateChanged(SearchAppBar.NONE)
                                 expanded = false
                             },
                             leadingIcon = {
@@ -357,6 +370,7 @@ fun SelectContentField(
                                 text = { Text(text = "标记为未读") },
                                 onClick = {
                                     onMarkAsReadAction(false)
+                                    onActivateStateChanged(SearchAppBar.NONE)
                                     expanded = false
                                 },
                                 leadingIcon = {
@@ -370,6 +384,7 @@ fun SelectContentField(
                                 text = { Text(text = "标记为已读") },
                                 onClick = {
                                     onMarkAsReadAction(true)
+                                    onActivateStateChanged(SearchAppBar.NONE)
                                     expanded = false
                                 },
                                 leadingIcon = {
@@ -385,6 +400,7 @@ fun SelectContentField(
                                 text = { Text(text = if (selection.size <= 1) "归档" else "全部归档") },
                                 onClick = {
                                     onArchiveAction(true)
+                                    onActivateStateChanged(SearchAppBar.NONE)
                                     expanded = false
                                 },
                                 leadingIcon = {
@@ -399,6 +415,7 @@ fun SelectContentField(
                                 text = { Text(text = if (selection.size <= 1) "取消归档" else "全部取消归档") },
                                 onClick = {
                                     onArchiveAction(false)
+                                    onActivateStateChanged(SearchAppBar.NONE)
                                     expanded = false
                                 },
                                 leadingIcon = {
@@ -466,6 +483,67 @@ fun SelectSpecContentField(
                 tint = MaterialTheme.colorScheme.onSecondaryContainer
             )
         }
+        Spacer(modifier = Modifier.weight(1f))
+        IconButton(onClick = { onHideAction() }) {
+            Icon(
+                Icons.Outlined.HideSource,
+                contentDescription = null
+            )
+        }
+        Box(
+            modifier = Modifier
+                .wrapContentSize(Alignment.TopStart)
+        ) {
+            IconButton(onClick = {
+                expanded = !expanded
+            }) {
+                Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = "more")
+            }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                DropdownMenuItem(
+                    text = { Text(text = "移出所有归档") },
+                    onClick = {
+                        expanded = false
+                    },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Outlined.Unarchive,
+                            contentDescription = null
+                        )
+                    })
+            }
+        }
+    }
+}
+
+@Composable
+fun PageContentField(
+    modifier: Modifier = Modifier,
+    isActivated: Boolean,
+    headerText: String = "",
+    onActivateStateChanged: (value: Int) -> Unit,
+    onHideAction: () -> Unit = {},
+) {
+    var expanded by remember {
+        mutableStateOf(false)
+    }
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(animateDpAsState(targetValue = if (isActivated) 64.dp else 48.dp).value),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(
+            onClick = { onActivateStateChanged(SearchAppBar.NONE) },
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.ArrowBack,
+                contentDescription = "back",
+                tint = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+        }
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(text = headerText, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
         Spacer(modifier = Modifier.weight(1f))
         IconButton(onClick = { onHideAction() }) {
             Icon(

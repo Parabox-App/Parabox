@@ -4,11 +4,13 @@ package com.ojhdtapp.parabox.ui.message
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -59,6 +61,7 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.navigate
 import com.valentinilk.shimmer.*
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -66,7 +69,7 @@ import kotlin.math.sqrt
 
 @OptIn(
     ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
-    ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class
+    ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class, ExperimentalAnimationApi::class
 )
 @Destination
 @MessageNavGraph(start = true)
@@ -163,6 +166,15 @@ fun MessagePage(
                     onActivateStateChanged = {
                         viewModel.setSearchBarActivateState(it)
                         viewModel.clearSelectedContactStateList()
+                        when (it) {
+                            SearchAppBar.SEARCH -> {
+                                viewModel.setAreaState(AreaState.SearchArea)
+                            }
+                            SearchAppBar.NONE, SearchAppBar.SELECT, SearchAppBar.ARCHIVE_SELECT -> {
+                                viewModel.setAreaState(AreaState.MessageArea)
+                            }
+                            else -> {}
+                        }
                     },
                     selection = viewModel.selectedContactStateList,
                     onGroupAction = {
@@ -194,22 +206,16 @@ fun MessagePage(
                         }
                         viewModel.setContactHidden(
                             viewModel.selectedContactStateList.toList().map { it.contactId })
-                        viewModel.setSearchBarActivateState(SearchAppBar.NONE)
-                        viewModel.clearSelectedContactStateList()
                     },
                     onPinAction = {
                         viewModel.setContactPinned(
                             viewModel.selectedContactStateList.toList().map { it.contactId }, it
                         )
-                        viewModel.setSearchBarActivateState(SearchAppBar.NONE)
-                        viewModel.clearSelectedContactStateList()
                     },
                     onArchiveAction = {
                         viewModel.setContactArchived(
                             viewModel.selectedContactStateList.toList().map { it.contactId }, it
                         )
-                        viewModel.setSearchBarActivateState(SearchAppBar.NONE)
-                        viewModel.clearSelectedContactStateList()
                     },
                     onMarkAsReadAction = {
                         if (it) {
@@ -219,8 +225,6 @@ fun MessagePage(
                             viewModel.restoreContactUnreadNum(
                                 viewModel.selectedContactStateList.toList().map { it.contactId })
                         }
-                        viewModel.setSearchBarActivateState(SearchAppBar.NONE)
-                        viewModel.clearSelectedContactStateList()
                     },
                     onExpandAction = {},
                     sizeClass = sizeClass,
@@ -249,212 +253,316 @@ fun MessagePage(
                 }
             },
         ) { paddingValues ->
-            LazyColumn(
-//            modifier = Modifier.padding(horizontal = 16.dp),
-                state = listState,
-                contentPadding = paddingValues
-            ) {
-                item(key = "tag") {
-                    val hashTagList = remember {
-                        mutableStateListOf<String>()
+            AnimatedContent(targetState = viewModel.areaState.value,
+                transitionSpec = {
+                    when (initialState) {
+                        AreaState.MessageArea -> scaleIn(tween(200), 1.1f) + fadeIn(tween(200)) with
+                                scaleOut(tween(200), 0.9f) + fadeOut(tween(200))
+                        AreaState.SearchArea, AreaState.ArchiveArea -> scaleIn(
+                            tween(200),
+                            0.9f
+                        ) + fadeIn(tween(200)) with
+                                scaleOut(tween(200), 1.1f) + fadeOut(tween(200))
+                        else -> fadeIn() with fadeOut()
                     }
-                    var hashTagText by remember {
-                        mutableStateOf("")
-                    }
-                    var hashTagError by remember {
-                        mutableStateOf<String>("")
-                    }
-                    var hashTagShouldShowError by remember {
-                        mutableStateOf(false)
-                    }
-                    var onConfirmDelete by remember {
-                        mutableStateOf(false)
-                    }
-                    val isEditing = viewModel.tagEditing.value
-                    val hashTagLazyListState = rememberLazyListState()
-                    val hashTagFocusRequester = remember { FocusRequester() }
-                    val hashTagInteraction = remember { MutableInteractionSource() }
-                    val rowInteraction = remember { MutableInteractionSource() }
-                    LaunchedEffect(key1 = true, block = {
-                        viewModel.contactTagStateFlow.collectLatest {
-                            it.map { it.value }.let {
-                                hashTagList.retainAll(it)
-                                it.forEach {
-                                    if (!hashTagList.contains(it))
-                                        hashTagList.add(it)
-                                }
-                            }
+                }) {
+                when (it) {
+                    AreaState.MessageArea -> MessageArea(
+                        Modifier,
+                        listState,
+                        paddingValues,
+                        viewModel,
+                        contactState,
+                        coroutineScope,
+                        snackBarHostState,
+                        mainSharedViewModel,
+                        sizeClass,
+                        shimmerInstance,
+                        mainNavController
+                    )
+                    AreaState.SearchArea -> SearchArea(
+                        Modifier,
+                        paddingValues,
+                        viewModel,
+                        coroutineScope,
+                        snackBarHostState,
+                        mainSharedViewModel,
+                        sizeClass,
+                        shimmerInstance,
+                        mainNavController
+                    )
+                    AreaState.ArchiveArea -> ArchiveArea(
+                        Modifier,
+                        paddingValues,
+                        viewModel,
+                        coroutineScope,
+                        snackBarHostState,
+                        mainSharedViewModel,
+                        sizeClass,
+                        shimmerInstance,
+                        mainNavController
+                    )
+                    else -> {}
+                }
+            }
+
+        }
+        // Right
+        if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) {
+            ChatPage(
+                modifier = Modifier.width(560.dp),
+                navigator = navigator,
+                mainNavController = mainNavController,
+                mainSharedViewModel = mainSharedViewModel,
+                sizeClass = sizeClass
+            )
+        }
+    }
+
+//        Column(
+//            modifier = modifier.fillMaxSize(),
+//            horizontalAlignment = Alignment.CenterHorizontally,
+//            verticalArrangement = Arrangement.Center
+//        ) {
+//            Button(onClick = {
+//                onConnectBtnClicked()
+//            }, enabled = viewModel.pluginInstalledState.value && !viewModel.sendAvailableState.value) {
+//                Text(text = "Connect")
+//            }
+//            Button(
+//                onClick = { onSendBtnClicked() },
+//                enabled = viewModel.sendAvailableState.value
+//            ) {
+//                Text(text = "Send")
+//            }
+//            Text(text = viewModel.message.value)
+//        }
+}
+
+@OptIn(
+    ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
+    ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class
+)
+@Composable
+fun RowScope.MessageArea(
+    modifier: Modifier = Modifier,
+    listState: LazyListState,
+    paddingValues: PaddingValues,
+    viewModel: MessagePageViewModel,
+    contactState: ContactState,
+    coroutineScope: CoroutineScope,
+    snackBarHostState: SnackbarHostState,
+    mainSharedViewModel: MainSharedViewModel,
+    sizeClass: WindowSizeClass,
+    shimmerInstance: Shimmer,
+    mainNavController: NavController
+) {
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        state = listState,
+        contentPadding = paddingValues
+    ) {
+        item(key = "tag") {
+            val hashTagList = remember {
+                mutableStateListOf<String>()
+            }
+            var hashTagText by remember {
+                mutableStateOf("")
+            }
+            var hashTagError by remember {
+                mutableStateOf<String>("")
+            }
+            var hashTagShouldShowError by remember {
+                mutableStateOf(false)
+            }
+            var onConfirmDelete by remember {
+                mutableStateOf(false)
+            }
+            val isEditing = viewModel.tagEditing.value
+            val hashTagLazyListState = rememberLazyListState()
+            val hashTagFocusRequester = remember { FocusRequester() }
+            val hashTagInteraction = remember { MutableInteractionSource() }
+            val rowInteraction = remember { MutableInteractionSource() }
+            LaunchedEffect(key1 = true, block = {
+                viewModel.contactTagStateFlow.collectLatest {
+                    it.map { it.value }.let {
+                        hashTagList.retainAll(it)
+                        it.forEach {
+                            if (!hashTagList.contains(it))
+                                hashTagList.add(it)
                         }
-                    })
-                    HashTagEditor(
-                        textFieldValue = hashTagText,
-                        enabled = isEditing,
-                        onValueChanged = {
-                            val values = FormUtil.splitPerSpaceOrNewLine(it)
+                    }
+                }
+            })
+            HashTagEditor(
+                textFieldValue = hashTagText,
+                enabled = isEditing,
+                onValueChanged = {
+                    val values = FormUtil.splitPerSpaceOrNewLine(it)
 
-                            if (values.size >= 2) {
-                                onConfirmDelete = false
-                                if (!FormUtil.checkTagMinimumCharacter(values[0])) {
-                                    hashTagError = "标签应至少包含两个字符"
-                                    hashTagShouldShowError = true
-                                } else if (!FormUtil.checkTagMaximumCharacter(values[0])) {
-                                    hashTagError = "标签长度不应超过50"
-                                    hashTagShouldShowError = true
-                                } else if (hashTagList.contains(values[0])) {
-                                    hashTagError = "该标签已存在"
-                                    hashTagShouldShowError = true
-                                } else {
-                                    hashTagShouldShowError = false
-                                }
-
-                                if (!hashTagShouldShowError) {
-                                    viewModel.addContactTag(values[0])
-                                    hashTagText = ""
-                                }
-                            } else {
-                                hashTagText = it
-                            }
-                        },
-                        placeHolderWhenEnabled = "自定义标签筛选",
-                        lazyListState = hashTagLazyListState,
-                        focusRequester = hashTagFocusRequester,
-                        textFieldInteraction = hashTagInteraction,
-                        rowInteraction = rowInteraction,
-                        errorMessage = hashTagError,
-                        shouldShowError = hashTagShouldShowError,
-                        listOfChips = hashTagList,
-                        selectedListOfChips = viewModel.selectedContactTagStateList,
-                        innerModifier = Modifier.onKeyEvent {
-                            if (it.key.keyCode == Key.Backspace.keyCode && hashTagText.isBlank()) {
-                                if (onConfirmDelete) {
-                                    viewModel.contactTagStateFlow.value.lastOrNull()?.let {
-                                        viewModel.deleteContactTag(it.value)
-                                    }
-                                    onConfirmDelete = false
-                                } else {
-                                    onConfirmDelete = true
-                                }
-                            }
-                            false
-                        },
-                        onChipClick = { chipIndex ->
-                            if (viewModel.contactTagStateFlow.value.isNotEmpty()) {
-                                hashTagList.getOrNull(chipIndex)?.let {
-                                    viewModel.addOrRemoveItemOfSelectedContactTagStateList(it)
-                                }
-                            }
-                        },
-                        onChipClickWhenEnabled = { chipIndex ->
-                            if (viewModel.contactTagStateFlow.value.isNotEmpty()) {
-                                hashTagList.getOrNull(chipIndex)?.let {
-                                    viewModel.deleteContactTag(it)
-                                }
-                            }
-                        },
-                        padding = HashTagEditor.PADDING_SMALL,
-                        onConfirmDelete = onConfirmDelete
-                    ) {
-                        var showDropDownMenu by remember {
-                            mutableStateOf(false)
-                        }
-                        androidx.compose.material3.FilterChip(
-                            modifier = Modifier
-                                .animateContentSize()
-                                .padding(end = 8.dp),
-                            selected = viewModel.typeFilter.value !is ContactTypeFilterState.All,
-                            onClick = { showDropDownMenu = !showDropDownMenu },
-                            enabled = !isEditing,
-                            selectedIcon = {
-                                Icon(
-                                    imageVector = Icons.Outlined.Done,
-                                    contentDescription = "",
-                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                )
-
-                            },
-                            trailingIcon = {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .wrapContentSize(Alignment.TopEnd)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.ExpandMore,
-                                        contentDescription = "expand",
-                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                    )
-                                    androidx.compose.material3.DropdownMenu(
-                                        expanded = showDropDownMenu,
-                                        onDismissRequest = { showDropDownMenu = false }
-                                    ) {
-                                        androidx.compose.material3.DropdownMenuItem(
-                                            text = { Text("全部") },
-                                            onClick = {
-                                                viewModel.setTypeFilter(
-                                                    ContactTypeFilterState.All()
-                                                )
-                                                showDropDownMenu = false
-                                            },
-                                        )
-                                        androidx.compose.material3.DropdownMenuItem(
-                                            text = { Text("已编组") },
-                                            onClick = {
-                                                viewModel.setTypeFilter(
-                                                    ContactTypeFilterState.Grouped()
-                                                )
-                                                showDropDownMenu = false
-                                            },
-                                        )
-                                        androidx.compose.material3.DropdownMenuItem(
-                                            text = { Text("未编组") },
-                                            onClick = {
-                                                viewModel.setTypeFilter(
-                                                    ContactTypeFilterState.Ungrouped()
-                                                )
-                                                showDropDownMenu = false
-                                            },
-                                        )
-                                    }
-                                }
-                            },
-                            label = { Text(text = viewModel.typeFilter.value.label) }
-                        )
-                        FilterChip(modifier = Modifier
-                            .animateContentSize()
-                            .padding(end = 8.dp),
-                            selected = viewModel.readFilter.value is ContactReadFilterState.Unread,
-                            onClick = {
-                                viewModel.setReadFilter(
-                                    if (viewModel.readFilter.value is ContactReadFilterState.Unread) ContactReadFilterState.All() else ContactReadFilterState.Unread()
-                                )
-                            },
-                            enabled = !isEditing,
-                            selectedIcon = {
-                                Icon(
-                                    imageVector = Icons.Outlined.Done,
-                                    contentDescription = "",
-                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                )
-
-                            },
-                            label = { Text(text = "未读") })
-                        FilterChip(modifier = Modifier
-                            .animateContentSize(), selected = false, onClick = {
-                            viewModel.setTagEditing(!isEditing)
-                            hashTagText = ""
-                            hashTagError = ""
+                    if (values.size >= 2) {
+                        onConfirmDelete = false
+                        if (!FormUtil.checkTagMinimumCharacter(values[0])) {
+                            hashTagError = "标签应至少包含两个字符"
+                            hashTagShouldShowError = true
+                        } else if (!FormUtil.checkTagMaximumCharacter(values[0])) {
+                            hashTagError = "标签长度不应超过50"
+                            hashTagShouldShowError = true
+                        } else if (hashTagList.contains(values[0])) {
+                            hashTagError = "该标签已存在"
+                            hashTagShouldShowError = true
+                        } else {
                             hashTagShouldShowError = false
-                            onConfirmDelete = false
-                            viewModel.clearSelectedContactTagStateList()
-                        },
-                            label = {
-                                Icon(
-                                    imageVector = Icons.Outlined.Tune,
-                                    contentDescription = "",
-                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                )
-                            })
+                        }
+
+                        if (!hashTagShouldShowError) {
+                            viewModel.addContactTag(values[0])
+                            hashTagText = ""
+                        }
+                    } else {
+                        hashTagText = it
                     }
+                },
+                placeHolderWhenEnabled = "自定义标签筛选",
+                lazyListState = hashTagLazyListState,
+                focusRequester = hashTagFocusRequester,
+                textFieldInteraction = hashTagInteraction,
+                rowInteraction = rowInteraction,
+                errorMessage = hashTagError,
+                shouldShowError = hashTagShouldShowError,
+                listOfChips = hashTagList,
+                selectedListOfChips = viewModel.selectedContactTagStateList,
+                innerModifier = Modifier.onKeyEvent {
+                    if (it.key.keyCode == Key.Backspace.keyCode && hashTagText.isBlank()) {
+                        if (onConfirmDelete) {
+                            viewModel.contactTagStateFlow.value.lastOrNull()?.let {
+                                viewModel.deleteContactTag(it.value)
+                            }
+                            onConfirmDelete = false
+                        } else {
+                            onConfirmDelete = true
+                        }
+                    }
+                    false
+                },
+                onChipClick = { chipIndex ->
+                    if (viewModel.contactTagStateFlow.value.isNotEmpty()) {
+                        hashTagList.getOrNull(chipIndex)?.let {
+                            viewModel.addOrRemoveItemOfSelectedContactTagStateList(it)
+                        }
+                    }
+                },
+                onChipClickWhenEnabled = { chipIndex ->
+                    if (viewModel.contactTagStateFlow.value.isNotEmpty()) {
+                        hashTagList.getOrNull(chipIndex)?.let {
+                            viewModel.deleteContactTag(it)
+                        }
+                    }
+                },
+                padding = HashTagEditor.PADDING_SMALL,
+                onConfirmDelete = onConfirmDelete
+            ) {
+                var showDropDownMenu by remember {
+                    mutableStateOf(false)
+                }
+                FilterChip(
+                    modifier = Modifier
+                        .animateContentSize()
+                        .padding(end = 8.dp),
+                    selected = viewModel.typeFilter.value !is ContactTypeFilterState.All,
+                    onClick = { showDropDownMenu = !showDropDownMenu },
+                    enabled = !isEditing,
+                    selectedIcon = {
+                        Icon(
+                            imageVector = Icons.Outlined.Done,
+                            contentDescription = "",
+                            modifier = Modifier.size(FilterChipDefaults.IconSize)
+                        )
+
+                    },
+                    trailingIcon = {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .wrapContentSize(Alignment.TopEnd)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.ExpandMore,
+                                contentDescription = "expand",
+                                modifier = Modifier.size(FilterChipDefaults.IconSize)
+                            )
+                            androidx.compose.material3.DropdownMenu(
+                                expanded = showDropDownMenu,
+                                onDismissRequest = { showDropDownMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("全部") },
+                                    onClick = {
+                                        viewModel.setTypeFilter(
+                                            ContactTypeFilterState.All()
+                                        )
+                                        showDropDownMenu = false
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("已编组") },
+                                    onClick = {
+                                        viewModel.setTypeFilter(
+                                            ContactTypeFilterState.Grouped()
+                                        )
+                                        showDropDownMenu = false
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("未编组") },
+                                    onClick = {
+                                        viewModel.setTypeFilter(
+                                            ContactTypeFilterState.Ungrouped()
+                                        )
+                                        showDropDownMenu = false
+                                    },
+                                )
+                            }
+                        }
+                    },
+                    label = { Text(text = viewModel.typeFilter.value.label) }
+                )
+                FilterChip(modifier = Modifier
+                    .animateContentSize()
+                    .padding(end = 8.dp),
+                    selected = viewModel.readFilter.value is ContactReadFilterState.Unread,
+                    onClick = {
+                        viewModel.setReadFilter(
+                            if (viewModel.readFilter.value is ContactReadFilterState.Unread) ContactReadFilterState.All() else ContactReadFilterState.Unread()
+                        )
+                    },
+                    enabled = !isEditing,
+                    selectedIcon = {
+                        Icon(
+                            imageVector = Icons.Outlined.Done,
+                            contentDescription = "",
+                            modifier = Modifier.size(FilterChipDefaults.IconSize)
+                        )
+
+                    },
+                    label = { Text(text = "未读") })
+                FilterChip(modifier = Modifier
+                    .animateContentSize(), selected = false, onClick = {
+                    viewModel.setTagEditing(!isEditing)
+                    hashTagText = ""
+                    hashTagError = ""
+                    hashTagShouldShowError = false
+                    onConfirmDelete = false
+                    viewModel.clearSelectedContactTagStateList()
+                },
+                    label = {
+                        Icon(
+                            imageVector = Icons.Outlined.Tune,
+                            contentDescription = "",
+                            modifier = Modifier.size(FilterChipDefaults.IconSize)
+                        )
+                    })
+            }
 //                    Row(
 //                        modifier = Modifier
 //                            .padding(vertical = 8.dp)
@@ -497,281 +605,293 @@ fun MessagePage(
 //                            )
 //                        }
 //                    }
-                }
+        }
 
-                item(key = "main") {
-                    AnimatedVisibility(
-                        visible = contactState.data.isNotEmpty(),
-                        enter = expandVertically(),
-                        exit = shrinkVertically()
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .padding(16.dp, 8.dp)
-                                .animateItemPlacement()
-                        ) {
-                            Text(
-                                text = "主要",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
+        item(key = "main") {
+            AnimatedVisibility(
+                visible = contactState.data.isNotEmpty(),
+                enter = expandVertically(),
+                exit = shrinkVertically()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .padding(16.dp, 8.dp)
+                        .animateItemPlacement()
+                ) {
+                    Text(
+                        text = "主要",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
+            }
+        }
 
-                if (contactState.isLoading) {
-                    itemsIndexed(
-                        items = listOf(null, null, null, null, null, null, null, null),
-                        key = { index, _ -> index }) { index, _ ->
-                        ContactItem(
-                            modifier = Modifier
-                                .padding(horizontal = 16.dp)
-                                .animateItemPlacement(),
-                            contact = null,
-                            topRadius = 28.dp,
-                            bottomRadius = 28.dp,
-                            isLoading = true,
-                        )
-                        if (index < 3)
-                            Spacer(modifier = Modifier.height(3.dp))
-                    }
-                } else {
-                    itemsIndexed(
-                        items = contactState.data,
-                        key = { _, item -> item.contactId }
-                    ) { index, item ->
-                        var loading by remember {
-                            mutableStateOf(false)
-                        }
-                        val swipeableState = rememberSwipeableState(initialValue = item.isHidden,
-                            confirmStateChange = {
-                                if (it) {
-                                    coroutineScope.launch {
-                                        snackBarHostState.showSnackbar(
-                                            message = "会话已暂时隐藏",
-                                            actionLabel = "取消",
-                                            duration = SnackbarDuration.Short
-                                        )
-                                            .also { result ->
-                                                when (result) {
-                                                    SnackbarResult.ActionPerformed -> {
-                                                        viewModel.cancelContactHidden()
-                                                    }
-                                                    SnackbarResult.Dismissed -> {}
-                                                    else -> {}
-                                                }
+        if (contactState.isLoading) {
+            itemsIndexed(
+                items = listOf(null, null, null, null, null, null, null, null),
+                key = { index, _ -> index }) { index, _ ->
+                ContactItem(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .animateItemPlacement(),
+                    contact = null,
+                    topRadius = if (index == 0) 28.dp else 0.dp,
+                    bottomRadius = if (index == 7) 28.dp else 0.dp,
+                    isLoading = true,
+                )
+                if (index < 7)
+                    Spacer(modifier = Modifier.height(3.dp))
+            }
+        } else {
+            itemsIndexed(
+                items = contactState.data,
+                key = { _, item -> item.contactId }
+            ) { index, item ->
+                var loading by remember {
+                    mutableStateOf(false)
+                }
+                val swipeableState = rememberSwipeableState(initialValue = item.isHidden,
+                    confirmStateChange = {
+                        if (it) {
+                            coroutineScope.launch {
+                                snackBarHostState.showSnackbar(
+                                    message = "会话已暂时隐藏",
+                                    actionLabel = "取消",
+                                    duration = SnackbarDuration.Short
+                                )
+                                    .also { result ->
+                                        when (result) {
+                                            SnackbarResult.ActionPerformed -> {
+                                                viewModel.cancelContactHidden()
                                             }
-                                    }
-                                    viewModel.setContactHidden(item.contactId)
-                                }
-                                true
-                            })
-                        val isFirst = index == 0
-                        val isLast = index == contactState.data.lastIndex
-                        val isDragging = swipeableState.offset.value.roundToInt() != 0
-                        val topRadius by animateDpAsState(targetValue = if (isDragging || isFirst) 28.dp else 0.dp)
-                        val bgTopRadius by animateDpAsState(targetValue = if (isFirst) 28.dp else 0.dp)
-                        val bottomRadius by animateDpAsState(targetValue = if (isDragging || isLast) 28.dp else 0.dp)
-                        val bgBottomRadius by animateDpAsState(targetValue = if (isLast) 28.dp else 0.dp)
-                        val isSelected =
-                            viewModel.selectedContactStateList.map { it.contactId }
-                                .contains(item.contactId)
-                        SwipeableContact(
-                            modifier = Modifier
-                                .padding(horizontal = 16.dp)
-                                .animateItemPlacement()
-                                .animateContentSize(),
-                            state = swipeableState,
-                            topRadius = bgTopRadius,
-                            bottomRadius = bgBottomRadius,
-                            extraSpace = 16.dp,
-                            enabled = viewModel.searchBarActivateState.value == SearchAppBar.NONE,
-                        ) {
-                            ContactItem(
-                                contact = item,
-                                topRadius = topRadius,
-                                bottomRadius = bottomRadius,
-                                isTop = item.isPinned,
-                                isLoading = loading,
-                                isSelected = isSelected,
-                                isEditing = item.contactId == mainSharedViewModel.editingContact.value,
-                                isExpanded = sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded,
-                                shimmer = shimmerInstance,
-                                onClick = {
-                                    if (viewModel.searchBarActivateState.value == SearchAppBar.SELECT) {
-                                        viewModel.addOrRemoveItemOfSelectedContactStateList(item)
-                                    } else {
-                                        if (viewModel.searchBarActivateState.value != SearchAppBar.ARCHIVE_SELECT) {
-                                            viewModel.clearContactUnreadNum(item.contactId)
-                                            mainSharedViewModel.receiveAndUpdateMessageFromContact(
-                                                contact = item,
-                                                shouldSelect = true
-//                                            sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded
-                                            )
-                                            if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
-                                                mainNavController.navigate(ChatPageDestination)
-                                            }
+                                            SnackbarResult.Dismissed -> {}
+                                            else -> {}
                                         }
                                     }
-                                },
-                                onLongClick = {
-                                    if (viewModel.searchBarActivateState.value != SearchAppBar.ARCHIVE_SELECT) {
-                                        viewModel.setSearchBarActivateState(SearchAppBar.SELECT)
-                                        viewModel.addOrRemoveItemOfSelectedContactStateList(item)
-                                    }
-                                }
-                            ) {
+                            }
+                            viewModel.setContactHidden(item.contactId)
+                        }
+                        true
+                    })
+                val isFirst = index == 0
+                val isLast = index == contactState.data.lastIndex
+                val isDragging = swipeableState.offset.value.roundToInt() != 0
+                val topRadius by animateDpAsState(targetValue = if (isDragging || isFirst) 28.dp else 0.dp)
+                val bgTopRadius by animateDpAsState(targetValue = if (isFirst) 28.dp else 0.dp)
+                val bottomRadius by animateDpAsState(targetValue = if (isDragging || isLast) 28.dp else 0.dp)
+                val bgBottomRadius by animateDpAsState(targetValue = if (isLast) 28.dp else 0.dp)
+                val isSelected =
+                    viewModel.selectedContactStateList.map { it.contactId }
+                        .contains(item.contactId)
+                SwipeableContact(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .animateItemPlacement()
+                        .animateContentSize(),
+                    state = swipeableState,
+                    topRadius = bgTopRadius,
+                    bottomRadius = bgBottomRadius,
+                    extraSpace = 16.dp,
+                    enabled = viewModel.searchBarActivateState.value == SearchAppBar.NONE,
+                ) {
+                    ContactItem(
+                        contact = item,
+                        topRadius = topRadius,
+                        bottomRadius = bottomRadius,
+                        isTop = item.isPinned,
+                        isLoading = loading,
+                        isSelected = isSelected,
+                        isEditing = item.contactId == mainSharedViewModel.editingContact.value,
+                        isExpanded = sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded,
+                        shimmer = shimmerInstance,
+                        onClick = {
+                            if (viewModel.searchBarActivateState.value == SearchAppBar.SELECT) {
+                                viewModel.addOrRemoveItemOfSelectedContactStateList(item)
+                            } else {
                                 if (viewModel.searchBarActivateState.value != SearchAppBar.ARCHIVE_SELECT) {
-                                    viewModel.setSearchBarActivateState(SearchAppBar.SELECT)
-                                    viewModel.addOrRemoveItemOfSelectedContactStateList(item)
-                                }
-                            }
-                        }
-                        if (index < contactState.data.lastIndex)
-                            Spacer(modifier = Modifier.height(2.dp))
-                    }
-                }
-                item(key = "other") {
-                    Box(
-                        modifier = Modifier
-                            .padding(16.dp, 8.dp)
-                            .animateItemPlacement()
-                    ) {
-                        Text(
-                            text = "其他",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-                item(key = "archived") {
-                    val archivedContact = contactState.data.filter { it.isArchived }
-                        .sortedByDescending { it.latestMessage?.timestamp ?: 0 }
-                    if (archivedContact.isNotEmpty()) {
-                        val swipeableState = rememberSwipeableState(initialValue = false,
-                            confirmStateChange = {
-                                if (it) {
-                                    coroutineScope.launch {
-                                        snackBarHostState.showSnackbar(
-                                            message = "会话已暂时隐藏",
-                                            actionLabel = "取消",
-                                            duration = SnackbarDuration.Short
-                                        )
-                                            .also { result ->
-                                                when (result) {
-                                                    SnackbarResult.ActionPerformed -> {
-                                                        TODO("show again")
-                                                    }
-                                                    SnackbarResult.Dismissed -> {}
-                                                    else -> {}
-                                                }
-                                            }
-                                    }
-                                    TODO("remove item")
-                                }
-                                true
-                            })
-                        SwipeableContact(
-                            modifier = Modifier
-                                .padding(horizontal = 16.dp)
-                                .animateItemPlacement()
-                                .animateContentSize(),
-                            state = swipeableState,
-                            topRadius = 28.dp, bottomRadius = 28.dp,
-                            enabled = viewModel.searchBarActivateState.value == SearchAppBar.NONE
-                        ) {
-                            ContactItem(
-                                contact = null,
-                                icon = {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Archive,
-                                        contentDescription = "archived",
-                                        tint = MaterialTheme.colorScheme.primary
+                                    viewModel.clearContactUnreadNum(item.contactId)
+                                    mainSharedViewModel.receiveAndUpdateMessageFromContact(
+                                        contact = item,
+                                        shouldSelect = true
+//                                            sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded
                                     )
-                                },
-                                title = "已归档会话",
-                                subTitle = "${archivedContact.firstOrNull()?.profile?.name}: ${archivedContact.firstOrNull()?.latestMessage?.content}",
-                                timestamp = archivedContact.firstOrNull()?.latestMessage?.timestamp,
-                                unreadMessagesNum = archivedContact.fold(0) { acc, contact ->
-                                    acc + (contact.latestMessage?.unreadMessagesNum ?: 0)
-                                },
-                                topRadius = 28.dp,
-                                bottomRadius = 28.dp,
-                                isTop = false,
-                                isLoading = false,
-                                isSelected = viewModel.searchBarActivateState.value == SearchAppBar.ARCHIVE_SELECT,
-                                isEditing = false,
-                                isExpanded = sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded,
-                                shimmer = shimmerInstance,
-                                onClick = {
-                                    if (viewModel.searchBarActivateState.value == SearchAppBar.ARCHIVE_SELECT) {
-                                        viewModel.setSearchBarActivateState(SearchAppBar.NONE)
-                                    }
                                     if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
+                                        mainNavController.navigate(ChatPageDestination)
                                     }
-                                },
-                                onLongClick = {
-                                    if (viewModel.searchBarActivateState.value != SearchAppBar.SELECT) {
-                                        viewModel.setSearchBarActivateState(SearchAppBar.ARCHIVE_SELECT)
-                                    }
-                                }
-                            ) {
-                                if (viewModel.searchBarActivateState.value != SearchAppBar.SELECT) {
-                                    viewModel.setSearchBarActivateState(SearchAppBar.ARCHIVE_SELECT)
-                                } else if (viewModel.searchBarActivateState.value == SearchAppBar.ARCHIVE_SELECT) {
-                                    viewModel.setSearchBarActivateState(SearchAppBar.NONE)
                                 }
                             }
+                        },
+                        onLongClick = {
+                            if (viewModel.searchBarActivateState.value != SearchAppBar.ARCHIVE_SELECT) {
+                                viewModel.setSearchBarActivateState(SearchAppBar.SELECT)
+                                viewModel.addOrRemoveItemOfSelectedContactStateList(item)
+                            }
+                        }
+                    ) {
+                        if (viewModel.searchBarActivateState.value != SearchAppBar.ARCHIVE_SELECT) {
+                            viewModel.setSearchBarActivateState(SearchAppBar.SELECT)
+                            viewModel.addOrRemoveItemOfSelectedContactStateList(item)
                         }
                     }
                 }
-                item(key = null) {
-                    androidx.compose.material3.OutlinedButton(onClick = { viewModel.testFun() }) {
-                        Text(text = "btn1")
-                    }
-                }
-                item(key = null) {
-                    androidx.compose.material3.OutlinedButton(onClick = { viewModel.testFun2() }) {
-                        Text(text = "btn2")
-                    }
-                }
-                item(key = null) {
-                    androidx.compose.material3.OutlinedButton(onClick = { viewModel.testFun3() }) {
-                        Text(text = "btn3")
+                if (index < contactState.data.lastIndex)
+                    Spacer(modifier = Modifier.height(2.dp))
+            }
+        }
+        item(key = "other") {
+            Box(
+                modifier = Modifier
+                    .padding(16.dp, 8.dp)
+                    .animateItemPlacement()
+            ) {
+                Text(
+                    text = "其他",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+        item(key = "archived") {
+            val archivedContact = contactState.data.filter { it.isArchived }
+                .sortedByDescending { it.latestMessage?.timestamp ?: 0 }
+            if (archivedContact.isNotEmpty()) {
+                val swipeableState = rememberSwipeableState(initialValue = false,
+                    confirmStateChange = {
+                        if (it) {
+                            coroutineScope.launch {
+                                snackBarHostState.showSnackbar(
+                                    message = "会话已暂时隐藏",
+                                    actionLabel = "取消",
+                                    duration = SnackbarDuration.Short
+                                )
+                                    .also { result ->
+                                        when (result) {
+                                            SnackbarResult.ActionPerformed -> {
+                                                TODO("show again")
+                                            }
+                                            SnackbarResult.Dismissed -> {}
+                                            else -> {}
+                                        }
+                                    }
+                            }
+                            TODO("remove item")
+                        }
+                        true
+                    })
+                SwipeableContact(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .animateItemPlacement()
+                        .animateContentSize(),
+                    state = swipeableState,
+                    topRadius = 28.dp, bottomRadius = 28.dp,
+                    enabled = viewModel.searchBarActivateState.value == SearchAppBar.NONE
+                ) {
+                    ContactItem(
+                        contact = null,
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Outlined.Archive,
+                                contentDescription = "archived",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        },
+                        title = "已归档会话",
+                        subTitle = "${archivedContact.firstOrNull()?.profile?.name}: ${archivedContact.firstOrNull()?.latestMessage?.content}",
+                        timestamp = archivedContact.firstOrNull()?.latestMessage?.timestamp,
+                        unreadMessagesNum = archivedContact.fold(0) { acc, contact ->
+                            acc + (contact.latestMessage?.unreadMessagesNum ?: 0)
+                        },
+                        topRadius = 28.dp,
+                        bottomRadius = 28.dp,
+                        isTop = false,
+                        isLoading = false,
+                        isSelected = viewModel.searchBarActivateState.value == SearchAppBar.ARCHIVE_SELECT,
+                        isEditing = false,
+                        isExpanded = sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded,
+                        shimmer = shimmerInstance,
+                        onClick = {
+                            if (viewModel.searchBarActivateState.value == SearchAppBar.ARCHIVE_SELECT) {
+                                viewModel.setSearchBarActivateState(SearchAppBar.NONE)
+                            }else{
+                                viewModel.setSearchBarActivateState(SearchAppBar.ARCHIVE)
+                                viewModel.setAreaState(AreaState.ArchiveArea)
+                            }
+//                            if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
+//                            }
+                        },
+                        onLongClick = {
+                            if (viewModel.searchBarActivateState.value != SearchAppBar.SELECT) {
+                                viewModel.setSearchBarActivateState(SearchAppBar.ARCHIVE_SELECT)
+                            }
+                        }
+                    ) {
+                        if (viewModel.searchBarActivateState.value != SearchAppBar.SELECT) {
+                            viewModel.setSearchBarActivateState(SearchAppBar.ARCHIVE_SELECT)
+                        } else if (viewModel.searchBarActivateState.value == SearchAppBar.ARCHIVE_SELECT) {
+                            viewModel.setSearchBarActivateState(SearchAppBar.NONE)
+                        }
                     }
                 }
             }
         }
-        // Right
-        if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) {
-            ChatPage(
-                modifier = Modifier.width(560.dp),
-                navigator = navigator,
-                mainNavController = mainNavController,
-                mainSharedViewModel = mainSharedViewModel,
-                sizeClass = sizeClass
-            )
+        item(key = null) {
+            androidx.compose.material3.OutlinedButton(onClick = { viewModel.testFun() }) {
+                Text(text = "btn1")
+            }
+        }
+        item(key = null) {
+            androidx.compose.material3.OutlinedButton(onClick = { viewModel.testFun2() }) {
+                Text(text = "btn2")
+            }
+        }
+        item(key = null) {
+            androidx.compose.material3.OutlinedButton(onClick = { viewModel.testFun3() }) {
+                Text(text = "btn3")
+            }
         }
     }
+}
 
-//        Column(
-//            modifier = modifier.fillMaxSize(),
-//            horizontalAlignment = Alignment.CenterHorizontally,
-//            verticalArrangement = Arrangement.Center
-//        ) {
-//            Button(onClick = {
-//                onConnectBtnClicked()
-//            }, enabled = viewModel.pluginInstalledState.value && !viewModel.sendAvailableState.value) {
-//                Text(text = "Connect")
-//            }
-//            Button(
-//                onClick = { onSendBtnClicked() },
-//                enabled = viewModel.sendAvailableState.value
-//            ) {
-//                Text(text = "Send")
-//            }
-//            Text(text = viewModel.message.value)
-//        }
+@Composable
+fun RowScope.SearchArea(
+    modifier: Modifier = Modifier,
+    paddingValues: PaddingValues,
+    viewModel: MessagePageViewModel,
+    coroutineScope: CoroutineScope,
+    snackBarHostState: SnackbarHostState,
+    mainSharedViewModel: MainSharedViewModel,
+    sizeClass: WindowSizeClass,
+    shimmerInstance: Shimmer,
+    mainNavController: NavController
+) {
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = paddingValues
+    ) {
+
+    }
+}
+
+@Composable
+fun RowScope.ArchiveArea(
+    modifier: Modifier = Modifier,
+    paddingValues: PaddingValues,
+    viewModel: MessagePageViewModel,
+    coroutineScope: CoroutineScope,
+    snackBarHostState: SnackbarHostState,
+    mainSharedViewModel: MainSharedViewModel,
+    sizeClass: WindowSizeClass,
+    shimmerInstance: Shimmer,
+    mainNavController: NavController
+) {
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = paddingValues
+    ) {
+
+    }
 }
 
 @OptIn(ExperimentalMaterialApi::class)
