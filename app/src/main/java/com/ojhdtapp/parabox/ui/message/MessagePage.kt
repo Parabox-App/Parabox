@@ -269,19 +269,37 @@ fun MessagePage(
             AnimatedContent(targetState = viewModel.areaState.value,
                 transitionSpec = {
                     if (targetState == AreaState.SearchArea && initialState == AreaState.MessageArea) {
-                        expandVertically(expandFrom = Alignment.Top).with(scaleOut(tween(200), 0.9f) + fadeOut(tween(200))).apply {
+                        expandVertically(expandFrom = Alignment.Top).with(
+                            scaleOut(
+                                tween(200),
+                                0.9f
+                            ) + fadeOut(tween(200))
+                        ).apply {
                             targetContentZIndex = 2f
                         }
                     } else if (targetState == AreaState.MessageArea && initialState == AreaState.SearchArea) {
-                        (scaleIn(tween(200), 0.9f) + fadeIn(tween(200))).with(shrinkVertically(shrinkTowards = Alignment.Top)).apply {
-                                    targetContentZIndex = 1f
+                        (scaleIn(tween(200), 0.9f) + fadeIn(tween(200))).with(
+                            shrinkVertically(
+                                shrinkTowards = Alignment.Top
+                            )
+                        ).apply {
+                            targetContentZIndex = 1f
                         }
                     } else if (targetState == AreaState.ArchiveArea && initialState == AreaState.MessageArea) {
-                        slideInHorizontally { it }.with(scaleOut(tween(200), 0.9f) + fadeOut(tween(200))).apply {
+                        slideInHorizontally { it }.with(
+                            scaleOut(tween(200), 0.9f) + fadeOut(
+                                tween(
+                                    200
+                                )
+                            )
+                        ).apply {
                             targetContentZIndex = 2f
                         }
                     } else if (targetState == AreaState.MessageArea && initialState == AreaState.ArchiveArea) {
-                        (scaleIn(tween(200), 0.9f) + fadeIn(tween(200))).with(slideOutHorizontally { it }).apply {
+                        (scaleIn(
+                            tween(200),
+                            0.9f
+                        ) + fadeIn(tween(200))).with(slideOutHorizontally { it }).apply {
                             targetContentZIndex = 1f
                         }
                     } else {
