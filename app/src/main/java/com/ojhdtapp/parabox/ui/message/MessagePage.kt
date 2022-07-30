@@ -3,6 +3,8 @@
 package com.ojhdtapp.parabox.ui.message
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
@@ -38,6 +40,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
@@ -209,6 +212,9 @@ fun MessagePage(
                         viewModel.setContactHidden(
                             viewModel.selectedContactStateList.toList().map { it.contactId })
                     },
+                    onArchiveHideAction = {
+                        viewModel.hideArchiveContact()
+                    },
                     onPinAction = {
                         viewModel.setContactPinned(
                             viewModel.selectedContactStateList.toList().map { it.contactId }, it
@@ -217,6 +223,11 @@ fun MessagePage(
                     onArchiveAction = {
                         viewModel.setContactArchived(
                             viewModel.selectedContactStateList.toList().map { it.contactId }, it
+                        )
+                    },
+                    onUnArchiveAction = {
+                        viewModel.setContactArchived(
+                            viewModel.archivedContactStateFlow.value.map { it.contactId }, false
                         )
                     },
                     onMarkAsReadAction = {
@@ -257,15 +268,21 @@ fun MessagePage(
         ) { paddingValues ->
             AnimatedContent(targetState = viewModel.areaState.value,
                 transitionSpec = {
-                    when (initialState) {
-                        AreaState.MessageArea -> scaleIn(tween(200), 1.1f) + fadeIn(tween(200)) with
+                    if (targetState == AreaState.SearchArea && initialState == AreaState.MessageArea) {
+                        expandVertically(expandFrom = Alignment.Top) with
                                 scaleOut(tween(200), 0.9f) + fadeOut(tween(200))
-                        AreaState.SearchArea, AreaState.ArchiveArea -> scaleIn(
-                            tween(200),
-                            0.9f
-                        ) + fadeIn(tween(200)) with
-                                scaleOut(tween(200), 1.1f) + fadeOut(tween(200))
-                        else -> fadeIn() with fadeOut()
+                    } else if (targetState == AreaState.MessageArea && initialState == AreaState.SearchArea) {
+                        scaleIn(tween(200), 0.9f) + fadeIn(tween(200)) with
+                                fadeOut(tween(200))
+                    } else if (targetState == AreaState.ArchiveArea && initialState == AreaState.MessageArea) {
+                        slideInHorizontally { it } with scaleOut(tween(200), 0.9f) + fadeOut(
+                            tween(200)
+                        )
+                    } else if (targetState == AreaState.MessageArea && initialState == AreaState.ArchiveArea) {
+                        scaleIn(tween(200), 0.9f) + fadeIn(tween(200)) with
+                                slideOutHorizontally { it }
+                    } else {
+                        fadeIn() with fadeOut()
                     }
                 }) {
                 when (it) {
@@ -820,7 +837,7 @@ fun RowScope.MessageArea(
                         onClick = {
                             if (viewModel.searchBarActivateState.value == SearchAppBar.ARCHIVE_SELECT) {
                                 viewModel.setSearchBarActivateState(SearchAppBar.NONE)
-                            }else{
+                            } else {
                                 viewModel.setSearchBarActivateState(SearchAppBar.ARCHIVE)
                                 viewModel.setAreaState(AreaState.ArchiveArea)
                             }
@@ -872,11 +889,16 @@ fun RowScope.SearchArea(
     shimmerInstance: Shimmer,
     mainNavController: NavController
 ) {
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = paddingValues
+    androidx.compose.material3.Surface(
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 1.dp
     ) {
+        LazyColumn(
+            modifier = modifier.fillMaxSize(),
+            contentPadding = paddingValues
+        ) {
 
+        }
     }
 }
 
@@ -893,62 +915,66 @@ fun RowScope.ArchiveArea(
     shimmerInstance: Shimmer,
     mainNavController: NavController
 ) {
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = paddingValues
+    androidx.compose.material3.Surface(
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 1.dp
     ) {
-        itemsIndexed(
-            items = archivedContact,
-            key = { _, item -> item.contactId }
-        ){ index, item ->
-            val isFirst = index == 0
-            val isLast = index == archivedContact.lastIndex
-            val topRadius by animateDpAsState(targetValue = if (isFirst) 28.dp else 0.dp)
-            val bottomRadius by animateDpAsState(targetValue = if (isLast) 28.dp else 0.dp)
-            val isSelected =
-                viewModel.selectedContactStateList.map { it.contactId }
-                    .contains(item.contactId)
-            ContactItem(
-                contact = item,
-                topRadius = topRadius,
-                bottomRadius = bottomRadius,
-                isTop = false,
-                isLoading = false,
-                isSelected = isSelected,
-                isEditing = item.contactId == mainSharedViewModel.editingContact.value,
-                isExpanded = sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded,
-                shimmer = shimmerInstance,
-                onClick = {
-                    if (viewModel.searchBarActivateState.value == SearchAppBar.SELECT) {
-                        viewModel.addOrRemoveItemOfSelectedContactStateList(item)
-                    } else {
-                        if (viewModel.searchBarActivateState.value != SearchAppBar.ARCHIVE_SELECT) {
-                            viewModel.clearContactUnreadNum(item.contactId)
-                            mainSharedViewModel.receiveAndUpdateMessageFromContact(
-                                contact = item,
-                                shouldSelect = true
+        LazyColumn(
+            modifier = modifier.fillMaxSize(),
+            contentPadding = paddingValues
+        ) {
+            itemsIndexed(
+                items = archivedContact,
+                key = { _, item -> item.contactId }
+            ) { index, item ->
+                val isFirst = index == 0
+                val isLast = index == archivedContact.lastIndex
+                val topRadius by animateDpAsState(targetValue = if (isFirst) 28.dp else 0.dp)
+                val bottomRadius by animateDpAsState(targetValue = if (isLast) 28.dp else 0.dp)
+                val isSelected =
+                    viewModel.selectedContactStateList.map { it.contactId }
+                        .contains(item.contactId)
+                ContactItem(
+                    contact = item,
+                    topRadius = topRadius,
+                    bottomRadius = bottomRadius,
+                    isTop = false,
+                    isLoading = false,
+                    isSelected = isSelected,
+                    isEditing = item.contactId == mainSharedViewModel.editingContact.value,
+                    isExpanded = sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded,
+                    noBackground = true,
+                    shimmer = shimmerInstance,
+                    onClick = {
+                        if (viewModel.searchBarActivateState.value == SearchAppBar.SELECT) {
+                            viewModel.addOrRemoveItemOfSelectedContactStateList(item)
+                        } else {
+                            if (viewModel.searchBarActivateState.value != SearchAppBar.ARCHIVE_SELECT) {
+                                viewModel.clearContactUnreadNum(item.contactId)
+                                mainSharedViewModel.receiveAndUpdateMessageFromContact(
+                                    contact = item,
+                                    shouldSelect = true
 //                                            sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded
-                            )
-                            if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
-                                mainNavController.navigate(ChatPageDestination)
+                                )
+                                if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
+                                    mainNavController.navigate(ChatPageDestination)
+                                }
                             }
                         }
+                    },
+                    onLongClick = {
+                        if (viewModel.searchBarActivateState.value != SearchAppBar.ARCHIVE_SELECT) {
+                            viewModel.setSearchBarActivateState(SearchAppBar.SELECT)
+                            viewModel.addOrRemoveItemOfSelectedContactStateList(item)
+                        }
                     }
-                },
-                onLongClick = {
+                ) {
                     if (viewModel.searchBarActivateState.value != SearchAppBar.ARCHIVE_SELECT) {
                         viewModel.setSearchBarActivateState(SearchAppBar.SELECT)
                         viewModel.addOrRemoveItemOfSelectedContactStateList(item)
                     }
                 }
-            ) {
-                if (viewModel.searchBarActivateState.value != SearchAppBar.ARCHIVE_SELECT) {
-                    viewModel.setSearchBarActivateState(SearchAppBar.SELECT)
-                    viewModel.addOrRemoveItemOfSelectedContactStateList(item)
-                }
             }
-        if (index < archivedContact.lastIndex)
-            Spacer(modifier = Modifier.height(2.dp))
         }
     }
 }
@@ -1046,6 +1072,7 @@ fun ContactItem(
     isSelected: Boolean = false,
     isEditing: Boolean = false,
     isExpanded: Boolean = false,
+    noBackground: Boolean = false,
     shimmer: Shimmer? = null,
     onClick: () -> Unit = {},
     onLongClick: () -> Unit = {},
@@ -1070,10 +1097,10 @@ fun ContactItem(
         modifier = modifier
             .clip(
                 RoundedCornerShape(
-                    topStart = topRadius,
-                    topEnd = topRadius,
-                    bottomEnd = bottomRadius,
-                    bottomStart = bottomRadius
+                    topStart = if (noBackground) 0.dp else topRadius,
+                    topEnd = if (noBackground) 0.dp else topRadius,
+                    bottomEnd = if (noBackground) 0.dp else bottomRadius,
+                    bottomStart = if (noBackground) 0.dp else bottomRadius
                 )
             )
             .fillMaxSize()
@@ -1086,7 +1113,7 @@ fun ContactItem(
                 onLongClick = onLongClick,
                 onClick = onClick
             ),
-        color = backgroundColor,
+        color = if (noBackground) Color.Transparent else backgroundColor,
         tonalElevation = 3.dp
     ) {
         Row(
@@ -1172,7 +1199,7 @@ fun ContactItem(
                     Text(
                         text = title ?: contact?.profile?.name ?: "会话名称",
                         style = MaterialTheme.typography.titleMedium,
-                        color = textColor,
+                        color = if (noBackground) MaterialTheme.colorScheme.onSurface else textColor,
                         maxLines = 1
                     )
                 }
@@ -1189,7 +1216,7 @@ fun ContactItem(
                     Text(
                         text = subTitle ?: contact?.latestMessage?.content ?: "",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = textColor,
+                        color = if (noBackground) MaterialTheme.colorScheme.onSurface else textColor,
                         maxLines = 1
                     )
                 }

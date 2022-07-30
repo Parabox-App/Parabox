@@ -55,8 +55,10 @@ fun SearchAppBar(
     onExpandAction: () -> Unit = {},
     onNewTagAction: () -> Unit = {},
     onHideAction: () -> Unit = {},
+    onArchiveHideAction: () -> Unit = {},
     onPinAction: (value: Boolean) -> Unit = {},
     onArchiveAction: (value: Boolean) -> Unit = {},
+    onUnArchiveAction: () -> Unit = {},
     onMarkAsReadAction: (read: Boolean) -> Unit = {},
     sizeClass: WindowSizeClass,
     onMenuClick: () -> Unit,
@@ -135,7 +137,8 @@ fun SearchAppBar(
                             modifier = Modifier.align(Alignment.BottomCenter),
                             isActivated = isActivated,
                             onActivateStateChanged = onActivateStateChanged,
-                            onHideAction = {}
+                            onHideAction = onArchiveHideAction,
+                            onUnArchiveAction = onUnArchiveAction,
                         )
                     }
                     SearchAppBar.ARCHIVE -> {
@@ -144,7 +147,8 @@ fun SearchAppBar(
                             isActivated = isActivated,
                             headerText = "归档",
                             onActivateStateChanged = onActivateStateChanged,
-                            onHideAction = {}
+                            onHideAction = onArchiveHideAction,
+                            onUnArchiveAction = onUnArchiveAction,
                         )
                     }
                     else -> {}
@@ -262,7 +266,9 @@ fun SelectContentField(
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(
-            onClick = { onActivateStateChanged(SearchAppBar.NONE) },
+            onClick = {
+                onActivateStateChanged(SearchAppBar.NONE)
+            },
         ) {
             Icon(
                 imageVector = Icons.Outlined.Close,
@@ -464,6 +470,7 @@ fun SelectSpecContentField(
     isActivated: Boolean,
     onActivateStateChanged: (value: Int) -> Unit,
     onHideAction: () -> Unit = {},
+    onUnArchiveAction: () -> Unit = {}
 ) {
     var expanded by remember {
         mutableStateOf(false)
@@ -504,6 +511,8 @@ fun SelectSpecContentField(
                     text = { Text(text = "移出所有归档") },
                     onClick = {
                         expanded = false
+                        onUnArchiveAction()
+                        onActivateStateChanged(SearchAppBar.NONE)
                     },
                     leadingIcon = {
                         Icon(
@@ -523,6 +532,7 @@ fun PageContentField(
     headerText: String = "",
     onActivateStateChanged: (value: Int) -> Unit,
     onHideAction: () -> Unit = {},
+    onUnArchiveAction: () -> Unit = {},
 ) {
     var expanded by remember {
         mutableStateOf(false)
@@ -543,14 +553,12 @@ fun PageContentField(
             )
         }
         Spacer(modifier = Modifier.width(4.dp))
-        Text(text = headerText, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
+        Text(
+            text = headerText,
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurface
+        )
         Spacer(modifier = Modifier.weight(1f))
-        IconButton(onClick = { onHideAction() }) {
-            Icon(
-                Icons.Outlined.HideSource,
-                contentDescription = null
-            )
-        }
         Box(
             modifier = Modifier
                 .wrapContentSize(Alignment.TopStart)
@@ -565,6 +573,8 @@ fun PageContentField(
                     text = { Text(text = "移出所有归档") },
                     onClick = {
                         expanded = false
+                        onUnArchiveAction()
+                        onActivateStateChanged(SearchAppBar.NONE)
                     },
                     leadingIcon = {
                         Icon(
