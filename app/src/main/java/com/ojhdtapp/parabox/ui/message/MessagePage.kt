@@ -494,14 +494,14 @@ fun RowScope.MessageArea(
                     selected = viewModel.typeFilter.value !is ContactTypeFilterState.All,
                     onClick = { showDropDownMenu = !showDropDownMenu },
                     enabled = !isEditing,
-                    selectedIcon = {
-                        Icon(
-                            imageVector = Icons.Outlined.Done,
-                            contentDescription = "",
-                            modifier = Modifier.size(FilterChipDefaults.IconSize)
-                        )
-
-                    },
+//                    leadingIcon = {
+//                        Icon(
+//                            imageVector = Icons.Outlined.Done,
+//                            contentDescription = "",
+//                            modifier = Modifier.size(FilterChipDefaults.IconSize)
+//                        )
+//
+//                    },
                     trailingIcon = {
                         Box(
                             modifier = Modifier
@@ -559,13 +559,13 @@ fun RowScope.MessageArea(
                         )
                     },
                     enabled = !isEditing,
-                    selectedIcon = {
-                        Icon(
-                            imageVector = Icons.Outlined.Done,
-                            contentDescription = "",
-                            modifier = Modifier.size(FilterChipDefaults.IconSize)
-                        )
-
+                    leadingIcon = {
+                        if (viewModel.readFilter.value is ContactReadFilterState.Unread)
+                            Icon(
+                                imageVector = Icons.Outlined.Done,
+                                contentDescription = "",
+                                modifier = Modifier.size(FilterChipDefaults.IconSize)
+                            )
                     },
                     label = { Text(text = "未读") })
                 FilterChip(modifier = Modifier
@@ -1086,7 +1086,7 @@ fun ContactItem(
             if (isTop) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
         }
     )
-    val editingOnlyBackgroundColor by animateColorAsState(targetValue = if(isEditing && isExpanded) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
+    val editingOnlyBackgroundColor by animateColorAsState(targetValue = if (isEditing && isExpanded) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
     val textColor by animateColorAsState(
         targetValue = if (isEditing && isExpanded) {
             MaterialTheme.colorScheme.onSecondaryContainer

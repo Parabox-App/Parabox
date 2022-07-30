@@ -111,9 +111,9 @@ fun NormalChatPage(
 ) {
     val coroutineScope = rememberCoroutineScope()
     // Top AppBar
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarScrollState())
-    val scrollFraction = scrollBehavior.scrollFraction
-    val topAppBarColor = TopAppBarDefaults.smallTopAppBarColors().containerColor(scrollFraction)
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
+    val scrollFraction = scrollBehavior?.state?.overlappedFraction ?: 0f
+    val topAppBarColor by TopAppBarDefaults.smallTopAppBarColors().containerColor(scrollFraction)
     // Bottom Sheet
     val navigationBarHeight = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
     var changedTextFieldHeight by remember {
@@ -135,7 +135,7 @@ fun NormalChatPage(
         topBar = {
             SmallTopAppBar(
                 modifier = Modifier
-                    .background(color = topAppBarColor.value)
+                    .background(color = topAppBarColor)
                     .statusBarsPadding(),
                 title = { Text(text = messageState.profile?.name ?: "会话") },
                 navigationIcon = {

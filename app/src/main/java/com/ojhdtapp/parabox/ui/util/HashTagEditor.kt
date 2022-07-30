@@ -229,8 +229,8 @@ fun TextFieldContent(
                             )
                         }
                     },
-                    selectedIcon = {
-                        if (!enabled) {
+                    leadingIcon = {
+                        if (!enabled && selectedListOfChips?.contains(item) == true) {
                             Icon(
                                 imageVector = Icons.Outlined.Done,
                                 contentDescription = "",
