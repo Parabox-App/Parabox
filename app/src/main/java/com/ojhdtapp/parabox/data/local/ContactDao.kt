@@ -57,7 +57,7 @@ interface ContactDao {
     @Query("SELECT * FROM contact_entity WHERE isHidden")
     fun getAllHiddenContacts(): Flow<List<ContactEntity>>
 
-    @Query("SELECT * FROM contact_entity WHERE NOT isHidden")
+    @Query("SELECT * FROM contact_entity WHERE NOT isHidden AND NOT isArchived")
     fun getAllUnhiddenContacts(): Flow<List<ContactEntity>>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)

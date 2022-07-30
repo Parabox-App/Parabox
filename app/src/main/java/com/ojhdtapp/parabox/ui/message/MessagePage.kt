@@ -1086,6 +1086,7 @@ fun ContactItem(
             if (isTop) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
         }
     )
+    val editingOnlyBackgroundColor by animateColorAsState(targetValue = if(isEditing && isExpanded) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
     val textColor by animateColorAsState(
         targetValue = if (isEditing && isExpanded) {
             MaterialTheme.colorScheme.onSecondaryContainer
@@ -1113,7 +1114,7 @@ fun ContactItem(
                 onLongClick = onLongClick,
                 onClick = onClick
             ),
-        color = if (noBackground) Color.Transparent else backgroundColor,
+        color = if (noBackground) editingOnlyBackgroundColor else backgroundColor,
         tonalElevation = 3.dp
     ) {
         Row(

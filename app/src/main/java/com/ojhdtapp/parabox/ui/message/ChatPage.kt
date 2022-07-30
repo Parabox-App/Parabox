@@ -225,12 +225,14 @@ fun ErrorChatPage(modifier: Modifier = Modifier, errMessage: String, onRetry: ()
 
 @Composable
 fun NullChatPage(modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(text = "选择会话", style = MaterialTheme.typography.bodyLarge)
+    Surface(color = MaterialTheme.colorScheme.surface, tonalElevation = 1.dp) {
+        Column(
+            modifier = modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(text = "选择会话", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+        }
     }
 }
 
