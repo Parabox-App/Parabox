@@ -568,7 +568,8 @@ fun RowScope.MessageArea(
                             }
                         }
                     },
-                    label = { Text(text = viewModel.typeFilter.value.label) }
+                    label = { Text(text = viewModel.typeFilter.value.label) },
+                    border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
                 )
                 FilterChip(modifier = Modifier
                     .animateContentSize()
@@ -588,7 +589,9 @@ fun RowScope.MessageArea(
                                 modifier = Modifier.size(FilterChipDefaults.IconSize)
                             )
                     },
-                    label = { Text(text = "未读") })
+                    label = { Text(text = "未读") },
+                    border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
+                )
                 FilterChip(modifier = Modifier
                     .animateContentSize(), selected = false, onClick = {
                     viewModel.setTagEditing(!isEditing)
@@ -604,7 +607,8 @@ fun RowScope.MessageArea(
                             contentDescription = "",
                             modifier = Modifier.size(FilterChipDefaults.IconSize)
                         )
-                    })
+                    },
+                border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant))
             }
 //                    Row(
 //                        modifier = Modifier
@@ -1245,7 +1249,7 @@ fun ContactItem(
             }
             if (!isLoading) {
                 Column(
-                    modifier = Modifier.fillMaxHeight(),
+                    modifier = Modifier.align(Alignment.Top),
                     horizontalAlignment = Alignment.End,
                     verticalArrangement = Arrangement.Top
                 ) {
