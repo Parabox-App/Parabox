@@ -37,23 +37,31 @@ class MainSharedViewModel @Inject constructor(
     private val _messageStateFlow = MutableStateFlow(MessageState())
     val messageStateFlow: StateFlow<MessageState> = _messageStateFlow.asStateFlow()
 
-    private var _messagePagingDataFlow = emptyFlow<PagingData<Message>>()
-
-    private val _editingContact = mutableStateOf<Long?>(null)
-    val editingContact: State<Long?> = _editingContact
-    private var messageJob: Job? = null
-
-    @OptIn(FlowPreview::class)
-    fun receiveAndUpdateMessageFromContact(contact: Contact, shouldSelect: Boolean) {
-        messageJob?.cancel()
-        if (shouldSelect) {
-            _editingContact.value = contact.contactId
+    fun loadMessageFromContact(contact: Contact){
+        _messageStateFlow.value = MessageState(MessageState.LOADING, contact)
+        viewModelScope.launch(Dispatchers.IO) {
+            getMessages.pluginConnectionObjectIdList(contact).also {
+                _messageStateFlow.value = MessageState(MessageState.SUCCESS, contact, it)
+            }
         }
-        messageJob = viewModelScope.launch(Dispatchers.IO) {
-            getMessages.pagingFlow(contact = contact)
-                .cachedIn(viewModelScope)
+    }
 
+    fun receiveMessagePagingDataFlow(pluginConnectionObjectIdList: List<Long>): Flow<PagingData<Message>> =
+        getMessages.pagingFlow(pluginConnectionObjectIdList)
+            .cachedIn(viewModelScope)
 
+    fun clearMessage(){
+        _messageStateFlow.value = MessageState()
+    }
+    //    private val _editingContact = mutableStateOf<Long?>(null)
+//    val editingContact: State<Long?> = _editingContact
+//    private var messageJob: Job? = null
+
+//    fun receiveAndUpdateMessageFromContact(
+//        contact: Contact,
+//    ) {
+//        messageJob?.cancel()
+//        messageJob = viewModelScope.launch(Dispatchers.IO) {
 //            getMessages(contact = contact).collectLatest {
 //                _messageStateFlow.value = when (it) {
 //                    is Resource.Loading -> MessageState(
@@ -72,13 +80,13 @@ class MainSharedViewModel @Inject constructor(
 //                    )
 //                }
 //            }
+//
+//        }
+//    }
 
-        }
-    }
-
-    fun cancelMessage() {
-        messageJob?.cancel()
-        _editingContact.value = null
-        _messageStateFlow.value = MessageState()
-    }
+//    fun cancelMessage() {
+//        messageJob?.cancel()
+////        _editingContact.value = null
+//        _messageStateFlow.value = MessageState()
+//    }
 }

@@ -57,9 +57,11 @@ fun FilePage(
                 activateState = searchBarState,
                 onActivateStateChanged = { searchBarState = it },
                 sizeClass = sizeClass,
-                onMenuClick = {coroutineScope.launch {
-                    drawerState.open()
-                }}
+                onMenuClick = {
+                    coroutineScope.launch {
+                        drawerState.open()
+                    }
+                }
             )
         },
         bottomBar = {

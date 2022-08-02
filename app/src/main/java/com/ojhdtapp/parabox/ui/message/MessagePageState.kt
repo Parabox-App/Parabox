@@ -13,15 +13,14 @@ data class ContactState(val isLoading: Boolean = true, val data: List<Contact> =
 data class ArchivedContactState(val isHidden: Boolean = false, val data: List<Contact> = emptyList())
 data class MessageState(
     val state: Int = MessageState.NULL,
-    val profile: Profile? = null,
-    val data: Map<Long, List<ChatBlock>>? = null,
-    val message: String? = null
+    val contact: Contact? = null,
+    val pluginConnectionObjectIdList: List<Long> = emptyList()
 ) {
     companion object {
         const val NULL = 0
         const val LOADING = 1
         const val SUCCESS = 2
-        const val ERROR = 3
+//        const val ERROR = 3
     }
 }
 

@@ -7,6 +7,7 @@ import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.ContactWithMessages
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.repository.MainRepository
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
@@ -35,20 +36,22 @@ class GetMessages @Inject constructor(
                 }
         }
     }
+    // Must called within coroutine
+    fun pluginConnectionObjectIdList(contact: Contact) : List<Long>{
+        return repository.getPluginConnectionObjectIdListByContactId(contactId = contact.contactId)
+    }
 
-    fun pagingFlow(contact: Contact): Flow<PagingData<Message>> {
-        repository.getPluginConnectionObjectIdListByContactId(contactId = contact.contactId).also {
+    fun pagingFlow(pluginConnectionObjectIdList: List<Long>): Flow<PagingData<Message>> {
             return Pager(
                 PagingConfig(
                     pageSize = 20,
                     enablePlaceholders = true
                 )
-            ) { repository.getMessagesPagingSource(it) }.flow
+            ) { repository.getMessagesPagingSource(pluginConnectionObjectIdList) }.flow
                 .map { pagingData ->
                     pagingData.map {
                         it.toMessage()
                     }
                 }
         }
-    }
 }

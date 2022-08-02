@@ -95,6 +95,7 @@ fun MessagePage(
             listState.firstVisibleItemIndex == 0
         }
     }
+    val messageState by mainSharedViewModel.messageStateFlow.collectAsState()
     val contactState by viewModel.contactStateFlow.collectAsState()
     val archivedContact by viewModel.archivedContactStateFlow.collectAsState()
     val coroutineScope = rememberCoroutineScope()
@@ -312,6 +313,7 @@ fun MessagePage(
                         listState,
                         paddingValues,
                         viewModel,
+                        messageState,
                         contactState,
                         archivedContact,
                         coroutineScope,
@@ -340,6 +342,7 @@ fun MessagePage(
                         coroutineScope,
                         snackBarHostState,
                         mainSharedViewModel,
+                        messageState,
                         sizeClass,
                         shimmerInstance,
                         mainNavController
@@ -391,6 +394,7 @@ fun RowScope.MessageArea(
     listState: LazyListState,
     paddingValues: PaddingValues,
     viewModel: MessagePageViewModel,
+    messageState: MessageState,
     contactState: ContactState,
     archivedContact: List<Contact>,
     coroutineScope: CoroutineScope,
@@ -749,7 +753,7 @@ fun RowScope.MessageArea(
                         isTop = item.isPinned,
                         isLoading = loading,
                         isSelected = isSelected,
-                        isEditing = item.contactId == mainSharedViewModel.editingContact.value,
+                        isEditing = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact && item.contactId == messageState.contact?.contactId,
                         isExpanded = sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded,
                         shimmer = shimmerInstance,
                         onClick = {
@@ -758,11 +762,10 @@ fun RowScope.MessageArea(
                             } else {
                                 if (viewModel.searchBarActivateState.value != SearchAppBar.ARCHIVE_SELECT) {
                                     viewModel.clearContactUnreadNum(item.contactId)
-                                    mainSharedViewModel.receiveAndUpdateMessageFromContact(
-                                        contact = item,
-                                        shouldSelect = true
-//                                            sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded
-                                    )
+                                    mainSharedViewModel.loadMessageFromContact(item)
+//                                    mainSharedViewModel.receiveAndUpdateMessageFromContact(
+//                                        contact = item,
+//                                    )
                                     if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
                                         mainNavController.navigate(ChatPageDestination)
                                     }
@@ -936,6 +939,7 @@ fun RowScope.ArchiveArea(
     coroutineScope: CoroutineScope,
     snackBarHostState: SnackbarHostState,
     mainSharedViewModel: MainSharedViewModel,
+    messageState: MessageState,
     sizeClass: WindowSizeClass,
     shimmerInstance: Shimmer,
     mainNavController: NavController
@@ -966,7 +970,7 @@ fun RowScope.ArchiveArea(
                     isTop = false,
                     isLoading = false,
                     isSelected = isSelected,
-                    isEditing = item.contactId == mainSharedViewModel.editingContact.value,
+                    isEditing = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact && item.contactId == messageState.contact?.contactId,
                     isExpanded = sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded,
                     noBackground = true,
                     shimmer = shimmerInstance,
@@ -976,11 +980,10 @@ fun RowScope.ArchiveArea(
                         } else {
                             if (viewModel.searchBarActivateState.value != SearchAppBar.ARCHIVE_SELECT) {
                                 viewModel.clearContactUnreadNum(item.contactId)
-                                mainSharedViewModel.receiveAndUpdateMessageFromContact(
-                                    contact = item,
-                                    shouldSelect = true
-//                                            sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded
-                                )
+                                mainSharedViewModel.loadMessageFromContact(item)
+//                                mainSharedViewModel.receiveAndUpdateMessageFromContact(
+//                                    contact = item
+//                                )
                                 if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
                                     mainNavController.navigate(ChatPageDestination)
                                 }

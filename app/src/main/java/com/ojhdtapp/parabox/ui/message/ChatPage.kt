@@ -10,6 +10,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
@@ -43,6 +44,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.paging.LoadState
+import androidx.paging.LoadStates
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.items
 import com.ojhdtapp.parabox.core.util.toDescriptiveTime
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Message
@@ -78,18 +83,20 @@ fun ChatPage(
             MessageState.NULL -> {
                 NullChatPage(modifier = modifier)
             }
-            MessageState.ERROR -> {
-                ErrorChatPage(modifier = modifier, errMessage = messageState.message ?: "请重试") {}
-            }
+//            MessageState.ERROR -> {
+//                ErrorChatPage(modifier = modifier, errMessage = messageState.message ?: "请重试") {}
+//            }
             MessageState.LOADING, MessageState.SUCCESS -> {
                 NormalChatPage(
                     modifier = modifier,
                     navigator = navigator,
+                    contact = messageState.contact!!,
                     messageState = messageState,
+                    mainSharedViewModel = mainSharedViewModel,
                     sizeClass = sizeClass,
                     onBackClick = {
                         if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) {
-                            mainSharedViewModel.cancelMessage()
+                            mainSharedViewModel.clearMessage()
                         } else {
                             mainNavController.navigateUp()
                         }
@@ -105,14 +112,16 @@ fun ChatPage(
 fun NormalChatPage(
     modifier: Modifier = Modifier,
     navigator: DestinationsNavigator,
+    contact: Contact,
     messageState: MessageState,
+    mainSharedViewModel: MainSharedViewModel,
     sizeClass: WindowSizeClass,
     onBackClick: () -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
     // Top AppBar
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
-    val scrollFraction = scrollBehavior?.state?.overlappedFraction ?: 0f
+    val scrollFraction = scrollBehavior.state.overlappedFraction ?: 0f
     val topAppBarColor by TopAppBarDefaults.smallTopAppBarColors().containerColor(scrollFraction)
     // Bottom Sheet
     val navigationBarHeight = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
@@ -137,7 +146,7 @@ fun NormalChatPage(
                 modifier = Modifier
                     .background(color = topAppBarColor)
                     .statusBarsPadding(),
-                title = { Text(text = messageState.profile?.name ?: "会话") },
+                title = { Text(text = messageState.contact?.profile?.name ?: "会话") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(imageVector = Icons.Outlined.ArrowBack, contentDescription = "back")
@@ -163,7 +172,7 @@ fun NormalChatPage(
             ) {
                 FloatingActionButton(onClick = {
                     coroutineScope.launch {
-                        scrollState.animateScrollToItem(messageState.data?.size ?: 0)
+//                        scrollState.animateScrollToItem(messageState.data?.size ?: 0)
                     }
                 }, modifier = Modifier.offset(y = (-42).dp)) {
                     Icon(
@@ -183,45 +192,59 @@ fun NormalChatPage(
         sheetPeekHeight = peakHeight,
         sheetElevation = 3.dp
     ) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.surface),
-            state = scrollState,
-            contentPadding = it
-        ) {
-            messageState.data?.forEach { (timestamp, chatBlockList) ->
-                item {
-                    TimeDivider(timestamp = timestamp)
-                }
-                items(items = chatBlockList) { chatBlock ->
-                    ChatBlock(
-                        modifier = Modifier.fillMaxWidth(),
-                        data = chatBlock,
-                        sentByMe = false
-                    )
-                }
+        if (messageState.state == MessageState.LOADING) {
+            Box(
+                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
             }
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
+        } else {
+            val lazyPagingItems =
+                mainSharedViewModel.receiveMessagePagingDataFlow(messageState.pluginConnectionObjectIdList).collectAsLazyPagingItems()
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surface),
+                state = scrollState,
+                contentPadding = it
+            ) {
+                items(items = lazyPagingItems) {
+                    Text(text = it?.contents?.getContentString() ?: "Text")
+                }
+//                messageState.data?.forEach { (timestamp, chatBlockList) ->
+//                    item {
+//                        TimeDivider(timestamp = timestamp)
+//                    }
+//                    items(items = chatBlockList) { chatBlock ->
+//                        ChatBlock(
+//                            modifier = Modifier.fillMaxWidth(),
+//                            data = chatBlock,
+//                            sentByMe = false
+//                        )
+//                    }
+//                }
+//                item {
+//                    Spacer(modifier = Modifier.height(16.dp))
+//                }
             }
         }
     }
 }
 
-@Composable
-fun ErrorChatPage(modifier: Modifier = Modifier, errMessage: String, onRetry: () -> Unit) {
-    Column(
-        modifier = modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(text = errMessage, style = MaterialTheme.typography.bodyLarge)
-        OutlinedButton(onClick = onRetry) {
-            Text(text = "重试")
-        }
-    }
-}
+//@Composable
+//fun ErrorChatPage(modifier: Modifier = Modifier, errMessage: String, onRetry: () -> Unit) {
+//    Column(
+//        modifier = modifier.fillMaxSize(),
+//        horizontalAlignment = Alignment.CenterHorizontally,
+//        verticalArrangement = Arrangement.Center
+//    ) {
+//        Text(text = errMessage, style = MaterialTheme.typography.bodyLarge)
+//        OutlinedButton(onClick = onRetry) {
+//            Text(text = "重试")
+//        }
+//    }
+//}
 
 @Composable
 fun NullChatPage(modifier: Modifier = Modifier) {
@@ -231,7 +254,11 @@ fun NullChatPage(modifier: Modifier = Modifier) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text(text = "选择会话", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+            Text(
+                text = "选择会话",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
     }
 }
