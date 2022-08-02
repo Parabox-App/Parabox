@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.data.repository
 
 import android.util.Log
+import androidx.paging.PagingSource
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.*
@@ -201,6 +202,10 @@ class MainRepositoryImpl @Inject constructor(
                     emit(Resource.Error<List<ContactWithMessages>>("获取数据时发生错误"))
                 }
         }
+    }
+
+    override fun getMessagesPagingSource(contactIds: List<Long>): PagingSource<Int, MessageEntity> {
+        return database.messageDao.getMessagesPagingSource(contactIds)
     }
 
     override fun getGroupInfoPack(contactIds: List<Long>): GroupInfoPack? {

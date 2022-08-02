@@ -1,6 +1,8 @@
 package com.ojhdtapp.parabox.domain.use_case
 
+import androidx.paging.*
 import com.ojhdtapp.parabox.core.util.Resource
+import com.ojhdtapp.parabox.data.local.entity.ContactWithMessagesEntity
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.ContactWithMessages
 import com.ojhdtapp.parabox.domain.model.Message
@@ -29,6 +31,22 @@ class GetMessages @Inject constructor(
                                 }?.sortedBy { it.timestamp }?.toList() ?: emptyList<Message>()
                             )
                         )
+                    }
+                }
+        }
+    }
+
+    fun pagingFlow(contact: Contact): Flow<PagingData<Message>> {
+        repository.getPluginConnectionObjectIdListByContactId(contactId = contact.contactId).also {
+            return Pager(
+                PagingConfig(
+                    pageSize = 20,
+                    enablePlaceholders = true
+                )
+            ) { repository.getMessagesPagingSource(it) }.flow
+                .map { pagingData ->
+                    pagingData.map {
+                        it.toMessage()
                     }
                 }
         }
