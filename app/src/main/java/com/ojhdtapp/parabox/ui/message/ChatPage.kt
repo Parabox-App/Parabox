@@ -90,7 +90,6 @@ fun ChatPage(
                 NormalChatPage(
                     modifier = modifier,
                     navigator = navigator,
-                    contact = messageState.contact!!,
                     messageState = messageState,
                     mainSharedViewModel = mainSharedViewModel,
                     sizeClass = sizeClass,
@@ -112,7 +111,6 @@ fun ChatPage(
 fun NormalChatPage(
     modifier: Modifier = Modifier,
     navigator: DestinationsNavigator,
-    contact: Contact,
     messageState: MessageState,
     mainSharedViewModel: MainSharedViewModel,
     sizeClass: WindowSizeClass,
@@ -194,14 +192,19 @@ fun NormalChatPage(
     ) {
         if (messageState.state == MessageState.LOADING) {
             Box(
-                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surface),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator()
             }
         } else {
+            val pagingDataFlow = remember {
+                mainSharedViewModel.receiveMessagePagingDataFlow(messageState.pluginConnectionObjectIdList)
+            }
             val lazyPagingItems =
-                mainSharedViewModel.receiveMessagePagingDataFlow(messageState.pluginConnectionObjectIdList).collectAsLazyPagingItems()
+                pagingDataFlow.collectAsLazyPagingItems()
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
