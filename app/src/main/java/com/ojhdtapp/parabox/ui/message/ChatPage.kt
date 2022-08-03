@@ -53,6 +53,7 @@ import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.chat.ChatBlock
 import com.ojhdtapp.parabox.domain.model.message_content.*
+import com.ojhdtapp.parabox.domain.model.toTimedMessages
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.util.MessageNavGraph
 import com.ojhdtapp.parabox.ui.util.SharedAxisZTransition
@@ -200,11 +201,16 @@ fun NormalChatPage(
                 CircularProgressIndicator()
             }
         } else {
-            val pagingDataFlow = remember {
+            val pagingDataFlow = remember(messageState) {
                 mainSharedViewModel.receiveMessagePagingDataFlow(messageState.pluginConnectionObjectIdList)
             }
             val lazyPagingItems =
                 pagingDataFlow.collectAsLazyPagingItems()
+            val timedList =
+                remember(lazyPagingItems.itemCount) {
+                    lazyPagingItems.itemSnapshotList.items.toTimedMessages()
+                }
+
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -212,24 +218,21 @@ fun NormalChatPage(
                 state = scrollState,
                 contentPadding = it
             ) {
-                items(items = lazyPagingItems) {
-                    Text(text = it?.contents?.getContentString() ?: "Text")
+                timedList.forEach { (timestamp, chatBlockList) ->
+                    item {
+                        TimeDivider(timestamp = timestamp)
+                    }
+                    items(items = chatBlockList) { chatBlock ->
+                        ChatBlock(
+                            modifier = Modifier.fillMaxWidth(),
+                            data = chatBlock,
+                            sentByMe = false
+                        )
+                    }
                 }
-//                messageState.data?.forEach { (timestamp, chatBlockList) ->
-//                    item {
-//                        TimeDivider(timestamp = timestamp)
-//                    }
-//                    items(items = chatBlockList) { chatBlock ->
-//                        ChatBlock(
-//                            modifier = Modifier.fillMaxWidth(),
-//                            data = chatBlock,
-//                            sentByMe = false
-//                        )
-//                    }
-//                }
-//                item {
-//                    Spacer(modifier = Modifier.height(16.dp))
-//                }
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
             }
         }
     }

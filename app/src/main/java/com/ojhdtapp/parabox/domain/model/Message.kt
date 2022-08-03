@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.domain.model
 
+import android.util.Log
 import androidx.paging.PagingData
 import com.ojhdtapp.parabox.data.local.entity.MessageEntity
 import com.ojhdtapp.parabox.domain.model.chat.ChatBlock
@@ -31,6 +32,7 @@ data class Message(
 }
 
 fun List<Message>.toTimedMessages(): Map<Long, List<ChatBlock>>{
+    Log.d("parabox", "Huge work for timing")
     val resMap = mutableMapOf<Long, List<ChatBlock>>()
     val timestampMessagePairList = mutableListOf<Pair<Long, Message>>()
     this.fold(timestampMessagePairList) { acc, message ->

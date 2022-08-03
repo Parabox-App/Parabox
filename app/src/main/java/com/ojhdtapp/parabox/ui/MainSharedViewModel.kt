@@ -38,6 +38,7 @@ class MainSharedViewModel @Inject constructor(
     val messageStateFlow: StateFlow<MessageState> = _messageStateFlow.asStateFlow()
 
     fun loadMessageFromContact(contact: Contact){
+        _messageStateFlow.value = MessageState()
         _messageStateFlow.value = MessageState(MessageState.LOADING, contact)
         viewModelScope.launch(Dispatchers.IO) {
             getMessages.pluginConnectionObjectIdList(contact).also {

@@ -234,7 +234,7 @@ class MainRepositoryImpl @Inject constructor(
                             name = name,
                             avatar = null,
                         ),
-                        latestMessage = null,
+                        latestMessage = LatestMessage("", System.currentTimeMillis(),0),
                         senderId = senderId,
                         tags = emptyList()
                     )
