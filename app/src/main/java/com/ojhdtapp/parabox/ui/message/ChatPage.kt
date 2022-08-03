@@ -217,12 +217,9 @@ fun NormalChatPage(
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.surface),
                 state = scrollState,
-                contentPadding = it
+                contentPadding = it,
+                reverseLayout = true
             ) {
-                item { Text(text = "${lazyPagingItems.itemCount}") }
-                items(lazyPagingItems){
-                    Text(text = it?.contents?.getContentString()?:"Text")
-                }
                 if (lazyPagingItems.loadState.append == LoadState.Loading) {
                     item {
                         CircularProgressIndicator(
@@ -231,21 +228,22 @@ fun NormalChatPage(
                         )
                     }
                 }
-//                timedList.forEach { (timestamp, chatBlockList) ->
-//                    item {
-//                        TimeDivider(timestamp = timestamp)
-//                    }
-//                    items(items = chatBlockList) { chatBlock ->
-//                        ChatBlock(
-//                            modifier = Modifier.fillMaxWidth(),
-//                            data = chatBlock,
-//                            sentByMe = false
-//                        )
-//                    }
-//                }
-//                item {
-//                    Spacer(modifier = Modifier.height(16.dp))
-//                }
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+                timedList.forEach { (timestamp, chatBlockList) ->
+                    items(items = chatBlockList) { chatBlock ->
+                        ChatBlock(
+                            modifier = Modifier.fillMaxWidth(),
+                            data = chatBlock,
+                            sentByMe = false
+                        )
+                    }
+                    item {
+                        TimeDivider(timestamp = timestamp)
+                    }
+                }
+
             }
         }
     }

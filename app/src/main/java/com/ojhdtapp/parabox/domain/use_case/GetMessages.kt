@@ -46,7 +46,6 @@ class GetMessages @Inject constructor(
                 PagingConfig(
                     pageSize = 20,
                     enablePlaceholders = true,
-                    initialLoadSize = 20
                 )
             ) { repository.getMessagesPagingSource(pluginConnectionObjectIdList) }.flow
                 .map { pagingData ->
