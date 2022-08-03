@@ -5,12 +5,10 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
@@ -29,34 +27,20 @@ import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.onFocusEvent
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.paging.LoadState
-import androidx.paging.LoadStates
 import androidx.paging.compose.collectAsLazyPagingItems
-import androidx.paging.compose.items
 import com.ojhdtapp.parabox.core.util.toDescriptiveTime
-import com.ojhdtapp.parabox.domain.model.Contact
-import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.chat.ChatBlock
 import com.ojhdtapp.parabox.domain.model.message_content.*
 import com.ojhdtapp.parabox.domain.model.toTimedMessages
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
-import com.ojhdtapp.parabox.ui.util.MessageNavGraph
-import com.ojhdtapp.parabox.ui.util.SharedAxisZTransition
 import com.ojhdtapp.parabox.ui.util.clearFocusOnKeyboardDismiss
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
@@ -220,27 +204,28 @@ fun NormalChatPage(
                 contentPadding = it,
                 reverseLayout = true
             ) {
-                if (lazyPagingItems.loadState.append == LoadState.Loading) {
-                    item {
-                        CircularProgressIndicator(
-                            modifier = Modifier.fillMaxWidth()
-                                .wrapContentWidth(Alignment.CenterHorizontally)
-                        )
-                    }
-                }
                 item {
                     Spacer(modifier = Modifier.height(16.dp))
                 }
                 timedList.forEach { (timestamp, chatBlockList) ->
-                    items(items = chatBlockList) { chatBlock ->
+                    items(items = chatBlockList, key = { "C${timestamp}:${it.messages.first().timestamp}" }) { chatBlock ->
                         ChatBlock(
                             modifier = Modifier.fillMaxWidth(),
                             data = chatBlock,
                             sentByMe = false
                         )
                     }
-                    item {
+                    item(key = "D$timestamp") {
                         TimeDivider(timestamp = timestamp)
+                    }
+                }
+                if (lazyPagingItems.loadState.append == LoadState.Loading) {
+                    item("loadingIndicator") {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .wrapContentWidth(Alignment.CenterHorizontally)
+                        )
                     }
                 }
 
@@ -349,13 +334,13 @@ fun ChatBlockMessages(modifier: Modifier = Modifier, data: ChatBlock, sentByMe: 
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.primary
         )
-        data.content.forEachIndexed { index, messageContents ->
+        data.messages.forEachIndexed { index, message ->
             Spacer(modifier = Modifier.height(2.dp))
             SingleMessage(
-                contents = messageContents,
+                contents = message.contents,
                 sentByMe = sentByMe,
                 isFirst = index == 0,
-                isLast = index == data.content.lastIndex,
+                isLast = index == data.messages.lastIndex,
                 onClick = {},
                 onLongClick = {})
         }
@@ -542,7 +527,6 @@ fun EditArea(
                     }
                 }
             }
-
         }
     }
 }

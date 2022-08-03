@@ -56,7 +56,7 @@ fun List<Message>.toTimedMessages(): Map<Long, List<ChatBlock>>{
 
 private fun messagesToChatBlocks(messagesAtSimilarTime:List<Message>):List<ChatBlock>{
     val chatBlockList = mutableListOf<ChatBlock>()
-    val messageItemList = mutableListOf<List<MessageContent>>()
+    val messageItemList = mutableListOf<Message>()
     var currentProfile: Profile? = null
     messagesAtSimilarTime.forEachIndexed { index, message ->
         if (currentProfile == null || message.profile == currentProfile) {
@@ -67,7 +67,7 @@ private fun messagesToChatBlocks(messagesAtSimilarTime:List<Message>):List<ChatB
             currentProfile = message.profile
             messageItemList.clear()
         }
-        messageItemList.add(message.contents)
+        messageItemList.add(message)
         if (messagesAtSimilarTime.lastIndex == index) {
             chatBlockList.add(ChatBlock(currentProfile!!, messageItemList.toList().reversed()))
         }
