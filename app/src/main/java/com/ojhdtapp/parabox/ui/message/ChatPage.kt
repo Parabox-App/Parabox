@@ -31,6 +31,7 @@ import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -111,10 +112,10 @@ fun NormalChatPage(
     var changedTextFieldHeight by remember {
         mutableStateOf(0)
     }
-//    val peakHeight =
-//        navigationBarHeight + 88.dp + with(LocalDensity.current) { changedTextFieldHeight.toDp() }
+    val peakHeight =
+        navigationBarHeight + 88.dp + with(LocalDensity.current) { changedTextFieldHeight.toDp() }
     //temp
-    val peakHeight = navigationBarHeight + 88.dp
+//    val peakHeight = navigationBarHeight + 88.dp
     // List Scroll && To Latest FAB
     val scrollState = rememberLazyListState()
     val fabExtended by remember {
@@ -468,11 +469,11 @@ fun EditArea(
                     color = MaterialTheme.colorScheme.surfaceVariant,
                     onClick = {}
                 ) {
-//                    val originalBoxHeight = with(LocalDensity.current) {
-//                        24.dp.toPx().toInt()
-//                    }
+                    val originalBoxHeight = with(LocalDensity.current) {
+                        24.dp.toPx().toInt()
+                    }
                     //temp
-                    val originalBoxHeight = 56
+//                    val originalBoxHeight = 56
                     Box(
                         modifier = Modifier
                             .defaultMinSize(minHeight = 48.dp)
