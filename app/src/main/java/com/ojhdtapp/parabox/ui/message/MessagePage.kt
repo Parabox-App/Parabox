@@ -575,9 +575,10 @@ fun RowScope.MessageArea(
                     label = { Text(text = viewModel.typeFilter.value.label) },
                     border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
                 )
-                FilterChip(modifier = Modifier
-                    .animateContentSize()
-                    .padding(end = 8.dp),
+                FilterChip(
+                    modifier = Modifier
+                        .animateContentSize()
+                        .padding(end = 8.dp),
                     selected = viewModel.readFilter.value is ContactReadFilterState.Unread,
                     onClick = {
                         viewModel.setReadFilter(
@@ -596,15 +597,16 @@ fun RowScope.MessageArea(
                     label = { Text(text = "未读") },
                     border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
                 )
-                FilterChip(modifier = Modifier
-                    .animateContentSize(), selected = false, onClick = {
-                    viewModel.setTagEditing(!isEditing)
-                    hashTagText = ""
-                    hashTagError = ""
-                    hashTagShouldShowError = false
-                    onConfirmDelete = false
-                    viewModel.clearSelectedContactTagStateList()
-                },
+                FilterChip(
+                    modifier = Modifier
+                        .animateContentSize(), selected = false, onClick = {
+                        viewModel.setTagEditing(!isEditing)
+                        hashTagText = ""
+                        hashTagError = ""
+                        hashTagShouldShowError = false
+                        onConfirmDelete = false
+                        viewModel.clearSelectedContactTagStateList()
+                    },
                     label = {
                         Icon(
                             imageVector = Icons.Outlined.Tune,
@@ -612,7 +614,8 @@ fun RowScope.MessageArea(
                             modifier = Modifier.size(FilterChipDefaults.IconSize)
                         )
                     },
-                border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant))
+                    border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
+                )
             }
 //                    Row(
 //                        modifier = Modifier
@@ -790,16 +793,22 @@ fun RowScope.MessageArea(
             }
         }
         item(key = "other") {
-            Box(
-                modifier = Modifier
-                    .padding(16.dp, 8.dp)
-                    .animateItemPlacement()
+            AnimatedVisibility(
+                visible = !viewModel.archivedContactHidden.value,
+                enter = expandVertically(),
+                exit = shrinkVertically()
             ) {
-                Text(
-                    text = "其他",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Box(
+                    modifier = Modifier
+                        .padding(16.dp, 8.dp)
+                        .animateItemPlacement()
+                ) {
+                    Text(
+                        text = "其他",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
         item(key = "archived") {
@@ -866,8 +875,10 @@ fun RowScope.MessageArea(
                             if (viewModel.searchBarActivateState.value == SearchAppBar.ARCHIVE_SELECT) {
                                 viewModel.setSearchBarActivateState(SearchAppBar.NONE)
                             } else {
-                                viewModel.setSearchBarActivateState(SearchAppBar.ARCHIVE)
-                                viewModel.setAreaState(AreaState.ArchiveArea)
+                                if (viewModel.searchBarActivateState.value == SearchAppBar.NONE) {
+                                    viewModel.setSearchBarActivateState(SearchAppBar.ARCHIVE)
+                                    viewModel.setAreaState(AreaState.ArchiveArea)
+                                }
                             }
 //                            if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
 //                            }
