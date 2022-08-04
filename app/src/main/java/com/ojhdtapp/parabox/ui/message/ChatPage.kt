@@ -119,7 +119,7 @@ fun NormalChatPage(
     val scrollState = rememberLazyListState()
     val fabExtended by remember {
         derivedStateOf {
-            scrollState.firstVisibleItemIndex == 0
+            scrollState.firstVisibleItemIndex > 2
         }
     }
     BottomSheetScaffold(
@@ -155,7 +155,7 @@ fun NormalChatPage(
             ) {
                 FloatingActionButton(onClick = {
                     coroutineScope.launch {
-//                        scrollState.animateScrollToItem(messageState.data?.size ?: 0)
+                        scrollState.animateScrollToItem(0)
                     }
                 }, modifier = Modifier.offset(y = (-42).dp)) {
                     Icon(
