@@ -38,6 +38,7 @@ import androidx.navigation.NavController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.ojhdtapp.parabox.core.util.toDescriptiveTime
+import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.chat.ChatBlock
 import com.ojhdtapp.parabox.domain.model.message_content.*
 import com.ojhdtapp.parabox.domain.model.toTimedMessages
@@ -92,7 +93,10 @@ fun ChatPage(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
+@OptIn(
+    ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class,
+    ExperimentalAnimationApi::class
+)
 @Composable
 fun NormalChatPage(
     modifier: Modifier = Modifier,
@@ -105,7 +109,7 @@ fun NormalChatPage(
     val coroutineScope = rememberCoroutineScope()
     // Top AppBar
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
-    val scrollFraction = scrollBehavior.state.overlappedFraction ?: 0f
+    val scrollFraction = scrollBehavior.state.overlappedFraction
     val topAppBarColor by TopAppBarDefaults.smallTopAppBarColors().containerColor(scrollFraction)
     // Bottom Sheet
     val navigationBarHeight = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
@@ -126,27 +130,99 @@ fun NormalChatPage(
     BottomSheetScaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            SmallTopAppBar(
-                modifier = Modifier
-                    .background(color = topAppBarColor)
-                    .statusBarsPadding(),
-                title = { Text(text = messageState.contact?.profile?.name ?: "会话") },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(imageVector = Icons.Outlined.ArrowBack, contentDescription = "back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { }) {
-                        Icon(imageVector = Icons.Outlined.Search, contentDescription = "search")
+            Crossfade(targetState = mainSharedViewModel.selectedMessageStateList.isNotEmpty()) {
+                if (it) {
+                    SmallTopAppBar(
+                        modifier = Modifier
+                            .background(color = topAppBarColor)
+                            .statusBarsPadding(),
+                        title = {
+                            AnimatedContent(targetState = mainSharedViewModel.selectedMessageStateList.size.toString(),
+                                transitionSpec = {
+                                    // Compare the incoming number with the previous number.
+                                    if (targetState > initialState) {
+                                        // If the target number is larger, it slides up and fades in
+                                        // while the initial (smaller) number slides up and fades out.
+                                        slideInVertically { height -> height } + fadeIn() with
+                                                slideOutVertically { height -> -height } + fadeOut()
+                                    } else {
+                                        // If the target number is smaller, it slides down and fades in
+                                        // while the initial number slides down and fades out.
+                                        slideInVertically { height -> -height } + fadeIn() with
+                                                slideOutVertically { height -> height } + fadeOut()
+                                    }.using(
+                                        // Disable clipping since the faded slide-in/out should
+                                        // be displayed out of bounds.
+                                        SizeTransform(clip = false)
+                                    )
+                                }) { num ->
+                                Text(text = num, style = MaterialTheme.typography.titleLarge)
+                            }
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = { mainSharedViewModel.clearSelectedMessageStateList() }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Close,
+                                    contentDescription = "close"
+                                )
+                            }
+                        },
+                        actions = {
+                            AnimatedVisibility(
+                                visible = mainSharedViewModel.selectedMessageStateList.size == 1,
+                                enter = fadeIn(),
+                                exit = fadeOut()
+                            ) {
+                                IconButton(onClick = { }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Reply,
+                                        contentDescription = "reply"
+                                    )
 
-                    }
-                    IconButton(onClick = { /*TODO*/ }) {
-                        Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = "more")
-                    }
-                },
-                scrollBehavior = scrollBehavior
-            )
+                                }
+                            }
+                            IconButton(onClick = { /*TODO*/ }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.MoreVert,
+                                    contentDescription = "more"
+                                )
+                            }
+                        },
+                        scrollBehavior = scrollBehavior
+                    )
+                } else {
+                    SmallTopAppBar(
+                        modifier = Modifier
+                            .background(color = topAppBarColor)
+                            .statusBarsPadding(),
+                        title = { Text(text = messageState.contact?.profile?.name ?: "会话") },
+                        navigationIcon = {
+                            IconButton(onClick = onBackClick) {
+                                Icon(
+                                    imageVector = Icons.Outlined.ArrowBack,
+                                    contentDescription = "back"
+                                )
+                            }
+                        },
+                        actions = {
+                            IconButton(onClick = { }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Search,
+                                    contentDescription = "search"
+                                )
+
+                            }
+                            IconButton(onClick = { /*TODO*/ }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.MoreVert,
+                                    contentDescription = "more"
+                                )
+                            }
+                        },
+                        scrollBehavior = scrollBehavior
+                    )
+                }
+            }
         },
         floatingActionButton = {
             AnimatedVisibility(
@@ -209,9 +285,12 @@ fun NormalChatPage(
                     Spacer(modifier = Modifier.height(16.dp))
                 }
                 timedList.forEach { (timestamp, chatBlockList) ->
-                    items(items = chatBlockList, key = { "C${timestamp}:${it.messages.first().timestamp}" }) { chatBlock ->
-                        ChatBlock(
+                    items(
+                        items = chatBlockList,
+                        key = { "C${timestamp}:${it.messages.first().timestamp}" }) { chatBlock ->
+                        com.ojhdtapp.parabox.ui.message.ChatBlock(
                             modifier = Modifier.fillMaxWidth(),
+                            mainSharedViewModel = mainSharedViewModel,
                             data = chatBlock,
                             sentByMe = false
                         )
@@ -293,21 +372,36 @@ fun TimeDivider(modifier: Modifier = Modifier, timestamp: Long) {
 }
 
 @Composable
-fun ChatBlock(modifier: Modifier = Modifier, data: ChatBlock, sentByMe: Boolean) {
+fun ChatBlock(
+    modifier: Modifier = Modifier,
+    mainSharedViewModel: MainSharedViewModel,
+    data: ChatBlock,
+    sentByMe: Boolean
+) {
     Row(
         modifier = modifier
-            .padding(horizontal = 16.dp, vertical = 4.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
 //        horizontalArrangement = if (sentByMe) Arrangement.End else Arrangement.Start
     ) {
         if (sentByMe) {
             Spacer(modifier = Modifier.width(48.dp))
-            ChatBlockMessages(modifier = Modifier.weight(1f), data = data, sentByMe = sentByMe)
+            ChatBlockMessages(
+                modifier = Modifier.weight(1f),
+                mainSharedViewModel = mainSharedViewModel,
+                data = data,
+                sentByMe = sentByMe
+            )
             Spacer(modifier = Modifier.width(8.dp))
             ChatBlockAvatar()
         } else {
             ChatBlockAvatar()
             Spacer(modifier = Modifier.width(8.dp))
-            ChatBlockMessages(modifier = Modifier.weight(1f), data = data, sentByMe = sentByMe)
+            ChatBlockMessages(
+                modifier = Modifier.weight(1f),
+                mainSharedViewModel = mainSharedViewModel,
+                data = data,
+                sentByMe = sentByMe
+            )
             Spacer(modifier = Modifier.width(48.dp))
         }
     }
@@ -325,7 +419,12 @@ fun ChatBlockAvatar(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun ChatBlockMessages(modifier: Modifier = Modifier, data: ChatBlock, sentByMe: Boolean) {
+fun ChatBlockMessages(
+    modifier: Modifier = Modifier,
+    mainSharedViewModel: MainSharedViewModel,
+    data: ChatBlock,
+    sentByMe: Boolean,
+) {
     Column(
         modifier = modifier,
         horizontalAlignment = if (sentByMe) Alignment.End else Alignment.Start
@@ -342,8 +441,17 @@ fun ChatBlockMessages(modifier: Modifier = Modifier, data: ChatBlock, sentByMe: 
                 sentByMe = sentByMe,
                 isFirst = index == 0,
                 isLast = index == data.messages.lastIndex,
-                onClick = {},
-                onLongClick = {})
+                isSelected = mainSharedViewModel.selectedMessageStateList.contains(message),
+                onClick = {
+                    if (mainSharedViewModel.selectedMessageStateList.isNotEmpty()) {
+                        mainSharedViewModel.addOrRemoveItemOfSelectedMessageStateList(message)
+                    }
+                },
+                onLongClick = {
+                    mainSharedViewModel.addOrRemoveItemOfSelectedMessageStateList(
+                        message
+                    )
+                })
         }
     }
 }
@@ -356,6 +464,7 @@ fun SingleMessage(
     sentByMe: Boolean,
     isFirst: Boolean,
     isLast: Boolean,
+    isSelected: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit
 ) {
@@ -363,6 +472,20 @@ fun SingleMessage(
     val topEndRadius by animateDpAsState(targetValue = if (!sentByMe || isFirst) 24.dp else 0.dp)
     val bottomStartRadius by animateDpAsState(targetValue = if (sentByMe || isLast) 24.dp else 0.dp)
     val bottomEndRadius by animateDpAsState(targetValue = if (!sentByMe || isLast) 24.dp else 0.dp)
+    val backgroundColor by animateColorAsState(
+        targetValue = if (sentByMe) {
+            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+        } else {
+            if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
+        }
+    )
+    val textColor by animateColorAsState(
+        targetValue = if (sentByMe) {
+            if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondary
+        } else {
+            if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+        }
+    )
     Column(
         modifier = modifier
             .clip(
@@ -374,7 +497,7 @@ fun SingleMessage(
                 )
             )
             .background(
-                if (sentByMe) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
+                backgroundColor
             )
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(horizontal = 12.dp, vertical = 12.dp)
@@ -383,15 +506,15 @@ fun SingleMessage(
             when (it) {
                 is At -> Text(
                     text = it.getContentString(),
-                    color = if (sentByMe) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                    color = textColor
                 )
                 is PlainText -> Text(
                     text = it.getContentString(),
-                    color = if (sentByMe) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                    color = textColor
                 )
                 is Image -> Text(
                     text = it.getContentString(),
-                    color = if (sentByMe) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                    color = textColor
                 )
             }
         }

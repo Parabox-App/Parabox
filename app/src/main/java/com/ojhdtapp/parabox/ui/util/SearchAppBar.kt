@@ -296,7 +296,7 @@ fun SelectContentField(
                     SizeTransform(clip = false)
                 )
             }) { num ->
-            Text(text = num, style = MaterialTheme.typography.titleMedium)
+            Text(text = num, style = MaterialTheme.typography.titleLarge)
         }
         Spacer(modifier = Modifier.weight(1f))
         Crossfade(targetState = selection.size) {

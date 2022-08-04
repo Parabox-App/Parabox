@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.ui
 
 import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -54,9 +55,20 @@ class MainSharedViewModel @Inject constructor(
     fun clearMessage(){
         _messageStateFlow.value = MessageState()
     }
-    //    private val _editingContact = mutableStateOf<Long?>(null)
-//    val editingContact: State<Long?> = _editingContact
-//    private var messageJob: Job? = null
+
+    // Selection
+    private val _selectedMessageStateList = mutableStateListOf<Message>()
+    val selectedMessageStateList = _selectedMessageStateList
+    fun addOrRemoveItemOfSelectedMessageStateList(value: Message) {
+        if (!_selectedMessageStateList.contains(value)) {
+            _selectedMessageStateList.add(value)
+        } else {
+            _selectedMessageStateList.remove(value)
+        }
+    }
+    fun clearSelectedMessageStateList() {
+        _selectedMessageStateList.clear()
+    }
 
 //    fun receiveAndUpdateMessageFromContact(
 //        contact: Contact,
