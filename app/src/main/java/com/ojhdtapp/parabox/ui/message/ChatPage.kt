@@ -633,7 +633,7 @@ fun EditArea(
                         )
                     }
                 }
-                AnimatedVisibility(visible = !inputText.isNullOrEmpty(),
+                AnimatedVisibility(visible = inputText.isNotEmpty(),
 //                    enter = slideInHorizontally { width -> width },
 //                    exit = slideOutHorizontally { width -> width }
                     enter = expandHorizontally() { width -> 0 },
