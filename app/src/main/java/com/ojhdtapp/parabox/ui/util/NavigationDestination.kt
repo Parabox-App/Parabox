@@ -138,6 +138,7 @@ fun NavigationDrawer(
     sizeClass: WindowSizeClass,
     content: @Composable () -> Unit,
 ) {
+    val coroutineScope = rememberCoroutineScope()
     ModalNavigationDrawer(
         drawerState = drawerState,
         gesturesEnabled = gesturesEnabled,
@@ -148,7 +149,9 @@ fun NavigationDrawer(
                     val isCurrentDestOnBackStack =
                         navController.appCurrentDestinationAsState().value in destination.graph.destinations
                     NavigationDrawerItem(
-                        modifier = Modifier.height(48.dp).padding(horizontal = 12.dp),
+                        modifier = Modifier
+                            .height(48.dp)
+                            .padding(horizontal = 12.dp),
                         icon = {
                             BadgedBox(badge = {
                                 if (destination.graph == NavGraphs.message && messageBadge != 0)
@@ -173,6 +176,9 @@ fun NavigationDrawer(
                                     }
                                     launchSingleTop = true
                                     restoreState = true
+                                }
+                                coroutineScope.launch {
+                                    drawerState.close()
                                 }
                             }
                         })
