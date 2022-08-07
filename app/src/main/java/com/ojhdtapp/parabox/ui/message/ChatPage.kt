@@ -252,7 +252,12 @@ fun NormalChatPage(
         sheetPeekHeight = peakHeight,
         sheetElevation = 3.dp
     ) {
-        if (messageState.state == MessageState.LOADING) {
+        val pagingDataFlow = remember(messageState) {
+            mainSharedViewModel.receiveMessagePagingDataFlow(messageState.pluginConnectionObjectIdList)
+        }
+        val lazyPagingItems =
+            pagingDataFlow.collectAsLazyPagingItems()
+        if (messageState.state == MessageState.LOADING || lazyPagingItems.itemCount == 0) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -262,11 +267,6 @@ fun NormalChatPage(
                 CircularProgressIndicator()
             }
         } else {
-            val pagingDataFlow = remember(messageState) {
-                mainSharedViewModel.receiveMessagePagingDataFlow(messageState.pluginConnectionObjectIdList)
-            }
-            val lazyPagingItems =
-                pagingDataFlow.collectAsLazyPagingItems()
             val timedList =
                 remember(lazyPagingItems.itemCount) {
                     Log.d("parabox", "${lazyPagingItems.itemCount}")
