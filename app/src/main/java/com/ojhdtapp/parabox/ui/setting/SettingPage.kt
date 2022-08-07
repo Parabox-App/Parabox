@@ -22,6 +22,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.menu.MenuSharedViewModel
@@ -42,6 +43,7 @@ fun SettingPage(
     sizeClass: WindowSizeClass,
     drawerState: DrawerState
 ) {
+    val viewModel = hiltViewModel<SettingPageViewModel>()
     val coroutineScope = rememberCoroutineScope()
     val decayAnimationSpec = rememberSplineBasedDecay<Float>()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
@@ -82,31 +84,51 @@ fun SettingPage(
             )
         },
         content = { innerPadding ->
-            LazyVerticalGrid(
-                contentPadding = innerPadding,
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                columns = GridCells.Fixed(if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) 2 else 1)
-            ) {
-                item {
-                    ThemeBlock(
-                        modifier = Modifier.fillMaxWidth(),
-                        userName = "User",
-                        version = "1.0",
-                        onBlockClick = {},
-                        onUserNameClick = {},
-                        onVersionClick = {},
-                        padding = if (sizeClass.widthSizeClass != WindowWidthSizeClass.Compact) 32.dp else 16.dp,
-                    )
+            Row() {
+                EditUserNameDialog(
+                    openDialog = viewModel.editUserNameDialogState.value,
+                    userName = viewModel.userNameFlow.collectAsState(initial = "User").value,
+                    onConfirm = {
+                        viewModel.setEditUserNameDialogState(false)
+                        viewModel.setUserName(it)
+                    },
+                    onDismiss = { viewModel.setEditUserNameDialogState(false) }
+                )
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    contentPadding = innerPadding,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    item {
+                        ThemeBlock(
+                            modifier = Modifier.fillMaxWidth(),
+                            userName = viewModel.userNameFlow.collectAsState(initial = "User").value,
+                            version = "1.0",
+                            onBlockClick = {},
+                            onUserNameClick = {
+                                viewModel.setEditUserNameDialogState(true)
+                            },
+                            onVersionClick = {},
+                            padding = if (sizeClass.widthSizeClass == WindowWidthSizeClass.Medium) 32.dp else 16.dp,
+                        )
+                    }
+                    val list = (0..75).map { it.toString() }
+                    items(count = list.size) {
+                        Text(
+                            text = list[it],
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
+                        )
+                    }
                 }
-                val list = (0..75).map { it.toString() }
-                items(count = list.size) {
-                    Text(
-                        text = list[it],
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
-                    )
+                if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) {
+                    LazyColumn(
+                        modifier = Modifier.width(560.dp),
+                    ) {
+
+                    }
                 }
             }
         }
