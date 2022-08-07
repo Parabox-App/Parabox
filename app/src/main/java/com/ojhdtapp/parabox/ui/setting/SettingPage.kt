@@ -10,8 +10,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Menu
-import androidx.compose.material.icons.outlined.MoreVert
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
@@ -19,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -26,6 +26,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.menu.MenuSharedViewModel
+import com.ojhdtapp.parabox.ui.util.NormalPreference
+import com.ojhdtapp.parabox.ui.util.PreferencesCategory
+import com.ojhdtapp.parabox.ui.util.SearchAppBar
 import com.ojhdtapp.parabox.ui.util.SettingNavGraph
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -73,11 +76,30 @@ fun SettingPage(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* doSomething() */ }) {
-                        Icon(
-                            imageVector = Icons.Outlined.MoreVert,
-                            contentDescription = "more"
-                        )
+                    var expanded by remember {
+                        mutableStateOf(false)
+                    }
+                    Box(
+                        modifier = Modifier
+                            .wrapContentSize(Alignment.TopStart)
+                    ) {
+                        IconButton(onClick = {
+                            expanded = !expanded
+                        }) {
+                            Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = "more")
+                        }
+                        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = "开放源代码许可",
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                },
+                                onClick = {
+                                    expanded = false
+                                })
+                        }
                     }
                 },
                 scrollBehavior = scrollBehavior
@@ -97,7 +119,7 @@ fun SettingPage(
                 LazyColumn(
                     modifier = Modifier.weight(1f),
                     contentPadding = innerPadding,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+//                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     item {
                         ThemeBlock(
@@ -112,15 +134,71 @@ fun SettingPage(
                             padding = if (sizeClass.widthSizeClass == WindowWidthSizeClass.Medium) 32.dp else 16.dp,
                         )
                     }
-                    val list = (0..75).map { it.toString() }
-                    items(count = list.size) {
-                        Text(
-                            text = list[it],
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp)
-                        )
+                    item(key = "extension_status") {
+                        PreferencesCategory(text = "扩展状态")
+                    }
+                    item(key = "function") {
+                        PreferencesCategory(text = "行为")
+                    }
+                    item(key = "extension") {
+                        NormalPreference(
+                            icon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.Extension,
+                                    contentDescription = "plugin"
+                                )
+                            },
+                            title = "扩展",
+                            subtitle = "管理已安装的扩展"
+                        ) {}
+                    }
+                    item(key = "cloud") {
+                        NormalPreference(
+                            icon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.Cloud,
+                                    contentDescription = "cloud"
+                                )
+                            },
+                            title = "连接云端服务",
+                            subtitle = "添加或修改云端服务连接"
+                        ) {}
+                    }
+                    item(key = "backup") {
+                        NormalPreference(
+                            icon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.Restore,
+                                    contentDescription = "backup and restore"
+                                )
+                            },
+                            title = "备份与还原",
+                            subtitle = "数据导出及恢复，存储空间管理"
+                        ) {}
+                    }
+                    item(key = "palette") {
+                        NormalPreference(
+                            icon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.Palette,
+                                    contentDescription = "theme"
+                                )
+                            },
+                            title = "用户界面",
+                            subtitle = "主题和语言"
+                        ) {}
+                    }
+                    item(key = "experimental") {
+                        NormalPreference(
+                            icon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.Science,
+                                    contentDescription = "experimental"
+                                )
+                            },
+                            title = "高级选项",
+                            subtitle = "实验性特性与功能"
+                        ) {}
                     }
                 }
                 if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) {

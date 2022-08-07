@@ -32,7 +32,7 @@ fun EditUserNameDialog(
             icon = {
                 Icon(imageVector = Icons.Outlined.AccountCircle, contentDescription = "account")
             },
-            title = { Text(text = "用户名") },
+            title = { Text(text = "如何称呼您") },
             text = {
                 OutlinedTextField(
                     modifier = Modifier.fillMaxWidth(),

@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.ui.util
 
 import android.util.Log
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -37,6 +38,7 @@ fun SwitchPreference(
     var checked by remember {
         mutableStateOf(initialChecked)
     }
+    val textColor by animateColorAsState(targetValue = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline)
     Row(
         modifier = modifier
             .clickable {
@@ -63,7 +65,7 @@ fun SwitchPreference(
                     Text(
                         text = it,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = textColor,
                     )
                 }
             } else {
@@ -72,7 +74,7 @@ fun SwitchPreference(
                     Text(
                         text = it,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = textColor,
                     )
                 }
             }
@@ -88,6 +90,7 @@ fun SwitchPreference(
 @Composable
 fun NormalPreference(
     modifier: Modifier = Modifier,
+    icon: (@Composable () -> Unit)? = null,
     title: String,
     subtitle: String? = null,
     onClick: () -> Unit
@@ -100,7 +103,12 @@ fun NormalPreference(
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
+        if (icon != null) {
+            Box(modifier = Modifier.padding(end = 16.dp), contentAlignment = Alignment.Center) {
+                icon()
+            }
+        }
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleLarge,
