@@ -10,6 +10,7 @@ import androidx.paging.PagingSource
 import androidx.paging.cachedIn
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.ojhdtapp.parabox.core.util.Resource
+import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.use_case.GetMessages
@@ -72,36 +73,10 @@ class MainSharedViewModel @Inject constructor(
         _selectedMessageStateList.clear()
     }
 
-//    fun receiveAndUpdateMessageFromContact(
-//        contact: Contact,
-//    ) {
-//        messageJob?.cancel()
-//        messageJob = viewModelScope.launch(Dispatchers.IO) {
-//            getMessages(contact = contact).collectLatest {
-//                _messageStateFlow.value = when (it) {
-//                    is Resource.Loading -> MessageState(
-//                        state = MessageState.LOADING,
-//                        profile = contact.profile
-//                    )
-//                    is Resource.Error -> MessageState(
-//                        state = MessageState.ERROR,
-//                        profile = contact.profile,
-//                        message = it.message
-//                    )
-//                    is Resource.Success -> MessageState(
-//                        state = MessageState.SUCCESS,
-//                        profile = contact.profile,
-//                        data = it.data!!.toTimedMessages()
-//                    )
-//                }
-//            }
-//
-//        }
-//    }
-
-//    fun cancelMessage() {
-//        messageJob?.cancel()
-////        _editingContact.value = null
-//        _messageStateFlow.value = MessageState()
-//    }
+    // Plugin List
+    private val _pluginListStateFlow = MutableStateFlow<List<AppModel>>(emptyList())
+    val pluginListStateFlow = _pluginListStateFlow.asStateFlow()
+    fun setPluginListStateFlow(value: List<AppModel>){
+        _pluginListStateFlow.value = value
+    }
 }

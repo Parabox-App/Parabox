@@ -2,6 +2,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.ojhdtapp.parabox">
 
+    <queries>
+<!--        <package android:name="com.ojhdtapp.miraipluginforparabox" />-->
+        <intent>
+            <action android:name="com.ojhdtapp.parabox.PLUGIN"/>
+        </intent>
+    </queries>
+
     <application
         android:name=".core.HiltApplication"
         android:allowBackup="true"
@@ -10,6 +17,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Parabox">
+        <service
+            android:name=".domain.service.PluginService"
+            android:enabled="true"
+            android:exported="true" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -22,9 +34,5 @@
             </intent-filter>
         </activity>
     </application>
-
-    <queries>
-        <package android:name="com.ojhdtapp.miraipluginforparabox" />
-    </queries>
 
 </manifest>

@@ -1,8 +1,14 @@
 package com.ojhdtapp.parabox
 
+import android.content.ComponentName
+import android.content.Intent
+import android.content.ServiceConnection
 import android.os.Bundle
+import android.os.IBinder
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -23,6 +29,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.ojhdtapp.parabox.domain.service.PluginService
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.NavGraphs
 import com.ojhdtapp.parabox.ui.theme.AppTheme
@@ -37,6 +44,9 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    var pluginService: PluginService? = null
+    private lateinit var pluginServiceConnection: ServiceConnection
+
     @OptIn(
         ExperimentalAnimationApi::class, ExperimentalMaterialNavigationApi::class,
         ExperimentalMaterial3WindowSizeClassApi::class
@@ -53,6 +63,10 @@ class MainActivity : ComponentActivity() {
 //                it.isInstalled()
 //            )
 //        }
+
+        // Shared ViewModel
+        val mainSharedViewModel by viewModels<MainSharedViewModel>()
+
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {
             // System Ui
@@ -90,7 +104,7 @@ class MainActivity : ComponentActivity() {
                 defaultAnimationsForNestedNavGraph = mapOf()
             )
             // Shared ViewModel
-            val mainSharedViewModel = hiltViewModel<MainSharedViewModel>(this)
+//            val mainSharedViewModel = hiltViewModel<MainSharedViewModel>(this)
 
             // Screen Sizes
             val sizeClass = calculateWindowSizeClass(activity = this)
@@ -143,5 +157,31 @@ class MainActivity : ComponentActivity() {
 //                )
             }
         }
+    }
+
+    override fun onStart() {
+        val pluginServiceBinderIntent = Intent(this, PluginService::class.java)
+        pluginServiceConnection = object : ServiceConnection {
+            override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
+                Log.d("parabox", "service bound")
+                pluginService = (p1 as PluginService.PluginServiceBinder).getService()
+            }
+
+            override fun onServiceDisconnected(p0: ComponentName?) {
+                pluginService = null
+            }
+
+        }
+        startService(pluginServiceBinderIntent)
+        bindService(pluginServiceBinderIntent, pluginServiceConnection, BIND_AUTO_CREATE)
+        super.onStart()
+    }
+
+    override fun onStop() {
+        if (pluginService != null) {
+            unbindService(pluginServiceConnection)
+            pluginService = null
+        }
+        super.onStop()
     }
 }
