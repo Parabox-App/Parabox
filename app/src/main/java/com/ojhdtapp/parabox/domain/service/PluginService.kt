@@ -10,6 +10,8 @@ import android.util.Log
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.ojhdtapp.parabox.domain.model.AppModel
+import com.ojhdtapp.parabox.domain.model.PluginConnection
+import com.ojhdtapp.parabox.domain.plugin.PluginConnObj
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +22,7 @@ import kotlinx.coroutines.launch
 class PluginService : LifecycleService() {
     private var installedPluginList = emptyList<ApplicationInfo>()
     private var appModelList = emptyList<AppModel>()
+    private val pluginConnectionMap = mutableMapOf<String, PluginConnObj>()
 
     override fun onBind(intent: Intent): IBinder {
         super.onBind(intent)
@@ -53,19 +56,36 @@ class PluginService : LifecycleService() {
         return super.onStartCommand(intent, flags, startId)
     }
 
+    // Call Only Once
     private fun bindPlugins() {
         installedPluginList.forEach {
             lifecycleScope.launch {
-                TODO("bind service here")
+                val pluginConnObj = PluginConnObj(
+                    this@PluginService,
+                    it.packageName,
+                    it.packageName + ".domain.service.ConnService"
+                )
+                pluginConnectionMap.put(it.packageName, pluginConnObj)
+                pluginConnObj.connect()
+                pluginConnObj.refreshRunningStatus()
             }
         }
     }
 
     fun getPluginListFlow(): Flow<List<AppModel>> {
+        Log.d("parabox", "begin creating flow")
         return flow {
             while (true) {
-                emit(appModelList)
-                delay(10000)
+                emit(appModelList.map {
+                    val connObj = pluginConnectionMap[it.packageName]
+                    Log.d("parabox", "status:${connObj?.getRunningStatus()?: AppModel.RUNNING_STATUS_DISABLED}")
+                    connObj?.refreshRunningStatus()
+                    it.copy(
+                        runningStatus = connObj?.getRunningStatus()
+                            ?: AppModel.RUNNING_STATUS_DISABLED
+                    )
+                })
+                delay(2000)
             }
         }
     }

@@ -1,13 +1,17 @@
 package com.ojhdtapp.parabox.ui.setting
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.rememberSplineBasedDecay
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
@@ -18,17 +22,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
-import com.ojhdtapp.parabox.ui.menu.MenuSharedViewModel
 import com.ojhdtapp.parabox.ui.util.NormalPreference
 import com.ojhdtapp.parabox.ui.util.PreferencesCategory
-import com.ojhdtapp.parabox.ui.util.SearchAppBar
 import com.ojhdtapp.parabox.ui.util.SettingNavGraph
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -106,6 +109,9 @@ fun SettingPage(
             )
         },
         content = { innerPadding ->
+            // Plugin List State
+            val pluginList by mainSharedViewModel.pluginListStateFlow.collectAsState()
+
             Row() {
                 EditUserNameDialog(
                     openDialog = viewModel.editUserNameDialogState.value,
@@ -121,6 +127,7 @@ fun SettingPage(
                     contentPadding = innerPadding,
 //                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+
                     item {
                         ThemeBlock(
                             modifier = Modifier.fillMaxWidth(),
@@ -135,14 +142,51 @@ fun SettingPage(
                         )
                     }
                     item(key = "extension_status") {
-                        PreferencesCategory(text = "扩展状态")
+                        AnimatedVisibility(
+                            visible = pluginList.isNotEmpty(),
+                            enter = expandVertically(),
+                            exit = shrinkVertically()
+                        ) {
+                            PreferencesCategory(text = "扩展状态")
+                        }
+                    }
+                    items(
+                        items = pluginList,
+                        key = { it.packageName }) {
+                        NormalPreference(
+                            title = it.name,
+                            subtitle = it.packageName,
+                            leadingIcon = {
+                                AsyncImage(model = it.icon, contentDescription = "icon", modifier = Modifier.size(24.dp).clip(
+                                    CircleShape))
+                            },
+                            trailingIcon = {
+                                when (it.runningStatus) {
+                                    AppModel.RUNNING_STATUS_DISABLED -> Icon(
+                                        imageVector = Icons.Outlined.Block,
+                                        contentDescription = "disabled"
+                                    )
+                                    AppModel.RUNNING_STATUS_ERROR -> Icon(
+                                        imageVector = Icons.Outlined.ErrorOutline,
+                                        contentDescription = "error",
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
+                                    AppModel.RUNNING_STATUS_RUNNING -> Icon(
+                                        imageVector = Icons.Outlined.CheckCircleOutline,
+                                        contentDescription = "running",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            },
+                            onClick = {}
+                        )
                     }
                     item(key = "function") {
                         PreferencesCategory(text = "行为")
                     }
                     item(key = "extension") {
                         NormalPreference(
-                            icon = {
+                            leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Outlined.Extension,
                                     contentDescription = "plugin"
@@ -154,7 +198,7 @@ fun SettingPage(
                     }
                     item(key = "cloud") {
                         NormalPreference(
-                            icon = {
+                            leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Outlined.Cloud,
                                     contentDescription = "cloud"
@@ -166,7 +210,7 @@ fun SettingPage(
                     }
                     item(key = "backup") {
                         NormalPreference(
-                            icon = {
+                            leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Outlined.Restore,
                                     contentDescription = "backup and restore"
@@ -178,7 +222,7 @@ fun SettingPage(
                     }
                     item(key = "palette") {
                         NormalPreference(
-                            icon = {
+                            leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Outlined.Palette,
                                     contentDescription = "theme"
@@ -190,7 +234,7 @@ fun SettingPage(
                     }
                     item(key = "experimental") {
                         NormalPreference(
-                            icon = {
+                            leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Outlined.Science,
                                     contentDescription = "experimental"

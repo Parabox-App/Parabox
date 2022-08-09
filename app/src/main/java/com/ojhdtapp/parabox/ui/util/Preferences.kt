@@ -1,6 +1,5 @@
 package com.ojhdtapp.parabox.ui.util
 
-import android.util.Log
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -90,7 +89,8 @@ fun SwitchPreference(
 @Composable
 fun NormalPreference(
     modifier: Modifier = Modifier,
-    icon: (@Composable () -> Unit)? = null,
+    leadingIcon: (@Composable () -> Unit)? = null,
+    trailingIcon: (@Composable () -> Unit)? = null,
     title: String,
     subtitle: String? = null,
     onClick: () -> Unit
@@ -103,9 +103,9 @@ fun NormalPreference(
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (icon != null) {
+        if (leadingIcon != null) {
             Box(modifier = Modifier.padding(end = 16.dp), contentAlignment = Alignment.Center) {
-                icon()
+                leadingIcon()
             }
         }
         Column(modifier = Modifier.weight(1f)) {
@@ -121,6 +121,11 @@ fun NormalPreference(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
+            }
+        }
+        if (trailingIcon != null) {
+            Box(modifier = Modifier.padding(start = 16.dp), contentAlignment = Alignment.Center) {
+                trailingIcon()
             }
         }
     }

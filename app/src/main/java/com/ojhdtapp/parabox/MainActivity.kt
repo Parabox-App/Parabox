@@ -25,6 +25,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
@@ -41,6 +44,9 @@ import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultA
 import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.navigation.dependency
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -54,7 +60,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-//        val pluginConn = Conn(
+//        val pluginConn = PluginConnection(
 //            this,
 //            "com.ojhdtapp.miraipluginforparabox",
 //            "com.ojhdtapp.miraipluginforparabox.domain.service.ConnService"
@@ -66,6 +72,17 @@ class MainActivity : ComponentActivity() {
 
         // Shared ViewModel
         val mainSharedViewModel by viewModels<MainSharedViewModel>()
+
+        // Receive Status Flow
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                delay(2000)
+                Log.d("parabox", "isPluginServiceNull: ${pluginService == null}")
+                pluginService?.getPluginListFlow()?.collectLatest {
+                    mainSharedViewModel.setPluginListStateFlow(it)
+                }
+            }
+        }
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {
@@ -163,11 +180,12 @@ class MainActivity : ComponentActivity() {
         val pluginServiceBinderIntent = Intent(this, PluginService::class.java)
         pluginServiceConnection = object : ServiceConnection {
             override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
-                Log.d("parabox", "service bound")
+                Log.d("parabox", "mainActivity - service connected")
                 pluginService = (p1 as PluginService.PluginServiceBinder).getService()
             }
 
             override fun onServiceDisconnected(p0: ComponentName?) {
+                Log.d("parabox", "mainActivity - service disconnected")
                 pluginService = null
             }
 
