@@ -48,12 +48,20 @@ class PluginService : LifecycleService() {
                 name = it.loadLabel(packageManager).toString(),
                 icon = it.loadIcon(packageManager),
                 packageName = it.packageName,
+                version = packageManager.getPackageInfo(it.packageName,PackageManager.GET_META_DATA).versionName,
                 launchIntent = packageManager.getLaunchIntentForPackage(it.packageName),
                 runningStatus = AppModel.RUNNING_STATUS_DISABLED
             )
         }
         bindPlugins()
         return super.onStartCommand(intent, flags, startId)
+    }
+
+    override fun onDestroy() {
+        pluginConnectionMap.forEach {
+            unbindService(it.value.getServiceConnection())
+        }
+        super.onDestroy()
     }
 
     // Call Only Once

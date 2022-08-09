@@ -7,6 +7,7 @@ data class AppModel(
     val name: String,
     val icon: Drawable,
     val packageName: String,
+    val version: String,
     val launchIntent: Intent?,
     val runningStatus: Int,
 ){

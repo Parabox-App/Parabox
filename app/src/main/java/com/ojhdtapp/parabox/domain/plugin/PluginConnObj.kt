@@ -31,6 +31,8 @@ class PluginConnObj(private val ctx: Context, private val pkg: String, private v
     private var isConnected = false
     private var runningStatus = AppModel.RUNNING_STATUS_DISABLED
 
+    fun getServiceConnection() : ServiceConnection = serviceConnection
+
 //    fun send(str: String) {
 //        if (sMessenger == null) {
 //            throw RemoteException("not connected")
@@ -71,6 +73,18 @@ class PluginConnObj(private val ctx: Context, private val pkg: String, private v
             val timestamp = System.currentTimeMillis()
             sMessenger?.send(Message.obtain(null, ConnKey.MSG_MESSAGE, Bundle().apply {
                 putInt("command", ConnKey.MSG_MESSAGE_CHECK_RUNNING_STATUS)
+                putLong("timestamp", timestamp)
+            }).apply {
+                replyTo = cMessenger
+            })
+        }
+    }
+
+    fun tryAutoLogin(){
+        if (isConnected) {
+            val timestamp = System.currentTimeMillis()
+            sMessenger?.send(Message.obtain(null, ConnKey.MSG_MESSAGE, Bundle().apply {
+                putInt("command", ConnKey.MSG_MESSAGE_TRY_AUTO_LOGIN)
                 putLong("timestamp", timestamp)
             }).apply {
                 replyTo = cMessenger
