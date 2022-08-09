@@ -30,6 +30,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
+import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.NormalPreference
 import com.ojhdtapp.parabox.ui.util.PreferencesCategory
 import com.ojhdtapp.parabox.ui.util.SettingNavGraph
@@ -47,7 +48,8 @@ fun SettingPage(
     navController: NavController,
     mainSharedViewModel: MainSharedViewModel,
     sizeClass: WindowSizeClass,
-    drawerState: DrawerState
+    drawerState: DrawerState,
+    onEvent: (ActivityEvent) -> Unit
 ) {
     val viewModel = hiltViewModel<SettingPageViewModel>()
     val coroutineScope = rememberCoroutineScope()
@@ -147,7 +149,7 @@ fun SettingPage(
                             enter = expandVertically(),
                             exit = shrinkVertically()
                         ) {
-                            PreferencesCategory(text = "扩展状态")
+                            PreferencesCategory(text = "扩展")
                         }
                     }
                     items(
@@ -157,8 +159,15 @@ fun SettingPage(
                             title = it.name,
                             subtitle = it.packageName,
                             leadingIcon = {
-                                AsyncImage(model = it.icon, contentDescription = "icon", modifier = Modifier.size(24.dp).clip(
-                                    CircleShape))
+                                AsyncImage(
+                                    model = it.icon,
+                                    contentDescription = "icon",
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .clip(
+                                            CircleShape
+                                        )
+                                )
                             },
                             trailingIcon = {
                                 when (it.runningStatus) {
@@ -178,7 +187,11 @@ fun SettingPage(
                                     )
                                 }
                             },
-                            onClick = {}
+                            onClick = {
+                                it.launchIntent?.let {
+                                    onEvent(ActivityEvent.LaunchIntent(it))
+                                }
+                            }
                         )
                     }
                     item(key = "function") {

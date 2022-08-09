@@ -24,6 +24,7 @@ import com.ojhdtapp.parabox.ui.destinations.FilePageDestination
 import com.ojhdtapp.parabox.ui.destinations.MessagePageDestination
 import com.ojhdtapp.parabox.ui.file.FilePage
 import com.ojhdtapp.parabox.ui.message.MessagePage
+import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.NavigationBar
 import com.ojhdtapp.parabox.ui.util.NavigationRail
 import com.ramcosta.composedestinations.DestinationsNavHost
@@ -48,7 +49,8 @@ fun MenuPage(
     navigator: DestinationsNavigator,
     navController: NavController,
     mainSharedViewModel: MainSharedViewModel,
-    sizeClass: WindowSizeClass
+    sizeClass: WindowSizeClass,
+    onEvent: (ActivityEvent) -> Unit
 ) {
     // Destination
     val menuNavController = rememberAnimatedNavController()
@@ -109,6 +111,7 @@ fun MenuPage(
                         dependency(mainSharedViewModel)
                         dependency(drawerState)
                         dependency(sizeClass)
+                        dependency { event: ActivityEvent -> onEvent(event) }
                     }
                 ){
                     composable(MessagePageDestination){

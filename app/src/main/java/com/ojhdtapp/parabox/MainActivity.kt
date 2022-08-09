@@ -36,6 +36,7 @@ import com.ojhdtapp.parabox.domain.service.PluginService
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.NavGraphs
 import com.ojhdtapp.parabox.ui.theme.AppTheme
+import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.FixedInsets
 import com.ojhdtapp.parabox.ui.util.LocalFixedInsets
 import com.ramcosta.composedestinations.DestinationsNavHost
@@ -53,22 +54,23 @@ class MainActivity : ComponentActivity() {
     var pluginService: PluginService? = null
     private lateinit var pluginServiceConnection: ServiceConnection
 
+    // Event
+    fun onEvent(event: ActivityEvent) {
+        when (event) {
+            is ActivityEvent.LaunchIntent -> {
+                startActivity(event.intent.apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                })
+            }
+        }
+    }
+
     @OptIn(
         ExperimentalAnimationApi::class, ExperimentalMaterialNavigationApi::class,
         ExperimentalMaterial3WindowSizeClassApi::class
     )
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-//        val pluginConn = PluginConnection(
-//            this,
-//            "com.ojhdtapp.miraipluginforparabox",
-//            "com.ojhdtapp.miraipluginforparabox.domain.service.ConnService"
-//        ).also {
-//            viewModel.setPluginInstalledState(
-//                it.isInstalled()
-//            )
-//        }
 
         // Shared ViewModel
         val mainSharedViewModel by viewModels<MainSharedViewModel>()
@@ -140,6 +142,7 @@ class MainActivity : ComponentActivity() {
                         dependenciesContainerBuilder = {
                             dependency(mainSharedViewModel)
                             dependency(sizeClass)
+                            dependency { event: ActivityEvent -> onEvent(event) }
                         })
 
                 }
