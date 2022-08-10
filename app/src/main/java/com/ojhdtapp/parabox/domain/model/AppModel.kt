@@ -12,6 +12,7 @@ data class AppModel(
     val runningStatus: Int,
 ){
     companion object{
+        val RUNNING_STATUS_CHECKING = 0
         val RUNNING_STATUS_DISABLED = 1
         val RUNNING_STATUS_RUNNING = 2
         val RUNNING_STATUS_ERROR = 3

@@ -50,7 +50,7 @@ class PluginService : LifecycleService() {
                 packageName = it.packageName,
                 version = packageManager.getPackageInfo(it.packageName,PackageManager.GET_META_DATA).versionName,
                 launchIntent = packageManager.getLaunchIntentForPackage(it.packageName),
-                runningStatus = AppModel.RUNNING_STATUS_DISABLED
+                runningStatus = AppModel.RUNNING_STATUS_CHECKING
             )
         }
         bindPlugins()

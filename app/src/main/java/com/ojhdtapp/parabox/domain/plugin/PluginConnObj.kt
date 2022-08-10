@@ -29,7 +29,7 @@ class PluginConnObj(private val ctx: Context, private val pkg: String, private v
     private var sMessenger: Messenger? = null
     private val cMessenger = Messenger(ConnHandler())
     private var isConnected = false
-    private var runningStatus = AppModel.RUNNING_STATUS_DISABLED
+    private var runningStatus = AppModel.RUNNING_STATUS_CHECKING
 
     fun getServiceConnection() : ServiceConnection = serviceConnection
 

@@ -185,6 +185,7 @@ fun SettingPage(
                                         contentDescription = "running",
                                         tint = MaterialTheme.colorScheme.primary
                                     )
+                                    AppModel.RUNNING_STATUS_CHECKING -> CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                                 }
                             },
                             onClick = {
