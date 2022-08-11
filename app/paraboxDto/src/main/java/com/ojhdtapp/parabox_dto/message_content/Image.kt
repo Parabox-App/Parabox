@@ -1,4 +1,4 @@
-package com.ojhdtapp.parabox.domain.model.message_content
+package com.ojhdtapp.parabox_dto.message_content
 
 import kotlinx.parcelize.Parcelize
 

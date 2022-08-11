@@ -6,12 +6,19 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.*
 import android.util.Log
+import com.ojhdtapp.parabox.dto.MessageDto
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.service.ConnKey
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import javax.inject.Inject
 
-class PluginConnObj(private val ctx: Context, private val pkg: String, private val cls: String) {
+class PluginConnObj @Inject constructor(
+    val onNewMessageReceived: (dto: MessageDto) -> Unit,
+    private val ctx: Context,
+    private val pkg: String,
+    private val cls: String
+) {
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
             Log.d("parabox", "bind status: true")
@@ -31,7 +38,7 @@ class PluginConnObj(private val ctx: Context, private val pkg: String, private v
     private var isConnected = false
     private var runningStatus = AppModel.RUNNING_STATUS_CHECKING
 
-    fun getServiceConnection() : ServiceConnection = serviceConnection
+    fun getServiceConnection(): ServiceConnection = serviceConnection
 
 //    fun send(str: String) {
 //        if (sMessenger == null) {
@@ -80,7 +87,7 @@ class PluginConnObj(private val ctx: Context, private val pkg: String, private v
         }
     }
 
-    fun tryAutoLogin(){
+    fun tryAutoLogin() {
         if (isConnected) {
             val timestamp = System.currentTimeMillis()
             sMessenger?.send(Message.obtain(null, ConnKey.MSG_MESSAGE, Bundle().apply {
@@ -95,6 +102,25 @@ class PluginConnObj(private val ctx: Context, private val pkg: String, private v
     inner class ConnHandler : Handler() {
         override fun handleMessage(msg: Message) {
             when (msg.what) {
+                ConnKey.MSG_MESSAGE -> {
+                    when ((msg.obj as Bundle).getInt("command", -1)) {
+                        ConnKey.MSG_MESSAGE_RECEIVE -> {
+//                            (msg.obj as Bundle).let {
+//                                it.classLoader = MessageDto::class.java.classLoader
+//                                val dto = it.getParcelable<MessageDto>("value")
+//                                dto?.let {
+//                                    onNewMessageReceived(it)
+//                                }
+//                            }
+
+                            msg.data.classLoader = ClassLoader.getSystemClassLoader()
+                            msg.data.getParcelable<MessageDto>("value")?.let {
+                                onNewMessageReceived(it)
+                            }
+                        }
+                        else -> {}
+                    }
+                }
                 ConnKey.MSG_COMMAND -> {}
                 ConnKey.MSG_RESPONSE -> {
                     when ((msg.obj as Bundle).getInt("command", -1)) {

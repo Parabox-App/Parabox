@@ -10,6 +10,7 @@ data class AppModel(
     val version: String,
     val launchIntent: Intent?,
     val runningStatus: Int,
+    val connectionType: Int
 ){
     companion object{
         val RUNNING_STATUS_CHECKING = 0

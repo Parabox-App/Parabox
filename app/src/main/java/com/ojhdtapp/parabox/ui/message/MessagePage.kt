@@ -1207,15 +1207,15 @@ fun ContactItem(
                                     .clickable { onAvatarClick() }
                             )
                         } else {
-                            Image(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(24.dp))
-                                    .size(48.dp)
-                                    .background(MaterialTheme.colorScheme.tertiaryContainer)
-                                    .clickable { onAvatarClick() },
-                                bitmap = contact.profile.avatar.toAvatarBitmap(),
-                                contentDescription = "avatar"
-                            )
+//                            Image(
+//                                modifier = Modifier
+//                                    .clip(RoundedCornerShape(24.dp))
+//                                    .size(48.dp)
+//                                    .background(MaterialTheme.colorScheme.tertiaryContainer)
+//                                    .clickable { onAvatarClick() },
+//                                bitmap = contact.profile.avatar,
+//                                contentDescription = "avatar"
+//                            )
                         }
                     }
                 }

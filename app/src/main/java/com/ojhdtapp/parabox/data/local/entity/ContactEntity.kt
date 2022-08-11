@@ -45,7 +45,7 @@ data class ContactProfileAndTagUpdate(
     @ColumnInfo(name = "name")
     val name: String,
     @ColumnInfo(name = "avatar")
-    val avatar: ByteArray?,
+    val avatar: String?,
     @ColumnInfo(name = "tags")
     val tags: List<String>,
 )

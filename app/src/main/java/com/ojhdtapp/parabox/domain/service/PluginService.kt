@@ -12,14 +12,21 @@ import androidx.lifecycle.lifecycleScope
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.plugin.PluginConnObj
+import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class PluginService : LifecycleService() {
+    @Inject
+    lateinit var handleNewMessage: HandleNewMessage
     private var installedPluginList = emptyList<ApplicationInfo>()
     private var appModelList = emptyList<AppModel>()
     private val pluginConnectionMap = mutableMapOf<String, PluginConnObj>()
@@ -44,13 +51,18 @@ class PluginService : LifecycleService() {
             it.serviceInfo.applicationInfo
         }
         appModelList = installedPluginList.map {
+
             AppModel(
                 name = it.loadLabel(packageManager).toString(),
                 icon = it.loadIcon(packageManager),
                 packageName = it.packageName,
-                version = packageManager.getPackageInfo(it.packageName,PackageManager.GET_META_DATA).versionName,
+                version = packageManager.getPackageInfo(
+                    it.packageName,
+                    PackageManager.GET_META_DATA
+                ).versionName,
                 launchIntent = packageManager.getLaunchIntentForPackage(it.packageName),
-                runningStatus = AppModel.RUNNING_STATUS_CHECKING
+                runningStatus = AppModel.RUNNING_STATUS_CHECKING,
+                connectionType = it.metaData?.getInt("connection_type") ?: 0
             )
         }
         bindPlugins()
@@ -69,6 +81,11 @@ class PluginService : LifecycleService() {
         installedPluginList.forEach {
             lifecycleScope.launch {
                 val pluginConnObj = PluginConnObj(
+                    {
+                        launch(Dispatchers.IO) {
+                            handleNewMessage(it)
+                        }
+                    },
                     this@PluginService,
                     it.packageName,
                     it.packageName + ".domain.service.ConnService"
@@ -86,7 +103,10 @@ class PluginService : LifecycleService() {
             while (true) {
                 emit(appModelList.map {
                     val connObj = pluginConnectionMap[it.packageName]
-                    Log.d("parabox", "status:${connObj?.getRunningStatus()?: AppModel.RUNNING_STATUS_DISABLED}")
+                    Log.d(
+                        "parabox",
+                        "status:${connObj?.getRunningStatus() ?: AppModel.RUNNING_STATUS_DISABLED}"
+                    )
                     connObj?.refreshRunningStatus()
                     it.copy(
                         runningStatus = connObj?.getRunningStatus()

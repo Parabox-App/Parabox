@@ -1,4 +1,4 @@
-package com.ojhdtapp.parabox.domain.model
+package com.ojhdtapp.parabox_dto
 
 import android.os.Parcelable
 import com.ojhdtapp.parabox.data.local.entity.PluginConnectionEntity

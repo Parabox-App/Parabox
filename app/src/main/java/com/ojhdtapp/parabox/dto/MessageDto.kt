@@ -1,13 +1,12 @@
-package com.ojhdtapp.parabox.data.remote.dto
+package com.ojhdtapp.parabox.dto
 
 import android.os.Parcelable
 import com.ojhdtapp.parabox.data.local.ContactDao
 import com.ojhdtapp.parabox.data.local.entity.ContactEntity
-import com.ojhdtapp.parabox.data.local.entity.ContactMessageCrossRef
 import com.ojhdtapp.parabox.data.local.entity.MessageEntity
 import com.ojhdtapp.parabox.domain.model.LatestMessage
-import com.ojhdtapp.parabox.domain.model.Profile
 import com.ojhdtapp.parabox.domain.model.PluginConnection
+import com.ojhdtapp.parabox.domain.model.Profile
 import com.ojhdtapp.parabox.domain.model.message_content.MessageContent
 import com.ojhdtapp.parabox.domain.model.message_content.getContentString
 import kotlinx.coroutines.Dispatchers

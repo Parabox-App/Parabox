@@ -21,6 +21,9 @@ object ConnKey {
 
     const val MSG_MESSAGE_CHECK_RUNNING_STATUS = 30
     const val MSG_MESSAGE_TRY_AUTO_LOGIN = 31
+    const val MSG_MESSAGE_RECEIVE = 32
+    const val MSG_MESSAGE_SEND = 33
 
     const val MSG_RESPONSE_CHECK_RUNNING_STATUS = 40
+    const val MSG_RESPONSE_MESSAGE_SEND = 43
 }

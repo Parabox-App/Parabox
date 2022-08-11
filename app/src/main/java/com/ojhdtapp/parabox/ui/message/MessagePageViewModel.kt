@@ -8,7 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.request.Tags
 import com.ojhdtapp.parabox.core.util.Resource
-import com.ojhdtapp.parabox.data.remote.dto.MessageDto
+import com.ojhdtapp.parabox.dto.MessageDto
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Profile
 import com.ojhdtapp.parabox.domain.model.PluginConnection
@@ -454,7 +454,7 @@ class MessagePageViewModel @Inject constructor(
                     Profile("Ojhdt", null),
                     Profile("Ojhdt-Group", null),
                     System.currentTimeMillis(),
-                    PluginConnection(1, 1)
+                    PluginConnection(1, 1, 1)
                 )
             )
         }
@@ -468,7 +468,7 @@ class MessagePageViewModel @Inject constructor(
                     Profile("Cool", null),
                     Profile("资源群", null),
                     System.currentTimeMillis(),
-                    PluginConnection(1, 2)
+                    PluginConnection(1, 2, 2)
                 )
             )
         }
@@ -482,7 +482,7 @@ class MessagePageViewModel @Inject constructor(
                     Profile("Steven", null),
                     Profile("课程群", null),
                     System.currentTimeMillis(),
-                    PluginConnection(1, 3)
+                    PluginConnection(1, 3, 3)
                 )
             )
         }

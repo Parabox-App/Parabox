@@ -5,7 +5,7 @@ import androidx.paging.PagingSource
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.*
-import com.ojhdtapp.parabox.data.remote.dto.MessageDto
+import com.ojhdtapp.parabox.dto.MessageDto
 import com.ojhdtapp.parabox.domain.model.*
 import com.ojhdtapp.parabox.domain.model.message_content.getContentString
 import com.ojhdtapp.parabox.domain.repository.MainRepository
