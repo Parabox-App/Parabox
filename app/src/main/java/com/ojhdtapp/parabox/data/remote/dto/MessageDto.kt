@@ -7,6 +7,7 @@ import com.ojhdtapp.parabox.data.local.entity.MessageEntity
 import com.ojhdtapp.parabox.domain.model.LatestMessage
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.model.Profile
+import com.ojhdtapp.parabox.domain.model.message_content.Audio
 import com.ojhdtapp.parabox.domain.model.message_content.Image
 import com.ojhdtapp.parabox.domain.model.message_content.MessageContent
 import com.ojhdtapp.parabox.domain.model.message_content.PlainText
@@ -51,8 +52,9 @@ fun List<com.ojhdtapp.messagedto.message_content.MessageContent>.toMessageConten
 fun com.ojhdtapp.messagedto.message_content.MessageContent.toMessageContent() : MessageContent{
     return when(this){
         is com.ojhdtapp.messagedto.message_content.PlainText -> PlainText(this.text)
-        is com.ojhdtapp.messagedto.message_content.Image -> Image(this.url)
+        is com.ojhdtapp.messagedto.message_content.Image -> Image(this.url, this.width, this.height)
         is com.ojhdtapp.messagedto.message_content.At -> com.ojhdtapp.parabox.domain.model.message_content.At(this.target, this.name)
+        is com.ojhdtapp.messagedto.message_content.Audio -> Audio(this.url, this.length, this.fileName, this.fileSize)
         else -> PlainText(this.getContentString())
     }
 }

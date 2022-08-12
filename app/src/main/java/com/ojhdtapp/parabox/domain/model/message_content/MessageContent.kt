@@ -7,6 +7,7 @@ interface MessageContent : Parcelable {
         const val PLAIN_TEXT = 0
         const val IMAGE = 1
         const val AT = 2
+        const val AUDIO = 3
     }
     fun getContentString() : String
 }

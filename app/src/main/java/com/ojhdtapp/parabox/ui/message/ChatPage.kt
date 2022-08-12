@@ -36,12 +36,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.min
 import androidx.navigation.NavController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import coil.size.Scale
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.toDescriptiveTime
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.chat.ChatBlock
@@ -520,21 +523,44 @@ fun SingleMessage(
                 backgroundColor
             )
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
-            .padding(horizontal = 12.dp, vertical = 12.dp)
     ) {
-        contents.forEach {
-            when (it) {
+        contents.forEachIndexed { index, messageContent ->
+            when (messageContent) {
                 is At -> Text(
-                    text = it.getContentString(),
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+                    text = messageContent.getContentString(),
                     color = textColor
                 )
                 is PlainText -> Text(
-                    text = it.getContentString(),
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+                    text = messageContent.text,
                     color = textColor
                 )
-                is Image -> Text(
-                    text = it.getContentString(),
-                    color = textColor
+                is Image -> AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(messageContent.url)
+                        .crossfade(true)
+                        .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
+                        .scale(Scale.FIT)
+                        .build(),
+                    contentDescription = "image",
+                    contentScale = ContentScale.FillWidth,
+                    modifier = Modifier
+                        .width(with(LocalDensity.current) {
+                            min(messageContent.width.toDp(), 360.dp)
+                        })
+//                        .height(with(LocalDensity.current) {
+//                            min(messageContent.height.toDp(), 600.dp)
+//                        })
+                        .padding(horizontal = 3.dp, vertical = 3.dp)
+                        .clip(
+                            RoundedCornerShape(
+                                if (index == 0) (topStartRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp,
+                                if (index == 0) (topEndRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp,
+                                if (index == contents.lastIndex) (bottomEndRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp,
+                                if (index == contents.lastIndex) (bottomStartRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp
+                            )
+                        )
                 )
             }
         }
