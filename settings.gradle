@@ -14,4 +14,3 @@ dependencyResolutionManagement {
 }
 rootProject.name = "Parabox"
 include ':app'
-include ':app:parabox-dto'
