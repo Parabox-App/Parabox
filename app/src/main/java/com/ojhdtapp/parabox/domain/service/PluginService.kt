@@ -82,9 +82,10 @@ class PluginService : LifecycleService() {
             lifecycleScope.launch {
                 val pluginConnObj = PluginConnObj(
                     {
-                        launch(Dispatchers.IO) {
+                        lifecycleScope.launch(Dispatchers.IO){
                             handleNewMessage(it)
                         }
+
                     },
                     this@PluginService,
                     it.packageName,

@@ -1,7 +1,6 @@
 package com.ojhdtapp.parabox.domain.use_case
 
 import com.ojhdtapp.parabox.core.util.Resource
-import com.ojhdtapp.parabox.dto.MessageDto
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import kotlinx.coroutines.Dispatchers

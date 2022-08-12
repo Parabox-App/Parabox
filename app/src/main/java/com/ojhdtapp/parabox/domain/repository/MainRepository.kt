@@ -2,11 +2,11 @@ package com.ojhdtapp.parabox.domain.repository
 
 import androidx.paging.PagingSource
 import coil.request.Tags
+import com.ojhdtapp.messagedto.MessageDto
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.local.entity.ContactWithMessagesEntity
 import com.ojhdtapp.parabox.data.local.entity.ContactWithPluginConnections
 import com.ojhdtapp.parabox.data.local.entity.MessageEntity
-import com.ojhdtapp.parabox.dto.MessageDto
 import com.ojhdtapp.parabox.domain.model.*
 import kotlinx.coroutines.flow.Flow
 

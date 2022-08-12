@@ -6,7 +6,7 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.*
 import android.util.Log
-import com.ojhdtapp.parabox.dto.MessageDto
+import com.ojhdtapp.messagedto.MessageDto
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.service.ConnKey
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -112,10 +112,10 @@ class PluginConnObj @Inject constructor(
 //                                    onNewMessageReceived(it)
 //                                }
 //                            }
-                            msg.data.classLoader = com.ojhdtapp.messagedto.MessageDto::class.java.classLoader
-                            msg.data.getParcelable<com.ojhdtapp.messagedto.MessageDto>("value")?.let {
+                            msg.data.classLoader = MessageDto::class.java.classLoader
+                            msg.data.getParcelable<MessageDto>("value")?.let {
                                 Log.d("parabox", "transfer success! value: $it")
-//                                onNewMessageReceived(it)
+                                onNewMessageReceived(it)
                             }
                         }
                         else -> {}

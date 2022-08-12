@@ -7,8 +7,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.request.Tags
+import com.ojhdtapp.messagedto.MessageDto
 import com.ojhdtapp.parabox.core.util.Resource
-import com.ojhdtapp.parabox.dto.MessageDto
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Profile
 import com.ojhdtapp.parabox.domain.model.PluginConnection
@@ -450,11 +450,11 @@ class MessagePageViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             handleNewMessage(
                 MessageDto(
-                    listOf(PlainText("Hello at ${System.currentTimeMillis()}")),
-                    Profile("Ojhdt", null),
-                    Profile("Ojhdt-Group", null),
+                    listOf(com.ojhdtapp.messagedto.message_content.PlainText("Hello at ${System.currentTimeMillis()}")),
+                    com.ojhdtapp.messagedto.Profile("Ojhdt", null),
+                    com.ojhdtapp.messagedto.Profile("Ojhdt-Group", null),
                     System.currentTimeMillis(),
-                    PluginConnection(1, 1, 1)
+                    com.ojhdtapp.messagedto.PluginConnection(1, 1, 1)
                 )
             )
         }
@@ -464,11 +464,11 @@ class MessagePageViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             handleNewMessage(
                 MessageDto(
-                    listOf(PlainText("Hi at ${System.currentTimeMillis()}")),
-                    Profile("Cool", null),
-                    Profile("资源群", null),
+                    listOf(com.ojhdtapp.messagedto.message_content.PlainText("Hi at ${System.currentTimeMillis()}")),
+                    com.ojhdtapp.messagedto.Profile("Cool", null),
+                    com.ojhdtapp.messagedto.Profile("资源群", null),
                     System.currentTimeMillis(),
-                    PluginConnection(1, 2, 2)
+                    com.ojhdtapp.messagedto.PluginConnection(1, 2, 2)
                 )
             )
         }
@@ -478,11 +478,11 @@ class MessagePageViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             handleNewMessage(
                 MessageDto(
-                    listOf(PlainText("Goodbye at ${System.currentTimeMillis()}")),
-                    Profile("Steven", null),
-                    Profile("课程群", null),
+                    listOf(com.ojhdtapp.messagedto.message_content.PlainText("Goodbye at ${System.currentTimeMillis()}")),
+                    com.ojhdtapp.messagedto.Profile("Steven", null),
+                    com.ojhdtapp.messagedto.Profile("课程群", null),
                     System.currentTimeMillis(),
-                    PluginConnection(1, 3, 3)
+                    com.ojhdtapp.messagedto.PluginConnection(1, 3, 3)
                 )
             )
         }

@@ -2,10 +2,14 @@ package com.ojhdtapp.parabox.data.repository
 
 import android.util.Log
 import androidx.paging.PagingSource
+import com.ojhdtapp.messagedto.MessageDto
+import com.ojhdtapp.messagedto.message_content.getContentString
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.*
-import com.ojhdtapp.parabox.dto.MessageDto
+import com.ojhdtapp.parabox.data.remote.dto.toContactEntity
+import com.ojhdtapp.parabox.data.remote.dto.toMessageEntity
+import com.ojhdtapp.parabox.data.remote.dto.toPluginConnection
 import com.ojhdtapp.parabox.domain.model.*
 import com.ojhdtapp.parabox.domain.model.message_content.getContentString
 import com.ojhdtapp.parabox.domain.repository.MainRepository
@@ -30,7 +34,7 @@ class MainRepositoryImpl @Inject constructor(
                 )
             }
             val pluginConnectionDeferred = async<Long> {
-                database.contactDao.insertPluginConnection(dto.pluginConnection.toPluginConnectionEntity())
+                database.contactDao.insertPluginConnection(dto.pluginConnection.toPluginConnection().toPluginConnectionEntity())
             }
 //            database.contactDao.updateHiddenState(ContactHiddenStateUpdate(dto.pluginConnection.objectId, false))
             if (pluginConnectionDeferred.await() != -1L) {
