@@ -112,10 +112,10 @@ class PluginConnObj @Inject constructor(
 //                                    onNewMessageReceived(it)
 //                                }
 //                            }
-
-                            msg.data.classLoader = ClassLoader.getSystemClassLoader()
-                            msg.data.getParcelable<MessageDto>("value")?.let {
-                                onNewMessageReceived(it)
+                            msg.data.classLoader = com.ojhdtapp.messagedto.MessageDto::class.java.classLoader
+                            msg.data.getParcelable<com.ojhdtapp.messagedto.MessageDto>("value")?.let {
+                                Log.d("parabox", "transfer success! value: $it")
+//                                onNewMessageReceived(it)
                             }
                         }
                         else -> {}
