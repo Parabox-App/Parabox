@@ -6,6 +6,6 @@ import kotlinx.parcelize.Parcelize
 data class Image(val url: String) : MessageContent{
     val type = MessageContent.IMAGE
     override fun getContentString(): String {
-        return "[图片]"
+        return "[图片]".trimStart()
     }
 }

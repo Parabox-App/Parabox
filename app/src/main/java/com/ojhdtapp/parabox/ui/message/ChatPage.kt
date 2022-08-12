@@ -30,13 +30,18 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
+import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import com.ojhdtapp.parabox.core.util.toDescriptiveTime
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.chat.ChatBlock
@@ -392,9 +397,9 @@ fun ChatBlock(
                 sentByMe = sentByMe
             )
             Spacer(modifier = Modifier.width(8.dp))
-            ChatBlockAvatar()
+            ChatBlockAvatar(avatar = data.profile.avatar)
         } else {
-            ChatBlockAvatar()
+            ChatBlockAvatar(avatar = data.profile.avatar)
             Spacer(modifier = Modifier.width(8.dp))
             ChatBlockMessages(
                 modifier = Modifier.weight(1f),
@@ -408,14 +413,29 @@ fun ChatBlock(
 }
 
 @Composable
-fun ChatBlockAvatar(modifier: Modifier = Modifier) {
-    Surface(
-        modifier = modifier.size(42.dp),
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.primary
-    ) {
-
+fun ChatBlockAvatar(modifier: Modifier = Modifier, avatar: String? = null) {
+    if (avatar == null) {
+        Surface(
+            modifier = modifier.size(42.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.primary
+        ) {}
+    } else {
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(avatar)
+                .crossfade(true)
+                .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
+                .build(),
+            contentDescription = "avatar",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .size(42.dp)
+                .clip(CircleShape)
+        )
     }
+
+
 }
 
 @Composable

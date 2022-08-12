@@ -44,13 +44,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import com.ojhdtapp.parabox.core.util.FormUtil
 import com.ojhdtapp.parabox.core.util.toAvatarBitmap
 import com.ojhdtapp.parabox.core.util.toTimeUntilNow
@@ -794,7 +802,7 @@ fun RowScope.MessageArea(
         }
         item(key = "other") {
             AnimatedVisibility(
-                visible = !viewModel.archivedContactHidden.value,
+                visible = !viewModel.archivedContactHidden.value && archivedContact.isNotEmpty(),
                 enter = expandVertically(),
                 exit = shrinkVertically()
             ) {
@@ -898,21 +906,21 @@ fun RowScope.MessageArea(
                 }
             }
         }
-        item(key = null) {
-            androidx.compose.material3.OutlinedButton(onClick = { viewModel.testFun() }) {
-                Text(text = "btn1")
-            }
-        }
-        item(key = null) {
-            androidx.compose.material3.OutlinedButton(onClick = { viewModel.testFun2() }) {
-                Text(text = "btn2")
-            }
-        }
-        item(key = null) {
-            androidx.compose.material3.OutlinedButton(onClick = { viewModel.testFun3() }) {
-                Text(text = "btn3")
-            }
-        }
+//        item(key = null) {
+//            androidx.compose.material3.OutlinedButton(onClick = { viewModel.testFun() }) {
+//                Text(text = "btn1")
+//            }
+//        }
+//        item(key = null) {
+//            androidx.compose.material3.OutlinedButton(onClick = { viewModel.testFun2() }) {
+//                Text(text = "btn2")
+//            }
+//        }
+//        item(key = null) {
+//            androidx.compose.material3.OutlinedButton(onClick = { viewModel.testFun3() }) {
+//                Text(text = "btn3")
+//            }
+//        }
     }
 }
 
@@ -1207,6 +1215,19 @@ fun ContactItem(
                                     .clickable { onAvatarClick() }
                             )
                         } else {
+                            AsyncImage(
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(contact.profile.avatar)
+                                    .crossfade(true)
+                                    .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
+                                    .build(),
+                                contentDescription = "avatar",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(CircleShape)
+                                    .clickable { onAvatarClick() }
+                            )
 //                            Image(
 //                                modifier = Modifier
 //                                    .clip(RoundedCornerShape(24.dp))
@@ -1254,7 +1275,23 @@ fun ContactItem(
                     )
                 } else {
                     Text(
-                        text = subTitle ?: contact?.latestMessage?.content ?: "",
+                        text = buildAnnotatedString {
+                            if (subTitle.isNullOrEmpty()) {
+                                if (contact?.profile?.name != contact?.latestMessage?.sender) {
+                                    withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                                        append(contact?.latestMessage?.sender ?: "")
+                                        append(": ")
+                                    }
+                                }
+                                withStyle(style = SpanStyle(color = if (noBackground) MaterialTheme.colorScheme.onSurface else textColor)) {
+                                    append(subTitle ?: contact?.latestMessage?.content ?: "")
+                                }
+                            } else {
+                                withStyle(style = SpanStyle(color = if (noBackground) MaterialTheme.colorScheme.onSurface else textColor)) {
+                                    append(subTitle)
+                                }
+                            }
+                        },
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (noBackground) MaterialTheme.colorScheme.onSurface else textColor,
                         maxLines = 1

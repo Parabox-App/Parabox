@@ -15,9 +15,10 @@ fun MessageDto.toContactEntity(): ContactEntity {
     return ContactEntity(
         profile = subjectProfile.toProfile(),
         latestMessage = LatestMessage(
+            sender = profile.name,
             content = contents.getContentString(),
             timestamp = timestamp,
-            unreadMessagesNum = 0
+            unreadMessagesNum = 0,
         ),
         contactId = pluginConnection.objectId,
         senderId = pluginConnection.objectId,

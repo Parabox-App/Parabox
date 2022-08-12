@@ -13,9 +13,9 @@ data class AppModel(
     val connectionType: Int
 ){
     companion object{
-        val RUNNING_STATUS_CHECKING = 0
-        val RUNNING_STATUS_DISABLED = 1
-        val RUNNING_STATUS_RUNNING = 2
-        val RUNNING_STATUS_ERROR = 3
+        const val RUNNING_STATUS_CHECKING = 0
+        const val RUNNING_STATUS_DISABLED = 1
+        const val RUNNING_STATUS_RUNNING = 2
+        const val RUNNING_STATUS_ERROR = 3
     }
 }

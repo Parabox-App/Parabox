@@ -26,11 +26,15 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.FormUtil
 import com.ojhdtapp.parabox.core.util.toDescriptiveTime
@@ -156,13 +160,25 @@ fun EditActionDialog(
                                         .background(MaterialTheme.colorScheme.surface),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Image(
+                                    AsyncImage(
+                                        model = ImageRequest.Builder(LocalContext.current)
+                                            .data(contact?.profile?.avatar ?: R.drawable.avatar)
+                                            .crossfade(true)
+                                            .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
+                                            .build(),
+                                        contentDescription = "avatar",
+                                        contentScale = ContentScale.Crop,
                                         modifier = Modifier
                                             .size(64.dp)
-                                            .clip(CircleShape),
-                                        painter = painterResource(id = R.drawable.avatar),
-                                        contentDescription = "avatar"
+                                            .clip(CircleShape)
                                     )
+//                                    Image(
+//                                        modifier = Modifier
+//                                            .size(64.dp)
+//                                            .clip(CircleShape),
+//                                        painter = painterResource(id = R.drawable.avatar),
+//                                        contentDescription = "avatar"
+//                                    )
                                 }
                             }
                         }

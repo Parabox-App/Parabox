@@ -5,6 +5,7 @@ import kotlinx.parcelize.Parcelize
 
 @Parcelize
 data class LatestMessage(
+    val sender: String,
     val content: String,
     val timestamp: Long,
     val unreadMessagesNum: Int = 0,

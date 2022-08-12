@@ -64,6 +64,7 @@ class MainRepositoryImpl @Inject constructor(
                 database.contactDao.updateContact(it.contactList.map {
                     it.copy(
                         latestMessage = LatestMessage(
+                            sender = dto.profile.name,
                             content = dto.contents.getContentString(),
                             timestamp = dto.timestamp,
                             unreadMessagesNum = (it.latestMessage?.unreadMessagesNum ?: 0) + 1
@@ -238,7 +239,7 @@ class MainRepositoryImpl @Inject constructor(
                             name = name,
                             avatar = null,
                         ),
-                        latestMessage = LatestMessage("", System.currentTimeMillis(),0),
+                        latestMessage = LatestMessage("","", System.currentTimeMillis(),0),
                         senderId = senderId,
                         tags = emptyList()
                     )
