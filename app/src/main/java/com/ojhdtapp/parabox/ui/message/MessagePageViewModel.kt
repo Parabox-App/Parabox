@@ -233,9 +233,10 @@ class MessagePageViewModel @Inject constructor(
         name: String,
         pluginConnections: List<PluginConnection>,
         senderId: Long,
+        avatar: String? = null
     ) {
         groupInfoJob?.cancel()
-        groupNewContact(name, pluginConnections, senderId).onEach {
+        groupNewContact(name, pluginConnections, senderId, avatar).onEach {
             _groupInfoState.value = GroupInfoState(
                 state = when (it) {
                     is Resource.Error -> GroupInfoState.ERROR

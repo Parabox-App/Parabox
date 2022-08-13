@@ -32,6 +32,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalTextInputService
@@ -39,6 +40,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import coil.compose.AsyncImage
+import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.domain.model.Contact
@@ -54,7 +56,7 @@ fun GroupActionDialog(
     state: GroupInfoState,
     sizeClass: WindowSizeClass,
     onDismiss: () -> Unit,
-    onConfirm: (name: String, pluginConnections: List<PluginConnection>, senderId: Long) -> Unit
+    onConfirm: (name: String, pluginConnections: List<PluginConnection>, senderId: Long, avatar: String?) -> Unit
 ) {
     if (showDialog) {
         var name by remember {
@@ -80,6 +82,10 @@ fun GroupActionDialog(
 
         var selectedSenderId by remember(state) {
             mutableStateOf(state.resource?.pluginConnections?.firstOrNull()?.objectId)
+        }
+
+        var selectedAvatar by remember {
+            mutableStateOf(state.resource?.avatar?.firstOrNull())
         }
         Dialog(
             onDismissRequest = {
@@ -121,7 +127,8 @@ fun GroupActionDialog(
                                             onConfirm(
                                                 name,
                                                 selectedPluginConnection.toList(),
-                                                selectedSenderId!!
+                                                selectedSenderId!!,
+                                                selectedAvatar
                                             )
                                         }
                                     },
@@ -155,6 +162,7 @@ fun GroupActionDialog(
                             selectedPluginConnection = selectedPluginConnection,
                             pluginConnectionNotSelectedError = pluginConnectionNotSelectedError,
                             selectedSenderId = selectedSenderId,
+                            selectedAvatar = selectedAvatar,
                             onNameChange = {
                                 name = it
                                 nameError = false
@@ -162,7 +170,8 @@ fun GroupActionDialog(
                             onAvatarSelectorTrigger = { shouldShowAvatarSelector = it },
                             onSelectedPluginConnectionAdd = { selectedPluginConnection.add(it) },
                             onSelectedPluginConnectionRemove = { selectedPluginConnection.remove(it) },
-                            onSelectedSenderIdChange = { selectedSenderId = it }
+                            onSelectedSenderIdChange = { selectedSenderId = it },
+                            onSelectedAvatarChange = { selectedAvatar = it }
                         )
                     }
 
@@ -184,11 +193,13 @@ fun GroupEditForm(
     selectedPluginConnection: List<PluginConnection>,
     pluginConnectionNotSelectedError: Boolean,
     selectedSenderId: Long?,
+    selectedAvatar: String?,
     onNameChange: (value: String) -> Unit,
     onAvatarSelectorTrigger: (value: Boolean) -> Unit,
     onSelectedPluginConnectionAdd: (target: PluginConnection) -> Unit,
     onSelectedPluginConnectionRemove: (target: PluginConnection) -> Unit,
-    onSelectedSenderIdChange: (value: Long) -> Unit
+    onSelectedSenderIdChange: (value: Long) -> Unit,
+    onSelectedAvatarChange: (value: String?) -> Unit
 ) {
 
     LazyColumn(
@@ -220,10 +231,27 @@ fun GroupEditForm(
                         .background(MaterialTheme.colorScheme.primary)
                         .clickable {
                             onAvatarSelectorTrigger(!shouldShowAvatarSelector)
-                        })
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(selectedAvatar)
+                            .crossfade(true)
+                            .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
+                            .build(),
+                        contentDescription = "avatar",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                    )
+                }
                 Spacer(modifier = Modifier.width(16.dp))
                 OutlinedTextField(
-                    modifier = Modifier.weight(1f).focusRequester(focusRequester),
+                    modifier = Modifier
+                        .weight(1f)
+                        .focusRequester(focusRequester),
                     value = name, onValueChange = {
                         onNameChange(it)
                     },
@@ -308,6 +336,7 @@ fun GroupEditForm(
                                     .clip(CircleShape)
                                     .clickable {
                                         onAvatarSelectorTrigger(false)
+                                        onSelectedAvatarChange(it)
                                     }
                             )
                             Spacer(modifier = Modifier.width(16.dp))
@@ -366,7 +395,7 @@ fun GroupEditForm(
                                         onSelectedPluginConnectionAdd(conn)
                                     }
                                 })
-                            Text(text = "${conn.connectionType} - ${conn.objectId}")
+                            Text(text = "${conn.connectionType} - ${conn.id}")
                         }
                     }
                     AnimatedVisibility(
@@ -419,7 +448,7 @@ fun GroupEditForm(
                                 selected = selectedSenderId == conn.objectId,
                                 onClick = null
                             )
-                            Text(text = "${conn.connectionType} - ${conn.objectId}")
+                            Text(text = "${conn.connectionType} - ${conn.id}")
                         }
                     }
                 }

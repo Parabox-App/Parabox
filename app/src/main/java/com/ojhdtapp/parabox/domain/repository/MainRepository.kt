@@ -34,6 +34,7 @@ interface MainRepository {
     suspend fun groupNewContact(
         name: String,
         pluginConnections: List<PluginConnection>,
-        senderId: Long
+        senderId: Long,
+        avatar: String? = null
     ): Boolean
 }

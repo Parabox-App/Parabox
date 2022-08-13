@@ -295,7 +295,7 @@ fun NormalChatPage(
                 timedList.forEach { (timestamp, chatBlockList) ->
                     items(
                         items = chatBlockList,
-                        key = { "C${timestamp}:${it.messages.first().timestamp}" }) { chatBlock ->
+                        key = { "${it.profile.name}:${timestamp}:${it.messages.first().timestamp}" }) { chatBlock ->
                         com.ojhdtapp.parabox.ui.message.ChatBlock(
                             modifier = Modifier.fillMaxWidth(),
                             mainSharedViewModel = mainSharedViewModel,
@@ -303,7 +303,7 @@ fun NormalChatPage(
                             sentByMe = false
                         )
                     }
-                    item(key = "D$timestamp") {
+                    item(key = "$timestamp") {
                         TimeDivider(timestamp = timestamp)
                     }
                 }
@@ -529,7 +529,7 @@ fun SingleMessage(
                 is At -> Text(
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
                     text = messageContent.getContentString(),
-                    color = textColor
+                    color = MaterialTheme.colorScheme.primary
                 )
                 is PlainText -> Text(
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
@@ -541,13 +541,13 @@ fun SingleMessage(
                         .data(messageContent.url)
                         .crossfade(true)
                         .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
-                        .scale(Scale.FIT)
+//                        .scale(Scale.FIT)
                         .build(),
                     contentDescription = "image",
                     contentScale = ContentScale.FillWidth,
                     modifier = Modifier
                         .width(with(LocalDensity.current) {
-                            min(messageContent.width.toDp(), 360.dp)
+                            messageContent.width.toDp().coerceIn(80.dp, 320.dp)
                         })
 //                        .height(with(LocalDensity.current) {
 //                            min(messageContent.height.toDp(), 600.dp)
