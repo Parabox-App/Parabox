@@ -1,6 +1,6 @@
 package com.ojhdtapp.parabox.data.remote.dto
 
-import com.ojhdtapp.messagedto.MessageDto
+import com.ojhdtapp.messagedto.ReceiveMessageDto
 import com.ojhdtapp.messagedto.message_content.getContentString
 import com.ojhdtapp.parabox.data.local.entity.ContactEntity
 import com.ojhdtapp.parabox.data.local.entity.MessageEntity
@@ -12,7 +12,7 @@ import com.ojhdtapp.parabox.domain.model.message_content.Image
 import com.ojhdtapp.parabox.domain.model.message_content.MessageContent
 import com.ojhdtapp.parabox.domain.model.message_content.PlainText
 
-fun MessageDto.toContactEntity(): ContactEntity {
+fun ReceiveMessageDto.toContactEntity(): ContactEntity {
     return ContactEntity(
         profile = subjectProfile.toProfile(),
         latestMessage = LatestMessage(
@@ -31,7 +31,7 @@ fun MessageDto.toContactEntity(): ContactEntity {
     )
 }
 
-fun MessageDto.toMessageEntity(): MessageEntity {
+fun ReceiveMessageDto.toMessageEntity(): MessageEntity {
     return MessageEntity(
         contents = contents.toMessageContentList(),
         profile = profile.toProfile(),

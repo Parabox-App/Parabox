@@ -65,6 +65,7 @@ import com.ojhdtapp.parabox.core.util.toTimeUntilNow
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.ChatPageDestination
+import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.HashTagEditor
 import com.ojhdtapp.parabox.ui.util.MessageNavGraph
 import com.ojhdtapp.parabox.ui.util.SearchAppBar
@@ -92,7 +93,8 @@ fun MessagePage(
     mainNavController: NavController,
     mainSharedViewModel: MainSharedViewModel,
     sizeClass: WindowSizeClass,
-    drawerState: DrawerState
+    drawerState: DrawerState,
+    onEvent: (ActivityEvent) -> Unit
 ) {
     val viewModel: MessagePageViewModel = hiltViewModel()
     val listState = rememberLazyListState()
@@ -367,7 +369,8 @@ fun MessagePage(
                 navigator = navigator,
                 mainNavController = mainNavController,
                 mainSharedViewModel = mainSharedViewModel,
-                sizeClass = sizeClass
+                sizeClass = sizeClass,
+                onEvent = onEvent
             )
         }
     }

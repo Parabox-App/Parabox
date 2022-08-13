@@ -2,7 +2,7 @@ package com.ojhdtapp.parabox.data.repository
 
 import android.util.Log
 import androidx.paging.PagingSource
-import com.ojhdtapp.messagedto.MessageDto
+import com.ojhdtapp.messagedto.ReceiveMessageDto
 import com.ojhdtapp.messagedto.message_content.getContentString
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.local.AppDatabase
@@ -20,7 +20,7 @@ import javax.inject.Inject
 class MainRepositoryImpl @Inject constructor(
     private val database: AppDatabase
 ) : MainRepository {
-    override suspend fun handleNewMessage(dto: MessageDto) {
+    override suspend fun handleNewMessage(dto: ReceiveMessageDto) {
         coroutineScope {
             val messageIdDeferred = async<Long> {
                 database.messageDao.insertMessage(dto.toMessageEntity())
@@ -34,7 +34,9 @@ class MainRepositoryImpl @Inject constructor(
                 )
             }
             val pluginConnectionDeferred = async<Long> {
-                database.contactDao.insertPluginConnection(dto.pluginConnection.toPluginConnection().toPluginConnectionEntity())
+                database.contactDao.insertPluginConnection(
+                    dto.pluginConnection.toPluginConnection().toPluginConnectionEntity()
+                )
             }
 //            database.contactDao.updateHiddenState(ContactHiddenStateUpdate(dto.pluginConnection.objectId, false))
             if (pluginConnectionDeferred.await() != -1L) {
@@ -164,11 +166,8 @@ class MainRepositoryImpl @Inject constructor(
             }
     }
 
-    override fun getPluginConnectionObjectIdListByContactId(contactId: Long): List<Long> {
-        return database.contactDao.getContactPluginConnectionCrossRefsByContactId(contactId = contactId)
-            .map {
-                it.objectId
-            }
+    override fun getPluginConnectionByContactId(contactId: Long): List<PluginConnection> {
+        return database.contactDao.getContactWithPluginConnections(contactId = contactId).pluginConnectionList.map { it.toPluginConnection() }
     }
 
     @OptIn(FlowPreview::class)
@@ -240,7 +239,7 @@ class MainRepositoryImpl @Inject constructor(
                             name = name,
                             avatar = null,
                         ),
-                        latestMessage = LatestMessage("","", System.currentTimeMillis(),0),
+                        latestMessage = LatestMessage("", "", System.currentTimeMillis(), 0),
                         senderId = senderId,
                         tags = emptyList()
                     )

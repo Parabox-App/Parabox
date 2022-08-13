@@ -44,6 +44,7 @@ import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import coil.size.Scale
+import com.ojhdtapp.messagedto.SendMessageDto
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.toDescriptiveTime
 import com.ojhdtapp.parabox.domain.model.Message
@@ -51,6 +52,7 @@ import com.ojhdtapp.parabox.domain.model.chat.ChatBlock
 import com.ojhdtapp.parabox.domain.model.message_content.*
 import com.ojhdtapp.parabox.domain.model.toTimedMessages
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
+import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.clearFocusOnKeyboardDismiss
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
@@ -69,6 +71,7 @@ fun ChatPage(
     mainNavController: NavController,
     mainSharedViewModel: MainSharedViewModel,
     sizeClass: WindowSizeClass,
+    onEvent: (ActivityEvent) -> Unit
 ) {
 
 //    val viewModel: MessagePageViewModel = hiltViewModel()
@@ -94,6 +97,15 @@ fun ChatPage(
                         } else {
                             mainNavController.navigateUp()
                         }
+                    },
+                    onSend = {
+                        onEvent(ActivityEvent.SendMessage(
+                            SendMessageDto(
+                                content = listOf(com.ojhdtapp.messagedto.message_content.PlainText(it)),
+                                timestamp = System.currentTimeMillis(),
+                                pluginConnection = messageState.pluginConnectionList.first().toSenderPluginConnection()
+                            )
+                        ))
                     }
                 )
             }
@@ -113,6 +125,7 @@ fun NormalChatPage(
     mainSharedViewModel: MainSharedViewModel,
     sizeClass: WindowSizeClass,
     onBackClick: () -> Unit,
+    onSend: (text: String) -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
     // Top AppBar
@@ -254,14 +267,14 @@ fun NormalChatPage(
         sheetContent = {
             EditArea(onTextFieldHeightChange = { px ->
                 changedTextFieldHeight = px
-            }, onSend = {})
+            }, onSend = onSend)
         },
         sheetBackgroundColor = MaterialTheme.colorScheme.surface,
         sheetPeekHeight = peakHeight,
         sheetElevation = 3.dp
     ) {
         val pagingDataFlow = remember(messageState) {
-            mainSharedViewModel.receiveMessagePagingDataFlow(messageState.pluginConnectionObjectIdList)
+            mainSharedViewModel.receiveMessagePagingDataFlow(messageState.pluginConnectionList.map { it.objectId })
         }
         val lazyPagingItems =
             pagingDataFlow.collectAsLazyPagingItems()
@@ -547,7 +560,9 @@ fun SingleMessage(
                     contentScale = ContentScale.FillWidth,
                     modifier = Modifier
                         .width(with(LocalDensity.current) {
-                            messageContent.width.toDp().coerceIn(80.dp, 320.dp)
+                            messageContent.width
+                                .toDp()
+                                .coerceIn(80.dp, 320.dp)
                         })
 //                        .height(with(LocalDensity.current) {
 //                            min(messageContent.height.toDp(), 600.dp)
@@ -557,8 +572,12 @@ fun SingleMessage(
                             RoundedCornerShape(
                                 if (index == 0) (topStartRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp,
                                 if (index == 0) (topEndRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp,
-                                if (index == contents.lastIndex) (bottomEndRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp,
-                                if (index == contents.lastIndex) (bottomStartRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp
+                                if (index == contents.lastIndex) (bottomEndRadius - 3.dp).coerceAtLeast(
+                                    0.dp
+                                ) else 0.dp,
+                                if (index == contents.lastIndex) (bottomStartRadius - 3.dp).coerceAtLeast(
+                                    0.dp
+                                ) else 0.dp
                             )
                         )
                 )
@@ -686,7 +705,10 @@ fun EditArea(
                     exit = shrinkHorizontally() { width -> 0 }
                 ) {
                     FloatingActionButton(
-                        onClick = { /*TODO*/ },
+                        onClick = {
+                            onSend(inputText)
+                            inputText = ""
+                        },
                         modifier = Modifier.padding(start = 16.dp),
                         elevation = elevation(
                             defaultElevation = 0.dp,

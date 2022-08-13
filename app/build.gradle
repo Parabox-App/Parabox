@@ -82,7 +82,7 @@ dependencies {
     implementation "androidx.compose.material:material-icons-extended:$compose_version"
 
     // Custom Dto
-    implementation 'com.github.ojhdt:ParaboxDto:1.4'
+    implementation 'com.github.ojhdt:ParaboxDto:1.6'
 
     // Paging
     def paging_version = "3.1.1"

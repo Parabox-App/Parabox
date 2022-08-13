@@ -62,6 +62,9 @@ class MainActivity : ComponentActivity() {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 })
             }
+            is ActivityEvent.SendMessage -> {
+                pluginService?.sendMessage(event.dto)
+            }
         }
     }
 

@@ -7,6 +7,10 @@ import kotlinx.parcelize.Parcelize
 @Parcelize
 data class PluginConnection(val connectionType: Int, val objectId: Long, val id: Long) :
     Parcelable {
+
+    fun toSenderPluginConnection(): com.ojhdtapp.messagedto.PluginConnection =
+        com.ojhdtapp.messagedto.PluginConnection(this.connectionType, this.objectId, this.id)
+
     fun toPluginConnectionEntity(): PluginConnectionEntity {
         return PluginConnectionEntity(
             connectionType = connectionType,

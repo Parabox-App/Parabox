@@ -44,7 +44,7 @@ class MainSharedViewModel @Inject constructor(
         _selectedMessageStateList.clear()
         _messageStateFlow.value = MessageState(MessageState.LOADING, contact)
         viewModelScope.launch(Dispatchers.IO) {
-            getMessages.pluginConnectionObjectIdList(contact).also {
+            getMessages.pluginConnectionList(contact).also {
                 _messageStateFlow.value = MessageState(MessageState.SUCCESS, contact, it)
             }
         }

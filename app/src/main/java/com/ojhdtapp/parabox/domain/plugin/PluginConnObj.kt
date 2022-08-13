@@ -6,7 +6,8 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.*
 import android.util.Log
-import com.ojhdtapp.messagedto.MessageDto
+import com.ojhdtapp.messagedto.ReceiveMessageDto
+import com.ojhdtapp.messagedto.SendMessageDto
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.service.ConnKey
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -14,7 +15,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import javax.inject.Inject
 
 class PluginConnObj @Inject constructor(
-    val onNewMessageReceived: (dto: MessageDto) -> Unit,
+    val onNewMessageReceived: (dto: ReceiveMessageDto) -> Unit,
     private val ctx: Context,
     private val pkg: String,
     private val cls: String
@@ -40,22 +41,21 @@ class PluginConnObj @Inject constructor(
 
     fun getServiceConnection(): ServiceConnection = serviceConnection
 
-//    fun send(str: String) {
-//        if (sMessenger == null) {
-//            throw RemoteException("not connected")
-//        }
-//        try {
-//            sMessenger!!.send(Message().apply {
-//                replyTo = cMessenger
-//                obj = Bundle().apply {
-//                    putString("str", str)
-//                }
-//            })
-//            Log.d("parabox", "message $str sent")
-//        } catch (e: RemoteException) {
-//            e.printStackTrace()
-//        }
-//    }
+    fun send(dto: SendMessageDto){
+        if(isConnected){
+            val timestamp = System.currentTimeMillis()
+            sMessenger?.send(Message.obtain(null, ConnKey.MSG_MESSAGE).apply {
+                obj = Bundle().apply {
+                    putInt("command", ConnKey.MSG_MESSAGE_SEND)
+                    putLong("timestamp", timestamp)
+                }
+                data = Bundle().apply {
+                    putParcelable("value", dto)
+                }
+                replyTo = cMessenger
+            })
+        }
+    }
 
     fun connect() {
         val intent = Intent().apply {
@@ -112,8 +112,8 @@ class PluginConnObj @Inject constructor(
 //                                    onNewMessageReceived(it)
 //                                }
 //                            }
-                            msg.data.classLoader = MessageDto::class.java.classLoader
-                            msg.data.getParcelable<MessageDto>("value")?.let {
+                            msg.data.classLoader = ReceiveMessageDto::class.java.classLoader
+                            msg.data.getParcelable<ReceiveMessageDto>("value")?.let {
                                 Log.d("parabox", "transfer success! value: $it")
                                 onNewMessageReceived(it)
                             }

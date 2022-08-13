@@ -7,7 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.request.Tags
-import com.ojhdtapp.messagedto.MessageDto
+import com.ojhdtapp.messagedto.ReceiveMessageDto
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Profile
@@ -447,47 +447,47 @@ class MessagePageViewModel @Inject constructor(
         refreshContactStateFlow()
     }
 
-    fun testFun() {
-        viewModelScope.launch(Dispatchers.IO) {
-            handleNewMessage(
-                MessageDto(
-                    listOf(com.ojhdtapp.messagedto.message_content.PlainText("Hello at ${System.currentTimeMillis()}")),
-                    com.ojhdtapp.messagedto.Profile("Ojhdt", null),
-                    com.ojhdtapp.messagedto.Profile("Ojhdt-Group", null),
-                    System.currentTimeMillis(),
-                    com.ojhdtapp.messagedto.PluginConnection(1, 1, 1)
-                )
-            )
-        }
-    }
-
-    fun testFun2() {
-        viewModelScope.launch(Dispatchers.IO) {
-            handleNewMessage(
-                MessageDto(
-                    listOf(com.ojhdtapp.messagedto.message_content.PlainText("Hi at ${System.currentTimeMillis()}")),
-                    com.ojhdtapp.messagedto.Profile("Cool", null),
-                    com.ojhdtapp.messagedto.Profile("资源群", null),
-                    System.currentTimeMillis(),
-                    com.ojhdtapp.messagedto.PluginConnection(1, 2, 2)
-                )
-            )
-        }
-    }
-
-    fun testFun3() {
-        viewModelScope.launch(Dispatchers.IO) {
-            handleNewMessage(
-                MessageDto(
-                    listOf(com.ojhdtapp.messagedto.message_content.PlainText("Goodbye at ${System.currentTimeMillis()}")),
-                    com.ojhdtapp.messagedto.Profile("Steven", null),
-                    com.ojhdtapp.messagedto.Profile("课程群", null),
-                    System.currentTimeMillis(),
-                    com.ojhdtapp.messagedto.PluginConnection(1, 3, 3)
-                )
-            )
-        }
-    }
+//    fun testFun() {
+//        viewModelScope.launch(Dispatchers.IO) {
+//            handleNewMessage(
+//                ReceiveMessageDto(
+//                    listOf(com.ojhdtapp.messagedto.message_content.PlainText("Hello at ${System.currentTimeMillis()}")),
+//                    com.ojhdtapp.messagedto.Profile("Ojhdt", null),
+//                    com.ojhdtapp.messagedto.Profile("Ojhdt-Group", null),
+//                    System.currentTimeMillis(),
+//                    com.ojhdtapp.messagedto.PluginConnection(1, 1, 1)
+//                )
+//            )
+//        }
+//    }
+//
+//    fun testFun2() {
+//        viewModelScope.launch(Dispatchers.IO) {
+//            handleNewMessage(
+//                ReceiveMessageDto(
+//                    listOf(com.ojhdtapp.messagedto.message_content.PlainText("Hi at ${System.currentTimeMillis()}")),
+//                    com.ojhdtapp.messagedto.Profile("Cool", null),
+//                    com.ojhdtapp.messagedto.Profile("资源群", null),
+//                    System.currentTimeMillis(),
+//                    com.ojhdtapp.messagedto.PluginConnection(1, 2, 2)
+//                )
+//            )
+//        }
+//    }
+//
+//    fun testFun3() {
+//        viewModelScope.launch(Dispatchers.IO) {
+//            handleNewMessage(
+//                ReceiveMessageDto(
+//                    listOf(com.ojhdtapp.messagedto.message_content.PlainText("Goodbye at ${System.currentTimeMillis()}")),
+//                    com.ojhdtapp.messagedto.Profile("Steven", null),
+//                    com.ojhdtapp.messagedto.Profile("课程群", null),
+//                    System.currentTimeMillis(),
+//                    com.ojhdtapp.messagedto.PluginConnection(1, 3, 3)
+//                )
+//            )
+//        }
+//    }
 
 
     private val _pluginInstalledState = mutableStateOf(false)

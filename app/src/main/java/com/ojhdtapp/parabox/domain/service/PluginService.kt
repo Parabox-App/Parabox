@@ -9,6 +9,7 @@ import android.os.IBinder
 import android.util.Log
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
+import com.ojhdtapp.messagedto.SendMessageDto
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.plugin.PluginConnObj
@@ -29,7 +30,7 @@ class PluginService : LifecycleService() {
     lateinit var handleNewMessage: HandleNewMessage
     private var installedPluginList = emptyList<ApplicationInfo>()
     private var appModelList = emptyList<AppModel>()
-    private val pluginConnectionMap = mutableMapOf<String, PluginConnObj>()
+    private val pluginConnectionMap = mutableMapOf<Int, PluginConnObj>()
 
     override fun onBind(intent: Intent): IBinder {
         super.onBind(intent)
@@ -78,23 +79,21 @@ class PluginService : LifecycleService() {
 
     // Call Only Once
     private fun bindPlugins() {
-        installedPluginList.forEach {
-            lifecycleScope.launch {
-                val pluginConnObj = PluginConnObj(
-                    {
-                        lifecycleScope.launch(Dispatchers.IO){
-                            handleNewMessage(it)
-                        }
+        appModelList.forEach {
+            val pluginConnObj = PluginConnObj(
+                {
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        handleNewMessage(it)
+                    }
 
-                    },
-                    this@PluginService,
-                    it.packageName,
-                    it.packageName + ".domain.service.ConnService"
-                )
-                pluginConnectionMap.put(it.packageName, pluginConnObj)
-                pluginConnObj.connect()
-                pluginConnObj.refreshRunningStatus()
-            }
+                },
+                this@PluginService,
+                it.packageName,
+                it.packageName + ".domain.service.ConnService"
+            )
+            pluginConnectionMap.put(it.connectionType, pluginConnObj)
+            pluginConnObj.connect()
+            pluginConnObj.refreshRunningStatus()
         }
     }
 
@@ -103,7 +102,7 @@ class PluginService : LifecycleService() {
         return flow {
             while (true) {
                 emit(appModelList.map {
-                    val connObj = pluginConnectionMap[it.packageName]
+                    val connObj = pluginConnectionMap[it.connectionType]
                     Log.d(
                         "parabox",
                         "status:${connObj?.getRunningStatus() ?: AppModel.RUNNING_STATUS_DISABLED}"
@@ -116,6 +115,15 @@ class PluginService : LifecycleService() {
                 })
                 delay(2000)
             }
+        }
+    }
+
+    fun sendMessage(dto: SendMessageDto) {
+        val type = dto.pluginConnection.connectionType
+        if (appModelList.map { it.connectionType }.contains(type)) {
+            pluginConnectionMap[type]?.send(dto)
+        } else {
+            TODO("plugin not installed")
         }
     }
 }

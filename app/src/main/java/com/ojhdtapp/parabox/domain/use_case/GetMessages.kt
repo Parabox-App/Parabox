@@ -6,6 +6,7 @@ import com.ojhdtapp.parabox.data.local.entity.ContactWithMessagesEntity
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.ContactWithMessages
 import com.ojhdtapp.parabox.domain.model.Message
+import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -17,8 +18,8 @@ class GetMessages @Inject constructor(
     val repository: MainRepository
 ) {
     operator fun invoke(contact: Contact): Flow<Resource<ContactWithMessages>> {
-        repository.getPluginConnectionObjectIdListByContactId(contactId = contact.contactId).also {
-            return repository.getSpecifiedListOfContactWithMessages(it)
+        repository.getPluginConnectionByContactId(contactId = contact.contactId).also {
+            return repository.getSpecifiedListOfContactWithMessages(it.map { it.objectId })
                 .map<Resource<List<ContactWithMessages>>, Resource<ContactWithMessages>> { contactWithMessagesListResource ->
                     return@map when (contactWithMessagesListResource) {
                         is Resource.Error -> Resource.Error(contactWithMessagesListResource.message!!)
@@ -37,8 +38,8 @@ class GetMessages @Inject constructor(
         }
     }
     // Must called within coroutine
-    fun pluginConnectionObjectIdList(contact: Contact) : List<Long>{
-        return repository.getPluginConnectionObjectIdListByContactId(contactId = contact.contactId)
+    fun pluginConnectionList(contact: Contact) : List<PluginConnection>{
+        return repository.getPluginConnectionByContactId(contactId = contact.contactId)
     }
 
     fun pagingFlow(pluginConnectionObjectIdList: List<Long>): Flow<PagingData<Message>> {
