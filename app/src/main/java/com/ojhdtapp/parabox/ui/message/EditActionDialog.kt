@@ -41,6 +41,7 @@ import com.ojhdtapp.parabox.core.util.toDescriptiveTime
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Profile
 import com.ojhdtapp.parabox.ui.util.HashTagEditor
+import com.ojhdtapp.parabox.ui.util.NormalPreference
 import com.ojhdtapp.parabox.ui.util.SwitchPreference
 import com.ojhdtapp.parabox.ui.util.clearFocusOnKeyboardDismiss
 
@@ -480,6 +481,19 @@ fun EditActionDialog(
                             enabled = contact != null,
                             horizontalPadding = if (isCompact) 24.dp else 32.dp,
                         )
+                    }
+                    item {
+                        AnimatedVisibility(
+                            visible = isEditing && contact?.contactId != contact?.senderId,
+                            enter = expandVertically(),
+                            exit = shrinkVertically(),
+                        ) {
+                            NormalPreference(title = "移除该群聊", subtitle = "高危操作！聊天记录将永久丢失",
+                            warning = true,
+                                horizontalPadding = if (isCompact) 24.dp else 32.dp) {
+                                TODO("Delete Grouped Contact")
+                            }
+                        }
                     }
                 }
             }

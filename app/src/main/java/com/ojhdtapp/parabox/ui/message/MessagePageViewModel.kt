@@ -447,49 +447,6 @@ class MessagePageViewModel @Inject constructor(
         refreshContactStateFlow()
     }
 
-//    fun testFun() {
-//        viewModelScope.launch(Dispatchers.IO) {
-//            handleNewMessage(
-//                ReceiveMessageDto(
-//                    listOf(com.ojhdtapp.messagedto.message_content.PlainText("Hello at ${System.currentTimeMillis()}")),
-//                    com.ojhdtapp.messagedto.Profile("Ojhdt", null),
-//                    com.ojhdtapp.messagedto.Profile("Ojhdt-Group", null),
-//                    System.currentTimeMillis(),
-//                    com.ojhdtapp.messagedto.PluginConnection(1, 1, 1)
-//                )
-//            )
-//        }
-//    }
-//
-//    fun testFun2() {
-//        viewModelScope.launch(Dispatchers.IO) {
-//            handleNewMessage(
-//                ReceiveMessageDto(
-//                    listOf(com.ojhdtapp.messagedto.message_content.PlainText("Hi at ${System.currentTimeMillis()}")),
-//                    com.ojhdtapp.messagedto.Profile("Cool", null),
-//                    com.ojhdtapp.messagedto.Profile("资源群", null),
-//                    System.currentTimeMillis(),
-//                    com.ojhdtapp.messagedto.PluginConnection(1, 2, 2)
-//                )
-//            )
-//        }
-//    }
-//
-//    fun testFun3() {
-//        viewModelScope.launch(Dispatchers.IO) {
-//            handleNewMessage(
-//                ReceiveMessageDto(
-//                    listOf(com.ojhdtapp.messagedto.message_content.PlainText("Goodbye at ${System.currentTimeMillis()}")),
-//                    com.ojhdtapp.messagedto.Profile("Steven", null),
-//                    com.ojhdtapp.messagedto.Profile("课程群", null),
-//                    System.currentTimeMillis(),
-//                    com.ojhdtapp.messagedto.PluginConnection(1, 3, 3)
-//                )
-//            )
-//        }
-//    }
-
-
     private val _pluginInstalledState = mutableStateOf(false)
     val pluginInstalledState = _pluginInstalledState
     fun setPluginInstalledState(value: Boolean) {

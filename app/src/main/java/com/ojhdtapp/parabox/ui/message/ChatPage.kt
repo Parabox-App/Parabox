@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.ui.message
 
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -32,8 +33,11 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.ClipboardManager
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
@@ -156,6 +160,8 @@ fun NormalChatPage(
             scrollState.firstVisibleItemIndex > 2
         }
     }
+    val context = LocalContext.current
+    val clipboardManager: ClipboardManager = LocalClipboardManager.current
     BottomSheetScaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -197,6 +203,22 @@ fun NormalChatPage(
                             }
                         },
                         actions = {
+                            AnimatedVisibility(
+                                visible = mainSharedViewModel.selectedMessageStateList.size == 1,
+                                enter = fadeIn(),
+                                exit = fadeOut()
+                            ) {
+                                IconButton(onClick = {
+                                    Toast.makeText(context, "内容已复制到剪贴板", Toast.LENGTH_SHORT).show()
+                                    clipboardManager.setText(AnnotatedString(mainSharedViewModel.selectedMessageStateList.first().contents.getContentString()))
+                                    mainSharedViewModel.clearSelectedMessageStateList()
+                                }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.ContentCopy,
+                                        contentDescription = "copy"
+                                    )
+                                }
+                            }
                             AnimatedVisibility(
                                 visible = mainSharedViewModel.selectedMessageStateList.size == 1,
                                 enter = fadeIn(),
@@ -548,7 +570,12 @@ fun SingleMessage(
                     tint = MaterialTheme.colorScheme.error
                 )
             } else {
-                CircularProgressIndicator(modifier = Modifier.padding(bottom = 14.dp, end = 4.dp).size(18.dp), strokeWidth = 2.dp)
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .padding(bottom = 14.dp, end = 4.dp)
+                        .size(18.dp),
+                    strokeWidth = 2.dp
+                )
             }
         }
         Column(
@@ -565,6 +592,7 @@ fun SingleMessage(
                     backgroundColor
                 )
                 .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+                .animateContentSize()
         ) {
             contents.forEachIndexed { index, messageContent ->
                 when (messageContent) {

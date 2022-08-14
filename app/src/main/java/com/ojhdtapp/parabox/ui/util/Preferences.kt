@@ -93,16 +93,19 @@ fun NormalPreference(
     trailingIcon: (@Composable () -> Unit)? = null,
     title: String,
     subtitle: String? = null,
+    warning: Boolean = false,
+    horizontalPadding: Dp = 24.dp,
     onClick: () -> Unit
 ) {
     Row(
         modifier = modifier
             .clickable { onClick() }
-            .padding(24.dp, 16.dp)
+            .padding(horizontalPadding, 16.dp)
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically
     ) {
+        val textColor = if(warning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
         if (leadingIcon != null) {
             Box(modifier = Modifier.padding(end = 16.dp), contentAlignment = Alignment.Center) {
                 leadingIcon()
@@ -112,6 +115,7 @@ fun NormalPreference(
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleLarge,
+                color = textColor,
                 fontSize = MaterialTheme.fontSize.title
             )
             subtitle?.let {
@@ -119,7 +123,7 @@ fun NormalPreference(
                 Text(
                     text = it,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = textColor
                 )
             }
         }

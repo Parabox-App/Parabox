@@ -317,7 +317,7 @@ class MainRepositoryImpl @Inject constructor(
                     val contactEntity = ContactEntity(
                         profile = Profile(
                             name = name,
-                            avatar = null,
+                            avatar = avatar,
                         ),
                         latestMessage = LatestMessage("", "", System.currentTimeMillis(), 0),
                         senderId = senderId,
