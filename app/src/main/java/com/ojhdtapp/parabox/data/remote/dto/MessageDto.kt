@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.data.remote.dto
 
 import com.ojhdtapp.messagedto.ReceiveMessageDto
+import com.ojhdtapp.messagedto.SendMessageDto
 import com.ojhdtapp.messagedto.message_content.getContentString
 import com.ojhdtapp.parabox.data.local.entity.ContactEntity
 import com.ojhdtapp.parabox.data.local.entity.MessageEntity
@@ -36,6 +37,37 @@ fun ReceiveMessageDto.toMessageEntity(): MessageEntity {
         contents = contents.toMessageContentList(),
         profile = profile.toProfile(),
         timestamp = timestamp,
+        sentByMe = false,
+        verified = true
+    )
+}
+
+fun SendMessageDto.toMessageEntity(): MessageEntity {
+    return MessageEntity(
+        contents = content.toMessageContentList(),
+        profile = Profile("", null),
+        timestamp = timestamp,
+        sentByMe = true,
+        verified = false
+    )
+}
+
+fun SendMessageDto.toContactEntity(senderName: String): ContactEntity {
+    return ContactEntity(
+        profile = Profile(pluginConnection.id.toString(), null),
+        latestMessage = LatestMessage(
+            sender = senderName,
+            content = content.getContentString(),
+            timestamp = timestamp,
+            unreadMessagesNum = 0,
+        ),
+        contactId = pluginConnection.objectId,
+        senderId = pluginConnection.objectId,
+        isHidden = false,
+        isPinned = false,
+        isArchived = false,
+        enableNotifications = true,
+        tags = emptyList()
     )
 }
 

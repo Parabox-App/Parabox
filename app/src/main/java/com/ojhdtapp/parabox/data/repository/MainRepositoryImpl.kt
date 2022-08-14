@@ -1,10 +1,15 @@
 package com.ojhdtapp.parabox.data.repository
 
+import android.content.Context
 import android.util.Log
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.paging.PagingSource
 import com.ojhdtapp.messagedto.ReceiveMessageDto
+import com.ojhdtapp.messagedto.SendMessageDto
 import com.ojhdtapp.messagedto.message_content.getContentString
+import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.Resource
+import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.*
 import com.ojhdtapp.parabox.data.remote.dto.toContactEntity
@@ -13,12 +18,15 @@ import com.ojhdtapp.parabox.data.remote.dto.toPluginConnection
 import com.ojhdtapp.parabox.domain.model.*
 import com.ojhdtapp.parabox.domain.model.message_content.getContentString
 import com.ojhdtapp.parabox.domain.repository.MainRepository
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import java.io.IOException
 import javax.inject.Inject
 
 class MainRepositoryImpl @Inject constructor(
-    private val database: AppDatabase
+    private val database: AppDatabase,
+    val context: Context,
 ) : MainRepository {
     override suspend fun handleNewMessage(dto: ReceiveMessageDto) {
         coroutineScope {
@@ -79,6 +87,73 @@ class MainRepositoryImpl @Inject constructor(
 //        database.messageDao.insertMessage(dto.toMessageEntity())
 //        database.contactDao.insertContact(dto.toContactEntityWithUnreadMessagesNumUpdate(database.contactDao))
 //        database.contactMessageCrossRefDao.insertNewContactMessageCrossRef(dto.getContactMessageCrossRef())
+    }
+
+    override suspend fun handleNewMessage(dto: SendMessageDto) {
+        coroutineScope {
+            val userName = context.dataStore.data
+                .catch { exception ->
+                    if (exception is IOException) {
+                        emit(emptyPreferences())
+                    } else {
+                        throw exception
+                    }
+                }
+                .map { settings ->
+                    settings[DataStoreKeys.USER_NAME] ?: "User"
+                }.firstOrNull() ?: "User"
+
+            val messageIdDeferred = async<Long> {
+                database.messageDao.insertMessage(dto.toMessageEntity())
+            }
+            val contactIdDeferred = async<Long> {
+                database.contactDao.insertContact(
+                    dto.toContactEntity(userName)
+                )
+            }
+            val pluginConnectionDeferred = async<Long> {
+                database.contactDao.insertPluginConnection(
+                    dto.pluginConnection.toPluginConnection().toPluginConnectionEntity()
+                )
+            }
+//            database.contactDao.updateHiddenState(ContactHiddenStateUpdate(dto.pluginConnection.objectId, false))
+            if (pluginConnectionDeferred.await() != -1L) {
+                database.contactDao.insertContactPluginConnectionCrossRef(
+                    ContactPluginConnectionCrossRef(
+                        contactId = dto.pluginConnection.objectId,
+                        objectId = pluginConnectionDeferred.await()
+                    )
+                )
+            }
+            database.contactMessageCrossRefDao.insertContactMessageCrossRef(
+                ContactMessageCrossRef(
+                    contactId = dto.pluginConnection.objectId,
+                    messageId = messageIdDeferred.await()
+                )
+            )
+//            database.contactDao.getContactPluginConnectionCrossRefsByObjectId(dto.pluginConnection.objectId)
+//                .map {
+//                    ContactHiddenStateUpdate(contactId = it.contactId, isHidden = false)
+//                }.let {
+//                    database.contactDao.updateHiddenState(it)
+//                }
+
+
+            // Update Avatar or Anything Else Here
+            database.contactDao.getPluginConnectionWithContacts(dto.pluginConnection.objectId).let {
+                database.contactDao.updateContact(it.contactList.map {
+                    it.copy(
+                        latestMessage = LatestMessage(
+                            sender = userName,
+                            content = dto.content.getContentString(),
+                            timestamp = dto.timestamp,
+                            unreadMessagesNum = (it.latestMessage?.unreadMessagesNum ?: 0) + 1
+                        ),
+                        isHidden = false
+                    )
+                })
+            }
+        }
     }
 
     override fun updateContactHiddenState(id: Long, value: Boolean) {

@@ -99,13 +99,20 @@ fun ChatPage(
                         }
                     },
                     onSend = {
-                        onEvent(ActivityEvent.SendMessage(
-                            SendMessageDto(
-                                content = listOf(com.ojhdtapp.messagedto.message_content.PlainText(it)),
-                                timestamp = System.currentTimeMillis(),
-                                pluginConnection = messageState.pluginConnectionList.first().toSenderPluginConnection()
+                        onEvent(
+                            ActivityEvent.SendMessage(
+                                SendMessageDto(
+                                    content = listOf(
+                                        com.ojhdtapp.messagedto.message_content.PlainText(
+                                            it
+                                        )
+                                    ),
+                                    timestamp = System.currentTimeMillis(),
+                                    pluginConnection = messageState.pluginConnectionList.first()
+                                        .toSenderPluginConnection()
+                                )
                             )
-                        ))
+                        )
                     }
                 )
             }
@@ -313,7 +320,8 @@ fun NormalChatPage(
                             modifier = Modifier.fillMaxWidth(),
                             mainSharedViewModel = mainSharedViewModel,
                             data = chatBlock,
-                            sentByMe = false
+                            sentByMe = chatBlock.messages.first().sentByMe,
+                            userName = mainSharedViewModel.userNameFlow.collectAsState(initial = "User").value
                         )
                     }
                     item(key = "$timestamp") {
@@ -397,7 +405,8 @@ fun ChatBlock(
     modifier: Modifier = Modifier,
     mainSharedViewModel: MainSharedViewModel,
     data: ChatBlock,
-    sentByMe: Boolean
+    sentByMe: Boolean,
+    userName: String,
 ) {
     Row(
         modifier = modifier
@@ -410,7 +419,8 @@ fun ChatBlock(
                 modifier = Modifier.weight(1f),
                 mainSharedViewModel = mainSharedViewModel,
                 data = data,
-                sentByMe = sentByMe
+                sentByMe = sentByMe,
+                userName = userName
             )
             Spacer(modifier = Modifier.width(8.dp))
             ChatBlockAvatar(avatar = data.profile.avatar)
@@ -421,7 +431,8 @@ fun ChatBlock(
                 modifier = Modifier.weight(1f),
                 mainSharedViewModel = mainSharedViewModel,
                 data = data,
-                sentByMe = sentByMe
+                sentByMe = sentByMe,
+                userName = userName
             )
             Spacer(modifier = Modifier.width(48.dp))
         }
@@ -460,13 +471,14 @@ fun ChatBlockMessages(
     mainSharedViewModel: MainSharedViewModel,
     data: ChatBlock,
     sentByMe: Boolean,
+    userName: String,
 ) {
     Column(
         modifier = modifier,
         horizontalAlignment = if (sentByMe) Alignment.End else Alignment.Start
     ) {
         Text(
-            text = data.profile.name,
+            text = if (sentByMe) userName else data.profile.name,
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.primary
         )

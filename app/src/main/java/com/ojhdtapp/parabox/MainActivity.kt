@@ -33,6 +33,7 @@ import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.ojhdtapp.parabox.domain.service.PluginService
+import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.NavGraphs
 import com.ojhdtapp.parabox.ui.theme.AppTheme
@@ -45,12 +46,16 @@ import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultA
 import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.navigation.dependency
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject
+    lateinit var handleNewMessage: HandleNewMessage
     var pluginService: PluginService? = null
     private lateinit var pluginServiceConnection: ServiceConnection
 
@@ -64,6 +69,9 @@ class MainActivity : ComponentActivity() {
             }
             is ActivityEvent.SendMessage -> {
                 pluginService?.sendMessage(event.dto)
+                lifecycleScope.launch(Dispatchers.IO) {
+                    handleNewMessage(event.dto)
+                }
             }
         }
     }

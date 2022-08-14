@@ -1,30 +1,37 @@
 package com.ojhdtapp.parabox.ui
 
+import android.content.Context
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.PagingSource
 import androidx.paging.cachedIn
 import androidx.paging.compose.collectAsLazyPagingItems
+import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.Resource
+import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.use_case.GetMessages
 import com.ojhdtapp.parabox.ui.message.MessageState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.io.IOException
 import javax.inject.Inject
 
 @HiltViewModel
 class MainSharedViewModel @Inject constructor(
+    @ApplicationContext val context: Context,
     val getMessages: GetMessages,
 ) : ViewModel() {
     // Badge
@@ -79,4 +86,17 @@ class MainSharedViewModel @Inject constructor(
     fun setPluginListStateFlow(value: List<AppModel>){
         _pluginListStateFlow.value = value
     }
+
+    // User name
+    val userNameFlow: Flow<String> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.USER_NAME] ?: "User"
+        }
 }

@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.di
 
 import android.app.Application
+import android.content.Context
 import androidx.room.Room
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.Converters
@@ -11,6 +12,7 @@ import com.ojhdtapp.parabox.domain.util.GsonParser
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
@@ -29,8 +31,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideMainRepository(database: AppDatabase): MainRepository =
-        MainRepositoryImpl(database)
+    fun provideMainRepository(database: AppDatabase, @ApplicationContext applicationContext: Context): MainRepository =
+        MainRepositoryImpl(database, applicationContext)
 
     @Provides
     @Singleton

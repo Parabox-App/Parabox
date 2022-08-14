@@ -3,6 +3,7 @@ package com.ojhdtapp.parabox.domain.repository
 import androidx.paging.PagingSource
 import coil.request.Tags
 import com.ojhdtapp.messagedto.ReceiveMessageDto
+import com.ojhdtapp.messagedto.SendMessageDto
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.local.entity.ContactWithMessagesEntity
 import com.ojhdtapp.parabox.data.local.entity.ContactWithPluginConnections
@@ -12,6 +13,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface MainRepository {
     suspend fun handleNewMessage(dto: ReceiveMessageDto)
+    suspend fun handleNewMessage(dto: SendMessageDto)
     fun updateContactHiddenState(id: Long, value: Boolean)
     fun updateContactPinnedState(id: Long, value: Boolean)
     fun updateContactNotificationState(id: Long, value: Boolean)
