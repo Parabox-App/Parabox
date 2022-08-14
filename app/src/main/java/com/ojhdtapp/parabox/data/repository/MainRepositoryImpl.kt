@@ -89,8 +89,8 @@ class MainRepositoryImpl @Inject constructor(
 //        database.contactMessageCrossRefDao.insertNewContactMessageCrossRef(dto.getContactMessageCrossRef())
     }
 
-    override suspend fun handleNewMessage(dto: SendMessageDto) {
-        coroutineScope {
+    override suspend fun handleNewMessage(dto: SendMessageDto) : Long {
+        return coroutineScope {
             val userName = context.dataStore.data
                 .catch { exception ->
                     if (exception is IOException) {
@@ -153,7 +153,12 @@ class MainRepositoryImpl @Inject constructor(
                     )
                 })
             }
+            messageIdDeferred.await()
         }
+    }
+
+    override fun updateMessageVerifiedState(id: Long, value: Boolean) {
+        database.messageDao.updateVerifiedState(MessageVerifyStateUpdate(id, value))
     }
 
     override fun updateContactHiddenState(id: Long, value: Boolean) {

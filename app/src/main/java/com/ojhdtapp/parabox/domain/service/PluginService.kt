@@ -14,6 +14,7 @@ import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.plugin.PluginConnObj
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
+import com.ojhdtapp.parabox.domain.use_case.UpdateMessage
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -28,6 +29,8 @@ import javax.inject.Inject
 class PluginService : LifecycleService() {
     @Inject
     lateinit var handleNewMessage: HandleNewMessage
+    @Inject
+    lateinit var updateMessage: UpdateMessage
     private var installedPluginList = emptyList<ApplicationInfo>()
     private var appModelList = emptyList<AppModel>()
     private val pluginConnectionMap = mutableMapOf<Int, PluginConnObj>()
@@ -87,6 +90,12 @@ class PluginService : LifecycleService() {
                     }
 
                 },
+                { id: Long, value: Boolean ->
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        Log.d("parabox", "response received: ${id}")
+                        updateMessage.verifiedState(id, value)
+                    }
+                },
                 this@PluginService,
                 it.packageName,
                 it.packageName + ".domain.service.ConnService"
@@ -118,10 +127,10 @@ class PluginService : LifecycleService() {
         }
     }
 
-    fun sendMessage(dto: SendMessageDto) {
+    fun sendMessage(dto: SendMessageDto, messageId: Long) {
         val type = dto.pluginConnection.connectionType
         if (appModelList.map { it.connectionType }.contains(type)) {
-            pluginConnectionMap[type]?.send(dto)
+            pluginConnectionMap[type]?.send(dto, messageId)
         } else {
             TODO("plugin not installed")
         }

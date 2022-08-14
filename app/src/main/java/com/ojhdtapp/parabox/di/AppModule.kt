@@ -73,4 +73,9 @@ object AppModule {
     fun provideGetArchivedContactsUseCase(repository: MainRepository): GetArchivedContacts{
         return GetArchivedContacts(repository)
     }
+    @Provides
+    @Singleton
+    fun provideUpdateMessageUseCase(repository: MainRepository): UpdateMessage{
+        return UpdateMessage(repository)
+    }
 }

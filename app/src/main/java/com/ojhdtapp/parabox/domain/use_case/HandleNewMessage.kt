@@ -13,7 +13,7 @@ class HandleNewMessage @Inject constructor(
         repository.handleNewMessage(dto)
     }
 
-    suspend operator fun invoke(dto : SendMessageDto){
-        repository.handleNewMessage(dto)
+    suspend operator fun invoke(dto : SendMessageDto) : Long{
+        return repository.handleNewMessage(dto)
     }
 }

@@ -8,14 +8,17 @@ import android.os.*
 import android.util.Log
 import com.ojhdtapp.messagedto.ReceiveMessageDto
 import com.ojhdtapp.messagedto.SendMessageDto
+import com.ojhdtapp.parabox.data.local.entity.MessageVerifyStateUpdate
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.service.ConnKey
+import com.ojhdtapp.parabox.domain.use_case.UpdateMessage
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import javax.inject.Inject
 
 class PluginConnObj @Inject constructor(
     val onNewMessageReceived: (dto: ReceiveMessageDto) -> Unit,
+    val onMessageVerifyStateUpdate: (id: Long, value: Boolean) -> Unit,
     private val ctx: Context,
     private val pkg: String,
     private val cls: String
@@ -41,13 +44,14 @@ class PluginConnObj @Inject constructor(
 
     fun getServiceConnection(): ServiceConnection = serviceConnection
 
-    fun send(dto: SendMessageDto){
-        if(isConnected){
+    fun send(dto: SendMessageDto, messageId: Long) {
+        if (isConnected) {
             val timestamp = System.currentTimeMillis()
             sMessenger?.send(Message.obtain(null, ConnKey.MSG_MESSAGE).apply {
                 obj = Bundle().apply {
                     putInt("command", ConnKey.MSG_MESSAGE_SEND)
                     putLong("timestamp", timestamp)
+                    putLong("message_id", messageId)
                 }
                 data = Bundle().apply {
                     putParcelable("value", dto)
@@ -128,6 +132,11 @@ class PluginConnObj @Inject constructor(
                             val isRunning = (msg.obj as Bundle).getBoolean("value") ?: false
                             runningStatus =
                                 if (isRunning) AppModel.RUNNING_STATUS_RUNNING else AppModel.RUNNING_STATUS_ERROR
+                        }
+                        ConnKey.MSG_RESPONSE_MESSAGE_SEND -> {
+                            val stateSuccess = (msg.obj as Bundle).getBoolean("value") ?: false
+                            val messageId = (msg.obj as Bundle).getLong("message_id")
+                            onMessageVerifyStateUpdate(messageId, stateSuccess)
                         }
                         else -> {}
                     }

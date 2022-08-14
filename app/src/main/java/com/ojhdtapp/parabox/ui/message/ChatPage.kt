@@ -59,6 +59,7 @@ import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -296,8 +297,7 @@ fun NormalChatPage(
             }
         } else {
             val timedList =
-                remember(lazyPagingItems.itemCount) {
-                    Log.d("parabox", "${lazyPagingItems.itemCount}")
+                remember(lazyPagingItems.itemSnapshotList) {
                     lazyPagingItems.itemSnapshotList.items.toTimedMessages()
                 }
 
@@ -487,6 +487,8 @@ fun ChatBlockMessages(
             SingleMessage(
                 contents = message.contents,
                 sentByMe = sentByMe,
+                verified = message.verified,
+                timestamp = message.timestamp,
                 isFirst = index == 0,
                 isLast = index == data.messages.lastIndex,
                 isSelected = mainSharedViewModel.selectedMessageStateList.contains(message),
@@ -510,6 +512,8 @@ fun SingleMessage(
     modifier: Modifier = Modifier,
     contents: List<MessageContent>,
     sentByMe: Boolean,
+    verified: Boolean,
+    timestamp: Long,
     isFirst: Boolean,
     isLast: Boolean,
     isSelected: Boolean,
@@ -534,65 +538,79 @@ fun SingleMessage(
             if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
         }
     )
-    Column(
-        modifier = modifier
-            .clip(
-                RoundedCornerShape(
-                    topStart = topStartRadius,
-                    topEnd = topEndRadius,
-                    bottomStart = bottomStartRadius,
-                    bottomEnd = bottomEndRadius
+    Row(verticalAlignment = Alignment.Bottom) {
+        if (sentByMe && !verified) {
+            if (abs(System.currentTimeMillis() - timestamp) > 6000) {
+                Icon(
+                    modifier = Modifier.padding(bottom = 11.dp, end = 4.dp),
+                    imageVector = Icons.Outlined.ErrorOutline,
+                    contentDescription = "error",
+                    tint = MaterialTheme.colorScheme.error
                 )
-            )
-            .background(
-                backgroundColor
-            )
-            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
-    ) {
-        contents.forEachIndexed { index, messageContent ->
-            when (messageContent) {
-                is At -> Text(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
-                    text = messageContent.getContentString(),
-                    color = MaterialTheme.colorScheme.primary
+            } else {
+                CircularProgressIndicator(modifier = Modifier.padding(bottom = 14.dp, end = 4.dp).size(18.dp), strokeWidth = 2.dp)
+            }
+        }
+        Column(
+            modifier = modifier
+                .clip(
+                    RoundedCornerShape(
+                        topStart = topStartRadius,
+                        topEnd = topEndRadius,
+                        bottomStart = bottomStartRadius,
+                        bottomEnd = bottomEndRadius
+                    )
                 )
-                is PlainText -> Text(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
-                    text = messageContent.text,
-                    color = textColor
+                .background(
+                    backgroundColor
                 )
-                is Image -> AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(messageContent.url)
-                        .crossfade(true)
-                        .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
+                .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+        ) {
+            contents.forEachIndexed { index, messageContent ->
+                when (messageContent) {
+                    is At -> Text(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+                        text = messageContent.getContentString(),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    is PlainText -> Text(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+                        text = messageContent.text,
+                        color = textColor
+                    )
+                    is Image -> AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(messageContent.url)
+                            .crossfade(true)
+                            .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
 //                        .scale(Scale.FIT)
-                        .build(),
-                    contentDescription = "image",
-                    contentScale = ContentScale.FillWidth,
-                    modifier = Modifier
-                        .width(with(LocalDensity.current) {
-                            messageContent.width
-                                .toDp()
-                                .coerceIn(80.dp, 320.dp)
-                        })
+                            .build(),
+                        contentDescription = "image",
+                        contentScale = ContentScale.FillWidth,
+                        modifier = Modifier
+                            .width(with(LocalDensity.current) {
+                                messageContent.width
+                                    .toDp()
+                                    .coerceIn(80.dp, 320.dp)
+                            })
 //                        .height(with(LocalDensity.current) {
 //                            min(messageContent.height.toDp(), 600.dp)
 //                        })
-                        .padding(horizontal = 3.dp, vertical = 3.dp)
-                        .clip(
-                            RoundedCornerShape(
-                                if (index == 0) (topStartRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp,
-                                if (index == 0) (topEndRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp,
-                                if (index == contents.lastIndex) (bottomEndRadius - 3.dp).coerceAtLeast(
-                                    0.dp
-                                ) else 0.dp,
-                                if (index == contents.lastIndex) (bottomStartRadius - 3.dp).coerceAtLeast(
-                                    0.dp
-                                ) else 0.dp
+                            .padding(horizontal = 3.dp, vertical = 3.dp)
+                            .clip(
+                                RoundedCornerShape(
+                                    if (index == 0) (topStartRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp,
+                                    if (index == 0) (topEndRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp,
+                                    if (index == contents.lastIndex) (bottomEndRadius - 3.dp).coerceAtLeast(
+                                        0.dp
+                                    ) else 0.dp,
+                                    if (index == contents.lastIndex) (bottomStartRadius - 3.dp).coerceAtLeast(
+                                        0.dp
+                                    ) else 0.dp
+                                )
                             )
-                        )
-                )
+                    )
+                }
             }
         }
     }

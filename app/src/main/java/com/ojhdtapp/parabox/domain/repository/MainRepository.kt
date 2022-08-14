@@ -13,7 +13,8 @@ import kotlinx.coroutines.flow.Flow
 
 interface MainRepository {
     suspend fun handleNewMessage(dto: ReceiveMessageDto)
-    suspend fun handleNewMessage(dto: SendMessageDto)
+    suspend fun handleNewMessage(dto: SendMessageDto) : Long
+    fun updateMessageVerifiedState(id: Long, value: Boolean)
     fun updateContactHiddenState(id: Long, value: Boolean)
     fun updateContactPinnedState(id: Long, value: Boolean)
     fun updateContactNotificationState(id: Long, value: Boolean)

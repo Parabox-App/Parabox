@@ -68,9 +68,10 @@ class MainActivity : ComponentActivity() {
                 })
             }
             is ActivityEvent.SendMessage -> {
-                pluginService?.sendMessage(event.dto)
                 lifecycleScope.launch(Dispatchers.IO) {
-                    handleNewMessage(event.dto)
+                    handleNewMessage(event.dto).also{
+                        pluginService?.sendMessage(event.dto, it)
+                    }
                 }
             }
         }
