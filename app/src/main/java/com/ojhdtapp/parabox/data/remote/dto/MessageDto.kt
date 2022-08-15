@@ -45,7 +45,7 @@ fun ReceiveMessageDto.toMessageEntity(): MessageEntity {
 fun SendMessageDto.toMessageEntity(): MessageEntity {
     return MessageEntity(
         contents = content.toMessageContentList(),
-        profile = Profile("", null),
+        profile = Profile("", null, null),
         timestamp = timestamp,
         sentByMe = true,
         verified = false
@@ -54,7 +54,7 @@ fun SendMessageDto.toMessageEntity(): MessageEntity {
 
 fun SendMessageDto.toContactEntity(senderName: String): ContactEntity {
     return ContactEntity(
-        profile = Profile(pluginConnection.id.toString(), null),
+        profile = Profile(pluginConnection.id.toString(), null, null),
         latestMessage = LatestMessage(
             sender = senderName,
             content = content.getContentString(),
@@ -72,7 +72,7 @@ fun SendMessageDto.toContactEntity(senderName: String): ContactEntity {
 }
 
 fun com.ojhdtapp.messagedto.Profile.toProfile() : Profile{
-    return Profile(this.name, this.avatar)
+    return Profile(this.name, this.avatar, null)
 }
 
 fun List<com.ojhdtapp.messagedto.message_content.MessageContent>.toMessageContentList() : List<MessageContent>{

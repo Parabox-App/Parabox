@@ -352,11 +352,15 @@ fun NormalChatPage(
                 }
                 if (lazyPagingItems.loadState.append == LoadState.Loading) {
                     item("loadingIndicator") {
-                        CircularProgressIndicator(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .wrapContentWidth(Alignment.CenterHorizontally)
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier
+                                    .size(36.dp)
+                            )
+                        }
                     }
                 }
 

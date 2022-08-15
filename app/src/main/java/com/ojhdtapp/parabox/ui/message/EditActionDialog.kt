@@ -267,7 +267,8 @@ fun EditActionDialog(
                                                                 contactId = it.contactId,
                                                                 profile = Profile(
                                                                     name = name,
-                                                                    avatar = contact.profile.avatar
+                                                                    avatar = contact.profile.avatar,
+                                                                    avatarUri = null
                                                                 ),
                                                                 tags = hashTagList.toList()
                                                             )
@@ -319,7 +320,8 @@ fun EditActionDialog(
                                                             contactId = it.contactId,
                                                             profile = Profile(
                                                                 name = name,
-                                                                avatar = null
+                                                                avatar = contact.profile.avatar,
+                                                                avatarUri = null
                                                             ),
                                                             tags = hashTagList.toList()
                                                         )

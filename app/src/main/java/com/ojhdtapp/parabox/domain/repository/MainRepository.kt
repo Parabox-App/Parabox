@@ -38,6 +38,7 @@ interface MainRepository {
         name: String,
         pluginConnections: List<PluginConnection>,
         senderId: Long,
-        avatar: String? = null
+        avatar: String? = null,
+        avatarUri: String? = null
     ): Boolean
 }

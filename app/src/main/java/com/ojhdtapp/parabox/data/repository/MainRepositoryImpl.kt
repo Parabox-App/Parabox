@@ -309,7 +309,8 @@ class MainRepositoryImpl @Inject constructor(
         name: String,
         pluginConnections: List<PluginConnection>,
         senderId: Long,
-        avatar: String?
+        avatar: String?,
+        avatarUri: String?
     ): Boolean {
         return coroutineScope {
             withContext(Dispatchers.IO) {
@@ -318,6 +319,7 @@ class MainRepositoryImpl @Inject constructor(
                         profile = Profile(
                             name = name,
                             avatar = avatar,
+                            avatarUri = avatarUri
                         ),
                         latestMessage = LatestMessage("", "", System.currentTimeMillis(), 0),
                         senderId = senderId,
