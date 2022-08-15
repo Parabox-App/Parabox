@@ -179,6 +179,7 @@ fun MessagePage(
                     onTextChange = viewModel::setSearchText,
                     placeholder = "搜索会话",
                     activateState = viewModel.searchBarActivateState.value,
+                    avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
                     onActivateStateChanged = {
                         viewModel.setSearchBarActivateState(it)
                         viewModel.clearSelectedContactStateList()
@@ -256,6 +257,9 @@ fun MessagePage(
                         coroutineScope.launch {
                             drawerState.open()
                         }
+                    },
+                    onAvatarClick = {
+                        onEvent(ActivityEvent.SetUserAvatar)
                     }
                 )
             },

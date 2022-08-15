@@ -6,4 +6,5 @@ import com.ojhdtapp.messagedto.SendMessageDto
 sealed class ActivityEvent{
     data class LaunchIntent(val intent: Intent) : ActivityEvent()
     data class SendMessage(val dto: SendMessageDto): ActivityEvent()
+    object SetUserAvatar: ActivityEvent()
 }

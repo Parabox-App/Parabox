@@ -55,13 +55,15 @@ fun FilePage(
                 onTextChange = viewModel::setSearchText,
                 placeholder = "搜索文件",
                 activateState = searchBarState,
+                avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
                 onActivateStateChanged = { searchBarState = it },
                 sizeClass = sizeClass,
                 onMenuClick = {
                     coroutineScope.launch {
                         drawerState.open()
                     }
-                }
+                },
+                onAvatarClick = {}
             )
         },
         bottomBar = {

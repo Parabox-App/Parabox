@@ -1,13 +1,20 @@
 package com.ojhdtapp.parabox
 
+import android.app.Activity
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
+import android.provider.MediaStore
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
@@ -23,15 +30,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.ojhdtapp.parabox.core.util.DataStoreKeys
+import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.parabox.domain.service.PluginService
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
@@ -41,7 +50,6 @@ import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.FixedInsets
 import com.ojhdtapp.parabox.ui.util.LocalFixedInsets
 import com.ramcosta.composedestinations.DestinationsNavHost
-import com.ramcosta.composedestinations.animations.defaults.NestedNavGraphDefaultAnimations
 import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
 import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.navigation.dependency
@@ -58,6 +66,20 @@ class MainActivity : ComponentActivity() {
     lateinit var handleNewMessage: HandleNewMessage
     var pluginService: PluginService? = null
     private lateinit var pluginServiceConnection: ServiceConnection
+    private lateinit var userAvatarPickerLauncher: ActivityResultLauncher<Intent>
+    private lateinit var userAvatarPickerSLauncher: ActivityResultLauncher<String>
+    private lateinit var requestPermissionLauncher: ActivityResultLauncher<String>
+
+    private fun setUserAvatar() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val intent = Intent(MediaStore.ACTION_PICK_IMAGES).apply {
+                type = "images/*"
+            }
+            userAvatarPickerLauncher.launch(intent)
+        } else {
+            userAvatarPickerSLauncher.launch("image/*")
+        }
+    }
 
     // Event
     fun onEvent(event: ActivityEvent) {
@@ -69,10 +91,13 @@ class MainActivity : ComponentActivity() {
             }
             is ActivityEvent.SendMessage -> {
                 lifecycleScope.launch(Dispatchers.IO) {
-                    handleNewMessage(event.dto).also{
+                    handleNewMessage(event.dto).also {
                         pluginService?.sendMessage(event.dto, it)
                     }
                 }
+            }
+            is ActivityEvent.SetUserAvatar -> {
+                setUserAvatar()
             }
         }
     }
@@ -83,6 +108,46 @@ class MainActivity : ComponentActivity() {
     )
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Activity Result Api
+        userAvatarPickerLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+                if (it.resultCode == Activity.RESULT_OK) {
+                    val uri = it.data?.data
+                    Log.d("parabox", "$uri")
+                    lifecycleScope.launch {
+                        this@MainActivity.dataStore.edit { settings ->
+                            settings[DataStoreKeys.USER_AVATAR] = uri.toString()
+                        }
+                    }
+                    Toast.makeText(this, "头像已更新", Toast.LENGTH_SHORT).show()
+                }
+            }
+        userAvatarPickerSLauncher =
+            registerForActivityResult(ActivityResultContracts.GetContent()) {
+                lifecycleScope.launch {
+                    this@MainActivity.dataStore.edit { settings ->
+                        settings[DataStoreKeys.USER_AVATAR] = it.toString()
+                    }
+                }
+                Toast.makeText(this, "头像已更新", Toast.LENGTH_SHORT).show()
+            }
+
+        // Request Permission Launcher
+        requestPermissionLauncher = registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { isGranted: Boolean ->
+            if (isGranted) {
+                // Permission is granted. Continue the action or workflow in your
+                // app.
+            } else {
+                // Explain to the user that the feature is unavailable because the
+                // features requires a permission that the user has denied. At the
+                // same time, respect the user's decision. Don't link to system
+                // settings in an effort to convince the user to change their
+                // decision.
+            }
+        }
 
         // Shared ViewModel
         val mainSharedViewModel by viewModels<MainSharedViewModel>()

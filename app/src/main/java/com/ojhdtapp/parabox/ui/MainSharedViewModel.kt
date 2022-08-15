@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -98,5 +99,25 @@ class MainSharedViewModel @Inject constructor(
         }
         .map { settings ->
             settings[DataStoreKeys.USER_NAME] ?: "User"
+        }
+    fun setUserName(value: String) {
+        viewModelScope.launch {
+            context.dataStore.edit { settings ->
+                settings[DataStoreKeys.USER_NAME] = value
+            }
+        }
+    }
+
+    // User Avatar
+    val userAvatarFlow: Flow<String?> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.USER_AVATAR]
         }
 }

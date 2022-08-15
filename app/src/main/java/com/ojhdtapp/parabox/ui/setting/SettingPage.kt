@@ -117,10 +117,10 @@ fun SettingPage(
             Row() {
                 EditUserNameDialog(
                     openDialog = viewModel.editUserNameDialogState.value,
-                    userName = viewModel.userNameFlow.collectAsState(initial = "User").value,
+                    userName = mainSharedViewModel.userNameFlow.collectAsState(initial = "User").value,
                     onConfirm = {
                         viewModel.setEditUserNameDialogState(false)
-                        viewModel.setUserName(it)
+                        mainSharedViewModel.setUserName(it)
                     },
                     onDismiss = { viewModel.setEditUserNameDialogState(false) }
                 )
@@ -133,7 +133,7 @@ fun SettingPage(
                     item {
                         ThemeBlock(
                             modifier = Modifier.fillMaxWidth(),
-                            userName = viewModel.userNameFlow.collectAsState(initial = "User").value,
+                            userName = mainSharedViewModel.userNameFlow.collectAsState(initial = "User").value,
                             version = "1.0",
                             onBlockClick = {},
                             onUserNameClick = {

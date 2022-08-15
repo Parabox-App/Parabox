@@ -28,23 +28,23 @@ class SettingPageViewModel @Inject constructor(
         _editUserNameDialogState.value = value
     }
 
-    val userNameFlow: Flow<String> = context.dataStore.data
-        .catch { exception ->
-            if (exception is IOException) {
-                emit(emptyPreferences())
-            } else {
-                throw exception
-            }
-        }
-        .map { settings ->
-            settings[DataStoreKeys.USER_NAME] ?: "User"
-        }
-
-    fun setUserName(value: String) {
-        viewModelScope.launch {
-            context.dataStore.edit { settings ->
-                settings[DataStoreKeys.USER_NAME] = value
-            }
-        }
-    }
+//    val userNameFlow: Flow<String> = context.dataStore.data
+//        .catch { exception ->
+//            if (exception is IOException) {
+//                emit(emptyPreferences())
+//            } else {
+//                throw exception
+//            }
+//        }
+//        .map { settings ->
+//            settings[DataStoreKeys.USER_NAME] ?: "User"
+//        }
+//
+//    fun setUserName(value: String) {
+//        viewModelScope.launch {
+//            context.dataStore.edit { settings ->
+//                settings[DataStoreKeys.USER_NAME] = value
+//            }
+//        }
+//    }
 }

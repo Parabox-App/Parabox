@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.util
 
+import android.net.Uri
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateIntAsState
@@ -25,11 +26,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.domain.model.Contact
 
 object SearchAppBar {
@@ -50,6 +57,7 @@ fun SearchAppBar(
     onTextChange: (text: String) -> Unit,
     placeholder: String,
     selection: SnapshotStateList<Contact> = mutableStateListOf(),
+    avatarUri: String?,
     onGroupAction: () -> Unit = {},
     onEditAction: () -> Unit = {},
     onExpandAction: () -> Unit = {},
@@ -62,6 +70,7 @@ fun SearchAppBar(
     onMarkAsReadAction: (read: Boolean) -> Unit = {},
     sizeClass: WindowSizeClass,
     onMenuClick: () -> Unit,
+    onAvatarClick: () -> Unit
 ) {
     val isActivated = activateState != SearchAppBar.NONE
     val isExpanded = sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded
@@ -129,7 +138,9 @@ fun SearchAppBar(
                             onTextChange = onTextChange,
                             keyboardController = keyboardController,
                             isExpanded = isExpanded,
+                            avatarUri = avatarUri ,
                             onMenuClick = onMenuClick,
+                            onAvatarClick = onAvatarClick
                         )
                     }
                     SearchAppBar.ARCHIVE_SELECT -> {
@@ -170,7 +181,9 @@ fun SearchContentField(
     onTextChange: (text: String) -> Unit,
     keyboardController: SoftwareKeyboardController?,
     isExpanded: Boolean,
-    onMenuClick: () -> Unit
+    avatarUri: String?,
+    onMenuClick: () -> Unit,
+    onAvatarClick: () -> Unit
 ) {
     Row(
         modifier = modifier
@@ -228,12 +241,17 @@ fun SearchContentField(
             enter = fadeIn(),
             exit = fadeOut()
         ) {
-            IconButton(onClick = { /*TODO*/ }) {
-                Box(
+            IconButton(onClick = { onAvatarClick() }) {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(avatarUri?.let{Uri.parse(it)} ?: R.drawable.avatar)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = "avatar",
+                    contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .size(30.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.secondary)
                 )
             }
         }
