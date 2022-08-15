@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.message
 
+import android.net.Uri
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.*
@@ -343,7 +344,8 @@ fun NormalChatPage(
                             mainSharedViewModel = mainSharedViewModel,
                             data = chatBlock,
                             sentByMe = chatBlock.messages.first().sentByMe,
-                            userName = mainSharedViewModel.userNameFlow.collectAsState(initial = "User").value
+                            userName = mainSharedViewModel.userNameFlow.collectAsState(initial = "User").value,
+                            avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
                         )
                     }
                     item(key = "$timestamp") {
@@ -433,6 +435,7 @@ fun ChatBlock(
     data: ChatBlock,
     sentByMe: Boolean,
     userName: String,
+    avatarUri: String?
 ) {
     Row(
         modifier = modifier
@@ -449,7 +452,7 @@ fun ChatBlock(
                 userName = userName
             )
             Spacer(modifier = Modifier.width(8.dp))
-            ChatBlockAvatar(avatar = data.profile.avatar)
+            ChatBlockAvatar(avatar = avatarUri)
         } else {
             ChatBlockAvatar(avatar = data.profile.avatar)
             Spacer(modifier = Modifier.width(8.dp))
@@ -466,29 +469,23 @@ fun ChatBlock(
 }
 
 @Composable
-fun ChatBlockAvatar(modifier: Modifier = Modifier, avatar: String? = null) {
-    if (avatar == null) {
-        Surface(
-            modifier = modifier.size(42.dp),
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.primary
-        ) {}
-    } else {
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(avatar)
-                .crossfade(true)
-                .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
-                .build(),
-            contentDescription = "avatar",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(42.dp)
-                .clip(CircleShape)
-        )
-    }
-
-
+fun ChatBlockAvatar(
+    modifier: Modifier = Modifier,
+    avatar: String? = null,
+    avatarUri: String? = null
+) {
+    AsyncImage(
+        model = ImageRequest.Builder(LocalContext.current)
+            .data(avatarUri?.let { Uri.parse(it) } ?: avatar ?: R.drawable.avatar)
+            .crossfade(true)
+            .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
+            .build(),
+        contentDescription = "avatar",
+        contentScale = ContentScale.Crop,
+        modifier = Modifier
+            .size(42.dp)
+            .clip(CircleShape)
+    )
 }
 
 @Composable

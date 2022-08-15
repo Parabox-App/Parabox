@@ -73,7 +73,7 @@ class MainActivity : ComponentActivity() {
     private fun setUserAvatar() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val intent = Intent(MediaStore.ACTION_PICK_IMAGES).apply {
-                type = "images/*"
+                type = "image/*"
             }
             userAvatarPickerLauncher.launch(intent)
         } else {
@@ -114,7 +114,6 @@ class MainActivity : ComponentActivity() {
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
                 if (it.resultCode == Activity.RESULT_OK) {
                     val uri = it.data?.data
-                    Log.d("parabox", "$uri")
                     lifecycleScope.launch {
                         this@MainActivity.dataStore.edit { settings ->
                             settings[DataStoreKeys.USER_AVATAR] = uri.toString()
@@ -125,12 +124,14 @@ class MainActivity : ComponentActivity() {
             }
         userAvatarPickerSLauncher =
             registerForActivityResult(ActivityResultContracts.GetContent()) {
-                lifecycleScope.launch {
-                    this@MainActivity.dataStore.edit { settings ->
-                        settings[DataStoreKeys.USER_AVATAR] = it.toString()
+                it?.let {
+                    lifecycleScope.launch {
+                        this@MainActivity.dataStore.edit { settings ->
+                            settings[DataStoreKeys.USER_AVATAR] = it.toString()
+                        }
                     }
+                    Toast.makeText(this, "头像已更新", Toast.LENGTH_SHORT).show()
                 }
-                Toast.makeText(this, "头像已更新", Toast.LENGTH_SHORT).show()
             }
 
         // Request Permission Launcher
