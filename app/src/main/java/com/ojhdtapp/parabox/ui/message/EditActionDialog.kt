@@ -80,12 +80,22 @@ fun EditActionDialog(
             }, properties = DialogProperties(
                 dismissOnBackPress = true,
                 dismissOnClickOutside = true,
-                usePlatformDefaultWidth = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact
+                usePlatformDefaultWidth = false
             )
         ) {
+            val horizontalPadding = when (sizeClass.widthSizeClass) {
+                WindowWidthSizeClass.Compact -> 16.dp
+                WindowWidthSizeClass.Medium -> 32.dp
+                WindowWidthSizeClass.Expanded -> 0.dp
+                else -> 16.dp
+            }
             Surface(
-                modifier = modifier.fillMaxSize(),
-                shape = RoundedCornerShape(16.dp)
+                modifier = modifier
+                    .widthIn(0.dp, 580.dp)
+                    .padding(horizontal = horizontalPadding)
+                    .animateContentSize(),
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surface
             ) {
                 var hashTagText by remember {
                     mutableStateOf("")

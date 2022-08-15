@@ -27,6 +27,7 @@ import androidx.compose.material3.FloatingActionButtonDefaults.elevation
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusEvent
@@ -45,12 +46,15 @@ import androidx.compose.ui.unit.min
 import androidx.navigation.NavController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.items
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import coil.size.Scale
 import com.ojhdtapp.messagedto.SendMessageDto
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.core.util.itemsBeforeAndAfter
+import com.ojhdtapp.parabox.core.util.itemsBeforeAndAfterReverse
 import com.ojhdtapp.parabox.core.util.toDescriptiveTime
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.chat.ChatBlock
@@ -319,10 +323,10 @@ fun NormalChatPage(
                 CircularProgressIndicator()
             }
         } else {
-            val timedList =
-                remember(lazyPagingItems.itemSnapshotList) {
-                    lazyPagingItems.itemSnapshotList.items.toTimedMessages()
-                }
+//            val timedList =
+//                remember(lazyPagingItems.itemSnapshotList) {
+//                    lazyPagingItems.itemSnapshotList.items.toTimedMessages()
+//                }
 
             LazyColumn(
                 modifier = Modifier
@@ -335,23 +339,63 @@ fun NormalChatPage(
                 item {
                     Spacer(modifier = Modifier.height(16.dp))
                 }
-                timedList.forEach { (timestamp, chatBlockList) ->
-                    items(
-                        items = chatBlockList,
-                        key = { "${it.profile.name}:${timestamp}:${it.messages.first().timestamp}" }) { chatBlock ->
-                        com.ojhdtapp.parabox.ui.message.ChatBlock(
-                            modifier = Modifier.fillMaxWidth(),
-                            mainSharedViewModel = mainSharedViewModel,
-                            data = chatBlock,
-                            sentByMe = chatBlock.messages.first().sentByMe,
+                itemsBeforeAndAfterReverse(
+                    items = lazyPagingItems,
+                    key = { it.messageId }) { value, beforeValue, afterValue ->
+                    if (value != null) {
+                        val shouldShowTimeDivider = remember(value, afterValue){
+                            beforeValue == null || abs(value.timestamp - beforeValue.timestamp) > 120000
+                        }
+                        val willShowTimeDivider = remember(value, afterValue){
+                            afterValue == null || abs(value.timestamp - afterValue.timestamp) > 120000
+                        }
+                        val isFirst = remember(value, afterValue){
+                            shouldShowTimeDivider || beforeValue == null || value.sentByMe != beforeValue.sentByMe || value.profile.name != beforeValue.profile.name
+                        }
+                        val isLast = remember(value, afterValue) {
+                            willShowTimeDivider || afterValue == null || value.sentByMe != afterValue.sentByMe || value.profile.name != afterValue.profile.name
+                        }
+                        MessageBlock(
+                            message = value,
+                            selectedMessageStateList = mainSharedViewModel.selectedMessageStateList,
+                            shouldShowTimeDivider = shouldShowTimeDivider,
+                            isFirst = isFirst,
+                            isLast = isLast,
                             userName = mainSharedViewModel.userNameFlow.collectAsState(initial = "User").value,
                             avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
+                            onMessageClick = {
+                                if (mainSharedViewModel.selectedMessageStateList.isNotEmpty()) {
+                                    mainSharedViewModel.addOrRemoveItemOfSelectedMessageStateList(
+                                        value
+                                    )
+                                }
+                            },
+                            onMessageLongClick = {
+                                mainSharedViewModel.addOrRemoveItemOfSelectedMessageStateList(
+                                    value
+                                )
+                            }
                         )
                     }
-                    item(key = "$timestamp") {
-                        TimeDivider(timestamp = timestamp)
-                    }
+
                 }
+//                timedList.forEach { (timestamp, chatBlockList) ->
+//                    items(
+//                        items = chatBlockList,
+//                        key = { "${it.profile.name}:${timestamp}:${it.messages.first().timestamp}" }) { chatBlock ->
+//                        com.ojhdtapp.parabox.ui.message.ChatBlock(
+//                            modifier = Modifier.fillMaxWidth(),
+//                            mainSharedViewModel = mainSharedViewModel,
+//                            data = chatBlock,
+//                            sentByMe = chatBlock.messages.first().sentByMe,
+//                            userName = mainSharedViewModel.userNameFlow.collectAsState(initial = "User").value,
+//                            avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
+//                        )
+//                    }
+//                    item(key = "$timestamp") {
+//                        TimeDivider(timestamp = timestamp)
+//                    }
+//                }
                 if (lazyPagingItems.loadState.append == LoadState.Loading) {
                     item("loadingIndicator") {
                         Row(
@@ -370,7 +414,6 @@ fun NormalChatPage(
         }
     }
 }
-
 //@Composable
 //fun ErrorChatPage(modifier: Modifier = Modifier, errMessage: String, onRetry: () -> Unit) {
 //    Column(
@@ -403,6 +446,118 @@ fun NullChatPage(modifier: Modifier = Modifier) {
 }
 
 @Composable
+fun MessageBlock(
+    modifier: Modifier = Modifier,
+    message: Message,
+    selectedMessageStateList: SnapshotStateList<Message>,
+    shouldShowTimeDivider: Boolean,
+    isFirst: Boolean,
+    isLast: Boolean,
+    userName: String,
+    avatarUri: String?,
+    onMessageClick: () -> Unit,
+    onMessageLongClick: () -> Unit
+) {
+    Column() {
+        if (shouldShowTimeDivider) {
+            TimeDivider(timestamp = message.timestamp)
+        }else if(isFirst){
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = if (message.sentByMe) Arrangement.End else Arrangement.Start
+        ) {
+            if (message.sentByMe) {
+                Spacer(modifier = Modifier.width(64.dp))
+                Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
+                    if (isFirst) {
+                        Text(
+                            text = userName,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                    }
+                    SingleMessage(
+                        message = message,
+                        isFirst = isFirst,
+                        isLast = isLast,
+                        isSelected = selectedMessageStateList.contains(message),
+                        onClick = onMessageClick,
+                        onLongClick = onMessageLongClick
+                    )
+                    if (!isLast) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                    }
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                MessageAvatar(
+                    shouldDisplay = isFirst,
+                    avatar = null,
+                    avatarUri = avatarUri
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+            } else {
+                Spacer(modifier = Modifier.width(16.dp))
+                MessageAvatar(
+                    shouldDisplay = isFirst,
+                    avatar = message.profile.avatar,
+                    avatarUri = null
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Column(modifier = Modifier.weight(1f) ,horizontalAlignment = Alignment.Start) {
+                    if (isFirst) {
+                        Text(
+                            text = message.profile.name,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                    }
+                    SingleMessage(
+                        message = message,
+                        isFirst = isFirst,
+                        isLast = isLast,
+                        isSelected = selectedMessageStateList.contains(message),
+                        onClick = onMessageClick,
+                        onLongClick = onMessageLongClick
+                    )
+                    if (!isLast) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                    }
+                }
+                Spacer(modifier = Modifier.width(64.dp))
+            }
+        }
+    }
+}
+
+@Composable
+fun MessageAvatar(
+    modifier: Modifier = Modifier,
+    shouldDisplay: Boolean,
+    avatar: String?,
+    avatarUri: String?
+) =
+    Box(modifier = Modifier.size(42.dp)) {
+        if (shouldDisplay) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(avatarUri?.let { Uri.parse(it) } ?: avatar ?: R.drawable.avatar)
+                    .crossfade(true)
+                    .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
+                    .build(),
+                contentDescription = "avatar",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(CircleShape)
+            )
+        }
+    }
+
+@Composable
 fun TimeDivider(modifier: Modifier = Modifier, timestamp: Long) {
     Row(
         modifier = modifier.height(48.dp),
@@ -428,142 +583,135 @@ fun TimeDivider(modifier: Modifier = Modifier, timestamp: Long) {
     }
 }
 
-@Composable
-fun ChatBlock(
-    modifier: Modifier = Modifier,
-    mainSharedViewModel: MainSharedViewModel,
-    data: ChatBlock,
-    sentByMe: Boolean,
-    userName: String,
-    avatarUri: String?
-) {
-    Row(
-        modifier = modifier
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-//        horizontalArrangement = if (sentByMe) Arrangement.End else Arrangement.Start
-    ) {
-        if (sentByMe) {
-            Spacer(modifier = Modifier.width(48.dp))
-            ChatBlockMessages(
-                modifier = Modifier.weight(1f),
-                mainSharedViewModel = mainSharedViewModel,
-                data = data,
-                sentByMe = sentByMe,
-                userName = userName
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            ChatBlockAvatar(avatar = avatarUri)
-        } else {
-            ChatBlockAvatar(avatar = data.profile.avatar)
-            Spacer(modifier = Modifier.width(8.dp))
-            ChatBlockMessages(
-                modifier = Modifier.weight(1f),
-                mainSharedViewModel = mainSharedViewModel,
-                data = data,
-                sentByMe = sentByMe,
-                userName = userName
-            )
-            Spacer(modifier = Modifier.width(48.dp))
-        }
-    }
-}
-
-@Composable
-fun ChatBlockAvatar(
-    modifier: Modifier = Modifier,
-    avatar: String? = null,
-    avatarUri: String? = null
-) {
-    AsyncImage(
-        model = ImageRequest.Builder(LocalContext.current)
-            .data(avatarUri?.let { Uri.parse(it) } ?: avatar ?: R.drawable.avatar)
-            .crossfade(true)
-            .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
-            .build(),
-        contentDescription = "avatar",
-        contentScale = ContentScale.Crop,
-        modifier = Modifier
-            .size(42.dp)
-            .clip(CircleShape)
-    )
-}
-
-@Composable
-fun ChatBlockMessages(
-    modifier: Modifier = Modifier,
-    mainSharedViewModel: MainSharedViewModel,
-    data: ChatBlock,
-    sentByMe: Boolean,
-    userName: String,
-) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = if (sentByMe) Alignment.End else Alignment.Start
-    ) {
-        Text(
-            text = if (sentByMe) userName else data.profile.name,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.primary
-        )
-        data.messages.forEachIndexed { index, message ->
-            Spacer(modifier = Modifier.height(2.dp))
-            SingleMessage(
-                contents = message.contents,
-                sentByMe = sentByMe,
-                verified = message.verified,
-                timestamp = message.timestamp,
-                isFirst = index == 0,
-                isLast = index == data.messages.lastIndex,
-                isSelected = mainSharedViewModel.selectedMessageStateList.contains(message),
-                onClick = {
-                    if (mainSharedViewModel.selectedMessageStateList.isNotEmpty()) {
-                        mainSharedViewModel.addOrRemoveItemOfSelectedMessageStateList(message)
-                    }
-                },
-                onLongClick = {
-                    mainSharedViewModel.addOrRemoveItemOfSelectedMessageStateList(
-                        message
-                    )
-                })
-        }
-    }
-}
+//@Composable
+//fun ChatBlock(
+//    modifier: Modifier = Modifier,
+//    mainSharedViewModel: MainSharedViewModel,
+//    data: ChatBlock,
+//    sentByMe: Boolean,
+//    userName: String,
+//    avatarUri: String?
+//) {
+//    Row(
+//        modifier = modifier
+//            .padding(horizontal = 16.dp, vertical = 8.dp),
+//    ) {
+//        if (sentByMe) {
+//            Spacer(modifier = Modifier.width(48.dp))
+//            ChatBlockMessages(
+//                modifier = Modifier.weight(1f),
+//                mainSharedViewModel = mainSharedViewModel,
+//                data = data,
+//                sentByMe = sentByMe,
+//                userName = userName
+//            )
+//            Spacer(modifier = Modifier.width(8.dp))
+//            ChatBlockAvatar(avatar = avatarUri)
+//        } else {
+//            ChatBlockAvatar(avatar = data.profile.avatar)
+//            Spacer(modifier = Modifier.width(8.dp))
+//            ChatBlockMessages(
+//                modifier = Modifier.weight(1f),
+//                mainSharedViewModel = mainSharedViewModel,
+//                data = data,
+//                sentByMe = sentByMe,
+//                userName = userName
+//            )
+//            Spacer(modifier = Modifier.width(48.dp))
+//        }
+//    }
+//}
+//
+//@Composable
+//fun ChatBlockAvatar(
+//    modifier: Modifier = Modifier,
+//    avatar: String? = null,
+//    avatarUri: String? = null
+//) {
+//    AsyncImage(
+//        model = ImageRequest.Builder(LocalContext.current)
+//            .data(avatarUri?.let { Uri.parse(it) } ?: avatar ?: R.drawable.avatar)
+//            .crossfade(true)
+//            .diskCachePolicy(CachePolicy.ENABLED)
+//            .build(),
+//        contentDescription = "avatar",
+//        contentScale = ContentScale.Crop,
+//        modifier = Modifier
+//            .size(42.dp)
+//            .clip(CircleShape)
+//    )
+//}
+//
+//@Composable
+//fun ChatBlockMessages(
+//    modifier: Modifier = Modifier,
+//    mainSharedViewModel: MainSharedViewModel,
+//    data: ChatBlock,
+//    sentByMe: Boolean,
+//    userName: String,
+//) {
+//    Column(
+//        modifier = modifier,
+//        horizontalAlignment = if (sentByMe) Alignment.End else Alignment.Start
+//    ) {
+//        Text(
+//            text = if (sentByMe) userName else data.profile.name,
+//            style = MaterialTheme.typography.labelMedium,
+//            color = MaterialTheme.colorScheme.primary
+//        )
+//        data.messages.forEachIndexed { index, message ->
+//            Spacer(modifier = Modifier.height(2.dp))
+//            SingleMessage(
+//                message = message,
+//                isFirst = index == 0,
+//                isLast = index == data.messages.lastIndex,
+//                isSelected = mainSharedViewModel.selectedMessageStateList.contains(message),
+//                onClick = {
+//                    if (mainSharedViewModel.selectedMessageStateList.isNotEmpty()) {
+//                        mainSharedViewModel.addOrRemoveItemOfSelectedMessageStateList(message)
+//                    }
+//                },
+//                onLongClick = {
+//                    mainSharedViewModel.addOrRemoveItemOfSelectedMessageStateList(
+//                        message
+//                    )
+//                })
+//        }
+//    }
+//}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SingleMessage(
     modifier: Modifier = Modifier,
-    contents: List<MessageContent>,
-    sentByMe: Boolean,
-    verified: Boolean,
-    timestamp: Long,
+    message: Message,
     isFirst: Boolean,
     isLast: Boolean,
     isSelected: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit
 ) {
-    val topStartRadius by animateDpAsState(targetValue = if (sentByMe || isFirst) 24.dp else 0.dp)
-    val topEndRadius by animateDpAsState(targetValue = if (!sentByMe || isFirst) 24.dp else 0.dp)
-    val bottomStartRadius by animateDpAsState(targetValue = if (sentByMe || isLast) 24.dp else 0.dp)
-    val bottomEndRadius by animateDpAsState(targetValue = if (!sentByMe || isLast) 24.dp else 0.dp)
+    val topStartRadius by animateDpAsState(targetValue = if (message.sentByMe || isFirst) 24.dp else 0.dp)
+    val topEndRadius by animateDpAsState(targetValue = if (!message.sentByMe || isFirst) 24.dp else 0.dp)
+    val bottomStartRadius by animateDpAsState(targetValue = if (message.sentByMe || isLast) 24.dp else 0.dp)
+    val bottomEndRadius by animateDpAsState(targetValue = if (!message.sentByMe || isLast) 24.dp else 0.dp)
     val backgroundColor by animateColorAsState(
-        targetValue = if (sentByMe) {
+        targetValue = if (message.sentByMe) {
             if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
         } else {
             if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
         }
     )
     val textColor by animateColorAsState(
-        targetValue = if (sentByMe) {
+        targetValue = if (message.sentByMe) {
             if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondary
         } else {
             if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
         }
     )
     Row(verticalAlignment = Alignment.Bottom) {
-        if (sentByMe && !verified) {
-            if (abs(System.currentTimeMillis() - timestamp) > 6000) {
+        if (message.sentByMe && !message.verified) {
+            if (abs(System.currentTimeMillis() - message.timestamp) > 6000) {
                 Icon(
                     modifier = Modifier.padding(bottom = 11.dp, end = 4.dp),
                     imageVector = Icons.Outlined.ErrorOutline,
@@ -595,7 +743,7 @@ fun SingleMessage(
                 .combinedClickable(onClick = onClick, onLongClick = onLongClick)
                 .animateContentSize()
         ) {
-            contents.forEachIndexed { index, messageContent ->
+            message.contents.forEachIndexed { index, messageContent ->
                 when (messageContent) {
                     is At -> Text(
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
@@ -630,10 +778,10 @@ fun SingleMessage(
                                 RoundedCornerShape(
                                     if (index == 0) (topStartRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp,
                                     if (index == 0) (topEndRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp,
-                                    if (index == contents.lastIndex) (bottomEndRadius - 3.dp).coerceAtLeast(
+                                    if (index == message.contents.lastIndex) (bottomEndRadius - 3.dp).coerceAtLeast(
                                         0.dp
                                     ) else 0.dp,
-                                    if (index == contents.lastIndex) (bottomStartRadius - 3.dp).coerceAtLeast(
+                                    if (index == message.contents.lastIndex) (bottomStartRadius - 3.dp).coerceAtLeast(
                                         0.dp
                                     ) else 0.dp
                                 )

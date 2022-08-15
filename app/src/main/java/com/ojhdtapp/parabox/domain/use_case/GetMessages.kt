@@ -37,23 +37,24 @@ class GetMessages @Inject constructor(
                 }
         }
     }
+
     // Must called within coroutine
-    fun pluginConnectionList(contact: Contact) : List<PluginConnection>{
+    fun pluginConnectionList(contact: Contact): List<PluginConnection> {
         return repository.getPluginConnectionByContactId(contactId = contact.contactId)
     }
 
     fun pagingFlow(pluginConnectionObjectIdList: List<Long>): Flow<PagingData<Message>> {
-            return Pager(
-                PagingConfig(
-                    pageSize = 20,
-                    enablePlaceholders = true
-                )
-            ) { repository.getMessagesPagingSource(pluginConnectionObjectIdList) }
-                .flow
-                .map { pagingData ->
-                    pagingData.map {
-                        it.toMessage()
-                    }
+        return Pager(
+            PagingConfig(
+                pageSize = 20,
+                enablePlaceholders = false
+            )
+        ) { repository.getMessagesPagingSource(pluginConnectionObjectIdList) }
+            .flow
+            .map { pagingData ->
+                pagingData.map {
+                    it.toMessage()
                 }
-        }
+            }
+    }
 }

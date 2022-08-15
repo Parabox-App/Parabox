@@ -94,11 +94,25 @@ fun GroupActionDialog(
             }, properties = DialogProperties(
                 dismissOnBackPress = true,
                 dismissOnClickOutside = true,
-                usePlatformDefaultWidth = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact
+//                usePlatformDefaultWidth = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact
+                usePlatformDefaultWidth = false
             )
         ) {
-            Surface(modifier = modifier.fillMaxWidth().animateContentSize(), shape = RoundedCornerShape(16.dp)) {
-                Column() {
+            val horizontalPadding = when (sizeClass.widthSizeClass) {
+                WindowWidthSizeClass.Compact -> 16.dp
+                WindowWidthSizeClass.Medium -> 32.dp
+                WindowWidthSizeClass.Expanded -> 0.dp
+                else -> 16.dp
+            }
+            Surface(
+                modifier = modifier
+                    .widthIn(0.dp, 580.dp)
+                    .padding(horizontal = horizontalPadding)
+                    .animateContentSize(),
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surface
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
                     SmallTopAppBar(title = { Text(text = "编组会话") },
                         navigationIcon = {
                             IconButton(
@@ -138,13 +152,17 @@ fun GroupActionDialog(
                         })
                     when (state.state) {
                         GroupInfoState.LOADING -> Box(
-                            modifier = Modifier.fillMaxWidth().height(360.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(360.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             CircularProgressIndicator()
                         }
                         GroupInfoState.ERROR -> Column(
-                            modifier = Modifier.fillMaxWidth().height(360.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(360.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ) {

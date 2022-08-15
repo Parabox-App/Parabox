@@ -168,6 +168,7 @@ fun MessagePage(
             openDialog = viewModel.showUserProfileDialogState.value,
             userName = mainSharedViewModel.userNameFlow.collectAsState(initial = "User").value,
             avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
+            sizeClass = sizeClass,
             onConfirm = { viewModel.setShowUserProfileDialogState(false) },
             onDismiss = { viewModel.setShowUserProfileDialogState(false) })
         Scaffold(
@@ -749,9 +750,10 @@ fun RowScope.MessageArea(
                 val isFirst = index == 0
                 val isLast = index == contactState.data.lastIndex
                 val isDragging = swipeableState.offset.value.roundToInt() != 0
-                val topRadius by animateDpAsState(targetValue = if (isDragging || isFirst) 28.dp else 0.dp)
+                // Smaller radius to hide lighting Corner
+                val topRadius by animateDpAsState(targetValue = if (isDragging || isFirst) 26.dp else 0.dp)
                 val bgTopRadius by animateDpAsState(targetValue = if (isFirst) 28.dp else 0.dp)
-                val bottomRadius by animateDpAsState(targetValue = if (isDragging || isLast) 28.dp else 0.dp)
+                val bottomRadius by animateDpAsState(targetValue = if (isDragging || isLast) 26.dp else 0.dp)
                 val bgBottomRadius by animateDpAsState(targetValue = if (isLast) 28.dp else 0.dp)
                 val isSelected =
                     viewModel.selectedContactStateList.map { it.contactId }
