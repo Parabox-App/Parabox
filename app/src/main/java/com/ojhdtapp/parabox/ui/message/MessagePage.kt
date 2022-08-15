@@ -65,10 +65,7 @@ import com.ojhdtapp.parabox.core.util.toTimeUntilNow
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.ChatPageDestination
-import com.ojhdtapp.parabox.ui.util.ActivityEvent
-import com.ojhdtapp.parabox.ui.util.HashTagEditor
-import com.ojhdtapp.parabox.ui.util.MessageNavGraph
-import com.ojhdtapp.parabox.ui.util.SearchAppBar
+import com.ojhdtapp.parabox.ui.util.*
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.navigate
@@ -167,6 +164,12 @@ fun MessagePage(
                 viewModel.clearSelectedContactStateList()
             }
         )
+        UserProfileDialog(
+            openDialog = viewModel.showUserProfileDialogState.value,
+            userName = mainSharedViewModel.userNameFlow.collectAsState(initial = "User").value,
+            avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
+            onConfirm = { viewModel.setShowUserProfileDialogState(false) },
+            onDismiss = { viewModel.setShowUserProfileDialogState(false) })
         Scaffold(
             modifier = modifier
                 .weight(1f)
@@ -259,7 +262,7 @@ fun MessagePage(
                         }
                     },
                     onAvatarClick = {
-                        onEvent(ActivityEvent.SetUserAvatar)
+                        viewModel.setShowUserProfileDialogState(true)
                     }
                 )
             },

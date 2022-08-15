@@ -97,64 +97,61 @@ fun GroupActionDialog(
                 usePlatformDefaultWidth = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact
             )
         ) {
-            Surface(modifier = modifier.fillMaxSize(), shape = RoundedCornerShape(16.dp)) {
-                Scaffold(
-                    topBar = {
-                        SmallTopAppBar(title = { Text(text = "编组会话") },
-                            navigationIcon = {
-                                IconButton(
-                                    onClick = {
-                                        name = ""
-                                        onDismiss()
+            Surface(modifier = modifier.fillMaxWidth().animateContentSize(), shape = RoundedCornerShape(16.dp)) {
+                Column() {
+                    SmallTopAppBar(title = { Text(text = "编组会话") },
+                        navigationIcon = {
+                            IconButton(
+                                onClick = {
+                                    name = ""
+                                    onDismiss()
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Close,
+                                    contentDescription = "close"
+                                )
+                            }
+                        },
+                        actions = {
+                            TextButton(
+                                onClick = {
+                                    if (name.isBlank()) {
+                                        nameError = true
                                     }
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Close,
-                                        contentDescription = "close"
-                                    )
-                                }
-                            },
-                            actions = {
-                                TextButton(
-                                    onClick = {
-                                        if (name.isBlank()) {
-                                            nameError = true
-                                        }
-                                        if (selectedPluginConnection.isEmpty()) {
-                                            pluginConnectionNotSelectedError = true
-                                        }
-                                        if (name.isNotBlank() && selectedPluginConnection.isNotEmpty() && selectedSenderId != null) {
-                                            onConfirm(
-                                                name,
-                                                selectedPluginConnection.toList(),
-                                                selectedSenderId!!,
-                                                selectedAvatar
-                                            )
-                                        }
-                                    },
-                                    enabled = state.state == GroupInfoState.SUCCESS
-                                ) {
-                                    Text(text = "保存")
-                                }
-                            })
-                    }
-                ) {
+                                    if (selectedPluginConnection.isEmpty()) {
+                                        pluginConnectionNotSelectedError = true
+                                    }
+                                    if (name.isNotBlank() && selectedPluginConnection.isNotEmpty() && selectedSenderId != null) {
+                                        onConfirm(
+                                            name,
+                                            selectedPluginConnection.toList(),
+                                            selectedSenderId!!,
+                                            selectedAvatar
+                                        )
+                                    }
+                                },
+                                enabled = state.state == GroupInfoState.SUCCESS
+                            ) {
+                                Text(text = "保存")
+                            }
+                        })
                     when (state.state) {
                         GroupInfoState.LOADING -> Box(
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier.fillMaxWidth().height(360.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             CircularProgressIndicator()
                         }
                         GroupInfoState.ERROR -> Column(
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier.fillMaxWidth().height(360.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ) {
                             Text(text = state.message!!)
                         }
                         GroupInfoState.SUCCESS -> GroupEditForm(
-                            paddingValues = it,
+                            paddingValues = PaddingValues(0.dp),
                             resource = state.resource!!,
                             name = name,
                             nameError = nameError,
@@ -174,7 +171,6 @@ fun GroupActionDialog(
                             onSelectedAvatarChange = { selectedAvatar = it }
                         )
                     }
-
                 }
             }
         }
