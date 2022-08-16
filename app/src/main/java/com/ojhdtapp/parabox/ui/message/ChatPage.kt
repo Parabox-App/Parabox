@@ -54,7 +54,7 @@ import coil.size.Scale
 import com.ojhdtapp.messagedto.SendMessageDto
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.itemsBeforeAndAfter
-import com.ojhdtapp.parabox.core.util.itemsBeforeAndAfterReverse
+import com.ojhdtapp.parabox.core.util.itemsBeforeAndAfterReverseIndexed
 import com.ojhdtapp.parabox.core.util.toDescriptiveTime
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.chat.ChatBlock
@@ -339,12 +339,12 @@ fun NormalChatPage(
                 item {
                     Spacer(modifier = Modifier.height(16.dp))
                 }
-                itemsBeforeAndAfterReverse(
+                itemsBeforeAndAfterReverseIndexed(
                     items = lazyPagingItems,
-                    key = { it.messageId }) { value, beforeValue, afterValue ->
+                    key = { it.messageId }) { value, beforeValue, afterValue, index ->
                     if (value != null) {
                         val shouldShowTimeDivider = remember(value, afterValue){
-                            beforeValue == null || abs(value.timestamp - beforeValue.timestamp) > 120000
+                            beforeValue == null || abs(value.timestamp - beforeValue.timestamp) > 120000 || (index + 1) % 40 == 0
                         }
                         val willShowTimeDivider = remember(value, afterValue){
                             afterValue == null || abs(value.timestamp - afterValue.timestamp) > 120000

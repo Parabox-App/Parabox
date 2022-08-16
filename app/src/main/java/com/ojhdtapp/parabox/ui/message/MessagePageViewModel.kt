@@ -390,6 +390,14 @@ class MessagePageViewModel @Inject constructor(
         _showUserProfileDialogState.value = value
     }
 
+    // Edit Username Dialog
+    private val _editUserNameDialogState = mutableStateOf<Boolean>(false)
+    val editUserNameDialogState : State<Boolean> = _editUserNameDialogState
+
+    fun setEditUserNameDialogState(value : Boolean){
+        _editUserNameDialogState.value = value
+    }
+
     // Tag & Filter
     private val _tagEditing = mutableStateOf<Boolean>(false)
     val tagEditing: State<Boolean> = _tagEditing

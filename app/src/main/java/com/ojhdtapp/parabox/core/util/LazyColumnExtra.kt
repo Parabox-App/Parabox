@@ -27,10 +27,10 @@ fun <T : Any> LazyListScope.itemsBeforeAndAfter(
     }
 }
 
-fun <T : Any> LazyListScope.itemsBeforeAndAfterReverse(
+fun <T : Any> LazyListScope.itemsBeforeAndAfterReverseIndexed(
     items: LazyPagingItems<T>,
     key: ((item: T) -> Any)? = null,
-    itemContent: @Composable LazyItemScope.(value: T?, beforeValue: T?, afterValue: T?) -> Unit
+    itemContent: @Composable LazyItemScope.(value: T?, beforeValue: T?, afterValue: T?, index: Int) -> Unit
 ) {
     items(
         count = items.itemCount,
@@ -45,6 +45,6 @@ fun <T : Any> LazyListScope.itemsBeforeAndAfterReverse(
     ) { index ->
         val beforeValue = if (index - 1 < 0) null else items.peek(index - 1)
         val afterValue = if (index + 1 >= items.itemCount) null else items.peek(index + 1)
-        itemContent(items[index], afterValue, beforeValue)
+        itemContent(items[index], afterValue, beforeValue, index)
     }
 }

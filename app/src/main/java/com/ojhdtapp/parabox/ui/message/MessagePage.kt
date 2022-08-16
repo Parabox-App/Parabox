@@ -65,6 +65,7 @@ import com.ojhdtapp.parabox.core.util.toTimeUntilNow
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.ChatPageDestination
+import com.ojhdtapp.parabox.ui.setting.EditUserNameDialog
 import com.ojhdtapp.parabox.ui.util.*
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -169,8 +170,22 @@ fun MessagePage(
             userName = mainSharedViewModel.userNameFlow.collectAsState(initial = "User").value,
             avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
             sizeClass = sizeClass,
-            onConfirm = { viewModel.setShowUserProfileDialogState(false) },
+            onUpdateName = {
+                viewModel.setEditUserNameDialogState(true)
+            },
+            onUpdateAvatar = {
+                onEvent(ActivityEvent.SetUserAvatar)
+            },
             onDismiss = { viewModel.setShowUserProfileDialogState(false) })
+        EditUserNameDialog(
+            openDialog = viewModel.editUserNameDialogState.value,
+            userName = mainSharedViewModel.userNameFlow.collectAsState(initial = "User").value,
+            onConfirm = {
+                viewModel.setEditUserNameDialogState(false)
+                mainSharedViewModel.setUserName(it)
+            },
+            onDismiss = { viewModel.setEditUserNameDialogState(false) }
+        )
         Scaffold(
             modifier = modifier
                 .weight(1f)

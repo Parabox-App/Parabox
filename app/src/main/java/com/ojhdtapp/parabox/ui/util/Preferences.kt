@@ -86,6 +86,56 @@ fun SwitchPreference(
     }
 }
 
+//@Composable
+//fun NormalPreference(
+//    modifier: Modifier = Modifier,
+//    leadingIcon: (@Composable () -> Unit)? = null,
+//    trailingIcon: (@Composable () -> Unit)? = null,
+//    title: String,
+//    subtitle: String? = null,
+//    warning: Boolean = false,
+//    horizontalPadding: Dp = 24.dp,
+//    onClick: () -> Unit
+//) {
+//    Row(
+//        modifier = modifier
+//            .clickable { onClick() }
+//            .padding(horizontalPadding, 16.dp)
+//            .fillMaxWidth(),
+//        horizontalArrangement = Arrangement.Start,
+//        verticalAlignment = Alignment.CenterVertically
+//    ) {
+//        val textColor =
+//            if (warning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+//        if (leadingIcon != null) {
+//            Box(modifier = Modifier.padding(end = 16.dp), contentAlignment = Alignment.Center) {
+//                leadingIcon()
+//            }
+//        }
+//        Column(modifier = Modifier.weight(1f)) {
+//            Text(
+//                text = title,
+//                style = MaterialTheme.typography.titleLarge,
+//                color = textColor,
+//                fontSize = MaterialTheme.fontSize.title
+//            )
+//            subtitle?.let {
+//                Spacer(modifier = Modifier.height(4.dp))
+//                Text(
+//                    text = it,
+//                    style = MaterialTheme.typography.bodyMedium,
+//                    color = textColor
+//                )
+//            }
+//        }
+//        if (trailingIcon != null) {
+//            Box(modifier = Modifier.padding(start = 16.dp), contentAlignment = Alignment.Center) {
+//                trailingIcon()
+//            }
+//        }
+//    }
+//}
+
 @Composable
 fun NormalPreference(
     modifier: Modifier = Modifier,
@@ -95,40 +145,92 @@ fun NormalPreference(
     subtitle: String? = null,
     warning: Boolean = false,
     horizontalPadding: Dp = 24.dp,
-    onClick: () -> Unit
+    onLeadingIconClick: (() -> Unit)? = null,
+    onTrailingIconClick: (() -> Unit)? = null,
+    onClick: () -> Unit,
 ) {
-    Row(
-        modifier = modifier
-            .clickable { onClick() }
-            .padding(horizontalPadding, 16.dp)
-            .fillMaxWidth(),
-        horizontalArrangement = Arrangement.Start,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        val textColor = if(warning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
-        if (leadingIcon != null) {
-            Box(modifier = Modifier.padding(end = 16.dp), contentAlignment = Alignment.Center) {
+    Row(modifier = modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+        if (onLeadingIconClick != null && leadingIcon != null) {
+            Row(
+                modifier = Modifier
+                    .clickable { onLeadingIconClick() }
+                    .padding(start = horizontalPadding, top = 16.dp, bottom = 16.dp)
+                    .fillMaxHeight(),
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 leadingIcon()
-            }
-        }
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge,
-                color = textColor,
-                fontSize = MaterialTheme.fontSize.title
-            )
-            subtitle?.let {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = textColor
+                Spacer(modifier = Modifier.width(15.dp))
+                Divider(
+                    modifier = Modifier
+                        .height(32.dp)
+                        .width(1.dp),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
                 )
             }
         }
-        if (trailingIcon != null) {
-            Box(modifier = Modifier.padding(start = 16.dp), contentAlignment = Alignment.Center) {
+        Row(
+            modifier = Modifier
+                .clickable { onClick() }
+                .padding(
+                    start = if (onLeadingIconClick != null && leadingIcon != null) 16.dp else horizontalPadding,
+                    end = if (onTrailingIconClick != null && trailingIcon != null) 16.dp else horizontalPadding,
+                    top = 16.dp,
+                    bottom = 16.dp
+                )
+                .weight(1f)
+                .fillMaxHeight(),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            val textColor =
+                if (warning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+            if (leadingIcon != null && onLeadingIconClick == null) {
+                Box(modifier = Modifier.padding(end = 16.dp), contentAlignment = Alignment.Center) {
+                    leadingIcon()
+                }
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = textColor,
+                    fontSize = MaterialTheme.fontSize.title
+                )
+                subtitle?.let {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = textColor
+                    )
+                }
+            }
+            if (trailingIcon != null) {
+                Box(
+                    modifier = Modifier.padding(start = 16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    trailingIcon()
+                }
+            }
+        }
+        if (onTrailingIconClick != null && trailingIcon != null) {
+            Row(
+                modifier = Modifier
+                    .clickable { onTrailingIconClick() }
+                    .padding(end = horizontalPadding, top = 16.dp, bottom = 16.dp)
+                    .fillMaxHeight(),
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Divider(
+                    modifier = Modifier
+                        .height(32.dp)
+                        .width(1.dp),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                )
+                Spacer(modifier = Modifier.width(15.dp))
                 trailingIcon()
             }
         }
