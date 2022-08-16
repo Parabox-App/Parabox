@@ -169,6 +169,7 @@ fun MessagePage(
             openDialog = viewModel.showUserProfileDialogState.value,
             userName = mainSharedViewModel.userNameFlow.collectAsState(initial = "User").value,
             avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
+            pluginList = mainSharedViewModel.pluginListStateFlow.collectAsState().value,
             sizeClass = sizeClass,
             onUpdateName = {
                 viewModel.setEditUserNameDialogState(true)

@@ -35,7 +35,7 @@ fun EditUserNameDialog(
             title = { Text(text = "如何称呼您") },
             text = {
                 OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
+//                    modifier = Modifier.fillMaxWidth(),
                     value = editUserName,
                     onValueChange = {
                         editUserNameError = false

@@ -8,9 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.NavigateNext
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
@@ -28,6 +26,7 @@ import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.ui.message.GroupInfoState
 
 @OptIn(
@@ -40,6 +39,7 @@ fun UserProfileDialog(
     openDialog: Boolean,
     userName: String = "",
     avatarUri: String? = null,
+    pluginList: List<AppModel>,
     sizeClass: WindowSizeClass,
     onUpdateName: () -> Unit,
     onUpdateAvatar: () -> Unit,
@@ -67,7 +67,8 @@ fun UserProfileDialog(
                     .padding(horizontal = horizontalPadding)
                     .animateContentSize(),
                 shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surface
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 2.dp
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     SmallTopAppBar(title = {},
@@ -131,13 +132,90 @@ fun UserProfileDialog(
                         }
                     )
                     Divider(
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
                     )
                     PreferencesCategory(text = "已连接服务")
+                    NormalPreference(
+                        title = "Google Drive",
+                        subtitle = "已使用 75% 的存储空间，总空间: 15 GB",
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Outlined.Cloud,
+                                contentDescription = "cloud",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    ) {
+
+                    }
+                    if (pluginList.isNotEmpty()) {
+                        Divider(
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+                        )
+                        PreferencesCategory(text = "扩展")
+                        pluginList.forEach {
+                            NormalPreference(
+                                title = it.name,
+                                subtitle = "版本 ${it.version}",
+                                leadingIcon = {
+                                    AsyncImage(
+                                        model = it.icon,
+                                        contentDescription = "icon",
+                                        modifier = Modifier
+                                            .size(24.dp)
+                                            .clip(
+                                                CircleShape
+                                            )
+                                    )
+                                },
+                                trailingIcon = {
+                                    when (it.runningStatus) {
+                                        AppModel.RUNNING_STATUS_DISABLED -> Icon(
+                                            imageVector = Icons.Outlined.Block,
+                                            contentDescription = "disabled"
+                                        )
+                                        AppModel.RUNNING_STATUS_ERROR -> Icon(
+                                            imageVector = Icons.Outlined.ErrorOutline,
+                                            contentDescription = "error",
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
+                                        AppModel.RUNNING_STATUS_RUNNING -> Icon(
+                                            imageVector = Icons.Outlined.CheckCircleOutline,
+                                            contentDescription = "running",
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                        AppModel.RUNNING_STATUS_CHECKING -> CircularProgressIndicator(
+                                            modifier = Modifier.size(24.dp),
+                                            strokeWidth = 2.dp
+                                        )
+                                    }
+                                },
+                                onClick = {}
+                            )
+                        }
+                    }
                     Divider(
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
                     )
-                    PreferencesCategory(text = "扩展")
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextButton(onClick = { /*TODO*/ }) {
+                            Text(text = "免责声明", color = MaterialTheme.colorScheme.primary)
+                        }
+                        Text(
+                            text = "•",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        TextButton(onClick = { /*TODO*/ }) {
+                            Text(text = "开放源代码许可")
+                        }
+                    }
                 }
             }
         }
