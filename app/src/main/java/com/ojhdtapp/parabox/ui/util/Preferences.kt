@@ -258,7 +258,7 @@ fun <T> SimpleMenuPreference(
     ) {
         DropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false }
+            onDismissRequest = { expanded = false },
         ) {
             for ((key, value) in optionsMap) {
                 DropdownMenuItem(text = { Text(text = value) }, onClick = {

@@ -16,11 +16,13 @@ class GroupNewContact @Inject constructor(
         name: String,
         pluginConnections: List<PluginConnection>,
         senderId: Long,
-        avatar: String?
+        avatar: String? = null,
+        avatarUri: String? = null,
+        tags: List<String>,
     ): Flow<Resource<Boolean>> {
         return flow {
             emit(Resource.Loading())
-            repository.groupNewContact(name, pluginConnections, senderId, avatar).let {
+            repository.groupNewContact(name, pluginConnections, senderId, avatar, avatarUri, tags).let {
                 if (it) {
                     emit(Resource.Success(true))
                 } else {

@@ -324,7 +324,7 @@ fun SelectContentField(
                     }) {
                         Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = "more")
                     }
-                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.width(224.dp)) {
                         if (selection.map { it.isPinned }.contains(false)) {
                             DropdownMenuItem(
                                 text = { Text(text = if (selection.size <= 1) "置顶" else "全部置顶") },
@@ -505,7 +505,7 @@ fun SelectSpecContentField(
             }) {
                 Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = "more")
             }
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.width(224.dp)) {
                 DropdownMenuItem(
                     text = { Text(text = "移出所有归档") },
                     onClick = {
@@ -566,7 +566,7 @@ fun PageContentField(
             }) {
                 Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = "more")
             }
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.width(224.dp)) {
                 DropdownMenuItem(
                     text = { Text(text = "移出所有归档") },
                     onClick = {

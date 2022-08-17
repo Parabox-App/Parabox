@@ -310,7 +310,8 @@ class MainRepositoryImpl @Inject constructor(
         pluginConnections: List<PluginConnection>,
         senderId: Long,
         avatar: String?,
-        avatarUri: String?
+        avatarUri: String?,
+        tags: List<String>
     ): Boolean {
         return coroutineScope {
             withContext(Dispatchers.IO) {
@@ -323,7 +324,7 @@ class MainRepositoryImpl @Inject constructor(
                         ),
                         latestMessage = LatestMessage("", "", System.currentTimeMillis(), 0),
                         senderId = senderId,
-                        tags = emptyList()
+                        tags = tags
                     )
                     val contactId = database.contactDao.insertContact(contactEntity)
                     pluginConnections.forEach { conn ->

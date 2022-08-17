@@ -86,6 +86,7 @@ fun ChatPage(
 
 //    val viewModel: MessagePageViewModel = hiltViewModel()
     val messageState by mainSharedViewModel.messageStateFlow.collectAsState()
+    val context = LocalContext.current
     Crossfade(targetState = messageState.state) {
         when (it) {
             MessageState.NULL -> {
@@ -109,20 +110,25 @@ fun ChatPage(
                         }
                     },
                     onSend = {
-                        onEvent(
-                            ActivityEvent.SendMessage(
-                                SendMessageDto(
-                                    content = listOf(
-                                        com.ojhdtapp.messagedto.message_content.PlainText(
-                                            it
-                                        )
-                                    ),
-                                    timestamp = System.currentTimeMillis(),
-                                    pluginConnection = messageState.pluginConnectionList.first()
-                                        .toSenderPluginConnection()
+                        val selectedPluginConnection = messageState.selectedPluginConnection
+                            ?: messageState.pluginConnectionList.firstOrNull()
+                        if (selectedPluginConnection == null) {
+                            Toast.makeText(context, "未选择有效的发送出口", Toast.LENGTH_SHORT).show()
+                        } else {
+                            onEvent(
+                                ActivityEvent.SendMessage(
+                                    SendMessageDto(
+                                        content = listOf(
+                                            com.ojhdtapp.messagedto.message_content.PlainText(
+                                                it
+                                            )
+                                        ),
+                                        timestamp = System.currentTimeMillis(),
+                                        pluginConnection = selectedPluginConnection.toSenderPluginConnection()
+                                    )
                                 )
                             )
-                        )
+                        }
                     }
                 )
             }
@@ -252,15 +258,17 @@ fun NormalChatPage(
                                 }
                                 DropdownMenu(
                                     expanded = menuExpanded,
-                                    onDismissRequest = { menuExpanded = false }) {
+                                    onDismissRequest = { menuExpanded = false },
+                                    modifier = Modifier.width(224.dp)
+                                ) {
                                     DropdownMenuItem(
-                                        text = { Text(text = "会话信息") },
+                                        text = { Text(text = "删除") },
                                         onClick = {
                                             menuExpanded = false
                                         },
                                         leadingIcon = {
                                             Icon(
-                                                Icons.Outlined.Info,
+                                                Icons.Outlined.DeleteOutline,
                                                 contentDescription = null
                                             )
                                         })
@@ -289,13 +297,79 @@ fun NormalChatPage(
                                     imageVector = Icons.Outlined.Search,
                                     contentDescription = "search"
                                 )
-
                             }
-                            IconButton(onClick = { /*TODO*/ }) {
-                                Icon(
-                                    imageVector = Icons.Outlined.MoreVert,
-                                    contentDescription = "more"
-                                )
+                            Box(
+                                modifier = Modifier
+                                    .wrapContentSize(Alignment.TopStart)
+                            ) {
+                                IconButton(onClick = { menuExpanded = !menuExpanded }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.MoreVert,
+                                        contentDescription = "more"
+                                    )
+                                }
+                                DropdownMenu(
+                                    expanded = menuExpanded,
+                                    onDismissRequest = { menuExpanded = false },
+                                    modifier = Modifier.width(224.dp)
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text(text = "会话信息") },
+                                        onClick = {
+                                            menuExpanded = false
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Outlined.Info,
+                                                contentDescription = null
+                                            )
+                                        })
+                                    Box(
+                                        modifier = Modifier
+                                            .wrapContentSize(Alignment.BottomCenter)
+                                    ) {
+                                        var pluginConnectionMenuExpanded by remember(
+                                            menuExpanded
+                                        ) {
+                                            mutableStateOf(false)
+                                        }
+                                        DropdownMenuItem(
+                                            text = { Text(text = "消息发送出口") },
+                                            onClick = {
+                                                pluginConnectionMenuExpanded =
+                                                    !pluginConnectionMenuExpanded
+                                            },
+                                            leadingIcon = {
+                                                Icon(
+                                                    Icons.Outlined.Contacts,
+                                                    contentDescription = null
+                                                )
+                                            },
+                                            trailingIcon = {
+                                                Icon(
+                                                    Icons.Outlined.ArrowRight,
+                                                    contentDescription = null
+                                                )
+                                            })
+                                        DropdownMenu(
+                                            expanded = pluginConnectionMenuExpanded,
+                                            onDismissRequest = {
+                                                pluginConnectionMenuExpanded = false
+                                            }) {
+                                            messageState.pluginConnectionList.forEach {
+                                                DropdownMenuItem(
+                                                    text = { Text(text = "${it.connectionType} - ${it.id}") },
+                                                    onClick = { mainSharedViewModel.updateSelectedPluginConnection(it) },
+                                                    trailingIcon = {
+                                                        Icon(
+                                                            imageVector = if (it.objectId == messageState.selectedPluginConnection?.objectId) Icons.Outlined.RadioButtonChecked else Icons.Outlined.RadioButtonUnchecked,
+                                                            contentDescription = "radio"
+                                                        )
+                                                    })
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         },
                         scrollBehavior = scrollBehavior

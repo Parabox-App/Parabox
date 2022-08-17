@@ -585,7 +585,8 @@ fun RowScope.MessageArea(
                             )
                             androidx.compose.material3.DropdownMenu(
                                 expanded = showDropDownMenu,
-                                onDismissRequest = { showDropDownMenu = false }
+                                onDismissRequest = { showDropDownMenu = false },
+                                modifier = Modifier.width(224.dp)
                             ) {
                                 DropdownMenuItem(
                                     text = { Text("全部") },

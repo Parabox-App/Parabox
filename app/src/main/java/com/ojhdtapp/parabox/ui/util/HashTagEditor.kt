@@ -39,7 +39,7 @@ import kotlinx.coroutines.launch
 object HashTagEditor {
     const val PADDING_NONE = 0
     const val PADDING_SMALL = 1
-    const val PAdding_MEDIUM = 2
+    const val PADDING_MEDIUM = 2
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -128,7 +128,7 @@ fun HashTagEditor(
                     horizontal = when (padding) {
                         HashTagEditor.PADDING_NONE -> 0.dp
                         HashTagEditor.PADDING_SMALL -> 16.dp
-                        HashTagEditor.PAdding_MEDIUM -> 32.dp
+                        HashTagEditor.PADDING_MEDIUM -> 32.dp
                         else -> 0.dp
                     }
                 ),
@@ -188,7 +188,7 @@ fun TextFieldContent(
                 start = when (padding) {
                     HashTagEditor.PADDING_NONE -> 0.dp
                     HashTagEditor.PADDING_SMALL -> 16.dp
-                    HashTagEditor.PAdding_MEDIUM -> 32.dp
+                    HashTagEditor.PADDING_MEDIUM -> 32.dp
                     else -> 0.dp
                 },
                 end = 0.dp

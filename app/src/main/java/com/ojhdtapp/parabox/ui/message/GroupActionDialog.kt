@@ -5,8 +5,12 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
@@ -27,26 +31,29 @@ import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalTextInputService
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.TextFieldValue
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
-import com.ojhdtapp.parabox.core.util.Resource
-import com.ojhdtapp.parabox.domain.model.Contact
+import com.ojhdtapp.parabox.core.util.FormUtil
 import com.ojhdtapp.parabox.domain.model.PluginConnection
-import com.ojhdtapp.parabox.domain.model.Profile
+import com.ojhdtapp.parabox.ui.util.HashTagEditor
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -56,7 +63,7 @@ fun GroupActionDialog(
     state: GroupInfoState,
     sizeClass: WindowSizeClass,
     onDismiss: () -> Unit,
-    onConfirm: (name: String, pluginConnections: List<PluginConnection>, senderId: Long, avatar: String?) -> Unit
+    onConfirm: (name: String, pluginConnections: List<PluginConnection>, senderId: Long, avatar: String?, avatarUri: String?, tags: List<String>) -> Unit
 ) {
     if (showDialog) {
         var name by remember {
@@ -86,6 +93,10 @@ fun GroupActionDialog(
 
         var selectedAvatar by remember {
             mutableStateOf(state.resource?.avatar?.firstOrNull())
+        }
+
+        var selectedTags = remember {
+            mutableStateListOf<String>()
         }
         Dialog(
             onDismissRequest = {
@@ -141,7 +152,9 @@ fun GroupActionDialog(
                                             name,
                                             selectedPluginConnection.toList(),
                                             selectedSenderId!!,
-                                            selectedAvatar
+                                            selectedAvatar,
+                                            null,
+                                            selectedTags.toList()
                                         )
                                     }
                                 },
@@ -178,6 +191,7 @@ fun GroupActionDialog(
                             pluginConnectionNotSelectedError = pluginConnectionNotSelectedError,
                             selectedSenderId = selectedSenderId,
                             selectedAvatar = selectedAvatar,
+                            selectedTags = selectedTags,
                             onNameChange = {
                                 name = it
                                 nameError = false
@@ -186,7 +200,7 @@ fun GroupActionDialog(
                             onSelectedPluginConnectionAdd = { selectedPluginConnection.add(it) },
                             onSelectedPluginConnectionRemove = { selectedPluginConnection.remove(it) },
                             onSelectedSenderIdChange = { selectedSenderId = it },
-                            onSelectedAvatarChange = { selectedAvatar = it }
+                            onSelectedAvatarChange = { selectedAvatar = it },
                         )
                     }
                 }
@@ -195,7 +209,7 @@ fun GroupActionDialog(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun GroupEditForm(
     modifier: Modifier = Modifier,
@@ -208,6 +222,7 @@ fun GroupEditForm(
     pluginConnectionNotSelectedError: Boolean,
     selectedSenderId: Long?,
     selectedAvatar: String?,
+    selectedTags: SnapshotStateList<String>,
     onNameChange: (value: String) -> Unit,
     onAvatarSelectorTrigger: (value: Boolean) -> Unit,
     onSelectedPluginConnectionAdd: (target: PluginConnection) -> Unit,
@@ -229,7 +244,7 @@ fun GroupEditForm(
             val focusRequester = remember { FocusRequester() }
             val focusManager = LocalFocusManager.current
             val inputService = LocalTextInputService.current
-            LaunchedEffect(Unit) {
+            LaunchedEffect(true) {
                 delay(300)
                 inputService?.showSoftwareKeyboard()
                 focusRequester.requestFocus()
@@ -368,6 +383,137 @@ fun GroupEditForm(
                                 contentDescription = "Add Avatar",
                                 tint = MaterialTheme.colorScheme.onPrimaryContainer
                             )
+                        }
+                    }
+                }
+            }
+        }
+        item {
+            val coroutineScope = rememberCoroutineScope()
+            val hashTagLazyListState = rememberLazyListState()
+            val hashTagFocusRequester = remember { FocusRequester() }
+            val hashTagInteraction = remember { MutableInteractionSource() }
+            var hashTagText by remember {
+                mutableStateOf("")
+            }
+            var hashTagError by remember {
+                mutableStateOf<String>("")
+            }
+            var hashTagShouldShowError by remember {
+                mutableStateOf(false)
+            }
+            var onConfirmDelete by remember {
+                mutableStateOf(false)
+            }
+            val rowInteraction = remember { MutableInteractionSource() }
+            Card(shape = RoundedCornerShape(24.dp)) {
+                Column() {
+                    Text(
+                        modifier = Modifier.padding(16.dp),
+                        text = "快速标签",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                        text = "标签可帮助快速筛选，定位会话。\n可稍后再作更改。允许留空。",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        modifier = Modifier.padding(start = 16.dp),
+                        text = "当前标签",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    HashTagEditor(
+                        textFieldValue = hashTagText,
+                        enabled = true,
+                        onValueChanged = {
+                            val values = FormUtil.splitPerSpaceOrNewLine(it)
+
+                            if (values.size >= 2) {
+                                onConfirmDelete = false
+                                if (!FormUtil.checkTagMinimumCharacter(values[0])) {
+                                    hashTagError = "标签应至少包含两个字符"
+                                    hashTagShouldShowError = true
+                                } else if (!FormUtil.checkTagMaximumCharacter(values[0])) {
+                                    hashTagError = "标签长度不应超过50"
+                                    hashTagShouldShowError = true
+                                } else if (selectedTags.contains(values[0])) {
+                                    hashTagError = "该标签已存在"
+                                    hashTagShouldShowError = true
+                                } else {
+                                    hashTagShouldShowError = false
+                                }
+
+                                if (!hashTagShouldShowError) {
+                                    selectedTags.add(values[0])
+                                    hashTagText = ""
+                                }
+                            } else {
+                                hashTagText = it
+                            }
+                        },
+                        placeHolder = "暂无标签",
+                        placeHolderWhenEnabled = "请输入标签后敲击空格或换行符",
+                        lazyListState = hashTagLazyListState,
+                        focusRequester = hashTagFocusRequester,
+                        textFieldInteraction = hashTagInteraction,
+                        rowInteraction = rowInteraction,
+                        errorMessage = hashTagError,
+                        shouldShowError = hashTagShouldShowError,
+                        listOfChips = selectedTags,
+                        selectedListOfChips = null,
+                        innerModifier = Modifier.onKeyEvent {
+                            if (it.key.keyCode == Key.Backspace.keyCode && hashTagText.isBlank()) {
+                                if (onConfirmDelete) {
+                                    selectedTags.removeLastOrNull()
+                                    onConfirmDelete = false
+                                } else {
+                                    onConfirmDelete = true
+                                }
+                            }
+                            false
+                        },
+                        onChipClick = {},
+                        onChipClickWhenEnabled = { chipIndex ->
+                            if (selectedTags.isNotEmpty()) {
+                                selectedTags.removeAt(chipIndex)
+                            }
+                        },
+                        padding = HashTagEditor.PADDING_SMALL,
+                        onConfirmDelete = onConfirmDelete
+                    )
+                    Text(
+                        modifier = Modifier.padding(start = 16.dp),
+                        text = "常用标签",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp)
+                    ) {
+                        items(listOf("工作", "课程", "家庭", "通知", "同学")) {
+                            FilterChip(
+                                selected = false,
+                                onClick = {
+                                    if (!selectedTags.contains(it)) {
+                                        selectedTags.add(it)
+                                        coroutineScope.launch {
+                                            delay(100)
+                                            if (selectedTags.isNotEmpty())
+                                                hashTagLazyListState.animateScrollToItem(
+                                                    selectedTags.lastIndex
+                                                )
+                                        }
+                                    } else {
+                                        hashTagError = "该标签已存在"
+                                        hashTagShouldShowError = true
+                                    }
+                                },
+                                label = { Text(text = it) })
                         }
                     }
                 }

@@ -14,7 +14,8 @@ data class ArchivedContactState(val isHidden: Boolean = false, val data: List<Co
 data class MessageState(
     val state: Int = MessageState.NULL,
     val contact: Contact? = null,
-    val pluginConnectionList: List<PluginConnection> = emptyList()
+    val pluginConnectionList: List<PluginConnection> = emptyList(),
+    val selectedPluginConnection: PluginConnection? = null
 ) {
     companion object {
         const val NULL = 0

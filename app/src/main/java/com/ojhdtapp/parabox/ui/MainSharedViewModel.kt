@@ -19,6 +19,7 @@ import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Message
+import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.use_case.GetMessages
 import com.ojhdtapp.parabox.ui.message.MessageState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -54,9 +55,15 @@ class MainSharedViewModel @Inject constructor(
         _messageStateFlow.value = MessageState(MessageState.LOADING, contact)
         viewModelScope.launch(Dispatchers.IO) {
             getMessages.pluginConnectionList(contact).also {
-                _messageStateFlow.value = MessageState(MessageState.SUCCESS, contact, it)
+                _messageStateFlow.value = MessageState(MessageState.SUCCESS, contact, it, it.findLast { it.objectId == contact.senderId })
             }
         }
+    }
+
+    fun updateSelectedPluginConnection(plg: PluginConnection){
+        _messageStateFlow.value = messageStateFlow.value.copy(
+            selectedPluginConnection = plg
+        )
     }
 
     fun receiveMessagePagingDataFlow(pluginConnectionObjectIdList: List<Long>): Flow<PagingData<Message>> =

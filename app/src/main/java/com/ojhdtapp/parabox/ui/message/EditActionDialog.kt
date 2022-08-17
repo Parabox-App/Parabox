@@ -427,7 +427,7 @@ fun EditActionDialog(
                                     hashTagList.removeAt(chipIndex)
                                 }
                             },
-                            padding = if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) HashTagEditor.PADDING_SMALL else HashTagEditor.PAdding_MEDIUM,
+                            padding = if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) HashTagEditor.PADDING_SMALL else HashTagEditor.PADDING_MEDIUM,
                             onConfirmDelete = onConfirmDelete
                         )
                     }
