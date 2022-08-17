@@ -15,7 +15,7 @@ import com.ojhdtapp.parabox.ui.theme.fontSize
 fun PreferencesCategory(modifier: Modifier = Modifier, text: String) {
     Text(
         modifier = modifier
-            .padding(24.dp, 8.dp)
+            .padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 8.dp)
             .fillMaxWidth(),
         text = text,
         style = MaterialTheme.typography.labelLarge,

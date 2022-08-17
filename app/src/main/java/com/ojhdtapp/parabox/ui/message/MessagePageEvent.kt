@@ -24,3 +24,14 @@ sealed class EditActionDialogEvent {
 
     data class ArchivedStateUpdate(val contactId: Long, val value: Boolean): EditActionDialogEvent()
 }
+
+sealed class DropdownMenuItemEvent{
+    data class Pin(val value: Boolean): DropdownMenuItemEvent()
+    object Hide: DropdownMenuItemEvent()
+    data class MarkAsRead(val value: Boolean): DropdownMenuItemEvent()
+    data class Archive(val value: Boolean): DropdownMenuItemEvent()
+    object HideArchive: DropdownMenuItemEvent()
+    object UnArchiveALl: DropdownMenuItemEvent()
+    object NewTag: DropdownMenuItemEvent()
+    object Info: DropdownMenuItemEvent()
+}

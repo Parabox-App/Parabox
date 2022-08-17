@@ -38,6 +38,7 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.domain.model.Contact
+import com.ojhdtapp.parabox.ui.message.DropdownMenuItemEvent
 
 object SearchAppBar {
     const val NONE = 0
@@ -59,15 +60,8 @@ fun SearchAppBar(
     selection: SnapshotStateList<Contact> = mutableStateListOf(),
     avatarUri: String?,
     onGroupAction: () -> Unit = {},
-    onEditAction: () -> Unit = {},
     onExpandAction: () -> Unit = {},
-    onNewTagAction: () -> Unit = {},
-    onHideAction: () -> Unit = {},
-    onArchiveHideAction: () -> Unit = {},
-    onPinAction: (value: Boolean) -> Unit = {},
-    onArchiveAction: (value: Boolean) -> Unit = {},
-    onUnArchiveAction: () -> Unit = {},
-    onMarkAsReadAction: (read: Boolean) -> Unit = {},
+    onDropdownMenuItemEvent: (event: DropdownMenuItemEvent) -> Unit,
     sizeClass: WindowSizeClass,
     onMenuClick: () -> Unit,
     onAvatarClick: () -> Unit
@@ -118,13 +112,8 @@ fun SearchAppBar(
                             onActivateStateChanged = onActivateStateChanged,
                             selection = selection,
                             onGroupAction = onGroupAction,
-                            onEditAction = onEditAction,
-                            onNewTagAction = onNewTagAction,
                             onExpandAction = onExpandAction,
-                            onPinAction = onPinAction,
-                            onHideAction = onHideAction,
-                            onArchiveAction = onArchiveAction,
-                            onMarkAsReadAction = onMarkAsReadAction
+                            onDropdownMenuItemEvent = onDropdownMenuItemEvent
                         )
                     }
                     SearchAppBar.SEARCH, SearchAppBar.NONE -> {
@@ -138,7 +127,7 @@ fun SearchAppBar(
                             onTextChange = onTextChange,
                             keyboardController = keyboardController,
                             isExpanded = isExpanded,
-                            avatarUri = avatarUri ,
+                            avatarUri = avatarUri,
                             onMenuClick = onMenuClick,
                             onAvatarClick = onAvatarClick
                         )
@@ -148,8 +137,7 @@ fun SearchAppBar(
                             modifier = Modifier.align(Alignment.BottomCenter),
                             isActivated = isActivated,
                             onActivateStateChanged = onActivateStateChanged,
-                            onHideAction = onArchiveHideAction,
-                            onUnArchiveAction = onUnArchiveAction,
+                            onDropdownMenuItemEvent = onDropdownMenuItemEvent
                         )
                     }
                     SearchAppBar.ARCHIVE -> {
@@ -158,8 +146,7 @@ fun SearchAppBar(
                             isActivated = isActivated,
                             headerText = "归档",
                             onActivateStateChanged = onActivateStateChanged,
-                            onHideAction = onArchiveHideAction,
-                            onUnArchiveAction = onUnArchiveAction,
+                            onDropdownMenuItemEvent = onDropdownMenuItemEvent
                         )
                     }
                     else -> {}
@@ -244,7 +231,7 @@ fun SearchContentField(
             IconButton(onClick = { onAvatarClick() }) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
-                        .data(avatarUri?.let{Uri.parse(it)} ?: R.drawable.avatar)
+                        .data(avatarUri?.let { Uri.parse(it) } ?: R.drawable.avatar)
                         .crossfade(true)
                         .build(),
                     contentDescription = "avatar",
@@ -266,13 +253,8 @@ fun SelectContentField(
     onActivateStateChanged: (value: Int) -> Unit,
     selection: List<Contact>,
     onGroupAction: () -> Unit,
-    onNewTagAction: () -> Unit,
-    onEditAction: () -> Unit,
     onExpandAction: () -> Unit,
-    onHideAction: () -> Unit = {},
-    onPinAction: (value: Boolean) -> Unit = {},
-    onArchiveAction: (value: Boolean) -> Unit = {},
-    onMarkAsReadAction: (read: Boolean) -> Unit = {},
+    onDropdownMenuItemEvent: (event: DropdownMenuItemEvent) -> Unit,
 ) {
     var expanded by remember {
         mutableStateOf(false)
@@ -323,7 +305,7 @@ fun SelectContentField(
                     Icon(imageVector = Icons.Outlined.Group, contentDescription = "group")
                 }
             } else if (it == 1) {
-                IconButton(onClick = onEditAction) {
+                IconButton(onClick = { onDropdownMenuItemEvent(DropdownMenuItemEvent.Info) }) {
                     Icon(imageVector = Icons.Outlined.Info, contentDescription = "info")
                 }
             } else {
@@ -347,7 +329,7 @@ fun SelectContentField(
                             DropdownMenuItem(
                                 text = { Text(text = if (selection.size <= 1) "置顶" else "全部置顶") },
                                 onClick = {
-                                    onPinAction(true)
+                                    onDropdownMenuItemEvent(DropdownMenuItemEvent.Pin(true))
                                     onActivateStateChanged(SearchAppBar.NONE)
                                     expanded = false
                                 },
@@ -361,7 +343,7 @@ fun SelectContentField(
                             DropdownMenuItem(
                                 text = { Text(text = if (selection.size <= 1) "取消置顶" else "全部取消置顶") },
                                 onClick = {
-                                    onPinAction(false)
+                                    onDropdownMenuItemEvent(DropdownMenuItemEvent.Pin(false))
                                     onActivateStateChanged(SearchAppBar.NONE)
                                     expanded = false
                                 },
@@ -375,7 +357,7 @@ fun SelectContentField(
                         DropdownMenuItem(
                             text = { Text(text = "隐藏会话") },
                             onClick = {
-                                onHideAction()
+                                onDropdownMenuItemEvent(DropdownMenuItemEvent.Hide)
                                 onActivateStateChanged(SearchAppBar.NONE)
                                 expanded = false
                             },
@@ -393,7 +375,7 @@ fun SelectContentField(
                             DropdownMenuItem(
                                 text = { Text(text = "标记为未读") },
                                 onClick = {
-                                    onMarkAsReadAction(false)
+                                    onDropdownMenuItemEvent(DropdownMenuItemEvent.MarkAsRead(false))
                                     onActivateStateChanged(SearchAppBar.NONE)
                                     expanded = false
                                 },
@@ -407,7 +389,7 @@ fun SelectContentField(
                             DropdownMenuItem(
                                 text = { Text(text = "标记为已读") },
                                 onClick = {
-                                    onMarkAsReadAction(true)
+                                    onDropdownMenuItemEvent(DropdownMenuItemEvent.MarkAsRead(true))
                                     onActivateStateChanged(SearchAppBar.NONE)
                                     expanded = false
                                 },
@@ -423,7 +405,7 @@ fun SelectContentField(
                             DropdownMenuItem(
                                 text = { Text(text = if (selection.size <= 1) "归档" else "全部归档") },
                                 onClick = {
-                                    onArchiveAction(true)
+                                    onDropdownMenuItemEvent(DropdownMenuItemEvent.Archive(true))
                                     onActivateStateChanged(SearchAppBar.NONE)
                                     expanded = false
                                 },
@@ -438,7 +420,7 @@ fun SelectContentField(
                             DropdownMenuItem(
                                 text = { Text(text = if (selection.size <= 1) "取消归档" else "全部取消归档") },
                                 onClick = {
-                                    onArchiveAction(false)
+                                    onDropdownMenuItemEvent(DropdownMenuItemEvent.Archive(false))
                                     onActivateStateChanged(SearchAppBar.NONE)
                                     expanded = false
                                 },
@@ -453,7 +435,7 @@ fun SelectContentField(
                             DropdownMenuItem(
                                 text = { Text(text = "快速添加标签") },
                                 onClick = {
-                                    onNewTagAction()
+                                    onDropdownMenuItemEvent(DropdownMenuItemEvent.NewTag)
                                     expanded = false
                                 },
                                 leadingIcon = {
@@ -465,7 +447,7 @@ fun SelectContentField(
                             DropdownMenuItem(
                                 text = { Text(text = "详细信息") },
                                 onClick = {
-                                    onEditAction()
+                                    onDropdownMenuItemEvent(DropdownMenuItemEvent.Info)
                                     expanded = false
                                 },
                                 leadingIcon = {
@@ -487,8 +469,7 @@ fun SelectSpecContentField(
     modifier: Modifier = Modifier,
     isActivated: Boolean,
     onActivateStateChanged: (value: Int) -> Unit,
-    onHideAction: () -> Unit = {},
-    onUnArchiveAction: () -> Unit = {}
+    onDropdownMenuItemEvent: (event: DropdownMenuItemEvent) -> Unit,
 ) {
     var expanded by remember {
         mutableStateOf(false)
@@ -509,7 +490,7 @@ fun SelectSpecContentField(
             )
         }
         Spacer(modifier = Modifier.weight(1f))
-        IconButton(onClick = { onHideAction() }) {
+        IconButton(onClick = { onDropdownMenuItemEvent(DropdownMenuItemEvent.HideArchive) }) {
             Icon(
                 Icons.Outlined.HideSource,
                 contentDescription = null
@@ -529,7 +510,7 @@ fun SelectSpecContentField(
                     text = { Text(text = "移出所有归档") },
                     onClick = {
                         expanded = false
-                        onUnArchiveAction()
+                        onDropdownMenuItemEvent(DropdownMenuItemEvent.UnArchiveALl)
                         onActivateStateChanged(SearchAppBar.NONE)
                     },
                     leadingIcon = {
@@ -549,8 +530,7 @@ fun PageContentField(
     isActivated: Boolean,
     headerText: String = "",
     onActivateStateChanged: (value: Int) -> Unit,
-    onHideAction: () -> Unit = {},
-    onUnArchiveAction: () -> Unit = {},
+    onDropdownMenuItemEvent: (event: DropdownMenuItemEvent) -> Unit,
 ) {
     var expanded by remember {
         mutableStateOf(false)
@@ -591,7 +571,7 @@ fun PageContentField(
                     text = { Text(text = "移出所有归档") },
                     onClick = {
                         expanded = false
-                        onUnArchiveAction()
+                        onDropdownMenuItemEvent(DropdownMenuItemEvent.UnArchiveALl)
                         onActivateStateChanged(SearchAppBar.NONE)
                     },
                     leadingIcon = {

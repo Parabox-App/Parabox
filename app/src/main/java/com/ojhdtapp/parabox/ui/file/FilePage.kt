@@ -63,7 +63,8 @@ fun FilePage(
                         drawerState.open()
                     }
                 },
-                onAvatarClick = {}
+                onAvatarClick = {},
+                onDropdownMenuItemEvent = {}
             )
         },
         bottomBar = {

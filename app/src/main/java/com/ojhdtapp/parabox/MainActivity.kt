@@ -4,7 +4,7 @@ import android.app.Activity
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
-import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
@@ -30,7 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.view.WindowCompat
 import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.Lifecycle
@@ -58,6 +58,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileOutputStream
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -70,7 +72,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var userAvatarPickerSLauncher: ActivityResultLauncher<String>
     private lateinit var requestPermissionLauncher: ActivityResultLauncher<String>
 
-    private fun setUserAvatar() {
+    private fun pickUserAvatar() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val intent = Intent(MediaStore.ACTION_PICK_IMAGES).apply {
                 type = "image/*"
@@ -78,6 +80,30 @@ class MainActivity : ComponentActivity() {
             userAvatarPickerLauncher.launch(intent)
         } else {
             userAvatarPickerSLauncher.launch("image/*")
+        }
+    }
+
+    private fun setUserAvatar(uri: Uri) {
+        getExternalFilesDir("avatar")?.listFiles()?.filter { it.isFile }?.map {
+            it.delete()
+        }
+        val timeStr = System.currentTimeMillis().toString().substring(7)
+        val outPutFile =
+            File("${getExternalFilesDir("avatar")}${File.separator}user_avatar_$timeStr.png")
+        contentResolver.openInputStream(uri)?.use { inputStream ->
+            FileOutputStream(outPutFile).use { outputStream ->
+                inputStream.copyTo(outputStream)
+            }
+        }
+        val copiedUri = FileProvider.getUriForFile(
+            this,
+            BuildConfig.APPLICATION_ID + ".provider", outPutFile
+        )
+        lifecycleScope.launch {
+            this@MainActivity.dataStore.edit { settings ->
+                settings[DataStoreKeys.USER_AVATAR] = copiedUri.toString()
+            }
+            Toast.makeText(this@MainActivity, "头像已更新", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -97,7 +123,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
             is ActivityEvent.SetUserAvatar -> {
-                setUserAvatar()
+                pickUserAvatar()
             }
         }
     }
@@ -113,24 +139,15 @@ class MainActivity : ComponentActivity() {
         userAvatarPickerLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
                 if (it.resultCode == Activity.RESULT_OK) {
-                    val uri = it.data?.data
-                    lifecycleScope.launch {
-                        this@MainActivity.dataStore.edit { settings ->
-                            settings[DataStoreKeys.USER_AVATAR] = uri.toString()
-                        }
+                    it.data?.data?.let {
+                        setUserAvatar(it)
                     }
-                    Toast.makeText(this, "头像已更新", Toast.LENGTH_SHORT).show()
                 }
             }
         userAvatarPickerSLauncher =
             registerForActivityResult(ActivityResultContracts.GetContent()) {
                 it?.let {
-                    lifecycleScope.launch {
-                        this@MainActivity.dataStore.edit { settings ->
-                            settings[DataStoreKeys.USER_AVATAR] = it.toString()
-                        }
-                    }
-                    Toast.makeText(this, "头像已更新", Toast.LENGTH_SHORT).show()
+                    setUserAvatar(it)
                 }
             }
 

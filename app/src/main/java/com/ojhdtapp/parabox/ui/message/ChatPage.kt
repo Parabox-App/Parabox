@@ -146,6 +146,9 @@ fun NormalChatPage(
 ) {
     val coroutineScope = rememberCoroutineScope()
     // Top AppBar
+    var menuExpanded by remember {
+        mutableStateOf(false)
+    }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     val scrollFraction = scrollBehavior.state.overlappedFraction
     val topAppBarColor by TopAppBarDefaults.smallTopAppBarColors().containerColor(scrollFraction)
@@ -237,11 +240,31 @@ fun NormalChatPage(
 
                                 }
                             }
-                            IconButton(onClick = { /*TODO*/ }) {
-                                Icon(
-                                    imageVector = Icons.Outlined.MoreVert,
-                                    contentDescription = "more"
-                                )
+                            Box(
+                                modifier = Modifier
+                                    .wrapContentSize(Alignment.TopStart)
+                            ) {
+                                IconButton(onClick = { menuExpanded = !menuExpanded }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.MoreVert,
+                                        contentDescription = "more"
+                                    )
+                                }
+                                DropdownMenu(
+                                    expanded = menuExpanded,
+                                    onDismissRequest = { menuExpanded = false }) {
+                                    DropdownMenuItem(
+                                        text = { Text(text = "会话信息") },
+                                        onClick = {
+                                            menuExpanded = false
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Outlined.Info,
+                                                contentDescription = null
+                                            )
+                                        })
+                                }
                             }
                         },
                         scrollBehavior = scrollBehavior
@@ -343,13 +366,13 @@ fun NormalChatPage(
                     items = lazyPagingItems,
                     key = { it.messageId }) { value, beforeValue, afterValue, index ->
                     if (value != null) {
-                        val shouldShowTimeDivider = remember(value, afterValue){
+                        val shouldShowTimeDivider = remember(value, afterValue) {
                             beforeValue == null || abs(value.timestamp - beforeValue.timestamp) > 120000 || (index + 1) % 40 == 0
                         }
-                        val willShowTimeDivider = remember(value, afterValue){
+                        val willShowTimeDivider = remember(value, afterValue) {
                             afterValue == null || abs(value.timestamp - afterValue.timestamp) > 120000
                         }
-                        val isFirst = remember(value, afterValue){
+                        val isFirst = remember(value, afterValue) {
                             shouldShowTimeDivider || beforeValue == null || value.sentByMe != beforeValue.sentByMe || value.profile.name != beforeValue.profile.name
                         }
                         val isLast = remember(value, afterValue) {
@@ -461,7 +484,7 @@ fun MessageBlock(
     Column() {
         if (shouldShowTimeDivider) {
             TimeDivider(timestamp = message.timestamp)
-        }else if(isFirst){
+        } else if (isFirst) {
             Spacer(modifier = Modifier.height(16.dp))
         }
         Row(
@@ -506,7 +529,7 @@ fun MessageBlock(
                     avatarUri = null
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Column(modifier = Modifier.weight(1f) ,horizontalAlignment = Alignment.Start) {
+                Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
                     if (isFirst) {
                         Text(
                             text = message.profile.name,

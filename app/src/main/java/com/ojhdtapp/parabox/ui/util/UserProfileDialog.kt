@@ -2,6 +2,9 @@ package com.ojhdtapp.parabox.ui.util
 
 import android.net.Uri
 import androidx.compose.animation.*
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.VectorConverter
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -137,12 +140,33 @@ fun UserProfileDialog(
                     PreferencesCategory(text = "已连接服务")
                     NormalPreference(
                         title = "Google Drive",
-                        subtitle = "已使用 75% 的存储空间，总空间: 15 GB",
+                        subtitle = "已使用 75% 的存储空间",
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Outlined.Cloud,
                                 contentDescription = "cloud",
                                 tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        },
+                        trailingIcon = {
+                            var progress by remember { mutableStateOf(0.75f) }
+//                            val animatedProgress by animateFloatAsState(
+//                                targetValue = progress,
+//                                animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec
+//                            )
+                            val animatedProgress = remember {
+                                Animatable(0f, Float.Companion.VectorConverter)
+                            }
+                            LaunchedEffect(progress, openDialog) {
+                                animatedProgress.animateTo(
+                                    progress,
+                                    ProgressIndicatorDefaults.ProgressAnimationSpec
+                                )
+                            }
+                            CircularProgressIndicator(
+                                progress = animatedProgress.value,
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 2.dp
                             )
                         }
                     ) {

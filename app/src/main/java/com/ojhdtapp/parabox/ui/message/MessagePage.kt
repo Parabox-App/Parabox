@@ -218,57 +218,67 @@ fun MessagePage(
                         viewModel.getGroupInfoPack()
                         viewModel.setShowGroupActionDialogState(true)
                     },
-                    onEditAction = {
-                        viewModel.setShowEditActionDialogState(true)
-                    },
-                    onNewTagAction = {
-                        viewModel.setShowTagEditAlertDialogState(true)
-                    },
-                    onHideAction = {
-                        coroutineScope.launch {
-                            snackBarHostState.showSnackbar(
-                                message = "会话已暂时隐藏",
-                                actionLabel = "取消",
-                                duration = SnackbarDuration.Short
-                            )
-                                .also { result ->
-                                    when (result) {
-                                        SnackbarResult.ActionPerformed -> {
-                                            viewModel.cancelContactHidden()
+                    onDropdownMenuItemEvent = {
+                        when (it) {
+                            is DropdownMenuItemEvent.Info -> {
+                                viewModel.setShowEditActionDialogState(true)
+                            }
+                            is DropdownMenuItemEvent.NewTag -> {
+                                viewModel.setShowTagEditAlertDialogState(true)
+                            }
+                            is DropdownMenuItemEvent.Hide -> {
+                                coroutineScope.launch {
+                                    snackBarHostState.showSnackbar(
+                                        message = "会话已暂时隐藏",
+                                        actionLabel = "取消",
+                                        duration = SnackbarDuration.Short
+                                    )
+                                        .also { result ->
+                                            when (result) {
+                                                SnackbarResult.ActionPerformed -> {
+                                                    viewModel.cancelContactHidden()
+                                                }
+                                                SnackbarResult.Dismissed -> {}
+                                                else -> {}
+                                            }
                                         }
-                                        SnackbarResult.Dismissed -> {}
-                                        else -> {}
-                                    }
                                 }
-                        }
-                        viewModel.setContactHidden(
-                            viewModel.selectedContactStateList.toList().map { it.contactId })
-                    },
-                    onArchiveHideAction = {
-                        viewModel.hideArchiveContact()
-                    },
-                    onPinAction = {
-                        viewModel.setContactPinned(
-                            viewModel.selectedContactStateList.toList().map { it.contactId }, it
-                        )
-                    },
-                    onArchiveAction = {
-                        viewModel.setContactArchived(
-                            viewModel.selectedContactStateList.toList().map { it.contactId }, it
-                        )
-                    },
-                    onUnArchiveAction = {
-                        viewModel.setContactArchived(
-                            viewModel.archivedContactStateFlow.value.map { it.contactId }, false
-                        )
-                    },
-                    onMarkAsReadAction = {
-                        if (it) {
-                            viewModel.clearContactUnreadNum(
-                                viewModel.selectedContactStateList.toList().map { it.contactId })
-                        } else {
-                            viewModel.restoreContactUnreadNum(
-                                viewModel.selectedContactStateList.toList().map { it.contactId })
+                                viewModel.setContactHidden(
+                                    viewModel.selectedContactStateList.toList()
+                                        .map { it.contactId })
+                            }
+                            is DropdownMenuItemEvent.HideArchive -> {
+                                viewModel.hideArchiveContact()
+                            }
+                            is DropdownMenuItemEvent.Pin -> {
+                                viewModel.setContactPinned(
+                                    viewModel.selectedContactStateList.toList()
+                                        .map { it.contactId }, it.value
+                                )
+                            }
+                            is DropdownMenuItemEvent.Archive -> {
+                                viewModel.setContactArchived(
+                                    viewModel.selectedContactStateList.toList()
+                                        .map { it.contactId }, it.value
+                                )
+                            }
+                            is DropdownMenuItemEvent.UnArchiveALl -> {
+                                viewModel.setContactArchived(
+                                    viewModel.archivedContactStateFlow.value.map { it.contactId },
+                                    false
+                                )
+                            }
+                            is DropdownMenuItemEvent.MarkAsRead -> {
+                                if (it.value) {
+                                    viewModel.clearContactUnreadNum(
+                                        viewModel.selectedContactStateList.toList()
+                                            .map { it.contactId })
+                                } else {
+                                    viewModel.restoreContactUnreadNum(
+                                        viewModel.selectedContactStateList.toList()
+                                            .map { it.contactId })
+                                }
+                            }
                         }
                     },
                     onExpandAction = {},
