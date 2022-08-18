@@ -364,22 +364,28 @@ fun MessagePage(
                             targetContentZIndex = 1f
                         }
                     } else if (targetState == AreaState.ArchiveArea && initialState == AreaState.MessageArea) {
-                        slideInHorizontally { it }.with(
-                            scaleOut(tween(200), 0.9f) + fadeOut(
-                                tween(
-                                    200
-                                )
-                            )
-                        ).apply {
+                        (slideInHorizontally { 100 } + fadeIn() with slideOutHorizontally { -100 } + fadeOut()).apply {
                             targetContentZIndex = 2f
                         }
+//                        slideInHorizontally { it }.with(
+//                            scaleOut(tween(200), 0.9f) + fadeOut(
+//                                tween(
+//                                    200
+//                                )
+//                            )
+//                        ).apply {
+//                            targetContentZIndex = 2f
+//                        }
                     } else if (targetState == AreaState.MessageArea && initialState == AreaState.ArchiveArea) {
-                        (scaleIn(
-                            tween(200),
-                            0.9f
-                        ) + fadeIn(tween(200))).with(slideOutHorizontally { it }).apply {
+                        (slideInHorizontally { -100 } + fadeIn() with slideOutHorizontally { 100 } + fadeOut()).apply {
                             targetContentZIndex = 1f
                         }
+//                        (scaleIn(
+//                            tween(200),
+//                            0.9f
+//                        ) + fadeIn(tween(200))).with(slideOutHorizontally { it }).apply {
+//                            targetContentZIndex = 1f
+//                        }
                     } else {
                         fadeIn() with fadeOut()
                     }
@@ -501,14 +507,17 @@ fun RowScope.ArchiveArea(
     shimmerInstance: Shimmer,
     mainNavController: NavController
 ) {
-    androidx.compose.material3.Surface(
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp
-    ) {
+//    androidx.compose.material3.Surface(
+//        color = MaterialTheme.colorScheme.surface,
+//        tonalElevation = 1.dp
+//    ) {
         LazyColumn(
             modifier = modifier.fillMaxSize(),
             contentPadding = paddingValues
         ) {
+            item{
+                Spacer(modifier = Modifier.height(16.dp))
+            }
             itemsIndexed(
                 items = archivedContact,
                 key = { _, item -> item.contactId }
@@ -521,6 +530,7 @@ fun RowScope.ArchiveArea(
                     viewModel.selectedContactStateList.map { it.contactId }
                         .contains(item.contactId)
                 ContactItem(
+                    modifier = Modifier.padding(horizontal = 16.dp),
                     contact = item,
                     topRadius = topRadius,
                     bottomRadius = bottomRadius,
@@ -529,7 +539,7 @@ fun RowScope.ArchiveArea(
                     isSelected = isSelected,
                     isEditing = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact && item.contactId == messageState.contact?.contactId,
                     isExpanded = sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded,
-                    noBackground = true,
+                    noBackground = false,
                     shimmer = shimmerInstance,
                     onClick = {
                         if (viewModel.searchBarActivateState.value == SearchAppBar.SELECT) {
@@ -559,9 +569,12 @@ fun RowScope.ArchiveArea(
                         viewModel.addOrRemoveItemOfSelectedContactStateList(item)
                     }
                 }
+                if(!isLast){
+                    Spacer(modifier = Modifier.height(3.dp))
+                }
             }
         }
-    }
+//    }
 }
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -683,10 +696,10 @@ fun ContactItem(
         modifier = modifier
             .clip(
                 RoundedCornerShape(
-                    topStart = if (noBackground) 0.dp else topRadius,
-                    topEnd = if (noBackground) 0.dp else topRadius,
-                    bottomEnd = if (noBackground) 0.dp else bottomRadius,
-                    bottomStart = if (noBackground) 0.dp else bottomRadius
+                    topStart = topRadius,
+                    topEnd = topRadius,
+                    bottomEnd = bottomRadius,
+                    bottomStart = bottomRadius
                 )
             )
             .fillMaxSize()
