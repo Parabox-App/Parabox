@@ -2,6 +2,7 @@
 
 package com.ojhdtapp.parabox.ui.message
 
+import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
@@ -107,11 +108,24 @@ fun MessagePage(
     val contactState by viewModel.contactStateFlow.collectAsState()
     val archivedContact by viewModel.archivedContactStateFlow.collectAsState()
     val coroutineScope = rememberCoroutineScope()
+    var showDeleteGroupedContactConfirm by remember {
+        mutableStateOf(false)
+    }
     LaunchedEffect(true) {
         viewModel.uiEventFlow.collectLatest { it ->
             when (it) {
                 is MessagePageUiEvent.ShowSnackBar -> {
-                    snackBarHostState.showSnackbar(it.message, it.label)
+                    coroutineScope.launch {
+                        snackBarHostState.showSnackbar(it.message, it.label).also { result ->
+                            when (result) {
+                                SnackbarResult.ActionPerformed -> {
+                                    it.callback?.invoke()
+                                }
+                                SnackbarResult.Dismissed -> {}
+                                else -> {}
+                            }
+                        }
+                    }
                 }
                 is MessagePageUiEvent.UpdateMessageBadge -> {
                     mainSharedViewModel.setMessageBadge(it.value)
@@ -187,6 +201,30 @@ fun MessagePage(
             },
             onDismiss = { viewModel.setEditUserNameDialogState(false) }
         )
+        if (showDeleteGroupedContactConfirm) {
+            androidx.compose.material3.AlertDialog(onDismissRequest = {
+                showDeleteGroupedContactConfirm = false
+            },
+                title = { Text(text = "确认删除") },
+                text = { Text(text = "该编组将从会话列表移除，但不会影响任何已关联会话及聊天记录。") },
+                confirmButton = {
+                    androidx.compose.material3.TextButton(onClick = {
+                        viewModel.selectedContactStateList.firstOrNull()?.let {
+                            viewModel.deleteGroupedContact(it)
+                        }
+                        showDeleteGroupedContactConfirm = false
+                    }) {
+                        Text(text = "确认")
+                    }
+                },
+                dismissButton = {
+                    androidx.compose.material3.TextButton(onClick = {
+                        showDeleteGroupedContactConfirm = false
+                    }) {
+                        Text(text = "取消")
+                    }
+                })
+        }
         Scaffold(
             modifier = modifier
                 .weight(1f)
@@ -278,6 +316,9 @@ fun MessagePage(
                                         viewModel.selectedContactStateList.toList()
                                             .map { it.contactId })
                                 }
+                            }
+                            is DropdownMenuItemEvent.DeleteGrouped -> {
+                                showDeleteGroupedContactConfirm = true
                             }
                         }
                     },
@@ -586,7 +627,7 @@ fun RowScope.MessageArea(
                             androidx.compose.material3.DropdownMenu(
                                 expanded = showDropDownMenu,
                                 onDismissRequest = { showDropDownMenu = false },
-                                modifier = Modifier.width(224.dp)
+                                modifier = Modifier.width(192.dp)
                             ) {
                                 DropdownMenuItem(
                                     text = { Text("全部") },
@@ -944,6 +985,9 @@ fun RowScope.MessageArea(
                     }
                 }
             }
+        }
+        item {
+            Spacer(modifier = Modifier.height(32.dp))
         }
 //        item(key = null) {
 //            androidx.compose.material3.OutlinedButton(onClick = { viewModel.testFun() }) {

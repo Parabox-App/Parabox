@@ -12,7 +12,7 @@ interface ContactDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertContact(contact: ContactEntity): Long
     @Query("DELETE FROM contact_entity WHERE contactId = :contactId")
-    fun deleteContact(contactId: Long)
+    suspend fun deleteContact(contactId: Long) : Int
 
     @Update
     fun updateContact(contacts: List<ContactEntity>)
@@ -76,6 +76,8 @@ interface ContactDao {
 
     @Delete
     fun deleteContactPluginConnectionCrossRef(crossRef: ContactPluginConnectionCrossRef)
+    @Query("DELETE FROM contact_plugin_connection_cross_ref WHERE contactId = :contactId")
+    suspend fun deleteContactPluginConnectionCrossRefByContactId(contactId: Long): Int
 
     @Query("SELECT * FROM contact_plugin_connection_cross_ref WHERE contactId = :contactId")
     fun getContactPluginConnectionCrossRefsByContactId(contactId: Long): List<ContactPluginConnectionCrossRef>

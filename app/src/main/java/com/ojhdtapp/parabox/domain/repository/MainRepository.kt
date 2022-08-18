@@ -5,15 +5,15 @@ import coil.request.Tags
 import com.ojhdtapp.messagedto.ReceiveMessageDto
 import com.ojhdtapp.messagedto.SendMessageDto
 import com.ojhdtapp.parabox.core.util.Resource
-import com.ojhdtapp.parabox.data.local.entity.ContactWithMessagesEntity
-import com.ojhdtapp.parabox.data.local.entity.ContactWithPluginConnections
-import com.ojhdtapp.parabox.data.local.entity.MessageEntity
+import com.ojhdtapp.parabox.data.local.entity.*
 import com.ojhdtapp.parabox.domain.model.*
 import kotlinx.coroutines.flow.Flow
 
 interface MainRepository {
     suspend fun handleNewMessage(dto: ReceiveMessageDto)
     suspend fun handleNewMessage(dto: SendMessageDto) : Long
+    suspend fun deleteGroupedContact(contactId: Long): Pair<ContactEntity?, List<ContactPluginConnectionCrossRef>>
+    suspend fun restoreGroupedContact(pair: Pair<ContactEntity, List<ContactPluginConnectionCrossRef>>)
     fun updateMessageVerifiedState(id: Long, value: Boolean)
     fun updateContactHiddenState(id: Long, value: Boolean)
     fun updateContactPinnedState(id: Long, value: Boolean)

@@ -259,7 +259,7 @@ fun NormalChatPage(
                                 DropdownMenu(
                                     expanded = menuExpanded,
                                     onDismissRequest = { menuExpanded = false },
-                                    modifier = Modifier.width(224.dp)
+                                    modifier = Modifier.width(192.dp)
                                 ) {
                                     DropdownMenuItem(
                                         text = { Text(text = "删除") },
@@ -311,7 +311,7 @@ fun NormalChatPage(
                                 DropdownMenu(
                                     expanded = menuExpanded,
                                     onDismissRequest = { menuExpanded = false },
-                                    modifier = Modifier.width(224.dp)
+                                    modifier = Modifier.width(192.dp)
                                 ) {
                                     DropdownMenuItem(
                                         text = { Text(text = "会话信息") },

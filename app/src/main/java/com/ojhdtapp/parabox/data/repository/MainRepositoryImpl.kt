@@ -157,6 +157,28 @@ class MainRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun deleteGroupedContact(contactId: Long): Pair<ContactEntity?, List<ContactPluginConnectionCrossRef>> {
+        return coroutineScope {
+            val contactDeferred = async {
+                database.contactDao.getContactById(contactId)
+            }
+            val connectionDeferred = async {
+                database.contactDao.getContactPluginConnectionCrossRefsByContactId(contactId)
+            }
+            (contactDeferred.await() to connectionDeferred.await()).also {
+                database.contactDao.deleteContact(contactId)
+                database.contactDao.deleteContactPluginConnectionCrossRefByContactId(contactId)
+            }
+        }
+    }
+
+    override suspend fun restoreGroupedContact(pair: Pair<ContactEntity, List<ContactPluginConnectionCrossRef>>) {
+        database.contactDao.insertContact(pair.first)
+        pair.second.forEach {
+            database.contactDao.insertContactPluginConnectionCrossRef(it)
+        }
+    }
+
     override fun updateMessageVerifiedState(id: Long, value: Boolean) {
         database.messageDao.updateVerifiedState(MessageVerifyStateUpdate(id, value))
     }

@@ -324,7 +324,7 @@ fun SelectContentField(
                     }) {
                         Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = "more")
                     }
-                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.width(224.dp)) {
+                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.width(192.dp)) {
                         if (selection.map { it.isPinned }.contains(false)) {
                             DropdownMenuItem(
                                 text = { Text(text = if (selection.size <= 1) "置顶" else "全部置顶") },
@@ -431,6 +431,20 @@ fun SelectContentField(
                                     )
                                 })
                         }
+                        if(selection.size == 1 && selection.first().senderId != selection.first().contactId){
+                            DropdownMenuItem(
+                                text = { Text(text = "删除该编组") },
+                                onClick = {
+                                    onDropdownMenuItemEvent(DropdownMenuItemEvent.DeleteGrouped)
+                                    expanded = false
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.Delete,
+                                        contentDescription = null
+                                    )
+                                })
+                        }
                         if (selection.size == 1) {
                             DropdownMenuItem(
                                 text = { Text(text = "快速添加标签") },
@@ -505,7 +519,7 @@ fun SelectSpecContentField(
             }) {
                 Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = "more")
             }
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.width(224.dp)) {
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.width(192.dp)) {
                 DropdownMenuItem(
                     text = { Text(text = "移出所有归档") },
                     onClick = {
@@ -566,7 +580,7 @@ fun PageContentField(
             }) {
                 Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = "more")
             }
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.width(224.dp)) {
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.width(192.dp)) {
                 DropdownMenuItem(
                     text = { Text(text = "移出所有归档") },
                     onClick = {

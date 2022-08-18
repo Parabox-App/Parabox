@@ -93,7 +93,7 @@ fun SettingPage(
                         }) {
                             Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = "more")
                         }
-                        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false },modifier = Modifier.width(224.dp)) {
+                        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false },modifier = Modifier.width(192.dp)) {
                             DropdownMenuItem(
                                 text = {
                                     Text(

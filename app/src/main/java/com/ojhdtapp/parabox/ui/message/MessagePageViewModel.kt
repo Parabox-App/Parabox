@@ -32,6 +32,7 @@ class MessagePageViewModel @Inject constructor(
     val updateContact: UpdateContact,
     val tagControl: TagControl,
     val getArchivedContacts: GetArchivedContacts,
+    val deleteGroupedContact: DeleteGroupedContact
 ) : ViewModel() {
     init {
         // Update Ungrouped Contacts
@@ -86,8 +87,8 @@ class MessagePageViewModel @Inject constructor(
     }
 
     private val _areaState = mutableStateOf<Int>(AreaState.MessageArea)
-    val areaState : State<Int> = _areaState
-    fun setAreaState(value : Int){
+    val areaState: State<Int> = _areaState
+    fun setAreaState(value: Int) {
         _areaState.value = value
     }
 
@@ -138,7 +139,7 @@ class MessagePageViewModel @Inject constructor(
                 return@filter false
             } else true
         }.map<Resource<List<Contact>>, List<Contact>> {
-            when(it){
+            when (it) {
                 is Resource.Loading -> emptyList()
                 is Resource.Success -> {
                     showArchiveContact()
@@ -154,17 +155,33 @@ class MessagePageViewModel @Inject constructor(
     val archivedContactStateFlow get() = _archivedContactStateFlow
 
     private val _archivedContactHidden = mutableStateOf<Boolean>(false)
-    val archivedContactHidden : State<Boolean> = _archivedContactHidden
-    fun hideArchiveContact(){
+    val archivedContactHidden: State<Boolean> = _archivedContactHidden
+    fun hideArchiveContact() {
         _archivedContactHidden.value = true
     }
-    fun showArchiveContact(){
+
+    fun showArchiveContact() {
         _archivedContactHidden.value = false
     }
 
     fun refreshContactStateFlow() {
         viewModelScope.launch {
             _contactRefreshFlow.emit(System.currentTimeMillis())
+        }
+    }
+
+    fun deleteGroupedContact(contact: Contact) {
+        viewModelScope.launch(Dispatchers.IO) {
+            deleteGroupedContact(contact = contact, contactId = null)
+            _uiEventFlow.emit(MessagePageUiEvent.ShowSnackBar("群组已被移除", "撤消") {
+                revokeGroupedContactDeleted()
+            })
+        }
+    }
+
+    fun revokeGroupedContactDeleted() {
+        viewModelScope.launch(Dispatchers.IO) {
+            deleteGroupedContact.revoke()
         }
     }
 
@@ -387,16 +404,16 @@ class MessagePageViewModel @Inject constructor(
 
     // Profile Dialog
     private val _showUserProfileDialogState = mutableStateOf<Boolean>(false)
-    val showUserProfileDialogState : State<Boolean> = _showUserProfileDialogState
-    fun setShowUserProfileDialogState(value : Boolean){
+    val showUserProfileDialogState: State<Boolean> = _showUserProfileDialogState
+    fun setShowUserProfileDialogState(value: Boolean) {
         _showUserProfileDialogState.value = value
     }
 
     // Edit Username Dialog
     private val _editUserNameDialogState = mutableStateOf<Boolean>(false)
-    val editUserNameDialogState : State<Boolean> = _editUserNameDialogState
+    val editUserNameDialogState: State<Boolean> = _editUserNameDialogState
 
-    fun setEditUserNameDialogState(value : Boolean){
+    fun setEditUserNameDialogState(value: Boolean) {
         _editUserNameDialogState.value = value
     }
 
