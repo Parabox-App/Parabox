@@ -95,7 +95,8 @@ fun EditActionDialog(
                     .padding(horizontal = horizontalPadding)
                     .animateContentSize(),
                 shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surface
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 2.dp
             ) {
                 var hashTagText by remember {
                     mutableStateOf("")
@@ -503,7 +504,7 @@ fun EditActionDialog(
                             NormalPreference(title = "移除该群聊", subtitle = "高危操作！聊天记录将永久丢失",
                             warning = true,
                                 horizontalPadding = if (isCompact) 24.dp else 32.dp) {
-                                TODO("Delete Grouped Contact")
+                                onEvent(EditActionDialogEvent.DeleteGrouped)
                             }
                         }
                     }

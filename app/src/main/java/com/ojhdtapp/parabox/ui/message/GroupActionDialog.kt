@@ -121,7 +121,8 @@ fun GroupActionDialog(
                     .padding(horizontal = horizontalPadding)
                     .animateContentSize(),
                 shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surface
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 2.dp
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     SmallTopAppBar(title = { Text(text = "编组会话") },

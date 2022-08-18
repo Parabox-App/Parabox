@@ -173,6 +173,9 @@ class MessagePageViewModel @Inject constructor(
     fun deleteGroupedContact(contact: Contact) {
         viewModelScope.launch(Dispatchers.IO) {
             deleteGroupedContact(contact = contact, contactId = null)
+            clearSelectedContactStateList()
+            setSearchBarActivateState(SearchAppBar.NONE)
+            _showEditActionDialogState.value = false
             _uiEventFlow.emit(MessagePageUiEvent.ShowSnackBar("群组已被移除", "撤消") {
                 revokeGroupedContactDeleted()
             })
