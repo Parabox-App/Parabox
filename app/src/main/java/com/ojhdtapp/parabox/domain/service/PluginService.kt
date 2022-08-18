@@ -27,8 +27,16 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class PluginService : LifecycleService() {
+    companion object {
+        val pluginTypeMap = mutableMapOf<Int, String>()
+        fun queryPluginConnectionName(type: Int): String {
+            return pluginTypeMap[type] ?: "Unknown"
+        }
+    }
+
     @Inject
     lateinit var handleNewMessage: HandleNewMessage
+
     @Inject
     lateinit var updateMessage: UpdateMessage
     private var installedPluginList = emptyList<ApplicationInfo>()
@@ -55,7 +63,9 @@ class PluginService : LifecycleService() {
             it.serviceInfo.applicationInfo
         }
         appModelList = installedPluginList.map {
-
+            val connectionType = it.metaData?.getInt("connection_type") ?: 0
+            val connectionName = it.metaData?.getString("connection_name") ?: "Unknown"
+            PluginService.pluginTypeMap.put(connectionType, connectionName)
             AppModel(
                 name = it.loadLabel(packageManager).toString(),
                 icon = it.loadIcon(packageManager),
@@ -66,7 +76,8 @@ class PluginService : LifecycleService() {
                 ).versionName,
                 launchIntent = packageManager.getLaunchIntentForPackage(it.packageName),
                 runningStatus = AppModel.RUNNING_STATUS_CHECKING,
-                connectionType = it.metaData?.getInt("connection_type") ?: 0
+                connectionType = connectionType,
+                connectionName = connectionName
             )
         }
         bindPlugins()

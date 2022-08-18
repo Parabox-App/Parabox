@@ -229,7 +229,7 @@ fun UserProfileDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         TextButton(onClick = { /*TODO*/ }) {
-                            Text(text = "免责声明", color = MaterialTheme.colorScheme.primary)
+                            Text(text = "免责声明", style = MaterialTheme.typography.labelMedium)
                         }
                         Text(
                             text = "•",
@@ -237,7 +237,7 @@ fun UserProfileDialog(
                             color = MaterialTheme.colorScheme.primary
                         )
                         TextButton(onClick = { /*TODO*/ }) {
-                            Text(text = "开放源代码许可")
+                            Text(text = "开放源代码许可", style = MaterialTheme.typography.labelMedium)
                         }
                     }
                 }

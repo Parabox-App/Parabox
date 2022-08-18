@@ -51,6 +51,7 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.ojhdtapp.parabox.core.util.FormUtil
 import com.ojhdtapp.parabox.domain.model.PluginConnection
+import com.ojhdtapp.parabox.domain.service.PluginService
 import com.ojhdtapp.parabox.ui.util.HashTagEditor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -536,6 +537,9 @@ fun GroupEditForm(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     resource.pluginConnections.forEach { conn ->
+                        val connectionName by remember{
+                            mutableStateOf(PluginService.queryPluginConnectionName(conn.connectionType))
+                        }
                         Row(modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
@@ -556,7 +560,7 @@ fun GroupEditForm(
                                         onSelectedPluginConnectionAdd(conn)
                                     }
                                 })
-                            Text(text = "${conn.connectionType} - ${conn.id}")
+                            Text(text = "$connectionName - ${conn.id}")
                         }
                     }
                     AnimatedVisibility(
@@ -591,6 +595,9 @@ fun GroupEditForm(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     resource.pluginConnections.forEach { conn ->
+                        val connectionName by remember{
+                            mutableStateOf(PluginService.queryPluginConnectionName(conn.connectionType))
+                        }
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -609,7 +616,7 @@ fun GroupEditForm(
                                 selected = selectedSenderId == conn.objectId,
                                 onClick = null
                             )
-                            Text(text = "${conn.connectionType} - ${conn.id}")
+                            Text(text = "$connectionName - ${conn.id}")
                         }
                     }
                 }

@@ -10,7 +10,8 @@ data class AppModel(
     val version: String,
     val launchIntent: Intent?,
     val runningStatus: Int,
-    val connectionType: Int
+    val connectionType: Int,
+    val connectionName: String
 ){
     companion object{
         const val RUNNING_STATUS_CHECKING = 0

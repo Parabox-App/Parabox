@@ -60,6 +60,7 @@ import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.chat.ChatBlock
 import com.ojhdtapp.parabox.domain.model.message_content.*
 import com.ojhdtapp.parabox.domain.model.toTimedMessages
+import com.ojhdtapp.parabox.domain.service.PluginService
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.clearFocusOnKeyboardDismiss
@@ -357,8 +358,11 @@ fun NormalChatPage(
                                                 pluginConnectionMenuExpanded = false
                                             }) {
                                             messageState.pluginConnectionList.forEach {
+                                                val connectionName by remember{
+                                                    mutableStateOf(PluginService.queryPluginConnectionName(it.connectionType))
+                                                }
                                                 DropdownMenuItem(
-                                                    text = { Text(text = "${it.connectionType} - ${it.id}") },
+                                                    text = { Text(text = "$connectionName - ${it.id}") },
                                                     onClick = { mainSharedViewModel.updateSelectedPluginConnection(it) },
                                                     trailingIcon = {
                                                         Icon(
