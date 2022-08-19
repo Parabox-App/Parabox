@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.ui.message
 
 import android.net.Uri
+import android.os.Build.VERSION.SDK_INT
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.*
@@ -47,7 +48,10 @@ import androidx.navigation.NavController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.items
+import coil.ImageLoader
 import coil.compose.AsyncImage
+import coil.decode.GifDecoder
+import coil.decode.ImageDecoderDecoder
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import coil.size.Scale
@@ -792,6 +796,7 @@ fun SingleMessage(
     onClick: () -> Unit,
     onLongClick: () -> Unit
 ) {
+    val context = LocalContext.current
     val topStartRadius by animateDpAsState(targetValue = if (message.sentByMe || isFirst) 24.dp else 0.dp)
     val topEndRadius by animateDpAsState(targetValue = if (!message.sentByMe || isFirst) 24.dp else 0.dp)
     val bottomStartRadius by animateDpAsState(targetValue = if (message.sentByMe || isLast) 24.dp else 0.dp)
@@ -856,38 +861,49 @@ fun SingleMessage(
                         text = messageContent.text,
                         color = textColor
                     )
-                    is Image -> AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(messageContent.url)
-                            .crossfade(true)
-                            .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
-//                        .scale(Scale.FIT)
-                            .build(),
-                        contentDescription = "image",
-                        contentScale = ContentScale.FillWidth,
-                        modifier = Modifier
-                            .width(with(LocalDensity.current) {
-                                messageContent.width
-                                    .toDp()
-                                    .coerceIn(80.dp, 320.dp)
-                            })
+                    is Image -> {
+                        val imageLoader = ImageLoader.Builder(context)
+                            .components {
+                                if (SDK_INT >= 28) {
+                                    add(ImageDecoderDecoder.Factory())
+                                } else {
+                                    add(GifDecoder.Factory())
+                                }
+                            }
+                            .build()
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(messageContent.url)
+                                .crossfade(true)
+                                .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
+                                .build(),
+                            imageLoader = imageLoader,
+                            contentDescription = "image",
+                            contentScale = ContentScale.FillWidth,
+                            modifier = Modifier
+                                .width(with(LocalDensity.current) {
+                                    messageContent.width
+                                        .toDp()
+                                        .coerceIn(80.dp, 320.dp)
+                                })
 //                        .height(with(LocalDensity.current) {
 //                            min(messageContent.height.toDp(), 600.dp)
 //                        })
-                            .padding(horizontal = 3.dp, vertical = 3.dp)
-                            .clip(
-                                RoundedCornerShape(
-                                    if (index == 0) (topStartRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp,
-                                    if (index == 0) (topEndRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp,
-                                    if (index == message.contents.lastIndex) (bottomEndRadius - 3.dp).coerceAtLeast(
-                                        0.dp
-                                    ) else 0.dp,
-                                    if (index == message.contents.lastIndex) (bottomStartRadius - 3.dp).coerceAtLeast(
-                                        0.dp
-                                    ) else 0.dp
+                                .padding(horizontal = 3.dp, vertical = 3.dp)
+                                .clip(
+                                    RoundedCornerShape(
+                                        if (index == 0) (topStartRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp,
+                                        if (index == 0) (topEndRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp,
+                                        if (index == message.contents.lastIndex) (bottomEndRadius - 3.dp).coerceAtLeast(
+                                            0.dp
+                                        ) else 0.dp,
+                                        if (index == message.contents.lastIndex) (bottomStartRadius - 3.dp).coerceAtLeast(
+                                            0.dp
+                                        ) else 0.dp
+                                    )
                                 )
-                            )
-                    )
+                        )
+                    }
                 }
             }
         }

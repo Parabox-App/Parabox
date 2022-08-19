@@ -203,6 +203,7 @@ fun NavigationRail(
 ) {
     NavigationRail(
         modifier = modifier,
+        containerColor = NavigationRailDefaults.ContainerColor,
         header = {
             IconButton(modifier = Modifier.statusBarsPadding(), onClick = onMenuClick) {
                 Icon(imageVector = Icons.Outlined.Menu, contentDescription = "menu")
