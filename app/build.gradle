@@ -87,7 +87,7 @@ dependencies {
     // Paging
     def paging_version = "3.1.1"
     implementation "androidx.paging:paging-runtime:$paging_version"
-    implementation "androidx.paging:paging-compose:1.0.0-alpha15"
+    implementation "androidx.paging:paging-compose:1.0.0-alpha16"
 
     // Coil
     implementation 'io.coil-kt:coil:2.1.0'
@@ -118,8 +118,8 @@ dependencies {
     implementation "androidx.navigation:navigation-compose:$nav_version"
 
     // m3
-    implementation "androidx.compose.material3:material3:1.0.0-alpha15"
-    implementation "androidx.compose.material3:material3-window-size-class:1.0.0-alpha15"
+    implementation "androidx.compose.material3:material3:1.0.0-alpha16"
+    implementation "androidx.compose.material3:material3-window-size-class:1.0.0-alpha16"
 
     // Chrome Custom Tab
     implementation "androidx.browser:browser:1.4.0"

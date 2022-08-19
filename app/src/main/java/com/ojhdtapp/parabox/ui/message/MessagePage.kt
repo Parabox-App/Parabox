@@ -651,7 +651,7 @@ fun SwipeableContact(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ContactItem(
     modifier: Modifier = Modifier,

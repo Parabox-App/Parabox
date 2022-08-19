@@ -46,6 +46,7 @@ enum class NavigationDestination(
     Setting(NavGraphs.setting, Icons.Outlined.Settings, Icons.Default.Settings, "设置")
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NavigationBar(
     modifier: Modifier = Modifier,
@@ -189,6 +190,7 @@ fun NavigationDrawer(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NavigationRail(
     modifier: Modifier = Modifier,
