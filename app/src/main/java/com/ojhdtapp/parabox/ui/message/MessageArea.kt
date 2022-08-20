@@ -212,7 +212,7 @@ fun RowScope.MessageArea(
                             DropdownMenu(
                                 expanded = showDropDownMenu,
                                 onDismissRequest = { showDropDownMenu = false },
-                                modifier = Modifier.width(192.dp)
+//                                modifier = Modifier.width(192.dp)
                             ) {
                                 DropdownMenuItem(
                                     text = { Text("全部") },

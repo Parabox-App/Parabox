@@ -14,12 +14,19 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.BottomSheetScaffold
-import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
@@ -159,6 +166,9 @@ fun NormalChatPage(
     var changedTextFieldHeight by remember {
         mutableStateOf(0)
     }
+    val scaffoldState = rememberBottomSheetScaffoldState(
+        bottomSheetState = rememberBottomSheetState(BottomSheetValue.Collapsed)
+    )
     val peakHeight =
         navigationBarHeight + 88.dp + with(LocalDensity.current) {
             changedTextFieldHeight.toDp()
@@ -176,6 +186,7 @@ fun NormalChatPage(
     val clipboardManager: ClipboardManager = LocalClipboardManager.current
     BottomSheetScaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        scaffoldState = scaffoldState,
         topBar = {
             Crossfade(targetState = mainSharedViewModel.selectedMessageStateList.isNotEmpty()) {
                 if (it) {
@@ -420,9 +431,15 @@ fun NormalChatPage(
             Spacer(modifier = Modifier.size(1.dp))
         },
         sheetContent = {
-            EditArea(onTextFieldHeightChange = { px ->
-                changedTextFieldHeight = px
-            }, onSend = onSend)
+            EditArea(
+                onBottomSheetExpand = {
+                    coroutineScope.launch {
+                        scaffoldState.bottomSheetState.expand()
+                    }
+                }, onSend = onSend,
+                onTextFieldHeightChange = { px ->
+                    changedTextFieldHeight = px
+                })
         },
         sheetBackgroundColor = MaterialTheme.colorScheme.surface,
         sheetPeekHeight = peakHeight,

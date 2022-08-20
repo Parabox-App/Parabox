@@ -48,7 +48,7 @@ fun EditUserNameDialog(
                     },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Password
+                        keyboardType = KeyboardType.Text
                     ),
                     keyboardActions = KeyboardActions(
                         onDone = {
