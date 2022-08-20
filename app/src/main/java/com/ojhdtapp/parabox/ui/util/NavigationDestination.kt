@@ -144,45 +144,52 @@ fun NavigationDrawer(
         drawerState = drawerState,
         gesturesEnabled = gesturesEnabled,
         drawerContent = {
-            Spacer(modifier = Modifier.statusBarsPadding())
-            if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) {
-                NavigationDestination.values().forEach { destination ->
-                    val isCurrentDestOnBackStack =
-                        navController.appCurrentDestinationAsState().value in destination.graph.destinations
-                    NavigationDrawerItem(
-                        modifier = Modifier
-                            .height(48.dp)
-                            .padding(horizontal = 12.dp),
-                        icon = {
-                            BadgedBox(badge = {
-                                if (destination.graph == NavGraphs.message && messageBadge != 0)
-                                    Badge { Text(text = "$messageBadge") }
-                                else if (destination.graph == NavGraphs.setting && settingBadge)
-                                    Badge()
-                            }) {
-                                Icon(
-                                    imageVector = if (isCurrentDestOnBackStack) destination.iconSelected else destination.icon,
-                                    contentDescription = destination.label
+            ModalDrawerSheet() {
+                Spacer(modifier = Modifier.statusBarsPadding())
+                if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) {
+                    NavigationDestination.values().forEach { destination ->
+                        val isCurrentDestOnBackStack =
+                            navController.appCurrentDestinationAsState().value in destination.graph.destinations
+                        NavigationDrawerItem(
+                            modifier = Modifier
+                                .height(48.dp)
+                                .padding(horizontal = 12.dp),
+                            icon = {
+                                BadgedBox(badge = {
+                                    if (destination.graph == NavGraphs.message && messageBadge != 0)
+                                        Badge { Text(text = "$messageBadge") }
+                                    else if (destination.graph == NavGraphs.setting && settingBadge)
+                                        Badge()
+                                }) {
+                                    Icon(
+                                        imageVector = if (isCurrentDestOnBackStack) destination.iconSelected else destination.icon,
+                                        contentDescription = destination.label
+                                    )
+                                }
+                            },
+                            label = {
+                                Text(
+                                    text = destination.label,
+                                    style = MaterialTheme.typography.labelLarge
                                 )
-                            }
-                        },
-                        label = { Text(text = destination.label, style = MaterialTheme.typography.labelLarge) },
-                        selected = isCurrentDestOnBackStack,
-                        onClick = {
-                            if (isCurrentDestOnBackStack) onSelfItemClick()
-                            else {
-                                navController.navigate(destination.graph) {
-                                    popUpTo(NavGraphs.menu) {
-                                        saveState = true
+                            },
+                            selected = isCurrentDestOnBackStack,
+                            onClick = {
+                                if (isCurrentDestOnBackStack) onSelfItemClick()
+                                else {
+                                    navController.navigate(destination.graph) {
+                                        popUpTo(NavGraphs.menu) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
                                     }
-                                    launchSingleTop = true
-                                    restoreState = true
+                                    coroutineScope.launch {
+                                        drawerState.close()
+                                    }
                                 }
-                                coroutineScope.launch {
-                                    drawerState.close()
-                                }
-                            }
-                        })
+                            })
+                    }
                 }
             }
         }) {
