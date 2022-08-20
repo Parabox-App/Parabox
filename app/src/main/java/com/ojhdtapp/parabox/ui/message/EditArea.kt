@@ -1,5 +1,14 @@
 package com.ojhdtapp.parabox.ui.message
 
+import android.app.Activity
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -21,18 +30,26 @@ import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.core.content.FileProvider
+import androidx.core.net.toFile
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
+import com.ojhdtapp.parabox.BuildConfig
 import com.ojhdtapp.parabox.ui.util.SearchAppBar
 import com.ojhdtapp.parabox.ui.util.clearFocusOnKeyboardDismiss
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.io.File
 
 @OptIn(
     ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class,
-    ExperimentalAnimationApi::class
+    ExperimentalAnimationApi::class, ExperimentalPermissionsApi::class
 )
 @Composable
 fun EditArea(
@@ -41,6 +58,7 @@ fun EditArea(
     onSend: (text: String) -> Unit,
     onTextFieldHeightChange: (height: Int) -> Unit
 ) {
+    val context = LocalContext.current
     var audioState by remember {
         mutableStateOf(false)
     }
@@ -49,6 +67,49 @@ fun EditArea(
     }
     var shouldToolbarShrink by remember {
         mutableStateOf(false)
+    }
+    val audioPermissionState =
+        rememberPermissionState(permission = android.Manifest.permission.RECORD_AUDIO)
+    val imagePickerLauncher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.StartActivityForResult()) {
+            if (it.resultCode == Activity.RESULT_OK) {
+                it.data?.let {
+                    var i = 0
+                    while (i < it.clipData!!.itemCount) {
+                        it.clipData!!.getItemAt(i).also {
+                            Log.d("parabox", it.uri.toString())
+                        }
+                        i++
+                    }
+                }
+            }
+        }
+    val imagePickerSLauncher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetMultipleContents()) {
+            it.forEach {
+                Log.d("parabox", it.toString())
+            }
+        }
+    val targetCameraShotUri = remember {
+        val path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+        val outputDirectory = File(path, "Parabox")
+        if (!outputDirectory.exists()) {
+            outputDirectory.mkdirs()
+        }
+        val outPutFile = File(outputDirectory, "camera.jpg")
+        FileProvider.getUriForFile(
+            context,
+            BuildConfig.APPLICATION_ID + ".provider", outPutFile
+        )
+    }
+    val cameraLauncher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.TakePicture()) {
+            if (it) {
+                Log.d("parabox", targetCameraShotUri.toString())
+            }
+        }
+    val filePickerLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()){
+        Log.d("parabox", it.toString())
     }
     Surface(
         modifier = modifier
@@ -206,8 +267,12 @@ fun EditArea(
                                 exit = fadeOut()
                             ) {
                                 IconButton(onClick = {
-                                    audioState = true
-                                    isEditing = false
+                                    if (audioPermissionState.status.isGranted) {
+                                        audioState = true
+                                        isEditing = false
+                                    } else {
+                                        audioPermissionState.launchPermissionRequest()
+                                    }
                                 }) {
                                     Icon(
                                         imageVector = Icons.Outlined.KeyboardVoice,
@@ -259,7 +324,24 @@ fun EditArea(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .clickable { },
+                            .clickable {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    val maxNumPhotosAndVideos = 10
+                                    Intent(MediaStore.ACTION_PICK_IMAGES)
+                                        .apply {
+                                            type = "image/*"
+                                            putExtra(
+                                                MediaStore.EXTRA_PICK_IMAGES_MAX,
+                                                maxNumPhotosAndVideos
+                                            )
+                                        }
+                                        .also {
+                                            imagePickerLauncher.launch(it)
+                                        }
+                                } else {
+                                    imagePickerSLauncher.launch("image/*")
+                                }
+                            },
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
@@ -272,29 +354,33 @@ fun EditArea(
                         Text(text = "相册", style = MaterialTheme.typography.labelLarge)
                     }
                 }
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .padding(horizontal = 2.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    tonalElevation = 3.dp,
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Column(
+                if (context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
+                    Surface(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .clickable { },
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .padding(horizontal = 2.dp),
+                        color = MaterialTheme.colorScheme.surface,
+                        tonalElevation = 3.dp,
+                        shape = RoundedCornerShape(16.dp)
                     ) {
-                        Icon(
-                            modifier = Modifier.padding(bottom = 8.dp),
-                            imageVector = Icons.Outlined.PhotoCamera,
-                            contentDescription = "carema",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Text(text = "拍摄", style = MaterialTheme.typography.labelLarge)
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clickable {
+                                    cameraLauncher.launch(targetCameraShotUri)
+                                },
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                modifier = Modifier.padding(bottom = 8.dp),
+                                imageVector = Icons.Outlined.PhotoCamera,
+                                contentDescription = "carema",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Text(text = "拍摄", style = MaterialTheme.typography.labelLarge)
+                        }
                     }
                 }
                 Surface(
@@ -309,7 +395,9 @@ fun EditArea(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .clickable { },
+                            .clickable {
+                                filePickerLauncher.launch("*/*")
+                            },
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
@@ -340,11 +428,11 @@ fun EditArea(
                     ) {
                         Icon(
                             modifier = Modifier.padding(bottom = 8.dp),
-                            imageVector = Icons.Outlined.LocationOn,
-                            contentDescription = "location",
+                            imageVector = Icons.Outlined.Videocam,
+                            contentDescription = "video",
                             tint = MaterialTheme.colorScheme.primary
                         )
-                        Text(text = "位置", style = MaterialTheme.typography.labelLarge)
+                        Text(text = "视频", style = MaterialTheme.typography.labelLarge)
                     }
                 }
             }
