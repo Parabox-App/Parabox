@@ -14,12 +14,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import com.ojhdtapp.parabox.ui.util.SearchAppBar
 import com.ojhdtapp.parabox.ui.util.clearFocusOnKeyboardDismiss
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -54,12 +57,16 @@ fun EditArea(
                     .fillMaxWidth()
                     .defaultMinSize(minHeight = 88.dp)
                     .bringIntoViewRequester(relocation)
-                    .padding(vertical =  16.dp),
+                    .padding(vertical = 16.dp),
                 verticalAlignment = Alignment.Bottom
             ) {
-
+                var isEditing by remember {
+                    mutableStateOf(false)
+                }
                 Crossfade(
-                    modifier = Modifier.padding(start = 16.dp, top = 4.dp, bottom = 4.dp).animateContentSize(),
+                    modifier = Modifier
+                        .padding(start = 16.dp, top = 4.dp, bottom = 4.dp)
+                        .animateContentSize(),
                     targetState = shouldToolbarShrink
                 ) {
                     if (it) {
@@ -92,7 +99,9 @@ fun EditArea(
                         .padding(end = 16.dp, top = 4.dp, bottom = 4.dp),
                     shape = RoundedCornerShape(24.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant,
-                    onClick = {}
+                    onClick = {
+                        isEditing = true
+                    }
                 ) {
                     val originalBoxHeight = with(LocalDensity.current) {
                         24.dp.toPx().toInt()
@@ -112,19 +121,26 @@ fun EditArea(
                             contentAlignment = Alignment.CenterStart
                         ) {
                             val scope = rememberCoroutineScope()
+                            val focusRequester = remember { FocusRequester() }
+                            LaunchedEffect(isEditing) {
+                                if (isEditing) focusRequester.requestFocus()
+                            }
                             BasicTextField(
                                 modifier = Modifier
                                     .onFocusEvent {
                                         if (it.isFocused) scope.launch { delay(200); relocation.bringIntoView() }
                                     }
-                                    .clearFocusOnKeyboardDismiss(),
+                                    .focusRequester(focusRequester)
+                                    .clearFocusOnKeyboardDismiss() {
+                                        isEditing = false
+                                    },
                                 value = inputText,
                                 onValueChange = {
                                     if (it.length > 6) shouldToolbarShrink = true
                                     else if (it.isEmpty()) shouldToolbarShrink = false
                                     inputText = it
                                 },
-                                enabled = true,
+                                enabled = isEditing,
                                 textStyle = MaterialTheme.typography.bodyLarge.merge(TextStyle(color = MaterialTheme.colorScheme.onSurface)),
                                 decorationBox = { innerTextField ->
                                     if (inputText.isEmpty()) {
@@ -138,7 +154,8 @@ fun EditArea(
                                 cursorBrush = SolidColor(value = MaterialTheme.colorScheme.primary)
                             )
                         }
-                        AnimatedVisibility(visible = inputText.isEmpty(),
+                        AnimatedVisibility(
+                            visible = inputText.isEmpty(),
                             enter = fadeIn(),
                             exit = fadeOut()
                         ) {

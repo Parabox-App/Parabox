@@ -11,7 +11,7 @@ import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.platform.LocalFocusManager
 
 @OptIn(ExperimentalLayoutApi::class)
-fun Modifier.clearFocusOnKeyboardDismiss(): Modifier = composed {
+fun Modifier.clearFocusOnKeyboardDismiss(onClear: (() -> Unit)? = null): Modifier = composed {
     var isFocused by remember {
         mutableStateOf(false)
     }
@@ -24,6 +24,9 @@ fun Modifier.clearFocusOnKeyboardDismiss(): Modifier = composed {
                 keyboardAppearedSinceLastFocused = true
             } else if (keyboardAppearedSinceLastFocused) {
                 focusManager.clearFocus()
+                onClear?.run {
+                    invoke()
+                }
             }
         }
     }
