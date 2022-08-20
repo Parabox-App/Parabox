@@ -443,7 +443,8 @@ fun MessagePage(
                 mainNavController = mainNavController,
                 mainSharedViewModel = mainSharedViewModel,
                 sizeClass = sizeClass,
-                onEvent = onEvent
+                onEvent = onEvent,
+                isInSplitScreen = true
             )
         }
     }
@@ -552,7 +553,7 @@ fun RowScope.ArchiveArea(
 //                                    contact = item
 //                                )
                                 if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
-                                    mainNavController.navigate(ChatPageDestination)
+                                    mainNavController.navigate(ChatPageDestination())
                                 }
                             }
                         }

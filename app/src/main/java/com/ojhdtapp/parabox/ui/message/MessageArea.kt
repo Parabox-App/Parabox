@@ -443,7 +443,7 @@ fun RowScope.MessageArea(
 //                                        contact = item,
 //                                    )
                                     if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
-                                        mainNavController.navigate(ChatPageDestination)
+                                        mainNavController.navigate(ChatPageDestination())
                                     }
                                 }
                             }

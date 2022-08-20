@@ -51,10 +51,12 @@ import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.message_content.*
 import com.ojhdtapp.parabox.domain.service.PluginService
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
+import com.ojhdtapp.parabox.ui.destinations.ChatPageDestination
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import com.ramcosta.composedestinations.navigation.navigate
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
@@ -69,7 +71,8 @@ fun ChatPage(
     mainNavController: NavController,
     mainSharedViewModel: MainSharedViewModel,
     sizeClass: WindowSizeClass,
-    onEvent: (ActivityEvent) -> Unit
+    onEvent: (ActivityEvent) -> Unit,
+    isInSplitScreen: Boolean = false
 ) {
 
 //    val viewModel: MessagePageViewModel = hiltViewModel()
@@ -90,12 +93,15 @@ fun ChatPage(
                     messageState = messageState,
                     mainSharedViewModel = mainSharedViewModel,
                     sizeClass = sizeClass,
+                    isInSplitScreen = isInSplitScreen,
+                    onStopSplitting = {
+                        mainNavController.navigate(ChatPageDestination())
+                    },
                     onBackClick = {
-                        if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) {
-                            mainSharedViewModel.clearMessage()
-                        } else {
+                        if (!isInSplitScreen || sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
                             mainNavController.navigateUp()
                         }
+                        mainSharedViewModel.clearMessage()
                     },
                     onSend = {
                         val selectedPluginConnection = messageState.selectedPluginConnection
@@ -135,6 +141,8 @@ fun NormalChatPage(
     messageState: MessageState,
     mainSharedViewModel: MainSharedViewModel,
     sizeClass: WindowSizeClass,
+    isInSplitScreen: Boolean = false,
+    onStopSplitting: () -> Unit = {},
     onBackClick: () -> Unit,
     onSend: (text: String) -> Unit
 ) {
@@ -153,7 +161,8 @@ fun NormalChatPage(
     }
     val peakHeight =
         navigationBarHeight + 88.dp + with(LocalDensity.current) {
-            changedTextFieldHeight.toDp() }
+            changedTextFieldHeight.toDp()
+        }
     //temp
 //    val peakHeight = navigationBarHeight + 88.dp
     // List Scroll && To Latest FAB
@@ -273,7 +282,7 @@ fun NormalChatPage(
                             .statusBarsPadding(),
                         title = { Text(text = messageState.contact?.profile?.name ?: "会话") },
                         navigationIcon = {
-                            IconButton(onClick = onBackClick) {
+                            IconButton(onClick = { onBackClick() }) {
                                 Icon(
                                     imageVector = Icons.Outlined.ArrowBack,
                                     contentDescription = "back"
@@ -313,6 +322,20 @@ fun NormalChatPage(
                                                 contentDescription = null
                                             )
                                         })
+                                    if (isInSplitScreen) {
+                                        DropdownMenuItem(
+                                            text = { Text(text = "解除分屏") },
+                                            onClick = {
+                                                menuExpanded = false
+                                                onStopSplitting()
+                                            },
+                                            leadingIcon = {
+                                                Icon(
+                                                    Icons.Outlined.VerticalSplit,
+                                                    contentDescription = null
+                                                )
+                                            })
+                                    }
                                     Box(
                                         modifier = Modifier
                                             .wrapContentSize(Alignment.BottomCenter)
@@ -346,12 +369,20 @@ fun NormalChatPage(
                                                 pluginConnectionMenuExpanded = false
                                             }) {
                                             messageState.pluginConnectionList.forEach {
-                                                val connectionName by remember{
-                                                    mutableStateOf(PluginService.queryPluginConnectionName(it.connectionType))
+                                                val connectionName by remember {
+                                                    mutableStateOf(
+                                                        PluginService.queryPluginConnectionName(
+                                                            it.connectionType
+                                                        )
+                                                    )
                                                 }
                                                 DropdownMenuItem(
                                                     text = { Text(text = "$connectionName - ${it.id}") },
-                                                    onClick = { mainSharedViewModel.updateSelectedPluginConnection(it) },
+                                                    onClick = {
+                                                        mainSharedViewModel.updateSelectedPluginConnection(
+                                                            it
+                                                        )
+                                                    },
                                                     trailingIcon = {
                                                         Icon(
                                                             imageVector = if (it.objectId == messageState.selectedPluginConnection?.objectId) Icons.Outlined.RadioButtonChecked else Icons.Outlined.RadioButtonUnchecked,
