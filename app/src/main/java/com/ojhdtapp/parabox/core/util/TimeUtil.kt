@@ -70,3 +70,10 @@ fun Long.toDescriptiveTime(): String {
 fun Long.toFormattedDate(): String {
     return SimpleDateFormat("M'月'd'日'", Locale.getDefault()).format(Date(this))
 }
+
+fun Long.toDateAndTimeString(): String {
+    return SimpleDateFormat(
+        "yyyy-MM-dd-HH-mm-ss-",
+        Locale.getDefault()
+    ).format(Date(this)) + this.toString().substring(11)
+}

@@ -41,6 +41,7 @@ import com.google.accompanist.navigation.material.ExperimentalMaterialNavigation
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.dataStore
+import com.ojhdtapp.parabox.core.util.toDateAndTimeString
 import com.ojhdtapp.parabox.domain.service.PluginService
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
@@ -87,9 +88,9 @@ class MainActivity : ComponentActivity() {
         getExternalFilesDir("avatar")?.listFiles()?.filter { it.isFile }?.map {
             it.delete()
         }
-        val timeStr = System.currentTimeMillis().toString().substring(7)
+        val timeStr = System.currentTimeMillis().toDateAndTimeString()
         val outPutFile =
-            File("${getExternalFilesDir("avatar")}${File.separator}user_avatar_$timeStr.png")
+            File("${getExternalFilesDir("avatar")}${File.separator}AVATAR_$timeStr.jpg")
         contentResolver.openInputStream(uri)?.use { inputStream ->
             FileOutputStream(outPutFile).use { outputStream ->
                 inputStream.copyTo(outputStream)

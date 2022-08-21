@@ -41,6 +41,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.ojhdtapp.parabox.BuildConfig
+import com.ojhdtapp.parabox.core.util.toDateAndTimeString
 import com.ojhdtapp.parabox.ui.util.SearchAppBar
 import com.ojhdtapp.parabox.ui.util.clearFocusOnKeyboardDismiss
 import kotlinx.coroutines.delay
@@ -92,11 +93,11 @@ fun EditArea(
         }
     val targetCameraShotUri = remember {
         val path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-        val outputDirectory = File(path, "Parabox")
-        if (!outputDirectory.exists()) {
-            outputDirectory.mkdirs()
-        }
-        val outPutFile = File(outputDirectory, "camera.jpg")
+        val outPutFile = File(File(path, "Parabox/Camera").also {
+            if (!it.exists()) {
+                it.mkdirs()
+            }
+        }, "CHAT_${System.currentTimeMillis().toDateAndTimeString()}.jpg")
         FileProvider.getUriForFile(
             context,
             BuildConfig.APPLICATION_ID + ".provider", outPutFile
@@ -108,9 +109,10 @@ fun EditArea(
                 Log.d("parabox", targetCameraShotUri.toString())
             }
         }
-    val filePickerLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()){
-        Log.d("parabox", it.toString())
-    }
+    val filePickerLauncher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) {
+            Log.d("parabox", it.toString())
+        }
     Surface(
         modifier = modifier
 //            .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
