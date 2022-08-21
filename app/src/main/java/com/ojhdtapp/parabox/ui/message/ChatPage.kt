@@ -154,6 +154,7 @@ fun NormalChatPage(
     onSend: (text: String) -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
+    val density = LocalDensity.current
     // Top AppBar
     var menuExpanded by remember {
         mutableStateOf(false)
@@ -169,12 +170,18 @@ fun NormalChatPage(
     val scaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberBottomSheetState(BottomSheetValue.Collapsed)
     )
-    val peakHeight =
-        navigationBarHeight + 88.dp + with(LocalDensity.current) {
-            changedTextFieldHeight.toDp()
+
+    val peakHeight by remember {
+        derivedStateOf {
+            density.run {
+                navigationBarHeight + 88.dp + changedTextFieldHeight.toDp()
+            }
         }
-    //temp
-//    val peakHeight = navigationBarHeight + 88.dp
+    }
+//        navigationBarHeight + 88.dp + with(LocalDensity.current) {
+//            changedTextFieldHeight.toDp()
+//        }
+
     // List Scroll && To Latest FAB
     val scrollState = rememberLazyListState()
     val fabExtended by remember {
@@ -231,6 +238,19 @@ fun NormalChatPage(
                                 enter = fadeIn(),
                                 exit = fadeOut()
                             ) {
+                                IconButton(onClick = { }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Reply,
+                                        contentDescription = "reply"
+                                    )
+
+                                }
+                            }
+                            AnimatedVisibility(
+                                visible = mainSharedViewModel.selectedMessageStateList.size == 1,
+                                enter = fadeIn(),
+                                exit = fadeOut()
+                            ) {
                                 IconButton(onClick = {
                                     Toast.makeText(context, "内容已复制到剪贴板", Toast.LENGTH_SHORT).show()
                                     clipboardManager.setText(AnnotatedString(mainSharedViewModel.selectedMessageStateList.first().contents.getContentString()))
@@ -240,19 +260,6 @@ fun NormalChatPage(
                                         imageVector = Icons.Outlined.ContentCopy,
                                         contentDescription = "copy"
                                     )
-                                }
-                            }
-                            AnimatedVisibility(
-                                visible = mainSharedViewModel.selectedMessageStateList.size == 1,
-                                enter = fadeIn(),
-                                exit = fadeOut()
-                            ) {
-                                IconButton(onClick = { }) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Reply,
-                                        contentDescription = "reply"
-                                    )
-
                                 }
                             }
                             Box(
@@ -432,9 +439,15 @@ fun NormalChatPage(
         },
         sheetContent = {
             EditArea(
+                isBottomSheetExpand = scaffoldState.bottomSheetState.isExpanded,
                 onBottomSheetExpand = {
                     coroutineScope.launch {
                         scaffoldState.bottomSheetState.expand()
+                    }
+                },
+                onBottomSheetCollapse = {
+                    coroutineScope.launch {
+                        scaffoldState.bottomSheetState.collapse()
                     }
                 }, onSend = onSend,
                 onTextFieldHeightChange = { px ->

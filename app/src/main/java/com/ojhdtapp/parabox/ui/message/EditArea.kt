@@ -14,6 +14,11 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,26 +28,34 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.core.content.FileProvider
-import androidx.core.net.toFile
+import coil.ImageLoader
+import coil.compose.AsyncImage
+import coil.decode.GifDecoder
+import coil.decode.ImageDecoderDecoder
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.ojhdtapp.parabox.BuildConfig
 import com.ojhdtapp.parabox.core.util.toDateAndTimeString
-import com.ojhdtapp.parabox.ui.util.SearchAppBar
 import com.ojhdtapp.parabox.ui.util.clearFocusOnKeyboardDismiss
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -50,17 +63,33 @@ import java.io.File
 
 @OptIn(
     ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class,
-    ExperimentalAnimationApi::class, ExperimentalPermissionsApi::class
+    ExperimentalAnimationApi::class, ExperimentalPermissionsApi::class,
+    ExperimentalComposeUiApi::class
 )
 @Composable
 fun EditArea(
     modifier: Modifier = Modifier,
+    isBottomSheetExpand: Boolean,
     onBottomSheetExpand: () -> Unit,
+    onBottomSheetCollapse: () -> Unit,
     onSend: (text: String) -> Unit,
     onTextFieldHeightChange: (height: Int) -> Unit
 ) {
     val context = LocalContext.current
+    val memeList = remember {
+        mutableStateListOf<File>()
+    }
+    LaunchedEffect(key1 = true) {
+        context.getExternalFilesDir("meme")?.listFiles()
+            ?.filter { it.path.endsWith(".jpg") || it.path.endsWith(".jpeg") || it.path.endsWith(".png") }
+            ?.forEach {
+                memeList.add(it)
+            }
+    }
     var audioState by remember {
+        mutableStateOf(false)
+    }
+    var emojiState by remember {
         mutableStateOf(false)
     }
     var inputText by remember {
@@ -113,6 +142,43 @@ fun EditArea(
         rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) {
             Log.d("parabox", it.toString())
         }
+
+    val permissionDeniedDialog = remember { mutableStateOf(false) }
+    if (permissionDeniedDialog.value) {
+        AlertDialog(
+            onDismissRequest = {
+                permissionDeniedDialog.value = false
+            },
+            icon = { Icon(Icons.Outlined.KeyboardVoice, contentDescription = null) },
+            title = {
+                Text(text = "权限申请")
+            },
+            text = {
+                Text(
+                    "要发送语音消息，您需要授权本应用使用设备麦克风。\n您亦可前往设置页面手动授权。"
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        permissionDeniedDialog.value = false
+                        audioPermissionState.launchPermissionRequest()
+                    }
+                ) {
+                    Text("尝试授权")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        permissionDeniedDialog.value = false
+                    }
+                ) {
+                    Text("转到设置")
+                }
+            }
+        )
+    }
     Surface(
         modifier = modifier
 //            .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
@@ -122,7 +188,6 @@ fun EditArea(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(250.dp)
         ) {
             val relocation = remember { BringIntoViewRequester() }
             Row(
@@ -136,6 +201,7 @@ fun EditArea(
                 var isEditing by remember {
                     mutableStateOf(false)
                 }
+                val keyboardController = LocalSoftwareKeyboardController.current
                 Crossfade(
                     modifier = Modifier
                         .padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp)
@@ -151,13 +217,38 @@ fun EditArea(
                         }
                     } else {
                         Row() {
-                            IconButton(onClick = onBottomSheetExpand) {
+                            IconButton(onClick = {
+                                keyboardController?.hide()
+                                if (!isBottomSheetExpand) {
+                                    onBottomSheetExpand()
+                                    emojiState = false
+                                } else {
+                                    if (emojiState) {
+                                        emojiState = false
+                                    } else {
+                                        onBottomSheetCollapse()
+                                    }
+                                }
+
+                            }) {
                                 Icon(
                                     imageVector = Icons.Outlined.AddCircleOutline,
                                     contentDescription = "more"
                                 )
                             }
-                            IconButton(onClick = { /*TODO*/ }) {
+                            IconButton(onClick = {
+                                keyboardController?.hide()
+                                if (!isBottomSheetExpand) {
+                                    onBottomSheetExpand()
+                                    emojiState = true
+                                } else {
+                                    if (!emojiState) {
+                                        emojiState = true
+                                    } else {
+                                        onBottomSheetCollapse()
+                                    }
+                                }
+                            }) {
                                 Icon(
                                     imageVector = Icons.Outlined.EmojiEmotions,
                                     contentDescription = "emoji"
@@ -273,7 +364,7 @@ fun EditArea(
                                         audioState = true
                                         isEditing = false
                                     } else {
-                                        audioPermissionState.launchPermissionRequest()
+                                        permissionDeniedDialog.value = true
                                     }
                                 }) {
                                     Icon(
@@ -307,134 +398,339 @@ fun EditArea(
                     }
                 }
             }
-            Row(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .padding(start = 14.dp, end = 14.dp, bottom = 4.dp)
-            ) {
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .padding(horizontal = 2.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    tonalElevation = 3.dp,
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clickable {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                    val maxNumPhotosAndVideos = 10
-                                    Intent(MediaStore.ACTION_PICK_IMAGES)
-                                        .apply {
-                                            type = "image/*"
-                                            putExtra(
-                                                MediaStore.EXTRA_PICK_IMAGES_MAX,
-                                                maxNumPhotosAndVideos
-                                            )
-                                        }
-                                        .also {
-                                            imagePickerLauncher.launch(it)
-                                        }
-                                } else {
-                                    imagePickerSLauncher.launch("image/*")
-                                }
-                            },
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            modifier = Modifier.padding(bottom = 8.dp),
-                            imageVector = Icons.Outlined.Image,
-                            contentDescription = "image",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Text(text = "相册", style = MaterialTheme.typography.labelLarge)
+            AnimatedContent(targetState = emojiState,
+                transitionSpec = {
+                    if (targetState) {
+                        (slideIntoContainer(AnimatedContentScope.SlideDirection.Start) with slideOutOfContainer(
+                            AnimatedContentScope.SlideDirection.Start
+                        ))
+                    } else {
+                        (slideIntoContainer(AnimatedContentScope.SlideDirection.End) with slideOutOfContainer(
+                            AnimatedContentScope.SlideDirection.End
+                        ))
                     }
-                }
-                if (context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
-                    Surface(
+                }) {
+                if (it) {
+                    Row(
                         modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .padding(horizontal = 2.dp),
-                        color = MaterialTheme.colorScheme.surface,
-                        tonalElevation = 3.dp,
-                        shape = RoundedCornerShape(16.dp)
+                            .height(160.dp)
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
+                            .padding(bottom = 4.dp)
                     ) {
+                        var memeState by remember {
+                            mutableStateOf(true)
+                        }
+                        Spacer(modifier = Modifier.width(14.dp))
                         Column(
                             modifier = Modifier
-                                .fillMaxSize()
-                                .clickable {
-                                    cameraLauncher.launch(targetCameraShotUri)
-                                },
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
+                                .fillMaxHeight()
+                                .aspectRatio(0.5f)
                         ) {
-                            Icon(
-                                modifier = Modifier.padding(bottom = 8.dp),
-                                imageVector = Icons.Outlined.PhotoCamera,
-                                contentDescription = "carema",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(text = "拍摄", style = MaterialTheme.typography.labelLarge)
+                            Surface(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(start = 2.dp, bottom = 2.dp),
+                                color = if (memeState) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
+                                tonalElevation = 3.dp,
+                                shape = RoundedCornerShape(16.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clickable {
+                                            memeState = true
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.FavoriteBorder,
+                                        contentDescription = "favorite",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+
+                            Surface(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(start = 2.dp, top = 2.dp),
+                                color = if (memeState) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.secondaryContainer,
+                                tonalElevation = 3.dp,
+                                shape = RoundedCornerShape(16.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clickable {
+                                            memeState = false
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Face,
+                                        contentDescription = "face",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        }
+                        AnimatedContent(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .weight(1f), targetState = memeState
+                        ) {
+                            if (it) {
+                                LazyRow(
+                                    modifier = Modifier
+                                        .fillMaxSize(),
+                                    contentPadding = PaddingValues(horizontal = 16.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    if (memeList.isEmpty()) {
+                                        item {
+                                            Column(
+                                                modifier = Modifier.fillParentMaxSize(),
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                verticalArrangement = Arrangement.Center
+                                            ) {
+                                                Text(
+                                                    text = "暂无自定义表情",
+                                                    style = MaterialTheme.typography.labelMedium
+                                                )
+                                                TextButton(onClick = { /*TODO*/ }) {
+                                                    Text(text = "手动添加")
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        items(items = memeList) {
+                                            Surface(
+                                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                                tonalElevation = 3.dp,
+                                                shape = RoundedCornerShape(16.dp)
+                                            ) {
+                                                Box(modifier = Modifier.padding(3.dp).clickable { }) {
+                                                    val imageLoader = ImageLoader.Builder(context)
+                                                        .components {
+                                                            if (Build.VERSION.SDK_INT >= 28) {
+                                                                add(ImageDecoderDecoder.Factory())
+                                                            } else {
+                                                                add(GifDecoder.Factory())
+                                                            }
+                                                        }
+                                                        .build()
+                                                    AsyncImage(
+                                                        model = ImageRequest.Builder(LocalContext.current)
+                                                            .data(it)
+                                                            .crossfade(true)
+                                                            .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
+                                                            .build(),
+                                                        imageLoader = imageLoader,
+                                                        contentDescription = "meme",
+                                                        contentScale = ContentScale.FillHeight,
+                                                        modifier = Modifier.widthIn(0.dp, 144.dp).clip(
+                                                            RoundedCornerShape(13.dp)
+                                                        )
+                                                    )
+
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                LazyHorizontalGrid(
+                                    rows = GridCells.Fixed(2),
+                                    contentPadding = PaddingValues(horizontal = 16.dp)
+                                ) {
+                                    items(
+                                        items = listOf(
+                                            "\uD83E\uDD24",
+                                            "\uD83E\uDD13",
+                                            "\uD83D\uDE05",
+                                            "\uD83D\uDE02",
+                                            "\uD83E\uDD23",
+                                            "\uD83D\uDE2D",
+                                            "\uD83E\uDD70",
+                                            "\uD83D\uDE0B",
+                                            "\uD83E\uDD17",
+                                            "\uD83D\uDE13",
+                                            "\uD83E\uDD7A",
+                                            "\uD83E\uDD14",
+                                            "\uD83D\uDE09",
+                                            "\uD83D\uDE19",
+                                            "\uD83D\uDE0D",
+                                            "\uD83D\uDE1D",
+                                            "\uD83E\uDEE3",
+                                            "\uD83D\uDE31",
+                                            "\uD83D\uDE21",
+                                            "\uD83D\uDE0E",
+                                            "\uD83D\uDC2E",
+                                            "\uD83D\uDC34",
+                                            "\uD83D\uDC2D",
+                                            "\uD83D\uDC30",
+                                            "\uD83D\uDC38",
+                                            "\uD83D\uDC22",
+                                            "\uD83D\uDC12",
+                                            "\uD83D\uDC37",
+                                            "\uD83D\uDCA7",
+                                            "☔"
+                                        )
+                                    ) {
+                                        Surface(
+                                            modifier = Modifier.width(48.dp),
+                                            color = Color.Transparent,
+                                            tonalElevation = 0.dp,
+                                            shape = RoundedCornerShape(16.dp)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxSize()
+                                                    .clickable {
+                                                        inputText += it
+                                                    },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(text = it)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
-                }
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .padding(horizontal = 2.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    tonalElevation = 3.dp,
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Column(
+                } else {
+                    Row(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .clickable {
-                                filePickerLauncher.launch("*/*")
-                            },
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                            .height(160.dp)
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
+                            .padding(start = 14.dp, end = 14.dp, bottom = 4.dp)
                     ) {
-                        Icon(
-                            modifier = Modifier.padding(bottom = 8.dp),
-                            imageVector = Icons.Outlined.Folder,
-                            contentDescription = "file",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Text(text = "文件", style = MaterialTheme.typography.labelLarge)
-                    }
-                }
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .padding(horizontal = 2.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    tonalElevation = 3.dp,
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clickable { },
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            modifier = Modifier.padding(bottom = 8.dp),
-                            imageVector = Icons.Outlined.Videocam,
-                            contentDescription = "video",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Text(text = "视频", style = MaterialTheme.typography.labelLarge)
+                        Surface(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .padding(horizontal = 2.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            tonalElevation = 3.dp,
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clickable {
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                            val maxNumPhotosAndVideos = 10
+                                            Intent(MediaStore.ACTION_PICK_IMAGES)
+                                                .apply {
+                                                    type = "image/*"
+                                                    putExtra(
+                                                        MediaStore.EXTRA_PICK_IMAGES_MAX,
+                                                        maxNumPhotosAndVideos
+                                                    )
+                                                }
+                                                .also {
+                                                    imagePickerLauncher.launch(it)
+                                                }
+                                        } else {
+                                            imagePickerSLauncher.launch("image/*")
+                                        }
+                                    },
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    modifier = Modifier.padding(bottom = 8.dp),
+                                    imageVector = Icons.Outlined.Image,
+                                    contentDescription = "image",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Text(text = "相册", style = MaterialTheme.typography.labelLarge)
+                            }
+                        }
+                        if (context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
+                            Surface(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxHeight()
+                                    .padding(horizontal = 2.dp),
+                                color = MaterialTheme.colorScheme.surface,
+                                tonalElevation = 3.dp,
+                                shape = RoundedCornerShape(16.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clickable {
+                                            cameraLauncher.launch(targetCameraShotUri)
+                                        },
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        modifier = Modifier.padding(bottom = 8.dp),
+                                        imageVector = Icons.Outlined.PhotoCamera,
+                                        contentDescription = "carema",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                    Text(text = "拍摄", style = MaterialTheme.typography.labelLarge)
+                                }
+                            }
+                        }
+                        Surface(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .padding(horizontal = 2.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            tonalElevation = 3.dp,
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clickable {
+                                        filePickerLauncher.launch("*/*")
+                                    },
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    modifier = Modifier.padding(bottom = 8.dp),
+                                    imageVector = Icons.Outlined.Folder,
+                                    contentDescription = "file",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Text(text = "文件", style = MaterialTheme.typography.labelLarge)
+                            }
+                        }
+                        Surface(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .padding(horizontal = 2.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            tonalElevation = 3.dp,
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clickable { },
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    modifier = Modifier.padding(bottom = 8.dp),
+                                    imageVector = Icons.Outlined.Videocam,
+                                    contentDescription = "video",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Text(text = "视频", style = MaterialTheme.typography.labelLarge)
+                            }
+                        }
                     }
                 }
             }
