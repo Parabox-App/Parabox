@@ -48,6 +48,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.core.content.FileProvider
+import androidx.core.net.toFile
 import coil.ImageLoader
 import coil.compose.AsyncImage
 import coil.decode.GifDecoder
@@ -57,6 +58,8 @@ import coil.request.ImageRequest
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import com.ojhdtapp.messagedto.message_content.Image
+import com.ojhdtapp.messagedto.message_content.ImageSend
 import com.ojhdtapp.messagedto.message_content.MessageContent
 import com.ojhdtapp.messagedto.message_content.PlainText
 import com.ojhdtapp.parabox.BuildConfig
@@ -382,7 +385,7 @@ fun EditArea(
                                 )
                             }
                             AnimatedVisibility(
-                                visible = inputText.isEmpty(),
+                                visible = inputText.isEmpty() && gallerySelected.isEmpty() && cameraSelected.isEmpty(),
                                 enter = fadeIn(),
                                 exit = fadeOut()
                             ) {
@@ -404,7 +407,7 @@ fun EditArea(
                     }
 
                 }
-                AnimatedVisibility(visible = (inputText.isNotEmpty() || false) && !audioState,
+                AnimatedVisibility(visible = (inputText.isNotEmpty() || gallerySelected.isNotEmpty() || cameraSelected.isNotEmpty()) && !audioState,
 //                    enter = slideInHorizontally { width -> width },
 //                    exit = slideOutHorizontally { width -> width }
                     enter = expandHorizontally() { width -> 0 },
@@ -416,8 +419,16 @@ fun EditArea(
                             if (inputText.isNotEmpty()) {
                                 content.add(PlainText(inputText))
                             }
+                            gallerySelected.forEach{
+                                content.add(ImageSend(file = it.toFile()))
+                            }
+                            cameraSelected.forEach{
+                                content.add(ImageSend(file = it.toFile()))
+                            }
                             onSend(content)
                             inputText = ""
+                            gallerySelected.clear()
+                            cameraSelected.clear()
                         },
                         modifier = Modifier.padding(end = 16.dp),
                         elevation = FloatingActionButtonDefaults.elevation(
