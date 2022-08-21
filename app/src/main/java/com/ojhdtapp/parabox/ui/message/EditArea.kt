@@ -42,6 +42,8 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -533,7 +535,7 @@ fun EditArea(
                                             }
                                         }
                                     } else {
-                                        items(items = memeList, key = {it.name}) {
+                                        items(items = memeList, key = { it.name }) {
                                             Surface(
                                                 color = MaterialTheme.colorScheme.secondaryContainer,
                                                 tonalElevation = 3.dp,
@@ -684,11 +686,27 @@ fun EditArea(
                                                 },
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            Icon(
-                                                imageVector = Icons.Outlined.AddPhotoAlternate,
-                                                contentDescription = "gallery add",
-                                                tint = MaterialTheme.colorScheme.primary
-                                            )
+                                            BadgedBox(badge = {
+                                                gallerySelected.size.let {
+                                                    if (it > 0) {
+                                                        Badge {
+                                                            Text(
+                                                                text = "$it",
+                                                                modifier = Modifier.semantics {
+                                                                    contentDescription =
+                                                                        "$it selected gallery images"
+                                                                }
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            }) {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.AddPhotoAlternate,
+                                                    contentDescription = "gallery add",
+                                                    tint = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
                                         }
                                     }
 
@@ -709,11 +727,27 @@ fun EditArea(
                                                     },
                                                 contentAlignment = Alignment.Center
                                             ) {
-                                                Icon(
-                                                    imageVector = Icons.Outlined.AddAPhoto,
-                                                    contentDescription = "camera add",
-                                                    tint = MaterialTheme.colorScheme.primary
-                                                )
+                                                BadgedBox(badge = {
+                                                    cameraSelected.size.let {
+                                                        if (it > 0) {
+                                                            Badge {
+                                                                Text(
+                                                                    text = "$it",
+                                                                    modifier = Modifier.semantics {
+                                                                        contentDescription =
+                                                                            "$it selected camera images"
+                                                                    }
+                                                                )
+                                                            }
+                                                        }
+                                                    }
+                                                }) {
+                                                    Icon(
+                                                        imageVector = Icons.Outlined.AddAPhoto,
+                                                        contentDescription = "camera add",
+                                                        tint = MaterialTheme.colorScheme.primary
+                                                    )
+                                                }
                                             }
                                         }
                                     }
@@ -725,7 +759,7 @@ fun EditArea(
                                     contentPadding = PaddingValues(horizontal = 16.dp),
                                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
-                                    items(items = gallerySelected, key = {it.toString()}) {
+                                    items(items = gallerySelected, key = { it.toString() }) {
                                         Surface(
                                             modifier = Modifier.animateItemPlacement(),
                                             color = MaterialTheme.colorScheme.secondaryContainer,
@@ -776,7 +810,7 @@ fun EditArea(
                                             }
                                         }
                                     }
-                                    items(items = cameraSelected, key = {it.toString()}) {
+                                    items(items = cameraSelected, key = { it.toString() }) {
                                         Surface(
                                             modifier = Modifier.animateItemPlacement(),
                                             color = MaterialTheme.colorScheme.secondaryContainer,
