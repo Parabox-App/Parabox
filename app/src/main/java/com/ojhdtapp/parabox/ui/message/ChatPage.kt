@@ -119,11 +119,7 @@ fun ChatPage(
                             onEvent(
                                 ActivityEvent.SendMessage(
                                     SendMessageDto(
-                                        content = listOf(
-                                            com.ojhdtapp.messagedto.message_content.PlainText(
-                                                it
-                                            )
-                                        ),
+                                        content = it,
                                         timestamp = System.currentTimeMillis(),
                                         pluginConnection = selectedPluginConnection.toSenderPluginConnection()
                                     )
@@ -151,7 +147,7 @@ fun NormalChatPage(
     isInSplitScreen: Boolean = false,
     onStopSplitting: () -> Unit = {},
     onBackClick: () -> Unit,
-    onSend: (text: String) -> Unit
+    onSend: (contents: List<com.ojhdtapp.messagedto.message_content.MessageContent>) -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current

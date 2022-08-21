@@ -3,6 +3,7 @@ package com.ojhdtapp.parabox.ui.message
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
@@ -54,6 +55,8 @@ import coil.request.ImageRequest
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import com.ojhdtapp.messagedto.message_content.MessageContent
+import com.ojhdtapp.messagedto.message_content.PlainText
 import com.ojhdtapp.parabox.BuildConfig
 import com.ojhdtapp.parabox.core.util.toDateAndTimeString
 import com.ojhdtapp.parabox.ui.util.clearFocusOnKeyboardDismiss
@@ -72,10 +75,12 @@ fun EditArea(
     isBottomSheetExpand: Boolean,
     onBottomSheetExpand: () -> Unit,
     onBottomSheetCollapse: () -> Unit,
-    onSend: (text: String) -> Unit,
+    onSend: (contents: List<MessageContent>) -> Unit,
     onTextFieldHeightChange: (height: Int) -> Unit
 ) {
     val context = LocalContext.current
+
+    // Meme
     val memeList = remember {
         mutableStateListOf<File>()
     }
@@ -86,6 +91,15 @@ fun EditArea(
                 memeList.add(it)
             }
     }
+
+    // Image Send
+    val gallerySelected = remember {
+        mutableStateListOf<Uri>()
+    }
+    val cameraSelected = remember {
+        mutableStateListOf<Uri>()
+    }
+
     var audioState by remember {
         mutableStateOf(false)
     }
@@ -107,6 +121,9 @@ fun EditArea(
                     var i = 0
                     while (i < it.clipData!!.itemCount) {
                         it.clipData!!.getItemAt(i).also {
+                            if (!gallerySelected.contains(it.uri)) {
+                                gallerySelected.add(it.uri)
+                            }
                             Log.d("parabox", it.uri.toString())
                         }
                         i++
@@ -117,10 +134,13 @@ fun EditArea(
     val imagePickerSLauncher =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.GetMultipleContents()) {
             it.forEach {
+                if (!gallerySelected.contains(it)) {
+                    gallerySelected.add(it)
+                }
                 Log.d("parabox", it.toString())
             }
         }
-    val targetCameraShotUri = remember {
+    val targetCameraShotUri = remember(cameraSelected.size) {
         val path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
         val outPutFile = File(File(path, "Parabox/Camera").also {
             if (!it.exists()) {
@@ -135,6 +155,7 @@ fun EditArea(
     val cameraLauncher =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.TakePicture()) {
             if (it) {
+                cameraSelected.add(targetCameraShotUri)
                 Log.d("parabox", targetCameraShotUri.toString())
             }
         }
@@ -142,6 +163,10 @@ fun EditArea(
         rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) {
             Log.d("parabox", it.toString())
         }
+
+    val cameraAccessible by remember {
+        mutableStateOf<Boolean>(context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY))
+    }
 
     val permissionDeniedDialog = remember { mutableStateOf(false) }
     if (permissionDeniedDialog.value) {
@@ -377,7 +402,7 @@ fun EditArea(
                     }
 
                 }
-                AnimatedVisibility(visible = inputText.isNotEmpty() && !audioState,
+                AnimatedVisibility(visible = (inputText.isNotEmpty() || false) && !audioState,
 //                    enter = slideInHorizontally { width -> width },
 //                    exit = slideOutHorizontally { width -> width }
                     enter = expandHorizontally() { width -> 0 },
@@ -385,7 +410,11 @@ fun EditArea(
                 ) {
                     FloatingActionButton(
                         onClick = {
-                            onSend(inputText)
+                            val content = mutableListOf<MessageContent>()
+                            if (inputText.isNotEmpty()) {
+                                content.add(PlainText(inputText))
+                            }
+                            onSend(content)
                             inputText = ""
                         },
                         modifier = Modifier.padding(end = 16.dp),
@@ -504,13 +533,16 @@ fun EditArea(
                                             }
                                         }
                                     } else {
-                                        items(items = memeList) {
+                                        items(items = memeList, key = {it.name}) {
                                             Surface(
                                                 color = MaterialTheme.colorScheme.secondaryContainer,
                                                 tonalElevation = 3.dp,
                                                 shape = RoundedCornerShape(16.dp)
                                             ) {
-                                                Box(modifier = Modifier.padding(3.dp).clickable { }) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .padding(3.dp)
+                                                        .clickable { }) {
                                                     val imageLoader = ImageLoader.Builder(context)
                                                         .components {
                                                             if (Build.VERSION.SDK_INT >= 28) {
@@ -529,9 +561,11 @@ fun EditArea(
                                                         imageLoader = imageLoader,
                                                         contentDescription = "meme",
                                                         contentScale = ContentScale.FillHeight,
-                                                        modifier = Modifier.widthIn(0.dp, 144.dp).clip(
-                                                            RoundedCornerShape(13.dp)
-                                                        )
+                                                        modifier = Modifier
+                                                            .widthIn(0.dp, 144.dp)
+                                                            .clip(
+                                                                RoundedCornerShape(13.dp)
+                                                            )
                                                     )
 
                                                 }
@@ -601,135 +635,344 @@ fun EditArea(
                         }
                     }
                 } else {
-                    Row(
-                        modifier = Modifier
-                            .height(160.dp)
-                            .fillMaxWidth()
-                            .navigationBarsPadding()
-                            .padding(start = 14.dp, end = 14.dp, bottom = 4.dp)
-                    ) {
-                        Surface(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .padding(horizontal = 2.dp),
-                            color = MaterialTheme.colorScheme.surface,
-                            tonalElevation = 3.dp,
-                            shape = RoundedCornerShape(16.dp)
-                        ) {
-                            Column(
+                    AnimatedContent(targetState = gallerySelected.isNotEmpty() || cameraSelected.isNotEmpty()) {
+                        if (it) {
+                            Row(
                                 modifier = Modifier
-                                    .fillMaxSize()
-                                    .clickable {
-                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                            val maxNumPhotosAndVideos = 10
-                                            Intent(MediaStore.ACTION_PICK_IMAGES)
-                                                .apply {
-                                                    type = "image/*"
-                                                    putExtra(
-                                                        MediaStore.EXTRA_PICK_IMAGES_MAX,
-                                                        maxNumPhotosAndVideos
-                                                    )
-                                                }
-                                                .also {
-                                                    imagePickerLauncher.launch(it)
-                                                }
-                                        } else {
-                                            imagePickerSLauncher.launch("image/*")
-                                        }
-                                    },
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
+                                    .height(160.dp)
+                                    .fillMaxWidth()
+                                    .navigationBarsPadding()
+                                    .padding(bottom = 4.dp)
                             ) {
-                                Icon(
-                                    modifier = Modifier.padding(bottom = 8.dp),
-                                    imageVector = Icons.Outlined.Image,
-                                    contentDescription = "image",
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Text(text = "相册", style = MaterialTheme.typography.labelLarge)
-                            }
-                        }
-                        if (context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
-                            Surface(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxHeight()
-                                    .padding(horizontal = 2.dp),
-                                color = MaterialTheme.colorScheme.surface,
-                                tonalElevation = 3.dp,
-                                shape = RoundedCornerShape(16.dp)
-                            ) {
+                                Spacer(modifier = Modifier.width(14.dp))
                                 Column(
                                     modifier = Modifier
-                                        .fillMaxSize()
-                                        .clickable {
-                                            cameraLauncher.launch(targetCameraShotUri)
-                                        },
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
+                                        .fillMaxHeight()
+                                        .aspectRatio(0.5f)
                                 ) {
-                                    Icon(
-                                        modifier = Modifier.padding(bottom = 8.dp),
-                                        imageVector = Icons.Outlined.PhotoCamera,
-                                        contentDescription = "carema",
-                                        tint = MaterialTheme.colorScheme.primary
-                                    )
-                                    Text(text = "拍摄", style = MaterialTheme.typography.labelLarge)
+                                    Surface(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .padding(
+                                                start = if (cameraAccessible) 0.dp else 2.dp,
+                                                bottom = if (cameraAccessible) 0.dp else 2.dp
+                                            ),
+                                        color = MaterialTheme.colorScheme.surface,
+                                        tonalElevation = 3.dp,
+                                        shape = RoundedCornerShape(16.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .clickable {
+                                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                                        val maxNumPhotosAndVideos = 10
+                                                        Intent(MediaStore.ACTION_PICK_IMAGES)
+                                                            .apply {
+                                                                type = "image/*"
+                                                                putExtra(
+                                                                    MediaStore.EXTRA_PICK_IMAGES_MAX,
+                                                                    maxNumPhotosAndVideos
+                                                                )
+                                                            }
+                                                            .also {
+                                                                imagePickerLauncher.launch(it)
+                                                            }
+                                                    } else {
+                                                        imagePickerSLauncher.launch("image/*")
+                                                    }
+                                                },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Outlined.AddPhotoAlternate,
+                                                contentDescription = "gallery add",
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    }
+
+                                    if (cameraAccessible) {
+                                        Surface(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .padding(start = 2.dp, top = 2.dp),
+                                            color = MaterialTheme.colorScheme.surface,
+                                            tonalElevation = 3.dp,
+                                            shape = RoundedCornerShape(16.dp)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxSize()
+                                                    .clickable {
+                                                        cameraLauncher.launch(targetCameraShotUri)
+                                                    },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.AddAPhoto,
+                                                    contentDescription = "camera add",
+                                                    tint = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                                LazyRow(
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .weight(1f),
+                                    contentPadding = PaddingValues(horizontal = 16.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    items(items = gallerySelected, key = {it.toString()}) {
+                                        Surface(
+                                            modifier = Modifier.animateItemPlacement(),
+                                            color = MaterialTheme.colorScheme.secondaryContainer,
+                                            tonalElevation = 3.dp,
+                                            shape = RoundedCornerShape(16.dp)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .padding(3.dp)
+                                                    .clickable { }
+                                            ) {
+                                                val imageLoader = ImageLoader.Builder(context)
+                                                    .components {
+                                                        if (Build.VERSION.SDK_INT >= 28) {
+                                                            add(ImageDecoderDecoder.Factory())
+                                                        } else {
+                                                            add(GifDecoder.Factory())
+                                                        }
+                                                    }
+                                                    .build()
+                                                AsyncImage(
+                                                    model = ImageRequest.Builder(LocalContext.current)
+                                                        .data(it)
+                                                        .crossfade(true)
+                                                        .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
+                                                        .build(),
+                                                    imageLoader = imageLoader,
+                                                    contentDescription = "gallery",
+                                                    contentScale = ContentScale.Crop,
+                                                    modifier = Modifier
+                                                        .width(144.dp)
+                                                        .clip(
+                                                            RoundedCornerShape(13.dp)
+                                                        )
+                                                )
+                                                IconButton(
+                                                    modifier = Modifier.align(Alignment.TopEnd),
+                                                    onClick = { gallerySelected.remove(it) },
+                                                    colors = IconButtonDefaults.iconButtonColors(
+                                                        contentColor = MaterialTheme.colorScheme.primary
+                                                    )
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Outlined.Cancel,
+                                                        contentDescription = "delete"
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                    items(items = cameraSelected, key = {it.toString()}) {
+                                        Surface(
+                                            modifier = Modifier.animateItemPlacement(),
+                                            color = MaterialTheme.colorScheme.secondaryContainer,
+                                            tonalElevation = 3.dp,
+                                            shape = RoundedCornerShape(16.dp)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .padding(3.dp)
+                                                    .clickable { }) {
+                                                val imageLoader = ImageLoader.Builder(context)
+                                                    .components {
+                                                        if (Build.VERSION.SDK_INT >= 28) {
+                                                            add(ImageDecoderDecoder.Factory())
+                                                        } else {
+                                                            add(GifDecoder.Factory())
+                                                        }
+                                                    }
+                                                    .build()
+                                                AsyncImage(
+                                                    model = ImageRequest.Builder(LocalContext.current)
+                                                        .data(it)
+                                                        .crossfade(true)
+                                                        .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
+                                                        .build(),
+                                                    imageLoader = imageLoader,
+                                                    contentDescription = "camera",
+                                                    contentScale = ContentScale.Crop,
+                                                    modifier = Modifier
+                                                        .width(144.dp)
+                                                        .clip(
+                                                            RoundedCornerShape(13.dp)
+                                                        )
+                                                )
+                                                IconButton(
+                                                    modifier = Modifier.align(Alignment.TopEnd),
+                                                    onClick = { cameraSelected.remove(it) },
+                                                    colors = IconButtonDefaults.iconButtonColors(
+                                                        contentColor = MaterialTheme.colorScheme.primary
+                                                    )
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Outlined.Cancel,
+                                                        contentDescription = "delete"
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
-                        }
-                        Surface(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .padding(horizontal = 2.dp),
-                            color = MaterialTheme.colorScheme.surface,
-                            tonalElevation = 3.dp,
-                            shape = RoundedCornerShape(16.dp)
-                        ) {
-                            Column(
+                        } else {
+                            Row(
                                 modifier = Modifier
-                                    .fillMaxSize()
-                                    .clickable {
-                                        filePickerLauncher.launch("*/*")
-                                    },
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
+                                    .height(160.dp)
+                                    .fillMaxWidth()
+                                    .navigationBarsPadding()
+                                    .padding(start = 14.dp, end = 14.dp, bottom = 4.dp)
                             ) {
-                                Icon(
-                                    modifier = Modifier.padding(bottom = 8.dp),
-                                    imageVector = Icons.Outlined.Folder,
-                                    contentDescription = "file",
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Text(text = "文件", style = MaterialTheme.typography.labelLarge)
+                                Surface(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight()
+                                        .padding(horizontal = 2.dp),
+                                    color = MaterialTheme.colorScheme.surface,
+                                    tonalElevation = 3.dp,
+                                    shape = RoundedCornerShape(16.dp)
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .clickable {
+                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                                    val maxNumPhotosAndVideos = 10
+                                                    Intent(MediaStore.ACTION_PICK_IMAGES)
+                                                        .apply {
+                                                            type = "image/*"
+                                                            putExtra(
+                                                                MediaStore.EXTRA_PICK_IMAGES_MAX,
+                                                                maxNumPhotosAndVideos
+                                                            )
+                                                        }
+                                                        .also {
+                                                            imagePickerLauncher.launch(it)
+                                                        }
+                                                } else {
+                                                    imagePickerSLauncher.launch("image/*")
+                                                }
+                                            },
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
+                                        Icon(
+                                            modifier = Modifier.padding(bottom = 8.dp),
+                                            imageVector = Icons.Outlined.Image,
+                                            contentDescription = "image",
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                        Text(
+                                            text = "相册",
+                                            style = MaterialTheme.typography.labelLarge
+                                        )
+                                    }
+                                }
+                                if (cameraAccessible) {
+                                    Surface(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxHeight()
+                                            .padding(horizontal = 2.dp),
+                                        color = MaterialTheme.colorScheme.surface,
+                                        tonalElevation = 3.dp,
+                                        shape = RoundedCornerShape(16.dp)
+                                    ) {
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .clickable {
+                                                    cameraLauncher.launch(targetCameraShotUri)
+                                                },
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.Center
+                                        ) {
+                                            Icon(
+                                                modifier = Modifier.padding(bottom = 8.dp),
+                                                imageVector = Icons.Outlined.PhotoCamera,
+                                                contentDescription = "camera",
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                            Text(
+                                                text = "拍摄",
+                                                style = MaterialTheme.typography.labelLarge
+                                            )
+                                        }
+                                    }
+                                }
+                                Surface(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight()
+                                        .padding(horizontal = 2.dp),
+                                    color = MaterialTheme.colorScheme.surface,
+                                    tonalElevation = 3.dp,
+                                    shape = RoundedCornerShape(16.dp)
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .clickable {
+                                                filePickerLauncher.launch("*/*")
+                                            },
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
+                                        Icon(
+                                            modifier = Modifier.padding(bottom = 8.dp),
+                                            imageVector = Icons.Outlined.Folder,
+                                            contentDescription = "file",
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                        Text(
+                                            text = "文件",
+                                            style = MaterialTheme.typography.labelLarge
+                                        )
+                                    }
+                                }
+                                Surface(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight()
+                                        .padding(horizontal = 2.dp),
+                                    color = MaterialTheme.colorScheme.surface,
+                                    tonalElevation = 3.dp,
+                                    shape = RoundedCornerShape(16.dp)
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .clickable { },
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
+                                        Icon(
+                                            modifier = Modifier.padding(bottom = 8.dp),
+                                            imageVector = Icons.Outlined.Videocam,
+                                            contentDescription = "video",
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                        Text(
+                                            text = "视频",
+                                            style = MaterialTheme.typography.labelLarge
+                                        )
+                                    }
+                                }
                             }
-                        }
-                        Surface(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .padding(horizontal = 2.dp),
-                            color = MaterialTheme.colorScheme.surface,
-                            tonalElevation = 3.dp,
-                            shape = RoundedCornerShape(16.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clickable { },
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Icon(
-                                    modifier = Modifier.padding(bottom = 8.dp),
-                                    imageVector = Icons.Outlined.Videocam,
-                                    contentDescription = "video",
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Text(text = "视频", style = MaterialTheme.typography.labelLarge)
-                            }
+
                         }
                     }
                 }
