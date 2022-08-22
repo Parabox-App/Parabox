@@ -81,6 +81,9 @@ dependencies {
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
     implementation "androidx.compose.material:material-icons-extended:$compose_version"
 
+    // Apache Commons
+    implementation "commons-io:commons-io:2.7"
+
     // Custom Dto
     implementation 'com.github.ojhdt:ParaboxDto:1.6'
 

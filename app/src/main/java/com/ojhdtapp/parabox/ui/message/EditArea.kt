@@ -63,6 +63,7 @@ import com.ojhdtapp.messagedto.message_content.ImageSend
 import com.ojhdtapp.messagedto.message_content.MessageContent
 import com.ojhdtapp.messagedto.message_content.PlainText
 import com.ojhdtapp.parabox.BuildConfig
+import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.toDateAndTimeString
 import com.ojhdtapp.parabox.ui.util.clearFocusOnKeyboardDismiss
 import kotlinx.coroutines.delay
@@ -419,13 +420,24 @@ fun EditArea(
                             if (inputText.isNotEmpty()) {
                                 content.add(PlainText(inputText))
                             }
-                            gallerySelected.forEach{
+                            gallerySelected.forEach {
+                                FileUtil.getFileByCopyingFileToPath(
+                                    context,
+                                    File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "Parabox/Chat"),
+                                    "Image_${System.currentTimeMillis().toDateAndTimeString()}",
+                                    it
+                                )?.also {
+                                    content.add(ImageSend(file = it))
+//                                    it.delete()
+                                }
+                            }
+                            cameraSelected.forEach {
                                 content.add(ImageSend(file = it.toFile()))
                             }
-                            cameraSelected.forEach{
-                                content.add(ImageSend(file = it.toFile()))
+                            Log.d("parabox", content.toString())
+                            if(content.size > 0){
+//                                onSend(content)
                             }
-                            onSend(content)
                             inputText = ""
                             gallerySelected.clear()
                             cameraSelected.clear()

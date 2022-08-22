@@ -40,6 +40,7 @@ import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
+import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.parabox.core.util.toDateAndTimeString
 import com.ojhdtapp.parabox.domain.service.PluginService
@@ -89,22 +90,26 @@ class MainActivity : ComponentActivity() {
             it.delete()
         }
         val timeStr = System.currentTimeMillis().toDateAndTimeString()
-        val outPutFile =
-            File("${getExternalFilesDir("avatar")}${File.separator}AVATAR_$timeStr.jpg")
-        contentResolver.openInputStream(uri)?.use { inputStream ->
-            FileOutputStream(outPutFile).use { outputStream ->
-                inputStream.copyTo(outputStream)
+        val path = getExternalFilesDir("avatar")!!
+        val copiedUri = FileUtil.getUriByCopyingFileToPath(this, path, "AVATAR_$timeStr.jpg", uri)
+//        val outputFile =
+//            File("${getExternalFilesDir("avatar")}${File.separator}AVATAR_$timeStr.jpg")
+//        contentResolver.openInputStream(uri)?.use { inputStream ->
+//            FileOutputStream(outputFile).use { outputStream ->
+//                inputStream.copyTo(outputStream)
+//            }
+//        }
+//        val copiedUri = FileProvider.getUriForFile(
+//            this,
+//            BuildConfig.APPLICATION_ID + ".provider", outputFile
+//        )
+        copiedUri?.let {
+            lifecycleScope.launch {
+                this@MainActivity.dataStore.edit { settings ->
+                    settings[DataStoreKeys.USER_AVATAR] = it.toString()
+                }
+                Toast.makeText(this@MainActivity, "头像已更新", Toast.LENGTH_SHORT).show()
             }
-        }
-        val copiedUri = FileProvider.getUriForFile(
-            this,
-            BuildConfig.APPLICATION_ID + ".provider", outPutFile
-        )
-        lifecycleScope.launch {
-            this@MainActivity.dataStore.edit { settings ->
-                settings[DataStoreKeys.USER_AVATAR] = copiedUri.toString()
-            }
-            Toast.makeText(this@MainActivity, "头像已更新", Toast.LENGTH_SHORT).show()
         }
     }
 
