@@ -55,7 +55,7 @@ object FileUtil {
                     inputStream.copyTo(outputStream)
                 }
             }
-            return outputFile
+            outputFile
         } catch (e: Exception) {
             Log.d("parabox", e.toString())
             null

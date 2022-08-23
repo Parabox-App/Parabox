@@ -5,7 +5,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
-import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -48,7 +47,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.core.content.FileProvider
-import androidx.core.net.toFile
 import coil.ImageLoader
 import coil.compose.AsyncImage
 import coil.decode.GifDecoder
@@ -59,7 +57,6 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.ojhdtapp.messagedto.message_content.Image
-import com.ojhdtapp.messagedto.message_content.ImageSend
 import com.ojhdtapp.messagedto.message_content.MessageContent
 import com.ojhdtapp.messagedto.message_content.PlainText
 import com.ojhdtapp.parabox.BuildConfig
@@ -79,6 +76,7 @@ import java.io.File
 fun EditArea(
     modifier: Modifier = Modifier,
     isBottomSheetExpand: Boolean,
+    packageNameList: List<String>,
     onBottomSheetExpand: () -> Unit,
     onBottomSheetCollapse: () -> Unit,
     onSend: (contents: List<MessageContent>) -> Unit,
@@ -147,12 +145,13 @@ fun EditArea(
             }
         }
     val targetCameraShotUri = remember(cameraSelected.size) {
-        val path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-        val outPutFile = File(File(path, "Parabox/Camera").also {
+//        val path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+        val path = context.getExternalFilesDir("chat")!!
+        val outPutFile = File(path.also {
             if (!it.exists()) {
                 it.mkdirs()
             }
-        }, "CHAT_${System.currentTimeMillis().toDateAndTimeString()}.jpg")
+        }, "Image_${System.currentTimeMillis().toDateAndTimeString()}.jpg")
         FileProvider.getUriForFile(
             context,
             BuildConfig.APPLICATION_ID + ".provider", outPutFile
@@ -421,22 +420,36 @@ fun EditArea(
                                 content.add(PlainText(inputText))
                             }
                             gallerySelected.forEach {
-                                FileUtil.getFileByCopyingFileToPath(
+                                FileUtil.getUriByCopyingFileToPath(
                                     context,
-                                    File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "Parabox/Chat"),
-                                    "Image_${System.currentTimeMillis().toDateAndTimeString()}",
+//                                    File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "Parabox/Chat"),
+                                    context.getExternalFilesDir("chat")!!,
+                                    "Image_${System.currentTimeMillis().toDateAndTimeString()}.jpg",
                                     it
                                 )?.also {
-                                    content.add(ImageSend(file = it))
-//                                    it.delete()
+                                    packageNameList.forEach{ packageName ->
+                                        context.grantUriPermission(packageName, it, Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    }
+                                    val intent = Intent().apply{
+                                        addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                        setDataAndType(it, "image/*")
+                                    }
+                                    content.add(Image(uri = it, sendIntent = intent))
                                 }
                             }
                             cameraSelected.forEach {
-                                content.add(ImageSend(file = it.toFile()))
+                                packageNameList.forEach{ packageName ->
+                                    context.grantUriPermission(packageName, it, Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                val intent = Intent().apply{
+                                    addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    setDataAndType(it, context.contentResolver.getType(it))
+                                }
+                                content.add(Image(uri = it, sendIntent = intent))
                             }
                             Log.d("parabox", content.toString())
-                            if(content.size > 0){
-//                                onSend(content)
+                            if (content.size > 0) {
+                                onSend(content)
                             }
                             inputText = ""
                             gallerySelected.clear()

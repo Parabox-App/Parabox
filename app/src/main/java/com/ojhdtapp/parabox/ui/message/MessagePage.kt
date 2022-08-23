@@ -340,7 +340,9 @@ fun MessagePage(
                             )
                         },
                         expanded = expandedFab,
-                        onClick = { })
+                        onClick = {
+                            viewModel.testFun()
+                        })
                 }
             },
         ) { paddingValues ->

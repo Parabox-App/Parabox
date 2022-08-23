@@ -119,7 +119,7 @@ fun ChatPage(
                             onEvent(
                                 ActivityEvent.SendMessage(
                                     SendMessageDto(
-                                        content = it,
+                                        contents = it,
                                         timestamp = System.currentTimeMillis(),
                                         pluginConnection = selectedPluginConnection.toSenderPluginConnection()
                                     )
@@ -149,6 +149,8 @@ fun NormalChatPage(
     onBackClick: () -> Unit,
     onSend: (contents: List<com.ojhdtapp.messagedto.message_content.MessageContent>) -> Unit
 ) {
+    val pluginPackageNameList =
+        mainSharedViewModel.pluginListStateFlow.collectAsState().value.map { it.packageName }
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
     // Top AppBar
@@ -436,6 +438,7 @@ fun NormalChatPage(
         sheetContent = {
             EditArea(
                 isBottomSheetExpand = scaffoldState.bottomSheetState.isExpanded,
+                packageNameList = pluginPackageNameList,
                 onBottomSheetExpand = {
                     coroutineScope.launch {
                         scaffoldState.bottomSheetState.expand()
@@ -914,7 +917,8 @@ fun SingleMessage(
                             .build()
                         AsyncImage(
                             model = ImageRequest.Builder(LocalContext.current)
-                                .data(messageContent.url)
+                                .data(messageContent.uriString?.also { Uri.parse(it) }
+                                    ?: messageContent.url)
                                 .crossfade(true)
                                 .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
                                 .build(),

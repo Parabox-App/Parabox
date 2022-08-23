@@ -145,7 +145,7 @@ class MainRepositoryImpl @Inject constructor(
                     it.copy(
                         latestMessage = LatestMessage(
                             sender = userName,
-                            content = dto.content.getContentString(),
+                            content = dto.contents.getContentString(),
                             timestamp = dto.timestamp,
                             unreadMessagesNum = (it.latestMessage?.unreadMessagesNum ?: 0) + 1
                         ),
