@@ -84,9 +84,9 @@ fun List<com.ojhdtapp.messagedto.message_content.MessageContent>.toMessageConten
 fun com.ojhdtapp.messagedto.message_content.MessageContent.toMessageContent() : MessageContent{
     return when(this){
         is com.ojhdtapp.messagedto.message_content.PlainText -> PlainText(this.text)
-        is com.ojhdtapp.messagedto.message_content.Image -> Image(this.url, this.width, this.height, this.uri.toString())
+        is com.ojhdtapp.messagedto.message_content.Image -> Image(this.url, this.width, this.height, this.uri?.toString())
         is com.ojhdtapp.messagedto.message_content.At -> com.ojhdtapp.parabox.domain.model.message_content.At(this.target, this.name)
-        is com.ojhdtapp.messagedto.message_content.Audio -> Audio(this.url, this.length, this.fileName, this.fileSize, this.uri.toString())
+        is com.ojhdtapp.messagedto.message_content.Audio -> Audio(this.url, this.length, this.fileName, this.fileSize, this.uri?.toString())
         else -> PlainText(this.getContentString())
     }
 }

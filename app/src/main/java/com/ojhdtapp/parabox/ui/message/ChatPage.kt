@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.message
 
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build.VERSION.SDK_INT
 import android.util.Log
@@ -65,6 +66,7 @@ import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.navigate
 import kotlinx.coroutines.launch
+import java.io.FileNotFoundException
 import kotlin.math.abs
 
 
@@ -841,6 +843,7 @@ fun SingleMessage(
     onLongClick: () -> Unit
 ) {
     val context = LocalContext.current
+    val density = LocalDensity.current
     val topStartRadius by animateDpAsState(targetValue = if (message.sentByMe || isFirst) 24.dp else 0.dp)
     val topEndRadius by animateDpAsState(targetValue = if (!message.sentByMe || isFirst) 24.dp else 0.dp)
     val bottomStartRadius by animateDpAsState(targetValue = if (message.sentByMe || isLast) 24.dp else 0.dp)
@@ -906,6 +909,9 @@ fun SingleMessage(
                         color = textColor
                     )
                     is Image -> {
+                        var imageWidth by remember {
+                            mutableStateOf(80.dp)
+                        }
                         val imageLoader = ImageLoader.Builder(context)
                             .components {
                                 if (SDK_INT >= 28) {
@@ -915,6 +921,38 @@ fun SingleMessage(
                                 }
                             }
                             .build()
+                        LaunchedEffect(key1 = messageContent) {
+                            imageWidth = if (messageContent.uriString != null) {
+                                try {
+                                    val options = BitmapFactory.Options().apply {
+                                        inJustDecodeBounds = true
+                                    }
+                                    context.contentResolver.openInputStream(Uri.parse(messageContent.uriString))
+                                        .use {
+                                            BitmapFactory.decodeStream(
+                                                it,
+                                                null,
+                                                options
+                                            )
+                                        }
+                                    with(density) {
+                                        options.outWidth.toDp().coerceIn(80.dp, 320.dp)
+                                    }
+                                } catch (e: FileNotFoundException) {
+                                    with(density) {
+                                        messageContent.width
+                                            .toDp()
+                                            .coerceIn(80.dp, 320.dp)
+                                    }
+                                }
+                            } else {
+                                with(density) {
+                                    messageContent.width
+                                        .toDp()
+                                        .coerceIn(80.dp, 320.dp)
+                                }
+                            }
+                        }
                         AsyncImage(
                             model = ImageRequest.Builder(LocalContext.current)
                                 .data(messageContent.uriString?.also { Uri.parse(it) }
@@ -926,11 +964,8 @@ fun SingleMessage(
                             contentDescription = "image",
                             contentScale = ContentScale.FillWidth,
                             modifier = Modifier
-                                .width(with(LocalDensity.current) {
-                                    messageContent.width
-                                        .toDp()
-                                        .coerceIn(80.dp, 320.dp)
-                                })
+                                .width(imageWidth)
+                                .defaultMinSize(minHeight = 80.dp)
 //                        .height(with(LocalDensity.current) {
 //                            min(messageContent.height.toDp(), 600.dp)
 //                        })
