@@ -110,19 +110,19 @@ fun NavigationBar(
                 )
             }
         }
-        Surface(
-            modifier = Modifier, color = MaterialTheme.colorScheme.surface, tonalElevation = 3.dp
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(
-                        WindowInsets.systemBars
-                            .asPaddingValues()
-                            .calculateBottomPadding()
-                    )
-            )
-        }
+//        Surface(
+//            modifier = Modifier, color = MaterialTheme.colorScheme.surface, tonalElevation = 3.dp
+//        ) {
+//            Box(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .height(
+//                        WindowInsets.systemBars
+//                            .asPaddingValues()
+//                            .calculateBottomPadding()
+//                    )
+//            )
+//        }
     }
 }
 

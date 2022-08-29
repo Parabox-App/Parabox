@@ -6,7 +6,10 @@ import android.os.Build.VERSION.SDK_INT
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.*
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -34,6 +37,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.ClipboardManager
@@ -159,6 +163,16 @@ fun NormalChatPage(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
 //    val scrollFraction = scrollBehavior.state.overlappedFraction
 //    val topAppBarColor by TopAppBarDefaults.smallTopAppBarColors().containerColor(scrollFraction)
+    val colorTransitionFraction = scrollBehavior.state.overlappedFraction
+    val fraction = if (colorTransitionFraction > 0.01f) 1f else 0f
+    val appBarContainerColor by animateColorAsState(
+        targetValue = lerp(
+            MaterialTheme.colorScheme.surface,
+            MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+            FastOutLinearInEasing.transform(fraction)
+        ),
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
+    )
     // Bottom Sheet
     val navigationBarHeight = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
     var changedTextFieldHeight by remember {
@@ -304,8 +318,8 @@ fun NormalChatPage(
                 } else {
                     SmallTopAppBar(
                         modifier = Modifier
-//                            .background(color = topAppBarColor)
-                            .then(Modifier.statusBarsPadding()),
+                            .background(color = appBarContainerColor)
+                            .statusBarsPadding(),
                         title = { Text(text = messageState.contact?.profile?.name ?: "会话") },
                         navigationIcon = {
                             IconButton(onClick = { onBackClick() }) {

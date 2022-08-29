@@ -1,10 +1,10 @@
 package com.ojhdtapp.parabox.ui.setting
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.*
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.rememberSplineBasedDecay
-import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,6 +22,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -58,13 +59,18 @@ fun SettingPage(
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            val colorTransitionFraction = scrollBehavior.state.collapsedFraction ?: 0f
-//            val appBarContainerColor by TopAppBarDefaults.largeTopAppBarColors()
-//                .containerColor(colorTransitionFraction)
+            val colorTransitionFraction = scrollBehavior.state.collapsedFraction
+            val appBarContainerColor by rememberUpdatedState(
+                lerp(
+                    MaterialTheme.colorScheme.surface,
+                    MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+                    FastOutLinearInEasing.transform(colorTransitionFraction)
+                )
+            )
             LargeTopAppBar(
                 modifier = Modifier
-//                    .background(appBarContainerColor)
-                    .then(Modifier.statusBarsPadding()),
+                    .background(appBarContainerColor)
+                    .statusBarsPadding(),
                 title = { Text("设置") },
                 navigationIcon = {
                     if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) {
@@ -90,7 +96,11 @@ fun SettingPage(
                         }) {
                             Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = "more")
                         }
-                        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false },modifier = Modifier.width(192.dp)) {
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false },
+                            modifier = Modifier.width(192.dp)
+                        ) {
                             DropdownMenuItem(
                                 text = {
                                     Text(
@@ -182,7 +192,10 @@ fun SettingPage(
                                         contentDescription = "running",
                                         tint = MaterialTheme.colorScheme.primary
                                     )
-                                    AppModel.RUNNING_STATUS_CHECKING -> CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                                    AppModel.RUNNING_STATUS_CHECKING -> CircularProgressIndicator(
+                                        modifier = Modifier.size(24.dp),
+                                        strokeWidth = 2.dp
+                                    )
                                 }
                             },
                             onClick = {
