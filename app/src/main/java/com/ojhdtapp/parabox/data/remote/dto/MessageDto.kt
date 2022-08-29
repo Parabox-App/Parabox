@@ -95,12 +95,25 @@ fun com.ojhdtapp.messagedto.message_content.MessageContent.toMessageContent(): M
             this.target,
             this.name
         )
+        is com.ojhdtapp.messagedto.message_content.AtAll -> com.ojhdtapp.parabox.domain.model.message_content.AtAll
         is com.ojhdtapp.messagedto.message_content.Audio -> Audio(
             this.url,
             this.length,
             this.fileName,
             this.fileSize,
             this.uri?.toString()
+        )
+        is com.ojhdtapp.messagedto.message_content.QuoteReply -> com.ojhdtapp.parabox.domain.model.message_content.QuoteReply(
+            this.quoteMessageId,
+            this.quoteMessageContent.toMessageContentList()
+        )
+        is com.ojhdtapp.messagedto.message_content.File -> com.ojhdtapp.parabox.domain.model.message_content.File(
+            this.url,
+            this.name,
+            this.size,
+            this.lastModifiedTime,
+            this.expiryTime,
+            this.uri
         )
         else -> PlainText(this.getContentString())
     }

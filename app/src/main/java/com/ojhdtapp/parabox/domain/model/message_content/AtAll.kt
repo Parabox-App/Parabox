@@ -1,14 +1,14 @@
 package com.ojhdtapp.parabox.domain.model.message_content
 
-import android.net.Uri
+import com.ojhdtapp.parabox.domain.model.message_content.MessageContent
 import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
-data class Image(val url: String?, val width: Int, val height: Int, val uriString: String?) : MessageContent{
+object AtAll: MessageContent {
     @IgnoredOnParcel
-    val type = MessageContent.IMAGE
+    val type = MessageContent.AT_ALL
     override fun getContentString(): String {
-        return "[图片]".trimStart()
+        return "全体成员"
     }
 }

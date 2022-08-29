@@ -160,7 +160,7 @@ fun NormalChatPage(
     var menuExpanded by remember {
         mutableStateOf(false)
     }
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 //    val scrollFraction = scrollBehavior.state.overlappedFraction
 //    val topAppBarColor by TopAppBarDefaults.smallTopAppBarColors().containerColor(scrollFraction)
     val colorTransitionFraction = scrollBehavior.state.overlappedFraction
