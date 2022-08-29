@@ -120,11 +120,8 @@ fun ChatPage(
                         } else {
                             onEvent(
                                 ActivityEvent.SendMessage(
-                                    SendMessageDto(
                                         contents = it,
-                                        timestamp = System.currentTimeMillis(),
                                         pluginConnection = selectedPluginConnection.toSenderPluginConnection()
-                                    )
                                 )
                             )
                         }
@@ -160,8 +157,8 @@ fun NormalChatPage(
         mutableStateOf(false)
     }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
-    val scrollFraction = scrollBehavior.state.overlappedFraction
-    val topAppBarColor by TopAppBarDefaults.smallTopAppBarColors().containerColor(scrollFraction)
+//    val scrollFraction = scrollBehavior.state.overlappedFraction
+//    val topAppBarColor by TopAppBarDefaults.smallTopAppBarColors().containerColor(scrollFraction)
     // Bottom Sheet
     val navigationBarHeight = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
     var changedTextFieldHeight by remember {
@@ -199,8 +196,8 @@ fun NormalChatPage(
                 if (it) {
                     SmallTopAppBar(
                         modifier = Modifier
-                            .background(color = topAppBarColor)
-                            .statusBarsPadding(),
+//                            .background(color = topAppBarColor)
+                            .then(Modifier.statusBarsPadding()),
                         title = {
                             AnimatedContent(targetState = mainSharedViewModel.selectedMessageStateList.size.toString(),
                                 transitionSpec = {
@@ -278,7 +275,18 @@ fun NormalChatPage(
                                     modifier = Modifier.width(192.dp)
                                 ) {
                                     DropdownMenuItem(
-                                        text = { Text(text = "删除") },
+                                        text = { Text(text = "尝试撤回") },
+                                        onClick = {
+                                            menuExpanded = false
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Outlined.Undo,
+                                                contentDescription = null
+                                            )
+                                        })
+                                    DropdownMenuItem(
+                                        text = { Text(text = "从聊天记录移除") },
                                         onClick = {
                                             menuExpanded = false
                                         },
@@ -296,8 +304,8 @@ fun NormalChatPage(
                 } else {
                     SmallTopAppBar(
                         modifier = Modifier
-                            .background(color = topAppBarColor)
-                            .statusBarsPadding(),
+//                            .background(color = topAppBarColor)
+                            .then(Modifier.statusBarsPadding()),
                         title = { Text(text = messageState.contact?.profile?.name ?: "会话") },
                         navigationIcon = {
                             IconButton(onClick = { onBackClick() }) {
@@ -478,7 +486,6 @@ fun NormalChatPage(
 //                remember(lazyPagingItems.itemSnapshotList) {
 //                    lazyPagingItems.itemSnapshotList.items.toTimedMessages()
 //                }
-
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()

@@ -138,10 +138,10 @@ class PluginService : LifecycleService() {
         }
     }
 
-    fun sendMessage(dto: SendMessageDto, messageId: Long) {
+    fun sendMessage(dto: SendMessageDto) {
         val type = dto.pluginConnection.connectionType
         if (appModelList.map { it.connectionType }.contains(type)) {
-            pluginConnectionMap[type]?.send(dto, messageId)
+            pluginConnectionMap[type]?.send(dto)
         } else {
             TODO("plugin not installed")
         }

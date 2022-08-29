@@ -54,20 +54,17 @@ fun SettingPage(
     val viewModel = hiltViewModel<SettingPageViewModel>()
     val coroutineScope = rememberCoroutineScope()
     val decayAnimationSpec = rememberSplineBasedDecay<Float>()
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
-        decayAnimationSpec,
-        rememberTopAppBarState()
-    )
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             val colorTransitionFraction = scrollBehavior.state.collapsedFraction ?: 0f
-            val appBarContainerColor by TopAppBarDefaults.largeTopAppBarColors()
-                .containerColor(colorTransitionFraction)
+//            val appBarContainerColor by TopAppBarDefaults.largeTopAppBarColors()
+//                .containerColor(colorTransitionFraction)
             LargeTopAppBar(
                 modifier = Modifier
-                    .background(appBarContainerColor)
-                    .statusBarsPadding(),
+//                    .background(appBarContainerColor)
+                    .then(Modifier.statusBarsPadding()),
                 title = { Text("设置") },
                 navigationIcon = {
                     if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) {

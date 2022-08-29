@@ -513,6 +513,7 @@ class MessagePageViewModel @Inject constructor(
                     com.ojhdtapp.messagedto.Profile("Ojhdt", null),
                     com.ojhdtapp.messagedto.Profile("Ojhdt-Group", null),
                     System.currentTimeMillis(),
+                    null,
                     com.ojhdtapp.messagedto.PluginConnection(1, 1, 1)
                 )
             )

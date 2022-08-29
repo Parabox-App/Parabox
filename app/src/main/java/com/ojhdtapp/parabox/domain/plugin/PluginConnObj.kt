@@ -44,14 +44,13 @@ class PluginConnObj @Inject constructor(
 
     fun getServiceConnection(): ServiceConnection = serviceConnection
 
-    fun send(dto: SendMessageDto, messageId: Long) {
+    fun send(dto: SendMessageDto) {
         if (isConnected) {
             val timestamp = System.currentTimeMillis()
             sMessenger?.send(Message.obtain(null, ConnKey.MSG_MESSAGE).apply {
                 obj = Bundle().apply {
                     putInt("command", ConnKey.MSG_MESSAGE_SEND)
                     putLong("timestamp", timestamp)
-                    putLong("message_id", messageId)
                 }
                 data = Bundle().apply {
                     putParcelable("value", dto)

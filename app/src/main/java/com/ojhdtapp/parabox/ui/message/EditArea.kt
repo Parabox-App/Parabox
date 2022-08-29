@@ -434,7 +434,7 @@ fun EditArea(
                                         addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                         setDataAndType(it, "image/*")
                                     }
-                                    content.add(Image(uri = it, sendIntent = intent))
+                                    content.add(Image(uri = it))
                                 }
                             }
                             cameraSelected.forEach {
@@ -445,11 +445,12 @@ fun EditArea(
                                     addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                     setDataAndType(it, context.contentResolver.getType(it))
                                 }
-                                content.add(Image(uri = it, sendIntent = intent))
+                                content.add(Image(uri = it))
                             }
                             Log.d("parabox", content.toString())
                             if (content.size > 0) {
                                 onSend(content)
+                                onBottomSheetCollapse()
                             }
                             inputText = ""
                             gallerySelected.clear()

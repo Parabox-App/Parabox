@@ -37,6 +37,7 @@ fun ReceiveMessageDto.toMessageEntity(): MessageEntity {
         contents = contents.toMessageContentList(),
         profile = profile.toProfile(),
         timestamp = timestamp,
+        messageId = messageId ?: 0,
         sentByMe = false,
         verified = true
     )
@@ -71,26 +72,40 @@ fun SendMessageDto.toContactEntity(senderName: String): ContactEntity {
     )
 }
 
-fun com.ojhdtapp.messagedto.Profile.toProfile() : Profile{
+fun com.ojhdtapp.messagedto.Profile.toProfile(): Profile {
     return Profile(this.name, this.avatar, null)
 }
 
-fun List<com.ojhdtapp.messagedto.message_content.MessageContent>.toMessageContentList() : List<MessageContent>{
+fun List<com.ojhdtapp.messagedto.message_content.MessageContent>.toMessageContentList(): List<MessageContent> {
     return this.map {
         it.toMessageContent()
     }
 }
 
-fun com.ojhdtapp.messagedto.message_content.MessageContent.toMessageContent() : MessageContent{
-    return when(this){
+fun com.ojhdtapp.messagedto.message_content.MessageContent.toMessageContent(): MessageContent {
+    return when (this) {
         is com.ojhdtapp.messagedto.message_content.PlainText -> PlainText(this.text)
-        is com.ojhdtapp.messagedto.message_content.Image -> Image(this.url, this.width, this.height, this.uri?.toString())
-        is com.ojhdtapp.messagedto.message_content.At -> com.ojhdtapp.parabox.domain.model.message_content.At(this.target, this.name)
-        is com.ojhdtapp.messagedto.message_content.Audio -> Audio(this.url, this.length, this.fileName, this.fileSize, this.uri?.toString())
+        is com.ojhdtapp.messagedto.message_content.Image -> Image(
+            this.url,
+            this.width,
+            this.height,
+            this.uri?.toString()
+        )
+        is com.ojhdtapp.messagedto.message_content.At -> com.ojhdtapp.parabox.domain.model.message_content.At(
+            this.target,
+            this.name
+        )
+        is com.ojhdtapp.messagedto.message_content.Audio -> Audio(
+            this.url,
+            this.length,
+            this.fileName,
+            this.fileSize,
+            this.uri?.toString()
+        )
         else -> PlainText(this.getContentString())
     }
 }
 
-fun com.ojhdtapp.messagedto.PluginConnection.toPluginConnection() : PluginConnection{
+fun com.ojhdtapp.messagedto.PluginConnection.toPluginConnection(): PluginConnection {
     return PluginConnection(this.connectionType, this.objectId, this.id)
 }

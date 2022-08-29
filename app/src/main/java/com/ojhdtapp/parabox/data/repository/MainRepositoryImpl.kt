@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.paging.PagingSource
 import com.ojhdtapp.messagedto.ReceiveMessageDto
 import com.ojhdtapp.messagedto.SendMessageDto
+import com.ojhdtapp.messagedto.message_content.MessageContent
 import com.ojhdtapp.messagedto.message_content.getContentString
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.Resource
@@ -13,6 +14,7 @@ import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.*
 import com.ojhdtapp.parabox.data.remote.dto.toContactEntity
+import com.ojhdtapp.parabox.data.remote.dto.toMessageContentList
 import com.ojhdtapp.parabox.data.remote.dto.toMessageEntity
 import com.ojhdtapp.parabox.data.remote.dto.toPluginConnection
 import com.ojhdtapp.parabox.domain.model.*
@@ -89,7 +91,7 @@ class MainRepositoryImpl @Inject constructor(
 //        database.contactMessageCrossRefDao.insertNewContactMessageCrossRef(dto.getContactMessageCrossRef())
     }
 
-    override suspend fun handleNewMessage(dto: SendMessageDto) : Long {
+    override suspend fun handleNewMessage(contents: List<com.ojhdtapp.messagedto.message_content.MessageContent>, pluginConnection: com.ojhdtapp.messagedto.PluginConnection, timestamp: Long) : Long {
         return coroutineScope {
             val userName = context.dataStore.data
                 .catch { exception ->
@@ -104,30 +106,51 @@ class MainRepositoryImpl @Inject constructor(
                 }.firstOrNull() ?: "User"
 
             val messageIdDeferred = async<Long> {
-                database.messageDao.insertMessage(dto.toMessageEntity())
+                database.messageDao.insertMessage(MessageEntity(
+                    contents = contents.toMessageContentList(),
+                    profile = Profile("", null, null),
+                    timestamp = timestamp,
+                    sentByMe = true,
+                    verified = false
+                ))
             }
             val contactIdDeferred = async<Long> {
                 database.contactDao.insertContact(
-                    dto.toContactEntity(userName)
+                    ContactEntity(
+                        profile = Profile(pluginConnection.id.toString(), null, null),
+                        latestMessage = LatestMessage(
+                            sender = userName,
+                            content = contents.getContentString(),
+                            timestamp = timestamp,
+                            unreadMessagesNum = 0,
+                        ),
+                        contactId = pluginConnection.objectId,
+                        senderId = pluginConnection.objectId,
+                        isHidden = false,
+                        isPinned = false,
+                        isArchived = false,
+                        enableNotifications = true,
+                        tags = emptyList()
+                    )
                 )
             }
             val pluginConnectionDeferred = async<Long> {
                 database.contactDao.insertPluginConnection(
-                    dto.pluginConnection.toPluginConnection().toPluginConnectionEntity()
+                    pluginConnection.toPluginConnection().toPluginConnectionEntity()
                 )
             }
 //            database.contactDao.updateHiddenState(ContactHiddenStateUpdate(dto.pluginConnection.objectId, false))
             if (pluginConnectionDeferred.await() != -1L) {
                 database.contactDao.insertContactPluginConnectionCrossRef(
                     ContactPluginConnectionCrossRef(
-                        contactId = dto.pluginConnection.objectId,
+                        contactId = pluginConnection.objectId,
                         objectId = pluginConnectionDeferred.await()
                     )
                 )
             }
             database.contactMessageCrossRefDao.insertContactMessageCrossRef(
                 ContactMessageCrossRef(
-                    contactId = dto.pluginConnection.objectId,
+                    contactId = pluginConnection.objectId,
                     messageId = messageIdDeferred.await()
                 )
             )
@@ -140,13 +163,13 @@ class MainRepositoryImpl @Inject constructor(
 
 
             // Update Avatar or Anything Else Here
-            database.contactDao.getPluginConnectionWithContacts(dto.pluginConnection.objectId).let {
+            database.contactDao.getPluginConnectionWithContacts(pluginConnection.objectId).let {
                 database.contactDao.updateContact(it.contactList.map {
                     it.copy(
                         latestMessage = LatestMessage(
                             sender = userName,
-                            content = dto.contents.getContentString(),
-                            timestamp = dto.timestamp,
+                            content = contents.getContentString(),
+                            timestamp = timestamp,
                             unreadMessagesNum = (it.latestMessage?.unreadMessagesNum ?: 0) + 1
                         ),
                         isHidden = false

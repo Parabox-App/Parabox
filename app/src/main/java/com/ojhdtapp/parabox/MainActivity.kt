@@ -39,6 +39,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.ojhdtapp.messagedto.SendMessageDto
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.dataStore
@@ -123,8 +124,15 @@ class MainActivity : ComponentActivity() {
             }
             is ActivityEvent.SendMessage -> {
                 lifecycleScope.launch(Dispatchers.IO) {
-                    handleNewMessage(event.dto).also {
-                        pluginService?.sendMessage(event.dto, it)
+                    val timestamp = System.currentTimeMillis()
+                    handleNewMessage(event.contents, event.pluginConnection, timestamp).also {
+                        val dto = SendMessageDto(
+                            contents = event.contents,
+                            timestamp = timestamp,
+                            pluginConnection = event.pluginConnection,
+                            messageId = it
+                        )
+                        pluginService?.sendMessage(dto)
                     }
                 }
             }
