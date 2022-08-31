@@ -37,6 +37,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
@@ -55,7 +56,6 @@ import coil.decode.GifDecoder
 import coil.decode.ImageDecoderDecoder
 import coil.request.CachePolicy
 import coil.request.ImageRequest
-import com.ojhdtapp.messagedto.SendMessageDto
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.itemsBeforeAndAfterReverseIndexed
 import com.ojhdtapp.parabox.core.util.toDescriptiveTime
@@ -124,8 +124,8 @@ fun ChatPage(
                         } else {
                             onEvent(
                                 ActivityEvent.SendMessage(
-                                        contents = it,
-                                        pluginConnection = selectedPluginConnection.toSenderPluginConnection()
+                                    contents = it,
+                                    pluginConnection = selectedPluginConnection.toSenderPluginConnection()
                                 )
                             )
                         }
@@ -210,8 +210,8 @@ fun NormalChatPage(
                 if (it) {
                     SmallTopAppBar(
                         modifier = Modifier
-//                            .background(color = topAppBarColor)
-                            .then(Modifier.statusBarsPadding()),
+                            .background(color = appBarContainerColor)
+                            .statusBarsPadding(),
                         title = {
                             AnimatedContent(targetState = mainSharedViewModel.selectedMessageStateList.size.toString(),
                                 transitionSpec = {
@@ -917,9 +917,12 @@ fun SingleMessage(
                 .combinedClickable(onClick = onClick, onLongClick = onLongClick)
                 .animateContentSize()
         ) {
+            LaunchedEffect(key1 = true, block = {
+                Log.d("parabox", message.contents.toString())
+            })
             message.contents.forEachIndexed { index, messageContent ->
                 when (messageContent) {
-                    is At -> Text(
+                    is At, AtAll -> Text(
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
                         text = messageContent.getContentString(),
                         color = MaterialTheme.colorScheme.primary
@@ -1004,6 +1007,83 @@ fun SingleMessage(
                                     )
                                 )
                         )
+                    }
+                    is QuoteReply -> {
+                        Surface(
+                            shape = RoundedCornerShape(24.dp),
+                            color = MaterialTheme.colorScheme.surface
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(
+                                    horizontal = 12.dp,
+                                    vertical = 12.dp
+                                )
+                            ) {
+                                Row() {
+                                    messageContent.quoteMessageSenderName?.let {
+                                        Text(
+                                            text = it,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                        Spacer(modifier = Modifier.width(16.dp))
+                                        messageContent.quoteMessageTimestamp?.let {
+                                            Text(
+                                                text = it.toDescriptiveTime(),
+                                                style = MaterialTheme.typography.labelMedium,
+                                                color = MaterialTheme.colorScheme.outline
+                                            )
+                                        }
+                                    }
+                                }
+                                Text(
+                                    text = messageContent.quoteMessageContent?.getContentString()
+                                        ?: "无法定位消息",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                    }
+                    is File -> {
+                        if (message.sentByMe) {
+                            Row() {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.surface
+                                ) {
+                                    Box(
+                                        modifier = Modifier.size(48.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = when (messageContent.extension) {
+                                                "apk" -> Icons.Outlined.Android
+                                                "txt" -> Icons.Outlined.Description
+                                                "mp3", "wav", "flac", "ape", "wma" -> Icons.Outlined.AudioFile
+                                                "mp4" -> Icons.Outlined.VideoFile
+                                                else -> Icons.Outlined.FilePresent
+                                            }, contentDescription = "type"
+                                        )
+                                    }
+                                }
+                                Column() {
+                                    Text(
+                                        text = messageContent.name,
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Text(
+                                        text = "${messageContent.size} ${messageContent.extension}",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.outline
+                                    )
+                                }
+                            }
+                        } else {
+                            Row() {
+
+                            }
+                        }
                     }
                 }
             }

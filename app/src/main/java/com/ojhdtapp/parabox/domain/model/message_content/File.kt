@@ -8,6 +8,7 @@ import kotlinx.parcelize.IgnoredOnParcel
 data class File(
     val url: String? = null,
     val name: String,
+    val extension: String,
     val size: Long,
     val lastModifiedTime: Long,
     val expiryTime: Long? = null,

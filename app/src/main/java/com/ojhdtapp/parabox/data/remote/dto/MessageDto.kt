@@ -8,10 +8,7 @@ import com.ojhdtapp.parabox.data.local.entity.MessageEntity
 import com.ojhdtapp.parabox.domain.model.LatestMessage
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.model.Profile
-import com.ojhdtapp.parabox.domain.model.message_content.Audio
-import com.ojhdtapp.parabox.domain.model.message_content.Image
-import com.ojhdtapp.parabox.domain.model.message_content.MessageContent
-import com.ojhdtapp.parabox.domain.model.message_content.PlainText
+import com.ojhdtapp.parabox.domain.model.message_content.*
 
 fun ReceiveMessageDto.toContactEntity(): ContactEntity {
     return ContactEntity(
@@ -103,13 +100,19 @@ fun com.ojhdtapp.messagedto.message_content.MessageContent.toMessageContent(): M
             this.fileSize,
             this.uri?.toString()
         )
-        is com.ojhdtapp.messagedto.message_content.QuoteReply -> com.ojhdtapp.parabox.domain.model.message_content.QuoteReply(
-            this.quoteMessageId,
-            this.quoteMessageContent.toMessageContentList()
-        )
+        is com.ojhdtapp.messagedto.message_content.QuoteReply -> {
+            this.quoteMessageContent
+            com.ojhdtapp.parabox.domain.model.message_content.QuoteReply(
+                this.quoteMessageSenderName,
+                this.quoteMessageTimestamp,
+                this.quoteMessageId,
+                this.quoteMessageContent?.toMessageContentList()
+            )
+        }
         is com.ojhdtapp.messagedto.message_content.File -> com.ojhdtapp.parabox.domain.model.message_content.File(
             this.url,
             this.name,
+            this.extension,
             this.size,
             this.lastModifiedTime,
             this.expiryTime,
