@@ -21,7 +21,6 @@ class Converters(
 
     @TypeConverter
     fun fromMessageContentListJson(json: String): List<MessageContent> {
-        Log.d("parabox", json)
         val res = mutableListOf<MessageContent>()
         json.split(delimiter1).forEach {
             val subList = it.split(delimiter2, limit = 2)

@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.message
 
+import android.content.Context
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build.VERSION.SDK_INT
@@ -46,6 +47,9 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.paging.LoadState
@@ -921,170 +925,215 @@ fun SingleMessage(
                 Log.d("parabox", message.contents.toString())
             })
             message.contents.forEachIndexed { index, messageContent ->
-                when (messageContent) {
-                    is At, AtAll -> Text(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
-                        text = messageContent.getContentString(),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    is PlainText -> Text(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
-                        text = messageContent.text,
-                        color = textColor
-                    )
-                    is Image -> {
-                        var imageWidth by remember {
-                            mutableStateOf(80.dp)
+                messageContent.toLayout(
+                    textColor,
+                    context,
+                    density,
+                    index,
+                    topStartRadius,
+                    topEndRadius,
+                    message,
+                    bottomEndRadius,
+                    bottomStartRadius
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MessageContent.toLayout(
+    textColor: Color,
+    context: Context,
+    density: Density,
+    index: Int,
+    topStartRadius: Dp,
+    topEndRadius: Dp,
+    message: Message,
+    bottomEndRadius: Dp,
+    bottomStartRadius: Dp
+) {
+    when (this) {
+        is At, AtAll -> Text(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+            text = this@toLayout.getContentString(),
+            color = MaterialTheme.colorScheme.primary
+        )
+        is PlainText -> Text(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+            text = this@toLayout.text,
+            color = textColor
+        )
+        is Image -> {
+            var imageWidth by remember {
+                mutableStateOf(80.dp)
+            }
+            val imageLoader = ImageLoader.Builder(context)
+                .components {
+                    if (SDK_INT >= 28) {
+                        add(ImageDecoderDecoder.Factory())
+                    } else {
+                        add(GifDecoder.Factory())
+                    }
+                }
+                .build()
+            LaunchedEffect(key1 = this@toLayout) {
+                imageWidth = if (this@toLayout.uriString != null) {
+                    try {
+                        val options = BitmapFactory.Options().apply {
+                            inJustDecodeBounds = true
                         }
-                        val imageLoader = ImageLoader.Builder(context)
-                            .components {
-                                if (SDK_INT >= 28) {
-                                    add(ImageDecoderDecoder.Factory())
-                                } else {
-                                    add(GifDecoder.Factory())
-                                }
-                            }
-                            .build()
-                        LaunchedEffect(key1 = messageContent) {
-                            imageWidth = if (messageContent.uriString != null) {
-                                try {
-                                    val options = BitmapFactory.Options().apply {
-                                        inJustDecodeBounds = true
-                                    }
-                                    context.contentResolver.openInputStream(Uri.parse(messageContent.uriString))
-                                        .use {
-                                            BitmapFactory.decodeStream(
-                                                it,
-                                                null,
-                                                options
-                                            )
-                                        }
-                                    with(density) {
-                                        options.outWidth.toDp().coerceIn(80.dp, 320.dp)
-                                    }
-                                } catch (e: FileNotFoundException) {
-                                    with(density) {
-                                        messageContent.width
-                                            .toDp()
-                                            .coerceIn(80.dp, 320.dp)
-                                    }
-                                }
-                            } else {
-                                with(density) {
-                                    messageContent.width
-                                        .toDp()
-                                        .coerceIn(80.dp, 320.dp)
-                                }
-                            }
-                        }
-                        AsyncImage(
-                            model = ImageRequest.Builder(LocalContext.current)
-                                .data(messageContent.uriString?.also { Uri.parse(it) }
-                                    ?: messageContent.url)
-                                .crossfade(true)
-                                .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
-                                .build(),
-                            imageLoader = imageLoader,
-                            contentDescription = "image",
-                            contentScale = ContentScale.FillWidth,
-                            modifier = Modifier
-                                .width(imageWidth)
-                                .defaultMinSize(minHeight = 80.dp)
-//                        .height(with(LocalDensity.current) {
-//                            min(messageContent.height.toDp(), 600.dp)
-//                        })
-                                .padding(horizontal = 3.dp, vertical = 3.dp)
-                                .clip(
-                                    RoundedCornerShape(
-                                        if (index == 0) (topStartRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp,
-                                        if (index == 0) (topEndRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp,
-                                        if (index == message.contents.lastIndex) (bottomEndRadius - 3.dp).coerceAtLeast(
-                                            0.dp
-                                        ) else 0.dp,
-                                        if (index == message.contents.lastIndex) (bottomStartRadius - 3.dp).coerceAtLeast(
-                                            0.dp
-                                        ) else 0.dp
-                                    )
+                        context.contentResolver.openInputStream(Uri.parse(this@toLayout.uriString))
+                            .use {
+                                BitmapFactory.decodeStream(
+                                    it,
+                                    null,
+                                    options
                                 )
+                            }
+                        with(density) {
+                            options.outWidth.toDp().coerceIn(80.dp, 320.dp)
+                        }
+                    } catch (e: FileNotFoundException) {
+                        with(density) {
+                            this@toLayout.width
+                                .toDp()
+                                .coerceIn(80.dp, 320.dp)
+                        }
+                    }
+                } else {
+                    with(density) {
+                        this@toLayout.width
+                            .toDp()
+                            .coerceIn(80.dp, 320.dp)
+                    }
+                }
+            }
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(this@toLayout.uriString?.also { Uri.parse(it) }
+                        ?: this@toLayout.url)
+                    .crossfade(true)
+                    .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
+                    .build(),
+                imageLoader = imageLoader,
+                contentDescription = "image",
+                contentScale = ContentScale.FillWidth,
+                modifier = Modifier
+                    .width(imageWidth)
+                    .defaultMinSize(minHeight = 80.dp)
+//                        .height(with(LocalDensity.current) {
+//                            min(this@toLayout.height.toDp(), 600.dp)
+//                        })
+                    .padding(horizontal = 3.dp, vertical = 3.dp)
+                    .clip(
+                        RoundedCornerShape(
+                            if (index == 0) (topStartRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp,
+                            if (index == 0) (topEndRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp,
+                            if (index == message.contents.lastIndex) (bottomEndRadius - 3.dp).coerceAtLeast(
+                                0.dp
+                            ) else 0.dp,
+                            if (index == message.contents.lastIndex) (bottomStartRadius - 3.dp).coerceAtLeast(
+                                0.dp
+                            ) else 0.dp
+                        )
+                    )
+            )
+        }
+        is QuoteReply -> {
+            Surface(
+                modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = 8.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surface
+            ) {
+                Column(
+                    modifier = Modifier.padding(
+                        horizontal = 12.dp,
+                        vertical = 12.dp
+                    )
+                ) {
+                    Row() {
+                        this@toLayout.quoteMessageSenderName?.let {
+                            Text(
+                                text = it,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            this@toLayout.quoteMessageTimestamp?.let {
+                                Text(
+                                    modifier = Modifier.width(IntrinsicSize.Max),
+                                    text = it.toDescriptiveTime(),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.outline,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Clip
+                                )
+                            }
+                        }
+                    }
+                    this@toLayout.quoteMessageContent?.forEachIndexed { index, messageContent ->
+                        messageContent.toLayout(
+                            textColor,
+                            context,
+                            density,
+                            index,
+                            0.dp,
+                            0.dp,
+                            message,
+                            0.dp,
+                            0.dp
                         )
                     }
-                    is QuoteReply -> {
-                        Surface(
-                            shape = RoundedCornerShape(24.dp),
-                            color = MaterialTheme.colorScheme.surface
+                    if (this@toLayout.quoteMessageContent == null) {
+                        Text(
+                            text = "无法定位消息",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
+        }
+        is File -> {
+            if (message.sentByMe) {
+                Row() {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surface
+                    ) {
+                        Box(
+                            modifier = Modifier.size(48.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Column(
-                                modifier = Modifier.padding(
-                                    horizontal = 12.dp,
-                                    vertical = 12.dp
-                                )
-                            ) {
-                                Row() {
-                                    messageContent.quoteMessageSenderName?.let {
-                                        Text(
-                                            text = it,
-                                            style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                        Spacer(modifier = Modifier.width(16.dp))
-                                        messageContent.quoteMessageTimestamp?.let {
-                                            Text(
-                                                text = it.toDescriptiveTime(),
-                                                style = MaterialTheme.typography.labelMedium,
-                                                color = MaterialTheme.colorScheme.outline
-                                            )
-                                        }
-                                    }
-                                }
-                                Text(
-                                    text = messageContent.quoteMessageContent?.getContentString()
-                                        ?: "无法定位消息",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
+                            Icon(
+                                imageVector = when (this@toLayout.extension) {
+                                    "apk" -> Icons.Outlined.Android
+                                    "txt" -> Icons.Outlined.Description
+                                    "mp3", "wav", "flac", "ape", "wma" -> Icons.Outlined.AudioFile
+                                    "mp4" -> Icons.Outlined.VideoFile
+                                    else -> Icons.Outlined.FilePresent
+                                }, contentDescription = "type"
+                            )
                         }
                     }
-                    is File -> {
-                        if (message.sentByMe) {
-                            Row() {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.surface
-                                ) {
-                                    Box(
-                                        modifier = Modifier.size(48.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = when (messageContent.extension) {
-                                                "apk" -> Icons.Outlined.Android
-                                                "txt" -> Icons.Outlined.Description
-                                                "mp3", "wav", "flac", "ape", "wma" -> Icons.Outlined.AudioFile
-                                                "mp4" -> Icons.Outlined.VideoFile
-                                                else -> Icons.Outlined.FilePresent
-                                            }, contentDescription = "type"
-                                        )
-                                    }
-                                }
-                                Column() {
-                                    Text(
-                                        text = messageContent.name,
-                                        style = MaterialTheme.typography.labelLarge,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                    Text(
-                                        text = "${messageContent.size} ${messageContent.extension}",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.outline
-                                    )
-                                }
-                            }
-                        } else {
-                            Row() {
+                    Column() {
+                        Text(
+                            text = this@toLayout.name,
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "${this@toLayout.size} ${this@toLayout.extension}",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
+                }
+            } else {
+                Row() {
 
-                            }
-                        }
-                    }
                 }
             }
         }
