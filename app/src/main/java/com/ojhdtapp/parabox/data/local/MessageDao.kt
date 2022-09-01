@@ -19,6 +19,11 @@ interface MessageDao {
     "WHERE contact_message_cross_ref.contactId IN (:contactIds) " + "ORDER BY message_entity.timestamp DESC")
     fun getMessagesPagingSource(contactIds: List<Long>): PagingSource<Int, MessageEntity>
 
+    @Query("DELETE FROM message_entity WHERE messageId = :messageId")
+    fun deleteMessageById(messageId: Long)
+    @Query("DELETE FROM message_entity WHERE messageId IN (:messageIdList)")
+    fun deleteMessageById(messageIdList: List<Long>)
+
     @Update(entity = MessageEntity::class)
     fun updateVerifiedState(obj: MessageVerifyStateUpdate)
 

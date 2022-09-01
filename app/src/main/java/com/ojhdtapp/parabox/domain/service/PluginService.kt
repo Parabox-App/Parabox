@@ -14,6 +14,7 @@ import com.ojhdtapp.messagedto.SendMessageDto
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.plugin.PluginConnObj
+import com.ojhdtapp.parabox.domain.use_case.DeleteMessage
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
 import com.ojhdtapp.parabox.domain.use_case.UpdateMessage
 import dagger.hilt.android.AndroidEntryPoint
@@ -40,6 +41,9 @@ class PluginService : LifecycleService() {
 
     @Inject
     lateinit var updateMessage: UpdateMessage
+
+    @Inject
+    lateinit var deleteMessage: DeleteMessage
     private var installedPluginList = emptyList<ApplicationInfo>()
     private var appModelList = emptyList<AppModel>()
     private val pluginConnectionMap = mutableMapOf<Int, PluginConnObj>()
@@ -108,6 +112,16 @@ class PluginService : LifecycleService() {
                         updateMessage.verifiedState(id, value)
                     }
                 },
+                { id: Long, value: Boolean ->
+                    if (value) {
+                        Toast.makeText(this, "消息已撤回", Toast.LENGTH_SHORT).show()
+                        lifecycleScope.launch(Dispatchers.IO) {
+                            deleteMessage(id)
+                        }
+                    } else {
+                        Toast.makeText(this, "消息撤回失败", Toast.LENGTH_SHORT).show()
+                    }
+                },
                 this@PluginService,
                 it.packageName,
                 it.packageName + ".domain.service.ConnService"
@@ -148,7 +162,7 @@ class PluginService : LifecycleService() {
         }
     }
 
-    fun recallMessage(type: Int, messageId: Long){
+    fun recallMessage(type: Int, messageId: Long) {
         if (appModelList.map { it.connectionType }.contains(type)) {
             pluginConnectionMap[type]?.recall(messageId)
         } else {

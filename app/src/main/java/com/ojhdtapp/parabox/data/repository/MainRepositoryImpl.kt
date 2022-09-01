@@ -374,6 +374,14 @@ class MainRepositoryImpl @Inject constructor(
         return database.messageDao.getMessagesPagingSource(contactIds)
     }
 
+    override fun deleteMessageById(messageId: Long) {
+        database.messageDao.deleteMessageById(messageId = messageId)
+    }
+
+    override fun deleteMessageById(messageIdList: List<Long>) {
+        database.messageDao.deleteMessageById(messageIdList = messageIdList)
+    }
+
     override fun getGroupInfoPack(contactIds: List<Long>): GroupInfoPack? {
         val contactList = mutableListOf<Contact>()
         val pluginConnectionList = mutableListOf<PluginConnection>()

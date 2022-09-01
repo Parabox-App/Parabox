@@ -19,6 +19,7 @@ import javax.inject.Inject
 class PluginConnObj @Inject constructor(
     val onNewMessageReceived: (dto: ReceiveMessageDto) -> Unit,
     val onMessageVerifyStateUpdate: (id: Long, value: Boolean) -> Unit,
+    val onRecallMessageVerifyStateUpdate: (id: Long, value: Boolean) -> Unit,
     private val ctx: Context,
     private val pkg: String,
     private val cls: String
@@ -153,11 +154,8 @@ class PluginConnObj @Inject constructor(
                         }
                         ConnKey.MSG_RESPONSE_MESSAGE_RECALL -> {
                             val stateSuccess = (msg.obj as Bundle).getBoolean("value") ?: false
-                            if(stateSuccess){
-                                TODO()
-                            }else{
-
-                            }
+                            val messageId = (msg.obj as Bundle).getLong("message_id")
+                            onRecallMessageVerifyStateUpdate(messageId, stateSuccess)
                         }
                         else -> {}
                     }

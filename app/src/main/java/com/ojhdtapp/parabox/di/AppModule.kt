@@ -83,4 +83,9 @@ object AppModule {
     fun provideDeleteGroupedContactUseCase(repository: MainRepository): DeleteGroupedContact{
         return DeleteGroupedContact(repository)
     }
+    @Provides
+    @Singleton
+    fun provideDeleteMessageUseCase(repository: MainRepository): DeleteMessage{
+        return DeleteMessage(repository)
+    }
 }

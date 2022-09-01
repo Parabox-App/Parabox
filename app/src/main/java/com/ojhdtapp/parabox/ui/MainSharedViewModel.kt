@@ -20,6 +20,7 @@ import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.PluginConnection
+import com.ojhdtapp.parabox.domain.use_case.DeleteMessage
 import com.ojhdtapp.parabox.domain.use_case.GetMessages
 import com.ojhdtapp.parabox.ui.message.MessageState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -36,6 +37,7 @@ import javax.inject.Inject
 class MainSharedViewModel @Inject constructor(
     @ApplicationContext val context: Context,
     val getMessages: GetMessages,
+    val deleteMessage: DeleteMessage,
 ) : ViewModel() {
     // Badge
     private val _messageBadge = mutableStateOf<Int>(0)
@@ -49,18 +51,22 @@ class MainSharedViewModel @Inject constructor(
     private val _messageStateFlow = MutableStateFlow(MessageState())
     val messageStateFlow: StateFlow<MessageState> = _messageStateFlow.asStateFlow()
 
-    fun loadMessageFromContact(contact: Contact){
+    fun loadMessageFromContact(contact: Contact) {
         _messageStateFlow.value = MessageState()
         _selectedMessageStateList.clear()
         _messageStateFlow.value = MessageState(MessageState.LOADING, contact)
         viewModelScope.launch(Dispatchers.IO) {
             getMessages.pluginConnectionList(contact).also {
-                _messageStateFlow.value = MessageState(MessageState.SUCCESS, contact, it, it.findLast { it.objectId == contact.senderId })
+                _messageStateFlow.value = MessageState(
+                    MessageState.SUCCESS,
+                    contact,
+                    it,
+                    it.findLast { it.objectId == contact.senderId })
             }
         }
     }
 
-    fun updateSelectedPluginConnection(plg: PluginConnection){
+    fun updateSelectedPluginConnection(plg: PluginConnection) {
         _messageStateFlow.value = messageStateFlow.value.copy(
             selectedPluginConnection = plg
         )
@@ -70,7 +76,7 @@ class MainSharedViewModel @Inject constructor(
         getMessages.pagingFlow(pluginConnectionObjectIdList)
             .cachedIn(viewModelScope)
 
-    fun clearMessage(){
+    fun clearMessage() {
         _messageStateFlow.value = MessageState()
         _selectedMessageStateList.clear()
     }
@@ -85,14 +91,22 @@ class MainSharedViewModel @Inject constructor(
             _selectedMessageStateList.remove(value)
         }
     }
+
     fun clearSelectedMessageStateList() {
         _selectedMessageStateList.clear()
+    }
+
+    fun deleteMessage(ids: List<Long>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            deleteMessage(messageIdList = ids)
+        }
+        clearSelectedMessageStateList()
     }
 
     // Plugin List
     private val _pluginListStateFlow = MutableStateFlow<List<AppModel>>(emptyList())
     val pluginListStateFlow = _pluginListStateFlow.asStateFlow()
-    fun setPluginListStateFlow(value: List<AppModel>){
+    fun setPluginListStateFlow(value: List<AppModel>) {
         _pluginListStateFlow.value = value
     }
 
@@ -108,6 +122,7 @@ class MainSharedViewModel @Inject constructor(
         .map { settings ->
             settings[DataStoreKeys.USER_NAME] ?: "User"
         }
+
     fun setUserName(value: String) {
         viewModelScope.launch {
             context.dataStore.edit { settings ->

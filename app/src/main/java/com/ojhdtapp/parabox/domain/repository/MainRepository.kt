@@ -33,6 +33,8 @@ interface MainRepository {
     fun getSpecifiedContactWithMessages(contactId: Long): Flow<Resource<ContactWithMessages>>
     fun getSpecifiedListOfContactWithMessages(contactIds: List<Long>): Flow<Resource<List<ContactWithMessages>>>
     fun getMessagesPagingSource(contactIds: List<Long>) : PagingSource<Int, MessageEntity>
+    fun deleteMessageById(messageId: Long)
+    fun deleteMessageById(messageIdList: List<Long>)
     fun getGroupInfoPack(contactIds: List<Long>): GroupInfoPack?
     suspend fun groupNewContact(
         name: String,

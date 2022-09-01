@@ -168,6 +168,12 @@ fun NormalChatPage(
     onBackClick: () -> Unit,
     onSend: (contents: List<com.ojhdtapp.messagedto.message_content.MessageContent>) -> Unit
 ) {
+    val pagingDataFlow = remember(messageState) {
+        mainSharedViewModel.receiveMessagePagingDataFlow(messageState.pluginConnectionList.map { it.objectId })
+    }
+    val lazyPagingItems =
+        pagingDataFlow.collectAsLazyPagingItems()
+
     val pluginPackageNameList =
         mainSharedViewModel.pluginListStateFlow.collectAsState().value.map { it.packageName }
     val coroutineScope = rememberCoroutineScope()
@@ -176,7 +182,7 @@ fun NormalChatPage(
     var menuExpanded by remember {
         mutableStateOf(false)
     }
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+//    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 //    val scrollFraction = scrollBehavior.state.overlappedFraction
 //    val topAppBarColor by TopAppBarDefaults.smallTopAppBarColors().containerColor(scrollFraction)
 //    val colorTransitionFraction = scrollBehavior.state.overlappedFraction
@@ -219,6 +225,44 @@ fun NormalChatPage(
     }
     val context = LocalContext.current
     val clipboardManager: ClipboardManager = LocalClipboardManager.current
+
+    var showDeleteMessageConfirmDialog by remember { mutableStateOf(false) }
+    if (showDeleteMessageConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showDeleteMessageConfirmDialog = false
+            },
+            icon = { Icon(Icons.Outlined.Warning, contentDescription = null) },
+            title = {
+                Text(text = "移除消息")
+            },
+            text = {
+                Text(
+                    "选中的 ${mainSharedViewModel.selectedMessageStateList.size} 条消息将被永久移除。"
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        showDeleteMessageConfirmDialog = false
+                        mainSharedViewModel.deleteMessage(mainSharedViewModel.selectedMessageStateList.map { it.messageId })
+                        lazyPagingItems.refresh()
+                    }
+                ) {
+                    Text("确认")
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        showDeleteMessageConfirmDialog = false
+                    }
+                ) {
+                    Text("取消")
+                }
+            }
+        )
+    }
     BottomSheetScaffold(
 //        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         scaffoldState = scaffoldState,
@@ -337,6 +381,7 @@ fun NormalChatPage(
                                         text = { Text(text = "从聊天记录移除") },
                                         onClick = {
                                             menuExpanded = false
+                                            showDeleteMessageConfirmDialog = true
                                         },
                                         leadingIcon = {
                                             Icon(
@@ -469,6 +514,18 @@ fun NormalChatPage(
                                             }
                                         }
                                     }
+                                    DropdownMenuItem(
+                                        text = { Text(text = "刷新") },
+                                        onClick = {
+                                            menuExpanded = false
+                                            lazyPagingItems.refresh()
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Outlined.Refresh,
+                                                contentDescription = null
+                                            )
+                                        })
                                 }
                             }
                         },
@@ -521,11 +578,6 @@ fun NormalChatPage(
         sheetPeekHeight = peakHeight,
         sheetElevation = 3.dp
     ) {
-        val pagingDataFlow = remember(messageState) {
-            mainSharedViewModel.receiveMessagePagingDataFlow(messageState.pluginConnectionList.map { it.objectId })
-        }
-        val lazyPagingItems =
-            pagingDataFlow.collectAsLazyPagingItems()
         if (messageState.state == MessageState.LOADING || lazyPagingItems.itemCount == 0) {
             Box(
                 modifier = Modifier
@@ -1172,7 +1224,7 @@ private fun MessageContent.toLayout(
                         Icon(
                             imageVector = when (extension) {
                                 "apk" -> Icons.Outlined.Android
-                                "txt" -> Icons.Outlined.Description
+                                "txt", "log", "md", "json", "xml" -> Icons.Outlined.Description
                                 "mp3", "wav", "flac", "ape", "wma" -> Icons.Outlined.AudioFile
                                 "mp4" -> Icons.Outlined.VideoFile
                                 "zip", "rar", "7z", "gz", "tar.gz" -> Icons.Outlined.FolderZip
