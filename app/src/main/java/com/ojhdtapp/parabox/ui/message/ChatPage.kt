@@ -43,10 +43,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.ClipboardManager
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.*
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
@@ -168,6 +165,14 @@ fun NormalChatPage(
     onBackClick: () -> Unit,
     onSend: (contents: List<com.ojhdtapp.messagedto.message_content.MessageContent>) -> Unit
 ) {
+    // Util
+    val coroutineScope = rememberCoroutineScope()
+    val density = LocalDensity.current
+    val context = LocalContext.current
+    val clipboardManager: ClipboardManager = LocalClipboardManager.current
+    val focusManager = LocalFocusManager.current
+
+    // Paging
     val pagingDataFlow = remember(messageState) {
         mainSharedViewModel.receiveMessagePagingDataFlow(messageState.pluginConnectionList.map { it.objectId })
     }
@@ -176,8 +181,7 @@ fun NormalChatPage(
 
     val pluginPackageNameList =
         mainSharedViewModel.pluginListStateFlow.collectAsState().value.map { it.packageName }
-    val coroutineScope = rememberCoroutineScope()
-    val density = LocalDensity.current
+
     // Top AppBar
     var menuExpanded by remember {
         mutableStateOf(false)
@@ -196,6 +200,7 @@ fun NormalChatPage(
 //        animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
 //    )
     val appBarContainerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+
     // Bottom Sheet
     val navigationBarHeight = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
     var changedTextFieldHeight by remember {
@@ -204,7 +209,6 @@ fun NormalChatPage(
     val scaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberBottomSheetState(BottomSheetValue.Collapsed)
     )
-
     val peakHeight by remember {
         derivedStateOf {
             density.run {
@@ -223,8 +227,6 @@ fun NormalChatPage(
             scrollState.firstVisibleItemIndex > 2
         }
     }
-    val context = LocalContext.current
-    val clipboardManager: ClipboardManager = LocalClipboardManager.current
 
     var showDeleteMessageConfirmDialog by remember { mutableStateOf(false) }
     if (showDeleteMessageConfirmDialog) {
@@ -355,8 +357,12 @@ fun NormalChatPage(
                                         DropdownMenuItem(
                                             text = { Text(text = "尝试撤回") },
                                             onClick = {
-                                                val message = mainSharedViewModel.selectedMessageStateList.first()
-                                                onRecallMessage(message.sendType!!, message.messageId)
+                                                val message =
+                                                    mainSharedViewModel.selectedMessageStateList.first()
+                                                onRecallMessage(
+                                                    message.sendType!!,
+                                                    message.messageId
+                                                )
                                                 menuExpanded = false
                                             },
                                             leadingIcon = {
@@ -366,17 +372,19 @@ fun NormalChatPage(
                                                 )
                                             })
                                     }
-                                    DropdownMenuItem(
-                                        text = { Text(text = "回复") },
-                                        onClick = {
-                                            menuExpanded = false
-                                        },
-                                        leadingIcon = {
-                                            Icon(
-                                                Icons.Outlined.Reply,
-                                                contentDescription = null
-                                            )
-                                        })
+                                    if (mainSharedViewModel.selectedMessageStateList.size == 1) {
+                                        DropdownMenuItem(
+                                            text = { Text(text = "回复") },
+                                            onClick = {
+                                                menuExpanded = false
+                                            },
+                                            leadingIcon = {
+                                                Icon(
+                                                    Icons.Outlined.Reply,
+                                                    contentDescription = null
+                                                )
+                                            })
+                                    }
                                     DropdownMenuItem(
                                         text = { Text(text = "从聊天记录移除") },
                                         onClick = {
@@ -544,6 +552,7 @@ fun NormalChatPage(
                 , exit = slideOutHorizontally { it * 2 } // slide out to the right
             ) {
                 FloatingActionButton(onClick = {
+                    focusManager.clearFocus()
                     coroutineScope.launch {
                         scrollState.animateScrollToItem(0)
                     }
@@ -635,6 +644,7 @@ fun NormalChatPage(
                                 }
                             },
                             onMessageLongClick = {
+                                focusManager.clearFocus()
                                 mainSharedViewModel.addOrRemoveItemOfSelectedMessageStateList(
                                     value
                                 )
