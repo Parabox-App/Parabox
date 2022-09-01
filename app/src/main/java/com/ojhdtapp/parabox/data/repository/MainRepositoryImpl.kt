@@ -95,7 +95,8 @@ class MainRepositoryImpl @Inject constructor(
     override suspend fun handleNewMessage(
         contents: List<com.ojhdtapp.messagedto.message_content.MessageContent>,
         pluginConnection: com.ojhdtapp.messagedto.PluginConnection,
-        timestamp: Long
+        timestamp: Long,
+        sendType: Int,
     ): Long {
         return coroutineScope {
             val userName = context.dataStore.data
@@ -111,7 +112,7 @@ class MainRepositoryImpl @Inject constructor(
                 }.firstOrNull() ?: "User"
 
             val messageIdDeferred = async<Long> {
-                storeSendMessage(contents, timestamp)
+                storeSendMessage(contents, timestamp, sendType)
             }
             val contactIdDeferred = async<Long> {
                 database.contactDao.insertContact(
@@ -181,7 +182,8 @@ class MainRepositoryImpl @Inject constructor(
 
     private suspend fun storeSendMessage(
         contents: List<MessageContent>,
-        timestamp: Long
+        timestamp: Long,
+        sendType: Int,
     ): Long {
         val sendId = context.dataStore.data
             .catch { exception ->
@@ -204,12 +206,13 @@ class MainRepositoryImpl @Inject constructor(
                 timestamp = timestamp,
                 messageId = sendId,
                 sentByMe = true,
-                verified = false
+                verified = false,
+                sendType = sendType
             )
         ).let {
             if (it != -1L) it
             else {
-                storeSendMessage(contents, timestamp)
+                storeSendMessage(contents, timestamp, sendType)
             }
         }
     }

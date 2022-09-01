@@ -16,6 +16,7 @@ data class MessageEntity(
     @PrimaryKey val messageId: Long,
     val sentByMe: Boolean,
     val verified : Boolean,
+    val sendType: Int? = null,
 ) {
     fun toMessage() = Message(
         contents = contents,
@@ -24,6 +25,7 @@ data class MessageEntity(
         messageId = messageId,
         sentByMe = sentByMe,
         verified = verified,
+        sendType = sendType
     )
 }
 

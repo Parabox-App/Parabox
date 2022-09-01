@@ -13,7 +13,7 @@ class HandleNewMessage @Inject constructor(
         repository.handleNewMessage(dto)
     }
 
-    suspend operator fun invoke(contents: List<com.ojhdtapp.messagedto.message_content.MessageContent>, pluginConnection: com.ojhdtapp.messagedto.PluginConnection, timestamp: Long) : Long{
-        return repository.handleNewMessage(contents, pluginConnection, timestamp)
+    suspend operator fun invoke(contents: List<com.ojhdtapp.messagedto.message_content.MessageContent>, pluginConnection: com.ojhdtapp.messagedto.PluginConnection, timestamp: Long, sendType: Int) : Long{
+        return repository.handleNewMessage(contents, pluginConnection, timestamp, sendType)
     }
 }

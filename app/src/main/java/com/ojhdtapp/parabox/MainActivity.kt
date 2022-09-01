@@ -125,7 +125,7 @@ class MainActivity : ComponentActivity() {
             is ActivityEvent.SendMessage -> {
                 lifecycleScope.launch(Dispatchers.IO) {
                     val timestamp = System.currentTimeMillis()
-                    handleNewMessage(event.contents, event.pluginConnection, timestamp).also {
+                    handleNewMessage(event.contents, event.pluginConnection, timestamp, event.sendType).also {
                         val dto = SendMessageDto(
                             contents = event.contents,
                             timestamp = timestamp,
@@ -135,6 +135,9 @@ class MainActivity : ComponentActivity() {
                         pluginService?.sendMessage(dto)
                     }
                 }
+            }
+            is ActivityEvent.RecallMessage -> {
+                pluginService?.recallMessage(event.type, event.messageId)
             }
             is ActivityEvent.SetUserAvatar -> {
                 pickUserAvatar()

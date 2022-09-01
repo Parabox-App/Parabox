@@ -113,10 +113,11 @@ fun ChatPage(
                     mainSharedViewModel = mainSharedViewModel,
                     sizeClass = sizeClass,
                     isInSplitScreen = isInSplitScreen,
-                    onRecallMessage = {
+                    onRecallMessage = { type, id ->
                         onEvent(
                             ActivityEvent.RecallMessage(
-                                messageId = it
+                                type = type,
+                                messageId = id
                             )
                         )
                     },
@@ -138,7 +139,8 @@ fun ChatPage(
                             onEvent(
                                 ActivityEvent.SendMessage(
                                     contents = it,
-                                    pluginConnection = selectedPluginConnection.toSenderPluginConnection()
+                                    pluginConnection = selectedPluginConnection.toSenderPluginConnection(),
+                                    sendType = selectedPluginConnection.connectionType
                                 )
                             )
                         }
@@ -161,7 +163,7 @@ fun NormalChatPage(
     mainSharedViewModel: MainSharedViewModel,
     sizeClass: WindowSizeClass,
     isInSplitScreen: Boolean = false,
-    onRecallMessage: (messageId: Long) -> Unit,
+    onRecallMessage: (type: Int, messageId: Long) -> Unit,
     onStopSplitting: () -> Unit = {},
     onBackClick: () -> Unit,
     onSend: (contents: List<com.ojhdtapp.messagedto.message_content.MessageContent>) -> Unit
@@ -309,7 +311,8 @@ fun NormalChatPage(
                                         DropdownMenuItem(
                                             text = { Text(text = "尝试撤回") },
                                             onClick = {
-                                                onRecallMessage(mainSharedViewModel.selectedMessageStateList.first().messageId)
+                                                val message = mainSharedViewModel.selectedMessageStateList.first()
+                                                onRecallMessage(message.sendType!!, message.messageId)
                                                 menuExpanded = false
                                             },
                                             leadingIcon = {

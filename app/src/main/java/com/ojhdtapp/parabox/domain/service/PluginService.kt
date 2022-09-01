@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.os.Binder
 import android.os.IBinder
 import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.ojhdtapp.messagedto.SendMessageDto
@@ -143,7 +144,15 @@ class PluginService : LifecycleService() {
         if (appModelList.map { it.connectionType }.contains(type)) {
             pluginConnectionMap[type]?.send(dto)
         } else {
-            TODO("plugin not installed")
+            Toast.makeText(this, "插件未安装", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun recallMessage(type: Int, messageId: Long){
+        if (appModelList.map { it.connectionType }.contains(type)) {
+            pluginConnectionMap[type]?.recall(messageId)
+        } else {
+            Toast.makeText(this, "插件未安装", Toast.LENGTH_SHORT).show()
         }
     }
 }

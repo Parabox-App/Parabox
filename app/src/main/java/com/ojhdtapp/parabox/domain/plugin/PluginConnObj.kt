@@ -90,6 +90,20 @@ class PluginConnObj @Inject constructor(
         }
     }
 
+    fun recall(messageId: Long){
+        if(isConnected){
+            val timestamp = System.currentTimeMillis()
+            sMessenger?.send(Message.obtain(null, ConnKey.MSG_MESSAGE).apply {
+                obj = Bundle().apply {
+                    putLong("message_id", messageId)
+                    putInt("command", ConnKey.MSG_MESSAGE_RECALL)
+                    putLong("timestamp", timestamp)
+                }
+                replyTo = cMessenger
+            })
+        }
+    }
+
     fun tryAutoLogin() {
         if (isConnected) {
             val timestamp = System.currentTimeMillis()
@@ -136,6 +150,14 @@ class PluginConnObj @Inject constructor(
                             val stateSuccess = (msg.obj as Bundle).getBoolean("value") ?: false
                             val messageId = (msg.obj as Bundle).getLong("message_id")
                             onMessageVerifyStateUpdate(messageId, stateSuccess)
+                        }
+                        ConnKey.MSG_RESPONSE_MESSAGE_RECALL -> {
+                            val stateSuccess = (msg.obj as Bundle).getBoolean("value") ?: false
+                            if(stateSuccess){
+                                TODO()
+                            }else{
+
+                            }
                         }
                         else -> {}
                     }
