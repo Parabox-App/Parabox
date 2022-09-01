@@ -13,6 +13,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -61,6 +62,7 @@ import coil.decode.ImageDecoderDecoder
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.itemsBeforeAndAfterReverseIndexed
 import com.ojhdtapp.parabox.core.util.toDescriptiveTime
 import com.ojhdtapp.parabox.domain.model.Message
@@ -550,6 +552,19 @@ fun NormalChatPage(
                                 mainSharedViewModel.addOrRemoveItemOfSelectedMessageStateList(
                                     value
                                 )
+                            },
+                            onQuoteReplyClick = { messageId ->
+                                coroutineScope.launch {
+                                    val idList = lazyPagingItems.itemSnapshotList.items.map { it.messageId }
+                                    idList.lastIndexOf(messageId).also {
+                                        if (it != -1) {
+                                            scrollState.animateScrollToItem(it)
+                                        } else {
+                                            Toast.makeText(context, "无法定位消息", Toast.LENGTH_SHORT)
+                                                .show()
+                                        }
+                                    }
+                                }
                             }
                         )
                     }
@@ -632,7 +647,8 @@ fun MessageBlock(
     userName: String,
     avatarUri: String?,
     onMessageClick: () -> Unit,
-    onMessageLongClick: () -> Unit
+    onMessageLongClick: () -> Unit,
+    onQuoteReplyClick: (messageId: Long) -> Unit
 ) {
     Column() {
         if (shouldShowTimeDivider) {
@@ -661,7 +677,8 @@ fun MessageBlock(
                         isLast = isLast,
                         isSelected = selectedMessageStateList.contains(message),
                         onClick = onMessageClick,
-                        onLongClick = onMessageLongClick
+                        onLongClick = onMessageLongClick,
+                        onQuoteReplyClick = onQuoteReplyClick
                     )
                     if (!isLast) {
                         Spacer(modifier = Modifier.height(2.dp))
@@ -697,7 +714,8 @@ fun MessageBlock(
                         isLast = isLast,
                         isSelected = selectedMessageStateList.contains(message),
                         onClick = onMessageClick,
-                        onLongClick = onMessageLongClick
+                        onLongClick = onMessageLongClick,
+                        onQuoteReplyClick = onQuoteReplyClick
                     )
                     if (!isLast) {
                         Spacer(modifier = Modifier.height(2.dp))
@@ -865,7 +883,8 @@ fun SingleMessage(
     isLast: Boolean,
     isSelected: Boolean,
     onClick: () -> Unit,
-    onLongClick: () -> Unit
+    onLongClick: () -> Unit,
+    onQuoteReplyClick: (messageId: Long) -> Unit = {},
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
@@ -921,9 +940,6 @@ fun SingleMessage(
                 .combinedClickable(onClick = onClick, onLongClick = onLongClick)
                 .animateContentSize()
         ) {
-            LaunchedEffect(key1 = true, block = {
-                Log.d("parabox", message.contents.toString())
-            })
             message.contents.forEachIndexed { index, messageContent ->
                 messageContent.toLayout(
                     textColor,
@@ -934,7 +950,8 @@ fun SingleMessage(
                     topEndRadius,
                     message,
                     bottomEndRadius,
-                    bottomStartRadius
+                    bottomStartRadius,
+                    onQuoteReplyClick = onQuoteReplyClick
                 )
             }
         }
@@ -951,17 +968,18 @@ private fun MessageContent.toLayout(
     topEndRadius: Dp,
     message: Message,
     bottomEndRadius: Dp,
-    bottomStartRadius: Dp
+    bottomStartRadius: Dp,
+    onQuoteReplyClick: (messageId: Long) -> Unit = {},
 ) {
     when (this) {
         is At, AtAll -> Text(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
-            text = this@toLayout.getContentString(),
+            text = getContentString(),
             color = MaterialTheme.colorScheme.primary
         )
         is PlainText -> Text(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
-            text = this@toLayout.text,
+            text = text,
             color = textColor
         )
         is Image -> {
@@ -978,12 +996,12 @@ private fun MessageContent.toLayout(
                 }
                 .build()
             LaunchedEffect(key1 = this@toLayout) {
-                imageWidth = if (this@toLayout.uriString != null) {
+                imageWidth = if (uriString != null) {
                     try {
                         val options = BitmapFactory.Options().apply {
                             inJustDecodeBounds = true
                         }
-                        context.contentResolver.openInputStream(Uri.parse(this@toLayout.uriString))
+                        context.contentResolver.openInputStream(Uri.parse(uriString))
                             .use {
                                 BitmapFactory.decodeStream(
                                     it,
@@ -996,14 +1014,14 @@ private fun MessageContent.toLayout(
                         }
                     } catch (e: FileNotFoundException) {
                         with(density) {
-                            this@toLayout.width
+                            width
                                 .toDp()
                                 .coerceIn(80.dp, 320.dp)
                         }
                     }
                 } else {
                     with(density) {
-                        this@toLayout.width
+                        width
                             .toDp()
                             .coerceIn(80.dp, 320.dp)
                     }
@@ -1011,8 +1029,8 @@ private fun MessageContent.toLayout(
             }
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data(this@toLayout.uriString?.also { Uri.parse(it) }
-                        ?: this@toLayout.url)
+                    .data(uriString?.also { Uri.parse(it) }
+                        ?: url)
                     .crossfade(true)
                     .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
                     .build(),
@@ -1021,9 +1039,9 @@ private fun MessageContent.toLayout(
                 contentScale = ContentScale.FillWidth,
                 modifier = Modifier
                     .width(imageWidth)
-                    .defaultMinSize(minHeight = 80.dp)
+//                    .defaultMinSize(minHeight = 80.dp)
 //                        .height(with(LocalDensity.current) {
-//                            min(this@toLayout.height.toDp(), 600.dp)
+//                            min(height.toDp(), 600.dp)
 //                        })
                     .padding(horizontal = 3.dp, vertical = 3.dp)
                     .clip(
@@ -1047,13 +1065,18 @@ private fun MessageContent.toLayout(
                 color = MaterialTheme.colorScheme.surface
             ) {
                 Column(
-                    modifier = Modifier.padding(
-                        horizontal = 12.dp,
-                        vertical = 12.dp
-                    )
+                    modifier = Modifier
+                        .clickable {
+                            if (quoteMessageId != null) {
+                                onQuoteReplyClick(quoteMessageId)
+                            }
+                        }.padding(
+                            horizontal = 12.dp,
+                            vertical = 12.dp
+                        )
                 ) {
                     Row() {
-                        this@toLayout.quoteMessageSenderName?.let {
+                        quoteMessageSenderName?.let {
                             Text(
                                 text = it,
                                 style = MaterialTheme.typography.labelMedium,
@@ -1062,7 +1085,7 @@ private fun MessageContent.toLayout(
                                 overflow = TextOverflow.Ellipsis
                             )
                             Spacer(modifier = Modifier.width(16.dp))
-                            this@toLayout.quoteMessageTimestamp?.let {
+                            quoteMessageTimestamp?.let {
                                 Text(
                                     modifier = Modifier.width(IntrinsicSize.Max),
                                     text = it.toDescriptiveTime(),
@@ -1074,7 +1097,7 @@ private fun MessageContent.toLayout(
                             }
                         }
                     }
-                    this@toLayout.quoteMessageContent?.forEachIndexed { index, messageContent ->
+                    quoteMessageContent?.forEachIndexed { index, messageContent ->
                         messageContent.toLayout(
                             textColor,
                             context,
@@ -1087,7 +1110,7 @@ private fun MessageContent.toLayout(
                             0.dp
                         )
                     }
-                    if (this@toLayout.quoteMessageContent == null) {
+                    if (quoteMessageContent == null) {
                         Text(
                             text = "无法定位消息",
                             style = MaterialTheme.typography.bodyMedium
@@ -1097,45 +1120,47 @@ private fun MessageContent.toLayout(
             }
         }
         is File -> {
-            if (message.sentByMe) {
-                Row() {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.surface
+            Row(
+                modifier = Modifier.padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    modifier = Modifier.padding(end = 12.dp),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surface
+                ) {
+                    Box(
+                        modifier = Modifier.size(48.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Box(
-                            modifier = Modifier.size(48.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = when (this@toLayout.extension) {
-                                    "apk" -> Icons.Outlined.Android
-                                    "txt" -> Icons.Outlined.Description
-                                    "mp3", "wav", "flac", "ape", "wma" -> Icons.Outlined.AudioFile
-                                    "mp4" -> Icons.Outlined.VideoFile
-                                    else -> Icons.Outlined.FilePresent
-                                }, contentDescription = "type"
-                            )
-                        }
-                    }
-                    Column() {
-                        Text(
-                            text = this@toLayout.name,
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = "${this@toLayout.size} ${this@toLayout.extension}",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.outline
+                        Icon(
+                            imageVector = when (extension) {
+                                "apk" -> Icons.Outlined.Android
+                                "txt" -> Icons.Outlined.Description
+                                "mp3", "wav", "flac", "ape", "wma" -> Icons.Outlined.AudioFile
+                                "mp4" -> Icons.Outlined.VideoFile
+                                "zip", "rar", "7z", "gz", "tar.gz" -> Icons.Outlined.FolderZip
+                                else -> Icons.Outlined.FilePresent
+                            }, contentDescription = "type",
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
-            } else {
-                Row() {
-
+                Column() {
+                    Text(
+                        text = name,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(3.dp))
+                    Text(
+                        text = FileUtil.getSizeString(size),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.outline
+                    )
                 }
             }
+
         }
     }
 }

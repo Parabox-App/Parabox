@@ -7,6 +7,7 @@ import androidx.core.content.FileProvider
 import com.ojhdtapp.parabox.BuildConfig
 import java.io.File
 import java.io.FileOutputStream
+import java.text.DecimalFormat
 
 object FileUtil {
     fun createTmpFileFromUri(context: Context, uri: Uri, fileName: String): File? {
@@ -57,8 +58,17 @@ object FileUtil {
             }
             outputFile
         } catch (e: Exception) {
-            Log.d("parabox", e.toString())
             null
+        }
+    }
+
+    fun getSizeString(size:Long):String{
+        val format = DecimalFormat("#.##")
+        return when(size){
+            in 0 until 1024 -> "${size}B"
+            in 1024 until 1048576 -> "${format.format(size.toDouble()/1024)}KB"
+            in 1048576 until 1073741824 -> "${format.format(size.toDouble()/1048576)}MB"
+            else -> "${format.format(size.toDouble()/1073741824)}GB"
         }
     }
 }
