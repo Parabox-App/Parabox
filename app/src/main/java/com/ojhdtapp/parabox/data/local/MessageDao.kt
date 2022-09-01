@@ -11,7 +11,7 @@ import com.ojhdtapp.parabox.domain.model.Message
 @Dao
 interface MessageDao {
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertMessage(message: MessageEntity): Long
     @SuppressWarnings(RoomWarnings.CURSOR_MISMATCH)
     @Query("SELECT * FROM message_entity " +

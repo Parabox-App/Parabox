@@ -13,7 +13,7 @@ data class MessageEntity(
     val contents: List<MessageContent>,
     @Embedded val profile: Profile,
     val timestamp: Long,
-    @PrimaryKey(autoGenerate = true) val messageId: Long = 0,
+    @PrimaryKey val messageId: Long,
     val sentByMe: Boolean,
     val verified : Boolean,
 ) {

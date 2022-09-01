@@ -40,34 +40,34 @@ fun ReceiveMessageDto.toMessageEntity(): MessageEntity {
     )
 }
 
-fun SendMessageDto.toMessageEntity(): MessageEntity {
-    return MessageEntity(
-        contents = contents.toMessageContentList(),
-        profile = Profile("", null, null),
-        timestamp = timestamp,
-        sentByMe = true,
-        verified = false
-    )
-}
-
-fun SendMessageDto.toContactEntity(senderName: String): ContactEntity {
-    return ContactEntity(
-        profile = Profile(pluginConnection.id.toString(), null, null),
-        latestMessage = LatestMessage(
-            sender = senderName,
-            content = contents.getContentString(),
-            timestamp = timestamp,
-            unreadMessagesNum = 0,
-        ),
-        contactId = pluginConnection.objectId,
-        senderId = pluginConnection.objectId,
-        isHidden = false,
-        isPinned = false,
-        isArchived = false,
-        enableNotifications = true,
-        tags = emptyList()
-    )
-}
+//fun SendMessageDto.toMessageEntity(): MessageEntity {
+//    return MessageEntity(
+//        contents = contents.toMessageContentList(),
+//        profile = Profile("", null, null),
+//        timestamp = timestamp,
+//        sentByMe = true,
+//        verified = false
+//    )
+//}
+//
+//fun SendMessageDto.toContactEntity(senderName: String): ContactEntity {
+//    return ContactEntity(
+//        profile = Profile(pluginConnection.id.toString(), null, null),
+//        latestMessage = LatestMessage(
+//            sender = senderName,
+//            content = contents.getContentString(),
+//            timestamp = timestamp,
+//            unreadMessagesNum = 0,
+//        ),
+//        contactId = pluginConnection.objectId,
+//        senderId = pluginConnection.objectId,
+//        isHidden = false,
+//        isPinned = false,
+//        isArchived = false,
+//        enableNotifications = true,
+//        tags = emptyList()
+//    )
+//}
 
 fun com.ojhdtapp.messagedto.Profile.toProfile(): Profile {
     return Profile(this.name, this.avatar, null)

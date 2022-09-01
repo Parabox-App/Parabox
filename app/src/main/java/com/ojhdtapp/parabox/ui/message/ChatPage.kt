@@ -113,6 +113,13 @@ fun ChatPage(
                     mainSharedViewModel = mainSharedViewModel,
                     sizeClass = sizeClass,
                     isInSplitScreen = isInSplitScreen,
+                    onRecallMessage = {
+                        onEvent(
+                            ActivityEvent.RecallMessage(
+                                messageId = it
+                            )
+                        )
+                    },
                     onStopSplitting = {
                         mainNavController.navigate(ChatPageDestination())
                     },
@@ -154,6 +161,7 @@ fun NormalChatPage(
     mainSharedViewModel: MainSharedViewModel,
     sizeClass: WindowSizeClass,
     isInSplitScreen: Boolean = false,
+    onRecallMessage: (messageId: Long) -> Unit,
     onStopSplitting: () -> Unit = {},
     onBackClick: () -> Unit,
     onSend: (contents: List<com.ojhdtapp.messagedto.message_content.MessageContent>) -> Unit
@@ -256,7 +264,9 @@ fun NormalChatPage(
                                 enter = fadeIn(),
                                 exit = fadeOut()
                             ) {
-                                IconButton(onClick = { }) {
+                                IconButton(onClick = {
+
+                                }) {
                                     Icon(
                                         imageVector = Icons.Outlined.Reply,
                                         contentDescription = "reply"
@@ -295,14 +305,28 @@ fun NormalChatPage(
                                     onDismissRequest = { menuExpanded = false },
                                     modifier = Modifier.width(192.dp)
                                 ) {
+                                    if (mainSharedViewModel.selectedMessageStateList.first().sentByMe) {
+                                        DropdownMenuItem(
+                                            text = { Text(text = "尝试撤回") },
+                                            onClick = {
+                                                onRecallMessage(mainSharedViewModel.selectedMessageStateList.first().messageId)
+                                                menuExpanded = false
+                                            },
+                                            leadingIcon = {
+                                                Icon(
+                                                    Icons.Outlined.Undo,
+                                                    contentDescription = null
+                                                )
+                                            })
+                                    }
                                     DropdownMenuItem(
-                                        text = { Text(text = "尝试撤回") },
+                                        text = { Text(text = "回复") },
                                         onClick = {
                                             menuExpanded = false
                                         },
                                         leadingIcon = {
                                             Icon(
-                                                Icons.Outlined.Undo,
+                                                Icons.Outlined.Reply,
                                                 contentDescription = null
                                             )
                                         })
@@ -562,7 +586,8 @@ fun NormalChatPage(
                             },
                             onQuoteReplyClick = { messageId ->
                                 coroutineScope.launch {
-                                    val idList = lazyPagingItems.itemSnapshotList.items.map { it.messageId }
+                                    val idList =
+                                        lazyPagingItems.itemSnapshotList.items.map { it.messageId }
                                     idList.lastIndexOf(messageId).also {
                                         if (it != -1) {
                                             scrollState.animateScrollToItem(it)

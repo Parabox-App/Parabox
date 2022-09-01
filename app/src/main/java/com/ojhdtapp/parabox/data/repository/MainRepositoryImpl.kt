@@ -2,6 +2,7 @@ package com.ojhdtapp.parabox.data.repository
 
 import android.content.Context
 import android.util.Log
+import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.paging.PagingSource
 import com.ojhdtapp.messagedto.ReceiveMessageDto
@@ -91,7 +92,11 @@ class MainRepositoryImpl @Inject constructor(
 //        database.contactMessageCrossRefDao.insertNewContactMessageCrossRef(dto.getContactMessageCrossRef())
     }
 
-    override suspend fun handleNewMessage(contents: List<com.ojhdtapp.messagedto.message_content.MessageContent>, pluginConnection: com.ojhdtapp.messagedto.PluginConnection, timestamp: Long) : Long {
+    override suspend fun handleNewMessage(
+        contents: List<com.ojhdtapp.messagedto.message_content.MessageContent>,
+        pluginConnection: com.ojhdtapp.messagedto.PluginConnection,
+        timestamp: Long
+    ): Long {
         return coroutineScope {
             val userName = context.dataStore.data
                 .catch { exception ->
@@ -106,13 +111,7 @@ class MainRepositoryImpl @Inject constructor(
                 }.firstOrNull() ?: "User"
 
             val messageIdDeferred = async<Long> {
-                database.messageDao.insertMessage(MessageEntity(
-                    contents = contents.toMessageContentList(),
-                    profile = Profile("", null, null),
-                    timestamp = timestamp,
-                    sentByMe = true,
-                    verified = false
-                ))
+                storeSendMessage(contents, timestamp)
             }
             val contactIdDeferred = async<Long> {
                 database.contactDao.insertContact(
@@ -177,6 +176,41 @@ class MainRepositoryImpl @Inject constructor(
                 })
             }
             messageIdDeferred.await()
+        }
+    }
+
+    private suspend fun storeSendMessage(
+        contents: List<MessageContent>,
+        timestamp: Long
+    ): Long {
+        val sendId = context.dataStore.data
+            .catch { exception ->
+                if (exception is IOException) {
+                    emit(emptyPreferences())
+                } else {
+                    throw exception
+                }
+            }
+            .map { settings ->
+                settings[DataStoreKeys.SEND_MESSAGE_ID] ?: 1L
+            }.firstOrNull() ?: 1L
+        context.dataStore.edit { settings ->
+            settings[DataStoreKeys.SEND_MESSAGE_ID] = sendId + 1
+        }
+        return database.messageDao.insertMessage(
+            MessageEntity(
+                contents = contents.toMessageContentList(),
+                profile = Profile("", null, null),
+                timestamp = timestamp,
+                messageId = sendId,
+                sentByMe = true,
+                verified = false
+            )
+        ).let {
+            if (it != -1L) it
+            else {
+                storeSendMessage(contents, timestamp)
+            }
         }
     }
 

@@ -8,5 +8,6 @@ import com.ojhdtapp.messagedto.message_content.MessageContent
 sealed class ActivityEvent{
     data class LaunchIntent(val intent: Intent) : ActivityEvent()
     data class SendMessage(val contents: List<MessageContent>, val pluginConnection: PluginConnection): ActivityEvent()
+    data class RecallMessage(val messageId: Long) : ActivityEvent()
     object SetUserAvatar: ActivityEvent()
 }
