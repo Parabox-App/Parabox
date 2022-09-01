@@ -169,16 +169,17 @@ fun NormalChatPage(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 //    val scrollFraction = scrollBehavior.state.overlappedFraction
 //    val topAppBarColor by TopAppBarDefaults.smallTopAppBarColors().containerColor(scrollFraction)
-    val colorTransitionFraction = scrollBehavior.state.overlappedFraction
-    val fraction = if (colorTransitionFraction > 0.01f) 1f else 0f
-    val appBarContainerColor by animateColorAsState(
-        targetValue = lerp(
-            MaterialTheme.colorScheme.surface,
-            MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
-            FastOutLinearInEasing.transform(fraction)
-        ),
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
-    )
+//    val colorTransitionFraction = scrollBehavior.state.overlappedFraction
+//    val fraction = if (colorTransitionFraction > 0.01f) 1f else 0f
+//    val appBarContainerColor by animateColorAsState(
+//        targetValue = lerp(
+//            MaterialTheme.colorScheme.surface,
+//            MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+//            FastOutLinearInEasing.transform(fraction)
+//        ),
+//        animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
+//    )
+    val appBarContainerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
     // Bottom Sheet
     val navigationBarHeight = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
     var changedTextFieldHeight by remember {
@@ -209,7 +210,7 @@ fun NormalChatPage(
     val context = LocalContext.current
     val clipboardManager: ClipboardManager = LocalClipboardManager.current
     BottomSheetScaffold(
-        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+//        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         scaffoldState = scaffoldState,
         topBar = {
             Crossfade(targetState = mainSharedViewModel.selectedMessageStateList.isNotEmpty()) {
@@ -319,7 +320,10 @@ fun NormalChatPage(
                                 }
                             }
                         },
-                        scrollBehavior = scrollBehavior
+                        colors = TopAppBarDefaults.smallTopAppBarColors(
+                            containerColor = appBarContainerColor
+                        )
+//                        scrollBehavior = scrollBehavior
                     )
                 } else {
                     SmallTopAppBar(
@@ -441,7 +445,10 @@ fun NormalChatPage(
                                 }
                             }
                         },
-                        scrollBehavior = scrollBehavior
+                        colors = TopAppBarDefaults.smallTopAppBarColors(
+                            containerColor = appBarContainerColor
+                        )
+//                        scrollBehavior = scrollBehavior,
                     )
                 }
             }
@@ -1070,7 +1077,8 @@ private fun MessageContent.toLayout(
                             if (quoteMessageId != null) {
                                 onQuoteReplyClick(quoteMessageId)
                             }
-                        }.padding(
+                        }
+                        .padding(
                             horizontal = 12.dp,
                             vertical = 12.dp
                         )
