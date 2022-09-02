@@ -124,6 +124,7 @@ fun MessagePage(
     }
     Row() {
         // Left
+        val contactWidthModifier = if(sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) modifier.width(400.dp) else modifier.weight(1f)
         GroupActionDialog(
             showDialog = viewModel.showGroupActionDialogState.value,
             state = viewModel.groupInfoState.value,
@@ -218,8 +219,7 @@ fun MessagePage(
                 })
         }
         Scaffold(
-            modifier = modifier
-                .weight(1f)
+            modifier = contactWidthModifier
                 .shadow(8.dp)
                 .zIndex(1f),
             snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
@@ -440,7 +440,7 @@ fun MessagePage(
         // Right
         if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) {
             ChatPage(
-                modifier = Modifier.width(560.dp),
+                modifier = Modifier.weight(1f),
                 navigator = navigator,
                 mainNavController = mainNavController,
                 mainSharedViewModel = mainSharedViewModel,

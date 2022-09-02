@@ -95,7 +95,9 @@ fun MenuPage(
                                 if (drawerState.isOpen) drawerState.close() else drawerState.open()
                             }
                         },
-                        onFABClick = {})
+                        onFABClick = {
+                            TODO("FAB")
+                        })
                 }
                 DestinationsNavHost(
                     navGraph = NavGraphs.menu,

@@ -134,7 +134,10 @@ class MessagePageViewModel @Inject constructor(
     val contactStateFlow get() = _contactStateFlow
 
     private val _archivedContactStateFlow: StateFlow<List<Contact>> =
-        getArchivedContacts().filter {
+        getArchivedContacts()
+            .combine(_contactRefreshFlow) { contacts, refresh ->
+                contacts
+            }.filter {
             if (it is Resource.Error) {
                 _uiEventFlow.emit(MessagePageUiEvent.ShowSnackBar(it.message!!))
                 return@filter false
@@ -144,7 +147,13 @@ class MessagePageViewModel @Inject constructor(
                 is Resource.Loading -> emptyList()
                 is Resource.Success -> {
                     showArchiveContact()
-                    it.data!!
+                    it.data!!.filter {
+                        typeFilter.value.contactCheck(it)
+                                && readFilter.value.contactCheck(it)
+                                && if (selectedContactTagStateList.isNotEmpty()) {
+                            (selectedContactTagStateList intersect it.tags.toSet()).isNotEmpty()
+                        } else true
+                    }.sortedByDescending { it.isPinned }
                 }
                 else -> emptyList()
             }
