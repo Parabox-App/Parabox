@@ -59,9 +59,12 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.ojhdtapp.messagedto.message_content.Image
 import com.ojhdtapp.messagedto.message_content.MessageContent
 import com.ojhdtapp.messagedto.message_content.PlainText
+import com.ojhdtapp.messagedto.message_content.QuoteReply
 import com.ojhdtapp.parabox.BuildConfig
 import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.toDateAndTimeString
+import com.ojhdtapp.parabox.domain.model.Message
+import com.ojhdtapp.parabox.domain.model.message_content.toMessageContentList
 import com.ojhdtapp.parabox.ui.util.clearFocusOnKeyboardDismiss
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -77,6 +80,7 @@ fun EditArea(
     modifier: Modifier = Modifier,
     isBottomSheetExpand: Boolean,
     packageNameList: List<String>,
+    quoteMessageSelected: Message?,
     onBottomSheetExpand: () -> Unit,
     onBottomSheetCollapse: () -> Unit,
     onSend: (contents: List<MessageContent>) -> Unit,
@@ -407,7 +411,7 @@ fun EditArea(
                     }
 
                 }
-                AnimatedVisibility(visible = (inputText.isNotEmpty() || gallerySelected.isNotEmpty() || cameraSelected.isNotEmpty()) && !audioState,
+                AnimatedVisibility(visible = (inputText.isNotEmpty() || gallerySelected.isNotEmpty() || cameraSelected.isNotEmpty() || quoteMessageSelected != null) && !audioState,
 //                    enter = slideInHorizontally { width -> width },
 //                    exit = slideOutHorizontally { width -> width }
                     enter = expandHorizontally() { width -> 0 },
@@ -416,6 +420,14 @@ fun EditArea(
                     FloatingActionButton(
                         onClick = {
                             val content = mutableListOf<MessageContent>()
+                            if(quoteMessageSelected != null){
+                                content.add(QuoteReply(
+                                    quoteMessageSenderName = quoteMessageSelected.profile.name,
+                                    quoteMessageTimestamp = quoteMessageSelected.timestamp,
+                                    quoteMessageId = quoteMessageSelected.messageId,
+                                    quoteMessageContent = quoteMessageSelected.contents.toMessageContentList()
+                                ))
+                            }
                             if (inputText.isNotEmpty()) {
                                 content.add(PlainText(inputText))
                             }
@@ -832,15 +844,15 @@ fun EditArea(
                                                             RoundedCornerShape(13.dp)
                                                         )
                                                 )
-                                                IconButton(
-                                                    modifier = Modifier.align(Alignment.TopEnd),
+                                                FilledIconButton(
+                                                    modifier = Modifier.size(32.dp).padding(4.dp).align(Alignment.TopEnd),
                                                     onClick = { gallerySelected.remove(it) },
-                                                    colors = IconButtonDefaults.iconButtonColors(
-                                                        contentColor = MaterialTheme.colorScheme.primary
-                                                    )
+//                                                    colors = IconButtonDefaults.iconButtonColors(
+//                                                        contentColor = MaterialTheme.colorScheme.primary
+//                                                    )
                                                 ) {
                                                     Icon(
-                                                        imageVector = Icons.Outlined.Cancel,
+                                                        imageVector = Icons.Outlined.Clear,
                                                         contentDescription = "delete"
                                                     )
                                                 }

@@ -83,40 +83,40 @@ fun com.ojhdtapp.messagedto.message_content.MessageContent.toMessageContent(): M
     return when (this) {
         is com.ojhdtapp.messagedto.message_content.PlainText -> PlainText(this.text)
         is com.ojhdtapp.messagedto.message_content.Image -> Image(
-            this.url,
-            this.width,
-            this.height,
-            this.uri?.toString()
+            url,
+            width,
+            height,
+            uri?.toString()
         )
         is com.ojhdtapp.messagedto.message_content.At -> com.ojhdtapp.parabox.domain.model.message_content.At(
-            this.target,
-            this.name
+            target,
+            name
         )
         is com.ojhdtapp.messagedto.message_content.AtAll -> com.ojhdtapp.parabox.domain.model.message_content.AtAll
         is com.ojhdtapp.messagedto.message_content.Audio -> Audio(
-            this.url,
-            this.length,
-            this.fileName,
-            this.fileSize,
-            this.uri?.toString()
+            url,
+            length,
+            fileName,
+            fileSize,
+            uri?.toString()
         )
         is com.ojhdtapp.messagedto.message_content.QuoteReply -> {
-            this.quoteMessageContent
+            quoteMessageContent
             com.ojhdtapp.parabox.domain.model.message_content.QuoteReply(
-                this.quoteMessageSenderName,
-                this.quoteMessageTimestamp,
-                this.quoteMessageId,
-                this.quoteMessageContent?.toMessageContentList()
+                quoteMessageSenderName,
+                quoteMessageTimestamp,
+                quoteMessageId,
+                quoteMessageContent?.toMessageContentList()
             )
         }
         is com.ojhdtapp.messagedto.message_content.File -> com.ojhdtapp.parabox.domain.model.message_content.File(
-            this.url,
-            this.name,
-            this.extension,
-            this.size,
-            this.lastModifiedTime,
-            this.expiryTime,
-            this.uri
+            url,
+            name,
+            extension,
+            size,
+            lastModifiedTime,
+            expiryTime,
+            uri
         )
         else -> PlainText(this.getContentString())
     }

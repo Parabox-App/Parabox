@@ -68,6 +68,7 @@ import com.ojhdtapp.parabox.domain.service.PluginService
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.ChatPageDestination
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
+import com.ojhdtapp.parabox.ui.util.onColor
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -128,6 +129,7 @@ fun ChatPage(
                         mainSharedViewModel.clearMessage()
                     },
                     onSend = {
+                        mainSharedViewModel.clearQuoteMessage()
                         val selectedPluginConnection = messageState.selectedPluginConnection
                             ?: messageState.pluginConnectionList.firstOrNull()
                         if (selectedPluginConnection == null) {
@@ -228,6 +230,13 @@ fun NormalChatPage(
         }
     }
 
+    // Quote
+    val quoteExtended by remember {
+        derivedStateOf {
+            !scrollState.isScrollInProgress
+        }
+    }
+
     var showDeleteMessageConfirmDialog by remember { mutableStateOf(false) }
     if (showDeleteMessageConfirmDialog) {
         AlertDialog(
@@ -313,7 +322,8 @@ fun NormalChatPage(
                                 exit = fadeOut()
                             ) {
                                 IconButton(onClick = {
-
+                                    mainSharedViewModel.setQuoteMessage(mainSharedViewModel.selectedMessageStateList.firstOrNull())
+                                    mainSharedViewModel.clearSelectedMessageStateList()
                                 }) {
                                     Icon(
                                         imageVector = Icons.Outlined.Reply,
@@ -376,6 +386,10 @@ fun NormalChatPage(
                                         DropdownMenuItem(
                                             text = { Text(text = "回复") },
                                             onClick = {
+                                                mainSharedViewModel.setQuoteMessage(
+                                                    mainSharedViewModel.selectedMessageStateList.firstOrNull()
+                                                )
+                                                mainSharedViewModel.clearSelectedMessageStateList()
                                                 menuExpanded = false
                                             },
                                             leadingIcon = {
@@ -547,21 +561,76 @@ fun NormalChatPage(
         },
         floatingActionButton = {
             AnimatedVisibility(
-                visible = fabExtended,
+                visible = mainSharedViewModel.quoteMessageState.value != null || fabExtended,
                 enter = slideInHorizontally { it * 2 }  // slide in from the right
                 , exit = slideOutHorizontally { it * 2 } // slide out to the right
             ) {
-                FloatingActionButton(onClick = {
-                    focusManager.clearFocus()
-                    coroutineScope.launch {
-                        scrollState.animateScrollToItem(0)
-                    }
-                }, modifier = Modifier.offset(y = (-42).dp)) {
-                    Icon(
-                        imageVector = Icons.Outlined.ArrowDownward,
-                        contentDescription = "to_latest"
-                    )
-                }
+                ExtendedFloatingActionButton(
+                    expanded = mainSharedViewModel.quoteMessageState.value != null && quoteExtended,
+                    onClick = {
+                        if (mainSharedViewModel.quoteMessageState.value != null) {
+                            coroutineScope.launch {
+                                val idList =
+                                    lazyPagingItems.itemSnapshotList.items.map { it.messageId }
+                                idList.lastIndexOf(mainSharedViewModel.quoteMessageState.value?.messageId)
+                                    .also {
+                                        if (it != -1) {
+                                            scrollState.animateScrollToItem(it)
+                                        } else {
+                                            Toast.makeText(context, "无法定位消息", Toast.LENGTH_SHORT)
+                                                .show()
+                                        }
+                                    }
+                            }
+                        } else {
+                            focusManager.clearFocus()
+                            coroutineScope.launch {
+                                scrollState.animateScrollToItem(0)
+                            }
+                        }
+                    }, modifier = Modifier.offset(y = (-42).dp),
+                    icon = {
+                        Crossfade(targetState = mainSharedViewModel.quoteMessageState.value != null) {
+                            if (it) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Reply,
+                                    contentDescription = "reply"
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Outlined.ArrowDownward,
+                                    contentDescription = "to_latest"
+                                )
+                            }
+                        }
+                    },
+                    text = {
+                        mainSharedViewModel.quoteMessageState.value?.let {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Column(modifier = Modifier.widthIn(0.dp, 208.dp)) {
+                                    Text(
+                                        text = it.profile.name,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = it.contents.getContentString(),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                                IconButton(onClick = { mainSharedViewModel.clearQuoteMessage() }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Close,
+                                        contentDescription = "cancel"
+                                    )
+                                }
+                            }
+                        }
+                    })
             }
             Spacer(modifier = Modifier.size(1.dp))
         },
@@ -569,6 +638,7 @@ fun NormalChatPage(
             EditArea(
                 isBottomSheetExpand = scaffoldState.bottomSheetState.isExpanded,
                 packageNameList = pluginPackageNameList,
+                quoteMessageSelected = mainSharedViewModel.quoteMessageState.value,
                 onBottomSheetExpand = {
                     coroutineScope.launch {
                         scaffoldState.bottomSheetState.expand()
@@ -1003,6 +1073,13 @@ fun SingleMessage(
             if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
         }
     )
+    val reverseTextColor by animateColorAsState(
+        targetValue = if (!message.sentByMe) {
+            if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondary
+        } else {
+            if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+        }
+    )
     Row(verticalAlignment = Alignment.Bottom) {
         if (message.sentByMe && !message.verified) {
             if (abs(System.currentTimeMillis() - message.timestamp) > 6000) {
@@ -1040,6 +1117,7 @@ fun SingleMessage(
             message.contents.forEachIndexed { index, messageContent ->
                 messageContent.toLayout(
                     textColor,
+                    reverseTextColor,
                     context,
                     density,
                     index,
@@ -1058,6 +1136,7 @@ fun SingleMessage(
 @Composable
 private fun MessageContent.toLayout(
     textColor: Color,
+    reverseTextColor: Color,
     context: Context,
     density: Density,
     index: Int,
@@ -1159,7 +1238,8 @@ private fun MessageContent.toLayout(
             Surface(
                 modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = 8.dp),
                 shape = RoundedCornerShape(16.dp),
-                color = MaterialTheme.colorScheme.surface
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 1.dp
             ) {
                 Column(
                     modifier = Modifier
@@ -1197,6 +1277,7 @@ private fun MessageContent.toLayout(
                     }
                     quoteMessageContent?.forEachIndexed { index, messageContent ->
                         messageContent.toLayout(
+                            reverseTextColor,
                             textColor,
                             context,
                             density,

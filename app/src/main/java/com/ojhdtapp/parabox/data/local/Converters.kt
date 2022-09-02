@@ -24,60 +24,62 @@ class Converters(
         val res = mutableListOf<MessageContent>()
         json.split(delimiter1).forEach {
             val subList = it.split(delimiter2, limit = 2)
-            when (subList[1].toInt()) {
-                MessageContent.PLAIN_TEXT -> {
-                    jsonParser.fromJson<PlainText>(
-                        subList[0],
-                        object : TypeToken<PlainText>() {}.type
-                    )
+            if (subList.size == 2) {
+                when (subList[1].toInt()) {
+                    MessageContent.PLAIN_TEXT -> {
+                        jsonParser.fromJson<PlainText>(
+                            subList[0],
+                            object : TypeToken<PlainText>() {}.type
+                        )
+                    }
+                    MessageContent.IMAGE -> {
+                        jsonParser.fromJson<Image>(
+                            subList[0],
+                            object : TypeToken<Image>() {}.type
+                        )
+                    }
+                    MessageContent.AT -> {
+                        jsonParser.fromJson<At>(
+                            subList[0],
+                            object : TypeToken<At>() {}.type
+                        )
+                    }
+                    MessageContent.AT_ALL -> {
+                        jsonParser.fromJson<AtAll>(
+                            subList[0],
+                            object : TypeToken<AtAll>() {}.type
+                        )
+                    }
+                    MessageContent.AUDIO -> {
+                        jsonParser.fromJson<Audio>(
+                            subList[0],
+                            object : TypeToken<Audio>() {}.type
+                        )
+                    }
+                    MessageContent.QUOTE_REPLY -> {
+                        val quoteReplySubList = subList[0].split(delimiter3, limit = 2)
+                        val metadata = jsonParser.fromJson<QuoteReplyMetadata>(
+                            quoteReplySubList[0],
+                            object : TypeToken<QuoteReplyMetadata>() {}.type
+                        )
+                        val content = fromQuoteMessageContentListJson(quoteReplySubList[1])
+                        QuoteReply(
+                            metadata?.quoteMessageSenderName,
+                            metadata?.quoteMessageTimestamp,
+                            metadata?.quoteMessageId,
+                            content
+                        )
+                    }
+                    MessageContent.FILE -> {
+                        jsonParser.fromJson<File>(
+                            subList[0],
+                            object : TypeToken<File>() {}.type
+                        )
+                    }
+                    else -> null
+                }?.let {
+                    res.add(it)
                 }
-                MessageContent.IMAGE -> {
-                    jsonParser.fromJson<Image>(
-                        subList[0],
-                        object : TypeToken<Image>() {}.type
-                    )
-                }
-                MessageContent.AT -> {
-                    jsonParser.fromJson<At>(
-                        subList[0],
-                        object : TypeToken<At>() {}.type
-                    )
-                }
-                MessageContent.AT_ALL -> {
-                    jsonParser.fromJson<AtAll>(
-                        subList[0],
-                        object : TypeToken<AtAll>() {}.type
-                    )
-                }
-                MessageContent.AUDIO -> {
-                    jsonParser.fromJson<Audio>(
-                        subList[0],
-                        object : TypeToken<Audio>() {}.type
-                    )
-                }
-                MessageContent.QUOTE_REPLY -> {
-                    val quoteReplySubList = subList[0].split(delimiter3, limit = 2)
-                    val metadata = jsonParser.fromJson<QuoteReplyMetadata>(
-                        quoteReplySubList[0],
-                        object : TypeToken<QuoteReplyMetadata>() {}.type
-                    )
-                    val content = fromQuoteMessageContentListJson(quoteReplySubList[1])
-                    QuoteReply(
-                        metadata?.quoteMessageSenderName,
-                        metadata?.quoteMessageTimestamp,
-                        metadata?.quoteMessageId,
-                        content
-                    )
-                }
-                MessageContent.FILE -> {
-                    jsonParser.fromJson<File>(
-                        subList[0],
-                        object : TypeToken<File>() {}.type
-                    )
-                }
-                else -> null
-            }?.let {
-                res.add(it)
             }
         }
         return res
@@ -231,47 +233,49 @@ class Converters(
         val res = mutableListOf<MessageContent>()
         json.split(delimiter4).forEach {
             val subList = it.split(delimiter5, limit = 2)
-            when (subList[1].toInt()) {
-                MessageContent.PLAIN_TEXT -> {
-                    jsonParser.fromJson<PlainText>(
-                        subList[0],
-                        object : TypeToken<PlainText>() {}.type
-                    )
+            if (subList.size == 2) {
+                when (subList[1].toInt()) {
+                    MessageContent.PLAIN_TEXT -> {
+                        jsonParser.fromJson<PlainText>(
+                            subList[0],
+                            object : TypeToken<PlainText>() {}.type
+                        )
+                    }
+                    MessageContent.IMAGE -> {
+                        jsonParser.fromJson<Image>(
+                            subList[0],
+                            object : TypeToken<Image>() {}.type
+                        )
+                    }
+                    MessageContent.AT -> {
+                        jsonParser.fromJson<At>(
+                            subList[0],
+                            object : TypeToken<At>() {}.type
+                        )
+                    }
+                    MessageContent.AT_ALL -> {
+                        jsonParser.fromJson<AtAll>(
+                            subList[0],
+                            object : TypeToken<AtAll>() {}.type
+                        )
+                    }
+                    MessageContent.AUDIO -> {
+                        jsonParser.fromJson<Audio>(
+                            subList[0],
+                            object : TypeToken<Audio>() {}.type
+                        )
+                    }
+                    MessageContent.QUOTE_REPLY -> null
+                    MessageContent.FILE -> {
+                        jsonParser.fromJson<File>(
+                            subList[0],
+                            object : TypeToken<File>() {}.type
+                        )
+                    }
+                    else -> null
+                }?.let {
+                    res.add(it)
                 }
-                MessageContent.IMAGE -> {
-                    jsonParser.fromJson<Image>(
-                        subList[0],
-                        object : TypeToken<Image>() {}.type
-                    )
-                }
-                MessageContent.AT -> {
-                    jsonParser.fromJson<At>(
-                        subList[0],
-                        object : TypeToken<At>() {}.type
-                    )
-                }
-                MessageContent.AT_ALL -> {
-                    jsonParser.fromJson<AtAll>(
-                        subList[0],
-                        object : TypeToken<AtAll>() {}.type
-                    )
-                }
-                MessageContent.AUDIO -> {
-                    jsonParser.fromJson<Audio>(
-                        subList[0],
-                        object : TypeToken<Audio>() {}.type
-                    )
-                }
-                MessageContent.QUOTE_REPLY -> null
-                MessageContent.FILE -> {
-                    jsonParser.fromJson<File>(
-                        subList[0],
-                        object : TypeToken<File>() {}.type
-                    )
-                }
-                else -> null
-            }?.let {
-                res.add(it)
             }
         }
         return res

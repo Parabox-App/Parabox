@@ -52,6 +52,7 @@ class MainSharedViewModel @Inject constructor(
     val messageStateFlow: StateFlow<MessageState> = _messageStateFlow.asStateFlow()
 
     fun loadMessageFromContact(contact: Contact) {
+        clearQuoteMessage()
         _messageStateFlow.value = MessageState()
         _selectedMessageStateList.clear()
         _messageStateFlow.value = MessageState(MessageState.LOADING, contact)
@@ -108,6 +109,16 @@ class MainSharedViewModel @Inject constructor(
     val pluginListStateFlow = _pluginListStateFlow.asStateFlow()
     fun setPluginListStateFlow(value: List<AppModel>) {
         _pluginListStateFlow.value = value
+    }
+
+    // Quote Message
+    private val _quoteMessageState = mutableStateOf<Message?>(null)
+    val quoteMessageState : State<Message?> = _quoteMessageState
+    fun setQuoteMessage(value : Message?){
+        _quoteMessageState.value = value
+    }
+    fun clearQuoteMessage(){
+        _quoteMessageState.value = null
     }
 
     // User name

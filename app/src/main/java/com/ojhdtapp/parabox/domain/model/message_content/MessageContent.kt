@@ -1,6 +1,9 @@
 package com.ojhdtapp.parabox.domain.model.message_content
 
+import android.net.Uri
 import android.os.Parcelable
+import com.ojhdtapp.parabox.data.remote.dto.toMessageContent
+import com.ojhdtapp.parabox.data.remote.dto.toMessageContentList
 
 interface MessageContent : Parcelable {
     companion object{
@@ -21,4 +24,30 @@ fun List<MessageContent>.getContentString() : String{
         builder.append(it.getContentString())
     }
     return builder.toString()
+}
+
+fun MessageContent.toMessageContent():com.ojhdtapp.messagedto.message_content.MessageContent{
+    return when(this){
+        is PlainText -> com.ojhdtapp.messagedto.message_content.PlainText(text)
+        is Image -> com.ojhdtapp.messagedto.message_content.Image(
+            url, width, height, uriString?.let { Uri.parse(it) }
+        )
+        is AtAll -> com.ojhdtapp.messagedto.message_content.AtAll
+        is Audio -> com.ojhdtapp.messagedto.message_content.Audio(
+            url, length, fileName, fileSize, uriString?.let { Uri.parse(it) }
+        )
+        is QuoteReply -> com.ojhdtapp.messagedto.message_content.QuoteReply(
+            quoteMessageSenderName, quoteMessageTimestamp, quoteMessageId, quoteMessageContent?.toMessageContentList()
+        )
+        is File -> com.ojhdtapp.messagedto.message_content.File(
+            url, name, extension, size, lastModifiedTime, expiryTime, uri
+        )
+        else -> com.ojhdtapp.messagedto.message_content.PlainText(getContentString())
+    }
+}
+
+fun List<MessageContent>.toMessageContentList() : List<com.ojhdtapp.messagedto.message_content.MessageContent>{
+    return this.map {
+        it.toMessageContent()
+    }
 }
