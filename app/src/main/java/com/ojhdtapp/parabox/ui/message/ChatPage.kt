@@ -1145,7 +1145,7 @@ private fun MessageContent.toLayout(
     message: Message,
     bottomEndRadius: Dp,
     bottomStartRadius: Dp,
-    onQuoteReplyClick: (messageId: Long) -> Unit = {},
+    onQuoteReplyClick: (messageId: Long) -> Unit = {}
 ) {
     when (this) {
         is At, AtAll -> Text(
@@ -1277,8 +1277,8 @@ private fun MessageContent.toLayout(
                     }
                     quoteMessageContent?.forEachIndexed { index, messageContent ->
                         messageContent.toLayout(
-                            reverseTextColor,
-                            textColor,
+                            if (message.sentByMe) reverseTextColor else textColor,
+                            if (message.sentByMe) textColor else reverseTextColor,
                             context,
                             density,
                             index,
@@ -1286,7 +1286,7 @@ private fun MessageContent.toLayout(
                             0.dp,
                             message,
                             0.dp,
-                            0.dp
+                            0.dp,
                         )
                     }
                     if (quoteMessageContent == null) {

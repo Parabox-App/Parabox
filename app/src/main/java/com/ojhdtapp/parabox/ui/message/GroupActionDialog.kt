@@ -233,27 +233,25 @@ fun GroupEditForm(
     onSelectedAvatarChange: (value: String?) -> Unit
 ) {
 
+    val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
+    val inputService = LocalTextInputService.current
+    LaunchedEffect(true) {
+        delay(300)
+        inputService?.showSoftwareKeyboard()
+        focusRequester.requestFocus()
+    }
+    var expanded by remember {
+        mutableStateOf(false)
+    }
     LazyColumn(
         modifier = Modifier
             .padding(paddingValues)
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-//        item{
-//            Text(text = "基本信息", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-//        }
+
         item {
-            val focusRequester = remember { FocusRequester() }
-            val focusManager = LocalFocusManager.current
-            val inputService = LocalTextInputService.current
-            LaunchedEffect(true) {
-                delay(300)
-                inputService?.showSoftwareKeyboard()
-                focusRequester.requestFocus()
-            }
-            BackHandler(enabled = true) {
-                focusManager.clearFocus()
-            }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
@@ -279,53 +277,79 @@ fun GroupEditForm(
                     )
                 }
                 Spacer(modifier = Modifier.width(16.dp))
-                OutlinedTextField(
-                    modifier = Modifier
-                        .weight(1f)
-                        .focusRequester(focusRequester),
-                    value = name, onValueChange = {
-                        onNameChange(it)
-                    },
-                    label = { Text(text = "会话名称") },
-                    isError = nameError,
-                    keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-                    singleLine = true,
-                    trailingIcon = {
-                        var expanded by remember {
-                            mutableStateOf(false)
-                        }
-                        Box(
-                            modifier = Modifier
-                                .wrapContentSize(Alignment.TopEnd)
+                ExposedDropdownMenuBox(modifier = Modifier.weight(1f),expanded = expanded, onExpandedChange = {expanded = !expanded}) {
+                    OutlinedTextField(
+                        modifier = Modifier
+                            .focusRequester(focusRequester),
+                        value = name, onValueChange = onNameChange,
+                        label = { Text(text = "会话名称") },
+                        isError = nameError,
+                        keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+                        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                        singleLine = true,
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        colors = ExposedDropdownMenuDefaults.textFieldColors(),
+                    )
+                    if (resource.name.isNotEmpty()) {
+                        ExposedDropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false },
                         ) {
-                            IconButton(onClick = { expanded = !expanded }) {
-                                Crossfade(targetState = expanded) {
-                                    if (it) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.ExpandLess,
-                                            contentDescription = "Shrink"
-                                        )
-                                    } else {
-                                        Icon(
-                                            imageVector = Icons.Outlined.ExpandMore,
-                                            contentDescription = "Expand"
-                                        )
-                                    }
-                                }
-                            }
-                            DropdownMenu(
-                                expanded = expanded,
-                                onDismissRequest = { expanded = false }) {
-                                resource.name.forEach {
-                                    DropdownMenuItem(text = { Text(text = it) }, onClick = {
-                                        onNameChange(it)
+                            resource.name.forEach { selectionOption ->
+                                DropdownMenuItem(
+                                    text = { Text(selectionOption) },
+                                    onClick = {
+                                        onNameChange(selectionOption)
                                         expanded = false
-                                    })
-                                }
+                                    }
+                                )
                             }
                         }
-                    })
+                    }
+                }
+//                OutlinedTextField(
+//                    modifier = Modifier
+//                        .focusRequester(focusRequester),
+//                    value = name, onValueChange = {
+//                        onNameChange(it)
+//                    },
+//                    label = { Text(text = "会话名称") },
+//                    isError = nameError,
+//                    keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+//                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+//                    singleLine = true,
+//                    trailingIcon = {
+//                        Box(
+//                            modifier = Modifier
+//                                .wrapContentSize(Alignment.TopEnd)
+//                        ) {
+//                            IconButton(onClick = { expanded = !expanded }) {
+//                                Crossfade(targetState = expanded) {
+//                                    if (it) {
+//                                        Icon(
+//                                            imageVector = Icons.Outlined.ExpandLess,
+//                                            contentDescription = "Shrink"
+//                                        )
+//                                    } else {
+//                                        Icon(
+//                                            imageVector = Icons.Outlined.ExpandMore,
+//                                            contentDescription = "Expand"
+//                                        )
+//                                    }
+//                                }
+//                            }
+//                            DropdownMenu(
+//                                expanded = expanded,
+//                                onDismissRequest = { expanded = false }) {
+//                                resource.name.forEach {
+//                                    DropdownMenuItem(text = { Text(text = it) }, onClick = {
+//                                        onNameChange(it)
+//                                        expanded = false
+//                                    })
+//                                }
+//                            }
+//                        }
+//                    })
             }
             AnimatedVisibility(
                 visible = nameError,
