@@ -43,7 +43,11 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.getTextAfterSelection
+import androidx.compose.ui.text.input.getTextBeforeSelection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.core.content.FileProvider
@@ -114,8 +118,15 @@ fun EditArea(
     var emojiState by remember {
         mutableStateOf(false)
     }
-    var inputText by remember {
-        mutableStateOf("")
+//    var inputText by remember {
+//        mutableStateOf("")
+//    }
+    var textFieldValueState by remember {
+        mutableStateOf(
+            TextFieldValue(
+                text = ""
+            )
+        )
     }
     var shouldToolbarShrink by remember {
         mutableStateOf(false)
@@ -338,7 +349,7 @@ fun EditArea(
                             onBottomSheetCollapse()
                             isEditing = true
                             coroutineScope.launch {
-                                delay(200)
+                                delay(150)
                                 relocation.bringIntoView()
                             }
                         }
@@ -355,7 +366,11 @@ fun EditArea(
                                     .defaultMinSize(minHeight = 48.dp)
                                     .weight(1f)
                                     .padding(12.dp)
-                                    .onSizeChanged { onTextFieldHeightChange(it.height - originalBoxHeight) },
+                                    .onSizeChanged { onTextFieldHeightChange(it.height - originalBoxHeight)
+                                        coroutineScope.launch {
+                                            delay(150)
+                                            relocation.bringIntoView()
+                                        }},
                                 contentAlignment = Alignment.CenterStart
                             ) {
                                 val focusRequester = remember { FocusRequester() }
@@ -375,18 +390,18 @@ fun EditArea(
                                         .clearFocusOnKeyboardDismiss() {
                                             isEditing = false
                                         },
-                                    value = inputText,
+                                    value = textFieldValueState,
                                     onValueChange = {
-                                        if (it.length > 6) shouldToolbarShrink = true
-                                        else if (it.isEmpty()) shouldToolbarShrink = false
-                                        inputText = it
+                                        if (it.text.length > 6) shouldToolbarShrink = true
+                                        else if (it.text.isEmpty()) shouldToolbarShrink = false
+                                        textFieldValueState = it
                                     },
                                     enabled = isEditing && !audioState,
                                     textStyle = MaterialTheme.typography.bodyLarge.merge(
                                         TextStyle(color = MaterialTheme.colorScheme.onSurface)
                                     ),
                                     decorationBox = { innerTextField ->
-                                        if (inputText.isEmpty()) {
+                                        if (textFieldValueState.text.isEmpty()) {
                                             Text(
                                                 text = "输入内容",
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -398,7 +413,7 @@ fun EditArea(
                                 )
                             }
                             AnimatedVisibility(
-                                visible = inputText.isEmpty() && gallerySelected.isEmpty() && cameraSelected.isEmpty(),
+                                visible = textFieldValueState.text.isEmpty() && gallerySelected.isEmpty() && cameraSelected.isEmpty(),
                                 enter = fadeIn(),
                                 exit = fadeOut()
                             ) {
@@ -421,7 +436,7 @@ fun EditArea(
                     }
 
                 }
-                AnimatedVisibility(visible = (inputText.isNotEmpty() || gallerySelected.isNotEmpty() || cameraSelected.isNotEmpty() || quoteMessageSelected != null) && !audioState,
+                AnimatedVisibility(visible = (textFieldValueState.text.isNotEmpty() || gallerySelected.isNotEmpty() || cameraSelected.isNotEmpty() || quoteMessageSelected != null) && !audioState,
 //                    enter = slideInHorizontally { width -> width },
 //                    exit = slideOutHorizontally { width -> width }
                     enter = expandHorizontally() { width -> 0 },
@@ -440,8 +455,8 @@ fun EditArea(
                                     )
                                 )
                             }
-                            if (inputText.isNotEmpty()) {
-                                content.add(PlainText(inputText))
+                            if (textFieldValueState.text.isNotEmpty()) {
+                                content.add(PlainText(textFieldValueState.text))
                             }
                             gallerySelected.forEach {
                                 FileUtil.getUriByCopyingFileToPath(
@@ -484,7 +499,9 @@ fun EditArea(
                                 onSend(content)
                                 onBottomSheetCollapse()
                             }
-                            inputText = ""
+                            textFieldValueState = TextFieldValue(
+                                text = ""
+                            )
                             gallerySelected.clear()
                             cameraSelected.clear()
                         },
@@ -693,7 +710,28 @@ fun EditArea(
                                                 modifier = Modifier
                                                     .fillMaxSize()
                                                     .clickable {
-                                                        inputText += it
+                                                        val value =
+                                                            textFieldValueState.let { textFieldValue ->
+                                                                textFieldValue
+                                                                    .getTextBeforeSelection(
+                                                                        500
+                                                                    )
+                                                                    .toString()
+                                                                    .plus(it)
+                                                                    .plus(
+                                                                        textFieldValue.getTextAfterSelection(
+                                                                            500
+                                                                        )
+                                                                    )
+                                                                    .toString()
+                                                            }
+                                                        textFieldValueState =
+                                                            textFieldValueState.copy(
+                                                                text = value,
+                                                                selection = TextRange(
+                                                                    textFieldValueState.selection.end + it.length
+                                                                )
+                                                            )
                                                     },
                                                 contentAlignment = Alignment.Center
                                             ) {
