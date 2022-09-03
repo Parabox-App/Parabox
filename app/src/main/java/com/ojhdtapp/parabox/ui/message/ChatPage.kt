@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Build.VERSION.SDK_INT
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.Spring
@@ -331,7 +332,12 @@ fun NormalChatPage(
                                 exit = fadeOut()
                             ) {
                                 IconButton(onClick = {
-                                    mainSharedViewModel.setQuoteMessage(mainSharedViewModel.selectedMessageStateList.firstOrNull(), name = userName)
+                                    if (mainSharedViewModel.selectedMessageStateList.size == 1) {
+                                        mainSharedViewModel.setQuoteMessage(
+                                            mainSharedViewModel.selectedMessageStateList.firstOrNull(),
+                                            name = userName
+                                        )
+                                    }
                                     mainSharedViewModel.clearSelectedMessageStateList()
                                 }) {
                                     Icon(
@@ -372,16 +378,18 @@ fun NormalChatPage(
                                     onDismissRequest = { menuExpanded = false },
                                     modifier = Modifier.width(192.dp)
                                 ) {
-                                    if (mainSharedViewModel.selectedMessageStateList.first().sentByMe) {
+                                    if (mainSharedViewModel.selectedMessageStateList.firstOrNull()?.sentByMe == true) {
                                         DropdownMenuItem(
                                             text = { Text(text = "尝试撤回") },
                                             onClick = {
-                                                val message =
-                                                    mainSharedViewModel.selectedMessageStateList.first()
-                                                onRecallMessage(
-                                                    message.sendType!!,
-                                                    message.messageId
-                                                )
+                                                if (mainSharedViewModel.selectedMessageStateList.size == 1) {
+                                                    val message =
+                                                        mainSharedViewModel.selectedMessageStateList.first()
+                                                    onRecallMessage(
+                                                        message.sendType!!,
+                                                        message.messageId
+                                                    )
+                                                }
                                                 menuExpanded = false
                                             },
                                             leadingIcon = {
@@ -395,9 +403,11 @@ fun NormalChatPage(
                                         DropdownMenuItem(
                                             text = { Text(text = "回复") },
                                             onClick = {
-                                                mainSharedViewModel.setQuoteMessage(
-                                                    mainSharedViewModel.selectedMessageStateList.firstOrNull(), userName
-                                                )
+                                                if (mainSharedViewModel.selectedMessageStateList.size == 1)
+                                                    mainSharedViewModel.setQuoteMessage(
+                                                        mainSharedViewModel.selectedMessageStateList.firstOrNull(),
+                                                        userName
+                                                    )
                                                 mainSharedViewModel.clearSelectedMessageStateList()
                                                 menuExpanded = false
                                             },
@@ -677,6 +687,18 @@ fun NormalChatPage(
         sheetPeekHeight = peakHeight,
         sheetElevation = 3.dp
     ) {
+        // Back Handlers (The last execute first)
+        BackHandler(enabled = mainSharedViewModel.quoteMessageState.value != null) {
+            mainSharedViewModel.clearQuoteMessage()
+        }
+        BackHandler(enabled = mainSharedViewModel.selectedMessageStateList.size != 0) {
+            mainSharedViewModel.clearSelectedMessageStateList()
+        }
+        BackHandler(enabled = scaffoldState.bottomSheetState.isExpanded) {
+            coroutineScope.launch {
+                scaffoldState.bottomSheetState.collapse()
+            }
+        }
         if (messageState.state == MessageState.LOADING || lazyPagingItems.itemCount == 0) {
             Box(
                 modifier = Modifier
@@ -694,8 +716,7 @@ fun NormalChatPage(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surface)
-                    .imeNestedScroll(),
+                    .background(MaterialTheme.colorScheme.surface),
                 state = scrollState,
                 contentPadding = it,
                 reverseLayout = true

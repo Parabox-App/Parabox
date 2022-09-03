@@ -2,6 +2,7 @@
 
 package com.ojhdtapp.parabox.ui.message
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -121,6 +122,12 @@ fun MessagePage(
                 }
             }
         }
+    }
+    BackHandler(enabled = viewModel.areaState.value != AreaState.MessageArea
+            || viewModel.searchBarActivateState.value != SearchAppBar.NONE) {
+        viewModel.setSearchBarActivateState(SearchAppBar.NONE)
+        viewModel.clearSelectedContactStateList()
+        viewModel.setAreaState(AreaState.MessageArea)
     }
     Row() {
         // Left
