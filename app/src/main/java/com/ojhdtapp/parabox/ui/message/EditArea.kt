@@ -81,12 +81,16 @@ fun EditArea(
     isBottomSheetExpand: Boolean,
     packageNameList: List<String>,
     quoteMessageSelected: Message?,
+    audioState: Boolean,
+    onAudioStateChanged: (value: Boolean) -> Unit,
     onBottomSheetExpand: () -> Unit,
     onBottomSheetCollapse: () -> Unit,
     onSend: (contents: List<MessageContent>) -> Unit,
     onTextFieldHeightChange: (height: Int) -> Unit
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val density = LocalDensity.current
 
     // Meme
     val memeList = remember {
@@ -106,10 +110,6 @@ fun EditArea(
     }
     val cameraSelected = remember {
         mutableStateListOf<Uri>()
-    }
-
-    var audioState by remember {
-        mutableStateOf(false)
     }
     var emojiState by remember {
         mutableStateOf(false)
@@ -263,7 +263,7 @@ fun EditArea(
                                         onBottomSheetCollapse()
                                     }
                                 }
-
+                                onAudioStateChanged(false)
                             }) {
                                 Icon(
                                     imageVector = Icons.Outlined.AddCircleOutline,
@@ -282,6 +282,7 @@ fun EditArea(
                                         onBottomSheetCollapse()
                                     }
                                 }
+                                onAudioStateChanged(false)
                             }) {
                                 Icon(
                                     imageVector = Icons.Outlined.EmojiEmotions,
@@ -318,7 +319,9 @@ fun EditArea(
                                 ) {
                                     Text(text = "长按录制", color = MaterialTheme.colorScheme.primary)
                                 }
-                                IconButton(onClick = { audioState = false }) {
+                                IconButton(onClick = {
+                                    onAudioStateChanged(false)
+                                }) {
                                     Icon(
                                         imageVector = Icons.Outlined.Keyboard,
                                         contentDescription = "keyboard",
@@ -332,14 +335,17 @@ fun EditArea(
                         shape = RoundedCornerShape(24.dp),
                         color = MaterialTheme.colorScheme.surfaceVariant,
                         onClick = {
+                            onBottomSheetCollapse()
                             isEditing = true
+                            coroutineScope.launch {
+                                delay(200)
+                                relocation.bringIntoView()
+                            }
                         }
                     ) {
-                        val originalBoxHeight = with(LocalDensity.current) {
+                        val originalBoxHeight = with(density) {
                             24.dp.toPx().toInt()
                         }
-                        //temp
-//                    val originalBoxHeight = 56
                         Row(
                             horizontalArrangement = Arrangement.Start,
                             verticalAlignment = Alignment.CenterVertically
@@ -352,16 +358,19 @@ fun EditArea(
                                     .onSizeChanged { onTextFieldHeightChange(it.height - originalBoxHeight) },
                                 contentAlignment = Alignment.CenterStart
                             ) {
-                                val scope = rememberCoroutineScope()
                                 val focusRequester = remember { FocusRequester() }
                                 LaunchedEffect(isEditing) {
                                     if (isEditing) focusRequester.requestFocus()
                                 }
                                 BasicTextField(
                                     modifier = Modifier
-                                        .onFocusEvent {
-                                            if (it.isFocused) scope.launch { delay(200); relocation.bringIntoView() }
-                                        }
+                                        .fillMaxWidth()
+//                                        .onFocusEvent {
+//                                            if (it.isFocused) coroutineScope.launch {
+//                                                delay(200)
+//                                                relocation.bringIntoView()
+//                                            }
+//                                        }
                                         .focusRequester(focusRequester)
                                         .clearFocusOnKeyboardDismiss() {
                                             isEditing = false
@@ -395,7 +404,8 @@ fun EditArea(
                             ) {
                                 IconButton(onClick = {
                                     if (audioPermissionState.status.isGranted) {
-                                        audioState = true
+                                        onBottomSheetCollapse()
+                                        onAudioStateChanged(true)
                                         isEditing = false
                                     } else {
                                         permissionDeniedDialog.value = true
@@ -420,13 +430,15 @@ fun EditArea(
                     FloatingActionButton(
                         onClick = {
                             val content = mutableListOf<MessageContent>()
-                            if(quoteMessageSelected != null){
-                                content.add(QuoteReply(
-                                    quoteMessageSenderName = quoteMessageSelected.profile.name,
-                                    quoteMessageTimestamp = quoteMessageSelected.timestamp,
-                                    quoteMessageId = quoteMessageSelected.messageId,
-                                    quoteMessageContent = quoteMessageSelected.contents.toMessageContentList()
-                                ))
+                            if (quoteMessageSelected != null) {
+                                content.add(
+                                    QuoteReply(
+                                        quoteMessageSenderName = quoteMessageSelected.profile.name,
+                                        quoteMessageTimestamp = quoteMessageSelected.timestamp,
+                                        quoteMessageId = quoteMessageSelected.messageId,
+                                        quoteMessageContent = quoteMessageSelected.contents.toMessageContentList()
+                                    )
+                                )
                             }
                             if (inputText.isNotEmpty()) {
                                 content.add(PlainText(inputText))
@@ -439,10 +451,14 @@ fun EditArea(
                                     "Image_${System.currentTimeMillis().toDateAndTimeString()}.jpg",
                                     it
                                 )?.also {
-                                    packageNameList.forEach{ packageName ->
-                                        context.grantUriPermission(packageName, it, Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    packageNameList.forEach { packageName ->
+                                        context.grantUriPermission(
+                                            packageName,
+                                            it,
+                                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                        )
                                     }
-                                    val intent = Intent().apply{
+                                    val intent = Intent().apply {
                                         addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                         setDataAndType(it, "image/*")
                                     }
@@ -450,10 +466,14 @@ fun EditArea(
                                 }
                             }
                             cameraSelected.forEach {
-                                packageNameList.forEach{ packageName ->
-                                    context.grantUriPermission(packageName, it, Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                packageNameList.forEach { packageName ->
+                                    context.grantUriPermission(
+                                        packageName,
+                                        it,
+                                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                    )
                                 }
-                                val intent = Intent().apply{
+                                val intent = Intent().apply {
                                     addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                     setDataAndType(it, context.contentResolver.getType(it))
                                 }
@@ -845,7 +865,10 @@ fun EditArea(
                                                         )
                                                 )
                                                 FilledIconButton(
-                                                    modifier = Modifier.size(32.dp).padding(4.dp).align(Alignment.TopEnd),
+                                                    modifier = Modifier
+                                                        .size(32.dp)
+                                                        .padding(4.dp)
+                                                        .align(Alignment.TopEnd),
                                                     onClick = { gallerySelected.remove(it) },
 //                                                    colors = IconButtonDefaults.iconButtonColors(
 //                                                        contentColor = MaterialTheme.colorScheme.primary

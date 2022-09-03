@@ -73,6 +73,7 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.navigate
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.FileNotFoundException
 import kotlin.math.abs
@@ -273,6 +274,10 @@ fun NormalChatPage(
                 }
             }
         )
+    }
+    // Audio State Hoisting for Gesture Control
+    var audioState by remember {
+        mutableStateOf(false)
     }
     BottomSheetScaffold(
 //        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -639,6 +644,8 @@ fun NormalChatPage(
                 isBottomSheetExpand = scaffoldState.bottomSheetState.isExpanded,
                 packageNameList = pluginPackageNameList,
                 quoteMessageSelected = mainSharedViewModel.quoteMessageState.value,
+                audioState = audioState,
+                onAudioStateChanged = { audioState = it },
                 onBottomSheetExpand = {
                     coroutineScope.launch {
                         scaffoldState.bottomSheetState.expand()
@@ -648,11 +655,20 @@ fun NormalChatPage(
                     coroutineScope.launch {
                         scaffoldState.bottomSheetState.collapse()
                     }
-                }, onSend = onSend,
+                }, onSend = {
+                    onSend(it)
+                    // return bottom after message sent
+                    coroutineScope.launch {
+                        scrollState.animateScrollToItem(0)
+                        delay(5000)
+                        lazyPagingItems.refresh()
+                    }
+                },
                 onTextFieldHeightChange = { px ->
                     changedTextFieldHeight = px
                 })
         },
+        sheetGesturesEnabled = !audioState,
         sheetBackgroundColor = MaterialTheme.colorScheme.surface,
         sheetPeekHeight = peakHeight,
         sheetElevation = 3.dp
@@ -1082,7 +1098,7 @@ fun SingleMessage(
     )
     Row(verticalAlignment = Alignment.Bottom) {
         if (message.sentByMe && !message.verified) {
-            if (abs(System.currentTimeMillis() - message.timestamp) > 6000) {
+            if (abs(System.currentTimeMillis() - message.timestamp) > 5000) {
                 Icon(
                     modifier = Modifier.padding(bottom = 11.dp, end = 4.dp),
                     imageVector = Icons.Outlined.ErrorOutline,
