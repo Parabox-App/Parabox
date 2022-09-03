@@ -349,7 +349,7 @@ fun EditArea(
                             onBottomSheetCollapse()
                             isEditing = true
                             coroutineScope.launch {
-                                delay(150)
+                                delay(200)
                                 relocation.bringIntoView()
                             }
                         }

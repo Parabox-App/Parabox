@@ -153,7 +153,7 @@ fun ChatPage(
 
 @OptIn(
     ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class,
-    ExperimentalAnimationApi::class
+    ExperimentalAnimationApi::class, ExperimentalLayoutApi::class
 )
 @Composable
 fun NormalChatPage(
@@ -237,6 +237,10 @@ fun NormalChatPage(
             !scrollState.isScrollInProgress
         }
     }
+
+    // User Profile
+    val userName by mainSharedViewModel.userNameFlow.collectAsState(initial = "User")
+    val avatarUri by mainSharedViewModel.userAvatarFlow.collectAsState(initial = null)
 
     var showDeleteMessageConfirmDialog by remember { mutableStateOf(false) }
     if (showDeleteMessageConfirmDialog) {
@@ -327,7 +331,7 @@ fun NormalChatPage(
                                 exit = fadeOut()
                             ) {
                                 IconButton(onClick = {
-                                    mainSharedViewModel.setQuoteMessage(mainSharedViewModel.selectedMessageStateList.firstOrNull())
+                                    mainSharedViewModel.setQuoteMessage(mainSharedViewModel.selectedMessageStateList.firstOrNull(), name = userName)
                                     mainSharedViewModel.clearSelectedMessageStateList()
                                 }) {
                                     Icon(
@@ -392,7 +396,7 @@ fun NormalChatPage(
                                             text = { Text(text = "回复") },
                                             onClick = {
                                                 mainSharedViewModel.setQuoteMessage(
-                                                    mainSharedViewModel.selectedMessageStateList.firstOrNull()
+                                                    mainSharedViewModel.selectedMessageStateList.firstOrNull(), userName
                                                 )
                                                 mainSharedViewModel.clearSelectedMessageStateList()
                                                 menuExpanded = false
@@ -502,7 +506,7 @@ fun NormalChatPage(
                                             },
                                             leadingIcon = {
                                                 Icon(
-                                                    Icons.Outlined.Contacts,
+                                                    Icons.Outlined.ManageAccounts,
                                                     contentDescription = null
                                                 )
                                             },
@@ -690,7 +694,8 @@ fun NormalChatPage(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surface),
+                    .background(MaterialTheme.colorScheme.surface)
+                    .imeNestedScroll(),
                 state = scrollState,
                 contentPadding = it,
                 reverseLayout = true
@@ -720,8 +725,8 @@ fun NormalChatPage(
                             shouldShowTimeDivider = shouldShowTimeDivider,
                             isFirst = isFirst,
                             isLast = isLast,
-                            userName = mainSharedViewModel.userNameFlow.collectAsState(initial = "User").value,
-                            avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
+                            userName = userName,
+                            avatarUri = avatarUri,
                             onMessageClick = {
                                 if (mainSharedViewModel.selectedMessageStateList.isNotEmpty()) {
                                     mainSharedViewModel.addOrRemoveItemOfSelectedMessageStateList(

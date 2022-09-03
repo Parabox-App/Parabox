@@ -16,10 +16,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.dataStore
-import com.ojhdtapp.parabox.domain.model.AppModel
-import com.ojhdtapp.parabox.domain.model.Contact
-import com.ojhdtapp.parabox.domain.model.Message
-import com.ojhdtapp.parabox.domain.model.PluginConnection
+import com.ojhdtapp.parabox.domain.model.*
 import com.ojhdtapp.parabox.domain.use_case.DeleteMessage
 import com.ojhdtapp.parabox.domain.use_case.GetMessages
 import com.ojhdtapp.parabox.ui.message.MessageState
@@ -114,7 +111,12 @@ class MainSharedViewModel @Inject constructor(
     // Quote Message
     private val _quoteMessageState = mutableStateOf<Message?>(null)
     val quoteMessageState : State<Message?> = _quoteMessageState
-    fun setQuoteMessage(value : Message?){
+    fun setQuoteMessage(value : Message?, name: String? = null){
+        if(value?.sentByMe == true && name != null){
+            _quoteMessageState.value = value.copy(
+                profile = Profile(name = name, null, null)
+            )
+        } else
         _quoteMessageState.value = value
     }
     fun clearQuoteMessage(){
