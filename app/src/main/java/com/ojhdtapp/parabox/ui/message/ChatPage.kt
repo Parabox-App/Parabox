@@ -49,6 +49,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.paging.LoadState
@@ -326,27 +327,27 @@ fun NormalChatPage(
                             }
                         },
                         actions = {
-                            AnimatedVisibility(
-                                visible = mainSharedViewModel.selectedMessageStateList.size == 1,
-                                enter = fadeIn(),
-                                exit = fadeOut()
-                            ) {
-                                IconButton(onClick = {
-                                    if (mainSharedViewModel.selectedMessageStateList.size == 1) {
-                                        mainSharedViewModel.setQuoteMessage(
-                                            mainSharedViewModel.selectedMessageStateList.firstOrNull(),
-                                            name = userName
-                                        )
-                                    }
-                                    mainSharedViewModel.clearSelectedMessageStateList()
-                                }) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Reply,
-                                        contentDescription = "reply"
-                                    )
-
-                                }
-                            }
+//                            AnimatedVisibility(
+//                                visible = mainSharedViewModel.selectedMessageStateList.size == 1,
+//                                enter = fadeIn(),
+//                                exit = fadeOut()
+//                            ) {
+//                                IconButton(onClick = {
+//                                    if (mainSharedViewModel.selectedMessageStateList.size == 1) {
+//                                        mainSharedViewModel.setQuoteMessage(
+//                                            mainSharedViewModel.selectedMessageStateList.firstOrNull(),
+//                                            name = userName
+//                                        )
+//                                    }
+//                                    mainSharedViewModel.clearSelectedMessageStateList()
+//                                }) {
+//                                    Icon(
+//                                        imageVector = Icons.Outlined.Reply,
+//                                        contentDescription = "reply"
+//                                    )
+//
+//                                }
+//                            }
                             AnimatedVisibility(
                                 visible = mainSharedViewModel.selectedMessageStateList.size == 1,
                                 enter = fadeIn(),
@@ -713,6 +714,9 @@ fun NormalChatPage(
 //                remember(lazyPagingItems.itemSnapshotList) {
 //                    lazyPagingItems.itemSnapshotList.items.toTimedMessages()
 //                }
+            var clickingMessage by remember {
+                mutableStateOf<Message?>(null)
+            }
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -744,15 +748,19 @@ fun NormalChatPage(
                             message = value,
                             selectedMessageStateList = mainSharedViewModel.selectedMessageStateList,
                             shouldShowTimeDivider = shouldShowTimeDivider,
+                            clickingMessage = clickingMessage,
                             isFirst = isFirst,
                             isLast = isLast,
                             userName = userName,
                             avatarUri = avatarUri,
+                            onClickingDismiss = { clickingMessage = null },
                             onMessageClick = {
                                 if (mainSharedViewModel.selectedMessageStateList.isNotEmpty()) {
                                     mainSharedViewModel.addOrRemoveItemOfSelectedMessageStateList(
                                         value
                                     )
+                                } else {
+                                    clickingMessage = value
                                 }
                             },
                             onMessageLongClick = {
@@ -851,10 +859,12 @@ fun MessageBlock(
     message: Message,
     selectedMessageStateList: SnapshotStateList<Message>,
     shouldShowTimeDivider: Boolean,
+    clickingMessage: Message?,
     isFirst: Boolean,
     isLast: Boolean,
     userName: String,
     avatarUri: String?,
+    onClickingDismiss: () -> Unit,
     onMessageClick: () -> Unit,
     onMessageLongClick: () -> Unit,
     onQuoteReplyClick: (messageId: Long) -> Unit
@@ -885,6 +895,8 @@ fun MessageBlock(
                         isFirst = isFirst,
                         isLast = isLast,
                         isSelected = selectedMessageStateList.contains(message),
+                        clickingMessage = clickingMessage,
+                        onClickingDismiss = onClickingDismiss,
                         onClick = onMessageClick,
                         onLongClick = onMessageLongClick,
                         onQuoteReplyClick = onQuoteReplyClick
@@ -922,6 +934,8 @@ fun MessageBlock(
                         isFirst = isFirst,
                         isLast = isLast,
                         isSelected = selectedMessageStateList.contains(message),
+                        clickingMessage = clickingMessage,
+                        onClickingDismiss = onClickingDismiss,
                         onClick = onMessageClick,
                         onLongClick = onMessageLongClick,
                         onQuoteReplyClick = onQuoteReplyClick
@@ -1091,6 +1105,8 @@ fun SingleMessage(
     isFirst: Boolean,
     isLast: Boolean,
     isSelected: Boolean,
+    clickingMessage: Message?,
+    onClickingDismiss: () -> Unit,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onQuoteReplyClick: (messageId: Long) -> Unit = {},
@@ -1122,54 +1138,105 @@ fun SingleMessage(
             if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
         }
     )
-    Row(verticalAlignment = Alignment.Bottom) {
-        if (message.sentByMe && !message.verified) {
-            if (abs(System.currentTimeMillis() - message.timestamp) > 5000) {
-                Icon(
-                    modifier = Modifier.padding(bottom = 11.dp, end = 4.dp),
-                    imageVector = Icons.Outlined.ErrorOutline,
-                    contentDescription = "error",
-                    tint = MaterialTheme.colorScheme.error
-                )
-            } else {
-                CircularProgressIndicator(
-                    modifier = Modifier
-                        .padding(bottom = 14.dp, end = 4.dp)
-                        .size(18.dp),
-                    strokeWidth = 2.dp
-                )
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .wrapContentSize(align = if (message.sentByMe) Alignment.TopEnd else Alignment.TopStart)
+    ) {
+        Row(verticalAlignment = Alignment.Bottom) {
+            if (message.sentByMe && !message.verified) {
+                if (abs(System.currentTimeMillis() - message.timestamp) > 5000) {
+                    Icon(
+                        modifier = Modifier.padding(bottom = 11.dp, end = 4.dp),
+                        imageVector = Icons.Outlined.ErrorOutline,
+                        contentDescription = "error",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                } else {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .padding(bottom = 14.dp, end = 4.dp)
+                            .size(18.dp),
+                        strokeWidth = 2.dp
+                    )
+                }
+            }
+            Column(
+                modifier = modifier
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = topStartRadius,
+                            topEnd = topEndRadius,
+                            bottomStart = bottomStartRadius,
+                            bottomEnd = bottomEndRadius
+                        )
+                    )
+                    .background(
+                        backgroundColor
+                    )
+                    .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+                    .animateContentSize()
+            ) {
+                message.contents.forEachIndexed { index, messageContent ->
+                    messageContent.toLayout(
+                        textColor,
+                        reverseTextColor,
+                        context,
+                        density,
+                        index,
+                        topStartRadius,
+                        topEndRadius,
+                        message,
+                        bottomEndRadius,
+                        bottomStartRadius,
+                        onQuoteReplyClick = onQuoteReplyClick
+                    )
+                }
             }
         }
-        Column(
-            modifier = modifier
-                .clip(
-                    RoundedCornerShape(
-                        topStart = topStartRadius,
-                        topEnd = topEndRadius,
-                        bottomStart = bottomStartRadius,
-                        bottomEnd = bottomEndRadius
-                    )
-                )
-                .background(
-                    backgroundColor
-                )
-                .combinedClickable(onClick = onClick, onLongClick = onLongClick)
-                .animateContentSize()
+        DropdownMenu(
+            offset = DpOffset(0.dp, 4.dp),
+            expanded = clickingMessage == message,
+            onDismissRequest = onClickingDismiss
         ) {
-            message.contents.forEachIndexed { index, messageContent ->
-                messageContent.toLayout(
-                    textColor,
-                    reverseTextColor,
-                    context,
-                    density,
-                    index,
-                    topStartRadius,
-                    topEndRadius,
-                    message,
-                    bottomEndRadius,
-                    bottomStartRadius,
-                    onQuoteReplyClick = onQuoteReplyClick
-                )
+            Row() {
+                if (message.sentByMe && !message.verified) {
+                    IconButton(onClick = { onClickingDismiss() }) {
+                        Icon(imageVector = Icons.Outlined.Refresh, contentDescription = "recall")
+                    }
+                }
+                if (message.sentByMe && message.verified) {
+                    IconButton(onClick = { onClickingDismiss() }) {
+                        Icon(imageVector = Icons.Outlined.Undo, contentDescription = "recall")
+                    }
+                }
+                if (message.contents.any { it is Image }) {
+                    IconButton(onClick = { onClickingDismiss() }) {
+                        Icon(
+                            imageVector = Icons.Outlined.FavoriteBorder,
+                            contentDescription = "favorite"
+                        )
+                    }
+                }
+                IconButton(onClick = { onClickingDismiss() }) {
+                    Icon(imageVector = Icons.Outlined.ContentCopy, contentDescription = "copy")
+                }
+                if (message.verified) {
+                    IconButton(onClick = { onClickingDismiss() }) {
+                        Icon(imageVector = Icons.Outlined.Reply, contentDescription = "reply")
+                    }
+                }
+                if (message.contents.any { it is Image }) {
+                    IconButton(onClick = { onClickingDismiss() }) {
+                        Icon(
+                            imageVector = Icons.Outlined.FileDownload,
+                            contentDescription = "download"
+                        )
+                    }
+                }
+                IconButton(onClick = { onClickingDismiss() }) {
+                    Icon(imageVector = Icons.Outlined.DeleteOutline, contentDescription = "delete")
+                }
             }
         }
     }
