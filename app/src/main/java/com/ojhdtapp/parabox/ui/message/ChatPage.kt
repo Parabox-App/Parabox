@@ -236,10 +236,16 @@ fun NormalChatPage(
         }
     }
 
+    // Clicking
+    var clickingMessage by remember {
+        mutableStateOf<Message?>(null)
+    }
+
     // User Profile
     val userName by mainSharedViewModel.userNameFlow.collectAsState(initial = "User")
     val avatarUri by mainSharedViewModel.userAvatarFlow.collectAsState(initial = null)
 
+    // Delete Confirm Dialog
     var showDeleteMessageConfirmDialog by remember { mutableStateOf(false) }
     if (showDeleteMessageConfirmDialog) {
         AlertDialog(
@@ -270,6 +276,49 @@ fun NormalChatPage(
                 androidx.compose.material3.TextButton(
                     onClick = {
                         showDeleteMessageConfirmDialog = false
+                    }
+                ) {
+                    Text("取消")
+                }
+            }
+        )
+    }
+    var showDeleteClickingMessageConfirmDialog by remember { mutableStateOf(false) }
+    if (showDeleteClickingMessageConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showDeleteClickingMessageConfirmDialog = false
+                clickingMessage = null
+
+            },
+            icon = { Icon(Icons.Outlined.Warning, contentDescription = null) },
+            title = {
+                Text(text = "移除消息")
+            },
+            text = {
+                Text(
+                    "消息将从聊天记录永久移除。"
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        showDeleteClickingMessageConfirmDialog = false
+                        clickingMessage?.messageId?.let{
+                            mainSharedViewModel.deleteMessage(listOf(it))
+                            lazyPagingItems.refresh()
+                            clickingMessage = null
+                        }
+                    }
+                ) {
+                    Text("确认")
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        showDeleteClickingMessageConfirmDialog = false
+                        clickingMessage = null
                     }
                 ) {
                     Text("取消")
@@ -719,9 +768,6 @@ fun NormalChatPage(
 //                remember(lazyPagingItems.itemSnapshotList) {
 //                    lazyPagingItems.itemSnapshotList.items.toTimedMessages()
 //                }
-            var clickingMessage by remember {
-                mutableStateOf<Message?>(null)
-            }
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -737,16 +783,16 @@ fun NormalChatPage(
                     items = lazyPagingItems,
                     key = { it.messageId }) { value, beforeValue, afterValue, index ->
                     if (value != null) {
-                        val shouldShowTimeDivider = remember(value, afterValue) {
+                        val shouldShowTimeDivider = remember(value, beforeValue, afterValue) {
                             beforeValue == null || abs(value.timestamp - beforeValue.timestamp) > 120000 || (index + 1) % 40 == 0
                         }
-                        val willShowTimeDivider = remember(value, afterValue) {
+                        val willShowTimeDivider = remember(value, beforeValue, afterValue) {
                             afterValue == null || abs(value.timestamp - afterValue.timestamp) > 120000
                         }
-                        val isFirst = remember(value, afterValue) {
+                        val isFirst = remember(value, beforeValue, afterValue) {
                             shouldShowTimeDivider || beforeValue == null || value.sentByMe != beforeValue.sentByMe || value.profile.name != beforeValue.profile.name
                         }
-                        val isLast = remember(value, afterValue) {
+                        val isLast = remember(value, beforeValue, afterValue) {
                             willShowTimeDivider || afterValue == null || value.sentByMe != afterValue.sentByMe || value.profile.name != afterValue.profile.name
                         }
                         MessageBlock(
@@ -867,6 +913,9 @@ fun NormalChatPage(
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         }
+                                    }
+                                    is SingleMessageEvent.Delete -> {
+                                        showDeleteClickingMessageConfirmDialog = true
                                     }
                                 }
                             },
@@ -1373,8 +1422,8 @@ fun SingleMessage(
                     }
                 }
                 IconButton(onClick = {
+                    // Temp ClickingMessage
                     onClickingEvent(SingleMessageEvent.Delete)
-                    onClickingDismiss()
                 }) {
                     Icon(imageVector = Icons.Outlined.DeleteOutline, contentDescription = "delete")
                 }
