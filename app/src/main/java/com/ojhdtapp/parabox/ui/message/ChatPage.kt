@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build.VERSION.SDK_INT
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
@@ -828,7 +829,44 @@ fun NormalChatPage(
                                         )
                                     }
                                     is SingleMessageEvent.Download -> {
-
+                                        try{
+                                            val images = value.contents.filter { it is Image }
+                                            if (value.sentByMe) {
+                                                images.forEach {
+                                                    (it as Image).uriString?.let { uriString ->
+                                                        FileUtil.saveImageToExternalStorage(
+                                                            context,
+                                                            Uri.parse(uriString)
+                                                        )
+                                                    }
+                                                }
+                                            } else {
+                                                images.forEach {
+                                                    (it as Image).url?.let { url ->
+                                                        context.imageLoader.diskCache?.get(url)
+                                                            ?.use { snapshot ->
+                                                                val imageFile = snapshot.data.toFile()
+                                                                FileUtil.saveImageToExternalStorage(
+                                                                    context,
+                                                                    imageFile
+                                                                )
+                                                            }
+                                                    }
+                                                }
+                                            }
+                                            Toast.makeText(
+                                                context,
+                                                "已将 ${images.size} 张图片保存到 /Pictures/Parabox",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }catch(e: Exception){
+                                            e.printStackTrace()
+                                            Toast.makeText(
+                                                context,
+                                                "保存图片时发生错误",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
                                     }
                                 }
                             },
@@ -1527,6 +1565,7 @@ private fun MessageContent.toLayout(
                         Icon(
                             imageVector = when (extension) {
                                 "apk" -> Icons.Outlined.Android
+                                "jpg", "jpeg", "png", "gif", "bmp", "svg", "webp", "tiff" -> Icons.Outlined.Image
                                 "txt", "log", "md", "json", "xml" -> Icons.Outlined.Description
                                 "mp3", "wav", "flac", "ape", "wma" -> Icons.Outlined.AudioFile
                                 "mp4" -> Icons.Outlined.VideoFile

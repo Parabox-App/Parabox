@@ -166,6 +166,44 @@ fun EditArea(
                 Log.d("parabox", it.toString())
             }
         }
+    val memePickerLauncher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.StartActivityForResult()) {
+            if (it.resultCode == Activity.RESULT_OK) {
+                val path = context.getExternalFilesDir("meme")!!
+                it.data?.let {
+                    var i = 0
+                    while (i < it.clipData!!.itemCount) {
+                        it.clipData!!.getItemAt(i).also {
+                            FileUtil.copyFileToPath(
+                                context, path,
+                                "Image_${
+                                    System.currentTimeMillis()
+                                        .toDateAndTimeString()
+                                }.jpg",
+                                it.uri
+                            )
+                        }
+                        i++
+                    }
+                }
+                onMemeUpdate()
+            }
+        }
+    val memePickerSLauncher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetMultipleContents()) {
+            val path = context.getExternalFilesDir("meme")!!
+            it.forEach {
+                FileUtil.copyFileToPath(
+                    context, path,
+                    "Image_${
+                        System.currentTimeMillis()
+                            .toDateAndTimeString()
+                    }.jpg",
+                    it
+                )
+            }
+            onMemeUpdate()
+        }
     val targetCameraShotUri = remember(cameraSelected.size) {
 //        val path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
         val path = context.getExternalFilesDir("chat")!!
@@ -627,7 +665,24 @@ fun EditArea(
                                                     text = "暂无自定义表情",
                                                     style = MaterialTheme.typography.labelMedium
                                                 )
-                                                TextButton(onClick = { /*TODO*/ }) {
+                                                TextButton(onClick = {
+                                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                                        val maxNumPhotosAndVideos = 10
+                                                        Intent(MediaStore.ACTION_PICK_IMAGES)
+                                                            .apply {
+                                                                type = "image/*"
+                                                                putExtra(
+                                                                    MediaStore.EXTRA_PICK_IMAGES_MAX,
+                                                                    maxNumPhotosAndVideos
+                                                                )
+                                                            }
+                                                            .also {
+                                                                memePickerLauncher.launch(it)
+                                                            }
+                                                    } else {
+                                                        memePickerSLauncher.launch("image/*")
+                                                    }
+                                                }) {
                                                     Text(text = "手动添加")
                                                 }
                                             }
@@ -720,12 +775,30 @@ fun EditArea(
                                                 Column(
                                                     modifier = Modifier
                                                         .fillMaxHeight()
-                                                        .width(96.dp),
+                                                        .width(96.dp)
+                                                        .animateItemPlacement(),
                                                     horizontalAlignment = Alignment.CenterHorizontally,
                                                     verticalArrangement = Arrangement.Center
                                                 ) {
                                                     SmallFloatingActionButton(
-                                                        onClick = { /*TODO*/ },
+                                                        onClick = {
+                                                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                                                val maxNumPhotosAndVideos = 10
+                                                                Intent(MediaStore.ACTION_PICK_IMAGES)
+                                                                    .apply {
+                                                                        type = "image/*"
+                                                                        putExtra(
+                                                                            MediaStore.EXTRA_PICK_IMAGES_MAX,
+                                                                            maxNumPhotosAndVideos
+                                                                        )
+                                                                    }
+                                                                    .also {
+                                                                        memePickerLauncher.launch(it)
+                                                                    }
+                                                            } else {
+                                                                memePickerSLauncher.launch("image/*")
+                                                            }
+                                                        },
                                                         shape = CircleShape,
                                                         elevation = FloatingActionButtonDefaults.elevation(
                                                             defaultElevation = 0.dp,
