@@ -13,6 +13,7 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -31,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusEvent
@@ -86,6 +88,7 @@ fun EditArea(
     packageNameList: List<String>,
     quoteMessageSelected: Message?,
     audioState: Boolean,
+    memeUpdateFlag: Int = 0,
     onAudioStateChanged: (value: Boolean) -> Unit,
     onBottomSheetExpand: () -> Unit,
     onBottomSheetCollapse: () -> Unit,
@@ -100,11 +103,13 @@ fun EditArea(
     val memeList = remember {
         mutableStateListOf<File>()
     }
-    LaunchedEffect(key1 = true) {
+    LaunchedEffect(key1 = memeUpdateFlag) {
+        memeList.clear()
         context.getExternalFilesDir("meme")?.listFiles()
             ?.filter { it.path.endsWith(".jpg") || it.path.endsWith(".jpeg") || it.path.endsWith(".png") }
-            ?.forEach {
-                memeList.add(it)
+            ?.reversed()
+            ?.also{
+                memeList.addAll(it)
             }
     }
 
@@ -366,11 +371,13 @@ fun EditArea(
                                     .defaultMinSize(minHeight = 48.dp)
                                     .weight(1f)
                                     .padding(12.dp)
-                                    .onSizeChanged { onTextFieldHeightChange(it.height - originalBoxHeight)
+                                    .onSizeChanged {
+                                        onTextFieldHeightChange(it.height - originalBoxHeight)
                                         coroutineScope.launch {
                                             delay(150)
                                             relocation.bringIntoView()
-                                        }},
+                                        }
+                                    },
                                 contentAlignment = Alignment.CenterStart
                             ) {
                                 val focusRequester = remember { FocusRequester() }
@@ -630,7 +637,20 @@ fun EditArea(
                                                 Box(
                                                     modifier = Modifier
                                                         .padding(3.dp)
-                                                        .clickable { }) {
+                                                        .combinedClickable(onClick = {
+                                                            FileUtil.getUriOfFile(context, it)?.let{
+                                                                packageNameList.forEach { packageName ->
+                                                                    context.grantUriPermission(
+                                                                        packageName,
+                                                                        it,
+                                                                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                                                    )
+                                                                }
+                                                                onSend(listOf(Image(uri = it)))
+                                                            }
+                                                        }, onLongClick = {
+
+                                                        })) {
                                                     val imageLoader = ImageLoader.Builder(context)
                                                         .components {
                                                             if (Build.VERSION.SDK_INT >= 28) {
@@ -913,6 +933,7 @@ fun EditArea(
 //                                                    )
                                                 ) {
                                                     Icon(
+                                                        modifier = Modifier.size(14.dp),
                                                         imageVector = Icons.Outlined.Clear,
                                                         contentDescription = "delete"
                                                     )
@@ -955,15 +976,19 @@ fun EditArea(
                                                             RoundedCornerShape(13.dp)
                                                         )
                                                 )
-                                                IconButton(
-                                                    modifier = Modifier.align(Alignment.TopEnd),
+                                                FilledIconButton(
+                                                    modifier = Modifier
+                                                        .size(32.dp)
+                                                        .padding(4.dp)
+                                                        .align(Alignment.TopEnd),
                                                     onClick = { cameraSelected.remove(it) },
-                                                    colors = IconButtonDefaults.iconButtonColors(
-                                                        contentColor = MaterialTheme.colorScheme.primary
-                                                    )
+//                                                    colors = IconButtonDefaults.iconButtonColors(
+//                                                        contentColor = MaterialTheme.colorScheme.primary
+//                                                    )
                                                 ) {
                                                     Icon(
-                                                        imageVector = Icons.Outlined.Cancel,
+                                                        modifier = Modifier.size(14.dp),
+                                                        imageVector = Icons.Outlined.Clear,
                                                         contentDescription = "delete"
                                                     )
                                                 }

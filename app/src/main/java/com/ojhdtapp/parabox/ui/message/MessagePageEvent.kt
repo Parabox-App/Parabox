@@ -37,3 +37,13 @@ sealed class DropdownMenuItemEvent{
     object Info: DropdownMenuItemEvent()
     object DeleteGrouped: DropdownMenuItemEvent()
 }
+
+sealed class MessageClickingEvent{
+    object FailRetry : MessageClickingEvent()
+    object Recall : MessageClickingEvent()
+    object Favorite : MessageClickingEvent()
+    object Copy : MessageClickingEvent()
+    object Reply : MessageClickingEvent()
+    object Download : MessageClickingEvent()
+    object Delete : MessageClickingEvent()
+}

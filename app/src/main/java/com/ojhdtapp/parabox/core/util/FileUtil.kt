@@ -22,6 +22,18 @@ object FileUtil {
         }
     }
 
+    fun getUriOfFile(context: Context, file: File): Uri?{
+        return try{
+            FileProvider.getUriForFile(
+                context,
+                BuildConfig.APPLICATION_ID + ".provider", file
+            )
+        }catch (e: Exception){
+            e.printStackTrace()
+            null
+        }
+    }
+
     fun getUriByCopyingFileToPath(context: Context, path: File, fileName: String, uri: Uri): Uri? {
         return try {
             if (!path.exists()) path.mkdirs()
@@ -36,7 +48,7 @@ object FileUtil {
                 BuildConfig.APPLICATION_ID + ".provider", outputFile
             )
         } catch (e: Exception) {
-            Log.d("parabox", e.toString())
+            e.printStackTrace()
             null
         }
 
@@ -58,7 +70,32 @@ object FileUtil {
             }
             outputFile
         } catch (e: Exception) {
+            e.printStackTrace()
             null
+        }
+    }
+
+    fun copyFileToPath(context: Context, path: File, fileName: String, uri: Uri){
+        try {
+            if (!path.exists()) path.mkdirs()
+            val outputFile = File(path, fileName)
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                FileOutputStream(outputFile).use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun copyFileToPath(context: Context, path: File, fileName: String, targetFile: File){
+        try {
+            if (!path.exists()) path.mkdirs()
+            val outputFile = File(path, fileName)
+            targetFile.copyTo(outputFile, overwrite = true)
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 

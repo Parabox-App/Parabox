@@ -33,8 +33,8 @@ import javax.inject.Inject
 @HiltViewModel
 class MainSharedViewModel @Inject constructor(
     @ApplicationContext val context: Context,
-    val getMessages: GetMessages,
-    val deleteMessage: DeleteMessage,
+    private val getMessages: GetMessages,
+    private val deleteMessage: DeleteMessage,
 ) : ViewModel() {
     // Badge
     private val _messageBadge = mutableStateOf<Int>(0)
