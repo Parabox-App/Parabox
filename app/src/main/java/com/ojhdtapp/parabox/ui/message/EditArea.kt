@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
@@ -89,6 +90,7 @@ fun EditArea(
     quoteMessageSelected: Message?,
     audioState: Boolean,
     memeUpdateFlag: Int = 0,
+    onMemeUpdate: () -> Unit,
     onAudioStateChanged: (value: Boolean) -> Unit,
     onBottomSheetExpand: () -> Unit,
     onBottomSheetCollapse: () -> Unit,
@@ -108,7 +110,7 @@ fun EditArea(
         context.getExternalFilesDir("meme")?.listFiles()
             ?.filter { it.path.endsWith(".jpg") || it.path.endsWith(".jpeg") || it.path.endsWith(".png") }
             ?.reversed()
-            ?.also{
+            ?.also {
                 memeList.addAll(it)
             }
     }
@@ -605,10 +607,13 @@ fun EditArea(
                                 .weight(1f), targetState = memeState
                         ) {
                             if (it) {
+                                var showMemeDeleteBtn by remember {
+                                    mutableStateOf(false)
+                                }
                                 LazyRow(
                                     modifier = Modifier
-                                        .fillMaxSize(),
-                                    contentPadding = PaddingValues(horizontal = 16.dp),
+                                        .fillMaxSize().padding(start = 16.dp),
+                                    contentPadding = PaddingValues(end = 16.dp),
                                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
                                     if (memeList.isEmpty()) {
@@ -630,6 +635,7 @@ fun EditArea(
                                     } else {
                                         items(items = memeList, key = { it.name }) {
                                             Surface(
+                                                modifier = Modifier.animateItemPlacement(),
                                                 color = MaterialTheme.colorScheme.secondaryContainer,
                                                 tonalElevation = 3.dp,
                                                 shape = RoundedCornerShape(16.dp)
@@ -637,20 +643,7 @@ fun EditArea(
                                                 Box(
                                                     modifier = Modifier
                                                         .padding(3.dp)
-                                                        .combinedClickable(onClick = {
-                                                            FileUtil.getUriOfFile(context, it)?.let{
-                                                                packageNameList.forEach { packageName ->
-                                                                    context.grantUriPermission(
-                                                                        packageName,
-                                                                        it,
-                                                                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                                                    )
-                                                                }
-                                                                onSend(listOf(Image(uri = it)))
-                                                            }
-                                                        }, onLongClick = {
-
-                                                        })) {
+                                                ) {
                                                     val imageLoader = ImageLoader.Builder(context)
                                                         .components {
                                                             if (Build.VERSION.SDK_INT >= 28) {
@@ -670,14 +663,82 @@ fun EditArea(
                                                         contentDescription = "meme",
                                                         contentScale = ContentScale.FillHeight,
                                                         modifier = Modifier
+                                                            .fillMaxHeight()
                                                             .widthIn(0.dp, 144.dp)
                                                             .clip(
                                                                 RoundedCornerShape(13.dp)
                                                             )
+                                                            .combinedClickable(onClick = {
+                                                                if (showMemeDeleteBtn) {
+                                                                    showMemeDeleteBtn = false
+                                                                } else {
+                                                                    FileUtil
+                                                                        .getUriOfFile(context, it)
+                                                                        ?.let {
+                                                                            packageNameList.forEach { packageName ->
+                                                                                context.grantUriPermission(
+                                                                                    packageName,
+                                                                                    it,
+                                                                                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                                                                )
+                                                                            }
+                                                                            onSend(listOf(Image(uri = it)))
+                                                                        }
+                                                                }
+                                                            }, onLongClick = {
+                                                                showMemeDeleteBtn =
+                                                                    !showMemeDeleteBtn
+                                                            }),
                                                     )
-
+                                                    androidx.compose.animation.AnimatedVisibility(
+                                                        modifier = Modifier.align(Alignment.TopEnd),
+                                                        visible = showMemeDeleteBtn,
+                                                        enter = scaleIn(),
+                                                        exit = scaleOut()
+                                                    ) {
+                                                        FilledIconButton(
+                                                            modifier = Modifier
+                                                                .size(32.dp)
+                                                                .padding(4.dp),
+                                                            onClick = {
+                                                                it.delete()
+                                                                onMemeUpdate()
+                                                            },
+                                                        ) {
+                                                            Icon(
+                                                                modifier = Modifier.size(14.dp),
+                                                                imageVector = Icons.Outlined.Clear,
+                                                                contentDescription = "delete"
+                                                            )
+                                                        }
+                                                    }
                                                 }
                                             }
+                                        }
+                                        item {
+                                            if (memeList.size > 0)
+                                                Column(
+                                                    modifier = Modifier
+                                                        .fillMaxHeight()
+                                                        .width(96.dp),
+                                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                                    verticalArrangement = Arrangement.Center
+                                                ) {
+                                                    SmallFloatingActionButton(
+                                                        onClick = { /*TODO*/ },
+                                                        shape = CircleShape,
+                                                        elevation = FloatingActionButtonDefaults.elevation(
+                                                            defaultElevation = 0.dp,
+                                                            pressedElevation = 0.dp
+                                                        )
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Outlined.Add,
+                                                            contentDescription = "add"
+                                                        )
+                                                    }
+//                                                Text(text = "添加", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                                                }
                                         }
                                     }
                                 }

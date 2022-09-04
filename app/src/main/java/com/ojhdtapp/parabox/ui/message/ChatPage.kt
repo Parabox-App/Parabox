@@ -4,14 +4,10 @@ import android.content.Context
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build.VERSION.SDK_INT
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
-import androidx.compose.animation.core.FastOutLinearInEasing
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -29,7 +25,6 @@ import androidx.compose.material3.*
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -41,8 +36,6 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.*
 import androidx.compose.ui.text.AnnotatedString
@@ -73,7 +66,6 @@ import com.ojhdtapp.parabox.domain.service.PluginService
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.ChatPageDestination
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
-import com.ojhdtapp.parabox.ui.util.onColor
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -289,7 +281,7 @@ fun NormalChatPage(
         mutableStateOf(false)
     }
     // Meme Related
-    var memeUpdateFlag by remember{
+    var memeUpdateFlag by remember {
         mutableStateOf(0)
     }
     BottomSheetScaffold(
@@ -633,7 +625,10 @@ fun NormalChatPage(
                     },
                     text = {
                         mainSharedViewModel.quoteMessageState.value?.let {
-                            Row(modifier = Modifier.animateContentSize(),verticalAlignment = Alignment.CenterVertically) {
+                            Row(
+                                modifier = Modifier.animateContentSize(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                                 Column(modifier = Modifier.widthIn(0.dp, 208.dp)) {
                                     Text(
                                         text = it.profile.name,
@@ -668,6 +663,7 @@ fun NormalChatPage(
                 quoteMessageSelected = mainSharedViewModel.quoteMessageState.value,
                 audioState = audioState,
                 memeUpdateFlag = memeUpdateFlag,
+                onMemeUpdate = { memeUpdateFlag++ },
                 onAudioStateChanged = { audioState = it },
                 onBottomSheetExpand = {
                     coroutineScope.launch {
@@ -764,7 +760,7 @@ fun NormalChatPage(
                             onClickingDismiss = { clickingMessage = null },
                             onClickingEvent = {
                                 when (it) {
-                                    is MessageClickingEvent.FailRetry -> {
+                                    is SingleMessageEvent.FailRetry -> {
                                         mainSharedViewModel.deleteMessage(listOf(value.messageId))
                                         lazyPagingItems.refresh()
                                         onSend(value.contents.toMessageContentList())
@@ -775,10 +771,10 @@ fun NormalChatPage(
                                             lazyPagingItems.refresh()
                                         }
                                     }
-                                    is MessageClickingEvent.Recall -> {
+                                    is SingleMessageEvent.Recall -> {
                                         onRecallMessage(value.sendType!!, value.messageId)
                                     }
-                                    is MessageClickingEvent.Favorite -> {
+                                    is SingleMessageEvent.Favorite -> {
                                         val path = context.getExternalFilesDir("meme")!!
                                         val images = value.contents.filter { it is Image }
                                         if (value.sentByMe) {
@@ -814,20 +810,24 @@ fun NormalChatPage(
                                             }
                                         }
                                         memeUpdateFlag++
-                                        Toast.makeText(context, "已添加 ${images.size} 张图片到自定义表情", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(
+                                            context,
+                                            "已添加 ${images.size} 张图片到自定义表情",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
                                     }
-                                    is MessageClickingEvent.Copy -> {
+                                    is SingleMessageEvent.Copy -> {
                                         Toast.makeText(context, "内容已复制到剪贴板", Toast.LENGTH_SHORT)
                                             .show()
                                         clipboardManager.setText(AnnotatedString(value.contents.getContentString()))
                                     }
-                                    is MessageClickingEvent.Reply -> {
+                                    is SingleMessageEvent.Reply -> {
                                         mainSharedViewModel.setQuoteMessage(
                                             value,
                                             userName
                                         )
                                     }
-                                    is MessageClickingEvent.Download -> {
+                                    is SingleMessageEvent.Download -> {
 
                                     }
                                 }
@@ -943,7 +943,7 @@ fun MessageBlock(
     userName: String,
     avatarUri: String?,
     onClickingDismiss: () -> Unit,
-    onClickingEvent: (event: MessageClickingEvent) -> Unit,
+    onClickingEvent: (event: SingleMessageEvent) -> Unit,
     onMessageClick: () -> Unit,
     onMessageLongClick: () -> Unit,
     onQuoteReplyClick: (messageId: Long) -> Unit
@@ -1188,7 +1188,7 @@ fun SingleMessage(
     isSelected: Boolean,
     clickingMessage: Message?,
     onClickingDismiss: () -> Unit,
-    onClickingEvent: (event: MessageClickingEvent) -> Unit,
+    onClickingEvent: (event: SingleMessageEvent) -> Unit,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onQuoteReplyClick: (messageId: Long) -> Unit = {},
@@ -1284,15 +1284,23 @@ fun SingleMessage(
             Row() {
                 if (message.sentByMe && !message.verified) {
                     IconButton(onClick = {
-                        onClickingEvent(MessageClickingEvent.FailRetry)
+                        onClickingEvent(SingleMessageEvent.FailRetry)
                         onClickingDismiss()
                     }) {
                         Icon(imageVector = Icons.Outlined.Refresh, contentDescription = "retry")
                     }
                 }
+                if (message.verified) {
+                    IconButton(onClick = {
+                        onClickingEvent(SingleMessageEvent.Reply)
+                        onClickingDismiss()
+                    }) {
+                        Icon(imageVector = Icons.Outlined.Reply, contentDescription = "reply")
+                    }
+                }
                 if (message.sentByMe && message.verified) {
                     IconButton(onClick = {
-                        onClickingEvent(MessageClickingEvent.Recall)
+                        onClickingEvent(SingleMessageEvent.Recall)
                         onClickingDismiss()
                     }) {
                         Icon(imageVector = Icons.Outlined.Undo, contentDescription = "recall")
@@ -1300,7 +1308,7 @@ fun SingleMessage(
                 }
                 if (message.contents.any { it is Image }) {
                     IconButton(onClick = {
-                        onClickingEvent(MessageClickingEvent.Favorite)
+                        onClickingEvent(SingleMessageEvent.Favorite)
                         onClickingDismiss()
                     }) {
                         Icon(
@@ -1310,22 +1318,14 @@ fun SingleMessage(
                     }
                 }
                 IconButton(onClick = {
-                    onClickingEvent(MessageClickingEvent.Copy)
+                    onClickingEvent(SingleMessageEvent.Copy)
                     onClickingDismiss()
                 }) {
                     Icon(imageVector = Icons.Outlined.ContentCopy, contentDescription = "copy")
                 }
-                if (message.verified) {
-                    IconButton(onClick = {
-                        onClickingEvent(MessageClickingEvent.Reply)
-                        onClickingDismiss()
-                    }) {
-                        Icon(imageVector = Icons.Outlined.Reply, contentDescription = "reply")
-                    }
-                }
                 if (message.contents.any { it is Image }) {
                     IconButton(onClick = {
-                        onClickingEvent(MessageClickingEvent.Download)
+                        onClickingEvent(SingleMessageEvent.Download)
                         onClickingDismiss()
                     }) {
                         Icon(
@@ -1335,7 +1335,7 @@ fun SingleMessage(
                     }
                 }
                 IconButton(onClick = {
-                    onClickingEvent(MessageClickingEvent.Delete)
+                    onClickingEvent(SingleMessageEvent.Delete)
                     onClickingDismiss()
                 }) {
                     Icon(imageVector = Icons.Outlined.DeleteOutline, contentDescription = "delete")
