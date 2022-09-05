@@ -1,5 +1,7 @@
 package com.ojhdtapp.parabox.ui.message
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.MaterialTheme
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.model.Profile
@@ -69,4 +71,13 @@ class AreaState{
         const val SearchArea = 1
         const val ArchiveArea = 2
     }
+}
+
+sealed class AudioRecorderState(
+    val text: String
+){
+    object Ready : AudioRecorderState("长按录制")
+    object Recording: AudioRecorderState("录制中")
+    object Confirmed: AudioRecorderState("松手发送")
+    object Done : AudioRecorderState("预览")
 }

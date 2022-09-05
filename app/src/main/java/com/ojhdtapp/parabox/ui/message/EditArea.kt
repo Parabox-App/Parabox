@@ -38,11 +38,14 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusEvent
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -53,6 +56,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.getTextAfterSelection
 import androidx.compose.ui.text.input.getTextBeforeSelection
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.core.content.FileProvider
@@ -350,6 +354,28 @@ fun EditArea(
                         }
                     }
                 }
+                var audioRecorderState by remember{
+                    mutableStateOf<AudioRecorderState>(AudioRecorderState.Ready)
+                }
+                LaunchedEffect(key1 = audioState){
+                    if(!audioState){
+                        audioRecorderState = AudioRecorderState.Ready
+                    }
+                }
+                AnimatedVisibility(visible = audioRecorderState is AudioRecorderState.Done) {
+                    Surface(
+                        modifier = Modifier.padding(end = 8.dp, bottom = 4.dp),
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        onClick = {
+                            audioRecorderState = AudioRecorderState.Ready
+                        }
+                    ) {
+                        Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center){
+                            Icon(imageVector = Icons.Outlined.Clear, contentDescription = "clear", tint = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                }
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -372,30 +398,51 @@ fun EditArea(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Box(
-                                    modifier = Modifier.weight(1f).pointerInteropFilter {
-                                        when(it.action){
-                                            MotionEvent.ACTION_DOWN -> {Log.d("parabox", "down")}
-//                                        MotionEvent.ACTION_MOVE -> {Log.d("parabox", "move")}
-                                            MotionEvent.ACTION_UP -> {Log.d("parabox", "up")}
-                                            MotionEvent.ACTION_OUTSIDE -> {Log.d("parabox", "outside")}
-                                            MotionEvent.ACTION_BUTTON_PRESS -> {Log.d("parabox", "press")}
-                                            MotionEvent.ACTION_BUTTON_RELEASE -> {Log.d("parabox", "release")}
-                                            else ->  false
-                                        }
-                                        true
-                                    },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(48.dp)
+                                        .pointerInteropFilter {
+                                            when (it.action) {
+                                                MotionEvent.ACTION_DOWN -> {
+                                                    audioRecorderState =
+                                                        AudioRecorderState.Recording
+                                                }
+                                                MotionEvent.ACTION_MOVE -> {
+                                                    audioRecorderState =
+                                                        if (it.y < -150) AudioRecorderState.Confirmed else AudioRecorderState.Recording
+                                                }
+                                                MotionEvent.ACTION_UP -> {
+                                                    if(audioRecorderState is AudioRecorderState.Confirmed){
+                                                        audioRecorderState = AudioRecorderState.Ready
+                                                    }else{
+                                                        audioRecorderState = AudioRecorderState.Done
+                                                    }
+                                                }
+                                                MotionEvent.ACTION_OUTSIDE -> {
+                                                    Log.d("parabox", "outside")
+                                                }
+                                                else -> false
+                                            }
+                                            true
+                                        },
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text(text = "长按录制", color = MaterialTheme.colorScheme.primary)
+                                    Text(text = audioRecorderState.text, color = MaterialTheme.colorScheme.primary)
                                 }
-                                IconButton(onClick = {
-                                    onAudioStateChanged(false)
-                                }) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Keyboard,
-                                        contentDescription = "keyboard",
-                                        tint = MaterialTheme.colorScheme.primary
-                                    )
+                                AnimatedVisibility(
+                                    visible = audioRecorderState is AudioRecorderState.Ready,
+                                    enter = fadeIn() + expandHorizontally(),
+                                    exit = fadeOut() + shrinkHorizontally(),
+                                ) {
+                                    IconButton(onClick = {
+                                        onAudioStateChanged(false)
+                                    }) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Keyboard,
+                                            contentDescription = "keyboard",
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -464,7 +511,9 @@ fun EditArea(
                                         if (textFieldValueState.text.isEmpty()) {
                                             Text(
                                                 text = "输入内容",
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Clip,
                                             )
                                         }
                                         innerTextField()
@@ -496,7 +545,7 @@ fun EditArea(
                     }
 
                 }
-                AnimatedVisibility(visible = (textFieldValueState.text.isNotEmpty() || gallerySelected.isNotEmpty() || cameraSelected.isNotEmpty() || quoteMessageSelected != null) && !audioState,
+                AnimatedVisibility(visible = ((textFieldValueState.text.isNotEmpty() || gallerySelected.isNotEmpty() || cameraSelected.isNotEmpty() || quoteMessageSelected != null) && !audioState) || (audioRecorderState is AudioRecorderState.Done && audioState),
 //                    enter = slideInHorizontally { width -> width },
 //                    exit = slideOutHorizontally { width -> width }
                     enter = expandHorizontally() { width -> 0 },
@@ -663,7 +712,8 @@ fun EditArea(
                                 }
                                 LazyRow(
                                     modifier = Modifier
-                                        .fillMaxSize().padding(start = 16.dp),
+                                        .fillMaxSize()
+                                        .padding(start = 16.dp),
                                     contentPadding = PaddingValues(end = 16.dp),
                                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
