@@ -90,9 +90,8 @@ class MainActivity : ComponentActivity() {
         getExternalFilesDir("avatar")?.listFiles()?.filter { it.isFile }?.map {
             it.delete()
         }
-        val timeStr = System.currentTimeMillis().toDateAndTimeString()
         val path = getExternalFilesDir("avatar")!!
-        val copiedUri = FileUtil.getUriByCopyingFileToPath(this, path, "IMAGE_$timeStr.jpg", uri)
+        val copiedUri = FileUtil.getUriByCopyingFileToPath(this, path, "${System.currentTimeMillis().toDateAndTimeString()}.jpg", uri)
 //        val outputFile =
 //            File("${getExternalFilesDir("avatar")}${File.separator}AVATAR_$timeStr.jpg")
 //        contentResolver.openInputStream(uri)?.use { inputStream ->

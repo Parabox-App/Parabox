@@ -22,11 +22,8 @@ import com.ojhdtapp.parabox.domain.use_case.GetMessages
 import com.ojhdtapp.parabox.ui.message.MessageState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import java.io.IOException
 import javax.inject.Inject
 
@@ -36,6 +33,7 @@ class MainSharedViewModel @Inject constructor(
     private val getMessages: GetMessages,
     private val deleteMessage: DeleteMessage,
 ) : ViewModel() {
+
     // Badge
     private val _messageBadge = mutableStateOf<Int>(0)
     val messageBadge: State<Int> = _messageBadge
@@ -70,9 +68,11 @@ class MainSharedViewModel @Inject constructor(
         )
     }
 
-    fun receiveMessagePagingDataFlow(pluginConnectionObjectIdList: List<Long>): Flow<PagingData<Message>> =
-        getMessages.pagingFlow(pluginConnectionObjectIdList)
+    fun receiveMessagePagingDataFlow(pluginConnectionObjectIdList: List<Long>): Flow<PagingData<Message>> {
+        return getMessages.pagingFlow(pluginConnectionObjectIdList)
             .cachedIn(viewModelScope)
+    }
+
 
     fun clearMessage() {
         _messageStateFlow.value = MessageState()
@@ -116,8 +116,9 @@ class MainSharedViewModel @Inject constructor(
             _quoteMessageState.value = value.copy(
                 profile = Profile(name = name, null, null)
             )
-        } else
-        _quoteMessageState.value = value
+        } else {
+            _quoteMessageState.value = value
+        }
     }
     fun clearQuoteMessage(){
         _quoteMessageState.value = null

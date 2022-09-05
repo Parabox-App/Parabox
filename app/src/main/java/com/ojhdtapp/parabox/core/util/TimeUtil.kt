@@ -7,7 +7,7 @@ import java.util.*
 import kotlin.math.abs
 
 fun Long.toTimeUntilNow(): String {
-    return when (val millsUtilNow = System.currentTimeMillis() - this) {
+    return when (val millsUtilNow = abs(System.currentTimeMillis() - this)) {
         in 0 until 120000 -> "刚刚"
         in 120000 until 1500000 -> "${millsUtilNow / 60000}分钟前"
         in 1500000 until 3000000 -> "半小时前"

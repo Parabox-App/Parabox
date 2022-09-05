@@ -1458,9 +1458,9 @@ private fun MessageContent.toLayout(
             color = textColor
         )
         is Image -> {
-            var imageWidth by remember {
-                mutableStateOf(80.dp)
-            }
+//            var imageWidth by remember {
+//                mutableStateOf(80.dp)
+//            }
             val imageLoader = ImageLoader.Builder(context)
                 .components {
                     if (SDK_INT >= 28) {
@@ -1470,38 +1470,37 @@ private fun MessageContent.toLayout(
                     }
                 }
                 .build()
-            LaunchedEffect(key1 = this@toLayout) {
-                imageWidth = if (uriString != null) {
-                    try {
-                        val options = BitmapFactory.Options().apply {
-                            inJustDecodeBounds = true
-                        }
-                        context.contentResolver.openInputStream(Uri.parse(uriString))
-                            .use {
-                                BitmapFactory.decodeStream(
-                                    it,
-                                    null,
-                                    options
-                                )
-                            }
-                        with(density) {
-                            options.outWidth.toDp().coerceIn(80.dp, 320.dp)
-                        }
-                    } catch (e: FileNotFoundException) {
-                        with(density) {
-                            width
-                                .toDp()
-                                .coerceIn(80.dp, 320.dp)
-                        }
-                    }
-                } else {
-                    with(density) {
-                        width
-                            .toDp()
-                            .coerceIn(80.dp, 320.dp)
-                    }
-                }
-            }
+//            LaunchedEffect(key1 = this@toLayout) {
+//                imageWidth = if (uriString != null) {
+//                    try {
+//                        val options = BitmapFactory.Options().apply {
+//                            inJustDecodeBounds = true
+//                        }
+//                        context.contentResolver.openInputStream(Uri.parse(uriString))
+//                            .use {
+//                                BitmapFactory.decodeStream(
+//                                    it,
+//                                    null,
+//                                    options
+//                                )
+//                            }
+//                        with(density) {
+//                            options.outWidth.toDp().coerceIn(80.dp, 320.dp)
+//                        }
+//                    } catch (e: FileNotFoundException) {
+//                        with(density) {
+//                            width
+//                                .toDp()
+//                                .coerceIn(80.dp, 320.dp)
+//                        }
+//                    }
+//                } else {
+//                    with(density) {
+//                        width.toDp()
+//                            .coerceIn(80.dp, 320.dp)
+//                    }
+//                }
+//            }
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(uriString?.also { Uri.parse(it) }
@@ -1513,7 +1512,7 @@ private fun MessageContent.toLayout(
                 contentDescription = "image",
                 contentScale = ContentScale.FillWidth,
                 modifier = Modifier
-                    .width(imageWidth)
+//                    .width(imageWidth)
 //                    .defaultMinSize(minHeight = 80.dp)
 //                        .height(with(LocalDensity.current) {
 //                            min(height.toDp(), 600.dp)

@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
+import android.view.MotionEvent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
@@ -39,6 +40,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
@@ -108,7 +110,7 @@ fun EditArea(
     LaunchedEffect(key1 = memeUpdateFlag) {
         memeList.clear()
         context.getExternalFilesDir("meme")?.listFiles()
-            ?.filter { it.path.endsWith(".jpg") || it.path.endsWith(".jpeg") || it.path.endsWith(".png") }
+            ?.filter { it.path.endsWith(".jpg") || it.path.endsWith(".jpeg") || it.path.endsWith(".png") || it.path.endsWith(".gif") }
             ?.reversed()
             ?.also {
                 memeList.addAll(it)
@@ -211,7 +213,7 @@ fun EditArea(
             if (!it.exists()) {
                 it.mkdirs()
             }
-        }, "Image_${System.currentTimeMillis().toDateAndTimeString()}.jpg")
+        }, "${System.currentTimeMillis().toDateAndTimeString()}.jpg")
         FileProvider.getUriForFile(
             context,
             BuildConfig.APPLICATION_ID + ".provider", outPutFile
@@ -370,7 +372,18 @@ fun EditArea(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Box(
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.weight(1f).pointerInteropFilter {
+                                        when(it.action){
+                                            MotionEvent.ACTION_DOWN -> {Log.d("parabox", "down")}
+//                                        MotionEvent.ACTION_MOVE -> {Log.d("parabox", "move")}
+                                            MotionEvent.ACTION_UP -> {Log.d("parabox", "up")}
+                                            MotionEvent.ACTION_OUTSIDE -> {Log.d("parabox", "outside")}
+                                            MotionEvent.ACTION_BUTTON_PRESS -> {Log.d("parabox", "press")}
+                                            MotionEvent.ACTION_BUTTON_RELEASE -> {Log.d("parabox", "release")}
+                                            else ->  false
+                                        }
+                                        true
+                                    },
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(text = "长按录制", color = MaterialTheme.colorScheme.primary)
@@ -510,7 +523,7 @@ fun EditArea(
                                     context,
 //                                    File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "Parabox/Chat"),
                                     context.getExternalFilesDir("chat")!!,
-                                    "Image_${System.currentTimeMillis().toDateAndTimeString()}.jpg",
+                                    "${System.currentTimeMillis().toDateAndTimeString()}.jpg",
                                     it
                                 )?.also {
                                     packageNameList.forEach { packageName ->
