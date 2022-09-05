@@ -103,7 +103,7 @@ fun EditArea(
     onSend: (contents: List<MessageContent>) -> Unit,
     onStartRecording: () -> Unit,
     onStopRecording: () -> Unit,
-    recordAmplitudeList: SnapshotStateList<Int>,
+    onClearRecording: () -> Unit,
     onTextFieldHeightChange: (height: Int) -> Unit
 ) {
     val context = LocalContext.current
@@ -364,6 +364,7 @@ fun EditArea(
                 LaunchedEffect(key1 = audioState) {
                     if (!audioState) {
                         audioRecorderState = AudioRecorderState.Ready
+                        onClearRecording()
                     }
                 }
                 AnimatedVisibility(visible = audioRecorderState is AudioRecorderState.Done) {
@@ -373,6 +374,7 @@ fun EditArea(
                         color = MaterialTheme.colorScheme.primaryContainer,
                         onClick = {
                             audioRecorderState = AudioRecorderState.Ready
+                            onClearRecording()
                         }
                     ) {
                         Box(
@@ -440,6 +442,7 @@ fun EditArea(
                                                     if (audioRecorderState is AudioRecorderState.Confirmed) {
                                                         audioRecorderState =
                                                             AudioRecorderState.Ready
+                                                        onClearRecording()
                                                     } else {
                                                         audioRecorderState =
                                                             AudioRecorderState.Done

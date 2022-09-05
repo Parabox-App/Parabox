@@ -126,6 +126,7 @@ class MainActivity : ComponentActivity() {
             recorderJob = lifecycleScope.launch {
                 while (true) {
                     val value = recorder?.maxAmplitude ?: 0
+                    Log.d("parabox", "$value")
                     mainSharedViewModel.insertIntoRecordAmplitudeStateList(value)
                     delay(500)
                 }

@@ -638,14 +638,16 @@ fun NormalChatPage(
         },
         floatingActionButton = {
             AnimatedVisibility(
-                visible = mainSharedViewModel.quoteMessageState.value != null || fabExtended,
+                visible = mainSharedViewModel.recordAmplitudeStateList.isNotEmpty() || mainSharedViewModel.quoteMessageState.value != null || fabExtended,
                 enter = slideInHorizontally { it * 2 }  // slide in from the right
                 , exit = slideOutHorizontally { it * 2 } // slide out to the right
             ) {
                 ExtendedFloatingActionButton(
-                    expanded = mainSharedViewModel.quoteMessageState.value != null && quoteExtended,
+                    expanded = mainSharedViewModel.recordAmplitudeStateList.isNotEmpty() || mainSharedViewModel.quoteMessageState.value != null && quoteExtended,
                     onClick = {
-                        if (mainSharedViewModel.quoteMessageState.value != null) {
+                        if (mainSharedViewModel.recordAmplitudeStateList.isNotEmpty()){
+
+                        } else if (mainSharedViewModel.quoteMessageState.value != null) {
                             coroutineScope.launch {
                                 val idList =
                                     lazyPagingItems.itemSnapshotList.items.map { it.messageId }
@@ -667,14 +669,21 @@ fun NormalChatPage(
                         }
                     }, modifier = Modifier.offset(y = (-42).dp),
                     icon = {
-                        Crossfade(targetState = mainSharedViewModel.quoteMessageState.value != null) {
-                            if (it) {
-                                Icon(
+                        Crossfade(targetState = when{
+                            mainSharedViewModel.recordAmplitudeStateList.isNotEmpty() -> 1
+                            mainSharedViewModel.quoteMessageState.value != null -> 2
+                            else -> 3
+                        }) {
+                            when(it){
+                                1 ->Icon(
+                                    imageVector = Icons.Outlined.SettingsVoice,
+                                    contentDescription = "voice"
+                                )
+                                2 -> Icon(
                                     imageVector = Icons.Outlined.Reply,
                                     contentDescription = "reply"
                                 )
-                            } else {
-                                Icon(
+                                else -> Icon(
                                     imageVector = Icons.Outlined.ArrowDownward,
                                     contentDescription = "to_latest"
                                 )
@@ -682,31 +691,36 @@ fun NormalChatPage(
                         }
                     },
                     text = {
-                        mainSharedViewModel.quoteMessageState.value?.let {
-                            Row(
-                                modifier = Modifier.animateContentSize(),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.widthIn(0.dp, 208.dp)) {
-                                    Text(
-                                        text = it.profile.name,
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                    Text(
-                                        text = it.contents.getContentString(),
-                                        style = MaterialTheme.typography.labelMedium,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-                                IconButton(onClick = { mainSharedViewModel.clearQuoteMessage() }) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Close,
-                                        contentDescription = "cancel"
-                                    )
+                        Box(modifier = Modifier.animateContentSize()){
+                            if (mainSharedViewModel.recordAmplitudeStateList.isNotEmpty()){
+                                AmplitudeIndicator(modifier = Modifier.size(width = 60.dp, height = 24.dp),amplitudeList = mainSharedViewModel.recordAmplitudeStateList)
+                            } else {
+                                mainSharedViewModel.quoteMessageState.value?.let {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(modifier = Modifier.widthIn(0.dp, 208.dp)) {
+                                            Text(
+                                                text = it.profile.name,
+                                                style = MaterialTheme.typography.labelMedium,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                            Text(
+                                                text = it.contents.getContentString(),
+                                                style = MaterialTheme.typography.labelMedium,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
+                                        IconButton(onClick = { mainSharedViewModel.clearQuoteMessage() }) {
+                                            Icon(
+                                                imageVector = Icons.Outlined.Close,
+                                                contentDescription = "cancel"
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -743,7 +757,9 @@ fun NormalChatPage(
                 },
                 onStartRecording = onStartRecording,
                 onStopRecording = onStopRecording,
-                recordAmplitudeList = mainSharedViewModel.recordAmplitudeStateList,
+                onClearRecording = {
+                    mainSharedViewModel.clearRecordAmplitudeStateList()
+                },
                 onTextFieldHeightChange = { px ->
                     changedTextFieldHeight = px
                 })
