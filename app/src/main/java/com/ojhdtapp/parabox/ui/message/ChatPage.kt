@@ -142,7 +142,13 @@ fun ChatPage(
                                 )
                             )
                         }
-                    }
+                    },
+                    onStartRecording = {
+                        onEvent(ActivityEvent.StartRecording)
+                    },
+                    onStopRecording = {
+                        onEvent(ActivityEvent.StopRecording)
+                    },
                 )
             }
         }
@@ -164,7 +170,9 @@ fun NormalChatPage(
     onRecallMessage: (type: Int, messageId: Long) -> Unit,
     onStopSplitting: () -> Unit = {},
     onBackClick: () -> Unit,
-    onSend: (contents: List<com.ojhdtapp.messagedto.message_content.MessageContent>) -> Unit
+    onSend: (contents: List<com.ojhdtapp.messagedto.message_content.MessageContent>) -> Unit,
+    onStartRecording: () -> Unit,
+    onStopRecording: () -> Unit,
 ) {
     // Util
     val coroutineScope = rememberCoroutineScope()
@@ -733,6 +741,9 @@ fun NormalChatPage(
                         lazyPagingItems.refresh()
                     }
                 },
+                onStartRecording = onStartRecording,
+                onStopRecording = onStopRecording,
+                recordAmplitudeList = mainSharedViewModel.recordAmplitudeStateList,
                 onTextFieldHeightChange = { px ->
                     changedTextFieldHeight = px
                 })

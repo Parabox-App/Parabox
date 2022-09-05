@@ -4,6 +4,8 @@ import android.app.Activity
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
+import android.media.MediaPlayer
+import android.media.MediaRecorder
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -58,11 +60,15 @@ import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.navigation.dependency
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -74,6 +80,67 @@ class MainActivity : ComponentActivity() {
     private lateinit var userAvatarPickerLauncher: ActivityResultLauncher<Intent>
     private lateinit var userAvatarPickerSLauncher: ActivityResultLauncher<String>
     private lateinit var requestPermissionLauncher: ActivityResultLauncher<String>
+
+    private var recorder: MediaRecorder? = null
+    private var recorderJob: Job? = null
+    private var player: MediaPlayer? = null
+    lateinit var recordPath: String
+
+    // Shared ViewModel
+    val mainSharedViewModel by viewModels<MainSharedViewModel>()
+
+
+    private fun startPlaying() {
+        player = MediaPlayer().apply {
+            try {
+                setDataSource(recordPath)
+                prepare()
+                start()
+            } catch (e: IOException) {
+                Log.e("parabox", "prepare() failed")
+            }
+        }
+    }
+
+    private fun stopPlaying() {
+        player?.release()
+        player = null
+    }
+
+    private fun startRecording() {
+        mainSharedViewModel.clearRecordAmplitudeStateList()
+        recorder = MediaRecorder().apply {
+            setAudioSource(MediaRecorder.AudioSource.MIC)
+            setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
+            setOutputFile(recordPath)
+            setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
+            try {
+                prepare()
+            } catch (e: IOException) {
+                Log.e("parabox", "prepare() failed")
+            }
+            start()
+            recorderJob = lifecycleScope.launch {
+                while (true) {
+                    val value = recorder?.maxAmplitude ?: 0
+                    mainSharedViewModel.insertIntoRecordAmplitudeStateList(value)
+                    delay(500)
+                }
+            }
+        }
+    }
+
+    private fun stopRecording() {
+        recorder?.apply {
+            stop()
+            reset()
+            release()
+        }
+        recorderJob?.cancel()
+        if (recorderJob != null)
+            recorderJob = null
+        recorder = null
+    }
 
     private fun pickUserAvatar() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -91,7 +158,12 @@ class MainActivity : ComponentActivity() {
             it.delete()
         }
         val path = getExternalFilesDir("avatar")!!
-        val copiedUri = FileUtil.getUriByCopyingFileToPath(this, path, "${System.currentTimeMillis().toDateAndTimeString()}.jpg", uri)
+        val copiedUri = FileUtil.getUriByCopyingFileToPath(
+            this,
+            path,
+            "${System.currentTimeMillis().toDateAndTimeString()}.jpg",
+            uri
+        )
 //        val outputFile =
 //            File("${getExternalFilesDir("avatar")}${File.separator}AVATAR_$timeStr.jpg")
 //        contentResolver.openInputStream(uri)?.use { inputStream ->
@@ -124,7 +196,12 @@ class MainActivity : ComponentActivity() {
             is ActivityEvent.SendMessage -> {
                 lifecycleScope.launch(Dispatchers.IO) {
                     val timestamp = System.currentTimeMillis()
-                    handleNewMessage(event.contents, event.pluginConnection, timestamp, event.sendType).also {
+                    handleNewMessage(
+                        event.contents,
+                        event.pluginConnection,
+                        timestamp,
+                        event.sendType
+                    ).also {
                         val dto = SendMessageDto(
                             contents = event.contents,
                             timestamp = timestamp,
@@ -141,6 +218,12 @@ class MainActivity : ComponentActivity() {
             is ActivityEvent.SetUserAvatar -> {
                 pickUserAvatar()
             }
+            is ActivityEvent.StartRecording -> {
+                startRecording()
+            }
+            is ActivityEvent.StopRecording -> {
+                stopRecording()
+            }
         }
     }
 
@@ -150,6 +233,8 @@ class MainActivity : ComponentActivity() {
     )
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Record
+        recordPath = "${externalCacheDir!!.absoluteFile}/audio_record.3gp"
 
         // Activity Result Api
         userAvatarPickerLauncher =
@@ -182,9 +267,6 @@ class MainActivity : ComponentActivity() {
                 // decision.
             }
         }
-
-        // Shared ViewModel
-        val mainSharedViewModel by viewModels<MainSharedViewModel>()
 
         // Receive Status Flow
         lifecycleScope.launch {

@@ -29,6 +29,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -100,6 +101,9 @@ fun EditArea(
     onBottomSheetExpand: () -> Unit,
     onBottomSheetCollapse: () -> Unit,
     onSend: (contents: List<MessageContent>) -> Unit,
+    onStartRecording: () -> Unit,
+    onStopRecording: () -> Unit,
+    recordAmplitudeList: SnapshotStateList<Int>,
     onTextFieldHeightChange: (height: Int) -> Unit
 ) {
     val context = LocalContext.current
@@ -280,6 +284,7 @@ fun EditArea(
             .background(MaterialTheme.colorScheme.surface),
         tonalElevation = 3.dp
     ) {
+//        Box(modifier = Modifier.size(24.dp).background(Color.Yellow).offset(x = 200.dp ,y = -200.dp))
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -408,6 +413,7 @@ fun EditArea(
                                                     audioRecorderState =
                                                         AudioRecorderState.Recording
                                                     interactionSource.tryEmit(press)
+                                                    onStartRecording()
                                                 }
                                                 MotionEvent.ACTION_MOVE -> {
                                                     audioRecorderState =
@@ -415,6 +421,7 @@ fun EditArea(
                                                 }
                                                 MotionEvent.ACTION_UP -> {
                                                     interactionSource.tryEmit(PressInteraction.Release(press))
+                                                    onStopRecording()
                                                     if(audioRecorderState is AudioRecorderState.Confirmed){
                                                         audioRecorderState = AudioRecorderState.Ready
                                                     }else{

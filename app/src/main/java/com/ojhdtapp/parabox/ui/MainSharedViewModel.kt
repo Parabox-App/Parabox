@@ -157,4 +157,15 @@ class MainSharedViewModel @Inject constructor(
         .map { settings ->
             settings[DataStoreKeys.USER_AVATAR]
         }
+
+    // Record Amplitude
+    private val _recordAmplitudeStateList = mutableStateListOf<Int>()
+    val recordAmplitudeStateList get() = _recordAmplitudeStateList
+    fun clearRecordAmplitudeStateList(){
+        _recordAmplitudeStateList.clear()
+    }
+    fun insertIntoRecordAmplitudeStateList(item: Int){
+        _recordAmplitudeStateList.add(item)
+    }
+
 }
