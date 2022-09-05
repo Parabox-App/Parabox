@@ -117,7 +117,11 @@ fun EditArea(
     LaunchedEffect(key1 = memeUpdateFlag) {
         memeList.clear()
         context.getExternalFilesDir("meme")?.listFiles()
-            ?.filter { it.path.endsWith(".jpg") || it.path.endsWith(".jpeg") || it.path.endsWith(".png") || it.path.endsWith(".gif") }
+            ?.filter {
+                it.path.endsWith(".jpg") || it.path.endsWith(".jpeg") || it.path.endsWith(".png") || it.path.endsWith(
+                    ".gif"
+                )
+            }
             ?.reversed()
             ?.also {
                 memeList.addAll(it)
@@ -284,11 +288,7 @@ fun EditArea(
             .background(MaterialTheme.colorScheme.surface),
         tonalElevation = 3.dp
     ) {
-//        Box(modifier = Modifier.size(24.dp).background(Color.Yellow).offset(x = 200.dp ,y = -200.dp))
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-        ) {
+        Column() {
             val relocation = remember { BringIntoViewRequester() }
             Row(
                 modifier = Modifier
@@ -358,11 +358,11 @@ fun EditArea(
                         }
                     }
                 }
-                var audioRecorderState by remember{
+                var audioRecorderState by remember {
                     mutableStateOf<AudioRecorderState>(AudioRecorderState.Ready)
                 }
-                LaunchedEffect(key1 = audioState){
-                    if(!audioState){
+                LaunchedEffect(key1 = audioState) {
+                    if (!audioState) {
                         audioRecorderState = AudioRecorderState.Ready
                     }
                 }
@@ -375,8 +375,15 @@ fun EditArea(
                             audioRecorderState = AudioRecorderState.Ready
                         }
                     ) {
-                        Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center){
-                            Icon(imageVector = Icons.Outlined.Clear, contentDescription = "clear", tint = MaterialTheme.colorScheme.primary)
+                        Box(
+                            modifier = Modifier.size(48.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Clear,
+                                contentDescription = "clear",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
                         }
                     }
                 }
@@ -398,7 +405,10 @@ fun EditArea(
                         ) {
                             val interactionSource = remember { MutableInteractionSource() }
                             Row(
-                                modifier = Modifier.indication(interactionSource, LocalIndication.current),
+                                modifier = Modifier.indication(
+                                    interactionSource,
+                                    LocalIndication.current
+                                ),
                                 horizontalArrangement = Arrangement.Center,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -407,7 +417,8 @@ fun EditArea(
                                         .weight(1f)
                                         .height(48.dp)
                                         .pointerInteropFilter {
-                                            val press = PressInteraction.Press(Offset(it.x, it.y))
+                                            val press =
+                                                PressInteraction.Press(Offset(it.x, it.y))
                                             when (it.action) {
                                                 MotionEvent.ACTION_DOWN -> {
                                                     audioRecorderState =
@@ -420,12 +431,18 @@ fun EditArea(
                                                         if (it.y < -150) AudioRecorderState.Confirmed else AudioRecorderState.Recording
                                                 }
                                                 MotionEvent.ACTION_UP -> {
-                                                    interactionSource.tryEmit(PressInteraction.Release(press))
+                                                    interactionSource.tryEmit(
+                                                        PressInteraction.Release(
+                                                            press
+                                                        )
+                                                    )
                                                     onStopRecording()
-                                                    if(audioRecorderState is AudioRecorderState.Confirmed){
-                                                        audioRecorderState = AudioRecorderState.Ready
-                                                    }else{
-                                                        audioRecorderState = AudioRecorderState.Done
+                                                    if (audioRecorderState is AudioRecorderState.Confirmed) {
+                                                        audioRecorderState =
+                                                            AudioRecorderState.Ready
+                                                    } else {
+                                                        audioRecorderState =
+                                                            AudioRecorderState.Done
                                                     }
                                                 }
                                                 else -> false
@@ -434,7 +451,10 @@ fun EditArea(
                                         },
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text(text = audioRecorderState.text, color = MaterialTheme.colorScheme.primary)
+                                    Text(
+                                        text = audioRecorderState.text,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
                                 }
                                 AnimatedVisibility(
                                     visible = audioRecorderState is AudioRecorderState.Ready,
@@ -769,17 +789,20 @@ fun EditArea(
                                                     modifier = Modifier
                                                         .padding(3.dp)
                                                 ) {
-                                                    val imageLoader = ImageLoader.Builder(context)
-                                                        .components {
-                                                            if (Build.VERSION.SDK_INT >= 28) {
-                                                                add(ImageDecoderDecoder.Factory())
-                                                            } else {
-                                                                add(GifDecoder.Factory())
+                                                    val imageLoader =
+                                                        ImageLoader.Builder(context)
+                                                            .components {
+                                                                if (Build.VERSION.SDK_INT >= 28) {
+                                                                    add(ImageDecoderDecoder.Factory())
+                                                                } else {
+                                                                    add(GifDecoder.Factory())
+                                                                }
                                                             }
-                                                        }
-                                                        .build()
+                                                            .build()
                                                     AsyncImage(
-                                                        model = ImageRequest.Builder(LocalContext.current)
+                                                        model = ImageRequest.Builder(
+                                                            LocalContext.current
+                                                        )
                                                             .data(it)
                                                             .crossfade(true)
                                                             .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
@@ -798,7 +821,10 @@ fun EditArea(
                                                                     showMemeDeleteBtn = false
                                                                 } else {
                                                                     FileUtil
-                                                                        .getUriOfFile(context, it)
+                                                                        .getUriOfFile(
+                                                                            context,
+                                                                            it
+                                                                        )
                                                                         ?.let {
                                                                             packageNameList.forEach { packageName ->
                                                                                 context.grantUriPermission(
@@ -807,7 +833,13 @@ fun EditArea(
                                                                                     Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION
                                                                                 )
                                                                             }
-                                                                            onSend(listOf(Image(uri = it)))
+                                                                            onSend(
+                                                                                listOf(
+                                                                                    Image(
+                                                                                        uri = it
+                                                                                    )
+                                                                                )
+                                                                            )
                                                                         }
                                                                 }
                                                             }, onLongClick = {
@@ -863,7 +895,9 @@ fun EditArea(
                                                                         )
                                                                     }
                                                                     .also {
-                                                                        memePickerLauncher.launch(it)
+                                                                        memePickerLauncher.launch(
+                                                                            it
+                                                                        )
                                                                     }
                                                             } else {
                                                                 memePickerSLauncher.launch("image/*")
@@ -1054,7 +1088,9 @@ fun EditArea(
                                                 modifier = Modifier
                                                     .fillMaxSize()
                                                     .clickable {
-                                                        cameraLauncher.launch(targetCameraShotUri)
+                                                        cameraLauncher.launch(
+                                                            targetCameraShotUri
+                                                        )
                                                     },
                                                 contentAlignment = Alignment.Center
                                             ) {
@@ -1345,7 +1381,6 @@ fun EditArea(
                                     }
                                 }
                             }
-
                         }
                     }
                 }
