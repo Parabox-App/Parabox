@@ -36,6 +36,13 @@ class MessagePageViewModel @Inject constructor(
     val deleteGroupedContact: DeleteGroupedContact
 ) : ViewModel() {
     init {
+        viewModelScope.launch {
+            while (true) {
+                delay(10000)
+//                Log.d("parabox", "time emitted")
+                _contactRefreshFlow.emit(System.currentTimeMillis())
+            }
+        }
         // Update Ungrouped Contacts
 //        getUngroupedContactList().onEach {
 //            Log.d("parabox", "contactList:${it}")
@@ -138,30 +145,30 @@ class MessagePageViewModel @Inject constructor(
             .combine(_contactRefreshFlow) { contacts, refresh ->
                 contacts
             }.filter {
-            if (it is Resource.Error) {
-                _uiEventFlow.emit(MessagePageUiEvent.ShowSnackBar(it.message!!))
-                return@filter false
-            } else true
-        }.map<Resource<List<Contact>>, List<Contact>> {
-            when (it) {
-                is Resource.Loading -> emptyList()
-                is Resource.Success -> {
-                    showArchiveContact()
-                    it.data!!.filter {
-                        typeFilter.value.contactCheck(it)
-                                && readFilter.value.contactCheck(it)
-                                && if (selectedContactTagStateList.isNotEmpty()) {
-                            (selectedContactTagStateList intersect it.tags.toSet()).isNotEmpty()
-                        } else true
-                    }.sortedByDescending { it.isPinned }
+                if (it is Resource.Error) {
+                    _uiEventFlow.emit(MessagePageUiEvent.ShowSnackBar(it.message!!))
+                    return@filter false
+                } else true
+            }.map<Resource<List<Contact>>, List<Contact>> {
+                when (it) {
+                    is Resource.Loading -> emptyList()
+                    is Resource.Success -> {
+                        showArchiveContact()
+                        it.data!!.filter {
+                            typeFilter.value.contactCheck(it)
+                                    && readFilter.value.contactCheck(it)
+                                    && if (selectedContactTagStateList.isNotEmpty()) {
+                                (selectedContactTagStateList intersect it.tags.toSet()).isNotEmpty()
+                            } else true
+                        }.sortedByDescending { it.isPinned }
+                    }
+                    else -> emptyList()
                 }
-                else -> emptyList()
-            }
-        }.stateIn(
-            initialValue = emptyList<Contact>(),
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000)
-        )
+            }.stateIn(
+                initialValue = emptyList<Contact>(),
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000)
+            )
     val archivedContactStateFlow get() = _archivedContactStateFlow
 
     private val _archivedContactHidden = mutableStateOf<Boolean>(false)
