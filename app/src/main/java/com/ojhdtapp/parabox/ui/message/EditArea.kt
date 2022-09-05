@@ -11,10 +11,9 @@ import android.view.MotionEvent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -390,10 +389,11 @@ fun EditArea(
                     ) {
                         Surface(
                             shape = RoundedCornerShape(24.dp),
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            onClick = {}
+                            color = MaterialTheme.colorScheme.primaryContainer
                         ) {
+                            val interactionSource = remember { MutableInteractionSource() }
                             Row(
+                                modifier = Modifier.indication(interactionSource, LocalIndication.current),
                                 horizontalArrangement = Arrangement.Center,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -402,24 +402,24 @@ fun EditArea(
                                         .weight(1f)
                                         .height(48.dp)
                                         .pointerInteropFilter {
+                                            val press = PressInteraction.Press(Offset(it.x, it.y))
                                             when (it.action) {
                                                 MotionEvent.ACTION_DOWN -> {
                                                     audioRecorderState =
                                                         AudioRecorderState.Recording
+                                                    interactionSource.tryEmit(press)
                                                 }
                                                 MotionEvent.ACTION_MOVE -> {
                                                     audioRecorderState =
                                                         if (it.y < -150) AudioRecorderState.Confirmed else AudioRecorderState.Recording
                                                 }
                                                 MotionEvent.ACTION_UP -> {
+                                                    interactionSource.tryEmit(PressInteraction.Release(press))
                                                     if(audioRecorderState is AudioRecorderState.Confirmed){
                                                         audioRecorderState = AudioRecorderState.Ready
                                                     }else{
                                                         audioRecorderState = AudioRecorderState.Done
                                                     }
-                                                }
-                                                MotionEvent.ACTION_OUTSIDE -> {
-                                                    Log.d("parabox", "outside")
                                                 }
                                                 else -> false
                                             }
