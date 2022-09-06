@@ -1,18 +1,19 @@
 package com.ojhdtapp.parabox.core.util
 
+import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
-import android.util.Log
+import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
-import androidx.core.os.EnvironmentCompat
 import com.ojhdtapp.parabox.BuildConfig
 import java.io.File
 import java.io.FileOutputStream
 import java.text.DecimalFormat
+import java.util.*
 
 object FileUtil {
     fun createTmpFileFromUri(context: Context, uri: Uri, fileName: String): File? {
@@ -58,7 +59,12 @@ object FileUtil {
         }
     }
 
-    fun getUriByCopyingFileToPath(context: Context, path: File, fileName: String, file: File): Uri? {
+    fun getUriByCopyingFileToPath(
+        context: Context,
+        path: File,
+        fileName: String,
+        file: File
+    ): Uri? {
         return try {
             if (!path.exists()) path.mkdirs()
             val outputFile = File(path, fileName)
@@ -158,41 +164,57 @@ object FileUtil {
         }
 
     }
+
     fun saveImageToExternalStorage(context: Context, file: File) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                val contentValues = ContentValues().apply {
-                    put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-                    put(
-                        MediaStore.Images.Media.DISPLAY_NAME,
-                        System.currentTimeMillis().toDateAndTimeString()
-                    )
-                    put(
-                        MediaStore.Images.Media.RELATIVE_PATH,
-                        "${Environment.DIRECTORY_PICTURES}/Parabox"
-                    )
-                }
-                val resolver = context.contentResolver
-                resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)?.also {
-                    resolver.openOutputStream(it).use { output ->
-                        file.inputStream().use { input ->
-                            input.copyTo(output!!, DEFAULT_BUFFER_SIZE)
-                        }
-                    }
-                }
-
-            } else {
-                val path = File(
-                    Environment.getExternalStoragePublicDirectory("${Environment.DIRECTORY_PICTURES}/Parabox"),
-                    "${System.currentTimeMillis().toDateAndTimeString()}.jpg"
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val contentValues = ContentValues().apply {
+                put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                put(
+                    MediaStore.Images.Media.DISPLAY_NAME,
+                    System.currentTimeMillis().toDateAndTimeString()
                 )
-                path.outputStream().use { output ->
+                put(
+                    MediaStore.Images.Media.RELATIVE_PATH,
+                    "${Environment.DIRECTORY_PICTURES}/Parabox"
+                )
+            }
+            val resolver = context.contentResolver
+            resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)?.also {
+                resolver.openOutputStream(it).use { output ->
                     file.inputStream().use { input ->
-                        input.copyTo(output, DEFAULT_BUFFER_SIZE)
+                        input.copyTo(output!!, DEFAULT_BUFFER_SIZE)
                     }
                 }
-
             }
+
+        } else {
+            val path = File(
+                Environment.getExternalStoragePublicDirectory("${Environment.DIRECTORY_PICTURES}/Parabox"),
+                "${System.currentTimeMillis().toDateAndTimeString()}.jpg"
+            )
+            path.outputStream().use { output ->
+                file.inputStream().use { input ->
+                    input.copyTo(output, DEFAULT_BUFFER_SIZE)
+                }
+            }
+
+        }
     }
+
+    fun uriToTempFile(context: Context, uri: Uri) = with(context.contentResolver) {
+        val data = readUriBytes(uri) ?: return@with null
+        val extension = getUriExtension(uri)
+        File(
+            context.cacheDir.path,
+            "${UUID.randomUUID()}.$extension"
+        ).also { audio -> audio.writeBytes(data) }
+    }
+
+    fun ContentResolver.readUriBytes(uri: Uri) = openInputStream(uri)
+        ?.buffered()?.use { it.readBytes() }
+
+    fun ContentResolver.getUriExtension(uri: Uri) = MimeTypeMap.getSingleton()
+        .getMimeTypeFromExtension(getType(uri))
 
     fun getSizeString(size: Long): String {
         val format = DecimalFormat("#.##")

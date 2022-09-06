@@ -81,6 +81,9 @@ dependencies {
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
     implementation "androidx.compose.material:material-icons-extended:$compose_version"
 
+    // Amplituda
+    implementation 'com.github.lincollincol:amplituda:2.2.1'
+
     // Apache Commons
     implementation "commons-io:commons-io:2.7"
 

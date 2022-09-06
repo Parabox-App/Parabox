@@ -32,7 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.core.content.FileProvider
 import androidx.core.view.WindowCompat
 import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.Lifecycle
@@ -62,12 +61,10 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
-import java.io.File
-import java.io.FileOutputStream
+import linc.com.amplituda.Amplituda
+import linc.com.amplituda.Compress
 import java.io.IOException
 import javax.inject.Inject
 import kotlin.math.abs
@@ -87,6 +84,7 @@ class MainActivity : ComponentActivity() {
     private var recorderStartTime: Long? = null
     private lateinit var recordPath: String
     private var player: MediaPlayer? = null
+    private var amplituda: Amplituda? = null
 
     // Shared ViewModel
     val mainSharedViewModel by viewModels<MainSharedViewModel>()
@@ -99,10 +97,43 @@ class MainActivity : ComponentActivity() {
                 setDataSource(applicationContext, uri)
                 prepare()
                 start()
+                setOnCompletionListener {
+                    amplituda?.clearCache()
+                    amplituda = null
+                    mainSharedViewModel.clearRecordAmplitudeStateList()
+                }
             } catch (e: IOException) {
                 Log.e("parabox", "prepare() failed")
             }
         }
+        amplituda = Amplituda(this).also { amplituda ->
+            amplituda.processAudio(
+                FileUtil.uriToTempFile(this, uri),
+                Compress.withParams(Compress.AVERAGE, 2)
+            ).get(
+                { result ->
+                    mainSharedViewModel.insertAllIntoRecordAmplitudeStateList(
+                        result.amplitudesAsList().map { it * 1000 })
+                }, { exception ->
+                    exception.printStackTrace()
+                })
+        }
+
+//        player?.let {
+//            Visualizer(it.audioSessionId).apply {
+//                captureSize = Visualizer.getCaptureSizeRange()[1]
+//                setDataCaptureListener(object: Visualizer.OnDataCaptureListener{
+//                    override fun onWaveFormDataCapture(p0: Visualizer?, p1: ByteArray?, p2: Int) {
+//                        val amplitude = p1?.let { it1 -> calculateRMSLevel(it1) } ?: 0
+//                        Log.d("parabox", "WaveFromData:$amplitude")
+//                    }
+//                    override fun onFftDataCapture(p0: Visualizer?, p1: ByteArray?, p2: Int) {
+//
+//                    }
+//                },Visualizer.getMaxCaptureRate() / 2, true, false)
+//                enabled = true
+//            }
+//        }
     }
 
     private fun startPlayingInternet(url: String) {
@@ -118,6 +149,26 @@ class MainActivity : ComponentActivity() {
                 Log.e("parabox", "prepare() failed")
             }
         }
+    }
+
+//    fun calculateRMSLevel(audioData: ByteArray): Int {
+//        var amplitude = 0.0
+//        for (i in audioData.indices) {
+//            amplitude += Math.abs((audioData[i] / 32768.0))
+//        }
+//        amplitude /= audioData.size
+//
+//        return amplitude.toInt()
+//    }
+
+    fun calculateRMSLevel(audioData: ByteArray): Double {
+        var amplitude = 0.0
+        for (i in 0 until (audioData.size / 2)) {
+            val y = (audioData[i * 2].toInt() or (audioData[i * 2 + 1].toInt() shl 8)) / 32768.0
+            amplitude += abs(y)
+        }
+        amplitude = amplitude / audioData.size / 2
+        return amplitude
     }
 
     private fun stopPlaying() {
@@ -138,26 +189,29 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun startRecording() {
+        recorderJob?.cancel()
+        if (recorderJob != null)
+            recorderJob = null
         mainSharedViewModel.clearRecordAmplitudeStateList()
         recorderStartTime = System.currentTimeMillis()
         recorder = MediaRecorder().apply {
             setAudioSource(MediaRecorder.AudioSource.MIC)
             setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
             setOutputFile(recordPath)
-            setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
+            setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
             try {
                 prepare()
             } catch (e: IOException) {
                 Log.e("parabox", "prepare() failed")
             }
             start()
-            recorderJob = lifecycleScope.launch {
-                while (true) {
-                    val value = recorder?.maxAmplitude ?: 0
-                    Log.d("parabox", "$value")
-                    mainSharedViewModel.insertIntoRecordAmplitudeStateList(value)
-                    delay(500)
-                }
+        }
+        recorderJob = lifecycleScope.launch {
+            while (true) {
+                val value = recorder?.maxAmplitude ?: 0
+                Log.d("parabox", "$value")
+                mainSharedViewModel.insertIntoRecordAmplitudeStateList(value)
+                delay(500)
             }
         }
     }

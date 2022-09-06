@@ -168,4 +168,9 @@ class MainSharedViewModel @Inject constructor(
         _recordAmplitudeStateList.add(item)
     }
 
+    fun insertAllIntoRecordAmplitudeStateList(list: List<Int>){
+        clearRecordAmplitudeStateList()
+        _recordAmplitudeStateList.addAll(list)
+    }
+
 }

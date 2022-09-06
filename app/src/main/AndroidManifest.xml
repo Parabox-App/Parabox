@@ -17,6 +17,7 @@
     </queries>
 
     <application
+        android:requestLegacyExternalStorage="true"
         android:name=".core.HiltApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
