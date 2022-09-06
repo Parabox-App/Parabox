@@ -56,7 +56,21 @@ object FileUtil {
             e.printStackTrace()
             null
         }
+    }
 
+    fun getUriByCopyingFileToPath(context: Context, path: File, fileName: String, file: File): Uri? {
+        return try {
+            if (!path.exists()) path.mkdirs()
+            val outputFile = File(path, fileName)
+            file.copyTo(outputFile, true, DEFAULT_BUFFER_SIZE)
+            FileProvider.getUriForFile(
+                context,
+                BuildConfig.APPLICATION_ID + ".provider", outputFile
+            )
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 
     fun getFileByCopyingFileToPath(

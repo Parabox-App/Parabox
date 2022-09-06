@@ -1,10 +1,13 @@
 package com.ojhdtapp.parabox.core.util
 
 import android.util.Log
+import java.math.RoundingMode
 import java.text.DateFormat
+import java.text.DecimalFormat
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
 fun Long.toTimeUntilNow(): String {
     return when (val millsUtilNow = abs(System.currentTimeMillis() - this)) {
@@ -76,4 +79,14 @@ fun Long.toDateAndTimeString(): String {
         "yyyy-MM-dd-HH-mm-ss-",
         Locale.getDefault()
     ).format(Date(this)) + this.toString().substring(11)
+}
+
+fun Long.toMSString(): String{
+    val df = DecimalFormat("#").apply {
+        roundingMode = RoundingMode.DOWN
+    }
+    val totalSecond = (this / 1000).toFloat().roundToInt()
+    val minute = df.format(totalSecond / 60)
+    val second = totalSecond % 60
+    return "${if(totalSecond > 60) minute.plus("′") else ""}${second}“"
 }

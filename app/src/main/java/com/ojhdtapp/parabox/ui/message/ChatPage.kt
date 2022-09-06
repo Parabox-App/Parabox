@@ -1,10 +1,8 @@
 package com.ojhdtapp.parabox.ui.message
 
 import android.content.Context
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build.VERSION.SDK_INT
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
@@ -57,10 +55,7 @@ import coil.imageLoader
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.ojhdtapp.parabox.R
-import com.ojhdtapp.parabox.core.util.FileUtil
-import com.ojhdtapp.parabox.core.util.itemsBeforeAndAfterReverseIndexed
-import com.ojhdtapp.parabox.core.util.toDateAndTimeString
-import com.ojhdtapp.parabox.core.util.toDescriptiveTime
+import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.message_content.*
 import com.ojhdtapp.parabox.domain.service.PluginService
@@ -73,7 +68,6 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.navigate
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.io.FileNotFoundException
 import kotlin.math.abs
 
 
@@ -149,6 +143,15 @@ fun ChatPage(
                     onStopRecording = {
                         onEvent(ActivityEvent.StopRecording)
                     },
+                    onStartAudioPlaying = {uri, url ->
+                        onEvent(ActivityEvent.StartAudioPlaying(uri, url))
+                    },
+                    onPauseAudioPlaying = {
+                        onEvent(ActivityEvent.PauseAudioPlaying)
+                    },
+                    onResumeAudioPlaying = {
+                        onEvent(ActivityEvent.ResumeAudioPlaying)
+                    }
                 )
             }
         }
@@ -173,6 +176,9 @@ fun NormalChatPage(
     onSend: (contents: List<com.ojhdtapp.messagedto.message_content.MessageContent>) -> Unit,
     onStartRecording: () -> Unit,
     onStopRecording: () -> Unit,
+    onStartAudioPlaying: (uri: Uri?, url: String?) -> Unit,
+    onPauseAudioPlaying: () -> Unit,
+    onResumeAudioPlaying: () -> Unit,
 ) {
     // Util
     val coroutineScope = rememberCoroutineScope()
@@ -754,6 +760,7 @@ fun NormalChatPage(
                         delay(5000)
                         lazyPagingItems.refresh()
                     }
+                    mainSharedViewModel.clearRecordAmplitudeStateList()
                 },
                 onStartRecording = onStartRecording,
                 onStopRecording = onStopRecording,
@@ -974,6 +981,9 @@ fun NormalChatPage(
                                         }
                                     }
                                 }
+                            },
+                            onAudioClick = { uri, url ->
+                                onStartAudioPlaying(uri, url)
                             }
                         )
                     }
@@ -1060,7 +1070,8 @@ fun MessageBlock(
     onClickingEvent: (event: SingleMessageEvent) -> Unit,
     onMessageClick: () -> Unit,
     onMessageLongClick: () -> Unit,
-    onQuoteReplyClick: (messageId: Long) -> Unit
+    onQuoteReplyClick: (messageId: Long) -> Unit,
+    onAudioClick: (uri: Uri?, url: String?) -> Unit
 ) {
     Column() {
         if (shouldShowTimeDivider) {
@@ -1093,7 +1104,8 @@ fun MessageBlock(
                         onClickingEvent = onClickingEvent,
                         onClick = onMessageClick,
                         onLongClick = onMessageLongClick,
-                        onQuoteReplyClick = onQuoteReplyClick
+                        onQuoteReplyClick = onQuoteReplyClick,
+                        onAudioClick = onAudioClick,
                     )
                     if (!isLast) {
                         Spacer(modifier = Modifier.height(2.dp))
@@ -1306,6 +1318,7 @@ fun SingleMessage(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onQuoteReplyClick: (messageId: Long) -> Unit = {},
+    onAudioClick: (uri: Uri?, url: String?) -> Unit = { _, _ ->},
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
@@ -1385,7 +1398,8 @@ fun SingleMessage(
                         message,
                         bottomEndRadius,
                         bottomStartRadius,
-                        onQuoteReplyClick = onQuoteReplyClick
+                        onQuoteReplyClick = onQuoteReplyClick,
+                        onAudioClick = onAudioClick,
                     )
                 }
             }
@@ -1459,6 +1473,7 @@ fun SingleMessage(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MessageContent.toLayout(
     textColor: Color,
@@ -1471,7 +1486,8 @@ private fun MessageContent.toLayout(
     message: Message,
     bottomEndRadius: Dp,
     bottomStartRadius: Dp,
-    onQuoteReplyClick: (messageId: Long) -> Unit = {}
+    onQuoteReplyClick: (messageId: Long) -> Unit = {},
+    onAudioClick: (uri: Uri?, url: String?) -> Unit,
 ) {
     when (this) {
         is At, AtAll -> Text(
@@ -1612,6 +1628,7 @@ private fun MessageContent.toLayout(
                             message,
                             0.dp,
                             0.dp,
+                            onAudioClick = onAudioClick
                         )
                     }
                     if (quoteMessageContent == null) {
@@ -1623,6 +1640,38 @@ private fun MessageContent.toLayout(
                 }
             }
         }
+        is Audio -> {
+            Row(
+                modifier = Modifier.padding(start = 1.dp, end = 12.dp, top = 1.dp, bottom = 1.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    modifier = Modifier.padding(end = 12.dp),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 1.dp,
+                    onClick = {
+                        onAudioClick(uriString?.let{Uri.parse(it)}, url)
+                    }
+                ) {
+                    Box(
+                        modifier = Modifier.size(46.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.RecordVoiceOver,
+                            contentDescription = "record",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+                    Text(
+                        text = length.toMSString(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = textColor
+                    )
+            }
+        }
         is File -> {
             Row(
                 modifier = Modifier.padding(12.dp),
@@ -1631,7 +1680,8 @@ private fun MessageContent.toLayout(
                 Surface(
                     modifier = Modifier.padding(end = 12.dp),
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surface
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 1.dp,
                 ) {
                     Box(
                         modifier = Modifier.size(48.dp),
@@ -1665,7 +1715,6 @@ private fun MessageContent.toLayout(
                     )
                 }
             }
-
         }
     }
 }

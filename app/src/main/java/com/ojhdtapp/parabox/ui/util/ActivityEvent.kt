@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.ui.util
 
 import android.content.Intent
+import android.net.Uri
 import com.ojhdtapp.messagedto.PluginConnection
 import com.ojhdtapp.messagedto.SendMessageDto
 import com.ojhdtapp.messagedto.message_content.MessageContent
@@ -12,4 +13,8 @@ sealed class ActivityEvent{
     object SetUserAvatar: ActivityEvent()
     object StartRecording: ActivityEvent()
     object StopRecording: ActivityEvent()
+    data class StartAudioPlaying(val uri: Uri? = null, val url: String? = null): ActivityEvent()
+    object PauseAudioPlaying: ActivityEvent()
+    object ResumeAudioPlaying: ActivityEvent()
+    object StopAudioPlaying: ActivityEvent()
 }

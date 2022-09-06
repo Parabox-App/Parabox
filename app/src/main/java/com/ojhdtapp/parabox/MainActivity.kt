@@ -85,19 +85,35 @@ class MainActivity : ComponentActivity() {
     private var recorder: MediaRecorder? = null
     private var recorderJob: Job? = null
     private var recorderStartTime: Long? = null
+    private lateinit var recordPath: String
     private var player: MediaPlayer? = null
-    lateinit var recordPath: String
 
     // Shared ViewModel
     val mainSharedViewModel by viewModels<MainSharedViewModel>()
 
 
-    private fun startPlaying() {
+    private fun startPlayingLocal(uri: Uri) {
+        stopPlaying()
         player = MediaPlayer().apply {
             try {
-                setDataSource(recordPath)
+                setDataSource(applicationContext, uri)
                 prepare()
                 start()
+            } catch (e: IOException) {
+                Log.e("parabox", "prepare() failed")
+            }
+        }
+    }
+
+    private fun startPlayingInternet(url: String) {
+        stopPlaying()
+        player = MediaPlayer().apply {
+            try {
+                setDataSource(url)
+                prepareAsync()
+                setOnPreparedListener {
+                    start()
+                }
             } catch (e: IOException) {
                 Log.e("parabox", "prepare() failed")
             }
@@ -107,6 +123,18 @@ class MainActivity : ComponentActivity() {
     private fun stopPlaying() {
         player?.release()
         player = null
+    }
+
+    private fun pausePlaying() {
+        if (player?.isPlaying == true) {
+            player?.pause()
+        }
+    }
+
+    private fun resumePlaying() {
+        if (player?.isPlaying == false) {
+            player?.start()
+        }
     }
 
     private fun startRecording() {
@@ -237,6 +265,24 @@ class MainActivity : ComponentActivity() {
             is ActivityEvent.StopRecording -> {
                 stopRecording()
             }
+            is ActivityEvent.StartAudioPlaying -> {
+                if (event.uri != null) {
+                    startPlayingLocal(event.uri)
+                } else if (event.url != null) {
+                    startPlayingInternet(event.url)
+                } else {
+                    Toast.makeText(this, "音频资源丢失", Toast.LENGTH_SHORT).show()
+                }
+            }
+            is ActivityEvent.StopAudioPlaying -> {
+                stopPlaying()
+            }
+            is ActivityEvent.PauseAudioPlaying -> {
+                pausePlaying()
+            }
+            is ActivityEvent.ResumeAudioPlaying -> {
+                resumePlaying()
+            }
         }
     }
 
@@ -248,6 +294,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         // Record
         recordPath = "${externalCacheDir!!.absoluteFile}/audio_record.3gp"
+//        recordPath = "${getExternalFilesDir("chat")!!.absoluteFile}/audio_record.3gp"
 
         // Activity Result Api
         userAvatarPickerLauncher =

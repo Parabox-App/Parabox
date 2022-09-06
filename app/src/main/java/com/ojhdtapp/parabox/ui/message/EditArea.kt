@@ -1,8 +1,10 @@
 package com.ojhdtapp.parabox.ui.message
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
@@ -29,7 +31,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -69,10 +70,7 @@ import coil.request.ImageRequest
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
-import com.ojhdtapp.messagedto.message_content.Image
-import com.ojhdtapp.messagedto.message_content.MessageContent
-import com.ojhdtapp.messagedto.message_content.PlainText
-import com.ojhdtapp.messagedto.message_content.QuoteReply
+import com.ojhdtapp.messagedto.message_content.*
 import com.ojhdtapp.parabox.BuildConfig
 import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.toDateAndTimeString
@@ -440,9 +438,12 @@ fun EditArea(
                                                     )
                                                     onStopRecording()
                                                     if (audioRecorderState is AudioRecorderState.Confirmed) {
-                                                        audioRecorderState =
-                                                            AudioRecorderState.Ready
                                                         onClearRecording()
+                                                        sendAudio(context, packageNameList){
+                                                            onSend(it)
+                                                            audioRecorderState =
+                                                                AudioRecorderState.Ready
+                                                        }
                                                     } else {
                                                         audioRecorderState =
                                                             AudioRecorderState.Done
@@ -583,28 +584,49 @@ fun EditArea(
                 ) {
                     FloatingActionButton(
                         onClick = {
-                            val content = mutableListOf<MessageContent>()
-                            if (quoteMessageSelected != null) {
-                                content.add(
-                                    QuoteReply(
-                                        quoteMessageSenderName = quoteMessageSelected.profile.name,
-                                        quoteMessageTimestamp = quoteMessageSelected.timestamp,
-                                        quoteMessageId = quoteMessageSelected.messageId,
-                                        quoteMessageContent = quoteMessageSelected.contents.toMessageContentList()
+                            if (audioState) {
+                                sendAudio(context, packageNameList) {
+                                    onSend(it)
+                                    audioRecorderState = AudioRecorderState.Ready
+                                }
+                            } else {
+                                val content = mutableListOf<MessageContent>()
+                                if (quoteMessageSelected != null) {
+                                    content.add(
+                                        QuoteReply(
+                                            quoteMessageSenderName = quoteMessageSelected.profile.name,
+                                            quoteMessageTimestamp = quoteMessageSelected.timestamp,
+                                            quoteMessageId = quoteMessageSelected.messageId,
+                                            quoteMessageContent = quoteMessageSelected.contents.toMessageContentList()
+                                        )
                                     )
-                                )
-                            }
-                            if (textFieldValueState.text.isNotEmpty()) {
-                                content.add(PlainText(textFieldValueState.text))
-                            }
-                            gallerySelected.forEach {
-                                FileUtil.getUriByCopyingFileToPath(
-                                    context,
-//                                    File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "Parabox/Chat"),
-                                    context.getExternalFilesDir("chat")!!,
-                                    "${System.currentTimeMillis().toDateAndTimeString()}.jpg",
-                                    it
-                                )?.also {
+                                }
+                                if (textFieldValueState.text.isNotEmpty()) {
+                                    content.add(PlainText(textFieldValueState.text))
+                                }
+                                gallerySelected.forEach {
+                                    FileUtil.getUriByCopyingFileToPath(
+                                        context,
+                                        //                                    File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "Parabox/Chat"),
+                                        context.getExternalFilesDir("chat")!!,
+                                        "${System.currentTimeMillis().toDateAndTimeString()}.jpg",
+                                        it
+                                    )?.also {
+                                        packageNameList.forEach { packageName ->
+                                            context.grantUriPermission(
+                                                packageName,
+                                                it,
+                                                Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                            )
+                                        }
+                                        val intent = Intent().apply {
+                                            addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                            setDataAndType(it, "image/*")
+                                        }
+                                        content.add(Image(uri = it))
+                                    }
+                                }
+                                cameraSelected.forEach {
                                     packageNameList.forEach { packageName ->
                                         context.grantUriPermission(
                                             packageName,
@@ -614,35 +636,21 @@ fun EditArea(
                                     }
                                     val intent = Intent().apply {
                                         addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                        setDataAndType(it, "image/*")
+                                        setDataAndType(it, context.contentResolver.getType(it))
                                     }
                                     content.add(Image(uri = it))
                                 }
-                            }
-                            cameraSelected.forEach {
-                                packageNameList.forEach { packageName ->
-                                    context.grantUriPermission(
-                                        packageName,
-                                        it,
-                                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                    )
+                                Log.d("parabox", content.toString())
+                                if (content.size > 0) {
+                                    onSend(content)
+                                    onBottomSheetCollapse()
                                 }
-                                val intent = Intent().apply {
-                                    addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                    setDataAndType(it, context.contentResolver.getType(it))
-                                }
-                                content.add(Image(uri = it))
+                                textFieldValueState = TextFieldValue(
+                                    text = ""
+                                )
+                                gallerySelected.clear()
+                                cameraSelected.clear()
                             }
-                            Log.d("parabox", content.toString())
-                            if (content.size > 0) {
-                                onSend(content)
-                                onBottomSheetCollapse()
-                            }
-                            textFieldValueState = TextFieldValue(
-                                text = ""
-                            )
-                            gallerySelected.clear()
-                            cameraSelected.clear()
                         },
                         modifier = Modifier.padding(end = 16.dp),
                         elevation = FloatingActionButtonDefaults.elevation(
@@ -1389,5 +1397,43 @@ fun EditArea(
                 }
             }
         }
+    }
+}
+
+private fun sendAudio(
+    context: Context,
+    packageNameList: List<String>,
+    onSend: (contents: List<MessageContent>) -> Unit
+) {
+    val originalPath = File(context.externalCacheDir!!.absoluteFile, "audio_record.3gp")
+    val audioFile = File(context.getExternalFilesDir("chat")!!, "audio_record.3gp")
+    val targetFileName = "${System.currentTimeMillis().toDateAndTimeString()}.3gp"
+    FileUtil.getUriByCopyingFileToPath(
+        context,
+        context.getExternalFilesDir("chat")!!,
+        targetFileName,
+        originalPath,
+    )?.let {
+        packageNameList.forEach { packageName ->
+            context.grantUriPermission(
+                packageName,
+                it,
+                Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION
+            )
+        }
+        val duration = MediaMetadataRetriever().apply {
+            setDataSource("${context.getExternalFilesDir("chat")!!.absoluteFile}/$targetFileName")
+        }.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L
+        val size = audioFile.length()
+        onSend(
+            listOf(
+                Audio(
+                    length = duration,
+                    fileName = targetFileName,
+                    fileSize = size,
+                    uri = it
+                )
+            )
+        )
     }
 }

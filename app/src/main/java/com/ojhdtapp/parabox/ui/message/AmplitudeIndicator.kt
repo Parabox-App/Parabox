@@ -33,7 +33,9 @@ fun AmplitudeIndicator(modifier: Modifier = Modifier, amplitudeList: SnapshotSta
     }) {
         val state = rememberLazyListState()
         LaunchedEffect(key1 = amplitudeList.size){
-            state.animateScrollToItem(amplitudeList.lastIndex)
+            if(amplitudeList.lastIndex >= 0){
+                state.animateScrollToItem(amplitudeList.lastIndex)
+            }
         }
         LazyRow(
             modifier = Modifier.fillMaxSize(),

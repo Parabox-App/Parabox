@@ -77,7 +77,7 @@ sealed class AudioRecorderState(
     val text: String
 ){
     object Ready : AudioRecorderState("长按录制")
-    object Recording: AudioRecorderState("录制中")
+    object Recording: AudioRecorderState("上滑发送")
     object Confirmed: AudioRecorderState("松手发送")
-    object Done : AudioRecorderState("预览")
+    object Done : AudioRecorderState("重新录制")
 }
