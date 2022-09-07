@@ -19,6 +19,7 @@ import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.parabox.domain.model.*
 import com.ojhdtapp.parabox.domain.use_case.DeleteMessage
 import com.ojhdtapp.parabox.domain.use_case.GetMessages
+import com.ojhdtapp.parabox.ui.message.AudioRecorderState
 import com.ojhdtapp.parabox.ui.message.MessageState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -158,6 +159,12 @@ class MainSharedViewModel @Inject constructor(
             settings[DataStoreKeys.USER_AVATAR]
         }
 
+    // Record State
+    private val _audioRecorderState = mutableStateOf<AudioRecorderState>(AudioRecorderState.Ready)
+    val audioRecorderState : State<AudioRecorderState> = _audioRecorderState
+    fun setAudioRecorderState(value : AudioRecorderState){
+        _audioRecorderState.value = value
+    }
     // Record Amplitude
     private val _recordAmplitudeStateList = mutableStateListOf<Int>()
     val recordAmplitudeStateList get() = _recordAmplitudeStateList

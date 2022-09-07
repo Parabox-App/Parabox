@@ -652,7 +652,15 @@ fun NormalChatPage(
                     expanded = mainSharedViewModel.recordAmplitudeStateList.isNotEmpty() || mainSharedViewModel.quoteMessageState.value != null && quoteExtended,
                     onClick = {
                         if (mainSharedViewModel.recordAmplitudeStateList.isNotEmpty()) {
+                            if (mainSharedViewModel.audioRecorderState.value is AudioRecorderState.Recording) {
 
+                            } else {
+                                if (mainSharedViewModel.isAudioPlaying.value) {
+                                    onPauseAudioPlaying()
+                                } else {
+                                    onResumeAudioPlaying()
+                                }
+                            }
                         } else if (mainSharedViewModel.quoteMessageState.value != null) {
                             coroutineScope.launch {
                                 val idList =
@@ -749,9 +757,11 @@ fun NormalChatPage(
                 packageNameList = pluginPackageNameList,
                 quoteMessageSelected = mainSharedViewModel.quoteMessageState.value,
                 audioState = audioState,
+                audioRecorderState = mainSharedViewModel.audioRecorderState.value,
                 memeUpdateFlag = memeUpdateFlag,
                 onMemeUpdate = { memeUpdateFlag++ },
                 onAudioStateChanged = { audioState = it },
+                onAudioRecorderStateChanged = { mainSharedViewModel.setAudioRecorderState(it) },
                 onBottomSheetExpand = {
                     coroutineScope.launch {
                         scaffoldState.bottomSheetState.expand()

@@ -93,9 +93,11 @@ fun EditArea(
     packageNameList: List<String>,
     quoteMessageSelected: Message?,
     audioState: Boolean,
+    audioRecorderState: AudioRecorderState,
     memeUpdateFlag: Int = 0,
     onMemeUpdate: () -> Unit,
     onAudioStateChanged: (value: Boolean) -> Unit,
+    onAudioRecorderStateChanged: (value: AudioRecorderState) -> Unit,
     onBottomSheetExpand: () -> Unit,
     onBottomSheetCollapse: () -> Unit,
     onSend: (contents: List<MessageContent>) -> Unit,
@@ -356,12 +358,12 @@ fun EditArea(
                         }
                     }
                 }
-                var audioRecorderState by remember {
-                    mutableStateOf<AudioRecorderState>(AudioRecorderState.Ready)
-                }
+//                var audioRecorderState by remember {
+//                    mutableStateOf<AudioRecorderState>(AudioRecorderState.Ready)
+//                }
                 LaunchedEffect(key1 = audioState) {
                     if (!audioState) {
-                        audioRecorderState = AudioRecorderState.Ready
+                        onAudioRecorderStateChanged(AudioRecorderState.Ready)
                         onClearRecording()
                     }
                 }
@@ -371,7 +373,7 @@ fun EditArea(
                         shape = CircleShape,
                         color = MaterialTheme.colorScheme.primaryContainer,
                         onClick = {
-                            audioRecorderState = AudioRecorderState.Ready
+                            onAudioRecorderStateChanged(AudioRecorderState.Ready)
                             onClearRecording()
                         }
                     ) {
@@ -421,14 +423,14 @@ fun EditArea(
                                                 PressInteraction.Press(Offset(it.x, it.y))
                                             when (it.action) {
                                                 MotionEvent.ACTION_DOWN -> {
-                                                    audioRecorderState =
-                                                        AudioRecorderState.Recording
+                                                    onAudioRecorderStateChanged(AudioRecorderState.Recording)
                                                     interactionSource.tryEmit(press)
                                                     onStartRecording()
                                                 }
                                                 MotionEvent.ACTION_MOVE -> {
-                                                    audioRecorderState =
+                                                    onAudioRecorderStateChanged(
                                                         if (it.y < -150) AudioRecorderState.Confirmed else AudioRecorderState.Recording
+                                                    )
                                                 }
                                                 MotionEvent.ACTION_UP -> {
                                                     interactionSource.tryEmit(
@@ -441,12 +443,10 @@ fun EditArea(
                                                         onClearRecording()
                                                         sendAudio(context, packageNameList){
                                                             onSend(it)
-                                                            audioRecorderState =
-                                                                AudioRecorderState.Ready
+                                                            onAudioRecorderStateChanged(AudioRecorderState.Ready)
                                                         }
                                                     } else {
-                                                        audioRecorderState =
-                                                            AudioRecorderState.Done
+                                                        onAudioRecorderStateChanged(AudioRecorderState.Done)
                                                     }
                                                 }
                                                 else -> false
@@ -587,7 +587,7 @@ fun EditArea(
                             if (audioState) {
                                 sendAudio(context, packageNameList) {
                                     onSend(it)
-                                    audioRecorderState = AudioRecorderState.Ready
+                                    onAudioRecorderStateChanged(AudioRecorderState.Ready)
                                 }
                             } else {
                                 val content = mutableListOf<MessageContent>()
