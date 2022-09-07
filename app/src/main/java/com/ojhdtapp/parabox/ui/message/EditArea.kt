@@ -317,7 +317,11 @@ fun EditArea(
                         }
                     } else {
                         Row() {
-                            IconButton(onClick = {
+                            IconButton(
+                                enabled = audioRecorderState.let{
+                                    it !is AudioRecorderState.Recording && it !is AudioRecorderState.Confirmed
+                                },
+                                onClick = {
                                 keyboardController?.hide()
                                 if (!isBottomSheetExpand) {
                                     onBottomSheetExpand()
@@ -336,7 +340,11 @@ fun EditArea(
                                     contentDescription = "more"
                                 )
                             }
-                            IconButton(onClick = {
+                            IconButton(
+                                enabled = audioRecorderState.let{
+                                    it !is AudioRecorderState.Recording && it !is AudioRecorderState.Confirmed
+                                },
+                                onClick = {
                                 keyboardController?.hide()
                                 if (!isBottomSheetExpand) {
                                     onBottomSheetExpand()
@@ -363,8 +371,10 @@ fun EditArea(
 //                }
                 LaunchedEffect(key1 = audioState) {
                     if (!audioState) {
+                        if(audioRecorderState is AudioRecorderState.Done){
+                            onClearRecording()
+                        }
                         onAudioRecorderStateChanged(AudioRecorderState.Ready)
-                        onClearRecording()
                     }
                 }
                 AnimatedVisibility(visible = audioRecorderState is AudioRecorderState.Done) {

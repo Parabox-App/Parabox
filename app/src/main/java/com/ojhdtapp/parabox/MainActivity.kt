@@ -343,18 +343,26 @@ class MainActivity : ComponentActivity() {
                 pickUserAvatar()
             }
             is ActivityEvent.StartRecording -> {
+                if(player?.isPlaying == true){
+                    stopPlaying()
+                    Toast.makeText(this, "播放中的音频已中断", Toast.LENGTH_SHORT).show()
+                }
                 startRecording()
             }
             is ActivityEvent.StopRecording -> {
                 stopRecording()
             }
             is ActivityEvent.StartAudioPlaying -> {
-                if (event.uri != null) {
-                    startPlayingLocal(event.uri)
-                } else if (event.url != null) {
-                    startPlayingInternet(event.url)
+                if(recorder != null) {
+                    Toast.makeText(this, "请先结束录音", Toast.LENGTH_SHORT).show()
                 } else {
-                    Toast.makeText(this, "音频资源丢失", Toast.LENGTH_SHORT).show()
+                    if (event.uri != null) {
+                        startPlayingLocal(event.uri)
+                    } else if (event.url != null) {
+                        startPlayingInternet(event.url)
+                    } else {
+                        Toast.makeText(this, "音频资源丢失", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
             is ActivityEvent.StopAudioPlaying -> {

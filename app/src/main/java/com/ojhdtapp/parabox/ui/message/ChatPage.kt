@@ -652,7 +652,9 @@ fun NormalChatPage(
                     expanded = mainSharedViewModel.recordAmplitudeStateList.isNotEmpty() || mainSharedViewModel.quoteMessageState.value != null && quoteExtended,
                     onClick = {
                         if (mainSharedViewModel.recordAmplitudeStateList.isNotEmpty()) {
-                            if (mainSharedViewModel.audioRecorderState.value is AudioRecorderState.Recording) {
+                            if (mainSharedViewModel.audioRecorderState.value.let {
+                                    it !is AudioRecorderState.Ready
+                                }) {
 
                             } else {
                                 if (mainSharedViewModel.isAudioPlaying.value) {
@@ -685,9 +687,13 @@ fun NormalChatPage(
                     icon = {
                         Crossfade(
                             targetState = when {
-                                mainSharedViewModel.recordAmplitudeStateList.isNotEmpty() -> 1
-                                mainSharedViewModel.quoteMessageState.value != null -> 2
-                                else -> 3
+                                mainSharedViewModel.audioRecorderState.value.let {
+                                    it !is AudioRecorderState.Ready
+                                } -> 1
+                                mainSharedViewModel.recordAmplitudeStateList.isNotEmpty() && mainSharedViewModel.isAudioPlaying.value -> 2
+                                mainSharedViewModel.recordAmplitudeStateList.isNotEmpty() -> 3
+                                mainSharedViewModel.quoteMessageState.value != null -> 4
+                                else -> 5
                             }
                         ) {
                             when (it) {
@@ -696,6 +702,14 @@ fun NormalChatPage(
                                     contentDescription = "voice"
                                 )
                                 2 -> Icon(
+                                    imageVector = Icons.Outlined.Pause,
+                                    contentDescription = "pause"
+                                )
+                                3 -> Icon(
+                                    imageVector = Icons.Outlined.PlayArrow,
+                                    contentDescription = "resume"
+                                )
+                                4 -> Icon(
                                     imageVector = Icons.Outlined.Reply,
                                     contentDescription = "reply"
                                 )
