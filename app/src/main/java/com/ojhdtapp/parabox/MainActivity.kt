@@ -100,10 +100,9 @@ class MainActivity : ComponentActivity() {
                 setOnPreparedListener {
                     playerJob = lifecycleScope.launch {
                         while (true) {
-                            val progress = (currentPosition / 500).toFloat().roundToInt()
-                            Log.d("parabox", progress.toString())
-                            mainSharedViewModel.setAudioPlayerProgress(progress)
-                            delay(500)
+                            val progress = (currentPosition.toFloat() / duration)
+                            mainSharedViewModel.setAudioPlayerProgressFraction(progress)
+                            delay(30)
                         }
                     }
                     amplituda = Amplituda(this@MainActivity).also { amplituda ->
@@ -158,10 +157,37 @@ class MainActivity : ComponentActivity() {
         player = MediaPlayer().apply {
             try {
                 setDataSource(url)
-                prepareAsync()
                 setOnPreparedListener {
-                    start()
+                    playerJob = lifecycleScope.launch {
+                        while (true) {
+                            val progress = (currentPosition.toFloat() / duration)
+                            mainSharedViewModel.setAudioPlayerProgressFraction(progress)
+                            delay(30)
+                        }
+                    }
+                    amplituda = Amplituda(this@MainActivity).also { amplituda ->
+                        amplituda.processAudio(
+                            url,
+                            Compress.withParams(Compress.AVERAGE, 2)
+                        ).get(
+                            { result ->
+                                mainSharedViewModel.insertAllIntoRecordAmplitudeStateList(
+                                    result.amplitudesAsList().map { it * 1000 })
+                            }, { exception ->
+                                exception.printStackTrace()
+                            })
+                    }
+                    mainSharedViewModel.setIsAudioPlaying(true)
                 }
+                setOnCompletionListener {
+                    amplituda?.clearCache()
+                    amplituda = null
+                    playerJob?.cancel()
+                    playerJob = null
+                    mainSharedViewModel.clearRecordAmplitudeStateList()
+                    mainSharedViewModel.setIsAudioPlaying(false)
+                }
+                prepareAsync()
             } catch (e: IOException) {
                 Log.e("parabox", "prepare() failed")
             }
@@ -210,10 +236,9 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun resumePlayingAtPosition(position: Int) {
+    private fun setProgress(fraction: Float) {
         player?.run {
-            seekTo(position)
-            resumePlaying()
+            seekTo((duration * fraction).roundToInt())
         }
     }
 
@@ -373,6 +398,9 @@ class MainActivity : ComponentActivity() {
             }
             is ActivityEvent.ResumeAudioPlaying -> {
                 resumePlaying()
+            }
+            is ActivityEvent.SetAudioProgress -> {
+                setProgress(event.fraction)
             }
         }
     }

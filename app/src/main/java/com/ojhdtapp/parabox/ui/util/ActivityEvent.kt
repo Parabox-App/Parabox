@@ -16,5 +16,6 @@ sealed class ActivityEvent{
     data class StartAudioPlaying(val uri: Uri? = null, val url: String? = null): ActivityEvent()
     object PauseAudioPlaying: ActivityEvent()
     object ResumeAudioPlaying: ActivityEvent()
+    data class SetAudioProgress(val fraction: Float) : ActivityEvent()
     object StopAudioPlaying: ActivityEvent()
 }

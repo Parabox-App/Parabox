@@ -111,9 +111,9 @@ class MainSharedViewModel @Inject constructor(
 
     // Quote Message
     private val _quoteMessageState = mutableStateOf<Message?>(null)
-    val quoteMessageState : State<Message?> = _quoteMessageState
-    fun setQuoteMessage(value : Message?, name: String? = null){
-        if(value?.sentByMe == true && name != null){
+    val quoteMessageState: State<Message?> = _quoteMessageState
+    fun setQuoteMessage(value: Message?, name: String? = null) {
+        if (value?.sentByMe == true && name != null) {
             _quoteMessageState.value = value.copy(
                 profile = Profile(name = name, null, null)
             )
@@ -121,7 +121,8 @@ class MainSharedViewModel @Inject constructor(
             _quoteMessageState.value = value
         }
     }
-    fun clearQuoteMessage(){
+
+    fun clearQuoteMessage() {
         _quoteMessageState.value = null
     }
 
@@ -161,33 +162,38 @@ class MainSharedViewModel @Inject constructor(
 
     // Record State
     private val _audioRecorderState = mutableStateOf<AudioRecorderState>(AudioRecorderState.Ready)
-    val audioRecorderState : State<AudioRecorderState> = _audioRecorderState
-    fun setAudioRecorderState(value : AudioRecorderState){
+    val audioRecorderState: State<AudioRecorderState> = _audioRecorderState
+    fun setAudioRecorderState(value: AudioRecorderState) {
         _audioRecorderState.value = value
     }
+
     // Record Amplitude
     private val _recordAmplitudeStateList = mutableStateListOf<Int>()
     val recordAmplitudeStateList get() = _recordAmplitudeStateList
-    fun clearRecordAmplitudeStateList(){
+    fun clearRecordAmplitudeStateList() {
         _recordAmplitudeStateList.clear()
     }
-    fun insertIntoRecordAmplitudeStateList(item: Int){
+
+    fun insertIntoRecordAmplitudeStateList(item: Int) {
         _recordAmplitudeStateList.add(item)
-        setAudioPlayerProgress(_recordAmplitudeStateList.size)
+        setAudioPlayerProgressFraction((_recordAmplitudeStateList.size + 1) * 2f)
     }
-    fun insertAllIntoRecordAmplitudeStateList(list: List<Int>){
+
+    fun insertAllIntoRecordAmplitudeStateList(list: List<Int>) {
         clearRecordAmplitudeStateList()
         _recordAmplitudeStateList.addAll(list)
     }
+
     // Player Progress
     private val _isAudioPlaying = mutableStateOf<Boolean>(false)
-    val isAudioPlaying : State<Boolean> = _isAudioPlaying
-    fun setIsAudioPlaying(value : Boolean){
+    val isAudioPlaying: State<Boolean> = _isAudioPlaying
+    fun setIsAudioPlaying(value: Boolean) {
         _isAudioPlaying.value = value
     }
-    private val _audioPlayerProgress = mutableStateOf<Int>(0)
-    val audioPlayerProgress : State<Int> = _audioPlayerProgress
-    fun setAudioPlayerProgress(value : Int){
-        _audioPlayerProgress.value = value
+
+    private val _audioPlayerProgressFraction = mutableStateOf<Float>(0f)
+    val audioPlayerProgressFraction: State<Float> = _audioPlayerProgressFraction
+    fun setAudioPlayerProgressFraction(value: Float) {
+        _audioPlayerProgressFraction.value = value
     }
 }

@@ -41,32 +41,44 @@ import androidx.compose.ui.unit.dp
 import com.smarttoolfactory.gesture.pointerMotionEvents
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun AmplitudeIndicator(
     modifier: Modifier = Modifier,
     amplitudeList: SnapshotStateList<Int>,
-    progress: Int,
+    progressFraction: Float,
     onPause: () -> Unit,
-    onResumeAt: (progress: Int) -> Unit,
+    onResumeAtFraction: (progressFraction: Float) -> Unit,
 ) {
     val density = LocalDensity.current
     var height by remember {
         mutableStateOf(0.dp)
     }
     val state = rememberLazyListState()
+    val widthPx by remember {
+        derivedStateOf {
+            val itemLengthInPx = state.layoutInfo.visibleItemsInfo.firstOrNull()?.size ?: 0
+            state.layoutInfo.totalItemsCount * itemLengthInPx
+        }
+    }
     Box(modifier = modifier
         .onSizeChanged {
             height = with(density) { it.height.toDp() }
-        }.pointerMotionEvents(
+        }
+        .pointerMotionEvents(
             onDown = {
                 Log.d("parabox", "down")
                 onPause()
                 it.consume()
             },
             onUp = {
-                onResumeAt(state.firstVisibleItemIndex)
+                state.firstVisibleItemIndex
+                val itemLengthInPx = state.layoutInfo.visibleItemsInfo.firstOrNull()?.size ?: 0
+                val fra =
+                    (state.firstVisibleItemScrollOffset + state.firstVisibleItemIndex * itemLengthInPx).toFloat() / widthPx
+                onResumeAtFraction(fra)
                 Log.d("parabox", "up")
             }
         )) {
@@ -79,26 +91,21 @@ fun AmplitudeIndicator(
 //                }
 //            }
 //        }
-        LaunchedEffect(key1 = progress) {
+        LaunchedEffect(key1 = progressFraction) {
             if (!state.isScrollInProgress) {
-                if (progress < amplitudeList.size) {
-                    if (progress == 0) {
-                        state.scrollToItem(0)
-                    } else {
-                        state.scrollToItem(progress)
-                    }
+                if (progressFraction <= 1f) {
+//                    Log.d("parabox", "${progressFraction} * ${widthPx} = ${widthPx * progressFraction}")
+                    state.scrollToItem(0, (widthPx * progressFraction).roundToInt())
                 } else {
-                    state.scrollToItem(amplitudeList.lastIndex)
+                    state.animateScrollToItem(amplitudeList.lastIndex)
                 }
             }
         }
         LazyRow(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxSize(),
 //                .nestedScroll(nestedScrollConnection)
-            ,
             state = state,
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             items(items = amplitudeList) {
@@ -110,6 +117,7 @@ fun AmplitudeIndicator(
                 }
                 Box(
                     modifier = Modifier
+                        .padding(end = 2.dp)
                         .size(width = 2.dp, height = itemHeight.value)
                         .clip(RoundedCornerShape(1.dp))
                         .background(MaterialTheme.colorScheme.primary)

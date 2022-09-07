@@ -152,6 +152,9 @@ fun ChatPage(
                     },
                     onResumeAudioPlaying = {
                         onEvent(ActivityEvent.ResumeAudioPlaying)
+                    },
+                    onSetAudioProgressByFraction = {
+                        onEvent(ActivityEvent.SetAudioProgress(it))
                     }
                 )
             }
@@ -180,6 +183,7 @@ fun NormalChatPage(
     onStartAudioPlaying: (uri: Uri?, url: String?) -> Unit,
     onPauseAudioPlaying: () -> Unit,
     onResumeAudioPlaying: () -> Unit,
+    onSetAudioProgressByFraction: (progressFraction: Float) -> Unit,
 ) {
     // Util
     val coroutineScope = rememberCoroutineScope()
@@ -746,9 +750,10 @@ fun NormalChatPage(
                                         height = 24.dp
                                     ),
                                     amplitudeList = mainSharedViewModel.recordAmplitudeStateList,
-                                    progress = mainSharedViewModel.audioPlayerProgress.value,
+                                    progressFraction = mainSharedViewModel.audioPlayerProgressFraction.value,
                                     onPause = onPauseAudioPlaying,
-                                    onResumeAt = {
+                                    onResumeAtFraction = {
+                                        onSetAudioProgressByFraction(it)
                                         onResumeAudioPlaying()
                                     }
                                 )
