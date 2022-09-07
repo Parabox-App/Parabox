@@ -99,7 +99,7 @@ class MainActivity : ComponentActivity() {
                 setDataSource(applicationContext, uri)
                 setOnPreparedListener {
                     playerJob = lifecycleScope.launch {
-                        while (true){
+                        while (true) {
                             val progress = (currentPosition / 500).toFloat().roundToInt()
                             Log.d("parabox", progress.toString())
                             mainSharedViewModel.setAudioPlayerProgress(progress)
@@ -210,7 +210,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun resumePlayingAtPosition(position: Int){
+    private fun resumePlayingAtPosition(position: Int) {
         player?.run {
             seekTo(position)
             resumePlaying()
@@ -343,7 +343,7 @@ class MainActivity : ComponentActivity() {
                 pickUserAvatar()
             }
             is ActivityEvent.StartRecording -> {
-                if(player?.isPlaying == true){
+                if (player?.isPlaying == true) {
                     stopPlaying()
                     Toast.makeText(this, "播放中的音频已中断", Toast.LENGTH_SHORT).show()
                 }
@@ -353,7 +353,7 @@ class MainActivity : ComponentActivity() {
                 stopRecording()
             }
             is ActivityEvent.StartAudioPlaying -> {
-                if(recorder != null) {
+                if (recorder != null) {
                     Toast.makeText(this, "请先结束录音", Toast.LENGTH_SHORT).show()
                 } else {
                     if (event.uri != null) {

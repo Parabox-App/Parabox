@@ -3,6 +3,7 @@ package com.ojhdtapp.parabox.ui.message
 import android.content.Context
 import android.net.Uri
 import android.os.Build.VERSION.SDK_INT
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
@@ -224,6 +225,22 @@ fun NormalChatPage(
     val scaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberBottomSheetState(BottomSheetValue.Collapsed)
     )
+    val opacityState by remember {
+        derivedStateOf {
+            if (scaffoldState.bottomSheetState.direction == 1f) {
+                1 - scaffoldState.bottomSheetState.progress.fraction.coerceIn(0f, 1f)
+            } else if (scaffoldState.bottomSheetState.direction == -1f) {
+                scaffoldState.bottomSheetState.progress.fraction.coerceIn(0f, 1f)
+            } else {
+                if (scaffoldState.bottomSheetState.currentValue == BottomSheetValue.Expanded) {
+                    1f
+                } else {
+                    0f
+                }
+            }
+        }
+    }
+
     val peakHeight by remember {
         derivedStateOf {
             density.run {
@@ -773,6 +790,7 @@ fun NormalChatPage(
                 audioState = audioState,
                 audioRecorderState = mainSharedViewModel.audioRecorderState.value,
                 memeUpdateFlag = memeUpdateFlag,
+                functionalAreaOpacity = opacityState,
                 onMemeUpdate = { memeUpdateFlag++ },
                 onAudioStateChanged = { audioState = it },
                 onAudioRecorderStateChanged = { mainSharedViewModel.setAudioRecorderState(it) },

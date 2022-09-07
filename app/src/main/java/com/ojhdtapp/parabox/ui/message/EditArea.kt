@@ -34,6 +34,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
@@ -95,6 +96,7 @@ fun EditArea(
     audioState: Boolean,
     audioRecorderState: AudioRecorderState,
     memeUpdateFlag: Int = 0,
+    functionalAreaOpacity: Float,
     onMemeUpdate: () -> Unit,
     onAudioStateChanged: (value: Boolean) -> Unit,
     onAudioRecorderStateChanged: (value: AudioRecorderState) -> Unit,
@@ -672,7 +674,9 @@ fun EditArea(
                     }
                 }
             }
-            AnimatedContent(targetState = emojiState,
+            AnimatedContent(
+                modifier = Modifier.alpha(functionalAreaOpacity),
+                targetState = emojiState,
                 transitionSpec = {
                     if (targetState) {
                         (slideIntoContainer(AnimatedContentScope.SlideDirection.Start) with slideOutOfContainer(
