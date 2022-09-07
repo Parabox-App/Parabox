@@ -1,5 +1,7 @@
 package com.ojhdtapp.parabox.ui.message
 
+import android.util.Log
+import android.view.MotionEvent
 import androidx.compose.animation.Animatable
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Animatable
@@ -8,6 +10,11 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.interaction.PressInteraction
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -17,41 +24,82 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.smarttoolfactory.gesture.pointerMotionEvents
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun AmplitudeIndicator(modifier: Modifier = Modifier, amplitudeList: SnapshotStateList<Int>, progress: Int) {
+fun AmplitudeIndicator(
+    modifier: Modifier = Modifier,
+    amplitudeList: SnapshotStateList<Int>,
+    progress: Int,
+    onPause: () -> Unit,
+    onResumeAt: (progress: Int) -> Unit,
+) {
     val density = LocalDensity.current
     var height by remember {
         mutableStateOf(0.dp)
     }
-    Box(modifier = modifier.onSizeChanged {
-        height = with(density) { it.height.toDp() }
-    }) {
-        val state = rememberLazyListState()
-        LaunchedEffect(key1 = amplitudeList.size){
-            if(amplitudeList.lastIndex >= 0){
-                state.animateScrollToItem(amplitudeList.lastIndex)
+    val state = rememberLazyListState()
+    Box(modifier = modifier
+        .onSizeChanged {
+            height = with(density) { it.height.toDp() }
+        }.pointerMotionEvents(
+            onDown = {
+                Log.d("parabox", "down")
+                onPause()
+                it.consume()
+            },
+            onUp = {
+                onResumeAt(state.firstVisibleItemIndex)
+                Log.d("parabox", "up")
+            }
+        )) {
+
+//        val nestedScrollConnection = remember {
+//            object : NestedScrollConnection {
+//                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+//                    // called when you scroll the content
+//                    return Offset.Zero
+//                }
+//            }
+//        }
+        LaunchedEffect(key1 = progress) {
+            if (!state.isScrollInProgress) {
+                if (progress < amplitudeList.size) {
+                    if (progress == 0) {
+                        state.scrollToItem(0)
+                    } else {
+                        state.scrollToItem(progress)
+                    }
+                } else {
+                    state.scrollToItem(amplitudeList.lastIndex)
+                }
             }
         }
-        LaunchedEffect(key1 = progress){
-            if(!state.isScrollInProgress && progress < amplitudeList.size){
-                state.animateScrollToItem(progress)
-            }
-        }
-        val opacity by animateFloatAsState(targetValue = if(state.isScrollInProgress) 0.2f else 1f)
         LazyRow(
-            modifier = Modifier.fillMaxSize().alpha(opacity),
+            modifier = Modifier
+                .fillMaxSize()
+//                .nestedScroll(nestedScrollConnection)
+            ,
             state = state,
             horizontalArrangement = Arrangement.spacedBy(2.dp),
             verticalAlignment = Alignment.CenterVertically,
-            userScrollEnabled = true
         ) {
             items(items = amplitudeList) {
                 val itemHeight = remember {
@@ -60,15 +108,6 @@ fun AmplitudeIndicator(modifier: Modifier = Modifier, amplitudeList: SnapshotSta
                 LaunchedEffect(true) {
                     itemHeight.animateTo(height * it.coerceIn(2000, 10000) / 10000)
                 }
-//                var itemHeight by remember {
-//                    mutableStateOf(8.dp)
-//                }
-//                LaunchedEffect(true){
-//                    itemHeight = height * it.coerceIn(200, 10000) / 10000
-//                }
-//                var itemHeight by remember {
-//                    mutableStateOf(height * it.coerceIn(2000, 10000) / 10000)
-//                }
                 Box(
                     modifier = Modifier
                         .size(width = 2.dp, height = itemHeight.value)
@@ -76,9 +115,6 @@ fun AmplitudeIndicator(modifier: Modifier = Modifier, amplitudeList: SnapshotSta
                         .background(MaterialTheme.colorScheme.primary)
                 )
             }
-//            item(key = "blank") {
-//                Spacer(modifier = Modifier.width(4.dp))
-//            }
         }
     }
 }

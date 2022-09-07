@@ -81,6 +81,9 @@ dependencies {
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
     implementation "androidx.compose.material:material-icons-extended:$compose_version"
 
+    // Extended Gestures
+    implementation 'com.github.SmartToolFactory:Compose-Extended-Gestures:2.0.0'
+
     // Amplituda
     implementation 'com.github.lincollincol:amplituda:2.2.1'
 

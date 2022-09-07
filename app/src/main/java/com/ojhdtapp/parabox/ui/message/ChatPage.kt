@@ -746,7 +746,11 @@ fun NormalChatPage(
                                         height = 24.dp
                                     ),
                                     amplitudeList = mainSharedViewModel.recordAmplitudeStateList,
-                                    progress = mainSharedViewModel.audioPlayerProgress.value
+                                    progress = mainSharedViewModel.audioPlayerProgress.value,
+                                    onPause = onPauseAudioPlaying,
+                                    onResumeAt = {
+                                        onResumeAudioPlaying()
+                                    }
                                 )
                             } else {
                                 mainSharedViewModel.quoteMessageState.value?.let {

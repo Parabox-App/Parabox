@@ -173,6 +173,7 @@ class MainSharedViewModel @Inject constructor(
     }
     fun insertIntoRecordAmplitudeStateList(item: Int){
         _recordAmplitudeStateList.add(item)
+        setAudioPlayerProgress(_recordAmplitudeStateList.size)
     }
     fun insertAllIntoRecordAmplitudeStateList(list: List<Int>){
         clearRecordAmplitudeStateList()
