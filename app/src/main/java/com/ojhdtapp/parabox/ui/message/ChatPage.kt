@@ -143,7 +143,7 @@ fun ChatPage(
                     onStopRecording = {
                         onEvent(ActivityEvent.StopRecording)
                     },
-                    onStartAudioPlaying = {uri, url ->
+                    onStartAudioPlaying = { uri, url ->
                         onEvent(ActivityEvent.StartAudioPlaying(uri, url))
                     },
                     onPauseAudioPlaying = {
@@ -318,7 +318,7 @@ fun NormalChatPage(
                 androidx.compose.material3.TextButton(
                     onClick = {
                         showDeleteClickingMessageConfirmDialog = false
-                        clickingMessage?.messageId?.let{
+                        clickingMessage?.messageId?.let {
                             mainSharedViewModel.deleteMessage(listOf(it))
                             lazyPagingItems.refresh()
                             clickingMessage = null
@@ -651,7 +651,7 @@ fun NormalChatPage(
                 ExtendedFloatingActionButton(
                     expanded = mainSharedViewModel.recordAmplitudeStateList.isNotEmpty() || mainSharedViewModel.quoteMessageState.value != null && quoteExtended,
                     onClick = {
-                        if (mainSharedViewModel.recordAmplitudeStateList.isNotEmpty()){
+                        if (mainSharedViewModel.recordAmplitudeStateList.isNotEmpty()) {
 
                         } else if (mainSharedViewModel.quoteMessageState.value != null) {
                             coroutineScope.launch {
@@ -675,13 +675,15 @@ fun NormalChatPage(
                         }
                     }, modifier = Modifier.offset(y = (-42).dp),
                     icon = {
-                        Crossfade(targetState = when{
-                            mainSharedViewModel.recordAmplitudeStateList.isNotEmpty() -> 1
-                            mainSharedViewModel.quoteMessageState.value != null -> 2
-                            else -> 3
-                        }) {
-                            when(it){
-                                1 ->Icon(
+                        Crossfade(
+                            targetState = when {
+                                mainSharedViewModel.recordAmplitudeStateList.isNotEmpty() -> 1
+                                mainSharedViewModel.quoteMessageState.value != null -> 2
+                                else -> 3
+                            }
+                        ) {
+                            when (it) {
+                                1 -> Icon(
                                     imageVector = Icons.Outlined.SettingsVoice,
                                     contentDescription = "voice"
                                 )
@@ -697,9 +699,16 @@ fun NormalChatPage(
                         }
                     },
                     text = {
-                        Box(modifier = Modifier.animateContentSize()){
-                            if (mainSharedViewModel.recordAmplitudeStateList.isNotEmpty()){
-                                AmplitudeIndicator(modifier = Modifier.size(width = 60.dp, height = 24.dp),amplitudeList = mainSharedViewModel.recordAmplitudeStateList)
+                        Box(modifier = Modifier.animateContentSize()) {
+                            if (mainSharedViewModel.recordAmplitudeStateList.isNotEmpty()) {
+                                AmplitudeIndicator(
+                                    modifier = Modifier.size(
+                                        width = 60.dp,
+                                        height = 24.dp
+                                    ),
+                                    amplitudeList = mainSharedViewModel.recordAmplitudeStateList,
+                                    progress = mainSharedViewModel.audioPlayerProgress.value
+                                )
                             } else {
                                 mainSharedViewModel.quoteMessageState.value?.let {
                                     Row(
@@ -909,7 +918,7 @@ fun NormalChatPage(
                                         )
                                     }
                                     is SingleMessageEvent.Download -> {
-                                        try{
+                                        try {
                                             val images = value.contents.filter { it is Image }
                                             if (value.sentByMe) {
                                                 images.forEach {
@@ -925,7 +934,8 @@ fun NormalChatPage(
                                                     (it as Image).url?.let { url ->
                                                         context.imageLoader.diskCache?.get(url)
                                                             ?.use { snapshot ->
-                                                                val imageFile = snapshot.data.toFile()
+                                                                val imageFile =
+                                                                    snapshot.data.toFile()
                                                                 FileUtil.saveImageToExternalStorage(
                                                                     context,
                                                                     imageFile
@@ -939,7 +949,7 @@ fun NormalChatPage(
                                                 "已将 ${images.size} 张图片保存到 /Pictures/Parabox",
                                                 Toast.LENGTH_SHORT
                                             ).show()
-                                        }catch(e: Exception){
+                                        } catch (e: Exception) {
                                             e.printStackTrace()
                                             Toast.makeText(
                                                 context,
@@ -1318,7 +1328,7 @@ fun SingleMessage(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onQuoteReplyClick: (messageId: Long) -> Unit = {},
-    onAudioClick: (uri: Uri?, url: String?) -> Unit = { _, _ ->},
+    onAudioClick: (uri: Uri?, url: String?) -> Unit = { _, _ -> },
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
@@ -1651,7 +1661,7 @@ private fun MessageContent.toLayout(
                     color = MaterialTheme.colorScheme.surface,
                     tonalElevation = 1.dp,
                     onClick = {
-                        onAudioClick(uriString?.let{Uri.parse(it)}, url)
+                        onAudioClick(uriString?.let { Uri.parse(it) }, url)
                     }
                 ) {
                     Box(
@@ -1665,11 +1675,11 @@ private fun MessageContent.toLayout(
                         )
                     }
                 }
-                    Text(
-                        text = length.toMSString(),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = textColor
-                    )
+                Text(
+                    text = length.toMSString(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = textColor
+                )
             }
         }
         is File -> {

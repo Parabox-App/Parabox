@@ -167,10 +167,19 @@ class MainSharedViewModel @Inject constructor(
     fun insertIntoRecordAmplitudeStateList(item: Int){
         _recordAmplitudeStateList.add(item)
     }
-
     fun insertAllIntoRecordAmplitudeStateList(list: List<Int>){
         clearRecordAmplitudeStateList()
         _recordAmplitudeStateList.addAll(list)
     }
-
+    // Player Progress
+    private val _isAudioPlaying = mutableStateOf<Boolean>(false)
+    val isAudioPlaying : State<Boolean> = _isAudioPlaying
+    fun setIsAudioPlaying(value : Boolean){
+        _isAudioPlaying.value = value
+    }
+    private val _audioPlayerProgress = mutableStateOf<Int>(0)
+    val audioPlayerProgress : State<Int> = _audioPlayerProgress
+    fun setAudioPlayerProgress(value : Int){
+        _audioPlayerProgress.value = value
+    }
 }

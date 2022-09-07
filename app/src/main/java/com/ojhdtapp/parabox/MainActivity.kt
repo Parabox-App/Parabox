@@ -68,6 +68,7 @@ import linc.com.amplituda.Compress
 import java.io.IOException
 import javax.inject.Inject
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -84,6 +85,7 @@ class MainActivity : ComponentActivity() {
     private var recorderStartTime: Long? = null
     private lateinit var recordPath: String
     private var player: MediaPlayer? = null
+    private var playerJob: Job? = null
     private var amplituda: Amplituda? = null
 
     // Shared ViewModel
@@ -95,29 +97,44 @@ class MainActivity : ComponentActivity() {
         player = MediaPlayer().apply {
             try {
                 setDataSource(applicationContext, uri)
-                prepare()
-                start()
+                setOnPreparedListener {
+                    playerJob = lifecycleScope.launch {
+                        while (true){
+                            val progress = (currentPosition / 500).toFloat().roundToInt()
+                            Log.d("parabox", progress.toString())
+                            mainSharedViewModel.setAudioPlayerProgress(progress)
+                            delay(500)
+                        }
+                    }
+                    amplituda = Amplituda(this@MainActivity).also { amplituda ->
+                        amplituda.processAudio(
+                            FileUtil.uriToTempFile(this@MainActivity, uri),
+                            Compress.withParams(Compress.AVERAGE, 2)
+                        ).get(
+                            { result ->
+                                mainSharedViewModel.insertAllIntoRecordAmplitudeStateList(
+                                    result.amplitudesAsList().map { it * 1000 })
+                            }, { exception ->
+                                exception.printStackTrace()
+                            })
+                    }
+                    mainSharedViewModel.setIsAudioPlaying(true)
+                }
                 setOnCompletionListener {
                     amplituda?.clearCache()
                     amplituda = null
+                    playerJob?.cancel()
+                    playerJob = null
                     mainSharedViewModel.clearRecordAmplitudeStateList()
+                    mainSharedViewModel.setIsAudioPlaying(false)
                 }
+                prepare()
+                start()
             } catch (e: IOException) {
                 Log.e("parabox", "prepare() failed")
             }
         }
-        amplituda = Amplituda(this).also { amplituda ->
-            amplituda.processAudio(
-                FileUtil.uriToTempFile(this, uri),
-                Compress.withParams(Compress.AVERAGE, 2)
-            ).get(
-                { result ->
-                    mainSharedViewModel.insertAllIntoRecordAmplitudeStateList(
-                        result.amplitudesAsList().map { it * 1000 })
-                }, { exception ->
-                    exception.printStackTrace()
-                })
-        }
+
 
 //        player?.let {
 //            Visualizer(it.audioSessionId).apply {
@@ -172,19 +189,31 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun stopPlaying() {
+        playerJob?.cancel()
+        playerJob = null
         player?.release()
         player = null
+        mainSharedViewModel.setIsAudioPlaying(false)
     }
 
     private fun pausePlaying() {
         if (player?.isPlaying == true) {
             player?.pause()
+            mainSharedViewModel.setIsAudioPlaying(false)
         }
     }
 
     private fun resumePlaying() {
         if (player?.isPlaying == false) {
             player?.start()
+            mainSharedViewModel.setIsAudioPlaying(true)
+        }
+    }
+
+    private fun resumePlayingAtPosition(position: Int){
+        player?.run {
+            seekTo(position)
+            resumePlaying()
         }
     }
 

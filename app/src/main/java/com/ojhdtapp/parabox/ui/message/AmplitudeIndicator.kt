@@ -4,8 +4,10 @@ import androidx.compose.animation.Animatable
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.VectorConverter
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -16,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -23,7 +26,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun AmplitudeIndicator(modifier: Modifier = Modifier, amplitudeList: SnapshotStateList<Int>) {
+fun AmplitudeIndicator(modifier: Modifier = Modifier, amplitudeList: SnapshotStateList<Int>, progress: Int) {
     val density = LocalDensity.current
     var height by remember {
         mutableStateOf(0.dp)
@@ -37,8 +40,14 @@ fun AmplitudeIndicator(modifier: Modifier = Modifier, amplitudeList: SnapshotSta
                 state.animateScrollToItem(amplitudeList.lastIndex)
             }
         }
+        LaunchedEffect(key1 = progress){
+            if(!state.isScrollInProgress && progress < amplitudeList.size){
+                state.animateScrollToItem(progress)
+            }
+        }
+        val opacity by animateFloatAsState(targetValue = if(state.isScrollInProgress) 0.2f else 1f)
         LazyRow(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().alpha(opacity),
             state = state,
             horizontalArrangement = Arrangement.spacedBy(2.dp),
             verticalAlignment = Alignment.CenterVertically,
