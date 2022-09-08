@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.ui.util
 
 import android.net.Uri
+import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateIntAsState
@@ -59,6 +60,7 @@ fun SearchAppBar(
     placeholder: String,
     selection: SnapshotStateList<Contact> = mutableStateListOf(),
     avatarUri: String?,
+    shouldHover: Boolean = false,
     onGroupAction: () -> Unit = {},
     onExpandAction: () -> Unit = {},
     onDropdownMenuItemEvent: (event: DropdownMenuItemEvent) -> Unit,
@@ -92,16 +94,18 @@ fun SearchAppBar(
                 )
             ),
     ) {
+        val shadowElevation = animateDpAsState(targetValue = if(shouldHover || activateState == SearchAppBar.SEARCH) 3.dp else 0.dp)
         Surface(
             modifier = Modifier
                 .fillMaxSize()
-                .clip(RoundedCornerShape(animateIntAsState(targetValue = if (isActivated) 0 else 50).value))
                 .clickable {
                     if (activateState == SearchAppBar.NONE)
                         onActivateStateChanged(SearchAppBar.SEARCH)
                 },
             color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 3.dp
+            shape = RoundedCornerShape(animateIntAsState(targetValue = if (isActivated) 0 else 50).value),
+            tonalElevation = 3.dp,
+            shadowElevation = shadowElevation.value,
         ) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
                 when (activateState) {

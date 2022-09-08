@@ -94,6 +94,11 @@ fun MessagePage(
             listState.firstVisibleItemIndex == 0
         }
     }
+    val hoverSearchBar by remember{
+        derivedStateOf {
+            listState.firstVisibleItemIndex > 1
+        }
+    }
     val messageState by mainSharedViewModel.messageStateFlow.collectAsState()
     val contactState by viewModel.contactStateFlow.collectAsState()
     val archivedContact by viewModel.archivedContactStateFlow.collectAsState()
@@ -237,6 +242,7 @@ fun MessagePage(
                     placeholder = "搜索会话",
                     activateState = viewModel.searchBarActivateState.value,
                     avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
+                    shouldHover = hoverSearchBar,
                     onActivateStateChanged = {
                         viewModel.setSearchBarActivateState(it)
                         viewModel.clearSelectedContactStateList()
