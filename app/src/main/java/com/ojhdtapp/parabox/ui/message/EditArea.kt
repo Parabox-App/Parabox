@@ -155,6 +155,7 @@ fun EditArea(
     }
     val audioPermissionState =
         rememberPermissionState(permission = android.Manifest.permission.RECORD_AUDIO)
+
     val imagePickerLauncher =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.StartActivityForResult()) {
             if (it.resultCode == Activity.RESULT_OK) {
@@ -453,12 +454,16 @@ fun EditArea(
                                                     onStopRecording()
                                                     if (audioRecorderState is AudioRecorderState.Confirmed) {
                                                         onClearRecording()
-                                                        sendAudio(context, packageNameList){
+                                                        sendAudio(context, packageNameList) {
                                                             onSend(it)
-                                                            onAudioRecorderStateChanged(AudioRecorderState.Ready)
+                                                            onAudioRecorderStateChanged(
+                                                                AudioRecorderState.Ready
+                                                            )
                                                         }
                                                     } else {
-                                                        onAudioRecorderStateChanged(AudioRecorderState.Done)
+                                                        onAudioRecorderStateChanged(
+                                                            AudioRecorderState.Done
+                                                        )
                                                     }
                                                 }
                                                 else -> false

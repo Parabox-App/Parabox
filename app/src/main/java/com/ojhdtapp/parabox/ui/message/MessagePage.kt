@@ -2,7 +2,9 @@
 
 package com.ojhdtapp.parabox.ui.message
 
+import android.os.Build
 import androidx.activity.compose.BackHandler
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -53,6 +55,9 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 import com.ojhdtapp.parabox.core.util.toTimeUntilNow
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
@@ -71,7 +76,8 @@ import kotlin.math.sqrt
 
 @OptIn(
     ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
-    ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class, ExperimentalAnimationApi::class
+    ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class, ExperimentalAnimationApi::class,
+    ExperimentalPermissionsApi::class
 )
 @Destination
 @MessageNavGraph(start = true)
@@ -106,7 +112,12 @@ fun MessagePage(
     var showDeleteGroupedContactConfirm by remember {
         mutableStateOf(false)
     }
+    val notificationPermissionState = rememberPermissionState(permission = android.Manifest.permission.POST_NOTIFICATIONS)
+    val notificationPermissionDeniedDialog = remember { mutableStateOf(false) }
     LaunchedEffect(true) {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !notificationPermissionState.status.isGranted){
+            notificationPermissionDeniedDialog.value = true
+        }
         viewModel.uiEventFlow.collectLatest { it ->
             when (it) {
                 is MessagePageUiEvent.ShowSnackBar -> {
@@ -137,6 +148,41 @@ fun MessagePage(
     Row() {
         // Left
         val contactWidthModifier = if(sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) modifier.width(400.dp) else modifier.weight(1f)
+        if (notificationPermissionDeniedDialog.value) {
+            AlertDialog(
+                onDismissRequest = {
+                    notificationPermissionDeniedDialog.value = false
+                },
+                icon = { Icon(Icons.Outlined.Notifications, contentDescription = null) },
+                title = {
+                    Text(text = "权限申请")
+                },
+                text = {
+                    Text(
+                        "在 Android 13 (Tiramisu) 及更高版本上，通知发送需要额外运行时权限。该权限对于即时通讯应用是必要的。\n您亦可前往设置页面手动授权。"
+                    )
+                },
+                confirmButton = {
+                    androidx.compose.material3.TextButton(
+                        onClick = {
+                            notificationPermissionDeniedDialog.value = false
+                            notificationPermissionState.launchPermissionRequest()
+                        }
+                    ) {
+                        Text("尝试授权")
+                    }
+                },
+                dismissButton = {
+                    androidx.compose.material3.TextButton(
+                        onClick = {
+                            notificationPermissionDeniedDialog.value = false
+                        }
+                    ) {
+                        Text("转到设置")
+                    }
+                }
+            )
+        }
         GroupActionDialog(
             showDialog = viewModel.showGroupActionDialogState.value,
             state = viewModel.groupInfoState.value,
