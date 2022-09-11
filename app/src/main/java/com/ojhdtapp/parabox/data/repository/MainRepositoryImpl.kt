@@ -86,6 +86,20 @@ class MainRepositoryImpl @Inject constructor(
                     )
                 })
             }
+            // If MessageContent Type is File ...
+            dto.contents.filterIsInstance<com.ojhdtapp.messagedto.message_content.File>().forEach {
+                database.fileDao.insertFile(
+                    FileEntity(
+                        url = it.url!!,
+                        name = it.name,
+                        extension = it.extension,
+                        size = it.size,
+                        timestamp = it.lastModifiedTime,
+                        profileName = dto.subjectProfile.name,
+                        relatedMessageId = messageIdDeferred.await()
+                    )
+                )
+            }
         }
 //        database.messageDao.insertMessage(dto.toMessageEntity())
 //        database.contactDao.insertContact(dto.toContactEntityWithUnreadMessagesNumUpdate(database.contactDao))
@@ -432,6 +446,28 @@ class MainRepositoryImpl @Inject constructor(
                 }
 
             }
+        }
+    }
+
+    override fun getFiles(query: String): Flow<Resource<List<File>>> {
+        return if (query.isBlank()) {
+            database.fileDao.getAllFiles()
+                .map<List<FileEntity>, Resource<List<File>>> { fileEntityList ->
+                    Resource.Success(fileEntityList.map {
+                        it.toFile()
+                    }.sortedByDescending { it.timestamp ?: 0 })
+                }.catch {
+                    emit(Resource.Error("获取数据时发生错误"))
+                }
+        } else {
+            database.fileDao.queryFiles(query)
+                .map<List<FileEntity>, Resource<List<File>>> { fileEntityList ->
+                    Resource.Success(fileEntityList.map {
+                        it.toFile()
+                    }.sortedByDescending { it.timestamp ?: 0 })
+                }.catch {
+                    emit(Resource.Error("获取数据时发生错误"))
+                }
         }
     }
 }

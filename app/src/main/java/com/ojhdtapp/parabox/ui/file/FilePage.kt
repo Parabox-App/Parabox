@@ -1,21 +1,21 @@
 package com.ojhdtapp.parabox.ui.file
 
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
-import com.ojhdtapp.parabox.ui.destinations.ChatPageDestination
-import com.ojhdtapp.parabox.ui.menu.MenuSharedViewModel
 import com.ojhdtapp.parabox.ui.util.FileNavGraph
 import com.ojhdtapp.parabox.ui.util.SearchAppBar
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
-import com.ramcosta.composedestinations.navigation.navigate
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -52,7 +52,7 @@ fun FilePage(
         topBar = {
             SearchAppBar(
                 text = viewModel.searchText.value,
-                onTextChange = viewModel::setSearchText,
+                onTextChange = viewModel::onSearch,
                 placeholder = "搜索文件",
                 activateState = searchBarState,
                 avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
@@ -70,7 +70,7 @@ fun FilePage(
         bottomBar = {
 
         }) {
-        LazyColumn(contentPadding = it, state = listState) {
+        LazyVerticalGrid(columns = GridCells.Adaptive(480.dp), contentPadding = it) {
 
         }
     }

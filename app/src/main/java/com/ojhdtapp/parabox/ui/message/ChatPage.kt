@@ -528,11 +528,13 @@ fun NormalChatPage(
                         modifier = Modifier
                             .background(color = appBarContainerColor)
                             .statusBarsPadding(),
-                        title = { Text(
-                            text = messageState.contact?.profile?.name ?: "会话",
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        ) },
+                        title = {
+                            Text(
+                                text = messageState.contact?.profile?.name ?: "会话",
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        },
                         navigationIcon = {
                             IconButton(onClick = { onBackClick() }) {
                                 Icon(
@@ -1760,7 +1762,7 @@ private fun MessageContent.toLayout(
                                 "txt", "log", "md", "json", "xml" -> Icons.Outlined.Description
                                 "mp3", "wav", "flac", "ape", "wma" -> Icons.Outlined.AudioFile
                                 "mp4" -> Icons.Outlined.VideoFile
-                                "zip", "rar", "7z", "gz", "tar.gz" -> Icons.Outlined.FolderZip
+                                "zip", "rar", "7z", "tar.bz2", "tar", "jar", "gz", "deb" -> Icons.Outlined.FolderZip
                                 else -> Icons.Outlined.FilePresent
                             }, contentDescription = "type",
                             tint = MaterialTheme.colorScheme.primary

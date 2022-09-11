@@ -8,6 +8,7 @@ import com.ojhdtapp.messagedto.message_content.getContentString
 import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.toDateAndTimeString
 import com.ojhdtapp.parabox.data.local.entity.ContactEntity
+import com.ojhdtapp.parabox.data.local.entity.FileEntity
 import com.ojhdtapp.parabox.data.local.entity.MessageEntity
 import com.ojhdtapp.parabox.domain.model.LatestMessage
 import com.ojhdtapp.parabox.domain.model.PluginConnection

@@ -31,7 +31,10 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideMainRepository(database: AppDatabase, @ApplicationContext applicationContext: Context): MainRepository =
+    fun provideMainRepository(
+        database: AppDatabase,
+        @ApplicationContext applicationContext: Context
+    ): MainRepository =
         MainRepositoryImpl(database, applicationContext)
 
     @Provides
@@ -63,29 +66,40 @@ object AppModule {
     fun provideUpdateContactUseCase(repository: MainRepository): UpdateContact {
         return UpdateContact(repository)
     }
+
     @Provides
     @Singleton
     fun provideTagControlUseCase(repository: MainRepository): TagControl {
         return TagControl(repository)
     }
+
     @Provides
     @Singleton
-    fun provideGetArchivedContactsUseCase(repository: MainRepository): GetArchivedContacts{
+    fun provideGetArchivedContactsUseCase(repository: MainRepository): GetArchivedContacts {
         return GetArchivedContacts(repository)
     }
+
     @Provides
     @Singleton
-    fun provideUpdateMessageUseCase(repository: MainRepository): UpdateMessage{
+    fun provideUpdateMessageUseCase(repository: MainRepository): UpdateMessage {
         return UpdateMessage(repository)
     }
+
     @Provides
     @Singleton
-    fun provideDeleteGroupedContactUseCase(repository: MainRepository): DeleteGroupedContact{
+    fun provideDeleteGroupedContactUseCase(repository: MainRepository): DeleteGroupedContact {
         return DeleteGroupedContact(repository)
     }
+
     @Provides
     @Singleton
-    fun provideDeleteMessageUseCase(repository: MainRepository): DeleteMessage{
+    fun provideDeleteMessageUseCase(repository: MainRepository): DeleteMessage {
         return DeleteMessage(repository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGetFilesUseCase(repository: MainRepository): GetFiles {
+        return GetFiles(repository)
     }
 }

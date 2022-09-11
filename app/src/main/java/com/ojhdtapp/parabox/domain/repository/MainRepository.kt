@@ -44,4 +44,6 @@ interface MainRepository {
         avatarUri: String? = null,
         tags: List<String>,
     ): Boolean
+
+    fun getFiles(query: String = "") : Flow<Resource<List<File>>>
 }

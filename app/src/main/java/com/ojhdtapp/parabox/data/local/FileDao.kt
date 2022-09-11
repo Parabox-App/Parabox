@@ -18,7 +18,9 @@ interface FileDao {
     fun deleteFileByMessageId(messageId: Long)
 
     @Query("SELECT * FROM file_entity")
-    fun getAllFiles(): Flow<FileEntity>
+    fun getAllFiles(): Flow<List<FileEntity>>
+    @Query("SELECT * FROM file_entity WHERE name LIKE '%' || :query || '%' OR profilename LIKE '%' || :query || '%'")
+    fun queryFiles(query: String): Flow<List<FileEntity>>
 
     @Query("SELECT * FROM file_entity WHERE extension in (:extension)")
     fun getFilesByExtensions(extension:List<String>): Flow<List<FileEntity>>
