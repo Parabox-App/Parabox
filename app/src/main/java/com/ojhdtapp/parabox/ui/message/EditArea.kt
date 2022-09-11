@@ -1419,9 +1419,9 @@ private fun sendAudio(
     packageNameList: List<String>,
     onSend: (contents: List<MessageContent>) -> Unit
 ) {
-    val originalPath = File(context.externalCacheDir!!.absoluteFile, "audio_record.3gp")
-    val audioFile = File(context.getExternalFilesDir("chat")!!, "audio_record.3gp")
-    val targetFileName = "${System.currentTimeMillis().toDateAndTimeString()}.3gp"
+    val originalPath = File(context.externalCacheDir!!.absoluteFile, "audio_record.mp3")
+    val audioFile = File(context.getExternalFilesDir("chat")!!, "audio_record.mp3")
+    val targetFileName = "${System.currentTimeMillis().toDateAndTimeString()}.mp3"
     FileUtil.getUriByCopyingFileToPath(
         context,
         context.getExternalFilesDir("chat")!!,

@@ -100,8 +100,8 @@ object FileUtil {
         }
     }
 
-    fun copyFileToPath(context: Context, path: File, fileName: String, uri: Uri) {
-        try {
+    fun copyFileToPath(context: Context, path: File, fileName: String, uri: Uri) : File? {
+        return try {
             if (!path.exists()) path.mkdirs()
             val outputFile = File(path, fileName)
             context.contentResolver.openInputStream(uri)?.use { inputStream ->
@@ -109,8 +109,10 @@ object FileUtil {
                     inputStream.copyTo(outputStream, DEFAULT_BUFFER_SIZE)
                 }
             }
+            outputFile
         } catch (e: Exception) {
             e.printStackTrace()
+            null
         }
     }
 

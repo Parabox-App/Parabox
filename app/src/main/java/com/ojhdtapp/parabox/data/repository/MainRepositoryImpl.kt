@@ -34,7 +34,7 @@ class MainRepositoryImpl @Inject constructor(
     override suspend fun handleNewMessage(dto: ReceiveMessageDto) {
         coroutineScope {
             val messageIdDeferred = async<Long> {
-                database.messageDao.insertMessage(dto.toMessageEntity())
+                database.messageDao.insertMessage(dto.toMessageEntity(context))
             }
             val contactIdDeferred = async<Long> {
                 database.contactDao.insertContact(
@@ -201,7 +201,7 @@ class MainRepositoryImpl @Inject constructor(
         }
         return database.messageDao.insertMessage(
             MessageEntity(
-                contents = contents.toMessageContentList(),
+                contents = contents.toMessageContentList(context),
                 profile = Profile("", null, null),
                 timestamp = timestamp,
                 messageId = sendId,

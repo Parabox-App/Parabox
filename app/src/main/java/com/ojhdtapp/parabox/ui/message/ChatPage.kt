@@ -528,7 +528,11 @@ fun NormalChatPage(
                         modifier = Modifier
                             .background(color = appBarContainerColor)
                             .statusBarsPadding(),
-                        title = { Text(text = messageState.contact?.profile?.name ?: "会话") },
+                        title = { Text(
+                            text = messageState.contact?.profile?.name ?: "会话",
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        ) },
                         navigationIcon = {
                             IconButton(onClick = { onBackClick() }) {
                                 Icon(
@@ -1206,7 +1210,8 @@ fun MessageBlock(
                         onClickingEvent = onClickingEvent,
                         onClick = onMessageClick,
                         onLongClick = onMessageLongClick,
-                        onQuoteReplyClick = onQuoteReplyClick
+                        onQuoteReplyClick = onQuoteReplyClick,
+                        onAudioClick = onAudioClick,
                     )
                     if (!isLast) {
                         Spacer(modifier = Modifier.height(2.dp))

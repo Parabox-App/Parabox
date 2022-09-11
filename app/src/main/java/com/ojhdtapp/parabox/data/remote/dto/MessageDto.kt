@@ -1,8 +1,12 @@
 package com.ojhdtapp.parabox.data.remote.dto
 
+import android.content.Context
+import android.media.MediaMetadataRetriever
 import com.ojhdtapp.messagedto.ReceiveMessageDto
 import com.ojhdtapp.messagedto.SendMessageDto
 import com.ojhdtapp.messagedto.message_content.getContentString
+import com.ojhdtapp.parabox.core.util.FileUtil
+import com.ojhdtapp.parabox.core.util.toDateAndTimeString
 import com.ojhdtapp.parabox.data.local.entity.ContactEntity
 import com.ojhdtapp.parabox.data.local.entity.MessageEntity
 import com.ojhdtapp.parabox.domain.model.LatestMessage
@@ -29,9 +33,9 @@ fun ReceiveMessageDto.toContactEntity(): ContactEntity {
     )
 }
 
-fun ReceiveMessageDto.toMessageEntity(): MessageEntity {
+fun ReceiveMessageDto.toMessageEntity(context: Context): MessageEntity {
     return MessageEntity(
-        contents = contents.toMessageContentList(),
+        contents = contents.toMessageContentList(context),
         profile = profile.toProfile(),
         timestamp = timestamp,
         messageId = messageId ?: 0,
@@ -73,13 +77,13 @@ fun com.ojhdtapp.messagedto.Profile.toProfile(): Profile {
     return Profile(this.name, this.avatar, null)
 }
 
-fun List<com.ojhdtapp.messagedto.message_content.MessageContent>.toMessageContentList(): List<MessageContent> {
+fun List<com.ojhdtapp.messagedto.message_content.MessageContent>.toMessageContentList(context: Context): List<MessageContent> {
     return this.map {
-        it.toMessageContent()
+        it.toMessageContent(context = context)
     }
 }
 
-fun com.ojhdtapp.messagedto.message_content.MessageContent.toMessageContent(): MessageContent {
+fun com.ojhdtapp.messagedto.message_content.MessageContent.toMessageContent(context: Context): MessageContent {
     return when (this) {
         is com.ojhdtapp.messagedto.message_content.PlainText -> PlainText(this.text)
         is com.ojhdtapp.messagedto.message_content.Image -> Image(
@@ -93,20 +97,38 @@ fun com.ojhdtapp.messagedto.message_content.MessageContent.toMessageContent(): M
             name
         )
         is com.ojhdtapp.messagedto.message_content.AtAll -> com.ojhdtapp.parabox.domain.model.message_content.AtAll
-        is com.ojhdtapp.messagedto.message_content.Audio -> Audio(
-            url,
-            length,
-            fileName,
-            fileSize,
-            uri?.toString()
-        )
+        is com.ojhdtapp.messagedto.message_content.Audio -> {
+            val path = context.getExternalFilesDir("chat")!!
+            val copiedPath = uri?.let {
+                FileUtil.copyFileToPath(
+                    context,
+                    path,
+                    "${
+                        System.currentTimeMillis().toDateAndTimeString()
+                    }.${fileName.substringAfterLast('.')}",
+                    it
+                )
+            }
+            val copiedUri = copiedPath?.let { FileUtil.getUriOfFile(context, it) }
+            Audio(
+                url,
+                if (length == 0L && copiedPath?.exists() == true) {
+                    MediaMetadataRetriever().apply {
+                        setDataSource(copiedPath.absolutePath)
+                    }.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLong() ?: 0L
+                } else length,
+                fileName,
+                fileSize,
+                copiedUri?.toString()
+            )
+        }
         is com.ojhdtapp.messagedto.message_content.QuoteReply -> {
             quoteMessageContent
             com.ojhdtapp.parabox.domain.model.message_content.QuoteReply(
                 quoteMessageSenderName,
                 quoteMessageTimestamp,
                 quoteMessageId,
-                quoteMessageContent?.toMessageContentList()
+                quoteMessageContent?.toMessageContentList(context)
             )
         }
         is com.ojhdtapp.messagedto.message_content.File -> com.ojhdtapp.parabox.domain.model.message_content.File(
