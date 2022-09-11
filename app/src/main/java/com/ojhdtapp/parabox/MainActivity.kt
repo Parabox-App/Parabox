@@ -378,7 +378,6 @@ class MainActivity : ComponentActivity() {
                 stopRecording()
             }
             is ActivityEvent.StartAudioPlaying -> {
-                Log.d("parabox", event.uri.toString())
                 if (recorder != null) {
                     Toast.makeText(this, "请先结束录音", Toast.LENGTH_SHORT).show()
                 } else {

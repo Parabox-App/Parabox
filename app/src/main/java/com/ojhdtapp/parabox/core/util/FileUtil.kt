@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.core.util
 
+import android.app.DownloadManager
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
@@ -8,6 +9,7 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.webkit.MimeTypeMap
+import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.ojhdtapp.parabox.BuildConfig
 import java.io.File
@@ -16,6 +18,7 @@ import java.text.DecimalFormat
 import java.util.*
 
 object FileUtil {
+
     fun createTmpFileFromUri(context: Context, uri: Uri, fileName: String): File? {
         return try {
             val stream = context.contentResolver.openInputStream(uri)
@@ -100,7 +103,7 @@ object FileUtil {
         }
     }
 
-    fun copyFileToPath(context: Context, path: File, fileName: String, uri: Uri) : File? {
+    fun copyFileToPath(context: Context, path: File, fileName: String, uri: Uri): File? {
         return try {
             if (!path.exists()) path.mkdirs()
             val outputFile = File(path, fileName)

@@ -1,8 +1,6 @@
 package com.ojhdtapp.parabox.core.util
 
-import android.util.Log
 import java.math.RoundingMode
-import java.text.DateFormat
 import java.text.DecimalFormat
 import java.text.SimpleDateFormat
 import java.util.*
@@ -32,7 +30,6 @@ fun Long.toDescriptiveTime(): String {
             SimpleDateFormat("s", Locale.getDefault()).format(Date(currentTimeMillis)).toInt()
         val startOfTodayInMills =
             currentTimeMillis - hourInDay * 3600000 - minuteInHour * 60000 - secondInMinute * 1000
-        Log.d("parabox", "${this},$startOfTodayInMills,${startOfTodayInMills - this}")
         when {
             startOfTodayInMills - this <= 0 -> "今天"
             startOfTodayInMills - this in 0 until 86400000 -> "昨天"

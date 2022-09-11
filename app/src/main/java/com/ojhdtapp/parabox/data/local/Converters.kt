@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.room.ProvidedTypeConverter
 import androidx.room.TypeConverter
 import com.google.gson.reflect.TypeToken
+import com.ojhdtapp.parabox.data.local.entity.DownloadingState
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.model.message_content.*
@@ -360,5 +361,49 @@ class Converters(
             }
         )
         return str.toString()
+    }
+
+    @TypeConverter
+    fun fromDownloadingStateJson(json: String): DownloadingState {
+        val list = json.split(delimiter1, limit = 2)
+        return when(list[1]){
+            "downloading" -> jsonParser.fromJson<DownloadingState.Downloading>(
+                list[0],
+                object : TypeToken<DownloadingState.Downloading>() {}.type
+            )!!
+            "none" -> jsonParser.fromJson<DownloadingState.Downloading>(
+                list[0],
+                object : TypeToken<DownloadingState.Downloading>() {}.type
+            )!!
+            "failure" -> jsonParser.fromJson<DownloadingState.Downloading>(
+                list[0],
+                object : TypeToken<DownloadingState.Downloading>() {}.type
+            )!!
+            else -> throw Exception("error converting")
+        }
+    }
+
+    @TypeConverter
+    fun toDownloadingStateJson(state: DownloadingState): String {
+        val stateJson = when(state){
+            is DownloadingState.Downloading ->jsonParser.toJson(
+                state,
+                object : TypeToken<DownloadingState.Downloading>() {}.type
+            ) ?: ""
+            is DownloadingState.None ->jsonParser.toJson(
+                state,
+                object : TypeToken<DownloadingState.None>() {}.type
+            ) ?: ""
+            is DownloadingState.Failure ->jsonParser.toJson(
+                state,
+                object : TypeToken<DownloadingState.Failure>() {}.type
+            ) ?: ""
+        }
+        val stateNum = when(state){
+            is DownloadingState.Downloading -> "downloading"
+            is DownloadingState.None -> "none"
+            is DownloadingState.Failure -> "failure"
+        }
+        return "${stateJson}${delimiter1}${stateNum}"
     }
 }
