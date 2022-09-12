@@ -4,12 +4,26 @@ import com.ojhdtapp.parabox.domain.model.File
 import kotlin.math.abs
 
 data class FilePageState(
+    val area: Int = FilePageState.MAIN_AREA,
     val isLoading: Boolean = true,
     val data: List<File> = emptyList(),
     val timeFilter: TimeFilter = TimeFilter.All,
     val extensionFilter: ExtensionFilter = ExtensionFilter.All,
     val sizeFilter: SizeFilter = SizeFilter.All,
+    val enableRecentDocsFilter: Boolean = false,
+    val enableRecentSlidesFilter: Boolean = false,
+    val enableRecentSheetsFilter: Boolean = false,
+    val enableRecentPictureFilter: Boolean = false,
+    val enableRecentAudioFilter: Boolean = false,
+    val enableRecentVideoFilter: Boolean = false,
+    val enableRecentCompressedFilter: Boolean = false,
+    val enableRecentPDFFilter: Boolean = false,
 ) {
+    companion object {
+        const val MAIN_AREA = 0
+        const val SEARCH_AREA = 1
+    }
+
     val filterData
         get() = data
             .filter {
@@ -17,6 +31,30 @@ data class FilePageState(
                         && extensionFilter.fileCheck(it)
                         && sizeFilter.fileCheck(it)
             }
+    val recentFilterData
+        get() = data.filter {
+            if (listOf<Boolean>(
+                    enableRecentDocsFilter,
+                    enableRecentSlidesFilter,
+                    enableRecentSheetsFilter,
+                    enableRecentPictureFilter,
+                    enableRecentAudioFilter,
+                    enableRecentVideoFilter,
+                    enableRecentCompressedFilter,
+                    enableRecentPDFFilter
+                ).all { !it }
+            ) true
+            else {
+                if (enableRecentDocsFilter) ExtensionFilter.Docs.fileCheck(it)
+                else if (enableRecentSlidesFilter) ExtensionFilter.Slides.fileCheck(it)
+                else if (enableRecentSheetsFilter) ExtensionFilter.Sheets.fileCheck(it)
+                else if (enableRecentPictureFilter) ExtensionFilter.Picture.fileCheck(it)
+                else if (enableRecentAudioFilter) ExtensionFilter.Audio.fileCheck(it)
+                else if (enableRecentVideoFilter) ExtensionFilter.Video.fileCheck(it)
+                else if (enableRecentCompressedFilter) ExtensionFilter.Compressed.fileCheck(it)
+                else if (enableRecentPDFFilter) ExtensionFilter.PDF.fileCheck(it) else false
+            }
+        }
 }
 
 sealed class TimeFilter(
@@ -54,6 +92,17 @@ sealed class ExtensionFilter(
     val label: String,
     val fileCheck: (file: File) -> Boolean
 ) {
+    companion object {
+        const val DOCS = 0
+        const val SLIDES = 1
+        const val SHEETS = 2
+        const val PICTURE = 3
+        const val VIDEO = 4
+        const val AUDIO = 5
+        const val COMPRESSED = 6
+        const val PDF = 7
+    }
+
     object All : ExtensionFilter(
         "所有类型",
         { true }

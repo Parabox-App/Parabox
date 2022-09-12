@@ -18,12 +18,12 @@ import javax.inject.Inject
 class FilePageViewModel @Inject constructor(
     val getFiles: GetFiles
 ) : ViewModel() {
-    init {
-        onSearch("", withoutDelay = true)
-    }
 
     private val _uiEventFlow = MutableSharedFlow<FilePageUiEvent>()
     val uiEventFlow = _uiEventFlow.asSharedFlow()
+
+    private var _fileStateFlow = MutableStateFlow(FilePageState())
+    val fileStateFlow get() = _fileStateFlow.asStateFlow()
 
     private val _searchText = mutableStateOf<String>("")
     val searchText: State<String> = _searchText
@@ -66,7 +66,38 @@ class FilePageViewModel @Inject constructor(
         }
     }
 
-    private var _fileStateFlow = MutableStateFlow(FilePageState())
-    val fileStateFlow get() = _fileStateFlow.asStateFlow()
+    fun setArea(area: Int){
+        _fileStateFlow.value = _fileStateFlow.value.copy(
+            area = area
+        )
+    }
 
+    fun setRecentFilter(type: Int, value: Boolean){
+        when(type){
+            ExtensionFilter.DOCS -> {
+                _fileStateFlow.value = _fileStateFlow.value.copy(enableRecentDocsFilter = value)
+            }
+            ExtensionFilter.SLIDES -> {
+                _fileStateFlow.value = _fileStateFlow.value.copy(enableRecentSlidesFilter = value)
+            }
+            ExtensionFilter.SHEETS -> {
+                _fileStateFlow.value = _fileStateFlow.value.copy(enableRecentSheetsFilter = value)
+            }
+            ExtensionFilter.PICTURE -> {
+                _fileStateFlow.value = _fileStateFlow.value.copy(enableRecentPictureFilter = value)
+            }
+            ExtensionFilter.VIDEO -> {
+                _fileStateFlow.value = _fileStateFlow.value.copy(enableRecentVideoFilter = value)
+            }
+            ExtensionFilter.AUDIO -> {
+                _fileStateFlow.value = _fileStateFlow.value.copy(enableRecentAudioFilter = value)
+            }
+            ExtensionFilter.COMPRESSED -> {
+                _fileStateFlow.value = _fileStateFlow.value.copy(enableRecentCompressedFilter = value)
+            }
+            ExtensionFilter.PDF -> {
+                _fileStateFlow.value = _fileStateFlow.value.copy(enableRecentPDFFilter = value)
+            }
+        }
+    }
 }

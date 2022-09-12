@@ -132,7 +132,8 @@ fun MenuPage(
                             mainNavController = navController,
                             mainSharedViewModel = mainSharedViewModel,
                             sizeClass = sizeClass,
-                            drawerState = drawerState
+                            drawerState = drawerState,
+                            onEvent = onEvent
                         )
                     }
                 }

@@ -160,6 +160,20 @@ class MainSharedViewModel @Inject constructor(
             settings[DataStoreKeys.USER_AVATAR]
         }
 
+    // Profile Dialog
+    private val _showUserProfileDialogState = mutableStateOf<Boolean>(false)
+    val showUserProfileDialogState: State<Boolean> = _showUserProfileDialogState
+    fun setShowUserProfileDialogState(value: Boolean) {
+        _showUserProfileDialogState.value = value
+    }
+
+    // Edit Username Dialog
+    private val _editUserNameDialogState = mutableStateOf<Boolean>(false)
+    val editUserNameDialogState: State<Boolean> = _editUserNameDialogState
+    fun setEditUserNameDialogState(value: Boolean) {
+        _editUserNameDialogState.value = value
+    }
+
     // Record State
     private val _audioRecorderState = mutableStateOf<AudioRecorderState>(AudioRecorderState.Ready)
     val audioRecorderState: State<AudioRecorderState> = _audioRecorderState

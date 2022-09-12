@@ -231,26 +231,26 @@ fun MessagePage(
             }
         )
         UserProfileDialog(
-            openDialog = viewModel.showUserProfileDialogState.value,
+            openDialog = mainSharedViewModel.showUserProfileDialogState.value,
             userName = mainSharedViewModel.userNameFlow.collectAsState(initial = "User").value,
             avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
             pluginList = mainSharedViewModel.pluginListStateFlow.collectAsState().value,
             sizeClass = sizeClass,
             onUpdateName = {
-                viewModel.setEditUserNameDialogState(true)
+                mainSharedViewModel.setEditUserNameDialogState(true)
             },
             onUpdateAvatar = {
                 onEvent(ActivityEvent.SetUserAvatar)
             },
-            onDismiss = { viewModel.setShowUserProfileDialogState(false) })
+            onDismiss = { mainSharedViewModel.setShowUserProfileDialogState(false) })
         EditUserNameDialog(
-            openDialog = viewModel.editUserNameDialogState.value,
+            openDialog = mainSharedViewModel.editUserNameDialogState.value,
             userName = mainSharedViewModel.userNameFlow.collectAsState(initial = "User").value,
             onConfirm = {
-                viewModel.setEditUserNameDialogState(false)
+                mainSharedViewModel.setEditUserNameDialogState(false)
                 mainSharedViewModel.setUserName(it)
             },
-            onDismiss = { viewModel.setEditUserNameDialogState(false) }
+            onDismiss = { mainSharedViewModel.setEditUserNameDialogState(false) }
         )
         if (showDeleteGroupedContactConfirm) {
             androidx.compose.material3.AlertDialog(onDismissRequest = {
@@ -381,7 +381,7 @@ fun MessagePage(
                         }
                     },
                     onAvatarClick = {
-                        viewModel.setShowUserProfileDialogState(true)
+                        mainSharedViewModel.setShowUserProfileDialogState(true)
                     }
                 )
             },
