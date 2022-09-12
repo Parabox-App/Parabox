@@ -54,4 +54,6 @@ sealed class DownloadingState : Parcelable {
     object None : DownloadingState()
 
     object Failure : DownloadingState()
+
+    object Done : DownloadingState()
 }

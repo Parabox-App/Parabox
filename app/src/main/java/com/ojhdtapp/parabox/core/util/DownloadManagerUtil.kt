@@ -61,6 +61,9 @@ object DownloadManagerUtil {
                 if (isSuccessful(cursor)) downloading.set(false)
                 cursor.close()
                 emit(DownloadingState.Downloading(bytesDownloaded, bytesTotal))
+                if (bytesDownloaded == bytesTotal) {
+                    emit(DownloadingState.Done)
+                }
 
                 if (downloading.get()) delay(1000)
             }

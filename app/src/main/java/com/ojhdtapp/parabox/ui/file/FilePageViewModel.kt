@@ -1,10 +1,14 @@
 package com.ojhdtapp.parabox.ui.file
 
 import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ojhdtapp.parabox.core.util.Resource
+import com.ojhdtapp.parabox.domain.model.File
+import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.use_case.GetFiles
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -24,6 +28,19 @@ class FilePageViewModel @Inject constructor(
 
     private var _fileStateFlow = MutableStateFlow(FilePageState())
     val fileStateFlow get() = _fileStateFlow.asStateFlow()
+
+    private var _selectedFiles: SnapshotStateList<File> = mutableStateListOf<File>()
+    val selectedFiles get() = _selectedFiles
+    fun clearSelectedFiles() {
+        _selectedFiles.clear()
+    }
+    fun addOrRemoveItemOfSelectedFileList(value: File) {
+        if (!_selectedFiles.contains(value)) {
+            _selectedFiles.add(value)
+        } else {
+            _selectedFiles.remove(value)
+        }
+    }
 
     private val _searchText = mutableStateOf<String>("")
     val searchText: State<String> = _searchText
@@ -61,19 +78,19 @@ class FilePageViewModel @Inject constructor(
                                 )
                             }
                         }
-                    }
+                    }.launchIn(this)
             }
         }
     }
 
-    fun setArea(area: Int){
+    fun setArea(area: Int) {
         _fileStateFlow.value = _fileStateFlow.value.copy(
             area = area
         )
     }
 
-    fun setRecentFilter(type: Int, value: Boolean){
-        when(type){
+    fun setRecentFilter(type: Int, value: Boolean) {
+        when (type) {
             ExtensionFilter.DOCS -> {
                 _fileStateFlow.value = _fileStateFlow.value.copy(enableRecentDocsFilter = value)
             }
@@ -93,7 +110,8 @@ class FilePageViewModel @Inject constructor(
                 _fileStateFlow.value = _fileStateFlow.value.copy(enableRecentAudioFilter = value)
             }
             ExtensionFilter.COMPRESSED -> {
-                _fileStateFlow.value = _fileStateFlow.value.copy(enableRecentCompressedFilter = value)
+                _fileStateFlow.value =
+                    _fileStateFlow.value.copy(enableRecentCompressedFilter = value)
             }
             ExtensionFilter.PDF -> {
                 _fileStateFlow.value = _fileStateFlow.value.copy(enableRecentPDFFilter = value)

@@ -379,6 +379,10 @@ class Converters(
                 list[0],
                 object : TypeToken<DownloadingState.Downloading>() {}.type
             )!!
+            "done" -> jsonParser.fromJson<DownloadingState.Done>(
+                list[0],
+                object : TypeToken<DownloadingState.Done>() {}.type
+            )!!
             else -> throw Exception("error converting")
         }
     }
@@ -398,11 +402,16 @@ class Converters(
                 state,
                 object : TypeToken<DownloadingState.Failure>() {}.type
             ) ?: ""
+            is DownloadingState.Done ->jsonParser.toJson(
+                state,
+                object : TypeToken<DownloadingState.Done>() {}.type
+            ) ?: ""
         }
         val stateNum = when(state){
             is DownloadingState.Downloading -> "downloading"
             is DownloadingState.None -> "none"
             is DownloadingState.Failure -> "failure"
+            is DownloadingState.Done -> "done"
         }
         return "${stateJson}${delimiter1}${stateNum}"
     }

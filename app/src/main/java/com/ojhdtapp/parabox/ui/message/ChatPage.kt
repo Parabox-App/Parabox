@@ -1758,10 +1758,10 @@ private fun MessageContent.toLayout(
                         Icon(
                             imageVector = when (extension) {
                                 "apk" -> Icons.Outlined.Android
-                                "jpg", "jpeg", "png", "gif", "bmp", "svg", "webp", "tiff" -> Icons.Outlined.Image
+                                "bmp", "jpeg", "jpg", "png", "tif", "gif", "pcx", "tga", "exif", "fpx", "svg", "psd", "cdr", "pcd", "dxf", "ufo", "eps", "ai", "raw", "webp", "avif", "apng", "tiff" -> Icons.Outlined.Image
                                 "txt", "log", "md", "json", "xml" -> Icons.Outlined.Description
-                                "mp3", "wav", "flac", "ape", "wma" -> Icons.Outlined.AudioFile
-                                "mp4" -> Icons.Outlined.VideoFile
+                                "cd", "wav", "aiff", "mp3", "wma", "ogg", "mpc", "flac", "ape", "3gp" -> Icons.Outlined.AudioFile
+                                "avi", "wmv", "mp4", "mpeg", "mpg", "mov", "flv", "rmvb", "rm", "asf" -> Icons.Outlined.VideoFile
                                 "zip", "rar", "7z", "tar.bz2", "tar", "jar", "gz", "deb" -> Icons.Outlined.FolderZip
                                 else -> Icons.Outlined.FilePresent
                             }, contentDescription = "type",

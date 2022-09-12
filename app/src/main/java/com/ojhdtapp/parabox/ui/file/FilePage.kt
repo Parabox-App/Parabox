@@ -1,22 +1,34 @@
 package com.ojhdtapp.parabox.ui.file
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Done
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -26,6 +38,11 @@ import coil.decode.SvgDecoder
 import coil.request.ImageRequest
 import com.google.accompanist.flowlayout.FlowRow
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.core.util.FileUtil
+import com.ojhdtapp.parabox.core.util.splitKeeping
+import com.ojhdtapp.parabox.core.util.toTimeUntilNow
+import com.ojhdtapp.parabox.data.local.entity.DownloadingState
+import com.ojhdtapp.parabox.domain.model.File
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.message.AreaState
 import com.ojhdtapp.parabox.ui.message.ContactReadFilterState
@@ -36,6 +53,7 @@ import com.ojhdtapp.parabox.ui.util.SearchAppBar
 import com.ojhdtapp.parabox.ui.util.UserProfileDialog
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import com.valentinilk.shimmer.shimmer
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -59,6 +77,12 @@ fun FilePage(
         mutableStateOf(SearchAppBar.NONE)
     }
     val coroutineScope = rememberCoroutineScope()
+    BackHandler(enabled = mainState.area != FilePageState.MAIN_AREA) {
+        viewModel.setArea(FilePageState.MAIN_AREA)
+    }
+    BackHandler(enabled = searchBarState != SearchAppBar.NONE) {
+        searchBarState = SearchAppBar.NONE
+    }
     LaunchedEffect(key1 = true) {
         viewModel.onSearch("", true)
         viewModel.uiEventFlow.collectLatest {
@@ -149,7 +173,10 @@ fun FilePage(
             when (it) {
                 FilePageState.MAIN_AREA -> MainArea(
                     mainState = mainState,
-                    onSetRecentFilter = { type, value -> viewModel.setRecentFilter(type, value) }
+                    onSetRecentFilter = { type, value -> viewModel.setRecentFilter(type, value) },
+                    searchText = viewModel.searchText.value,
+                    selectedFileList = viewModel.selectedFiles,
+                    onAddOrRemoveFile = viewModel::addOrRemoveItemOfSelectedFileList
                 )
                 FilePageState.SEARCH_AREA -> SearchArea()
                 else -> {}
@@ -164,6 +191,9 @@ fun FilePage(
 fun MainArea(
     modifier: Modifier = Modifier,
     mainState: FilePageState,
+    searchText: String,
+    selectedFileList: List<File>,
+    onAddOrRemoveFile: (file: File) -> Unit,
     onSetRecentFilter: (type: Int, value: Boolean) -> Unit
 ) {
     LazyVerticalGrid(
@@ -173,7 +203,9 @@ fun MainArea(
     ) {
         item {
             Column(
-                modifier = Modifier.padding(horizontal = 16.dp).animateItemPlacement()
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .animateItemPlacement()
             ) {
                 Box(
                     modifier = Modifier
@@ -391,12 +423,28 @@ fun MainArea(
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                } else {
+                    mainState.filterData.forEachIndexed { index, file ->
+                        FileItem(
+                            modifier = Modifier.padding(top = 3.dp),
+                            file = file,
+                            searchText = searchText,
+                            isFirst = index == 0,
+                            isLast = index == mainState.data.lastIndex,
+                            isSelected = selectedFileList.contains(file),
+                            onClick = { /*TODO*/ },
+                            onLongClick = { onAddOrRemoveFile(file) }) {
+
+                        }
+                    }
                 }
             }
         }
         item {
             Column(
-                modifier = Modifier.padding(horizontal = 16.dp).animateItemPlacement()
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .animateItemPlacement()
             ) {
                 Box(
                     modifier = Modifier
@@ -422,4 +470,180 @@ fun SearchArea(modifier: Modifier = Modifier) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun FileItem(
+    modifier: Modifier = Modifier,
+    file: File,
+    searchText: String,
+    isFirst: Boolean,
+    isLast: Boolean,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    onAvatarClick: () -> Unit
+) {
+    val topRadius by animateDpAsState(targetValue = if (isFirst) 24.dp else 0.dp)
+    val bottomRadius by animateDpAsState(targetValue = if (isLast) 24.dp else 0.dp)
+    Surface(
+        modifier = modifier.height(IntrinsicSize.Min),
+        shape = RoundedCornerShape(
+            topStart = topRadius,
+            topEnd = topRadius,
+            bottomStart = bottomRadius,
+            bottomEnd = bottomRadius
+        ),
+        tonalElevation = 3.dp,
+    ) {
+        Row(
+            modifier = modifier.combinedClickable(
+                interactionSource = remember {
+                    MutableInteractionSource()
+                },
+                indication = LocalIndication.current,
+                enabled = true,
+                onLongClick = onLongClick,
+                onClick = onClick
+            ).padding(horizontal = 16.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Crossfade(targetState = isSelected) {
+                if (it) {
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .size(48.dp)
+                            .background(MaterialTheme.colorScheme.primary)
+                            .clickable {
+                                onAvatarClick()
+                            }
+                    ) {
+                        Icon(
+                            modifier = Modifier.align(Alignment.Center),
+                            imageVector = Icons.Outlined.Done,
+                            contentDescription = "selected",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primaryContainer)
+                            .clickable {
+                                onAvatarClick()
+                            },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        when (file.downloadingState) {
+                            is DownloadingState.None -> {
+                                Icon(
+                                    imageVector = when (file.extension) {
+                                        "apk" -> Icons.Outlined.Android
+                                        "bmp", "jpeg", "jpg", "png", "tif", "gif", "pcx", "tga", "exif", "fpx", "svg", "psd", "cdr", "pcd", "dxf", "ufo", "eps", "ai", "raw", "webp", "avif", "apng", "tiff" -> Icons.Outlined.Image
+                                        "txt", "log", "md", "json", "xml" -> Icons.Outlined.Description
+                                        "cd", "wav", "aiff", "mp3", "wma", "ogg", "mpc", "flac", "ape", "3gp" -> Icons.Outlined.AudioFile
+                                        "avi", "wmv", "mp4", "mpeg", "mpg", "mov", "flv", "rmvb", "rm", "asf" -> Icons.Outlined.VideoFile
+                                        "zip", "rar", "7z", "tar.bz2", "tar", "jar", "gz", "deb" -> Icons.Outlined.FolderZip
+                                        else -> Icons.Outlined.FilePresent
+                                    }, contentDescription = "type",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            is DownloadingState.Downloading -> {
+                                val progress by animateFloatAsState(targetValue = file.downloadingState.progress.toFloat() / 100)
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(48.dp),
+                                    progress = progress,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    strokeWidth = 2.dp,
+                                )
+                                Icon(
+                                    imageVector = Icons.Outlined.FileDownload,
+                                    contentDescription = "download",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            is DownloadingState.Failure -> {
+                                Icon(
+                                    imageVector = Icons.Outlined.Warning,
+                                    contentDescription = "warning",
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
+                            is DownloadingState.Done -> {
+                                Icon(
+                                    imageVector = Icons.Outlined.FileDownloadDone,
+                                    contentDescription = "download done",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+
+                        Icon(
+                            imageVector = when (file.extension) {
+                                "apk" -> Icons.Outlined.Android
+                                "bmp", "jpeg", "jpg", "png", "tif", "gif", "pcx", "tga", "exif", "fpx", "svg", "psd", "cdr", "pcd", "dxf", "ufo", "eps", "ai", "raw", "webp", "avif", "apng", "tiff" -> Icons.Outlined.Image
+                                "txt", "log", "md", "json", "xml" -> Icons.Outlined.Description
+                                "cd", "wav", "aiff", "mp3", "wma", "ogg", "mpc", "flac", "ape", "3gp" -> Icons.Outlined.AudioFile
+                                "avi", "wmv", "mp4", "mpeg", "mpg", "mov", "flv", "rmvb", "rm", "asf" -> Icons.Outlined.VideoFile
+                                "zip", "rar", "7z", "tar.bz2", "tar", "jar", "gz", "deb" -> Icons.Outlined.FolderZip
+                                else -> Icons.Outlined.FilePresent
+                            }, contentDescription = "type",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(), verticalArrangement = Arrangement.Top
+            ) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = file.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = buildAnnotatedString {
+                        file.profileName.splitKeeping(searchText).forEach {
+                            if (it == searchText) {
+                                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                    append(it)
+                                }
+                            } else {
+                                append(it)
+                            }
+                        }
+                        append(" ")
+                        if (file.downloadingState is DownloadingState.Downloading) {
+                            append(FileUtil.getSizeString(file.downloadingState.downloadedBytes.toLong()))
+                            append(" ")
+                            append("/")
+                            append(" ")
+                            append(FileUtil.getSizeString(file.downloadingState.totalBytes.toLong()))
+                        }
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Text(
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .align(Alignment.Top),
+                text = file.timestamp.toTimeUntilNow(),
+                style = MaterialTheme.typography.labelMedium
+            )
+        }
+    }
+}
 

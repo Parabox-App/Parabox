@@ -5,3 +5,6 @@ object FormUtil {
     fun checkTagMinimumCharacter(str: String): Boolean = str.length >= 2
     fun checkTagMaximumCharacter(str: String): Boolean = str.length < 50
 }
+fun String.splitKeeping(str: String): List<String> {
+    return this.split(str).flatMap { listOf(it, str) }.dropLast(1).filterNot { it.isEmpty() }
+}

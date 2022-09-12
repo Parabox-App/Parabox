@@ -796,7 +796,7 @@ fun ContactItem(
                     if (it) {
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(24.dp))
+                                .clip(CircleShape)
                                 .size(48.dp)
                                 .background(MaterialTheme.colorScheme.primary)
                         ) {

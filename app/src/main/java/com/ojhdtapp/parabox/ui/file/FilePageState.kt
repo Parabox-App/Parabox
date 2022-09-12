@@ -148,7 +148,8 @@ sealed class ExtensionFilter(
                 "raw",
                 "webp",
                 "avif",
-                "apng"
+                "apng",
+                "tiff"
             )
         }
     )
