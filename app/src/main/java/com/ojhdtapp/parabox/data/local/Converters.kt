@@ -371,13 +371,13 @@ class Converters(
                 list[0],
                 object : TypeToken<DownloadingState.Downloading>() {}.type
             )!!
-            "none" -> jsonParser.fromJson<DownloadingState.Downloading>(
+            "none" -> jsonParser.fromJson<DownloadingState.None>(
                 list[0],
-                object : TypeToken<DownloadingState.Downloading>() {}.type
+                object : TypeToken<DownloadingState.None>() {}.type
             )!!
-            "failure" -> jsonParser.fromJson<DownloadingState.Downloading>(
+            "failure" -> jsonParser.fromJson<DownloadingState.Failure>(
                 list[0],
-                object : TypeToken<DownloadingState.Downloading>() {}.type
+                object : TypeToken<DownloadingState.Failure>() {}.type
             )!!
             "done" -> jsonParser.fromJson<DownloadingState.Done>(
                 list[0],

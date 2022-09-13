@@ -97,17 +97,16 @@ fun SearchAppBar(
         val shadowElevation = animateDpAsState(targetValue = if(shouldHover || activateState == SearchAppBar.SEARCH) 3.dp else 0.dp)
         Surface(
             modifier = Modifier
-                .fillMaxSize()
-                .clickable {
-                    if (activateState == SearchAppBar.NONE)
-                        onActivateStateChanged(SearchAppBar.SEARCH)
-                },
+                .fillMaxSize(),
             color = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(animateIntAsState(targetValue = if (isActivated) 0 else 50).value),
             tonalElevation = 3.dp,
             shadowElevation = shadowElevation.value,
         ) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+            Box(modifier = Modifier.fillMaxSize().clickable {
+                if (activateState == SearchAppBar.NONE)
+                    onActivateStateChanged(SearchAppBar.SEARCH)
+            }, contentAlignment = Alignment.BottomCenter) {
                 when (activateState) {
                     SearchAppBar.SELECT -> {
                         SelectContentField(

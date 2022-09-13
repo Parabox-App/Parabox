@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -57,6 +59,7 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.valentinilk.shimmer.shimmer
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.lang.Integer.min
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Destination
@@ -232,8 +235,7 @@ fun MainArea(
                 ) {
                     FilterChip(
                         modifier = Modifier
-                            .animateContentSize()
-                            .animateItemPlacement(),
+                            .animateContentSize(),
                         selected = mainState.enableRecentDocsFilter,
                         onClick = {
                             onSetRecentFilter(
@@ -434,10 +436,8 @@ fun MainArea(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 } else {
-                    LaunchedEffect(key1 = mainState, block = {
-                        Log.d("parabox", "inner:${mainState.filterData}")
-                    })
-                    mainState.recentFilterData.forEachIndexed { index, file ->
+                    mainState.recentFilterData.take(5)
+                        .forEachIndexed { index, file ->
                         FileItem(
                             modifier = Modifier
                                 .padding(top = 3.dp)
@@ -445,7 +445,7 @@ fun MainArea(
                             file = file,
                             searchText = searchText,
                             isFirst = index == 0,
-                            isLast = index == mainState.recentFilterData.lastIndex,
+                            isLast = index == min(mainState.recentFilterData.lastIndex, 4),
                             isSelected = selectedFileList.contains(file),
                             onClick = { /*TODO*/ },
                             onLongClick = { onAddOrRemoveFile(file) }) {
@@ -629,7 +629,8 @@ fun FileItem(
                     text = file.name,
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
