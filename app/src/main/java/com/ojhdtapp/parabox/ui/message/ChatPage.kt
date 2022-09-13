@@ -12,11 +12,13 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
@@ -36,6 +38,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.*
 import androidx.compose.ui.text.AnnotatedString
@@ -463,7 +466,7 @@ fun NormalChatPage(
                                     onDismissRequest = { menuExpanded = false },
                                     modifier = Modifier.width(192.dp)
                                 ) {
-                                    if (mainSharedViewModel.selectedMessageStateList.firstOrNull()?.sentByMe == true) {
+                                    if (mainSharedViewModel.selectedMessageStateList.size == 1 && mainSharedViewModel.selectedMessageStateList.firstOrNull()?.sentByMe == true) {
                                         DropdownMenuItem(
                                             text = { Text(text = "尝试撤回") },
                                             onClick = {
@@ -871,10 +874,20 @@ fun NormalChatPage(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surface),
+                    .background(MaterialTheme.colorScheme.surface)
+                    .pointerInput(Unit) {
+                        detectTapGestures {
+                            focusManager.clearFocus()
+                            if(scaffoldState.bottomSheetState.isExpanded){
+                                coroutineScope.launch {
+                                    scaffoldState.bottomSheetState.collapse()
+                                }
+                            }
+                        }
+                    },
                 state = scrollState,
                 contentPadding = it,
-                reverseLayout = true
+                reverseLayout = true,
             ) {
                 item {
                     Spacer(modifier = Modifier.height(16.dp))
@@ -1451,7 +1464,8 @@ fun SingleMessage(
                     .background(
                         backgroundColor
                     )
-                    .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+//                    .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+                    .clickable { onClick() }
                     .animateContentSize()
             ) {
                 message.contents.forEachIndexed { index, messageContent ->
@@ -1514,6 +1528,12 @@ fun SingleMessage(
                     }
                 }
                 IconButton(onClick = {
+                    onLongClick()
+                    onClickingDismiss()
+                }) {
+                    Icon(imageVector = Icons.Outlined.Checklist, contentDescription = "select")
+                }
+                IconButton(onClick = {
                     onClickingEvent(SingleMessageEvent.Copy)
                     onClickingDismiss()
                 }) {
@@ -1563,11 +1583,13 @@ private fun MessageContent.toLayout(
             text = getContentString(),
             color = MaterialTheme.colorScheme.primary
         )
-        is PlainText -> Text(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
-            text = text,
-            color = textColor
-        )
+        is PlainText -> SelectionContainer {
+            Text(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+                text = text,
+                color = textColor
+            )
+        }
         is Image -> {
 //            var imageWidth by remember {
 //                mutableStateOf(80.dp)

@@ -81,6 +81,9 @@ dependencies {
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
     implementation "androidx.compose.material:material-icons-extended:$compose_version"
 
+    // ML-Kit
+    implementation 'com.google.mlkit:entity-extraction:16.0.0-beta4'
+
     // Extended Gestures
     implementation 'com.github.SmartToolFactory:Compose-Extended-Gestures:2.0.0'
 
