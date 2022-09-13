@@ -230,4 +230,17 @@ object FileUtil {
             else -> "${format.format(size.toDouble() / 1073741824)}GB"
         }
     }
+
+    fun getAvailableFileName(context: Context, acquireName: String, withNumber: Int = 0): String {
+        val separatorIndex = acquireName.lastIndexOf('.')
+        if(separatorIndex == -1) throw IndexOutOfBoundsException("no separator found in name")
+        else{
+            val path = File(
+                Environment.getExternalStoragePublicDirectory("${Environment.DIRECTORY_DOWNLOADS}/Parabox"),
+                acquireName.substringBeforeLast('.') + (if(withNumber == 0) "" else "-${withNumber}") + "." + acquireName.substringAfterLast('.')
+            )
+            if(!path.exists()) return acquireName
+            else return getAvailableFileName(context, acquireName, withNumber + 1)
+        }
+    }
 }
