@@ -10,6 +10,7 @@ import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.domain.model.File
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.use_case.GetFiles
+import com.ojhdtapp.parabox.ui.util.SearchAppBar
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -34,13 +35,19 @@ class FilePageViewModel @Inject constructor(
     fun clearSelectedFiles() {
         _selectedFiles.clear()
     }
-
     fun addOrRemoveItemOfSelectedFileList(value: File) {
         if (!_selectedFiles.contains(value)) {
             _selectedFiles.add(value)
         } else {
             _selectedFiles.remove(value)
         }
+    }
+
+    // Search
+    private val _searchBarActivateState = mutableStateOf<Int>(SearchAppBar.NONE)
+    val searchBarActivateState: State<Int> = _searchBarActivateState
+    fun setSearchBarActivateState(value: Int) {
+        _searchBarActivateState.value = value
     }
 
     private val _searchText = mutableStateOf<String>("")

@@ -38,7 +38,9 @@ import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.data.local.entity.DownloadingState
 import com.ojhdtapp.parabox.domain.model.Contact
+import com.ojhdtapp.parabox.domain.model.File
 import com.ojhdtapp.parabox.ui.message.DropdownMenuItemEvent
 
 object SearchAppBar {
@@ -47,6 +49,7 @@ object SearchAppBar {
     const val SELECT = 2
     const val ARCHIVE_SELECT = 3
     const val ARCHIVE = 4
+    const val FILE_SELECT = 5
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -59,6 +62,7 @@ fun SearchAppBar(
     onTextChange: (text: String) -> Unit,
     placeholder: String,
     selection: SnapshotStateList<Contact> = mutableStateListOf(),
+    fileSelection: SnapshotStateList<File> = mutableStateListOf(),
     avatarUri: String?,
     shouldHover: Boolean = false,
     onGroupAction: () -> Unit = {},
@@ -94,7 +98,8 @@ fun SearchAppBar(
                 )
             ),
     ) {
-        val shadowElevation = animateDpAsState(targetValue = if(shouldHover || activateState == SearchAppBar.SEARCH) 3.dp else 0.dp)
+        val shadowElevation =
+            animateDpAsState(targetValue = if (shouldHover || activateState == SearchAppBar.SEARCH) 3.dp else 0.dp)
         Surface(
             modifier = Modifier
                 .fillMaxSize(),
@@ -103,10 +108,13 @@ fun SearchAppBar(
             tonalElevation = 3.dp,
             shadowElevation = shadowElevation.value,
         ) {
-            Box(modifier = Modifier.fillMaxSize().clickable {
-                if (activateState == SearchAppBar.NONE)
-                    onActivateStateChanged(SearchAppBar.SEARCH)
-            }, contentAlignment = Alignment.BottomCenter) {
+            Box(modifier = Modifier
+                .fillMaxSize()
+                .clickable {
+                    if (activateState == SearchAppBar.NONE)
+                        onActivateStateChanged(SearchAppBar.SEARCH)
+                }, contentAlignment = Alignment.BottomCenter
+            ) {
                 when (activateState) {
                     SearchAppBar.SELECT -> {
                         SelectContentField(
@@ -149,6 +157,16 @@ fun SearchAppBar(
                             isActivated = isActivated,
                             headerText = "归档",
                             onActivateStateChanged = onActivateStateChanged,
+                            onDropdownMenuItemEvent = onDropdownMenuItemEvent
+                        )
+                    }
+                    SearchAppBar.FILE_SELECT -> {
+                        FileSelectContentField(
+                            modifier = Modifier.align(Alignment.BottomCenter),
+                            isActivated = isActivated,
+                            onActivateStateChanged = onActivateStateChanged,
+                            selection = fileSelection,
+                            onExpandAction = onExpandAction,
                             onDropdownMenuItemEvent = onDropdownMenuItemEvent
                         )
                     }
@@ -327,7 +345,11 @@ fun SelectContentField(
                     }) {
                         Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = "more")
                     }
-                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.width(192.dp)) {
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        modifier = Modifier.width(192.dp)
+                    ) {
                         if (selection.map { it.isPinned }.contains(false)) {
                             DropdownMenuItem(
                                 text = { Text(text = if (selection.size <= 1) "置顶" else "全部置顶") },
@@ -434,7 +456,7 @@ fun SelectContentField(
                                     )
                                 })
                         }
-                        if(selection.size == 1 && selection.first().senderId != selection.first().contactId){
+                        if (selection.size == 1 && selection.first().senderId != selection.first().contactId) {
                             DropdownMenuItem(
                                 text = { Text(text = "删除该编组") },
                                 onClick = {
@@ -474,6 +496,103 @@ fun SelectContentField(
                                     )
                                 })
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalAnimationApi::class)
+@Composable
+fun FileSelectContentField(
+    modifier: Modifier = Modifier,
+    isActivated: Boolean,
+    onActivateStateChanged: (value: Int) -> Unit,
+    selection: List<File>,
+    onExpandAction: () -> Unit,
+    onDropdownMenuItemEvent: (event: DropdownMenuItemEvent) -> Unit,
+) {
+    var expanded by remember {
+        mutableStateOf(false)
+    }
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(animateDpAsState(targetValue = if (isActivated) 64.dp else 48.dp).value),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(
+            onClick = {
+                onActivateStateChanged(SearchAppBar.NONE)
+            },
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Close,
+                contentDescription = "close",
+                tint = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        AnimatedContent(targetState = selection.size.toString(),
+            transitionSpec = {
+                // Compare the incoming number with the previous number.
+                if (targetState > initialState) {
+                    // If the target number is larger, it slides up and fades in
+                    // while the initial (smaller) number slides up and fades out.
+                    slideInVertically { height -> height } + fadeIn() with
+                            slideOutVertically { height -> -height } + fadeOut()
+                } else {
+                    // If the target number is smaller, it slides down and fades in
+                    // while the initial number slides down and fades out.
+                    slideInVertically { height -> -height } + fadeIn() with
+                            slideOutVertically { height -> height } + fadeOut()
+                }.using(
+                    // Disable clipping since the faded slide-in/out should
+                    // be displayed out of bounds.
+                    SizeTransform(clip = false)
+                )
+            }) { num ->
+            Text(text = num, style = MaterialTheme.typography.titleLarge)
+        }
+        Spacer(modifier = Modifier.weight(1f))
+        Crossfade(targetState = selection) {
+            if (it.isNotEmpty() && it.any { it.downloadingState is DownloadingState.None || it.downloadingState is DownloadingState.Failure }) {
+                IconButton(onClick = { onDropdownMenuItemEvent(DropdownMenuItemEvent.DownloadFile) }) {
+                    Icon(imageVector = Icons.Outlined.FileDownload, contentDescription = "download")
+                }
+            }
+        }
+        Crossfade(targetState = selection) {
+            if (it.isNotEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .wrapContentSize(Alignment.TopStart)
+                ) {
+                    IconButton(onClick = {
+                        onExpandAction()
+                        expanded = !expanded
+                    }) {
+                        Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = "more")
+                    }
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        modifier = Modifier.width(192.dp)
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text(text = "保存至云端") },
+                            onClick = {
+                                onDropdownMenuItemEvent(DropdownMenuItemEvent.SaveToCloud)
+                                onActivateStateChanged(SearchAppBar.NONE)
+                                expanded = false
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Outlined.CloudUpload,
+                                    contentDescription = null
+                                )
+                            })
                     }
                 }
             }
@@ -522,7 +641,11 @@ fun SelectSpecContentField(
             }) {
                 Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = "more")
             }
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.width(192.dp)) {
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.width(192.dp)
+            ) {
                 DropdownMenuItem(
                     text = { Text(text = "移出所有归档") },
                     onClick = {
@@ -583,7 +706,11 @@ fun PageContentField(
             }) {
                 Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = "more")
             }
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.width(192.dp)) {
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.width(192.dp)
+            ) {
                 DropdownMenuItem(
                     text = { Text(text = "移出所有归档") },
                     onClick = {

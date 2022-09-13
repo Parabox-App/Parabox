@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.message
 
+import com.ojhdtapp.parabox.domain.model.File
 import com.ojhdtapp.parabox.domain.model.Profile
 
 // Ui 2 VM
@@ -36,6 +37,8 @@ sealed class DropdownMenuItemEvent{
     object NewTag: DropdownMenuItemEvent()
     object Info: DropdownMenuItemEvent()
     object DeleteGrouped: DropdownMenuItemEvent()
+    object DownloadFile : DropdownMenuItemEvent()
+    object SaveToCloud: DropdownMenuItemEvent()
 }
 
 sealed class SingleMessageEvent{

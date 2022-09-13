@@ -49,6 +49,7 @@ import com.ojhdtapp.parabox.domain.model.File
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.message.AreaState
 import com.ojhdtapp.parabox.ui.message.ContactReadFilterState
+import com.ojhdtapp.parabox.ui.message.DropdownMenuItemEvent
 import com.ojhdtapp.parabox.ui.setting.EditUserNameDialog
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.FileNavGraph
@@ -80,15 +81,12 @@ fun FilePage(
         Log.d("parabox", mainState.toString())
     })
     val snackBarHostState = remember { SnackbarHostState() }
-    var searchBarState by remember {
-        mutableStateOf(SearchAppBar.NONE)
-    }
     val coroutineScope = rememberCoroutineScope()
     BackHandler(enabled = mainState.area != FilePageState.MAIN_AREA) {
         viewModel.setArea(FilePageState.MAIN_AREA)
     }
-    BackHandler(enabled = searchBarState != SearchAppBar.NONE) {
-        searchBarState = SearchAppBar.NONE
+    BackHandler(enabled = viewModel.searchBarActivateState.value != SearchAppBar.NONE) {
+        viewModel.setSearchBarActivateState(SearchAppBar.NONE)
     }
     LaunchedEffect(key1 = true) {
         viewModel.onSearch("", withoutDelay = true)
@@ -129,10 +127,11 @@ fun FilePage(
                 text = viewModel.searchText.value,
                 onTextChange = viewModel::onSearch,
                 placeholder = "搜索文件",
-                activateState = searchBarState,
+                fileSelection = viewModel.selectedFiles,
+                activateState = viewModel.searchBarActivateState.value,
                 avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
                 onActivateStateChanged = {
-                    searchBarState = it
+                    viewModel.setSearchBarActivateState(it)
                     when (it) {
                         SearchAppBar.SEARCH -> viewModel.setArea(FilePageState.SEARCH_AREA)
                         SearchAppBar.NONE -> viewModel.setArea(FilePageState.MAIN_AREA)
@@ -147,12 +146,17 @@ fun FilePage(
                 onAvatarClick = {
                     mainSharedViewModel.setShowUserProfileDialogState(true)
                 },
-                onDropdownMenuItemEvent = {}
+                onDropdownMenuItemEvent = {
+                    when (it) {
+                        is DropdownMenuItemEvent.DownloadFile -> {}
+                        is DropdownMenuItemEvent.SaveToCloud -> {}
+                    }
+                }
             )
         },
         bottomBar = {
 
-        }) {paddingValues ->
+        }) { paddingValues ->
         AnimatedContent(
             targetState = mainState.area,
 //            transitionSpec = {
@@ -185,6 +189,11 @@ fun FilePage(
                     searchText = viewModel.searchText.value,
                     selectedFileList = viewModel.selectedFiles,
                     paddingValues = paddingValues,
+                    onEvent = onEvent,
+                    searchAppBarState = viewModel.searchBarActivateState.value,
+                    onChangeSearchAppBarState = {
+                        viewModel.setSearchBarActivateState(it)
+                    },
                     onChangeArea = { viewModel.setArea(it) },
                     onAddOrRemoveFile = viewModel::addOrRemoveItemOfSelectedFileList
                 )
@@ -204,6 +213,9 @@ fun MainArea(
     searchText: String,
     selectedFileList: List<File>,
     paddingValues: PaddingValues,
+    searchAppBarState: Int,
+    onChangeSearchAppBarState: (state: Int) -> Unit,
+    onEvent: (ActivityEvent) -> Unit,
     onChangeArea: (area: Int) -> Unit,
     onAddOrRemoveFile: (file: File) -> Unit,
     onSetRecentFilter: (type: Int, value: Boolean) -> Unit
@@ -231,6 +243,7 @@ fun MainArea(
                     )
                 }
                 FlowRow(
+                    modifier = Modifier.padding(bottom = 8.dp),
                     mainAxisSpacing = 8.dp
                 ) {
                     FilterChip(
@@ -438,19 +451,29 @@ fun MainArea(
                 } else {
                     mainState.recentFilterData.take(5)
                         .forEachIndexed { index, file ->
-                        FileItem(
-                            modifier = Modifier
-                                .padding(top = 3.dp)
-                                .animateItemPlacement(),
-                            file = file,
-                            searchText = searchText,
-                            isFirst = index == 0,
-                            isLast = index == min(mainState.recentFilterData.lastIndex, 4),
-                            isSelected = selectedFileList.contains(file),
-                            onClick = { /*TODO*/ },
-                            onLongClick = { onAddOrRemoveFile(file) }) {
+                            FileItem(
+                                modifier = Modifier
+                                    .padding(top = 3.dp)
+                                    .animateItemPlacement(),
+                                file = file,
+                                searchText = searchText,
+                                isFirst = index == 0,
+                                isLast = index == min(mainState.recentFilterData.lastIndex, 4),
+                                isSelected = selectedFileList.contains(file),
+                                onClick = {
+                                    if (searchAppBarState == SearchAppBar.FILE_SELECT) {
+                                        onAddOrRemoveFile(file)
+                                    }
+                                },
+                                onLongClick = {
+                                    onChangeSearchAppBarState(SearchAppBar.FILE_SELECT)
+                                    onAddOrRemoveFile(file)
+                                },
+                                onAvatarClick = {
+                                    onChangeSearchAppBarState(SearchAppBar.FILE_SELECT)
+                                    onAddOrRemoveFile(file)
+                                })
                         }
-                    }
                     TextButton(
                         modifier = Modifier.align(Alignment.CenterHorizontally),
                         onClick = { onChangeArea(FilePageState.SEARCH_AREA) }
