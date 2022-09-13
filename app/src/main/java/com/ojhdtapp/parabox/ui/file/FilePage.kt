@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.file
 
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
@@ -72,6 +73,9 @@ fun FilePage(
 ) {
     val viewModel: FilePageViewModel = hiltViewModel()
     val mainState by viewModel.fileStateFlow.collectAsState()
+    LaunchedEffect(key1 = mainState, block = {
+        Log.d("parabox", mainState.toString())
+    })
     val snackBarHostState = remember { SnackbarHostState() }
     var searchBarState by remember {
         mutableStateOf(SearchAppBar.NONE)
@@ -84,7 +88,7 @@ fun FilePage(
         searchBarState = SearchAppBar.NONE
     }
     LaunchedEffect(key1 = true) {
-        viewModel.onSearch("", true)
+        viewModel.onSearch("", withoutDelay = true)
         viewModel.uiEventFlow.collectLatest {
             when (it) {
                 is FilePageUiEvent.ShowSnackBar -> {
@@ -128,6 +132,7 @@ fun FilePage(
                     searchBarState = it
                     when (it) {
                         SearchAppBar.SEARCH -> viewModel.setArea(FilePageState.SEARCH_AREA)
+                        SearchAppBar.NONE -> viewModel.setArea(FilePageState.MAIN_AREA)
                     }
                 },
                 sizeClass = sizeClass,
@@ -144,9 +149,9 @@ fun FilePage(
         },
         bottomBar = {
 
-        }) {
+        }) {paddingValues ->
         AnimatedContent(
-            modifier = Modifier.padding(it), targetState = mainState.area,
+            targetState = mainState.area,
 //            transitionSpec = {
 //                if (targetState == FilePageState.SEARCH_AREA && initialState == FilePageState.MAIN_AREA) {
 //                    expandVertically(expandFrom = Alignment.Top).with(
@@ -176,6 +181,8 @@ fun FilePage(
                     onSetRecentFilter = { type, value -> viewModel.setRecentFilter(type, value) },
                     searchText = viewModel.searchText.value,
                     selectedFileList = viewModel.selectedFiles,
+                    paddingValues = paddingValues,
+                    onChangeArea = { viewModel.setArea(it) },
                     onAddOrRemoveFile = viewModel::addOrRemoveItemOfSelectedFileList
                 )
                 FilePageState.SEARCH_AREA -> SearchArea()
@@ -193,13 +200,16 @@ fun MainArea(
     mainState: FilePageState,
     searchText: String,
     selectedFileList: List<File>,
+    paddingValues: PaddingValues,
+    onChangeArea: (area: Int) -> Unit,
     onAddOrRemoveFile: (file: File) -> Unit,
     onSetRecentFilter: (type: Int, value: Boolean) -> Unit
 ) {
     LazyVerticalGrid(
         modifier = Modifier
             .fillMaxSize(),
-        columns = GridCells.Adaptive(352.dp)
+        columns = GridCells.Adaptive(352.dp),
+        contentPadding = paddingValues
     ) {
         item {
             Column(
@@ -395,7 +405,7 @@ fun MainArea(
                         border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
                     )
                 }
-                if (mainState.data.isEmpty()) {
+                if (mainState.recentFilterData.isEmpty()) {
                     val context = LocalContext.current
                     val imageLoader = ImageLoader.Builder(context)
                         .components {
@@ -412,8 +422,8 @@ fun MainArea(
                         contentScale = ContentScale.FillWidth,
                         modifier = Modifier
                             .align(Alignment.CenterHorizontally)
-                            .width(256.dp)
-                            .padding(vertical = 16.dp)
+                            .width(224.dp)
+                            .padding(top = 32.dp, bottom = 16.dp)
                     )
                     Text(
                         modifier = Modifier
@@ -424,18 +434,28 @@ fun MainArea(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 } else {
-                    mainState.filterData.forEachIndexed { index, file ->
+                    LaunchedEffect(key1 = mainState, block = {
+                        Log.d("parabox", "inner:${mainState.filterData}")
+                    })
+                    mainState.recentFilterData.forEachIndexed { index, file ->
                         FileItem(
-                            modifier = Modifier.padding(top = 3.dp),
+                            modifier = Modifier
+                                .padding(top = 3.dp)
+                                .animateItemPlacement(),
                             file = file,
                             searchText = searchText,
                             isFirst = index == 0,
-                            isLast = index == mainState.data.lastIndex,
+                            isLast = index == mainState.recentFilterData.lastIndex,
                             isSelected = selectedFileList.contains(file),
                             onClick = { /*TODO*/ },
                             onLongClick = { onAddOrRemoveFile(file) }) {
-
                         }
+                    }
+                    TextButton(
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        onClick = { onChangeArea(FilePageState.SEARCH_AREA) }
+                    ) {
+                        Text(text = "查看完整列表")
                     }
                 }
             }
@@ -451,7 +471,7 @@ fun MainArea(
                         .padding(vertical = 8.dp)
                 ) {
                     Text(
-                        text = "已连接服务",
+                        text = "云服务",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -496,15 +516,17 @@ fun FileItem(
         tonalElevation = 3.dp,
     ) {
         Row(
-            modifier = modifier.combinedClickable(
-                interactionSource = remember {
-                    MutableInteractionSource()
-                },
-                indication = LocalIndication.current,
-                enabled = true,
-                onLongClick = onLongClick,
-                onClick = onClick
-            ).padding(horizontal = 16.dp, vertical = 16.dp),
+            modifier = Modifier
+                .combinedClickable(
+                    interactionSource = remember {
+                        MutableInteractionSource()
+                    },
+                    indication = LocalIndication.current,
+                    enabled = true,
+                    onLongClick = onLongClick,
+                    onClick = onClick
+                )
+                .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Crossfade(targetState = isSelected) {
@@ -621,13 +643,15 @@ fun FileItem(
                                 append(it)
                             }
                         }
-                        append(" ")
+                        append("  ")
                         if (file.downloadingState is DownloadingState.Downloading) {
                             append(FileUtil.getSizeString(file.downloadingState.downloadedBytes.toLong()))
                             append(" ")
                             append("/")
                             append(" ")
                             append(FileUtil.getSizeString(file.downloadingState.totalBytes.toLong()))
+                        } else {
+                            append(FileUtil.getSizeString(file.size))
                         }
                     },
                     style = MaterialTheme.typography.bodyMedium,

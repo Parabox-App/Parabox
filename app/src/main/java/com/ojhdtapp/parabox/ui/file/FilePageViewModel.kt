@@ -34,6 +34,7 @@ class FilePageViewModel @Inject constructor(
     fun clearSelectedFiles() {
         _selectedFiles.clear()
     }
+
     fun addOrRemoveItemOfSelectedFileList(value: File) {
         if (!_selectedFiles.contains(value)) {
             _selectedFiles.add(value)
@@ -50,36 +51,35 @@ class FilePageViewModel @Inject constructor(
         _searchText.value = value
         searchJob?.cancel()
         searchJob = viewModelScope.launch(Dispatchers.IO) {
-            if (!withoutDelay) {
-                delay(800L)
-                getFiles(value)
-                    .onEach { result ->
-                        when (result) {
-                            is Resource.Success -> {
-                                _fileStateFlow.value = _fileStateFlow.value.copy(
-                                    isLoading = false,
-                                    data = result.data ?: emptyList()
-                                )
-                            }
-                            is Resource.Loading -> {
-                                _fileStateFlow.value = _fileStateFlow.value.copy(
-                                    isLoading = true
-                                )
-                            }
-                            is Resource.Error -> {
-                                _fileStateFlow.value = _fileStateFlow.value.copy(
-                                    isLoading = false,
-                                    data = result.data ?: emptyList()
-                                )
-                                _uiEventFlow.emit(
-                                    FilePageUiEvent.ShowSnackBar(
-                                        result.message ?: "未知错误"
-                                    )
-                                )
-                            }
+            if (!withoutDelay) delay(800L)
+            getFiles(value)
+                .onEach { result ->
+                    when (result) {
+                        is Resource.Success -> {
+                            _fileStateFlow.value = _fileStateFlow.value.copy(
+                                isLoading = false,
+                                data = result.data ?: emptyList()
+                            )
                         }
-                    }.launchIn(this)
-            }
+                        is Resource.Loading -> {
+                            _fileStateFlow.value = _fileStateFlow.value.copy(
+                                isLoading = true
+                            )
+                        }
+                        is Resource.Error -> {
+                            _fileStateFlow.value = _fileStateFlow.value.copy(
+                                isLoading = false,
+                                data = result.data ?: emptyList()
+                            )
+                            _uiEventFlow.emit(
+                                FilePageUiEvent.ShowSnackBar(
+                                    result.message ?: "未知错误"
+                                )
+                            )
+                        }
+                    }
+                }.launchIn(this)
+
         }
     }
 

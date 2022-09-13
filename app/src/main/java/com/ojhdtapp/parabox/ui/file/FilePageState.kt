@@ -45,14 +45,14 @@ data class FilePageState(
                 ).all { !it }
             ) true
             else {
-                if (enableRecentDocsFilter) ExtensionFilter.Docs.fileCheck(it)
-                else if (enableRecentSlidesFilter) ExtensionFilter.Slides.fileCheck(it)
-                else if (enableRecentSheetsFilter) ExtensionFilter.Sheets.fileCheck(it)
-                else if (enableRecentPictureFilter) ExtensionFilter.Picture.fileCheck(it)
-                else if (enableRecentAudioFilter) ExtensionFilter.Audio.fileCheck(it)
-                else if (enableRecentVideoFilter) ExtensionFilter.Video.fileCheck(it)
-                else if (enableRecentCompressedFilter) ExtensionFilter.Compressed.fileCheck(it)
-                else if (enableRecentPDFFilter) ExtensionFilter.PDF.fileCheck(it) else false
+                (if (enableRecentDocsFilter) ExtensionFilter.Docs.fileCheck(it) else false)
+                        || (if (enableRecentSlidesFilter) ExtensionFilter.Slides.fileCheck(it) else false)
+                        || (if (enableRecentSheetsFilter) ExtensionFilter.Sheets.fileCheck(it) else false)
+                        || (if (enableRecentPictureFilter) ExtensionFilter.Picture.fileCheck(it) else false)
+                        || (if (enableRecentAudioFilter) ExtensionFilter.Audio.fileCheck(it) else false)
+                        || (if (enableRecentVideoFilter) ExtensionFilter.Video.fileCheck(it) else false)
+                        || (if (enableRecentCompressedFilter) ExtensionFilter.Compressed.fileCheck(it) else false)
+                        || (if (enableRecentPDFFilter) ExtensionFilter.PDF.fileCheck(it) else false)
             }
         }
 }
