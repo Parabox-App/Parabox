@@ -1,11 +1,9 @@
 package com.ojhdtapp.parabox.ui.file
 
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -14,7 +12,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -47,8 +44,6 @@ import com.ojhdtapp.parabox.core.util.toTimeUntilNow
 import com.ojhdtapp.parabox.data.local.entity.DownloadingState
 import com.ojhdtapp.parabox.domain.model.File
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
-import com.ojhdtapp.parabox.ui.message.AreaState
-import com.ojhdtapp.parabox.ui.message.ContactReadFilterState
 import com.ojhdtapp.parabox.ui.message.DropdownMenuItemEvent
 import com.ojhdtapp.parabox.ui.setting.EditUserNameDialog
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
@@ -57,7 +52,6 @@ import com.ojhdtapp.parabox.ui.util.SearchAppBar
 import com.ojhdtapp.parabox.ui.util.UserProfileDialog
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
-import com.valentinilk.shimmer.shimmer
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.lang.Integer.min
@@ -230,7 +224,12 @@ fun FilePage(
                     onChangeArea = { viewModel.setArea(it) },
                     onAddOrRemoveFile = viewModel::addOrRemoveItemOfSelectedFileList
                 )
-                FilePageState.SEARCH_AREA -> SearchArea()
+                FilePageState.SEARCH_AREA -> SearchArea(
+                    mainState = mainState,
+                    searchText = viewModel.searchText.value,
+                    paddingValues = paddingValues,
+                    onEvent = onEvent,
+                )
                 else -> {}
             }
         }
@@ -543,12 +542,98 @@ fun MainArea(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchArea(modifier: Modifier = Modifier) {
+fun SearchArea(
+    modifier: Modifier = Modifier,
+    mainState: FilePageState,
+    searchText: String,
+    paddingValues: PaddingValues,
+    onEvent: (ActivityEvent) -> Unit,
+) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
+        contentPadding = paddingValues,
     ) {
+        item{
+            FlowRow(
+                modifier = Modifier.padding(bottom = 8.dp),
+                mainAxisSpacing = 8.dp
+            ) {
+                var showSizeFilterDropDownMenu by remember {
+                    mutableStateOf(false)
+                }
+                FilterChip(
+                    modifier = Modifier
+                        .animateContentSize(),
+                    selected = mainState.sizeFilter !is SizeFilter.All,
+                    onClick = {
 
+                    },
+                    enabled = true,
+                    trailingIcon = {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .wrapContentSize(Alignment.TopEnd)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.ExpandMore,
+                                contentDescription = "expand",
+                                modifier = Modifier.size(FilterChipDefaults.IconSize)
+                            )
+                            DropdownMenu(
+                                expanded = showSizeFilterDropDownMenu,
+                                onDismissRequest = { showSizeFilterDropDownMenu = false },
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text(SizeFilter.All.label) },
+                                    onClick = {
+
+                                        showSizeFilterDropDownMenu = false
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(SizeFilter.TenMB.label) },
+                                    onClick = {
+
+                                        showSizeFilterDropDownMenu = false
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(SizeFilter.HundredMB.label) },
+                                    onClick = {
+
+                                        showSizeFilterDropDownMenu = false
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(SizeFilter.OverHundredMB.label) },
+                                    onClick = {
+
+                                        showSizeFilterDropDownMenu = false
+                                    },
+                                )
+                            }
+                        }
+                    },
+                    label = { Text(text = mainState.sizeFilter.label) },
+                    border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
+                )
+            }
+        }
+        itemsIndexed(items = mainState.filterData, key = {index, item -> item.fileId}) {index, item ->
+            FileItem(
+                file = item,
+                searchText = searchText,
+                isFirst = index == 0,
+                isLast = index == mainState.filterData.lastIndex,
+                isSelected = false,
+                onClick = { },
+                onLongClick = {  },
+                onAvatarClick = {},
+            )
+        }
     }
 }
 
@@ -686,7 +771,7 @@ fun FileItem(
                     text = buildAnnotatedString {
                         file.profileName.splitKeeping(searchText).forEach {
                             if (it == searchText) {
-                                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)) {
                                     append(it)
                                 }
                             } else {
