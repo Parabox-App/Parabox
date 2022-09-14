@@ -376,7 +376,7 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK))
         } else {
-            vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(200, 200), 0))
+            vibrator.vibrate(VibrationEffect.createOneShot(30, 20))
         }
     }
 

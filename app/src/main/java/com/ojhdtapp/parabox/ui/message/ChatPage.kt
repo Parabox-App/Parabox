@@ -158,6 +158,9 @@ fun ChatPage(
                     },
                     onSetAudioProgressByFraction = {
                         onEvent(ActivityEvent.SetAudioProgress(it))
+                    },
+                    onVibrate = {
+                        onEvent(ActivityEvent.Vibrate)
                     }
                 )
             }
@@ -187,6 +190,7 @@ fun NormalChatPage(
     onPauseAudioPlaying: () -> Unit,
     onResumeAudioPlaying: () -> Unit,
     onSetAudioProgressByFraction: (progressFraction: Float) -> Unit,
+    onVibrate: () -> Unit,
 ) {
     // Util
     val coroutineScope = rememberCoroutineScope()
@@ -232,6 +236,10 @@ fun NormalChatPage(
     val scaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberBottomSheetState(BottomSheetValue.Collapsed)
     )
+    LaunchedEffect(key1 = scaffoldState.bottomSheetState.targetValue) {
+        if (scaffoldState.bottomSheetState.progress.fraction != 1f && scaffoldState.bottomSheetState.progress.fraction != 0f)
+            onVibrate()
+    }
     val opacityState by remember {
         derivedStateOf {
             if (scaffoldState.bottomSheetState.direction == 1f) {
@@ -878,7 +886,7 @@ fun NormalChatPage(
                     .pointerInput(Unit) {
                         detectTapGestures {
                             focusManager.clearFocus()
-                            if(scaffoldState.bottomSheetState.isExpanded){
+                            if (scaffoldState.bottomSheetState.isExpanded) {
                                 coroutineScope.launch {
                                     scaffoldState.bottomSheetState.collapse()
                                 }
