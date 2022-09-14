@@ -32,12 +32,13 @@ object DownloadManagerUtil {
                 setTitle(fileName)
                 setDestinationInExternalPublicDir(
                     Environment.DIRECTORY_DOWNLOADS,
-                    File.pathSeparator + "Parabox" + File.separator + fileName
+                    "Parabox" + File.separator + fileName
                 )
             }
             Toast.makeText(context, "开始下载${fileName}到/Download/Parabox", Toast.LENGTH_SHORT).show()
             downloadManager.enqueue(request)
         } catch (e: Exception) {
+            e.printStackTrace()
             Toast.makeText(context, "下载失败", Toast.LENGTH_SHORT).show()
             null
         }

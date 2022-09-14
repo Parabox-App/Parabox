@@ -5,6 +5,7 @@ import android.net.Uri
 import com.ojhdtapp.messagedto.PluginConnection
 import com.ojhdtapp.messagedto.SendMessageDto
 import com.ojhdtapp.messagedto.message_content.MessageContent
+import com.ojhdtapp.parabox.domain.model.File
 
 sealed class ActivityEvent{
     data class LaunchIntent(val intent: Intent) : ActivityEvent()
@@ -18,4 +19,5 @@ sealed class ActivityEvent{
     object ResumeAudioPlaying: ActivityEvent()
     data class SetAudioProgress(val fraction: Float) : ActivityEvent()
     object StopAudioPlaying: ActivityEvent()
+    data class DownloadFile(val file: File) : ActivityEvent()
 }

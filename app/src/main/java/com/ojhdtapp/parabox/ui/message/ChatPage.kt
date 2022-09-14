@@ -1784,7 +1784,7 @@ private fun MessageContent.toLayout(
                                 "txt", "log", "md", "json", "xml" -> Icons.Outlined.Description
                                 "cd", "wav", "aiff", "mp3", "wma", "ogg", "mpc", "flac", "ape", "3gp" -> Icons.Outlined.AudioFile
                                 "avi", "wmv", "mp4", "mpeg", "mpg", "mov", "flv", "rmvb", "rm", "asf" -> Icons.Outlined.VideoFile
-                                "zip", "rar", "7z", "tar.bz2", "tar", "jar", "gz", "deb" -> Icons.Outlined.FolderZip
+                                "zip", "rar", "7z", "bz2", "tar", "jar", "gz", "deb" -> Icons.Outlined.FolderZip
                                 else -> Icons.Outlined.FilePresent
                             }, contentDescription = "type",
                             tint = MaterialTheme.colorScheme.primary

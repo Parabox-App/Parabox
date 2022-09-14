@@ -197,7 +197,7 @@ sealed class ExtensionFilter(
                 "zip",
                 "rar",
                 "7z",
-                "tar.bz2",
+                "bz2",
                 "tar",
                 "jar",
                 "gz",

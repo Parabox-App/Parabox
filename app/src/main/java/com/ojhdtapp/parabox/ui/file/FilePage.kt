@@ -134,7 +134,10 @@ fun FilePage(
                     viewModel.setSearchBarActivateState(it)
                     when (it) {
                         SearchAppBar.SEARCH -> viewModel.setArea(FilePageState.SEARCH_AREA)
-                        SearchAppBar.NONE -> viewModel.setArea(FilePageState.MAIN_AREA)
+                        SearchAppBar.NONE -> {
+                            viewModel.setArea(FilePageState.MAIN_AREA)
+                            viewModel.clearSelectedFiles()
+                        }
                     }
                 },
                 sizeClass = sizeClass,
@@ -463,6 +466,12 @@ fun MainArea(
                                 onClick = {
                                     if (searchAppBarState == SearchAppBar.FILE_SELECT) {
                                         onAddOrRemoveFile(file)
+                                    } else {
+                                        if (file.downloadingState is DownloadingState.None || file.downloadingState is DownloadingState.Failure) {
+                                            onEvent(ActivityEvent.DownloadFile(file))
+                                        } else {
+
+                                        }
                                     }
                                 },
                                 onLongClick = {
@@ -590,7 +599,7 @@ fun FileItem(
                                         "txt", "log", "md", "json", "xml" -> Icons.Outlined.Description
                                         "cd", "wav", "aiff", "mp3", "wma", "ogg", "mpc", "flac", "ape", "3gp" -> Icons.Outlined.AudioFile
                                         "avi", "wmv", "mp4", "mpeg", "mpg", "mov", "flv", "rmvb", "rm", "asf" -> Icons.Outlined.VideoFile
-                                        "zip", "rar", "7z", "tar.bz2", "tar", "jar", "gz", "deb" -> Icons.Outlined.FolderZip
+                                        "zip", "rar", "7z", "bz2", "tar", "jar", "gz", "deb" -> Icons.Outlined.FolderZip
                                         else -> Icons.Outlined.FilePresent
                                     }, contentDescription = "type",
                                     tint = MaterialTheme.colorScheme.primary
@@ -633,7 +642,7 @@ fun FileItem(
                                 "txt", "log", "md", "json", "xml" -> Icons.Outlined.Description
                                 "cd", "wav", "aiff", "mp3", "wma", "ogg", "mpc", "flac", "ape", "3gp" -> Icons.Outlined.AudioFile
                                 "avi", "wmv", "mp4", "mpeg", "mpg", "mov", "flv", "rmvb", "rm", "asf" -> Icons.Outlined.VideoFile
-                                "zip", "rar", "7z", "tar.bz2", "tar", "jar", "gz", "deb" -> Icons.Outlined.FolderZip
+                                "zip", "rar", "7z", "bz2", "tar", "jar", "gz", "deb" -> Icons.Outlined.FolderZip
                                 else -> Icons.Outlined.FilePresent
                             }, contentDescription = "type",
                             tint = MaterialTheme.colorScheme.primary

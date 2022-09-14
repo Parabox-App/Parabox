@@ -46,4 +46,6 @@ interface MainRepository {
     ): Boolean
 
     fun getFiles(query: String = "") : Flow<Resource<List<File>>>
+
+    fun updateDownloadingState(state: DownloadingState, target: File, path: String)
 }

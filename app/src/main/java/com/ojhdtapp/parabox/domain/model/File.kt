@@ -13,6 +13,7 @@ data class File(
     val downloadingState: DownloadingState = DownloadingState.None,
     val downloadPath: String? = null,
     val relatedMessageId: Long,
+    val fileId : Long,
 ) {
     fun toFileEntity() = FileEntity(
         url,
@@ -23,6 +24,7 @@ data class File(
         profileName,
         downloadingState,
         downloadPath,
-        relatedMessageId
+        relatedMessageId,
+        fileId
     )
 }

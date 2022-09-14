@@ -41,12 +41,11 @@ import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.ojhdtapp.messagedto.SendMessageDto
-import com.ojhdtapp.parabox.core.util.DataStoreKeys
-import com.ojhdtapp.parabox.core.util.FileUtil
-import com.ojhdtapp.parabox.core.util.dataStore
-import com.ojhdtapp.parabox.core.util.toDateAndTimeString
+import com.ojhdtapp.parabox.core.util.*
+import com.ojhdtapp.parabox.domain.model.File
 import com.ojhdtapp.parabox.domain.service.PluginService
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
+import com.ojhdtapp.parabox.domain.use_case.UpdateDownloadingState
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.NavGraphs
 import com.ojhdtapp.parabox.ui.theme.AppTheme
@@ -74,6 +73,9 @@ import kotlin.math.roundToInt
 class MainActivity : ComponentActivity() {
     @Inject
     lateinit var handleNewMessage: HandleNewMessage
+
+    @Inject
+    lateinit var updateDownloadingState: UpdateDownloadingState
     var pluginService: PluginService? = null
     private lateinit var pluginServiceConnection: ServiceConnection
     private lateinit var userAvatarPickerLauncher: ActivityResultLauncher<Intent>
@@ -90,6 +92,24 @@ class MainActivity : ComponentActivity() {
 
     // Shared ViewModel
     val mainSharedViewModel by viewModels<MainSharedViewModel>()
+
+    private fun downloadFile(file: File) {
+        val path = FileUtil.getAvailableFileName(this, file.name)
+        DownloadManagerUtil.downloadWithManager(
+            this,
+            file.url,
+            path
+        )?.also {
+            lifecycleScope.launch(Dispatchers.IO) {
+                repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    DownloadManagerUtil.retrieve(this@MainActivity, it).collectLatest {
+                        Log.d("parabox", it.toString())
+                        updateDownloadingState(it, file, path)
+                    }
+                }
+            }
+        }
+    }
 
 
     private fun startPlayingLocal(uri: Uri) {
@@ -401,6 +421,9 @@ class MainActivity : ComponentActivity() {
             }
             is ActivityEvent.SetAudioProgress -> {
                 setProgress(event.fraction)
+            }
+            is ActivityEvent.DownloadFile -> {
+                downloadFile(event.file)
             }
         }
     }

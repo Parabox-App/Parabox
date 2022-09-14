@@ -30,7 +30,8 @@ data class FileEntity(
         profileName,
         downloadingState,
         downloadPath,
-        relatedMessageId
+        relatedMessageId,
+        fileId
     )
 }
 
