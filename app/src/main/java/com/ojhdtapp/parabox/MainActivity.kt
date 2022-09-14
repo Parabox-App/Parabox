@@ -2,15 +2,13 @@ package com.ojhdtapp.parabox
 
 import android.app.Activity
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.net.Uri
-import android.os.Build
-import android.os.Bundle
-import android.os.Environment
-import android.os.IBinder
+import android.os.*
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
@@ -79,6 +77,7 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var getFiles: GetFiles
+
     var pluginService: PluginService? = null
     private lateinit var pluginServiceConnection: ServiceConnection
     private lateinit var userAvatarPickerLauncher: ActivityResultLauncher<Intent>
@@ -92,6 +91,8 @@ class MainActivity : ComponentActivity() {
     private var player: MediaPlayer? = null
     private var playerJob: Job? = null
     private var amplituda: Amplituda? = null
+
+    lateinit var vibrator: Vibrator
 
     // Shared ViewModel
     val mainSharedViewModel by viewModels<MainSharedViewModel>()
@@ -371,6 +372,14 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun vibrate() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK))
+        } else {
+            vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(200, 200), 0))
+        }
+    }
+
     // Event
     fun onEvent(event: ActivityEvent) {
         when (event) {
@@ -442,6 +451,9 @@ class MainActivity : ComponentActivity() {
             is ActivityEvent.DownloadFile -> {
                 downloadFile(event.file)
             }
+            is ActivityEvent.Vibrate -> {
+                vibrate()
+            }
         }
     }
 
@@ -451,6 +463,14 @@ class MainActivity : ComponentActivity() {
     )
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Vibrator
+        vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            (getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
+        } else {
+            getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
+
         // Record
         recordPath = "${externalCacheDir!!.absoluteFile}/audio_record.mp3"
 //        recordPath = "${getExternalFilesDir("chat")!!.absoluteFile}/audio_record.mp3"
@@ -490,15 +510,20 @@ class MainActivity : ComponentActivity() {
         // File Download Process
         lifecycleScope.launch(Dispatchers.IO) {
             getFiles.allStatic().forEach {
-                val path = java.io.File(
-                    Environment.getExternalStoragePublicDirectory("${Environment.DIRECTORY_DOWNLOADS}/Parabox"),
-                    it.downloadPath
-                )
-                if (it.downloadPath == null || !path.exists()) {
+                if (it.downloadPath == null) {
                     updateFile.downloadState(DownloadingState.None, it)
                     updateFile.downloadInfo(null, null, it)
                 } else {
-                    retrieveDownloadProcess(it)
+                    val path = java.io.File(
+                        Environment.getExternalStoragePublicDirectory("${Environment.DIRECTORY_DOWNLOADS}/Parabox"),
+                        it.downloadPath
+                    )
+                    if (!path.exists()) {
+                        updateFile.downloadState(DownloadingState.None, it)
+                        updateFile.downloadInfo(null, null, it)
+                    } else {
+                        retrieveDownloadProcess(it)
+                    }
                 }
             }
         }
