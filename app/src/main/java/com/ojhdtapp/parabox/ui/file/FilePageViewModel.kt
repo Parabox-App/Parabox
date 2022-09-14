@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.domain.model.File
 import com.ojhdtapp.parabox.domain.model.Message
+import com.ojhdtapp.parabox.domain.use_case.DeleteFile
 import com.ojhdtapp.parabox.domain.use_case.GetFiles
 import com.ojhdtapp.parabox.ui.util.SearchAppBar
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,7 +22,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class FilePageViewModel @Inject constructor(
-    val getFiles: GetFiles
+    val getFiles: GetFiles,
+    val deleteFile: DeleteFile
 ) : ViewModel() {
 
     private val _uiEventFlow = MutableSharedFlow<FilePageUiEvent>()
@@ -123,6 +125,16 @@ class FilePageViewModel @Inject constructor(
             ExtensionFilter.PDF -> {
                 _fileStateFlow.value = _fileStateFlow.value.copy(enableRecentPDFFilter = value)
             }
+        }
+    }
+
+    fun deleteSelectedFile(){
+        viewModelScope.launch(Dispatchers.IO) {
+            _selectedFiles.forEach {
+                deleteFile(it)
+            }
+            _selectedFiles.clear()
+            setSearchBarActivateState(SearchAppBar.NONE)
         }
     }
 }

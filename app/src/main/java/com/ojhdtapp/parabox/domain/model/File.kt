@@ -14,6 +14,7 @@ data class File(
     val downloadPath: String? = null,
     val relatedMessageId: Long,
     val fileId : Long,
+    val downloadId: Long? = null
 ) {
     fun toFileEntity() = FileEntity(
         url,

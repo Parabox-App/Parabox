@@ -77,9 +77,6 @@ fun FilePage(
 ) {
     val viewModel: FilePageViewModel = hiltViewModel()
     val mainState by viewModel.fileStateFlow.collectAsState()
-    LaunchedEffect(key1 = mainState, block = {
-        Log.d("parabox", mainState.toString())
-    })
     val snackBarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     BackHandler(enabled = mainState.area != FilePageState.MAIN_AREA) {
@@ -97,6 +94,32 @@ fun FilePage(
                 }
             }
         }
+    }
+    // Delete File Confirm
+    var deleteFileConfirm by remember {
+        mutableStateOf(false)
+    }
+    if (deleteFileConfirm) {
+        androidx.compose.material3.AlertDialog(onDismissRequest = {
+            deleteFileConfirm = false
+        },
+            title = { Text(text = "确认删除") },
+            text = { Text(text = "选择项将从文件列表移除，但不会影响所有已下载的本地文件。") },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    viewModel.deleteSelectedFile()
+                    deleteFileConfirm = false
+                }) {
+                    Text(text = "确认")
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    deleteFileConfirm = false
+                }) {
+                    Text(text = "取消")
+                }
+            })
     }
     UserProfileDialog(
         openDialog = mainSharedViewModel.showUserProfileDialogState.value,
@@ -151,8 +174,15 @@ fun FilePage(
                 },
                 onDropdownMenuItemEvent = {
                     when (it) {
-                        is DropdownMenuItemEvent.DownloadFile -> {}
+                        is DropdownMenuItemEvent.DownloadFile -> {
+                            viewModel.selectedFiles.forEach {
+                                onEvent(ActivityEvent.DownloadFile(it))
+                            }
+                        }
                         is DropdownMenuItemEvent.SaveToCloud -> {}
+                        is DropdownMenuItemEvent.DeleteFile -> {
+                            deleteFileConfirm = true
+                        }
                     }
                 }
             )
@@ -584,7 +614,7 @@ fun FileItem(
                         modifier = Modifier
                             .size(48.dp)
                             .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer)
+                            .background(if (file.downloadingState is DownloadingState.Failure) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer)
                             .clickable {
                                 onAvatarClick()
                             },
@@ -606,7 +636,7 @@ fun FileItem(
                                 )
                             }
                             is DownloadingState.Downloading -> {
-                                val progress by animateFloatAsState(targetValue = file.downloadingState.progress.toFloat() / 100)
+                                val progress by animateFloatAsState(targetValue = file.downloadingState.progress)
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(48.dp),
                                     progress = progress,
@@ -634,19 +664,6 @@ fun FileItem(
                                 )
                             }
                         }
-
-                        Icon(
-                            imageVector = when (file.extension) {
-                                "apk" -> Icons.Outlined.Android
-                                "bmp", "jpeg", "jpg", "png", "tif", "gif", "pcx", "tga", "exif", "fpx", "svg", "psd", "cdr", "pcd", "dxf", "ufo", "eps", "ai", "raw", "webp", "avif", "apng", "tiff" -> Icons.Outlined.Image
-                                "txt", "log", "md", "json", "xml" -> Icons.Outlined.Description
-                                "cd", "wav", "aiff", "mp3", "wma", "ogg", "mpc", "flac", "ape", "3gp" -> Icons.Outlined.AudioFile
-                                "avi", "wmv", "mp4", "mpeg", "mpg", "mov", "flv", "rmvb", "rm", "asf" -> Icons.Outlined.VideoFile
-                                "zip", "rar", "7z", "bz2", "tar", "jar", "gz", "deb" -> Icons.Outlined.FolderZip
-                                else -> Icons.Outlined.FilePresent
-                            }, contentDescription = "type",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
                     }
                 }
             }

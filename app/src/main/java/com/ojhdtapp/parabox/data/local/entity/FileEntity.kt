@@ -20,6 +20,7 @@ data class FileEntity(
     val downloadPath: String? = null,
     val relatedMessageId: Long,
     @PrimaryKey(autoGenerate = true) val fileId: Long = 0,
+    val downloadId: Long? = null,
 ) {
     fun toFile() = File(
         url,
@@ -31,7 +32,8 @@ data class FileEntity(
         downloadingState,
         downloadPath,
         relatedMessageId,
-        fileId
+        fileId,
+        downloadId
     )
 }
 
@@ -41,15 +43,20 @@ data class FileDownloadingStateUpdate(
     val fileId: Long,
     @ColumnInfo(name = "downloadingState")
     val downloadingState: DownloadingState,
-    @ColumnInfo(name = "downloadPath")
-    val downloadPath: String,
 )
 
-@Parcelize
-sealed class DownloadingState : Parcelable {
+data class FileDownloadInfoUpdate(
+    @ColumnInfo(name = "fileId")
+    val fileId: Long,
+    @ColumnInfo(name = "downloadPath")
+    val downloadPath: String?,
+    @ColumnInfo(name = "downloadId")
+    val downloadId: Long?
+)
+
+sealed class DownloadingState {
     data class Downloading(val downloadedBytes: Int, val totalBytes: Int) : DownloadingState() {
-        @IgnoredOnParcel
-        val progress = if (totalBytes == 0) 0 else ((downloadedBytes * 100) / totalBytes)
+        val progress = if (totalBytes == 0) 0f else (downloadedBytes.toFloat() / totalBytes)
     }
 
     object None : DownloadingState()

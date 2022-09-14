@@ -2,6 +2,7 @@ package com.ojhdtapp.parabox.data.local
 
 import androidx.room.*
 import com.ojhdtapp.parabox.data.local.entity.FileAndMessage
+import com.ojhdtapp.parabox.data.local.entity.FileDownloadInfoUpdate
 import com.ojhdtapp.parabox.data.local.entity.FileDownloadingStateUpdate
 import com.ojhdtapp.parabox.data.local.entity.FileEntity
 import kotlinx.coroutines.flow.Flow
@@ -13,12 +14,17 @@ interface FileDao {
 
     @Update(entity = FileEntity::class)
     fun updateDownloadingState(obj: FileDownloadingStateUpdate)
+    @Update(entity = FileEntity::class)
+    fun updateDownloadInfo(obj: FileDownloadInfoUpdate)
+    @Query("DELETE FROM file_entity WHERE fileId = :fileId")
+    suspend fun deleteFileByFileId(fileId: Long)
 
     @Query("DELETE FROM file_entity WHERE relatedMessageId = :messageId")
     fun deleteFileByMessageId(messageId: Long)
-
     @Query("SELECT * FROM file_entity")
     fun getAllFiles(): Flow<List<FileEntity>>
+    @Query("SELECT * FROM file_entity")
+    fun getAllFilesStatic() : List<FileEntity>
     @Query("SELECT * FROM file_entity WHERE name LIKE '%' || :query || '%' OR profilename LIKE '%' || :query || '%'")
     fun queryFiles(query: String): Flow<List<FileEntity>>
 

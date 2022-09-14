@@ -3,6 +3,7 @@ package com.ojhdtapp.parabox.core.util
 import android.app.DownloadManager
 import android.content.Context
 import android.database.Cursor
+import android.database.CursorIndexOutOfBoundsException
 import android.net.Uri
 import android.os.Environment
 import android.webkit.MimeTypeMap
@@ -47,26 +48,30 @@ object DownloadManagerUtil {
     fun retrieve(context: Context, id: Long): Flow<DownloadingState> {
         val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
         return flow {
-            val downloading = AtomicBoolean(true)
+            try {
+                val downloading = AtomicBoolean(true)
 
-            while (downloading.get()) {
-                val query = DownloadManager.Query().setFilterById(id)
-                val cursor = downloadManager.query(query)
+                while (downloading.get()) {
+                    val query = DownloadManager.Query().setFilterById(id)
+                    val cursor = downloadManager.query(query)
 
-                cursor.moveToFirst()
+                    cursor.moveToFirst()
 
-                val bytesDownloaded =
-                    cursor.intValue(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)
-                val bytesTotal = cursor.intValue(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)
+                    val bytesDownloaded =
+                        cursor.intValue(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)
+                    val bytesTotal = cursor.intValue(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)
 
-                if (isSuccessful(cursor)) downloading.set(false)
-                cursor.close()
-                emit(DownloadingState.Downloading(bytesDownloaded, bytesTotal))
-                if (bytesDownloaded == bytesTotal) {
-                    emit(DownloadingState.Done)
+                    if (isSuccessful(cursor)) downloading.set(false)
+                    cursor.close()
+                    emit(DownloadingState.Downloading(bytesDownloaded, bytesTotal))
+                    if (bytesDownloaded == bytesTotal) {
+                        emit(DownloadingState.Done)
+                    }
+
+                    if (downloading.get()) delay(1000)
                 }
-
-                if (downloading.get()) delay(1000)
+            } catch (e: CursorIndexOutOfBoundsException) {
+                emit(DownloadingState.Failure)
             }
         }.flowOn(Dispatchers.IO)
     }

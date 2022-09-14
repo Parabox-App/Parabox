@@ -46,6 +46,8 @@ interface MainRepository {
     ): Boolean
 
     fun getFiles(query: String = "") : Flow<Resource<List<File>>>
-
-    fun updateDownloadingState(state: DownloadingState, target: File, path: String)
+    fun getAllFilesStatic() : List<File>
+    fun updateDownloadingState(state: DownloadingState, target: File)
+    fun updateDownloadInfo(path: String?, downloadId: Long?, target: File)
+    suspend fun deleteFile(fileId : Long)
 }

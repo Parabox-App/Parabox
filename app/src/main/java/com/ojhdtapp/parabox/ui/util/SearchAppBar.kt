@@ -592,6 +592,31 @@ fun FileSelectContentField(
                                     contentDescription = null
                                 )
                             })
+                        DropdownMenuItem(
+                            text = { Text(text = "跳转至上下文") },
+                            onClick = {
+                                onDropdownMenuItemEvent(DropdownMenuItemEvent.RedirectToConversation)
+                                onActivateStateChanged(SearchAppBar.NONE)
+                                expanded = false
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Outlined.OpenInNew,
+                                    contentDescription = null
+                                )
+                            })
+                        DropdownMenuItem(
+                            text = { Text(text = "删除记录") },
+                            onClick = {
+                                onDropdownMenuItemEvent(DropdownMenuItemEvent.DeleteFile)
+                                expanded = false
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Outlined.DeleteOutline,
+                                    contentDescription = null
+                                )
+                            })
                     }
                 }
             }

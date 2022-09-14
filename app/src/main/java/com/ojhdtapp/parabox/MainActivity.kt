@@ -9,6 +9,7 @@ import android.media.MediaRecorder
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.os.IBinder
 import android.provider.MediaStore
 import android.util.Log
@@ -42,10 +43,12 @@ import com.google.accompanist.navigation.material.ExperimentalMaterialNavigation
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.ojhdtapp.messagedto.SendMessageDto
 import com.ojhdtapp.parabox.core.util.*
+import com.ojhdtapp.parabox.data.local.entity.DownloadingState
 import com.ojhdtapp.parabox.domain.model.File
 import com.ojhdtapp.parabox.domain.service.PluginService
+import com.ojhdtapp.parabox.domain.use_case.GetFiles
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
-import com.ojhdtapp.parabox.domain.use_case.UpdateDownloadingState
+import com.ojhdtapp.parabox.domain.use_case.UpdateFile
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.NavGraphs
 import com.ojhdtapp.parabox.ui.theme.AppTheme
@@ -57,11 +60,8 @@ import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultA
 import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.navigation.dependency
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 import linc.com.amplituda.Amplituda
 import linc.com.amplituda.Compress
 import java.io.IOException
@@ -75,7 +75,10 @@ class MainActivity : ComponentActivity() {
     lateinit var handleNewMessage: HandleNewMessage
 
     @Inject
-    lateinit var updateDownloadingState: UpdateDownloadingState
+    lateinit var updateFile: UpdateFile
+
+    @Inject
+    lateinit var getFiles: GetFiles
     var pluginService: PluginService? = null
     private lateinit var pluginServiceConnection: ServiceConnection
     private lateinit var userAvatarPickerLauncher: ActivityResultLauncher<Intent>
@@ -101,16 +104,30 @@ class MainActivity : ComponentActivity() {
             path
         )?.also {
             lifecycleScope.launch(Dispatchers.IO) {
+                updateFile.downloadInfo(path, it, file)
                 repeatOnLifecycle(Lifecycle.State.STARTED) {
                     DownloadManagerUtil.retrieve(this@MainActivity, it).collectLatest {
-                        Log.d("parabox", it.toString())
-                        updateDownloadingState(it, file, path)
+                        if (it is DownloadingState.Done) {
+                            updateFile.downloadInfo(path, null, file)
+                        }
+                        updateFile.downloadState(it, file)
                     }
                 }
             }
         }
     }
 
+    private suspend fun retrieveDownloadProcess(file: File) {
+        file.downloadId?.let { id ->
+            lifecycleScope.launch(Dispatchers.IO) {
+                repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    DownloadManagerUtil.retrieve(this@MainActivity, id).collectLatest {
+                        updateFile.downloadState(it, file)
+                    }
+                }
+            }
+        }
+    }
 
     private fun startPlayingLocal(uri: Uri) {
         stopPlaying()
@@ -467,6 +484,22 @@ class MainActivity : ComponentActivity() {
                 // same time, respect the user's decision. Don't link to system
                 // settings in an effort to convince the user to change their
                 // decision.
+            }
+        }
+
+        // File Download Process
+        lifecycleScope.launch(Dispatchers.IO) {
+            getFiles.allStatic().forEach {
+                val path = java.io.File(
+                    Environment.getExternalStoragePublicDirectory("${Environment.DIRECTORY_DOWNLOADS}/Parabox"),
+                    it.downloadPath
+                )
+                if (it.downloadPath == null || !path.exists()) {
+                    updateFile.downloadState(DownloadingState.None, it)
+                    updateFile.downloadInfo(null, null, it)
+                } else {
+                    retrieveDownloadProcess(it)
+                }
             }
         }
 

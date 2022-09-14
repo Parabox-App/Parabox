@@ -471,7 +471,30 @@ class MainRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun updateDownloadingState(state: DownloadingState, target: File, path: String) {
-        database.fileDao.updateDownloadingState(FileDownloadingStateUpdate(target.fileId, state, path))
+    override fun getAllFilesStatic(): List<File> {
+        return database.fileDao.getAllFilesStatic().map { it.toFile() }
+    }
+
+    override fun updateDownloadingState(state: DownloadingState, target: File) {
+        database.fileDao.updateDownloadingState(
+            FileDownloadingStateUpdate(
+                target.fileId,
+                state
+            )
+        )
+    }
+
+    override fun updateDownloadInfo(path: String?, downloadId: Long?, target: File) {
+        database.fileDao.updateDownloadInfo(
+            FileDownloadInfoUpdate(
+                target.fileId,
+                path,
+                downloadId
+            )
+        )
+    }
+
+    override suspend fun deleteFile(fileId: Long) {
+        database.fileDao.deleteFileByFileId(fileId)
     }
 }

@@ -12,4 +12,8 @@ class GetFiles @Inject constructor(
     operator fun invoke(query: String): Flow<Resource<List<File>>> {
         return repository.getFiles(query)
     }
+
+    fun allStatic() : List<File>{
+        return repository.getAllFilesStatic()
+    }
 }
