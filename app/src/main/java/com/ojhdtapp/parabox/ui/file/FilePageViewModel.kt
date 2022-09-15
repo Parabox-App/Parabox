@@ -7,8 +7,6 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ojhdtapp.parabox.core.util.Resource
-import com.ojhdtapp.parabox.domain.model.File
-import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.use_case.DeleteFile
 import com.ojhdtapp.parabox.domain.use_case.GetFiles
 import com.ojhdtapp.parabox.ui.util.SearchAppBar
@@ -32,16 +30,25 @@ class FilePageViewModel @Inject constructor(
     private var _fileStateFlow = MutableStateFlow(FilePageState())
     val fileStateFlow get() = _fileStateFlow.asStateFlow()
 
-    private var _selectedFiles: SnapshotStateList<File> = mutableStateListOf<File>()
-    val selectedFiles get() = _selectedFiles
+    private var _selectedFilesId: SnapshotStateList<Long> = mutableStateListOf<Long>()
+    val selectedFilesId get() = _selectedFilesId
     fun clearSelectedFiles() {
-        _selectedFiles.clear()
+        _selectedFilesId.clear()
     }
-    fun addOrRemoveItemOfSelectedFileList(value: File) {
-        if (!_selectedFiles.contains(value)) {
-            _selectedFiles.add(value)
+    fun addOrRemoveItemOfSelectedFileList(value: Long) {
+        if (!_selectedFilesId.contains(value)) {
+            _selectedFilesId.add(value)
         } else {
-            _selectedFiles.remove(value)
+            _selectedFilesId.remove(value)
+        }
+    }
+    fun deleteSelectedFile(){
+        viewModelScope.launch(Dispatchers.IO) {
+            _selectedFilesId.forEach {
+                deleteFile(it)
+            }
+            _selectedFilesId.clear()
+            setSearchBarActivateState(SearchAppBar.NONE)
         }
     }
 
@@ -128,13 +135,14 @@ class FilePageViewModel @Inject constructor(
         }
     }
 
-    fun deleteSelectedFile(){
-        viewModelScope.launch(Dispatchers.IO) {
-            _selectedFiles.forEach {
-                deleteFile(it)
-            }
-            _selectedFiles.clear()
-            setSearchBarActivateState(SearchAppBar.NONE)
-        }
+    fun setFilter(filter: TimeFilter){
+        _fileStateFlow.value = _fileStateFlow.value.copy(timeFilter = filter)
     }
+    fun setFilter(filter: ExtensionFilter){
+        _fileStateFlow.value = _fileStateFlow.value.copy(extensionFilter = filter)
+    }
+    fun setFilter(filter: SizeFilter){
+        _fileStateFlow.value = _fileStateFlow.value.copy(sizeFilter = filter)
+    }
+
 }

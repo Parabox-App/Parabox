@@ -17,7 +17,7 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Archive
 import androidx.compose.material.icons.outlined.Done
-import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.rememberSwipeableState
 import androidx.compose.material3.*
@@ -205,7 +205,7 @@ fun RowScope.MessageArea(
                                 .wrapContentSize(Alignment.TopEnd)
                         ) {
                             Icon(
-                                imageVector = Icons.Outlined.ExpandMore,
+                                imageVector = Icons.Outlined.ArrowDropDown,
                                 contentDescription = "expand",
                                 modifier = Modifier.size(FilterChipDefaults.IconSize)
                             )

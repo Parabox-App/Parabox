@@ -7,7 +7,7 @@ import javax.inject.Inject
 class DeleteFile @Inject constructor(
     val repository: MainRepository
 ) {
-    suspend operator fun invoke(file: File) {
-        repository.deleteFile(file.fileId)
+    suspend operator fun invoke(fileId: Long) {
+        repository.deleteFile(fileId)
     }
 }

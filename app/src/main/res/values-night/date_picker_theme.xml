@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="date_picker_theme" parent="ThemeOverlay.AppCompat.Dialog">
+        <item name="colorAccent">@color/material_dynamic_primary80</item>                   <!--header background-->
+        <item name="android:windowBackground">@color/material_dynamic_neutral10</item>     <!--calendar background-->
+        <item name="android:colorControlActivated">@color/material_dynamic_primary80</item> <!--selected day-->
+        <item name="android:textColorPrimary">@color/material_dynamic_neutral90</item> <!--days of the month-->
+        <item name="android:textColorSecondary">@color/material_dynamic_primary80</item>    <!--days of the week-->
+        <item name="colorControlHighlight">@color/material_dynamic_secondary40</item>
+    </style>
+</resources>

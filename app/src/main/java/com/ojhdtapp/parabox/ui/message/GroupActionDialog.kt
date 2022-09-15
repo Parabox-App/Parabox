@@ -22,7 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ExpandLess
-import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -332,7 +332,7 @@ fun GroupEditForm(
 //                                        )
 //                                    } else {
 //                                        Icon(
-//                                            imageVector = Icons.Outlined.ExpandMore,
+//                                            imageVector = Icons.Outlined.ArrowDropDown,
 //                                            contentDescription = "Expand"
 //                                        )
 //                                    }

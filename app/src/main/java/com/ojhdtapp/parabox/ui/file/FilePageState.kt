@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.file
 
+import com.ojhdtapp.parabox.core.util.toFormattedDate
 import com.ojhdtapp.parabox.domain.model.File
 import kotlin.math.abs
 
@@ -51,8 +52,10 @@ data class FilePageState(
                         || (if (enableRecentPictureFilter) ExtensionFilter.Picture.fileCheck(it) else false)
                         || (if (enableRecentAudioFilter) ExtensionFilter.Audio.fileCheck(it) else false)
                         || (if (enableRecentVideoFilter) ExtensionFilter.Video.fileCheck(it) else false)
-                        || (if (enableRecentCompressedFilter) ExtensionFilter.Compressed.fileCheck(it) else false)
-                        || (if (enableRecentPDFFilter) ExtensionFilter.PDF.fileCheck(it) else false)
+                        || (if (enableRecentCompressedFilter) ExtensionFilter.Compressed.fileCheck(
+                    it
+                ) else false)
+                        || (if (enableRecentPDFFilter) ExtensionFilter.Pdf.fileCheck(it) else false)
             }
         }
 }
@@ -81,10 +84,16 @@ sealed class TimeFilter(
         { file: File -> abs(System.currentTimeMillis() - file.timestamp) >= 2592000000 }
     )
 
-    data class Custom(val mLabel: String, val timestampStart: Long, val timestampEnd: Long) :
+    data class Custom(
+        val timestampStart: Long? = null,
+        val timestampEnd: Long? = null
+    ) :
         TimeFilter(
-            label = mLabel,
-            fileCheck = { file: File -> file.timestamp in timestampStart until timestampEnd }
+            label = "从 ${timestampStart?.toFormattedDate() ?: "不受限制"} 到 ${timestampEnd?.toFormattedDate() ?: "不受限制"}",
+            fileCheck = { file: File ->
+                file.timestamp in (timestampStart ?: System.currentTimeMillis()) until (timestampEnd
+                    ?: System.currentTimeMillis())
+            }
         )
 }
 
@@ -206,7 +215,7 @@ sealed class ExtensionFilter(
         }
     )
 
-    object PDF : ExtensionFilter(
+    object Pdf : ExtensionFilter(
         "便携式文档",
         { file: File ->
             file.extension.lowercase() in listOf<String>(

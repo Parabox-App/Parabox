@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.file
 
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
@@ -10,7 +11,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,18 +38,13 @@ import coil.decode.SvgDecoder
 import coil.request.ImageRequest
 import com.google.accompanist.flowlayout.FlowRow
 import com.ojhdtapp.parabox.R
-import com.ojhdtapp.parabox.core.util.FileUtil
-import com.ojhdtapp.parabox.core.util.splitKeeping
-import com.ojhdtapp.parabox.core.util.toTimeUntilNow
+import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.data.local.entity.DownloadingState
 import com.ojhdtapp.parabox.domain.model.File
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.message.DropdownMenuItemEvent
 import com.ojhdtapp.parabox.ui.setting.EditUserNameDialog
-import com.ojhdtapp.parabox.ui.util.ActivityEvent
-import com.ojhdtapp.parabox.ui.util.FileNavGraph
-import com.ojhdtapp.parabox.ui.util.SearchAppBar
-import com.ojhdtapp.parabox.ui.util.UserProfileDialog
+import com.ojhdtapp.parabox.ui.util.*
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.flow.collectLatest
@@ -144,7 +139,7 @@ fun FilePage(
                 text = viewModel.searchText.value,
                 onTextChange = viewModel::onSearch,
                 placeholder = "搜索文件",
-                fileSelection = viewModel.selectedFiles,
+                fileSelection = mainState.data.filter { it.fileId in viewModel.selectedFilesId },
                 activateState = viewModel.searchBarActivateState.value,
                 avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
                 onActivateStateChanged = {
@@ -169,9 +164,12 @@ fun FilePage(
                 onDropdownMenuItemEvent = {
                     when (it) {
                         is DropdownMenuItemEvent.DownloadFile -> {
-                            viewModel.selectedFiles.forEach {
-                                onEvent(ActivityEvent.DownloadFile(it))
+                            viewModel.selectedFilesId.forEach {id ->
+                                mainState.data.firstOrNull { it.fileId == id }?.also {
+                                    onEvent(ActivityEvent.DownloadFile(it))
+                                }
                             }
+                            viewModel.setSearchBarActivateState(SearchAppBar.NONE)
                         }
                         is DropdownMenuItemEvent.SaveToCloud -> {}
                         is DropdownMenuItemEvent.DeleteFile -> {
@@ -214,7 +212,7 @@ fun FilePage(
                     mainState = mainState,
                     onSetRecentFilter = { type, value -> viewModel.setRecentFilter(type, value) },
                     searchText = viewModel.searchText.value,
-                    selectedFileList = viewModel.selectedFiles,
+                    selectedFileIdList = viewModel.selectedFilesId,
                     paddingValues = paddingValues,
                     onEvent = onEvent,
                     searchAppBarState = viewModel.searchBarActivateState.value,
@@ -222,15 +220,26 @@ fun FilePage(
                         viewModel.setSearchBarActivateState(it)
                     },
                     onChangeArea = { viewModel.setArea(it) },
-                    onAddOrRemoveFile = viewModel::addOrRemoveItemOfSelectedFileList
+                    onAddOrRemoveFile = {viewModel.addOrRemoveItemOfSelectedFileList(it.fileId)}
                 )
                 FilePageState.SEARCH_AREA -> SearchArea(
                     mainState = mainState,
                     searchText = viewModel.searchText.value,
+                    selectedFileIdList = viewModel.selectedFilesId,
                     paddingValues = paddingValues,
                     onEvent = onEvent,
+                    searchAppBarState = viewModel.searchBarActivateState.value,
+                    onChangeSearchAppBarState = {
+                        viewModel.setSearchBarActivateState(it)
+                    },
+                    onUpdateSizeFilter = viewModel::setFilter,
+                    onUpdateExtensionFilter = viewModel::setFilter,
+                    onUpdateTimeFilter = viewModel::setFilter,
+                    onAddOrRemoveFile = {viewModel.addOrRemoveItemOfSelectedFileList(it.fileId)}
                 )
-                else -> {}
+                else -> {
+                    AlertDialogDefaults.containerColor
+                }
             }
         }
 
@@ -243,7 +252,7 @@ fun MainArea(
     modifier: Modifier = Modifier,
     mainState: FilePageState,
     searchText: String,
-    selectedFileList: List<File>,
+    selectedFileIdList: List<Long>,
     paddingValues: PaddingValues,
     searchAppBarState: Int,
     onChangeSearchAppBarState: (state: Int) -> Unit,
@@ -491,7 +500,7 @@ fun MainArea(
                                 searchText = searchText,
                                 isFirst = index == 0,
                                 isLast = index == min(mainState.recentFilterData.lastIndex, 4),
-                                isSelected = selectedFileList.contains(file),
+                                isSelected = selectedFileIdList.contains(file.fileId),
                                 onClick = {
                                     if (searchAppBarState == SearchAppBar.FILE_SELECT) {
                                         onAddOrRemoveFile(file)
@@ -542,25 +551,45 @@ fun MainArea(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun SearchArea(
     modifier: Modifier = Modifier,
     mainState: FilePageState,
     searchText: String,
+    selectedFileIdList: List<Long>,
     paddingValues: PaddingValues,
+    searchAppBarState: Int,
+    onChangeSearchAppBarState: (state: Int) -> Unit,
+    onUpdateTimeFilter: (filter: TimeFilter) -> Unit,
+    onUpdateExtensionFilter: (filter: ExtensionFilter) -> Unit,
+    onUpdateSizeFilter: (filter: SizeFilter) -> Unit,
+    onAddOrRemoveFile: (file: File) -> Unit,
     onEvent: (ActivityEvent) -> Unit,
 ) {
+    val context = LocalContext.current
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = paddingValues,
+        verticalArrangement = Arrangement.spacedBy(3.dp),
     ) {
-        item{
-            FlowRow(
-                modifier = Modifier.padding(bottom = 8.dp),
-                mainAxisSpacing = 8.dp
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+                    .horizontalScroll(rememberScrollState()),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
+                Spacer(modifier = Modifier.width(8.dp))
                 var showSizeFilterDropDownMenu by remember {
+                    mutableStateOf(false)
+                }
+                var showExtensionFilterDropDownMenu by remember {
+                    mutableStateOf(false)
+                }
+                var showTimeFilterDropDownMenu by remember {
                     mutableStateOf(false)
                 }
                 FilterChip(
@@ -568,17 +597,16 @@ fun SearchArea(
                         .animateContentSize(),
                     selected = mainState.sizeFilter !is SizeFilter.All,
                     onClick = {
-
+                        showSizeFilterDropDownMenu = true
                     },
                     enabled = true,
                     trailingIcon = {
                         Box(
                             modifier = Modifier
-                                .fillMaxSize()
                                 .wrapContentSize(Alignment.TopEnd)
                         ) {
                             Icon(
-                                imageVector = Icons.Outlined.ExpandMore,
+                                imageVector = Icons.Outlined.ArrowDropDown,
                                 contentDescription = "expand",
                                 modifier = Modifier.size(FilterChipDefaults.IconSize)
                             )
@@ -589,28 +617,28 @@ fun SearchArea(
                                 DropdownMenuItem(
                                     text = { Text(SizeFilter.All.label) },
                                     onClick = {
-
+                                        onUpdateSizeFilter(SizeFilter.All)
                                         showSizeFilterDropDownMenu = false
                                     },
                                 )
                                 DropdownMenuItem(
                                     text = { Text(SizeFilter.TenMB.label) },
                                     onClick = {
-
+                                        onUpdateSizeFilter(SizeFilter.TenMB)
                                         showSizeFilterDropDownMenu = false
                                     },
                                 )
                                 DropdownMenuItem(
                                     text = { Text(SizeFilter.HundredMB.label) },
                                     onClick = {
-
+                                        onUpdateSizeFilter(SizeFilter.HundredMB)
                                         showSizeFilterDropDownMenu = false
                                     },
                                 )
                                 DropdownMenuItem(
                                     text = { Text(SizeFilter.OverHundredMB.label) },
                                     onClick = {
-
+                                        onUpdateSizeFilter(SizeFilter.OverHundredMB)
                                         showSizeFilterDropDownMenu = false
                                     },
                                 )
@@ -620,18 +648,209 @@ fun SearchArea(
                     label = { Text(text = mainState.sizeFilter.label) },
                     border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
                 )
+                FilterChip(
+                    modifier = Modifier
+                        .animateContentSize(),
+                    selected = mainState.extensionFilter !is ExtensionFilter.All,
+                    onClick = {
+                        showExtensionFilterDropDownMenu = true
+                    },
+                    enabled = true,
+                    trailingIcon = {
+                        Box(
+                            modifier = Modifier
+                                .wrapContentSize(Alignment.TopEnd)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.ArrowDropDown,
+                                contentDescription = "expand",
+                                modifier = Modifier.size(FilterChipDefaults.IconSize)
+                            )
+                            DropdownMenu(
+                                expanded = showExtensionFilterDropDownMenu,
+                                onDismissRequest = { showExtensionFilterDropDownMenu = false },
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text(ExtensionFilter.All.label) },
+                                    onClick = {
+                                        onUpdateExtensionFilter(ExtensionFilter.All)
+                                        showExtensionFilterDropDownMenu = false
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(ExtensionFilter.Docs.label) },
+                                    onClick = {
+                                        onUpdateExtensionFilter(ExtensionFilter.Docs)
+                                        showExtensionFilterDropDownMenu = false
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(ExtensionFilter.Slides.label) },
+                                    onClick = {
+                                        onUpdateExtensionFilter(ExtensionFilter.Slides)
+                                        showExtensionFilterDropDownMenu = false
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(ExtensionFilter.Sheets.label) },
+                                    onClick = {
+                                        onUpdateExtensionFilter(ExtensionFilter.Sheets)
+                                        showExtensionFilterDropDownMenu = false
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(ExtensionFilter.Video.label) },
+                                    onClick = {
+                                        onUpdateExtensionFilter(ExtensionFilter.Video)
+                                        showExtensionFilterDropDownMenu = false
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(ExtensionFilter.Audio.label) },
+                                    onClick = {
+                                        onUpdateExtensionFilter(ExtensionFilter.Audio)
+                                        showExtensionFilterDropDownMenu = false
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(ExtensionFilter.Compressed.label) },
+                                    onClick = {
+                                        onUpdateExtensionFilter(ExtensionFilter.Compressed)
+                                        showExtensionFilterDropDownMenu = false
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(ExtensionFilter.Pdf.label) },
+                                    onClick = {
+                                        onUpdateExtensionFilter(ExtensionFilter.Pdf)
+                                        showExtensionFilterDropDownMenu = false
+                                    },
+                                )
+                            }
+                        }
+                    },
+                    label = { Text(text = mainState.extensionFilter.label) },
+                    border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
+                )
+                FilterChip(
+                    modifier = Modifier
+                        .animateContentSize(),
+                    selected = mainState.timeFilter !is TimeFilter.All,
+                    onClick = {
+                        showTimeFilterDropDownMenu = true
+                    },
+                    enabled = true,
+                    trailingIcon = {
+                        Box(
+                            modifier = Modifier
+                                .wrapContentSize(Alignment.TopEnd)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.ArrowDropDown,
+                                contentDescription = "expand",
+                                modifier = Modifier.size(FilterChipDefaults.IconSize)
+                            )
+                            DropdownMenu(
+                                expanded = showTimeFilterDropDownMenu,
+                                onDismissRequest = { showTimeFilterDropDownMenu = false },
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text(TimeFilter.All.label) },
+                                    onClick = {
+                                        onUpdateTimeFilter(TimeFilter.All)
+                                        showTimeFilterDropDownMenu = false
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(TimeFilter.WithinThreeDays.label) },
+                                    onClick = {
+                                        onUpdateTimeFilter(TimeFilter.WithinThreeDays)
+                                        showTimeFilterDropDownMenu = false
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(TimeFilter.WithinThisWeek.label) },
+                                    onClick = {
+                                        onUpdateTimeFilter(TimeFilter.WithinThisWeek)
+                                        showTimeFilterDropDownMenu = false
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(TimeFilter.WithinThisMonth.label) },
+                                    onClick = {
+                                        onUpdateTimeFilter(TimeFilter.WithinThisMonth)
+                                        showTimeFilterDropDownMenu = false
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(TimeFilter.MoreThanAMonth.label) },
+                                    onClick = {
+                                        onUpdateTimeFilter(TimeFilter.MoreThanAMonth)
+                                        showTimeFilterDropDownMenu = false
+                                    },
+                                )
+                                var timeStart by remember{
+                                    mutableStateOf<Long?>(null)
+                                }
+                                val timeEndPicker = rememberDatePicker(){
+                                    onUpdateTimeFilter(TimeFilter.Custom(
+                                        timestampStart = kotlin.math.min(timeStart?: it.time, it.time),
+                                        timestampEnd = it.time
+                                    ))
+                                }
+                                val timeStartPicker = rememberDatePicker(){
+                                    timeStart = it.time
+                                    onUpdateTimeFilter(TimeFilter.Custom(
+                                        timestampStart = it.time,
+                                        timestampEnd = null
+                                    ))
+                                    Toast.makeText(context, "请输入截止时间", Toast.LENGTH_SHORT).show()
+                                    timeEndPicker.show()
+                                }
+                                DropdownMenuItem(
+                                    text = { Text("自定义范围") },
+                                    onClick = {
+                                        showTimeFilterDropDownMenu = false
+                                        Toast.makeText(context, "请输入起始时间", Toast.LENGTH_SHORT).show()
+                                        timeStartPicker.show()
+                                    },
+                                )
+                            }
+                        }
+                    },
+                    label = { Text(text = mainState.timeFilter.label) },
+                    border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
+                )
+                Spacer(modifier = Modifier.width(16.dp))
             }
         }
         itemsIndexed(items = mainState.filterData, key = {index, item -> item.fileId}) {index, item ->
             FileItem(
+                modifier = Modifier.padding(horizontal = 16.dp).animateItemPlacement(),
                 file = item,
                 searchText = searchText,
                 isFirst = index == 0,
                 isLast = index == mainState.filterData.lastIndex,
-                isSelected = false,
-                onClick = { },
-                onLongClick = {  },
-                onAvatarClick = {},
+                isSelected = selectedFileIdList.contains(item.fileId),
+                onClick = {
+                    if (searchAppBarState == SearchAppBar.FILE_SELECT) {
+                        onAddOrRemoveFile(item)
+                    } else {
+                        if (item.downloadingState is DownloadingState.None || item.downloadingState is DownloadingState.Failure) {
+                            onEvent(ActivityEvent.DownloadFile(item))
+                        } else {
+
+                        }
+                    }
+                },
+                onLongClick = {
+                    onChangeSearchAppBarState(SearchAppBar.FILE_SELECT)
+                    onAddOrRemoveFile(item)
+                },
+                onAvatarClick = {
+                    onChangeSearchAppBarState(SearchAppBar.FILE_SELECT)
+                    onAddOrRemoveFile(item)
+                }
             )
         }
     }
@@ -760,7 +979,17 @@ fun FileItem(
             ) {
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = file.name,
+                    text = buildAnnotatedString {
+                        file.name.splitKeeping(searchText).forEach {
+                            if (it == searchText) {
+                                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)) {
+                                    append(it)
+                                }
+                            } else {
+                                append(it)
+                            }
+                        }
+                    },
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,

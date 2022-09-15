@@ -62,7 +62,7 @@ fun SearchAppBar(
     onTextChange: (text: String) -> Unit,
     placeholder: String,
     selection: SnapshotStateList<Contact> = mutableStateListOf(),
-    fileSelection: SnapshotStateList<File> = mutableStateListOf(),
+    fileSelection: List<File> = listOf(),
     avatarUri: String?,
     shouldHover: Boolean = false,
     onGroupAction: () -> Unit = {},
