@@ -570,277 +570,283 @@ fun SearchArea(
     onEvent: (ActivityEvent) -> Unit,
 ) {
     val context = LocalContext.current
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = paddingValues,
-        verticalArrangement = Arrangement.spacedBy(3.dp),
-    ) {
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-                    .horizontalScroll(rememberScrollState()),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Spacer(modifier = Modifier.width(8.dp))
-                var showSizeFilterDropDownMenu by remember {
-                    mutableStateOf(false)
-                }
-                var showExtensionFilterDropDownMenu by remember {
-                    mutableStateOf(false)
-                }
-                var showTimeFilterDropDownMenu by remember {
-                    mutableStateOf(false)
-                }
-                FilterChip(
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter){
+        LazyColumn(
+            modifier = modifier
+                .fillMaxHeight()
+                .widthIn(0.dp, 600.dp),
+            contentPadding = paddingValues,
+            verticalArrangement = Arrangement.spacedBy(3.dp),
+        ) {
+            item {
+                Row(
                     modifier = Modifier
-                        .animateContentSize(),
-                    selected = mainState.sizeFilter !is SizeFilter.All,
-                    onClick = {
-                        showSizeFilterDropDownMenu = true
-                    },
-                    enabled = true,
-                    trailingIcon = {
-                        Box(
-                            modifier = Modifier
-                                .wrapContentSize(Alignment.TopEnd)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.ArrowDropDown,
-                                contentDescription = "expand",
-                                modifier = Modifier.size(FilterChipDefaults.IconSize)
-                            )
-                            DropdownMenu(
-                                expanded = showSizeFilterDropDownMenu,
-                                onDismissRequest = { showSizeFilterDropDownMenu = false },
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text(SizeFilter.All.label) },
-                                    onClick = {
-                                        onUpdateSizeFilter(SizeFilter.All)
-                                        showSizeFilterDropDownMenu = false
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(SizeFilter.TenMB.label) },
-                                    onClick = {
-                                        onUpdateSizeFilter(SizeFilter.TenMB)
-                                        showSizeFilterDropDownMenu = false
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(SizeFilter.HundredMB.label) },
-                                    onClick = {
-                                        onUpdateSizeFilter(SizeFilter.HundredMB)
-                                        showSizeFilterDropDownMenu = false
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(SizeFilter.OverHundredMB.label) },
-                                    onClick = {
-                                        onUpdateSizeFilter(SizeFilter.OverHundredMB)
-                                        showSizeFilterDropDownMenu = false
-                                    },
-                                )
-                            }
-                        }
-                    },
-                    label = { Text(text = mainState.sizeFilter.label) },
-                    border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
-                )
-                FilterChip(
-                    modifier = Modifier
-                        .animateContentSize(),
-                    selected = mainState.extensionFilter !is ExtensionFilter.All,
-                    onClick = {
-                        showExtensionFilterDropDownMenu = true
-                    },
-                    enabled = true,
-                    trailingIcon = {
-                        Box(
-                            modifier = Modifier
-                                .wrapContentSize(Alignment.TopEnd)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.ArrowDropDown,
-                                contentDescription = "expand",
-                                modifier = Modifier.size(FilterChipDefaults.IconSize)
-                            )
-                            DropdownMenu(
-                                expanded = showExtensionFilterDropDownMenu,
-                                onDismissRequest = { showExtensionFilterDropDownMenu = false },
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text(ExtensionFilter.All.label) },
-                                    onClick = {
-                                        onUpdateExtensionFilter(ExtensionFilter.All)
-                                        showExtensionFilterDropDownMenu = false
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(ExtensionFilter.Docs.label) },
-                                    onClick = {
-                                        onUpdateExtensionFilter(ExtensionFilter.Docs)
-                                        showExtensionFilterDropDownMenu = false
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(ExtensionFilter.Slides.label) },
-                                    onClick = {
-                                        onUpdateExtensionFilter(ExtensionFilter.Slides)
-                                        showExtensionFilterDropDownMenu = false
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(ExtensionFilter.Sheets.label) },
-                                    onClick = {
-                                        onUpdateExtensionFilter(ExtensionFilter.Sheets)
-                                        showExtensionFilterDropDownMenu = false
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(ExtensionFilter.Video.label) },
-                                    onClick = {
-                                        onUpdateExtensionFilter(ExtensionFilter.Video)
-                                        showExtensionFilterDropDownMenu = false
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(ExtensionFilter.Audio.label) },
-                                    onClick = {
-                                        onUpdateExtensionFilter(ExtensionFilter.Audio)
-                                        showExtensionFilterDropDownMenu = false
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(ExtensionFilter.Compressed.label) },
-                                    onClick = {
-                                        onUpdateExtensionFilter(ExtensionFilter.Compressed)
-                                        showExtensionFilterDropDownMenu = false
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(ExtensionFilter.Pdf.label) },
-                                    onClick = {
-                                        onUpdateExtensionFilter(ExtensionFilter.Pdf)
-                                        showExtensionFilterDropDownMenu = false
-                                    },
-                                )
-                            }
-                        }
-                    },
-                    label = { Text(text = mainState.extensionFilter.label) },
-                    border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
-                )
-                FilterChip(
-                    modifier = Modifier
-                        .animateContentSize(),
-                    selected = mainState.timeFilter !is TimeFilter.All,
-                    onClick = {
-                        showTimeFilterDropDownMenu = true
-                    },
-                    enabled = true,
-                    trailingIcon = {
-                        Box(
-                            modifier = Modifier
-                                .wrapContentSize(Alignment.TopEnd)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.ArrowDropDown,
-                                contentDescription = "expand",
-                                modifier = Modifier.size(FilterChipDefaults.IconSize)
-                            )
-                            DropdownMenu(
-                                expanded = showTimeFilterDropDownMenu,
-                                onDismissRequest = { showTimeFilterDropDownMenu = false },
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text(TimeFilter.All.label) },
-                                    onClick = {
-                                        onUpdateTimeFilter(TimeFilter.All)
-                                        showTimeFilterDropDownMenu = false
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(TimeFilter.WithinThreeDays.label) },
-                                    onClick = {
-                                        onUpdateTimeFilter(TimeFilter.WithinThreeDays)
-                                        showTimeFilterDropDownMenu = false
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(TimeFilter.WithinThisWeek.label) },
-                                    onClick = {
-                                        onUpdateTimeFilter(TimeFilter.WithinThisWeek)
-                                        showTimeFilterDropDownMenu = false
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(TimeFilter.WithinThisMonth.label) },
-                                    onClick = {
-                                        onUpdateTimeFilter(TimeFilter.WithinThisMonth)
-                                        showTimeFilterDropDownMenu = false
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(TimeFilter.MoreThanAMonth.label) },
-                                    onClick = {
-                                        onUpdateTimeFilter(TimeFilter.MoreThanAMonth)
-                                        showTimeFilterDropDownMenu = false
-                                    },
-                                )
-                                val timeRangePicker = rememberDateRangePicker(){
-                                    onUpdateTimeFilter(TimeFilter.Custom(
-                                        timestampStart = it.first,
-                                        timestampEnd = it.second
-                                    ))
-                                }
-                                DropdownMenuItem(
-                                    text = { Text("自定义范围") },
-                                    onClick = {
-                                        showTimeFilterDropDownMenu = false
-                                        timeRangePicker.show((context as AppCompatActivity).supportFragmentManager, "time_range_picker")
-                                    },
-                                )
-                            }
-                        }
-                    },
-                    label = { Text(text = mainState.timeFilter.label) },
-                    border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-            }
-        }
-        itemsIndexed(items = mainState.filterData, key = {index, item -> item.fileId}) {index, item ->
-            FileItem(
-                modifier = Modifier.padding(horizontal = 16.dp).animateItemPlacement(),
-                file = item,
-                searchText = searchText,
-                isFirst = index == 0,
-                isLast = index == mainState.filterData.lastIndex,
-                isSelected = selectedFileIdList.contains(item.fileId),
-                onClick = {
-                    if (searchAppBarState == SearchAppBar.FILE_SELECT) {
-                        onAddOrRemoveFile(item)
-                    } else {
-                        if (item.downloadingState is DownloadingState.None || item.downloadingState is DownloadingState.Failure) {
-                            onEvent(ActivityEvent.DownloadFile(item))
-                        } else {
-
-                        }
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                        .horizontalScroll(rememberScrollState()),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    var showSizeFilterDropDownMenu by remember {
+                        mutableStateOf(false)
                     }
-                },
-                onLongClick = {
-                    onChangeSearchAppBarState(SearchAppBar.FILE_SELECT)
-                    onAddOrRemoveFile(item)
-                },
-                onAvatarClick = {
-                    onChangeSearchAppBarState(SearchAppBar.FILE_SELECT)
-                    onAddOrRemoveFile(item)
+                    var showExtensionFilterDropDownMenu by remember {
+                        mutableStateOf(false)
+                    }
+                    var showTimeFilterDropDownMenu by remember {
+                        mutableStateOf(false)
+                    }
+                    FilterChip(
+                        modifier = Modifier
+                            .animateContentSize(),
+                        selected = mainState.sizeFilter !is SizeFilter.All,
+                        onClick = {
+                            showSizeFilterDropDownMenu = true
+                        },
+                        enabled = true,
+                        trailingIcon = {
+                            Box(
+                                modifier = Modifier
+                                    .wrapContentSize(Alignment.TopEnd)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.ArrowDropDown,
+                                    contentDescription = "expand",
+                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                )
+                                DropdownMenu(
+                                    expanded = showSizeFilterDropDownMenu,
+                                    onDismissRequest = { showSizeFilterDropDownMenu = false },
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text(SizeFilter.All.label) },
+                                        onClick = {
+                                            onUpdateSizeFilter(SizeFilter.All)
+                                            showSizeFilterDropDownMenu = false
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(SizeFilter.TenMB.label) },
+                                        onClick = {
+                                            onUpdateSizeFilter(SizeFilter.TenMB)
+                                            showSizeFilterDropDownMenu = false
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(SizeFilter.HundredMB.label) },
+                                        onClick = {
+                                            onUpdateSizeFilter(SizeFilter.HundredMB)
+                                            showSizeFilterDropDownMenu = false
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(SizeFilter.OverHundredMB.label) },
+                                        onClick = {
+                                            onUpdateSizeFilter(SizeFilter.OverHundredMB)
+                                            showSizeFilterDropDownMenu = false
+                                        },
+                                    )
+                                }
+                            }
+                        },
+                        label = { Text(text = mainState.sizeFilter.label) },
+                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
+                    )
+                    FilterChip(
+                        modifier = Modifier
+                            .animateContentSize(),
+                        selected = mainState.extensionFilter !is ExtensionFilter.All,
+                        onClick = {
+                            showExtensionFilterDropDownMenu = true
+                        },
+                        enabled = true,
+                        trailingIcon = {
+                            Box(
+                                modifier = Modifier
+                                    .wrapContentSize(Alignment.TopEnd)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.ArrowDropDown,
+                                    contentDescription = "expand",
+                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                )
+                                DropdownMenu(
+                                    expanded = showExtensionFilterDropDownMenu,
+                                    onDismissRequest = { showExtensionFilterDropDownMenu = false },
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text(ExtensionFilter.All.label) },
+                                        onClick = {
+                                            onUpdateExtensionFilter(ExtensionFilter.All)
+                                            showExtensionFilterDropDownMenu = false
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(ExtensionFilter.Docs.label) },
+                                        onClick = {
+                                            onUpdateExtensionFilter(ExtensionFilter.Docs)
+                                            showExtensionFilterDropDownMenu = false
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(ExtensionFilter.Slides.label) },
+                                        onClick = {
+                                            onUpdateExtensionFilter(ExtensionFilter.Slides)
+                                            showExtensionFilterDropDownMenu = false
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(ExtensionFilter.Sheets.label) },
+                                        onClick = {
+                                            onUpdateExtensionFilter(ExtensionFilter.Sheets)
+                                            showExtensionFilterDropDownMenu = false
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(ExtensionFilter.Video.label) },
+                                        onClick = {
+                                            onUpdateExtensionFilter(ExtensionFilter.Video)
+                                            showExtensionFilterDropDownMenu = false
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(ExtensionFilter.Audio.label) },
+                                        onClick = {
+                                            onUpdateExtensionFilter(ExtensionFilter.Audio)
+                                            showExtensionFilterDropDownMenu = false
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(ExtensionFilter.Compressed.label) },
+                                        onClick = {
+                                            onUpdateExtensionFilter(ExtensionFilter.Compressed)
+                                            showExtensionFilterDropDownMenu = false
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(ExtensionFilter.Pdf.label) },
+                                        onClick = {
+                                            onUpdateExtensionFilter(ExtensionFilter.Pdf)
+                                            showExtensionFilterDropDownMenu = false
+                                        },
+                                    )
+                                }
+                            }
+                        },
+                        label = { Text(text = mainState.extensionFilter.label) },
+                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
+                    )
+                    FilterChip(
+                        modifier = Modifier
+                            .animateContentSize(),
+                        selected = mainState.timeFilter !is TimeFilter.All,
+                        onClick = {
+                            showTimeFilterDropDownMenu = true
+                        },
+                        enabled = true,
+                        trailingIcon = {
+                            Box(
+                                modifier = Modifier
+                                    .wrapContentSize(Alignment.TopEnd)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.ArrowDropDown,
+                                    contentDescription = "expand",
+                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                )
+                                DropdownMenu(
+                                    expanded = showTimeFilterDropDownMenu,
+                                    onDismissRequest = { showTimeFilterDropDownMenu = false },
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text(TimeFilter.All.label) },
+                                        onClick = {
+                                            onUpdateTimeFilter(TimeFilter.All)
+                                            showTimeFilterDropDownMenu = false
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(TimeFilter.WithinThreeDays.label) },
+                                        onClick = {
+                                            onUpdateTimeFilter(TimeFilter.WithinThreeDays)
+                                            showTimeFilterDropDownMenu = false
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(TimeFilter.WithinThisWeek.label) },
+                                        onClick = {
+                                            onUpdateTimeFilter(TimeFilter.WithinThisWeek)
+                                            showTimeFilterDropDownMenu = false
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(TimeFilter.WithinThisMonth.label) },
+                                        onClick = {
+                                            onUpdateTimeFilter(TimeFilter.WithinThisMonth)
+                                            showTimeFilterDropDownMenu = false
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(TimeFilter.MoreThanAMonth.label) },
+                                        onClick = {
+                                            onUpdateTimeFilter(TimeFilter.MoreThanAMonth)
+                                            showTimeFilterDropDownMenu = false
+                                        },
+                                    )
+                                    val timeRangePicker = rememberDateRangePicker(){
+                                        onUpdateTimeFilter(TimeFilter.Custom(
+                                            timestampStart = it.first,
+                                            timestampEnd = it.second
+                                        ))
+                                    }
+                                    DropdownMenuItem(
+                                        text = { Text("自定义范围") },
+                                        onClick = {
+                                            showTimeFilterDropDownMenu = false
+                                            timeRangePicker.show((context as AppCompatActivity).supportFragmentManager, "time_range_picker")
+                                        },
+                                    )
+                                }
+                            }
+                        },
+                        label = { Text(text = mainState.timeFilter.label) },
+                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
                 }
-            )
+            }
+            itemsIndexed(items = mainState.filterData, key = {index, item -> item.fileId}) {index, item ->
+                FileItem(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .animateItemPlacement(),
+                    file = item,
+                    searchText = searchText,
+                    isFirst = index == 0,
+                    isLast = index == mainState.filterData.lastIndex,
+                    isSelected = selectedFileIdList.contains(item.fileId),
+                    onClick = {
+                        if (searchAppBarState == SearchAppBar.FILE_SELECT) {
+                            onAddOrRemoveFile(item)
+                        } else {
+                            if (item.downloadingState is DownloadingState.None || item.downloadingState is DownloadingState.Failure) {
+                                onEvent(ActivityEvent.DownloadFile(item))
+                            } else {
+
+                            }
+                        }
+                    },
+                    onLongClick = {
+                        onChangeSearchAppBarState(SearchAppBar.FILE_SELECT)
+                        onAddOrRemoveFile(item)
+                    },
+                    onAvatarClick = {
+                        onChangeSearchAppBarState(SearchAppBar.FILE_SELECT)
+                        onAddOrRemoveFile(item)
+                    },
+                )
+            }
         }
     }
 }

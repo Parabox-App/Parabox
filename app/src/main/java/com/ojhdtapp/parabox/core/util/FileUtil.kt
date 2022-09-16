@@ -4,12 +4,14 @@ import android.app.DownloadManager
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.webkit.MimeTypeMap
 import android.widget.Toast
+import androidx.compose.ui.text.toLowerCase
 import androidx.core.content.FileProvider
 import com.ojhdtapp.parabox.BuildConfig
 import java.io.File
@@ -241,6 +243,20 @@ object FileUtil {
             )
             if(!path.exists()) return acquireName
             else return getAvailableFileName(context, acquireName, withNumber + 1)
+        }
+    }
+
+    fun openFile(context: Context, file: File, extension: String){
+        val mineType = MimeTypeMap.getSingleton()
+            .getMimeTypeFromExtension(extension.lowercase(Locale.getDefault()))
+        val uri = getUriOfFile(context, file)
+        Intent().apply{
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            setAction(Intent.ACTION_VIEW)
+            setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            setDataAndType(uri, mineType)
+        }.also {
+            context.startActivity(it)
         }
     }
 }

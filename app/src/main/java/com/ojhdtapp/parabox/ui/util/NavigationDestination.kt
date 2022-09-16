@@ -146,6 +146,13 @@ fun NavigationDrawer(
         drawerContent = {
             ModalDrawerSheet() {
                 Spacer(modifier = Modifier.statusBarsPadding())
+                IconButton(modifier = Modifier.padding(start = 12.dp, bottom = 12.dp), onClick = {
+                    coroutineScope.launch {
+                        drawerState.close()
+                    }
+                }) {
+                    Icon(imageVector = Icons.Outlined.MenuOpen, contentDescription = "menu_open")
+                }
                 if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) {
                     NavigationDestination.values().forEach { destination ->
                         val isCurrentDestOnBackStack =
@@ -257,12 +264,14 @@ fun NavigationRail(
                         )
                     }
                 },
-                label = {
-                    Text(
-                        text = destination.label,
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                })
+//                label = {
+//                    Text(
+//                        text = destination.label,
+//                        style = MaterialTheme.typography.labelLarge
+//                    )
+//                },
+            label = null,
+            )
         }
     }
 }
