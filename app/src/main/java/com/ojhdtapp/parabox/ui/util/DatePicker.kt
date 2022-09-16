@@ -36,23 +36,8 @@ fun rememberDatePicker(
 
 @Composable
 fun rememberDateRangePicker(
-    initialDate: Date = Date(),
-    onDateChange: (newDate: Date) -> Unit
+    onChange: (datePair: androidx.core.util.Pair<Long, Long>) -> Unit
 ): MaterialDatePicker<androidx.core.util.Pair<Long, Long>> {
-    val context = LocalContext.current
-    val initialLocalDate = localDateFor(initialDate)
-    val initialYear = initialLocalDate.year
-    val initialMonth = initialLocalDate.monthValue - 1 // month 5 is june in  java calendar
-    val initialDayOfMonth = initialLocalDate.dayOfMonth
-//    val datePickerDialog = DatePickerDialog(
-//        context,
-//        R.style.date_picker_theme,
-//        { _, year: Int, month: Int, dayOfMonth: Int ->
-//            val newLocalDate = LocalDate.of(year, month + 1, dayOfMonth)
-//            onDateChange(dateFor(newLocalDate))
-//        },
-//        initialYear, initialMonth, initialDayOfMonth
-//    )
     val dateRangePicker = MaterialDatePicker.Builder.dateRangePicker()
         .setTitleText("请选择范围")
         .setSelection(
@@ -61,18 +46,10 @@ fun rememberDateRangePicker(
                 MaterialDatePicker.todayInUtcMilliseconds()
             )
         )
+        .setTheme(R.style.ThemeOverlay_App_DatePicker)
         .build().apply {
             addOnPositiveButtonClickListener {
-                // Respond to positive button click.
-            }
-            addOnNegativeButtonClickListener {
-                // Respond to negative button click.
-            }
-            addOnCancelListener {
-                // Respond to cancel button click.
-            }
-            addOnDismissListener {
-                // Respond to dismiss events.
+                onChange(it)
             }
         }
     return remember { dateRangePicker }

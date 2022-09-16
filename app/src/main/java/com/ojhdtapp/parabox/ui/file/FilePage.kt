@@ -791,7 +791,12 @@ fun SearchArea(
                                         showTimeFilterDropDownMenu = false
                                     },
                                 )
-                                val timeRangePicker = rememberDateRangePicker(){}
+                                val timeRangePicker = rememberDateRangePicker(){
+                                    onUpdateTimeFilter(TimeFilter.Custom(
+                                        timestampStart = it.first,
+                                        timestampEnd = it.second
+                                    ))
+                                }
                                 DropdownMenuItem(
                                     text = { Text("自定义范围") },
                                     onClick = {
