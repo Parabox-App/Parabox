@@ -80,6 +80,7 @@ dependencies {
     androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_version"
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
     implementation "androidx.compose.material:material-icons-extended:$compose_version"
+    implementation "com.google.android.material:material:1.8.0-alpha01"
 
     // ML-Kit
     implementation 'com.google.mlkit:entity-extraction:16.0.0-beta4'

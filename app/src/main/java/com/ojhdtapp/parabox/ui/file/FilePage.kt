@@ -1,7 +1,9 @@
 package com.ojhdtapp.parabox.ui.file
 
+import android.app.Activity
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -789,30 +791,12 @@ fun SearchArea(
                                         showTimeFilterDropDownMenu = false
                                     },
                                 )
-                                var timeStart by remember{
-                                    mutableStateOf<Long?>(null)
-                                }
-                                val timeEndPicker = rememberDatePicker(){
-                                    onUpdateTimeFilter(TimeFilter.Custom(
-                                        timestampStart = kotlin.math.min(timeStart?: it.time, it.time),
-                                        timestampEnd = it.time
-                                    ))
-                                }
-                                val timeStartPicker = rememberDatePicker(){
-                                    timeStart = it.time
-                                    onUpdateTimeFilter(TimeFilter.Custom(
-                                        timestampStart = it.time,
-                                        timestampEnd = null
-                                    ))
-                                    Toast.makeText(context, "请输入截止时间", Toast.LENGTH_SHORT).show()
-                                    timeEndPicker.show()
-                                }
+                                val timeRangePicker = rememberDateRangePicker(){}
                                 DropdownMenuItem(
                                     text = { Text("自定义范围") },
                                     onClick = {
                                         showTimeFilterDropDownMenu = false
-                                        Toast.makeText(context, "请输入起始时间", Toast.LENGTH_SHORT).show()
-                                        timeStartPicker.show()
+                                        timeRangePicker.show((context as AppCompatActivity).supportFragmentManager, "time_range_picker")
                                     },
                                 )
                             }
