@@ -2,10 +2,7 @@ package com.ojhdtapp.parabox.ui.setting
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.FastOutLinearInEasing
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -39,7 +36,7 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Destination
 @SettingNavGraph(start = true)
 @Composable
@@ -54,88 +51,146 @@ fun SettingPage(
 ) {
     val viewModel = hiltViewModel<SettingPageViewModel>()
     val coroutineScope = rememberCoroutineScope()
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    Scaffold(
-        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = {
-            val colorTransitionFraction = scrollBehavior.state.collapsedFraction
-            val appBarContainerColor by rememberUpdatedState(
-                lerp(
-                    MaterialTheme.colorScheme.surface,
-                    MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
-                    FastOutLinearInEasing.transform(colorTransitionFraction)
-                )
-            )
-            LargeTopAppBar(
-                modifier = Modifier
-                    .background(appBarContainerColor)
-                    .statusBarsPadding(),
-                title = { Text("设置") },
-                navigationIcon = {
-                    if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) {
-                        IconButton(onClick = {
-                            coroutineScope.launch {
-                                drawerState.open()
-                            }
-                        }) {
-                            Icon(imageVector = Icons.Outlined.Menu, contentDescription = "menu")
-                        }
-                    }
-                },
-                actions = {
-                    var expanded by remember {
-                        mutableStateOf(false)
-                    }
-                    Box(
-                        modifier = Modifier
-                            .wrapContentSize(Alignment.TopStart)
-                    ) {
-                        IconButton(onClick = {
-                            expanded = !expanded
-                        }) {
-                            Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = "more")
-                        }
-                        DropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false },
-                            modifier = Modifier.width(192.dp)
-                        ) {
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        text = "开放源代码许可",
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                },
-                                onClick = {
-                                    expanded = false
-                                })
-                        }
-                    }
-                },
-                scrollBehavior = scrollBehavior
-            )
+
+    EditUserNameDialog(
+        openDialog = viewModel.editUserNameDialogState.value,
+        userName = mainSharedViewModel.userNameFlow.collectAsState(initial = "User").value,
+        onConfirm = {
+            viewModel.setEditUserNameDialogState(false)
+            mainSharedViewModel.setUserName(it)
         },
-        content = { innerPadding ->
+        onDismiss = { viewModel.setEditUserNameDialogState(false) }
+    )
+    Row(modifier = Modifier.fillMaxSize()) {
+        // Left
+        val exitUntilCollapsedScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+        val pinnedScrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+
+        Scaffold(
+            modifier = modifier
+                .weight(2f)
+                .nestedScroll(
+                    if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) exitUntilCollapsedScrollBehavior.nestedScrollConnection
+                    else pinnedScrollBehavior.nestedScrollConnection
+                ),
+            topBar = {
+                if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
+                    val colorTransitionFraction =
+                        exitUntilCollapsedScrollBehavior.state.collapsedFraction
+                    val appBarContainerColor by rememberUpdatedState(
+                        lerp(
+                            MaterialTheme.colorScheme.surface,
+                            MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+                            FastOutLinearInEasing.transform(colorTransitionFraction)
+                        )
+                    )
+                    LargeTopAppBar(
+                        modifier = Modifier
+                            .background(appBarContainerColor)
+                            .statusBarsPadding(),
+                        title = { Text("设置") },
+                        actions = {
+                            var expanded by remember {
+                                mutableStateOf(false)
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .wrapContentSize(Alignment.TopStart)
+                            ) {
+                                IconButton(onClick = {
+                                    expanded = !expanded
+                                }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.MoreVert,
+                                        contentDescription = "more"
+                                    )
+                                }
+                                DropdownMenu(
+                                    expanded = expanded,
+                                    onDismissRequest = { expanded = false },
+                                    modifier = Modifier.width(192.dp)
+                                ) {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = "开放源代码许可",
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                        },
+                                        onClick = {
+                                            expanded = false
+                                        })
+                                }
+                            }
+                        },
+                        scrollBehavior = exitUntilCollapsedScrollBehavior
+                    )
+                } else {
+                    TopAppBar(
+                        title = {
+                            Text(text = "设置")
+                        },
+                        navigationIcon = {
+                            if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) {
+                                IconButton(onClick = {
+                                    coroutineScope.launch {
+                                        drawerState.open()
+                                    }
+                                }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Menu,
+                                        contentDescription = "menu"
+                                    )
+                                }
+                            }
+                        },
+                        actions = {
+                            var expanded by remember {
+                                mutableStateOf(false)
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .wrapContentSize(Alignment.TopStart)
+                            ) {
+                                IconButton(onClick = {
+                                    expanded = !expanded
+                                }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.MoreVert,
+                                        contentDescription = "more"
+                                    )
+                                }
+                                DropdownMenu(
+                                    expanded = expanded,
+                                    onDismissRequest = { expanded = false },
+                                    modifier = Modifier.width(192.dp)
+                                ) {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = "开放源代码许可",
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                        },
+                                        onClick = {
+                                            expanded = false
+                                        })
+                                }
+                            }
+                        },
+                        scrollBehavior = pinnedScrollBehavior
+                    )
+                }
+
+            }) { innerPadding ->
             // Plugin List State
             val pluginList by mainSharedViewModel.pluginListStateFlow.collectAsState()
+            LazyColumn(
+                contentPadding = innerPadding,
+                //                    verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
 
-            Row() {
-                EditUserNameDialog(
-                    openDialog = viewModel.editUserNameDialogState.value,
-                    userName = mainSharedViewModel.userNameFlow.collectAsState(initial = "User").value,
-                    onConfirm = {
-                        viewModel.setEditUserNameDialogState(false)
-                        mainSharedViewModel.setUserName(it)
-                    },
-                    onDismiss = { viewModel.setEditUserNameDialogState(false) }
-                )
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    contentPadding = innerPadding,
-//                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-
+                if (sizeClass.widthSizeClass != WindowWidthSizeClass.Medium) {
                     item {
                         ThemeBlock(
                             modifier = Modifier.fillMaxWidth(),
@@ -148,6 +203,8 @@ fun SettingPage(
                             onVersionClick = {}
                         )
                     }
+                }
+                if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
                     item(key = "extension_status") {
                         AnimatedVisibility(
                             visible = pluginList.isNotEmpty(),
@@ -161,6 +218,7 @@ fun SettingPage(
                         items = pluginList,
                         key = { it.packageName }) {
                         NormalPreference(
+                            modifier = Modifier.padding(horizontal = if(sizeClass.widthSizeClass != WindowWidthSizeClass.Compact) 16.dp else 0.dp),
                             title = it.name,
                             subtitle = it.packageName,
                             leadingIcon = {
@@ -203,122 +261,241 @@ fun SettingPage(
                             }
                         )
                     }
+                } else {
                     item(key = "info") {
                         NormalPreference(
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Outlined.Info,
-                                    contentDescription = "application info"
-                                )
-                            },
+                            modifier = Modifier.padding(horizontal = if(sizeClass.widthSizeClass != WindowWidthSizeClass.Compact) 16.dp else 0.dp),
+                            leadingIcon =
+                            if (sizeClass.widthSizeClass != WindowWidthSizeClass.Medium) {
+                                {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Info,
+                                        contentDescription = "application info"
+                                    )
+                                }
+                            } else null,
                             title = "关于",
-                            subtitle = "软件及账户基本信息"
-                        ) {}
+                            subtitle = "应用及账户基本信息",
+                            selected = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact
+                                    && viewModel.selectedSetting.value == SettingPageState.INFO,
+                            roundedCorner = true,
+                        ) {
+                            if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
+
+                            } else {
+                                viewModel.setSelectedSetting(SettingPageState.INFO)
+                            }
+                        }
                     }
-                    item(key = "function") {
-                        PreferencesCategory(text = "行为")
-                    }
-                    item(key = "extension") {
-                        NormalPreference(
-                            leadingIcon = {
+                }
+                item(key = "function") {
+                    PreferencesCategory(text = "行为")
+                }
+                item(key = "extension") {
+                    NormalPreference(
+                        modifier = Modifier.padding(horizontal = if(sizeClass.widthSizeClass != WindowWidthSizeClass.Compact) 16.dp else 0.dp),
+                        leadingIcon =
+                        if (sizeClass.widthSizeClass != WindowWidthSizeClass.Medium) {
+                            {
                                 Icon(
                                     imageVector = Icons.Outlined.Extension,
                                     contentDescription = "plugin"
                                 )
-                            },
-                            title = "扩展",
-                            subtitle = "管理已安装的扩展"
-                        ) {}
+                            }
+                        } else null,
+                        title = "扩展",
+                        subtitle = "管理已安装的扩展",
+                        selected = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact
+                                && viewModel.selectedSetting.value == SettingPageState.EXTENSION,
+                        roundedCorner = true,
+                    ) {
+                        if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
+
+                        } else {
+                            viewModel.setSelectedSetting(SettingPageState.EXTENSION)
+                        }
                     }
-                    item(key = "cloud") {
-                        NormalPreference(
-                            leadingIcon = {
+                }
+                item(key = "cloud") {
+                    NormalPreference(
+                        modifier = Modifier.padding(horizontal = if(sizeClass.widthSizeClass != WindowWidthSizeClass.Compact) 16.dp else 0.dp),
+                        leadingIcon =
+                        if (sizeClass.widthSizeClass != WindowWidthSizeClass.Medium) {
+                            {
                                 Icon(
                                     imageVector = Icons.Outlined.Cloud,
                                     contentDescription = "cloud"
                                 )
-                            },
-                            title = "连接云端服务",
-                            subtitle = "添加或修改云端服务连接"
-                        ) {}
+                            }
+                        } else null,
+                        title = "连接云端服务",
+                        subtitle = "添加或修改云端服务连接",
+                        selected = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact
+                                && viewModel.selectedSetting.value == SettingPageState.CLOUD,
+                        roundedCorner = true,
+                    ) {
+                        if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
+
+                        } else {
+                            viewModel.setSelectedSetting(SettingPageState.CLOUD)
+                        }
                     }
-                    item(key = "backup") {
-                        NormalPreference(
-                            leadingIcon = {
+                }
+                item(key = "backup") {
+                    NormalPreference(
+                        modifier = Modifier.padding(horizontal = if(sizeClass.widthSizeClass != WindowWidthSizeClass.Compact) 16.dp else 0.dp),
+                        leadingIcon =
+                        if (sizeClass.widthSizeClass != WindowWidthSizeClass.Medium) {
+                            {
                                 Icon(
                                     imageVector = Icons.Outlined.Restore,
                                     contentDescription = "backup and restore"
                                 )
-                            },
-                            title = "备份与还原",
-                            subtitle = "数据导出及恢复，存储空间管理"
-                        ) {}
+                            }
+                        } else null,
+                        title = "备份与还原",
+                        subtitle = "数据导出及恢复，存储空间管理",
+                        selected = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact
+                                && viewModel.selectedSetting.value == SettingPageState.BACKUP,
+                        roundedCorner = true,
+                    ) {
+                        if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
+
+                        } else {
+                            viewModel.setSelectedSetting(SettingPageState.BACKUP)
+                        }
                     }
-                    item(key = "personalise") {
-                        PreferencesCategory(text = "个性化")
-                    }
-                    item(key = "notification") {
-                        NormalPreference(
-                            leadingIcon = {
+                }
+                item(key = "personalise") {
+                    PreferencesCategory(text = "个性化")
+                }
+                item(key = "notification") {
+                    NormalPreference(
+                        modifier = Modifier.padding(horizontal = if(sizeClass.widthSizeClass != WindowWidthSizeClass.Compact) 16.dp else 0.dp),
+                        leadingIcon =
+                        if (sizeClass.widthSizeClass != WindowWidthSizeClass.Medium) {
+                            {
                                 Icon(
                                     imageVector = Icons.Outlined.Notifications,
                                     contentDescription = "notification"
                                 )
-                            },
-                            title = "通知",
-                            subtitle = "消息提醒，对话泡，快速回复"
-                        ) {}
+                            }
+                        } else null,
+                        title = "通知",
+                        subtitle = "消息提醒，对话泡，快速回复",
+                        selected = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact
+                                && viewModel.selectedSetting.value == SettingPageState.NOTIFICATION,
+                        roundedCorner = true,
+                    ) {
+                        if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
+
+                        } else {
+                            viewModel.setSelectedSetting(SettingPageState.NOTIFICATION)
+                        }
                     }
-                    item(key = "palette") {
-                        NormalPreference(
-                            leadingIcon = {
+                }
+                item(key = "interface") {
+                    NormalPreference(
+                        modifier = Modifier.padding(horizontal = if(sizeClass.widthSizeClass != WindowWidthSizeClass.Compact) 16.dp else 0.dp),
+                        leadingIcon =
+                        if (sizeClass.widthSizeClass != WindowWidthSizeClass.Medium) {
+                            {
                                 Icon(
                                     imageVector = Icons.Outlined.Palette,
                                     contentDescription = "theme"
                                 )
-                            },
-                            title = "用户界面",
-                            subtitle = "主题和语言"
-                        ) {}
+                            }
+                        } else null,
+                        title = "用户界面",
+                        subtitle = "主题和语言",
+                        selected = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact
+                                && viewModel.selectedSetting.value == SettingPageState.INTERFACE,
+                        roundedCorner = true,
+                    ) {
+                        if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
+
+                        } else {
+                            viewModel.setSelectedSetting(SettingPageState.INTERFACE)
+                        }
                     }
-                    item(key = "additional") {
-                        PreferencesCategory(text = "其他")
-                    }
-                    item(key = "experimental") {
-                        NormalPreference(
-                            leadingIcon = {
+                }
+                item(key = "additional") {
+                    PreferencesCategory(text = "其他")
+                }
+                item(key = "experimental") {
+                    NormalPreference(
+                        modifier = Modifier.padding(horizontal = if(sizeClass.widthSizeClass != WindowWidthSizeClass.Compact) 16.dp else 0.dp),
+                        leadingIcon =
+                        if (sizeClass.widthSizeClass != WindowWidthSizeClass.Medium) {
+                            {
                                 Icon(
                                     imageVector = Icons.Outlined.Science,
                                     contentDescription = "experimental"
                                 )
-                            },
-                            title = "高级",
-                            subtitle = "实验性特性与功能"
-                        ) {}
+                            }
+                        } else null,
+                        title = "高级",
+                        subtitle = "实验性特性与功能",
+                        selected = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact
+                                && viewModel.selectedSetting.value == SettingPageState.EXPERIMENTAL,
+                        roundedCorner = true,
+                    ) {
+                        if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
+
+                        } else {
+                            viewModel.setSelectedSetting(SettingPageState.EXPERIMENTAL)
+                        }
                     }
-                    item(key = "help") {
-                        NormalPreference(
-                            leadingIcon = {
+                }
+                item(key = "help") {
+                    NormalPreference(
+                        modifier = Modifier.padding(horizontal = if(sizeClass.widthSizeClass != WindowWidthSizeClass.Compact) 16.dp else 0.dp),
+                        leadingIcon =
+                        if (sizeClass.widthSizeClass != WindowWidthSizeClass.Medium) {
+                            {
                                 Icon(
                                     imageVector = Icons.Outlined.HelpOutline,
                                     contentDescription = "help and support"
                                 )
-                            },
-                            title = "帮助与支持",
-                            subtitle = "联系方式，文档和疑难解答"
-                        ) {}
-                    }
-                }
-                if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) {
-                    LazyColumn(
-                        modifier = Modifier.width(560.dp),
+                            }
+                        } else null,
+                        title = "帮助与支持",
+                        subtitle = "联系方式，文档和疑难解答",
+                        selected = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact
+                                && viewModel.selectedSetting.value == SettingPageState.SUPPORT,
+                        roundedCorner = true,
                     ) {
+                        if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
 
+                        } else {
+                            viewModel.setSelectedSetting(SettingPageState.SUPPORT)
+                        }
                     }
                 }
             }
         }
-    )
+        // Right
+        if (sizeClass.widthSizeClass != WindowWidthSizeClass.Compact) {
+            AnimatedContent(
+                modifier = Modifier.weight(3f),
+                targetState = viewModel.selectedSetting.value,
+                transitionSpec = {
+                    (slideInHorizontally { -100 } + fadeIn() with slideOutHorizontally { 100 } + fadeOut()).apply {
+                        targetContentZIndex = 1f
+                    }
+                }
+            ) {
+                when (it) {
+                    SettingPageState.INFO -> InfoPage(
+                        mainSharedViewModel = mainSharedViewModel,
+                        sizeClass = sizeClass,
+                        onEvent = onEvent,
+                    )
+                }
+            }
+        }
+    }
+
 }
 
 @Composable
