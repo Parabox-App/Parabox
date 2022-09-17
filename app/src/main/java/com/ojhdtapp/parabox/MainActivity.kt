@@ -99,6 +99,16 @@ class MainActivity : AppCompatActivity() {
     // Shared ViewModel
     val mainSharedViewModel by viewModels<MainSharedViewModel>()
 
+    private fun openFile(file: File) {
+        file.downloadPath?.let {
+            val path = java.io.File(
+                Environment.getExternalStoragePublicDirectory("${Environment.DIRECTORY_DOWNLOADS}/Parabox"),
+                it
+            )
+            FileUtil.openFile(this, path, file.extension)
+        }
+    }
+
     private fun downloadFile(file: File) {
         val path = FileUtil.getAvailableFileName(this, file.name)
         DownloadManagerUtil.downloadWithManager(
@@ -452,6 +462,9 @@ class MainActivity : AppCompatActivity() {
             }
             is ActivityEvent.DownloadFile -> {
                 downloadFile(event.file)
+            }
+            is ActivityEvent.OpenFile -> {
+                openFile(event.file)
             }
             is ActivityEvent.Vibrate -> {
                 vibrate()

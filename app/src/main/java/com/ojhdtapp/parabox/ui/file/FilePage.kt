@@ -166,7 +166,7 @@ fun FilePage(
                 onDropdownMenuItemEvent = {
                     when (it) {
                         is DropdownMenuItemEvent.DownloadFile -> {
-                            viewModel.selectedFilesId.forEach {id ->
+                            viewModel.selectedFilesId.forEach { id ->
                                 mainState.data.firstOrNull { it.fileId == id }?.also {
                                     onEvent(ActivityEvent.DownloadFile(it))
                                 }
@@ -222,7 +222,7 @@ fun FilePage(
                         viewModel.setSearchBarActivateState(it)
                     },
                     onChangeArea = { viewModel.setArea(it) },
-                    onAddOrRemoveFile = {viewModel.addOrRemoveItemOfSelectedFileList(it.fileId)}
+                    onAddOrRemoveFile = { viewModel.addOrRemoveItemOfSelectedFileList(it.fileId) }
                 )
                 FilePageState.SEARCH_AREA -> SearchArea(
                     mainState = mainState,
@@ -237,7 +237,7 @@ fun FilePage(
                     onUpdateSizeFilter = viewModel::setFilter,
                     onUpdateExtensionFilter = viewModel::setFilter,
                     onUpdateTimeFilter = viewModel::setFilter,
-                    onAddOrRemoveFile = {viewModel.addOrRemoveItemOfSelectedFileList(it.fileId)}
+                    onAddOrRemoveFile = { viewModel.addOrRemoveItemOfSelectedFileList(it.fileId) }
                 )
                 else -> {
                     AlertDialogDefaults.containerColor
@@ -509,8 +509,8 @@ fun MainArea(
                                     } else {
                                         if (file.downloadingState is DownloadingState.None || file.downloadingState is DownloadingState.Failure) {
                                             onEvent(ActivityEvent.DownloadFile(file))
-                                        } else {
-
+                                        } else if (file.downloadingState is DownloadingState.Done) {
+                                            onEvent(ActivityEvent.OpenFile(file))
                                         }
                                     }
                                 },
@@ -570,7 +570,7 @@ fun SearchArea(
     onEvent: (ActivityEvent) -> Unit,
 ) {
     val context = LocalContext.current
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter){
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         LazyColumn(
             modifier = modifier
                 .fillMaxHeight()
@@ -794,17 +794,22 @@ fun SearchArea(
                                             showTimeFilterDropDownMenu = false
                                         },
                                     )
-                                    val timeRangePicker = rememberDateRangePicker(){
-                                        onUpdateTimeFilter(TimeFilter.Custom(
-                                            timestampStart = it.first,
-                                            timestampEnd = it.second
-                                        ))
+                                    val timeRangePicker = rememberDateRangePicker() {
+                                        onUpdateTimeFilter(
+                                            TimeFilter.Custom(
+                                                timestampStart = it.first,
+                                                timestampEnd = it.second
+                                            )
+                                        )
                                     }
                                     DropdownMenuItem(
                                         text = { Text("自定义范围") },
                                         onClick = {
                                             showTimeFilterDropDownMenu = false
-                                            timeRangePicker.show((context as AppCompatActivity).supportFragmentManager, "time_range_picker")
+                                            timeRangePicker.show(
+                                                (context as AppCompatActivity).supportFragmentManager,
+                                                "time_range_picker"
+                                            )
                                         },
                                     )
                                 }
@@ -816,7 +821,9 @@ fun SearchArea(
                     Spacer(modifier = Modifier.width(16.dp))
                 }
             }
-            itemsIndexed(items = mainState.filterData, key = {index, item -> item.fileId}) {index, item ->
+            itemsIndexed(
+                items = mainState.filterData,
+                key = { index, item -> item.fileId }) { index, item ->
                 FileItem(
                     modifier = Modifier
                         .padding(horizontal = 16.dp)
@@ -977,7 +984,12 @@ fun FileItem(
                     text = buildAnnotatedString {
                         file.name.splitKeeping(searchText).forEach {
                             if (it == searchText) {
-                                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)) {
+                                withStyle(
+                                    style = SpanStyle(
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                ) {
                                     append(it)
                                 }
                             } else {
@@ -995,7 +1007,12 @@ fun FileItem(
                     text = buildAnnotatedString {
                         file.profileName.splitKeeping(searchText).forEach {
                             if (it == searchText) {
-                                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)) {
+                                withStyle(
+                                    style = SpanStyle(
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                ) {
                                     append(it)
                                 }
                             } else {
