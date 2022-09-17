@@ -123,20 +123,20 @@ fun EditActionDialog(
                     item {
                         Box(
                             modifier = Modifier
-                                .height(276.dp),
+                                .height(176.dp),
                             contentAlignment = Alignment.TopCenter
                         ) {
                             Image(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(240.dp)
+                                    .height(140.dp)
                                     .clip(
                                         RoundedCornerShape(
                                             bottomStart = 24.dp,
                                             bottomEnd = 24.dp
                                         )
                                     ),
-                                painter = painterResource(id = R.drawable.bg),
+                                painter = painterResource(id = R.drawable.background),
                                 contentDescription = "background",
                                 contentScale = ContentScale.Crop
                             )

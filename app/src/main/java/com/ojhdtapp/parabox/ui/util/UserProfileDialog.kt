@@ -78,7 +78,7 @@ fun UserProfileDialog(
                 Column(modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())) {
-                    SmallTopAppBar(title = {},
+                    TopAppBar(title = {},
                         navigationIcon = {
                             IconButton(
                                 onClick = {
@@ -90,7 +90,11 @@ fun UserProfileDialog(
                                     contentDescription = "close"
                                 )
                             }
-                        })
+                        },
+                        colors = TopAppBarDefaults.smallTopAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)
+                        )
+                    )
                     NormalPreference(title = userName, leadingIcon = {
                         Box(
                             modifier = Modifier.size(42.dp),

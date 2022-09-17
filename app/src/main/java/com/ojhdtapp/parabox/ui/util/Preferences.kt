@@ -3,6 +3,8 @@ package com.ojhdtapp.parabox.ui.util
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -82,7 +84,18 @@ fun SwitchPreference(
         Switch(checked = checked, onCheckedChange = {
             onCheckedChange(it)
             checked = !checked
-        }, enabled = enabled)
+        }, enabled = enabled,
+            thumbContent = if (checked) {
+                {
+                    Icon(
+                        imageVector = Icons.Outlined.Check,
+                        contentDescription = null,
+                        modifier = Modifier.size(SwitchDefaults.IconSize),
+                    )
+                }
+            } else {
+                null
+            })
     }
 }
 
@@ -149,7 +162,9 @@ fun NormalPreference(
     onTrailingIconClick: (() -> Unit)? = null,
     onClick: () -> Unit,
 ) {
-    Row(modifier = modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+    Row(modifier = modifier
+        .fillMaxWidth()
+        .height(IntrinsicSize.Min)) {
         if (onLeadingIconClick != null && leadingIcon != null) {
             Row(
                 modifier = Modifier

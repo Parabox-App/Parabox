@@ -386,10 +386,28 @@ fun NormalChatPage(
         topBar = {
             Crossfade(targetState = mainSharedViewModel.selectedMessageStateList.isNotEmpty()) {
                 if (it) {
-                    SmallTopAppBar(
-                        modifier = Modifier
-                            .background(color = appBarContainerColor)
-                            .statusBarsPadding(),
+                    //                            AnimatedVisibility(
+//                                visible = mainSharedViewModel.selectedMessageStateList.size == 1,
+//                                enter = fadeIn(),
+//                                exit = fadeOut()
+//                            ) {
+//                                IconButton(onClick = {
+//                                    if (mainSharedViewModel.selectedMessageStateList.size == 1) {
+//                                        mainSharedViewModel.setQuoteMessage(
+//                                            mainSharedViewModel.selectedMessageStateList.firstOrNull(),
+//                                            name = userName
+//                                        )
+//                                    }
+//                                    mainSharedViewModel.clearSelectedMessageStateList()
+//                                }) {
+//                                    Icon(
+//                                        imageVector = Icons.Outlined.Reply,
+//                                        contentDescription = "reply"
+//                                    )
+//
+//                                }
+//                            }
+                    TopAppBar(
                         title = {
                             AnimatedContent(targetState = mainSharedViewModel.selectedMessageStateList.size.toString(),
                                 transitionSpec = {
@@ -413,6 +431,9 @@ fun NormalChatPage(
                                 Text(text = num, style = MaterialTheme.typography.titleLarge)
                             }
                         },
+                        modifier = Modifier
+                            .background(color = appBarContainerColor)
+                            .statusBarsPadding(),
                         navigationIcon = {
                             IconButton(onClick = { mainSharedViewModel.clearSelectedMessageStateList() }) {
                                 Icon(
@@ -422,27 +443,27 @@ fun NormalChatPage(
                             }
                         },
                         actions = {
-//                            AnimatedVisibility(
-//                                visible = mainSharedViewModel.selectedMessageStateList.size == 1,
-//                                enter = fadeIn(),
-//                                exit = fadeOut()
-//                            ) {
-//                                IconButton(onClick = {
-//                                    if (mainSharedViewModel.selectedMessageStateList.size == 1) {
-//                                        mainSharedViewModel.setQuoteMessage(
-//                                            mainSharedViewModel.selectedMessageStateList.firstOrNull(),
-//                                            name = userName
-//                                        )
-//                                    }
-//                                    mainSharedViewModel.clearSelectedMessageStateList()
-//                                }) {
-//                                    Icon(
-//                                        imageVector = Icons.Outlined.Reply,
-//                                        contentDescription = "reply"
-//                                    )
-//
-//                                }
-//                            }
+                            //                            AnimatedVisibility(
+                            //                                visible = mainSharedViewModel.selectedMessageStateList.size == 1,
+                            //                                enter = fadeIn(),
+                            //                                exit = fadeOut()
+                            //                            ) {
+                            //                                IconButton(onClick = {
+                            //                                    if (mainSharedViewModel.selectedMessageStateList.size == 1) {
+                            //                                        mainSharedViewModel.setQuoteMessage(
+                            //                                            mainSharedViewModel.selectedMessageStateList.firstOrNull(),
+                            //                                            name = userName
+                            //                                        )
+                            //                                    }
+                            //                                    mainSharedViewModel.clearSelectedMessageStateList()
+                            //                                }) {
+                            //                                    Icon(
+                            //                                        imageVector = Icons.Outlined.Reply,
+                            //                                        contentDescription = "reply"
+                            //                                    )
+                            //
+                            //                                }
+                            //                            }
                             AnimatedVisibility(
                                 visible = mainSharedViewModel.selectedMessageStateList.size == 1,
                                 enter = fadeIn(),
@@ -528,17 +549,13 @@ fun NormalChatPage(
                                         })
                                 }
                             }
-                        },
-                        colors = TopAppBarDefaults.smallTopAppBarColors(
+                        }, colors = TopAppBarDefaults.smallTopAppBarColors(
                             containerColor = appBarContainerColor
                         )
 //                        scrollBehavior = scrollBehavior
                     )
                 } else {
-                    SmallTopAppBar(
-                        modifier = Modifier
-                            .background(color = appBarContainerColor)
-                            .statusBarsPadding(),
+                    TopAppBar(
                         title = {
                             Text(
                                 text = messageState.contact?.profile?.name ?: "会话",
@@ -546,6 +563,9 @@ fun NormalChatPage(
                                 overflow = TextOverflow.Ellipsis,
                             )
                         },
+                        modifier = Modifier
+                            .background(color = appBarContainerColor)
+                            .statusBarsPadding(),
                         navigationIcon = {
                             IconButton(onClick = { onBackClick() }) {
                                 Icon(
@@ -671,8 +691,7 @@ fun NormalChatPage(
                                         })
                                 }
                             }
-                        },
-                        colors = TopAppBarDefaults.smallTopAppBarColors(
+                        }, colors = TopAppBarDefaults.smallTopAppBarColors(
                             containerColor = appBarContainerColor
                         )
 //                        scrollBehavior = scrollBehavior,

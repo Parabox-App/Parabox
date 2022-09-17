@@ -193,7 +193,8 @@ fun MessagePage(
         )
         EditActionDialog(
             showDialog = viewModel.showEditActionDialogState.value,
-            contact = contactState.data.findLast { it.contactId == viewModel.selectedContactStateList.firstOrNull()?.contactId },
+            contact = contactState.data.findLast { it.contactId == viewModel.selectedContactStateList.firstOrNull()?.contactId }
+                ?: archivedContact.findLast { it.contactId == viewModel.selectedContactStateList.firstOrNull()?.contactId },
             sizeClass = sizeClass,
             onDismiss = { viewModel.setShowEditActionDialogState(false) },
             onConfirm = {},

@@ -40,6 +40,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -116,17 +117,19 @@ fun GroupActionDialog(
                 WindowWidthSizeClass.Expanded -> 0.dp
                 else -> 16.dp
             }
+            val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
             Surface(
                 modifier = modifier
                     .widthIn(0.dp, 580.dp)
                     .padding(horizontal = horizontalPadding)
+                    .nestedScroll(scrollBehavior.nestedScrollConnection)
                     .animateContentSize(),
                 shape = RoundedCornerShape(24.dp),
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 2.dp
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    SmallTopAppBar(title = { Text(text = "编组会话") },
+                    TopAppBar(title = { Text(text = "编组会话") },
                         navigationIcon = {
                             IconButton(
                                 onClick = {
@@ -164,7 +167,13 @@ fun GroupActionDialog(
                             ) {
                                 Text(text = "保存")
                             }
-                        })
+                        },
+                        scrollBehavior = scrollBehavior,
+                        colors = TopAppBarDefaults.smallTopAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),
+                            scrolledContainerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(5.dp)
+                        )
+                    )
                     when (state.state) {
                         GroupInfoState.LOADING -> Box(
                             modifier = Modifier
@@ -250,9 +259,10 @@ fun GroupEditForm(
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-
         item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.padding(top = 16.dp),
+                verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
                         .size(48.dp)
