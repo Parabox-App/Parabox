@@ -23,6 +23,7 @@ import com.ojhdtapp.parabox.ui.NavGraphs
 import com.ojhdtapp.parabox.ui.destinations.FilePageDestination
 import com.ojhdtapp.parabox.ui.destinations.MessagePageDestination
 import com.ojhdtapp.parabox.ui.file.FilePage
+import com.ojhdtapp.parabox.ui.message.AudioRecorderState
 import com.ojhdtapp.parabox.ui.message.MessagePage
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.NavigationBar
@@ -78,7 +79,7 @@ fun MenuPage(
         messageBadge = mainSharedViewModel.messageBadge.value,
         onSelfItemClick = {},
         drawerState = drawerState,
-        gesturesEnabled = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact,
+        gesturesEnabled = mainSharedViewModel.audioRecorderState.value !is AudioRecorderState.Recording,
         sizeClass = sizeClass
     ) {
         Column() {

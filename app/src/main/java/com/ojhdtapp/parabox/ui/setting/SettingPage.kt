@@ -145,8 +145,7 @@ fun SettingPage(
                             onUserNameClick = {
                                 viewModel.setEditUserNameDialogState(true)
                             },
-                            onVersionClick = {},
-                            padding = if (sizeClass.widthSizeClass == WindowWidthSizeClass.Medium) 32.dp else 16.dp,
+                            onVersionClick = {}
                         )
                     }
                     item(key = "extension_status") {
@@ -204,6 +203,18 @@ fun SettingPage(
                             }
                         )
                     }
+                    item(key = "info") {
+                        NormalPreference(
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.Info,
+                                    contentDescription = "application info"
+                                )
+                            },
+                            title = "关于",
+                            subtitle = "软件及账户基本信息"
+                        ) {}
+                    }
                     item(key = "function") {
                         PreferencesCategory(text = "行为")
                     }
@@ -243,6 +254,21 @@ fun SettingPage(
                             subtitle = "数据导出及恢复，存储空间管理"
                         ) {}
                     }
+                    item(key = "personalise") {
+                        PreferencesCategory(text = "个性化")
+                    }
+                    item(key = "notification") {
+                        NormalPreference(
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.Notifications,
+                                    contentDescription = "notification"
+                                )
+                            },
+                            title = "通知",
+                            subtitle = "消息提醒，对话泡，快速回复"
+                        ) {}
+                    }
                     item(key = "palette") {
                         NormalPreference(
                             leadingIcon = {
@@ -255,6 +281,9 @@ fun SettingPage(
                             subtitle = "主题和语言"
                         ) {}
                     }
+                    item(key = "additional") {
+                        PreferencesCategory(text = "其他")
+                    }
                     item(key = "experimental") {
                         NormalPreference(
                             leadingIcon = {
@@ -263,8 +292,20 @@ fun SettingPage(
                                     contentDescription = "experimental"
                                 )
                             },
-                            title = "高级选项",
+                            title = "高级",
                             subtitle = "实验性特性与功能"
+                        ) {}
+                    }
+                    item(key = "help") {
+                        NormalPreference(
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.HelpOutline,
+                                    contentDescription = "help and support"
+                                )
+                            },
+                            title = "帮助与支持",
+                            subtitle = "联系方式，文档和疑难解答"
                         ) {}
                     }
                 }

@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -218,6 +219,7 @@ fun FilePage(
                     paddingValues = paddingValues,
                     onEvent = onEvent,
                     searchAppBarState = viewModel.searchBarActivateState.value,
+                    sizeClass = sizeClass,
                     onChangeSearchAppBarState = {
                         viewModel.setSearchBarActivateState(it)
                     },
@@ -257,6 +259,7 @@ fun MainArea(
     selectedFileIdList: List<Long>,
     paddingValues: PaddingValues,
     searchAppBarState: Int,
+    sizeClass: WindowSizeClass,
     onChangeSearchAppBarState: (state: Int) -> Unit,
     onEvent: (ActivityEvent) -> Unit,
     onChangeArea: (area: Int) -> Unit,
@@ -265,7 +268,7 @@ fun MainArea(
 ) {
     LazyVerticalGrid(
         modifier = Modifier
-            .fillMaxSize(),
+            .fillMaxSize().padding(horizontal = if(sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) 64.dp else 0.dp),
         columns = GridCells.Adaptive(352.dp),
         contentPadding = paddingValues
     ) {
