@@ -112,10 +112,14 @@ fun MessagePage(
     var showDeleteGroupedContactConfirm by remember {
         mutableStateOf(false)
     }
-    val notificationPermissionState = rememberPermissionState(permission = android.Manifest.permission.POST_NOTIFICATIONS)
+    val notificationPermissionState = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        rememberPermissionState(permission = android.Manifest.permission.POST_NOTIFICATIONS)
+    } else {
+        null
+    }
     val notificationPermissionDeniedDialog = remember { mutableStateOf(false) }
     LaunchedEffect(true) {
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !notificationPermissionState.status.isGranted){
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && notificationPermissionState?.status?.isGranted == false){
             notificationPermissionDeniedDialog.value = true
         }
         viewModel.uiEventFlow.collectLatest { it ->
@@ -166,7 +170,7 @@ fun MessagePage(
                     androidx.compose.material3.TextButton(
                         onClick = {
                             notificationPermissionDeniedDialog.value = false
-                            notificationPermissionState.launchPermissionRequest()
+                            notificationPermissionState?.launchPermissionRequest()
                         }
                     ) {
                         Text("尝试授权")

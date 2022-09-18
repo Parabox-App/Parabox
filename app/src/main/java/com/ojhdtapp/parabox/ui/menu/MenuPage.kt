@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.menu
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -73,6 +74,11 @@ fun MenuPage(
     // Drawer
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
+    BackHandler(drawerState.currentValue == DrawerValue.Open) {
+        coroutineScope.launch { 
+            drawerState.close()
+        }
+    }
     com.ojhdtapp.parabox.ui.util.NavigationDrawer(
         modifier = modifier.fillMaxSize(),
         navController = menuNavController,

@@ -75,7 +75,9 @@ fun InfoPage(
     ) {
         // Plugin List State
         val pluginList by mainSharedViewModel.pluginListStateFlow.collectAsState()
-        LazyColumn(contentPadding = it) {
+        LazyColumn(
+            contentPadding = it
+        ) {
             if(sizeClass.widthSizeClass == WindowWidthSizeClass.Medium){
                 item {
                     ThemeBlock(
