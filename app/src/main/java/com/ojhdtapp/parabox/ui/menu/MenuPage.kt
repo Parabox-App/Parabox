@@ -5,6 +5,9 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.ModalBottomSheetValue
+import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberDrawerState
@@ -41,7 +44,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(
     ExperimentalAnimationApi::class, ExperimentalMaterialNavigationApi::class,
-    ExperimentalMaterial3Api::class
+    ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class
 )
 @Destination
 @RootNavGraph(start = true)
@@ -73,6 +76,10 @@ fun MenuPage(
         hiltViewModel<MenuSharedViewModel>()
     // Drawer
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val bottomSheetState = rememberModalBottomSheetState(
+        initialValue = ModalBottomSheetValue.Hidden,
+        skipHalfExpanded = true
+    )
     val coroutineScope = rememberCoroutineScope()
     BackHandler(drawerState.currentValue == DrawerValue.Open) {
         coroutineScope.launch {
@@ -103,7 +110,9 @@ fun MenuPage(
                             }
                         },
                         onFABClick = {
-                            TODO("FAB")
+                            coroutineScope.launch {
+                                bottomSheetState.show()
+                            }
                         })
                 }
                 DestinationsNavHost(
@@ -130,6 +139,7 @@ fun MenuPage(
                             mainSharedViewModel = mainSharedViewModel,
                             sizeClass = sizeClass,
                             drawerState = drawerState,
+                            bottomSheetState = bottomSheetState,
                             onEvent = onEvent
                         )
                     }
