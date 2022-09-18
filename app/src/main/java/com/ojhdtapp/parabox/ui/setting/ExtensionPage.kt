@@ -85,9 +85,8 @@ fun ExtensionPage(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Text(text = "未发现可用扩展", style = MaterialTheme.typography.labelLarge)
+                        Text(modifier = Modifier.padding(vertical = 16.dp),text = "未发现可用扩展", style = MaterialTheme.typography.labelLarge)
                         FilledTonalButton(
-                            modifier = Modifier.padding(top = 16.dp),
                             onClick = { /*TODO*/ }) {
                             Icon(
                                 modifier = Modifier.padding(end = 8.dp).size(ButtonDefaults.IconSize),

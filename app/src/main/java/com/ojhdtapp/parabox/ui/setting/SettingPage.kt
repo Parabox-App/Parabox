@@ -198,7 +198,8 @@ fun SettingPage(
                         )
                     }
 
-                }) { innerPadding ->
+                }
+                ) { innerPadding ->
                 // Plugin List State
                 val pluginList by mainSharedViewModel.pluginListStateFlow.collectAsState()
                 LazyColumn(
@@ -509,6 +510,36 @@ fun SettingPage(
                             mainSharedViewModel = mainSharedViewModel,
                             sizeClass = sizeClass,
                             onEvent = onEvent,
+                        )
+                        SettingPageState.CLOUD -> CloudPage(
+                            mainSharedViewModel = mainSharedViewModel,
+                            sizeClass = sizeClass,
+                            onEvent = onEvent
+                        )
+                        SettingPageState.BACKUP -> BackupPage(
+                            mainSharedViewModel = mainSharedViewModel,
+                            sizeClass = sizeClass,
+                            onEvent = onEvent
+                        )
+                        SettingPageState.NOTIFICATION -> NotificationPage(
+                            mainSharedViewModel = mainSharedViewModel,
+                            sizeClass = sizeClass,
+                            onEvent = onEvent
+                        )
+                        SettingPageState.INTERFACE -> InterfacePage(
+                            mainSharedViewModel = mainSharedViewModel,
+                            sizeClass = sizeClass,
+                            onEvent = onEvent
+                        )
+                        SettingPageState.EXPERIMENTAL -> ExperimentalPage(
+                            mainSharedViewModel = mainSharedViewModel,
+                            sizeClass = sizeClass,
+                            onEvent = onEvent
+                        )
+                        SettingPageState.SUPPORT -> SupportPage(
+                            mainSharedViewModel = mainSharedViewModel,
+                            sizeClass = sizeClass,
+                            onEvent = onEvent
                         )
                     }
                 }
