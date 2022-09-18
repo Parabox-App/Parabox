@@ -809,10 +809,12 @@ fun SearchArea(
                                         text = { Text("自定义范围") },
                                         onClick = {
                                             showTimeFilterDropDownMenu = false
-                                            timeRangePicker.show(
-                                                (context as AppCompatActivity).supportFragmentManager,
-                                                "time_range_picker"
-                                            )
+                                            if(!timeRangePicker.isAdded){
+                                                timeRangePicker.show(
+                                                    (context as AppCompatActivity).supportFragmentManager,
+                                                    "time_range_picker"
+                                                )
+                                            }
                                         },
                                     )
                                 }

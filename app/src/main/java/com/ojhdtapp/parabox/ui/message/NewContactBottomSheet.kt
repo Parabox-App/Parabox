@@ -54,7 +54,7 @@ fun NewContactBottomSheet(
                         Box(modifier = Modifier.size(32.dp, 4.dp))
                     }
                     Text(text = "发起会话", style = MaterialTheme.typography.headlineSmall)
-                    SegmentedControl(items = listOf("私人会话","群聊")){
+                    SegmentedControl(modifier = Modifier.padding(vertical = 16.dp),items = listOf("私人会话","群聊")){
 
                     }
                     Spacer(modifier = Modifier.height(200.dp))
