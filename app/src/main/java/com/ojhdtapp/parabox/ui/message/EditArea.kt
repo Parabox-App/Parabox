@@ -27,6 +27,7 @@ import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.BottomSheetState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -1288,21 +1289,23 @@ fun EditArea(
                                         modifier = Modifier
                                             .fillMaxSize()
                                             .clickable {
-                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                                    val maxNumPhotosAndVideos = 10
-                                                    Intent(MediaStore.ACTION_PICK_IMAGES)
-                                                        .apply {
-                                                            type = "image/*"
-                                                            putExtra(
-                                                                MediaStore.EXTRA_PICK_IMAGES_MAX,
-                                                                maxNumPhotosAndVideos
-                                                            )
-                                                        }
-                                                        .also {
-                                                            imagePickerLauncher.launch(it)
-                                                        }
-                                                } else {
-                                                    imagePickerSLauncher.launch("image/*")
+                                                if (isBottomSheetExpand) {
+                                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                                        val maxNumPhotosAndVideos = 10
+                                                        Intent(MediaStore.ACTION_PICK_IMAGES)
+                                                            .apply {
+                                                                type = "image/*"
+                                                                putExtra(
+                                                                    MediaStore.EXTRA_PICK_IMAGES_MAX,
+                                                                    maxNumPhotosAndVideos
+                                                                )
+                                                            }
+                                                            .also {
+                                                                imagePickerLauncher.launch(it)
+                                                            }
+                                                    } else {
+                                                        imagePickerSLauncher.launch("image/*")
+                                                    }
                                                 }
                                             },
                                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -1334,7 +1337,9 @@ fun EditArea(
                                             modifier = Modifier
                                                 .fillMaxSize()
                                                 .clickable {
-                                                    cameraLauncher.launch(targetCameraShotUri)
+                                                    if (isBottomSheetExpand) {
+                                                        cameraLauncher.launch(targetCameraShotUri)
+                                                    }
                                                 },
                                             horizontalAlignment = Alignment.CenterHorizontally,
                                             verticalArrangement = Arrangement.Center
@@ -1365,7 +1370,9 @@ fun EditArea(
                                         modifier = Modifier
                                             .fillMaxSize()
                                             .clickable {
-                                                filePickerLauncher.launch("*/*")
+                                                if (isBottomSheetExpand) {
+                                                    filePickerLauncher.launch("*/*")
+                                                }
                                             },
                                         horizontalAlignment = Alignment.CenterHorizontally,
                                         verticalArrangement = Arrangement.Center

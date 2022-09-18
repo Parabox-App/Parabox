@@ -229,7 +229,7 @@ fun NormalChatPage(
     val appBarContainerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
 
     // Bottom Sheet
-    val navigationBarHeight = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
+    val paddingValues = WindowInsets.systemBars.asPaddingValues()
     var changedTextFieldHeight by remember {
         mutableStateOf(0)
     }
@@ -259,7 +259,7 @@ fun NormalChatPage(
     val peakHeight by remember {
         derivedStateOf {
             density.run {
-                navigationBarHeight + 88.dp + changedTextFieldHeight.toDp()
+                paddingValues.calculateBottomPadding() + 88.dp + changedTextFieldHeight.toDp()
             }
         }
     }
