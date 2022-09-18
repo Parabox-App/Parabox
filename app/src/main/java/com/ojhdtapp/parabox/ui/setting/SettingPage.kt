@@ -496,13 +496,16 @@ fun SettingPage(
                     modifier = Modifier.weight(3f),
                     targetState = viewModel.selectedSetting.value,
                     transitionSpec = {
-                        (slideInHorizontally { -100 } + fadeIn() with slideOutHorizontally { 100 } + fadeOut()).apply {
-                            targetContentZIndex = 1f
-                        }
+                        slideInHorizontally { 100 } + fadeIn() with fadeOut()
                     }
                 ) {
                     when (it) {
                         SettingPageState.INFO -> InfoPage(
+                            mainSharedViewModel = mainSharedViewModel,
+                            sizeClass = sizeClass,
+                            onEvent = onEvent,
+                        )
+                        SettingPageState.EXTENSION -> ExtensionPage(
                             mainSharedViewModel = mainSharedViewModel,
                             sizeClass = sizeClass,
                             onEvent = onEvent,

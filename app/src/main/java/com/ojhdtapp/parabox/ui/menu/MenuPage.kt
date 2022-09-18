@@ -75,7 +75,7 @@ fun MenuPage(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
     BackHandler(drawerState.currentValue == DrawerValue.Open) {
-        coroutineScope.launch { 
+        coroutineScope.launch {
             drawerState.close()
         }
     }
