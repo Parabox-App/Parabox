@@ -3,6 +3,8 @@ package com.ojhdtapp.parabox.ui.message
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ChipDefaults
@@ -31,7 +33,9 @@ import com.ojhdtapp.parabox.ui.util.SegmentedControl
 import com.ojhdtapp.parabox.ui.util.clearFocusOnKeyboardDismiss
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class,
+    ExperimentalFoundationApi::class
+)
 @Composable
 fun NewContactBottomSheet(
     modifier: Modifier = Modifier,
@@ -112,15 +116,15 @@ fun NewContactBottomSheet(
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         } else {
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxHeight()
-                                    .horizontalScroll(rememberScrollState())
-                            ) {
-                                pluginList.forEach {
+                            LazyRow(modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically){
+                                items(items = pluginList.sortedBy { it.connectionType == selectedPluginId }){
                                     FilterChip(
                                         modifier = Modifier
+                                            .animateItemPlacement()
                                             .animateContentSize(),
                                         onClick = {
                                             selectedPluginId = it.connectionType
@@ -153,7 +157,6 @@ fun NewContactBottomSheet(
                                         )
                                     )
                                 }
-
                             }
                         }
                     }

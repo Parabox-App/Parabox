@@ -2,6 +2,7 @@ package com.ojhdtapp.parabox.ui
 
 import android.content.Context
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -19,8 +20,12 @@ import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.parabox.domain.model.*
 import com.ojhdtapp.parabox.domain.use_case.DeleteMessage
 import com.ojhdtapp.parabox.domain.use_case.GetMessages
+import com.ojhdtapp.parabox.domain.use_case.GroupNewContact
 import com.ojhdtapp.parabox.ui.message.AudioRecorderState
+import com.ojhdtapp.parabox.ui.message.GroupInfoState
+import com.ojhdtapp.parabox.ui.message.MessagePageUiEvent
 import com.ojhdtapp.parabox.ui.message.MessageState
+import com.ojhdtapp.parabox.ui.util.SearchAppBar
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.*
@@ -33,7 +38,12 @@ class MainSharedViewModel @Inject constructor(
     @ApplicationContext val context: Context,
     private val getMessages: GetMessages,
     private val deleteMessage: DeleteMessage,
+    private val groupNewContact: GroupNewContact,
 ) : ViewModel() {
+
+    // emit to this when wanting toasting
+    private val _uiEventFlow = MutableSharedFlow<MainSharedUiEvent>()
+    val uiEventFlow = _uiEventFlow.asSharedFlow()
 
     // Badge
     private val _messageBadge = mutableStateOf<Int>(0)
@@ -78,6 +88,25 @@ class MainSharedViewModel @Inject constructor(
     fun clearMessage() {
         _messageStateFlow.value = MessageState()
         _selectedMessageStateList.clear()
+    }
+
+    // New Contact
+    fun groupContact(
+        name: String,
+        pluginConnections: List<PluginConnection>,
+        senderId: Long,
+        avatar: String? = null,
+        avatarUri: String? = null,
+        tags: List<String> = emptyList()
+    ) {
+        groupNewContact(name, pluginConnections, senderId, avatar, avatarUri, tags).onEach {
+            if (it is Resource.Success) {
+                _uiEventFlow.emit(MainSharedUiEvent.BottomSheetControl(false))
+                Toast.makeText(context, "新建会话成功", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, "会话编组失败", Toast.LENGTH_SHORT).show()
+            }
+        }.launchIn(viewModelScope)
     }
 
     // Selection
