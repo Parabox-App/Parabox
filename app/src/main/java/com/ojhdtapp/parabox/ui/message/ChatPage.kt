@@ -884,7 +884,7 @@ fun NormalChatPage(
                 scaffoldState.bottomSheetState.collapse()
             }
         }
-        if (messageState.state == MessageState.LOADING || lazyPagingItems.itemCount == 0) {
+        if (messageState.state == MessageState.LOADING) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()

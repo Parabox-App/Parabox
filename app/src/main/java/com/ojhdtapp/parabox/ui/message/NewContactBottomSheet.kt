@@ -7,6 +7,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.ChipDefaults
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ModalBottomSheetLayout
@@ -25,15 +27,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.ojhdtapp.messagedto.ObjectIdUtil
+import com.ojhdtapp.messagedto.SendTargetType
+import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.util.SegmentedControl
 import com.ojhdtapp.parabox.ui.util.clearFocusOnKeyboardDismiss
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class,
+@OptIn(
+    ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class,
     ExperimentalFoundationApi::class
 )
 @Composable
@@ -51,14 +59,9 @@ fun NewContactBottomSheet(
     sheetElevation = 0.dp,
     sheetContent = {
         val coroutineScope = rememberCoroutineScope()
+        val focusManager = LocalFocusManager.current
         // Plugin List State
         val pluginList by mainSharedViewModel.pluginListStateFlow.collectAsState()
-        var selectedPluginId by remember {
-            mutableStateOf<Int?>(null)
-        }
-        var idInput by remember {
-            mutableStateOf("")
-        }
         val paddingModifier = if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
             Modifier
         } else {
@@ -91,7 +94,10 @@ fun NewContactBottomSheet(
                         modifier = Modifier.padding(vertical = 16.dp),
                         items = listOf("私人会话", "群聊")
                     ) {
-
+                        when (it) {
+                            0 -> mainSharedViewModel.setSendTargetType(SendTargetType.USER)
+                            1 -> mainSharedViewModel.setSendTargetType(SendTargetType.GROUP)
+                        }
                     }
                     Row(
                         modifier = Modifier
@@ -116,22 +122,24 @@ fun NewContactBottomSheet(
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         } else {
-                            LazyRow(modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight(),
+                            LazyRow(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxHeight(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically){
-                                items(items = pluginList.sortedBy { it.connectionType == selectedPluginId }){
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                items(items = pluginList.sortedBy { mainSharedViewModel.selectedExtensionId.value == it.connectionType }) {
                                     FilterChip(
                                         modifier = Modifier
                                             .animateItemPlacement()
                                             .animateContentSize(),
                                         onClick = {
-                                            selectedPluginId = it.connectionType
+                                            mainSharedViewModel.setSelectedExtensionId(it.connectionType)
                                         },
-                                        selected = selectedPluginId == it.connectionType,
+                                        selected = mainSharedViewModel.selectedExtensionId.value == it.connectionType,
                                         leadingIcon = {
-                                            if (selectedPluginId == it.connectionType) {
+                                            if (mainSharedViewModel.selectedExtensionId.value == it.connectionType) {
                                                 Icon(
                                                     imageVector = Icons.Outlined.Done,
                                                     contentDescription = "",
@@ -165,9 +173,9 @@ fun NewContactBottomSheet(
                         modifier = Modifier
                             .width(320.dp)
                             .clearFocusOnKeyboardDismiss(),
-                        value = idInput,
-                        onValueChange = { idInput = it },
-                        enabled = selectedPluginId != null,
+                        value = mainSharedViewModel.idInput.value,
+                        onValueChange = { mainSharedViewModel.setIdInput(it) },
+                        enabled = mainSharedViewModel.selectedExtensionId.value != null,
                         label = { Text(text = "识别ID") },
                         leadingIcon = {
                             Icon(
@@ -175,7 +183,14 @@ fun NewContactBottomSheet(
                                 contentDescription = null
                             )
                         },
-                        maxLines = 1,
+                        singleLine = true,
+                        keyboardActions = KeyboardActions(onDone = {
+                            focusManager.clearFocus()
+                        }),
+                        keyboardOptions = KeyboardOptions.Default.copy(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Done
+                        )
                     )
                     Spacer(modifier = Modifier.height(32.dp))
                     Row(
@@ -193,8 +208,26 @@ fun NewContactBottomSheet(
                             Text(text = "取消")
                         }
                         Button(
-                            onClick = { /*TODO*/ },
-                            enabled = selectedPluginId != null && idInput.isNotBlank()
+                            onClick = {
+                                val objectId = ObjectIdUtil.getObjectId(
+                                    mainSharedViewModel.selectedExtensionId.value!!,
+                                    mainSharedViewModel.sendTargetType.value,
+                                    mainSharedViewModel.idInput.value.toLong()
+                                )
+                                mainSharedViewModel.groupContact(
+                                    name = mainSharedViewModel.idInput.value,
+                                    pluginConnections = listOf(
+                                        PluginConnection(
+                                            connectionType = mainSharedViewModel.selectedExtensionId.value!!,
+                                            objectId = objectId,
+                                            id = mainSharedViewModel.idInput.value.toLong()
+                                        )
+                                    ),
+                                    senderId = objectId,
+                                    contactId = objectId,
+                                )
+                            },
+                            enabled = mainSharedViewModel.selectedExtensionId.value != null && mainSharedViewModel.idInput.value.isNotBlank()
                         ) {
                             Text(text = "确定")
                         }

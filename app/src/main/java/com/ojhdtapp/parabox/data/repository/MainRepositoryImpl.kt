@@ -14,10 +14,7 @@ import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.*
-import com.ojhdtapp.parabox.data.remote.dto.toContactEntity
-import com.ojhdtapp.parabox.data.remote.dto.toMessageContentList
-import com.ojhdtapp.parabox.data.remote.dto.toMessageEntity
-import com.ojhdtapp.parabox.data.remote.dto.toPluginConnection
+import com.ojhdtapp.parabox.data.remote.dto.*
 import com.ojhdtapp.parabox.domain.model.*
 import com.ojhdtapp.parabox.domain.model.message_content.getContentString
 import com.ojhdtapp.parabox.domain.repository.MainRepository
@@ -76,6 +73,7 @@ class MainRepositoryImpl @Inject constructor(
             database.contactDao.getPluginConnectionWithContacts(dto.pluginConnection.objectId).let {
                 database.contactDao.updateContact(it.contactList.map {
                     it.copy(
+                        profile = dto.subjectProfile.toProfile(),
                         latestMessage = LatestMessage(
                             sender = dto.profile.name,
                             content = dto.contents.getContentString(),
@@ -415,11 +413,25 @@ class MainRepositoryImpl @Inject constructor(
         senderId: Long,
         avatar: String?,
         avatarUri: String?,
-        tags: List<String>
+        tags: List<String>,
+        contactId: Long?
     ): Boolean {
         return coroutineScope {
             withContext(Dispatchers.IO) {
                 try {
+                    if (contactId != null) {
+                        // Group Action don't need extra pluginConnection inserted,
+                        // But Create Action need. (Under Ignore Strategy)
+                        pluginConnections.forEach {
+                            database.contactDao.insertPluginConnection(
+                                it.toPluginConnectionEntity()
+                            )
+                        }
+                        if (database.contactDao.isExist(contactId)) {
+                            // Already Exist
+                            throw IOException("id already exist")
+                        }
+                    }
                     val contactEntity = ContactEntity(
                         profile = Profile(
                             name = name,
@@ -428,13 +440,14 @@ class MainRepositoryImpl @Inject constructor(
                         ),
                         latestMessage = LatestMessage("", "", System.currentTimeMillis(), 0),
                         senderId = senderId,
-                        tags = tags
+                        tags = tags,
+                        contactId = contactId ?: 0
                     )
-                    val contactId = database.contactDao.insertContact(contactEntity)
+                    val returnedContactId = database.contactDao.insertContact(contactEntity)
                     pluginConnections.forEach { conn ->
                         database.contactDao.insertContactPluginConnectionCrossRef(
                             ContactPluginConnectionCrossRef(
-                                contactId = contactId,
+                                contactId = returnedContactId,
                                 objectId = conn.objectId
                             )
                         )

@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.domain.model
 
 import android.os.Parcelable
+import com.ojhdtapp.messagedto.ObjectIdUtil
 import com.ojhdtapp.parabox.data.local.entity.PluginConnectionEntity
 import kotlinx.parcelize.Parcelize
 
@@ -9,7 +10,7 @@ data class PluginConnection(val connectionType: Int, val objectId: Long, val id:
     Parcelable {
 
     fun toSenderPluginConnection(): com.ojhdtapp.messagedto.PluginConnection =
-        com.ojhdtapp.messagedto.PluginConnection(this.connectionType, this.objectId, this.id)
+        com.ojhdtapp.messagedto.PluginConnection(this.connectionType, ObjectIdUtil.getSendTargetType(objectId, connectionType.toString().length), this.id)
 
     fun toPluginConnectionEntity(): PluginConnectionEntity {
         return PluginConnectionEntity(

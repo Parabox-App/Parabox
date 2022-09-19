@@ -9,6 +9,9 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ContactDao {
 
+    @Query("SELECT EXISTS(SELECT * FROM contact_entity WHERE contactId = :contactId)")
+    suspend fun isExist(contactId: Long) : Boolean
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertContact(contact: ContactEntity): Long
     @Query("DELETE FROM contact_entity WHERE contactId = :contactId")

@@ -43,6 +43,7 @@ interface MainRepository {
         avatar: String? = null,
         avatarUri: String? = null,
         tags: List<String>,
+        contactId: Long? = null
     ): Boolean
 
     fun getFiles(query: String = "") : Flow<Resource<List<File>>>

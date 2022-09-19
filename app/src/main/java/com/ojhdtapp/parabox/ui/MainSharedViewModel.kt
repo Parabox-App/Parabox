@@ -14,6 +14,7 @@ import androidx.paging.PagingData
 import androidx.paging.PagingSource
 import androidx.paging.cachedIn
 import androidx.paging.compose.collectAsLazyPagingItems
+import com.ojhdtapp.messagedto.SendTargetType
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.dataStore
@@ -91,20 +92,44 @@ class MainSharedViewModel @Inject constructor(
     }
 
     // New Contact
+    private val _sendTargetType = mutableStateOf<Int>(SendTargetType.USER)
+    val sendTargetType : State<Int> = _sendTargetType
+    fun setSendTargetType(value : Int){
+        _sendTargetType.value = value
+    }
+
+    private val _selectedExtensionId = mutableStateOf<Int?>(null)
+    val selectedExtensionId : State<Int?> = _selectedExtensionId
+    fun setSelectedExtensionId(value : Int?){
+        _selectedExtensionId.value = value
+    }
+    private val _idInput = mutableStateOf<String>("")
+    val idInput : State<String> = _idInput
+    fun setIdInput(value : String){
+        _idInput.value = value
+    }
     fun groupContact(
         name: String,
         pluginConnections: List<PluginConnection>,
         senderId: Long,
         avatar: String? = null,
         avatarUri: String? = null,
-        tags: List<String> = emptyList()
+        tags: List<String> = emptyList(),
+        contactId: Long? = null,
     ) {
-        groupNewContact(name, pluginConnections, senderId, avatar, avatarUri, tags).onEach {
-            if (it is Resource.Success) {
-                _uiEventFlow.emit(MainSharedUiEvent.BottomSheetControl(false))
-                Toast.makeText(context, "新建会话成功", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(context, "会话编组失败", Toast.LENGTH_SHORT).show()
+        groupNewContact(name, pluginConnections, senderId, avatar, avatarUri, tags, contactId).onEach {
+            when(it){
+                is Resource.Success -> {
+                    _uiEventFlow.emit(MainSharedUiEvent.BottomSheetControl(false))
+                    _selectedExtensionId.value = null
+                    _sendTargetType.value = SendTargetType.USER
+                    _idInput.value = ""
+                    Toast.makeText(context, "新建会话成功", Toast.LENGTH_SHORT).show()
+                }
+                is Resource.Error -> {
+                    Toast.makeText(context, "会话编组失败", Toast.LENGTH_SHORT).show()
+                }
+                else -> {}
             }
         }.launchIn(viewModelScope)
     }

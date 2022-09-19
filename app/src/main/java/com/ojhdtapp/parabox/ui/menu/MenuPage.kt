@@ -14,6 +14,7 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,6 +23,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
+import com.ojhdtapp.parabox.ui.MainSharedUiEvent
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.NavGraphs
 import com.ojhdtapp.parabox.ui.destinations.FilePageDestination
@@ -42,6 +44,7 @@ import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.manualcomposablecalls.composable
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.dependency
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @OptIn(
@@ -82,6 +85,23 @@ fun MenuPage(
         initialValue = ModalBottomSheetValue.Hidden,
         skipHalfExpanded = true
     )
+
+    // ui Event
+    LaunchedEffect(true) {
+        mainSharedViewModel.uiEventFlow.collectLatest {
+            when (it) {
+                is MainSharedUiEvent.ShowSnackBar -> {
+                }
+                is MainSharedUiEvent.BottomSheetControl -> {
+                    if (it.shouldOpen) {
+                        bottomSheetState.show()
+                    } else {
+                        bottomSheetState.hide()
+                    }
+                }
+            }
+        }
+    }
     val coroutineScope = rememberCoroutineScope()
     BackHandler(drawerState.currentValue == DrawerValue.Open) {
         coroutineScope.launch {
@@ -93,7 +113,11 @@ fun MenuPage(
             bottomSheetState.hide()
         }
     }
-    NewContactBottomSheet(sheetState = bottomSheetState, sizeClass = sizeClass, mainSharedViewModel = mainSharedViewModel) {
+    NewContactBottomSheet(
+        sheetState = bottomSheetState,
+        sizeClass = sizeClass,
+        mainSharedViewModel = mainSharedViewModel
+    ) {
         NavigationDrawer(
             modifier = modifier.fillMaxSize(),
             navController = menuNavController,

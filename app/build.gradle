@@ -95,7 +95,7 @@ dependencies {
     implementation "commons-io:commons-io:2.7"
 
     // Custom Dto
-    implementation 'com.github.ojhdt:ParaboxDto:1.12'
+    implementation 'com.github.ojhdt:ParaboxDto:1.14'
 
     // Paging
     def paging_version = "3.1.1"
