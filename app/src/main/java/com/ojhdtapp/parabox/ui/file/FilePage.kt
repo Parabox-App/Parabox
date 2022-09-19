@@ -312,7 +312,7 @@ fun MainArea(
                                 )
                         },
                         label = { Text(text = "文档") },
-                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
+                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
                     )
                     FilterChip(
                         modifier = Modifier
@@ -334,7 +334,7 @@ fun MainArea(
                                 )
                         },
                         label = { Text(text = "演示文稿") },
-                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
+                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
                     )
                     FilterChip(
                         modifier = Modifier
@@ -356,7 +356,7 @@ fun MainArea(
                                 )
                         },
                         label = { Text(text = "电子表格") },
-                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
+                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
                     )
                     FilterChip(
                         modifier = Modifier
@@ -378,7 +378,7 @@ fun MainArea(
                                 )
                         },
                         label = { Text(text = "视频") },
-                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
+                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
                     )
                     FilterChip(
                         modifier = Modifier
@@ -400,7 +400,7 @@ fun MainArea(
                                 )
                         },
                         label = { Text(text = "音频") },
-                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
+                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
                     )
                     FilterChip(
                         modifier = Modifier
@@ -422,7 +422,7 @@ fun MainArea(
                                 )
                         },
                         label = { Text(text = "图片") },
-                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
+                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
                     )
                     FilterChip(
                         modifier = Modifier
@@ -441,7 +441,7 @@ fun MainArea(
                                 )
                         },
                         label = { Text(text = "便携式文档") },
-                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
+                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
                     )
                     FilterChip(
                         modifier = Modifier
@@ -463,7 +463,7 @@ fun MainArea(
                                 )
                         },
                         label = { Text(text = "压缩文件") },
-                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
+                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
                     )
                 }
                 if (mainState.recentFilterData.isEmpty()) {
@@ -654,7 +654,7 @@ fun SearchArea(
                             }
                         },
                         label = { Text(text = mainState.sizeFilter.label) },
-                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
+                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
                     )
                     FilterChip(
                         modifier = Modifier
@@ -738,7 +738,7 @@ fun SearchArea(
                             }
                         },
                         label = { Text(text = mainState.extensionFilter.label) },
-                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
+                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
                     )
                     FilterChip(
                         modifier = Modifier
@@ -821,7 +821,7 @@ fun SearchArea(
                             }
                         },
                         label = { Text(text = mainState.timeFilter.label) },
-                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
+                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
                     )
                     Spacer(modifier = Modifier.width(16.dp))
                 }

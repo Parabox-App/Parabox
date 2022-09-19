@@ -239,7 +239,7 @@ fun TextFieldContent(
                         }
                     },
                     label = { Text(text = item) },
-                    border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant))
+                    border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)))
             }
             item {
                 BasicTextField(

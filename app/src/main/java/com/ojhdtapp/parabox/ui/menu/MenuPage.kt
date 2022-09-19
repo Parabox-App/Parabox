@@ -29,8 +29,10 @@ import com.ojhdtapp.parabox.ui.destinations.MessagePageDestination
 import com.ojhdtapp.parabox.ui.file.FilePage
 import com.ojhdtapp.parabox.ui.message.AudioRecorderState
 import com.ojhdtapp.parabox.ui.message.MessagePage
+import com.ojhdtapp.parabox.ui.message.NewContactBottomSheet
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.NavigationBar
+import com.ojhdtapp.parabox.ui.util.NavigationDrawer
 import com.ojhdtapp.parabox.ui.util.NavigationRail
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
@@ -86,82 +88,89 @@ fun MenuPage(
             drawerState.close()
         }
     }
-    com.ojhdtapp.parabox.ui.util.NavigationDrawer(
-        modifier = modifier.fillMaxSize(),
-        navController = menuNavController,
-        messageBadge = mainSharedViewModel.messageBadge.value,
-        onSelfItemClick = {},
-        drawerState = drawerState,
-        gesturesEnabled = mainSharedViewModel.audioRecorderState.value !is AudioRecorderState.Recording,
-        sizeClass = sizeClass
-    ) {
-        Column() {
-            Row(modifier = Modifier.weight(1f)) {
+    BackHandler(bottomSheetState.currentValue != ModalBottomSheetValue.Hidden) {
+        coroutineScope.launch {
+            bottomSheetState.hide()
+        }
+    }
+    NewContactBottomSheet(sheetState = bottomSheetState, sizeClass = sizeClass, mainSharedViewModel = mainSharedViewModel) {
+        NavigationDrawer(
+            modifier = modifier.fillMaxSize(),
+            navController = menuNavController,
+            messageBadge = mainSharedViewModel.messageBadge.value,
+            onSelfItemClick = {},
+            drawerState = drawerState,
+            gesturesEnabled = mainSharedViewModel.audioRecorderState.value !is AudioRecorderState.Recording,
+            sizeClass = sizeClass
+        ) {
+            Column() {
+                Row(modifier = Modifier.weight(1f)) {
 //                              if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) { }
-                if (sizeClass.widthSizeClass == WindowWidthSizeClass.Medium) {
-                    NavigationRail(
-                        modifier = Modifier.zIndex(1f),
+                    if (sizeClass.widthSizeClass == WindowWidthSizeClass.Medium) {
+                        NavigationRail(
+                            modifier = Modifier.zIndex(1f),
+                            navController = menuNavController,
+                            messageBadge = mainSharedViewModel.messageBadge.value,
+                            onSelfItemClick = {},
+                            onMenuClick = {
+                                coroutineScope.launch {
+                                    if (drawerState.isOpen) drawerState.close() else drawerState.open()
+                                }
+                            },
+                            onFABClick = {
+                                coroutineScope.launch {
+                                    bottomSheetState.show()
+                                }
+                            })
+                    }
+                    DestinationsNavHost(
+                        navGraph = NavGraphs.menu,
+                        engine = menuNavHostEngine,
                         navController = menuNavController,
-                        messageBadge = mainSharedViewModel.messageBadge.value,
-                        onSelfItemClick = {},
-                        onMenuClick = {
-                            coroutineScope.launch {
-                                if (drawerState.isOpen) drawerState.close() else drawerState.open()
-                            }
-                        },
-                        onFABClick = {
-                            coroutineScope.launch {
-                                bottomSheetState.show()
-                            }
-                        })
-                }
-                DestinationsNavHost(
-                    navGraph = NavGraphs.menu,
-                    engine = menuNavHostEngine,
-                    navController = menuNavController,
-                    dependenciesContainerBuilder = {
+                        dependenciesContainerBuilder = {
 //                        dependency(NavGraphs.message) {
 //                            val parentEntry = remember(navBackStackEntry) {
 //                                menuNavController.getBackStackEntry(NavGraphs.message.route)
 //                            }
 //                            hiltViewModel<MessagePageViewModel>(parentEntry)
 //                        }
-                        dependency(mainSharedViewModel)
-                        dependency(drawerState)
-                        dependency(sizeClass)
-                        dependency { event: ActivityEvent -> onEvent(event) }
-                    }
-                ){
-                    composable(MessagePageDestination){
-                        MessagePage(
-                            navigator = destinationsNavigator,
-                            mainNavController = navController,
-                            mainSharedViewModel = mainSharedViewModel,
-                            sizeClass = sizeClass,
-                            drawerState = drawerState,
-                            bottomSheetState = bottomSheetState,
-                            onEvent = onEvent
-                        )
-                    }
-                    composable(FilePageDestination){
-                        FilePage(
-                            navigator = destinationsNavigator,
-                            mainNavController = navController,
-                            mainSharedViewModel = mainSharedViewModel,
-                            sizeClass = sizeClass,
-                            drawerState = drawerState,
-                            onEvent = onEvent
-                        )
+                            dependency(mainSharedViewModel)
+                            dependency(drawerState)
+                            dependency(sizeClass)
+                            dependency { event: ActivityEvent -> onEvent(event) }
+                        }
+                    ) {
+                        composable(MessagePageDestination) {
+                            MessagePage(
+                                navigator = destinationsNavigator,
+                                mainNavController = navController,
+                                mainSharedViewModel = mainSharedViewModel,
+                                sizeClass = sizeClass,
+                                drawerState = drawerState,
+                                bottomSheetState = bottomSheetState,
+                                onEvent = onEvent
+                            )
+                        }
+                        composable(FilePageDestination) {
+                            FilePage(
+                                navigator = destinationsNavigator,
+                                mainNavController = navController,
+                                mainSharedViewModel = mainSharedViewModel,
+                                sizeClass = sizeClass,
+                                drawerState = drawerState,
+                                onEvent = onEvent
+                            )
+                        }
                     }
                 }
-            }
-            if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact
-            ) {
-                NavigationBar(
-                    navController = menuNavController,
-                    messageBadge = mainSharedViewModel.messageBadge.value,
-                    onSelfItemClick = {},
-                )
+                if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact
+                ) {
+                    NavigationBar(
+                        navController = menuNavController,
+                        messageBadge = mainSharedViewModel.messageBadge.value,
+                        onSelfItemClick = {},
+                    )
+                }
             }
         }
     }

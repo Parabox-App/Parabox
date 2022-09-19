@@ -245,7 +245,7 @@ fun RowScope.MessageArea(
                         }
                     },
                     label = { Text(text = viewModel.typeFilter.value.label) },
-                    border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
+                    border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
                 )
                 FilterChip(
                     modifier = Modifier
@@ -267,7 +267,7 @@ fun RowScope.MessageArea(
                             )
                     },
                     label = { Text(text = "未读") },
-                    border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
+                    border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
                 )
                 FilterChip(
                     modifier = Modifier
@@ -286,7 +286,7 @@ fun RowScope.MessageArea(
                             modifier = Modifier.size(FilterChipDefaults.IconSize)
                         )
                     },
-                    border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
+                    border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
                 )
             }
 //                    Row(

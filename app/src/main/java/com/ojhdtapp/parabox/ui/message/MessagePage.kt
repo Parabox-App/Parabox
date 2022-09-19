@@ -155,302 +155,297 @@ fun MessagePage(
         viewModel.clearSelectedContactStateList()
         viewModel.setAreaState(AreaState.MessageArea)
     }
-    BackHandler(enabled = bottomSheetState.currentValue != ModalBottomSheetValue.Hidden) {
-        coroutineScope.launch {
-            bottomSheetState.hide()
+
+    Row() {
+        // Left
+        val contactWidthModifier =
+            if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) modifier.width(400.dp) else modifier.weight(
+                1f
+            )
+        if (notificationPermissionDeniedDialog.value) {
+            AlertDialog(
+                onDismissRequest = {
+                    notificationPermissionDeniedDialog.value = false
+                },
+                icon = { Icon(Icons.Outlined.Notifications, contentDescription = null) },
+                title = {
+                    Text(text = "权限申请")
+                },
+                text = {
+                    Text(
+                        "在 Android 13 (Tiramisu) 及更高版本上，通知发送需要额外运行时权限。该权限对于即时通讯应用是必要的。\n您亦可前往设置页面手动授权。"
+                    )
+                },
+                confirmButton = {
+                    androidx.compose.material3.TextButton(
+                        onClick = {
+                            notificationPermissionDeniedDialog.value = false
+                            notificationPermissionState?.launchPermissionRequest()
+                        }
+                    ) {
+                        Text("尝试授权")
+                    }
+                },
+                dismissButton = {
+                    androidx.compose.material3.TextButton(
+                        onClick = {
+                            notificationPermissionDeniedDialog.value = false
+                        }
+                    ) {
+                        Text("转到设置")
+                    }
+                }
+            )
         }
-    }
-    NewContactBottomSheet(sheetState = bottomSheetState, sizeClass = sizeClass) {
-        Row() {
-            // Left
-            val contactWidthModifier =
-                if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) modifier.width(400.dp) else modifier.weight(
-                    1f
-                )
-            if (notificationPermissionDeniedDialog.value) {
-                AlertDialog(
-                    onDismissRequest = {
-                        notificationPermissionDeniedDialog.value = false
-                    },
-                    icon = { Icon(Icons.Outlined.Notifications, contentDescription = null) },
-                    title = {
-                        Text(text = "权限申请")
-                    },
-                    text = {
-                        Text(
-                            "在 Android 13 (Tiramisu) 及更高版本上，通知发送需要额外运行时权限。该权限对于即时通讯应用是必要的。\n您亦可前往设置页面手动授权。"
-                        )
-                    },
-                    confirmButton = {
-                        androidx.compose.material3.TextButton(
-                            onClick = {
-                                notificationPermissionDeniedDialog.value = false
-                                notificationPermissionState?.launchPermissionRequest()
-                            }
-                        ) {
-                            Text("尝试授权")
-                        }
-                    },
-                    dismissButton = {
-                        androidx.compose.material3.TextButton(
-                            onClick = {
-                                notificationPermissionDeniedDialog.value = false
-                            }
-                        ) {
-                            Text("转到设置")
-                        }
+        GroupActionDialog(
+            showDialog = viewModel.showGroupActionDialogState.value,
+            state = viewModel.groupInfoState.value,
+            sizeClass = sizeClass,
+            onDismiss = {
+                viewModel.setShowGroupActionDialogState(false)
+            }, onConfirm = viewModel::groupContact
+        )
+        EditActionDialog(
+            showDialog = viewModel.showEditActionDialogState.value,
+            contact = contactState.data.findLast { it.contactId == viewModel.selectedContactStateList.firstOrNull()?.contactId }
+                ?: archivedContact.findLast { it.contactId == viewModel.selectedContactStateList.firstOrNull()?.contactId },
+            sizeClass = sizeClass,
+            onDismiss = { viewModel.setShowEditActionDialogState(false) },
+            onConfirm = {},
+            onEvent = {
+                when (it) {
+                    is EditActionDialogEvent.ProfileAndTagUpdate -> {
+                        viewModel.setContactProfileAndTag(it.contactId, it.profile, it.tags)
+                        viewModel.addContactTag(it.tags)
                     }
-                )
-            }
-            GroupActionDialog(
-                showDialog = viewModel.showGroupActionDialogState.value,
-                state = viewModel.groupInfoState.value,
-                sizeClass = sizeClass,
-                onDismiss = {
-                    viewModel.setShowGroupActionDialogState(false)
-                }, onConfirm = viewModel::groupContact
-            )
-            EditActionDialog(
-                showDialog = viewModel.showEditActionDialogState.value,
-                contact = contactState.data.findLast { it.contactId == viewModel.selectedContactStateList.firstOrNull()?.contactId }
-                    ?: archivedContact.findLast { it.contactId == viewModel.selectedContactStateList.firstOrNull()?.contactId },
-                sizeClass = sizeClass,
-                onDismiss = { viewModel.setShowEditActionDialogState(false) },
-                onConfirm = {},
-                onEvent = {
-                    when (it) {
-                        is EditActionDialogEvent.ProfileAndTagUpdate -> {
-                            viewModel.setContactProfileAndTag(it.contactId, it.profile, it.tags)
-                            viewModel.addContactTag(it.tags)
-                        }
-                        is EditActionDialogEvent.EnableNotificationStateUpdate -> {
-                            viewModel.setContactNotification(it.contactId, it.value)
-                        }
-                        is EditActionDialogEvent.PinnedStateUpdate -> {
-                            viewModel.setContactPinned(it.contactId, it.value)
-                        }
-                        is EditActionDialogEvent.ArchivedStateUpdate -> {
-                            viewModel.setContactArchived(it.contactId, it.value)
-                        }
-                        is EditActionDialogEvent.DeleteGrouped -> {
-                            showDeleteGroupedContactConfirm = true
-                        }
+                    is EditActionDialogEvent.EnableNotificationStateUpdate -> {
+                        viewModel.setContactNotification(it.contactId, it.value)
+                    }
+                    is EditActionDialogEvent.PinnedStateUpdate -> {
+                        viewModel.setContactPinned(it.contactId, it.value)
+                    }
+                    is EditActionDialogEvent.ArchivedStateUpdate -> {
+                        viewModel.setContactArchived(it.contactId, it.value)
+                    }
+                    is EditActionDialogEvent.DeleteGrouped -> {
+                        showDeleteGroupedContactConfirm = true
                     }
                 }
-            )
-            TagEditAlertDialog(
-                showDialog = viewModel.showTagEditAlertDialogState.value,
-                contact = contactState.data.findLast { it.contactId == viewModel.selectedContactStateList.firstOrNull()?.contactId },
-                sizeClass = sizeClass,
-                onDismiss = { viewModel.setShowTagEditAlertDialogState(false) },
-                onConfirm = { id: Long, tags: List<String> ->
-                    viewModel.setContactTag(id, tags)
-                    viewModel.addContactTag(tags)
-                    viewModel.setShowTagEditAlertDialogState(false)
-                    viewModel.clearSelectedContactStateList()
-                }
-            )
-            UserProfileDialog(
-                openDialog = mainSharedViewModel.showUserProfileDialogState.value,
-                userName = mainSharedViewModel.userNameFlow.collectAsState(initial = "User").value,
-                avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
-                pluginList = mainSharedViewModel.pluginListStateFlow.collectAsState().value,
-                sizeClass = sizeClass,
-                onUpdateName = {
-                    mainSharedViewModel.setEditUserNameDialogState(true)
+            }
+        )
+        TagEditAlertDialog(
+            showDialog = viewModel.showTagEditAlertDialogState.value,
+            contact = contactState.data.findLast { it.contactId == viewModel.selectedContactStateList.firstOrNull()?.contactId },
+            sizeClass = sizeClass,
+            onDismiss = { viewModel.setShowTagEditAlertDialogState(false) },
+            onConfirm = { id: Long, tags: List<String> ->
+                viewModel.setContactTag(id, tags)
+                viewModel.addContactTag(tags)
+                viewModel.setShowTagEditAlertDialogState(false)
+                viewModel.clearSelectedContactStateList()
+            }
+        )
+        UserProfileDialog(
+            openDialog = mainSharedViewModel.showUserProfileDialogState.value,
+            userName = mainSharedViewModel.userNameFlow.collectAsState(initial = "User").value,
+            avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
+            pluginList = mainSharedViewModel.pluginListStateFlow.collectAsState().value,
+            sizeClass = sizeClass,
+            onUpdateName = {
+                mainSharedViewModel.setEditUserNameDialogState(true)
+            },
+            onUpdateAvatar = {
+                onEvent(ActivityEvent.SetUserAvatar)
+            },
+            onDismiss = { mainSharedViewModel.setShowUserProfileDialogState(false) })
+        EditUserNameDialog(
+            openDialog = mainSharedViewModel.editUserNameDialogState.value,
+            userName = mainSharedViewModel.userNameFlow.collectAsState(initial = "User").value,
+            onConfirm = {
+                mainSharedViewModel.setEditUserNameDialogState(false)
+                mainSharedViewModel.setUserName(it)
+            },
+            onDismiss = { mainSharedViewModel.setEditUserNameDialogState(false) }
+        )
+        if (showDeleteGroupedContactConfirm) {
+            androidx.compose.material3.AlertDialog(onDismissRequest = {
+                showDeleteGroupedContactConfirm = false
+            },
+                title = { Text(text = "确认删除") },
+                text = { Text(text = "该编组将从会话列表移除，但不会影响任何已关联会话及聊天记录。") },
+                confirmButton = {
+                    androidx.compose.material3.TextButton(onClick = {
+                        viewModel.selectedContactStateList.firstOrNull()?.let {
+                            viewModel.deleteGroupedContact(it)
+                        }
+                        showDeleteGroupedContactConfirm = false
+                    }) {
+                        Text(text = "确认")
+                    }
                 },
-                onUpdateAvatar = {
-                    onEvent(ActivityEvent.SetUserAvatar)
-                },
-                onDismiss = { mainSharedViewModel.setShowUserProfileDialogState(false) })
-            EditUserNameDialog(
-                openDialog = mainSharedViewModel.editUserNameDialogState.value,
-                userName = mainSharedViewModel.userNameFlow.collectAsState(initial = "User").value,
-                onConfirm = {
-                    mainSharedViewModel.setEditUserNameDialogState(false)
-                    mainSharedViewModel.setUserName(it)
-                },
-                onDismiss = { mainSharedViewModel.setEditUserNameDialogState(false) }
-            )
-            if (showDeleteGroupedContactConfirm) {
-                androidx.compose.material3.AlertDialog(onDismissRequest = {
-                    showDeleteGroupedContactConfirm = false
-                },
-                    title = { Text(text = "确认删除") },
-                    text = { Text(text = "该编组将从会话列表移除，但不会影响任何已关联会话及聊天记录。") },
-                    confirmButton = {
-                        androidx.compose.material3.TextButton(onClick = {
-                            viewModel.selectedContactStateList.firstOrNull()?.let {
-                                viewModel.deleteGroupedContact(it)
+                dismissButton = {
+                    androidx.compose.material3.TextButton(onClick = {
+                        showDeleteGroupedContactConfirm = false
+                    }) {
+                        Text(text = "取消")
+                    }
+                })
+        }
+        Scaffold(
+            modifier = contactWidthModifier
+                .shadow(8.dp)
+                .zIndex(1f),
+            snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
+            topBar = {
+                SearchAppBar(
+                    text = viewModel.searchText.value,
+                    onTextChange = viewModel::setSearchText,
+                    placeholder = "搜索会话",
+                    activateState = viewModel.searchBarActivateState.value,
+                    avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
+                    shouldHover = hoverSearchBar,
+                    onActivateStateChanged = {
+                        viewModel.setSearchBarActivateState(it)
+                        viewModel.clearSelectedContactStateList()
+                        when (it) {
+                            SearchAppBar.SEARCH -> {
+                                viewModel.setAreaState(AreaState.SearchArea)
                             }
-                            showDeleteGroupedContactConfirm = false
-                        }) {
-                            Text(text = "确认")
+                            SearchAppBar.NONE, SearchAppBar.SELECT, SearchAppBar.ARCHIVE_SELECT -> {
+                                viewModel.setAreaState(AreaState.MessageArea)
+                            }
+                            else -> {}
                         }
                     },
-                    dismissButton = {
-                        androidx.compose.material3.TextButton(onClick = {
-                            showDeleteGroupedContactConfirm = false
-                        }) {
-                            Text(text = "取消")
-                        }
-                    })
-            }
-            Scaffold(
-                modifier = contactWidthModifier
-                    .shadow(8.dp)
-                    .zIndex(1f),
-                snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
-                topBar = {
-                    SearchAppBar(
-                        text = viewModel.searchText.value,
-                        onTextChange = viewModel::setSearchText,
-                        placeholder = "搜索会话",
-                        activateState = viewModel.searchBarActivateState.value,
-                        avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
-                        shouldHover = hoverSearchBar,
-                        onActivateStateChanged = {
-                            viewModel.setSearchBarActivateState(it)
-                            viewModel.clearSelectedContactStateList()
-                            when (it) {
-                                SearchAppBar.SEARCH -> {
-                                    viewModel.setAreaState(AreaState.SearchArea)
-                                }
-                                SearchAppBar.NONE, SearchAppBar.SELECT, SearchAppBar.ARCHIVE_SELECT -> {
-                                    viewModel.setAreaState(AreaState.MessageArea)
-                                }
-                                else -> {}
+                    selection = viewModel.selectedContactStateList,
+                    onGroupAction = {
+                        viewModel.getGroupInfoPack()
+                        viewModel.setShowGroupActionDialogState(true)
+                    },
+                    onDropdownMenuItemEvent = {
+                        when (it) {
+                            is DropdownMenuItemEvent.Info -> {
+                                viewModel.setShowEditActionDialogState(true)
                             }
-                        },
-                        selection = viewModel.selectedContactStateList,
-                        onGroupAction = {
-                            viewModel.getGroupInfoPack()
-                            viewModel.setShowGroupActionDialogState(true)
-                        },
-                        onDropdownMenuItemEvent = {
-                            when (it) {
-                                is DropdownMenuItemEvent.Info -> {
-                                    viewModel.setShowEditActionDialogState(true)
-                                }
-                                is DropdownMenuItemEvent.NewTag -> {
-                                    viewModel.setShowTagEditAlertDialogState(true)
-                                }
-                                is DropdownMenuItemEvent.Hide -> {
-                                    coroutineScope.launch {
-                                        snackBarHostState.showSnackbar(
-                                            message = "会话已暂时隐藏",
-                                            actionLabel = "取消",
-                                            duration = SnackbarDuration.Short
-                                        )
-                                            .also { result ->
-                                                when (result) {
-                                                    SnackbarResult.ActionPerformed -> {
-                                                        viewModel.cancelContactHidden()
-                                                    }
-                                                    SnackbarResult.Dismissed -> {}
-                                                    else -> {}
+                            is DropdownMenuItemEvent.NewTag -> {
+                                viewModel.setShowTagEditAlertDialogState(true)
+                            }
+                            is DropdownMenuItemEvent.Hide -> {
+                                coroutineScope.launch {
+                                    snackBarHostState.showSnackbar(
+                                        message = "会话已暂时隐藏",
+                                        actionLabel = "取消",
+                                        duration = SnackbarDuration.Short
+                                    )
+                                        .also { result ->
+                                            when (result) {
+                                                SnackbarResult.ActionPerformed -> {
+                                                    viewModel.cancelContactHidden()
                                                 }
+                                                SnackbarResult.Dismissed -> {}
+                                                else -> {}
                                             }
-                                    }
-                                    viewModel.setContactHidden(
+                                        }
+                                }
+                                viewModel.setContactHidden(
+                                    viewModel.selectedContactStateList.toList()
+                                        .map { it.contactId })
+                            }
+                            is DropdownMenuItemEvent.HideArchive -> {
+                                viewModel.hideArchiveContact()
+                            }
+                            is DropdownMenuItemEvent.Pin -> {
+                                viewModel.setContactPinned(
+                                    viewModel.selectedContactStateList.toList()
+                                        .map { it.contactId }, it.value
+                                )
+                            }
+                            is DropdownMenuItemEvent.Archive -> {
+                                viewModel.setContactArchived(
+                                    viewModel.selectedContactStateList.toList()
+                                        .map { it.contactId }, it.value
+                                )
+                            }
+                            is DropdownMenuItemEvent.UnArchiveALl -> {
+                                viewModel.setContactArchived(
+                                    viewModel.archivedContactStateFlow.value.map { it.contactId },
+                                    false
+                                )
+                            }
+                            is DropdownMenuItemEvent.MarkAsRead -> {
+                                if (it.value) {
+                                    viewModel.clearContactUnreadNum(
+                                        viewModel.selectedContactStateList.toList()
+                                            .map { it.contactId })
+                                } else {
+                                    viewModel.restoreContactUnreadNum(
                                         viewModel.selectedContactStateList.toList()
                                             .map { it.contactId })
                                 }
-                                is DropdownMenuItemEvent.HideArchive -> {
-                                    viewModel.hideArchiveContact()
-                                }
-                                is DropdownMenuItemEvent.Pin -> {
-                                    viewModel.setContactPinned(
-                                        viewModel.selectedContactStateList.toList()
-                                            .map { it.contactId }, it.value
-                                    )
-                                }
-                                is DropdownMenuItemEvent.Archive -> {
-                                    viewModel.setContactArchived(
-                                        viewModel.selectedContactStateList.toList()
-                                            .map { it.contactId }, it.value
-                                    )
-                                }
-                                is DropdownMenuItemEvent.UnArchiveALl -> {
-                                    viewModel.setContactArchived(
-                                        viewModel.archivedContactStateFlow.value.map { it.contactId },
-                                        false
-                                    )
-                                }
-                                is DropdownMenuItemEvent.MarkAsRead -> {
-                                    if (it.value) {
-                                        viewModel.clearContactUnreadNum(
-                                            viewModel.selectedContactStateList.toList()
-                                                .map { it.contactId })
-                                    } else {
-                                        viewModel.restoreContactUnreadNum(
-                                            viewModel.selectedContactStateList.toList()
-                                                .map { it.contactId })
-                                    }
-                                }
-                                is DropdownMenuItemEvent.DeleteGrouped -> {
-                                    showDeleteGroupedContactConfirm = true
-                                }
                             }
-                        },
-                        onExpandAction = {},
-                        sizeClass = sizeClass,
-                        onMenuClick = {
-                            coroutineScope.launch {
-                                drawerState.open()
+                            is DropdownMenuItemEvent.DeleteGrouped -> {
+                                showDeleteGroupedContactConfirm = true
                             }
-                        },
-                        onAvatarClick = {
-                            mainSharedViewModel.setShowUserProfileDialogState(true)
                         }
-                    )
-                },
-                bottomBar = {
-
-                },
-                floatingActionButton = {
-                    if (sizeClass.widthSizeClass != WindowWidthSizeClass.Medium) {
-                        ExtendedFloatingActionButton(
-                            modifier = Modifier.navigationBarsPadding(),
-                            text = { Text(text = "发起会话") },
-                            icon = {
-                                Icon(
-                                    imageVector = Icons.Outlined.Add,
-                                    contentDescription = "new contact"
-                                )
-                            },
-                            expanded = expandedFab,
-                            onClick = {
-                                coroutineScope.launch {
-                                    bottomSheetState.show()
-                                }
-                            })
+                    },
+                    onExpandAction = {},
+                    sizeClass = sizeClass,
+                    onMenuClick = {
+                        coroutineScope.launch {
+                            drawerState.open()
+                        }
+                    },
+                    onAvatarClick = {
+                        mainSharedViewModel.setShowUserProfileDialogState(true)
                     }
-                },
-            ) { paddingValues ->
-                AnimatedContent(targetState = viewModel.areaState.value,
-                    transitionSpec = {
-                        if (targetState == AreaState.SearchArea && initialState == AreaState.MessageArea) {
-                            expandVertically(expandFrom = Alignment.Top).with(
-                                scaleOut(
-                                    tween(200),
-                                    0.9f
-                                ) + fadeOut(tween(200))
-                            ).apply {
-                                targetContentZIndex = 2f
+                )
+            },
+            bottomBar = {
+
+            },
+            floatingActionButton = {
+                if (sizeClass.widthSizeClass != WindowWidthSizeClass.Medium) {
+                    ExtendedFloatingActionButton(
+                        modifier = Modifier.navigationBarsPadding(),
+                        text = { Text(text = "发起会话") },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Outlined.Add,
+                                contentDescription = "new contact"
+                            )
+                        },
+                        expanded = expandedFab,
+                        onClick = {
+                            coroutineScope.launch {
+                                bottomSheetState.show()
                             }
-                        } else if (targetState == AreaState.MessageArea && initialState == AreaState.SearchArea) {
-                            (scaleIn(tween(200), 0.9f) + fadeIn(tween(200))).with(
-                                shrinkVertically(
-                                    shrinkTowards = Alignment.Top
-                                )
-                            ).apply {
-                                targetContentZIndex = 1f
-                            }
-                        } else if (targetState == AreaState.ArchiveArea && initialState == AreaState.MessageArea) {
-                            (slideInHorizontally { 100 } + fadeIn() with slideOutHorizontally { -100 } + fadeOut()).apply {
-                                targetContentZIndex = 2f
-                            }
+                        })
+                }
+            },
+        ) { paddingValues ->
+            AnimatedContent(targetState = viewModel.areaState.value,
+                transitionSpec = {
+                    if (targetState == AreaState.SearchArea && initialState == AreaState.MessageArea) {
+                        expandVertically(expandFrom = Alignment.Top).with(
+                            scaleOut(
+                                tween(200),
+                                0.9f
+                            ) + fadeOut(tween(200))
+                        ).apply {
+                            targetContentZIndex = 2f
+                        }
+                    } else if (targetState == AreaState.MessageArea && initialState == AreaState.SearchArea) {
+                        (scaleIn(tween(200), 0.9f) + fadeIn(tween(200))).with(
+                            shrinkVertically(
+                                shrinkTowards = Alignment.Top
+                            )
+                        ).apply {
+                            targetContentZIndex = 1f
+                        }
+                    } else if (targetState == AreaState.ArchiveArea && initialState == AreaState.MessageArea) {
+                        (slideInHorizontally { 100 } + fadeIn() with slideOutHorizontally { -100 } + fadeOut()).apply {
+                            targetContentZIndex = 2f
+                        }
 //                        slideInHorizontally { it }.with(
 //                            scaleOut(tween(200), 0.9f) + fadeOut(
 //                                tween(
@@ -460,77 +455,76 @@ fun MessagePage(
 //                        ).apply {
 //                            targetContentZIndex = 2f
 //                        }
-                        } else if (targetState == AreaState.MessageArea && initialState == AreaState.ArchiveArea) {
-                            (slideInHorizontally { -100 } + fadeIn() with slideOutHorizontally { 100 } + fadeOut()).apply {
-                                targetContentZIndex = 1f
-                            }
+                    } else if (targetState == AreaState.MessageArea && initialState == AreaState.ArchiveArea) {
+                        (slideInHorizontally { -100 } + fadeIn() with slideOutHorizontally { 100 } + fadeOut()).apply {
+                            targetContentZIndex = 1f
+                        }
 //                        (scaleIn(
 //                            tween(200),
 //                            0.9f
 //                        ) + fadeIn(tween(200))).with(slideOutHorizontally { it }).apply {
 //                            targetContentZIndex = 1f
 //                        }
-                        } else {
-                            fadeIn() with fadeOut()
-                        }
-                    }) {
-                    when (it) {
-                        AreaState.MessageArea -> MessageArea(
-                            Modifier,
-                            listState,
-                            paddingValues,
-                            viewModel,
-                            messageState,
-                            contactState,
-                            archivedContact,
-                            coroutineScope,
-                            snackBarHostState,
-                            mainSharedViewModel,
-                            sizeClass,
-                            shimmerInstance,
-                            mainNavController
-                        )
-                        AreaState.SearchArea -> SearchArea(
-                            Modifier,
-                            paddingValues,
-                            viewModel,
-                            coroutineScope,
-                            snackBarHostState,
-                            mainSharedViewModel,
-                            sizeClass,
-                            shimmerInstance,
-                            mainNavController
-                        )
-                        AreaState.ArchiveArea -> ArchiveArea(
-                            Modifier,
-                            paddingValues,
-                            viewModel,
-                            archivedContact,
-                            coroutineScope,
-                            snackBarHostState,
-                            mainSharedViewModel,
-                            messageState,
-                            sizeClass,
-                            shimmerInstance,
-                            mainNavController
-                        )
-                        else -> {}
+                    } else {
+                        fadeIn() with fadeOut()
                     }
+                }) {
+                when (it) {
+                    AreaState.MessageArea -> MessageArea(
+                        Modifier,
+                        listState,
+                        paddingValues,
+                        viewModel,
+                        messageState,
+                        contactState,
+                        archivedContact,
+                        coroutineScope,
+                        snackBarHostState,
+                        mainSharedViewModel,
+                        sizeClass,
+                        shimmerInstance,
+                        mainNavController
+                    )
+                    AreaState.SearchArea -> SearchArea(
+                        Modifier,
+                        paddingValues,
+                        viewModel,
+                        coroutineScope,
+                        snackBarHostState,
+                        mainSharedViewModel,
+                        sizeClass,
+                        shimmerInstance,
+                        mainNavController
+                    )
+                    AreaState.ArchiveArea -> ArchiveArea(
+                        Modifier,
+                        paddingValues,
+                        viewModel,
+                        archivedContact,
+                        coroutineScope,
+                        snackBarHostState,
+                        mainSharedViewModel,
+                        messageState,
+                        sizeClass,
+                        shimmerInstance,
+                        mainNavController
+                    )
+                    else -> {}
                 }
+            }
 
-            }
-            // Right
-            if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) {
-                ChatPage(
-                    modifier = Modifier.weight(1f),
-                    navigator = navigator,
-                    mainNavController = mainNavController,
-                    mainSharedViewModel = mainSharedViewModel,
-                    sizeClass = sizeClass,
-                    onEvent = onEvent,
-                    isInSplitScreen = true
-                )
-            }
+        }
+        // Right
+        if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) {
+            ChatPage(
+                modifier = Modifier.weight(1f),
+                navigator = navigator,
+                mainNavController = mainNavController,
+                mainSharedViewModel = mainSharedViewModel,
+                sizeClass = sizeClass,
+                onEvent = onEvent,
+                isInSplitScreen = true
+            )
         }
     }
 
