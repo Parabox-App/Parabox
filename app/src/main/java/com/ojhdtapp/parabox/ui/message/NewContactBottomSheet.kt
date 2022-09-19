@@ -94,6 +94,7 @@ fun NewContactBottomSheet(
                         modifier = Modifier.padding(vertical = 16.dp),
                         items = listOf("私人会话", "群聊")
                     ) {
+                        mainSharedViewModel.setIdInput("")
                         when (it) {
                             0 -> mainSharedViewModel.setSendTargetType(SendTargetType.USER)
                             1 -> mainSharedViewModel.setSendTargetType(SendTargetType.GROUP)
@@ -204,6 +205,9 @@ fun NewContactBottomSheet(
                             coroutineScope.launch {
                                 sheetState.hide()
                             }
+                            mainSharedViewModel.setSelectedExtensionId(null)
+                            mainSharedViewModel.setSendTargetType(SendTargetType.USER)
+                            mainSharedViewModel.setIdInput("")
                         }) {
                             Text(text = "取消")
                         }
