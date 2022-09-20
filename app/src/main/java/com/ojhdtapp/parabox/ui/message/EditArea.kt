@@ -94,6 +94,7 @@ fun EditArea(
     isBottomSheetExpand: Boolean,
     packageNameList: List<String>,
     quoteMessageSelected: Message?,
+    at: At?,
     audioState: Boolean,
     audioRecorderState: AudioRecorderState,
     memeUpdateFlag: Int = 0,
@@ -594,7 +595,7 @@ fun EditArea(
                     }
 
                 }
-                AnimatedVisibility(visible = ((textFieldValueState.text.isNotEmpty() || gallerySelected.isNotEmpty() || cameraSelected.isNotEmpty() || quoteMessageSelected != null) && !audioState) || (audioRecorderState is AudioRecorderState.Done && audioState),
+                AnimatedVisibility(visible = ((textFieldValueState.text.isNotEmpty() || gallerySelected.isNotEmpty() || cameraSelected.isNotEmpty() || quoteMessageSelected != null || at != null) && !audioState) || (audioRecorderState is AudioRecorderState.Done && audioState),
 //                    enter = slideInHorizontally { width -> width },
 //                    exit = slideOutHorizontally { width -> width }
                     enter = expandHorizontally() { width -> 0 },
@@ -618,6 +619,9 @@ fun EditArea(
                                             quoteMessageContent = quoteMessageSelected.contents.toMessageContentList()
                                         )
                                     )
+                                }
+                                if (at != null) {
+                                    content.add(at)
                                 }
                                 if (textFieldValueState.text.isNotEmpty()) {
                                     content.add(PlainText(textFieldValueState.text))

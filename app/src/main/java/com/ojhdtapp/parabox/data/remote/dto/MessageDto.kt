@@ -75,7 +75,7 @@ fun ReceiveMessageDto.toMessageEntity(context: Context): MessageEntity {
 //}
 
 fun com.ojhdtapp.messagedto.Profile.toProfile(): Profile {
-    return Profile(this.name, this.avatar, null)
+    return Profile(this.name, this.avatar, null, this.id)
 }
 
 fun List<com.ojhdtapp.messagedto.message_content.MessageContent>.toMessageContentList(context: Context): List<MessageContent> {

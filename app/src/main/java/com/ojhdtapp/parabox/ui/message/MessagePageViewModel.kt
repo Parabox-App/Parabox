@@ -511,8 +511,8 @@ class MessagePageViewModel @Inject constructor(
             handleNewMessage(
                 ReceiveMessageDto(
                     listOf(com.ojhdtapp.messagedto.message_content.PlainText("Hello at ${System.currentTimeMillis()}")),
-                    com.ojhdtapp.messagedto.Profile("Ojhdt", null),
-                    com.ojhdtapp.messagedto.Profile("Ojhdt-Group", null),
+                    com.ojhdtapp.messagedto.Profile("Ojhdt", null, null),
+                    com.ojhdtapp.messagedto.Profile("Ojhdt-Group", null, null),
                     System.currentTimeMillis(),
                     null,
                     com.ojhdtapp.messagedto.PluginConnection(1, 1, 1)

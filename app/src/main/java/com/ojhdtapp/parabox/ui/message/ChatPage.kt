@@ -127,6 +127,7 @@ fun ChatPage(
                     },
                     onSend = {
                         mainSharedViewModel.clearQuoteMessage()
+                        mainSharedViewModel.clearAt()
                         val selectedPluginConnection = messageState.selectedPluginConnection
                             ?: messageState.pluginConnectionList.firstOrNull()
                         if (selectedPluginConnection == null) {
@@ -701,12 +702,12 @@ fun NormalChatPage(
         },
         floatingActionButton = {
             AnimatedVisibility(
-                visible = mainSharedViewModel.recordAmplitudeStateList.isNotEmpty() || mainSharedViewModel.quoteMessageState.value != null || fabExtended,
+                visible = mainSharedViewModel.recordAmplitudeStateList.isNotEmpty() || mainSharedViewModel.quoteMessageState.value != null || mainSharedViewModel.atState.value != null || fabExtended,
                 enter = slideInHorizontally { it * 2 }  // slide in from the right
                 , exit = slideOutHorizontally { it * 2 } // slide out to the right
             ) {
                 ExtendedFloatingActionButton(
-                    expanded = mainSharedViewModel.recordAmplitudeStateList.isNotEmpty() || mainSharedViewModel.quoteMessageState.value != null && quoteExtended,
+                    expanded = mainSharedViewModel.recordAmplitudeStateList.isNotEmpty() || mainSharedViewModel.quoteMessageState.value != null || mainSharedViewModel.atState.value != null && quoteExtended,
                     onClick = {
                         if (mainSharedViewModel.recordAmplitudeStateList.isNotEmpty()) {
                             if (mainSharedViewModel.audioRecorderState.value.let {
@@ -749,8 +750,9 @@ fun NormalChatPage(
                                 } -> 1
                                 mainSharedViewModel.recordAmplitudeStateList.isNotEmpty() && mainSharedViewModel.isAudioPlaying.value -> 2
                                 mainSharedViewModel.recordAmplitudeStateList.isNotEmpty() -> 3
-                                mainSharedViewModel.quoteMessageState.value != null -> 4
-                                else -> 5
+                                mainSharedViewModel.atState.value != null -> 4
+                                mainSharedViewModel.quoteMessageState.value != null -> 5
+                                else -> 6
                             }
                         ) {
                             when (it) {
@@ -767,6 +769,10 @@ fun NormalChatPage(
                                     contentDescription = "resume"
                                 )
                                 4 -> Icon(
+                                    imageVector = Icons.Outlined.AlternateEmail,
+                                    contentDescription = "at"
+                                )
+                                5 -> Icon(
                                     imageVector = Icons.Outlined.Reply,
                                     contentDescription = "reply"
                                 )
@@ -794,30 +800,55 @@ fun NormalChatPage(
                                     }
                                 )
                             } else {
-                                mainSharedViewModel.quoteMessageState.value?.let {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Column(modifier = Modifier.widthIn(0.dp, 208.dp)) {
+                                if (mainSharedViewModel.quoteMessageState.value == null) {
+                                    mainSharedViewModel.atState.value?.let {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
                                             Text(
-                                                text = it.profile.name,
-                                                style = MaterialTheme.typography.labelMedium,
+                                                modifier = Modifier.widthIn(0.dp, 208.dp),
+                                                text = it.name,
                                                 color = MaterialTheme.colorScheme.primary,
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis
                                             )
-                                            Text(
-                                                text = it.contents.getContentString(),
-                                                style = MaterialTheme.typography.labelMedium,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
+                                            IconButton(onClick = { mainSharedViewModel.clearAt() }) {
+                                                Icon(
+                                                    modifier = Modifier.size(18.dp),
+                                                    imageVector = Icons.Outlined.Close,
+                                                    contentDescription = "cancel"
+                                                )
+                                            }
                                         }
-                                        IconButton(onClick = { mainSharedViewModel.clearQuoteMessage() }) {
-                                            Icon(
-                                                imageVector = Icons.Outlined.Close,
-                                                contentDescription = "cancel"
-                                            )
+                                    }
+                                } else {
+                                    mainSharedViewModel.quoteMessageState.value?.let {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column(modifier = Modifier.widthIn(0.dp, 208.dp)) {
+                                                Text(
+//                                                    text = "${if(mainSharedViewModel.atState.value!=null)"@" else ""}${it.profile.name}",
+                                                    text = it.profile.name,
+                                                    style = MaterialTheme.typography.labelMedium,
+                                                    color = MaterialTheme.colorScheme.primary,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                                Text(
+                                                    text = it.contents.getContentString(),
+                                                    style = MaterialTheme.typography.labelMedium,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                            }
+                                            IconButton(onClick = { mainSharedViewModel.clearQuoteMessage() }) {
+                                                Icon(
+                                                    modifier = Modifier.size(18.dp),
+                                                    imageVector = Icons.Outlined.Close,
+                                                    contentDescription = "cancel"
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -832,6 +863,7 @@ fun NormalChatPage(
                 isBottomSheetExpand = scaffoldState.bottomSheetState.isExpanded,
                 packageNameList = pluginPackageNameList,
                 quoteMessageSelected = mainSharedViewModel.quoteMessageState.value,
+                at = mainSharedViewModel.atState.value,
                 audioState = audioState,
                 audioRecorderState = mainSharedViewModel.audioRecorderState.value,
                 memeUpdateFlag = memeUpdateFlag,
@@ -1091,6 +1123,17 @@ fun NormalChatPage(
                             },
                             onAudioClick = { uri, url ->
                                 onStartAudioPlaying(uri, url)
+                            },
+                            onAvatarLongClick = {
+                                value.profile.id?.let { id ->
+                                    mainSharedViewModel.setAtState(
+                                        com.ojhdtapp.messagedto.message_content.At(
+                                            target = id,
+                                            name = value.profile.name,
+                                        )
+                                    )
+                                    onVibrate()
+                                }
                             }
                         )
                     }
@@ -1178,7 +1221,8 @@ fun MessageBlock(
     onMessageClick: () -> Unit,
     onMessageLongClick: () -> Unit,
     onQuoteReplyClick: (messageId: Long) -> Unit,
-    onAudioClick: (uri: Uri?, url: String?) -> Unit
+    onAudioClick: (uri: Uri?, url: String?) -> Unit,
+    onAvatarLongClick: () -> Unit,
 ) {
     Column() {
         if (shouldShowTimeDivider) {
@@ -1222,7 +1266,9 @@ fun MessageBlock(
                 MessageAvatar(
                     shouldDisplay = isFirst,
                     avatar = null,
-                    avatarUri = avatarUri
+                    avatarUri = avatarUri,
+                    onClick = {},
+                    onLongClick = onAvatarLongClick,
                 )
                 Spacer(modifier = Modifier.width(16.dp))
             } else {
@@ -1230,7 +1276,9 @@ fun MessageBlock(
                 MessageAvatar(
                     shouldDisplay = isFirst,
                     avatar = message.profile.avatar,
-                    avatarUri = null
+                    avatarUri = null,
+                    onClick = {},
+                    onLongClick = onAvatarLongClick,
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
@@ -1265,12 +1313,15 @@ fun MessageBlock(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MessageAvatar(
     modifier: Modifier = Modifier,
     shouldDisplay: Boolean,
     avatar: String?,
-    avatarUri: String?
+    avatarUri: String?,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
 ) =
     Box(modifier = Modifier.size(42.dp)) {
         if (shouldDisplay) {
@@ -1285,6 +1336,11 @@ fun MessageAvatar(
                 modifier = Modifier
                     .fillMaxSize()
                     .clip(CircleShape)
+                    .combinedClickable(
+                        enabled = true,
+                        onClick = onClick,
+                        onLongClick = onLongClick
+                    )
             )
         }
     }
@@ -1607,8 +1663,8 @@ private fun MessageContent.toLayout(
     when (this) {
         is At, AtAll -> Text(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
-            text = getContentString(),
-            color = MaterialTheme.colorScheme.primary
+            text = "@${getContentString()}",
+            color = textColor,
         )
         is PlainText -> SelectionContainer {
             Text(

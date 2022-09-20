@@ -15,6 +15,7 @@ import androidx.paging.PagingSource
 import androidx.paging.cachedIn
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.ojhdtapp.messagedto.SendTargetType
+import com.ojhdtapp.messagedto.message_content.At
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.dataStore
@@ -169,15 +170,31 @@ class MainSharedViewModel @Inject constructor(
     fun setQuoteMessage(value: Message?, name: String? = null) {
         if (value?.sentByMe == true && name != null) {
             _quoteMessageState.value = value.copy(
-                profile = Profile(name = name, null, null)
+                profile = Profile(name = name, null, null, null)
             )
         } else {
             _quoteMessageState.value = value
+        }
+        if(value != null && _atState.value?.target != value.profile.id){
+            clearAt()
         }
     }
 
     fun clearQuoteMessage() {
         _quoteMessageState.value = null
+    }
+
+    // At
+    private val _atState = mutableStateOf<At?>(null)
+    val atState : State<At?> = _atState
+    fun setAtState(value : At?){
+        _atState.value = value
+        if(value != null && value.target != _quoteMessageState.value?.profile?.id){
+            clearQuoteMessage()
+        }
+    }
+    fun clearAt(){
+        _atState.value = null
     }
 
     // User name

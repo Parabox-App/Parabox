@@ -129,7 +129,7 @@ class MainRepositoryImpl @Inject constructor(
             val contactIdDeferred = async<Long> {
                 database.contactDao.insertContact(
                     ContactEntity(
-                        profile = Profile(pluginConnection.id.toString(), null, null),
+                        profile = Profile(pluginConnection.id.toString(), null, null, pluginConnection.id),
                         latestMessage = LatestMessage(
                             sender = userName,
                             content = contents.getContentString(),
@@ -214,7 +214,7 @@ class MainRepositoryImpl @Inject constructor(
         return database.messageDao.insertMessage(
             MessageEntity(
                 contents = contents.toMessageContentList(context),
-                profile = Profile("", null, null),
+                profile = Profile("", null, null, null),
                 timestamp = timestamp,
                 messageId = sendId,
                 sentByMe = true,
@@ -436,7 +436,8 @@ class MainRepositoryImpl @Inject constructor(
                         profile = Profile(
                             name = name,
                             avatar = avatar,
-                            avatarUri = avatarUri
+                            avatarUri = avatarUri,
+                            id = null,
                         ),
                         latestMessage = LatestMessage("", "", System.currentTimeMillis(), 0),
                         senderId = senderId,
