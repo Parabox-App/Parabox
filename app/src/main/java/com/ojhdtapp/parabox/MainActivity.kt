@@ -547,7 +547,6 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 delay(2000)
-                Log.d("parabox", "isPluginServiceNull: ${pluginService == null}")
                 pluginService?.getPluginListFlow()?.collectLatest {
                     mainSharedViewModel.setPluginListStateFlow(it)
                 }

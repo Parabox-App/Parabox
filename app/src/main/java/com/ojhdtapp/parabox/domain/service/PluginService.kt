@@ -45,6 +45,7 @@ class PluginService : LifecycleService() {
 
     @Inject
     lateinit var deleteMessage: DeleteMessage
+
     private var installedPluginList = emptyList<ApplicationInfo>()
     private var appModelList = emptyList<AppModel>()
     private val pluginConnectionMap = mutableMapOf<Int, PluginConnObj>()
@@ -124,8 +125,12 @@ class PluginService : LifecycleService() {
                     }
                 },
                 this@PluginService,
+                lifecycleScope,
                 it.packageName,
-                it.packageName + ".domain.service.ConnService"
+                it.packageName + ".domain.service.ConnService",
+                handleNewMessage,
+                updateMessage,
+                deleteMessage,
             )
             pluginConnectionMap.put(it.connectionType, pluginConnObj)
             pluginConnObj.connect()
@@ -143,7 +148,6 @@ class PluginService : LifecycleService() {
                         "parabox",
                         "status:${connObj?.getRunningStatus() ?: AppModel.RUNNING_STATUS_DISABLED}"
                     )
-                    connObj?.refreshRunningStatus()
                     it.copy(
                         runningStatus = connObj?.getRunningStatus()
                             ?: AppModel.RUNNING_STATUS_DISABLED
