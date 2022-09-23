@@ -92,9 +92,7 @@ class PluginService : LifecycleService() {
     }
 
     override fun onDestroy() {
-        pluginConnectionMap.forEach {
-            unbindService(it.value.getServiceConnection())
-        }
+        unbindPlugins()
         super.onDestroy()
     }
 
@@ -134,7 +132,12 @@ class PluginService : LifecycleService() {
             )
             pluginConnectionMap.put(it.connectionType, pluginConnObj)
             pluginConnObj.connect()
-            pluginConnObj.refreshRunningStatus()
+        }
+    }
+
+    private fun unbindPlugins() {
+        pluginConnectionMap.forEach {
+            it.value.disconnect()
         }
     }
 

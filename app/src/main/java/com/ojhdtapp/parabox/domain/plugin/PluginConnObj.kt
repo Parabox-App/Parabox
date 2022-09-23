@@ -45,6 +45,8 @@ class PluginConnObj(
             Log.d("parabox", "bind status: true")
             sMessenger = Messenger(p1)
             isConnected = true
+            // temp
+            refreshRunningStatus()
         }
 
         override fun onServiceDisconnected(p0: ComponentName?) {
@@ -73,7 +75,11 @@ class PluginConnObj(
         )
     }
 
-    fun getServiceConnection(): ServiceConnection = serviceConnection
+    fun disconnect(){
+        ctx.unbindService(serviceConnection)
+    }
+//
+//    fun getServiceConnection(): ServiceConnection = serviceConnection
 
     fun send(dto: SendMessageDto) {
         sendCommand(
@@ -113,14 +119,26 @@ class PluginConnObj(
     }
 
     fun refreshRunningStatus() {
+        Log.d("parabox", "sMessenger welcome: $sMessenger")
         if (isConnected) {
-            val timestamp = System.currentTimeMillis()
-            sMessenger?.send(Message.obtain(null, ConnKey.MSG_MESSAGE, Bundle().apply {
-                putInt("command", ConnKey.MSG_MESSAGE_CHECK_RUNNING_STATUS)
-                putLong("timestamp", timestamp)
-            }).apply {
-                replyTo = cMessenger
-            })
+//            val timestamp = System.currentTimeMillis()
+//            sMessenger?.send(Message.obtain(null, ConnKey.MSG_MESSAGE, Bundle().apply {
+//                putInt("command", ConnKey.MSG_MESSAGE_CHECK_RUNNING_STATUS)
+//                putLong("timestamp", timestamp)
+//            }).apply {
+//                replyTo = cMessenger
+//            })
+            sMessenger?.send(
+                Message.obtain(null, 0 ,ParaboxKey.CLIENT_MAIN_APP, 0, Bundle().apply {
+                    putParcelable("metadata", ParaboxMetadata(
+                        0,
+                        System.currentTimeMillis(),
+                        ParaboxKey.CLIENT_MAIN_APP
+                    ))
+                }).apply {
+                    replyTo = cMessenger
+                }
+            )
         }
     }
 
@@ -282,6 +300,7 @@ class PluginConnObj(
 
     inner class ConnHandler : Handler() {
         override fun handleMessage(msg: Message) {
+            Log.d("parabox", "msg comming!:${msg}")
             val obj = msg.obj as Bundle
             when (msg.arg2) {
                 ParaboxKey.TYPE_REQUEST -> {
