@@ -11,8 +11,6 @@ import com.ojhdtapp.messagedto.ParaboxMetadata
 import com.ojhdtapp.messagedto.ReceiveMessageDto
 import com.ojhdtapp.messagedto.SendMessageDto
 import com.ojhdtapp.parabox.domain.model.AppModel
-import com.ojhdtapp.parabox.domain.service.ConnKey
-import com.ojhdtapp.parabox.domain.service.PluginListListener
 import com.ojhdtapp.parabox.domain.use_case.DeleteMessage
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
 import com.ojhdtapp.parabox.domain.use_case.UpdateMessage
@@ -42,7 +40,7 @@ class PluginConnObj(
             sMessenger = Messenger(p1)
             isConnected = true
             getState()
-            getUnreceivedMessage()
+            refreshMessage()
         }
 
         override fun onServiceDisconnected(p0: ComponentName?) {
@@ -139,11 +137,11 @@ class PluginConnObj(
         )
     }
 
-    fun getUnreceivedMessage() {
+    fun refreshMessage() {
         Log.d("parabox", "sMessenger welcome: $sMessenger")
         if (isConnected) {
             sendCommand(
-                command = ParaboxKey.COMMAND_GET_UNRECEIVED_MESSAGE,
+                command = ParaboxKey.COMMAND_REFRESH_MESSAGE,
                 onResult = {}
             )
         }

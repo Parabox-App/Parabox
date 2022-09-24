@@ -1,9 +1,5 @@
 package com.ojhdtapp.parabox.toolkit
 
-import android.os.Bundle
-import android.os.Parcelable
-import kotlinx.parcelize.Parcelize
-
 object ParaboxKey {
     const val CLIENT_MAIN_APP = 255650
     const val CLIENT_CONTROLLER = 255651
@@ -19,7 +15,7 @@ object ParaboxKey {
     const val COMMAND_FORCE_STOP_SERVICE = 2556512
     const val COMMAND_SEND_MESSAGE = 2556513
     const val COMMAND_RECALL_MESSAGE = 2556514
-    const val COMMAND_GET_UNRECEIVED_MESSAGE = 2556515
+    const val COMMAND_REFRESH_MESSAGE = 2556515
     const val COMMAND_GET_STATE = 2556516
 
     const val NOTIFICATION_STATE_UPDATE = 2556520
