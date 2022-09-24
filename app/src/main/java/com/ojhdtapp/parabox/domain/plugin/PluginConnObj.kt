@@ -12,6 +12,7 @@ import com.ojhdtapp.messagedto.ReceiveMessageDto
 import com.ojhdtapp.messagedto.SendMessageDto
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.service.ConnKey
+import com.ojhdtapp.parabox.domain.service.PluginListListener
 import com.ojhdtapp.parabox.domain.use_case.DeleteMessage
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
 import com.ojhdtapp.parabox.domain.use_case.UpdateMessage
@@ -29,16 +30,18 @@ class PluginConnObj(
     private val coroutineScope: CoroutineScope,
     private val pkg: String,
     private val cls: String,
+    private val connectionType: Int,
     val handleNewMessage: HandleNewMessage,
     val updateMessage: UpdateMessage,
     val deleteMessage: DeleteMessage,
+    val onRunningStatusChange: (connectionType: Int, status: Int) -> Unit,
 ) {
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
             Log.d("parabox", "bind status: true")
             sMessenger = Messenger(p1)
             isConnected = true
-            // temp
+            getState()
             getUnreceivedMessage()
         }
 
@@ -114,6 +117,28 @@ class PluginConnObj(
         return runningStatus
     }
 
+    fun getState() {
+        Log.d("parabox", "state get begin!")
+        sendCommand(
+            command = ParaboxKey.COMMAND_GET_STATE,
+            onResult = {
+                Log.d("parabox", "state result back!: $it")
+                if (it is ParaboxResult.Success) {
+                    val state = it.obj.getInt("state")
+                    val transformState = when(state){
+                        ParaboxKey.STATE_ERROR -> AppModel.RUNNING_STATUS_ERROR
+                        ParaboxKey.STATE_LOADING -> AppModel.RUNNING_STATUS_CHECKING
+                        ParaboxKey.STATE_PAUSE -> AppModel.RUNNING_STATUS_CHECKING
+                        ParaboxKey.STATE_STOP -> AppModel.RUNNING_STATUS_DISABLED
+                        ParaboxKey.STATE_RUNNING -> AppModel.RUNNING_STATUS_RUNNING
+                        else -> AppModel.RUNNING_STATUS_DISABLED
+                    }
+                    onRunningStatusChange(connectionType, transformState)
+                }
+            }
+        )
+    }
+
     fun getUnreceivedMessage() {
         Log.d("parabox", "sMessenger welcome: $sMessenger")
         if (isConnected) {
@@ -151,18 +176,6 @@ class PluginConnObj(
 //                replyTo = cMessenger
 //            })
 //        }
-    }
-
-    fun tryAutoLogin() {
-        if (isConnected) {
-            val timestamp = System.currentTimeMillis()
-            sMessenger?.send(Message.obtain(null, ConnKey.MSG_MESSAGE, Bundle().apply {
-                putInt("command", ConnKey.MSG_MESSAGE_TRY_AUTO_LOGIN)
-                putLong("timestamp", timestamp)
-            }).apply {
-                replyTo = cMessenger
-            })
-        }
     }
 
     fun sendCommand(
@@ -330,6 +343,7 @@ class PluginConnObj(
                                         }
                                     }
                                 }
+
                                 else -> {}
                             }
 
@@ -400,6 +414,7 @@ class PluginConnObj(
                                 ParaboxKey.STATE_RUNNING -> AppModel.RUNNING_STATUS_RUNNING
                                 else -> AppModel.RUNNING_STATUS_DISABLED
                             }
+                            onRunningStatusChange(connectionType, runningStatus)
                         }
                     }
                 }

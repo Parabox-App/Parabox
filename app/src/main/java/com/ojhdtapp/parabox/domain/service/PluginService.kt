@@ -49,6 +49,7 @@ class PluginService : LifecycleService() {
     private var installedPluginList = emptyList<ApplicationInfo>()
     private var appModelList = emptyList<AppModel>()
     private val pluginConnectionMap = mutableMapOf<Int, PluginConnObj>()
+    private var pluginListListener: PluginListListener? = null
 
     override fun onBind(intent: Intent): IBinder {
         super.onBind(intent)
@@ -72,7 +73,7 @@ class PluginService : LifecycleService() {
         appModelList = installedPluginList.map {
             val connectionType = it.metaData?.getInt("connection_type") ?: 0
             val connectionName = it.metaData?.getString("connection_name") ?: "Unknown"
-            PluginService.pluginTypeMap.put(connectionType, connectionName)
+            PluginService.pluginTypeMap[connectionType] = connectionName
             AppModel(
                 name = it.loadLabel(packageManager).toString(),
                 icon = it.loadIcon(packageManager),
@@ -99,17 +100,26 @@ class PluginService : LifecycleService() {
 
     // Call Only Once
     private fun bindPlugins() {
-        appModelList.forEach {
+        appModelList.forEach { appModel ->
             val pluginConnObj = PluginConnObj(
-                this@PluginService,
-                lifecycleScope,
-                it.packageName,
-                it.packageName + ".domain.service.ConnService",
-                handleNewMessage,
-                updateMessage,
-                deleteMessage,
+                ctx = this@PluginService,
+                coroutineScope =  lifecycleScope,
+                pkg = appModel.packageName,
+                cls = appModel.packageName + ".domain.service.ConnService",
+                connectionType = appModel.connectionType,
+                handleNewMessage = handleNewMessage,
+                updateMessage = updateMessage,
+                deleteMessage =  deleteMessage,
+                onRunningStatusChange = {connectionType, status ->
+                    Log.d("parabox", "stated changed received: $status")
+                    pluginListListener?.onPluginListChange(
+                        appModelList.map {
+                            if(it.connectionType == connectionType) it.copy(runningStatus = status) else it
+                        }
+                    )
+                }
             )
-            pluginConnectionMap[it.connectionType] = pluginConnObj
+            pluginConnectionMap[appModel.connectionType] = pluginConnObj
             pluginConnObj.connect()
         }
     }
@@ -119,26 +129,30 @@ class PluginService : LifecycleService() {
             it.value.disconnect()
         }
     }
-
-    fun getPluginListFlow(): Flow<List<AppModel>> {
-        Log.d("parabox", "begin creating flow")
-        return flow {
-            while (true) {
-                emit(appModelList.map {
-                    val connObj = pluginConnectionMap[it.connectionType]
-                    Log.d(
-                        "parabox",
-                        "status:${connObj?.getRunningStatus() ?: AppModel.RUNNING_STATUS_DISABLED}"
-                    )
-                    it.copy(
-                        runningStatus = connObj?.getRunningStatus()
-                            ?: AppModel.RUNNING_STATUS_DISABLED
-                    )
-                })
-                delay(2000)
-            }
-        }
+    
+    fun setPluginListListener(listener: PluginListListener){
+        pluginListListener = listener
     }
+
+//    fun getPluginListFlow(): Flow<List<AppModel>> {
+//        Log.d("parabox", "begin creating flow")
+//        return flow {
+//            while (true) {
+//                emit(appModelList.map {
+//                    val connObj = pluginConnectionMap[it.connectionType]
+//                    Log.d(
+//                        "parabox",
+//                        "status:${connObj?.getRunningStatus() ?: AppModel.RUNNING_STATUS_DISABLED}"
+//                    )
+//                    it.copy(
+//                        runningStatus = connObj?.getRunningStatus()
+//                            ?: AppModel.RUNNING_STATUS_DISABLED
+//                    )
+//                })
+//                delay(2000)
+//            }
+//        }
+//    }
 
     fun sendMessage(dto: SendMessageDto) {
         val type = dto.pluginConnection.connectionType

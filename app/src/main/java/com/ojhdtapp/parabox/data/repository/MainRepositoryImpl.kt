@@ -85,18 +85,21 @@ class MainRepositoryImpl @Inject constructor(
                 })
             }
             // If MessageContent Type is File ...
-            dto.contents.filterIsInstance<com.ojhdtapp.messagedto.message_content.File>().forEach {
-                database.fileDao.insertFile(
-                    FileEntity(
-                        url = it.url!!,
-                        name = it.name,
-                        extension = it.extension,
-                        size = it.size,
-                        timestamp = it.lastModifiedTime,
-                        profileName = dto.subjectProfile.name,
-                        relatedMessageId = messageIdDeferred.await()
-                    )
-                )
+            if (messageIdDeferred.await() != -1L) {
+                dto.contents.filterIsInstance<com.ojhdtapp.messagedto.message_content.File>()
+                    .forEach {
+                        database.fileDao.insertFile(
+                            FileEntity(
+                                url = it.url!!,
+                                name = it.name,
+                                extension = it.extension,
+                                size = it.size,
+                                timestamp = it.lastModifiedTime,
+                                profileName = dto.subjectProfile.name,
+                                relatedMessageId = messageIdDeferred.await()
+                            )
+                        )
+                    }
             }
         }
 //        database.messageDao.insertMessage(dto.toMessageEntity())
@@ -129,7 +132,12 @@ class MainRepositoryImpl @Inject constructor(
             val contactIdDeferred = async<Long> {
                 database.contactDao.insertContact(
                     ContactEntity(
-                        profile = Profile(pluginConnection.id.toString(), null, null, pluginConnection.id),
+                        profile = Profile(
+                            pluginConnection.id.toString(),
+                            null,
+                            null,
+                            pluginConnection.id
+                        ),
                         latestMessage = LatestMessage(
                             sender = userName,
                             content = contents.getContentString(),

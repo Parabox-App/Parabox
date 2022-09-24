@@ -44,7 +44,9 @@ import com.google.android.material.datepicker.MaterialDatePicker
 import com.ojhdtapp.messagedto.SendMessageDto
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.data.local.entity.DownloadingState
+import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.model.File
+import com.ojhdtapp.parabox.domain.service.PluginListListener
 import com.ojhdtapp.parabox.domain.service.PluginService
 import com.ojhdtapp.parabox.domain.use_case.GetFiles
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
@@ -544,14 +546,14 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Receive Status Flow
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                delay(2000)
-                pluginService?.getPluginListFlow()?.collectLatest {
-                    mainSharedViewModel.setPluginListStateFlow(it)
-                }
-            }
-        }
+//        lifecycleScope.launch {
+//            repeatOnLifecycle(Lifecycle.State.STARTED) {
+//                delay(2000)
+//                pluginService?.getPluginListFlow()?.collectLatest {
+//                    mainSharedViewModel.setPluginListStateFlow(it)
+//                }
+//            }
+//        }
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {
@@ -651,7 +653,13 @@ class MainActivity : AppCompatActivity() {
         pluginServiceConnection = object : ServiceConnection {
             override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
                 Log.d("parabox", "mainActivity - service connected")
-                pluginService = (p1 as PluginService.PluginServiceBinder).getService()
+                pluginService = (p1 as PluginService.PluginServiceBinder).getService().also {
+                    it.setPluginListListener(object : PluginListListener{
+                        override fun onPluginListChange(pluginList: List<AppModel>) {
+                            mainSharedViewModel.setPluginListStateFlow(pluginList)
+                        }
+                    })
+                }
             }
 
             override fun onServiceDisconnected(p0: ComponentName?) {
