@@ -92,36 +92,15 @@ class PluginService : LifecycleService() {
     }
 
     override fun onDestroy() {
-        unbindPlugins()
+        Log.d("parabox", "onDestroy called")
         super.onDestroy()
+        unbindPlugins()
     }
 
     // Call Only Once
     private fun bindPlugins() {
         appModelList.forEach {
             val pluginConnObj = PluginConnObj(
-                {
-                    lifecycleScope.launch(Dispatchers.IO) {
-                        handleNewMessage(it)
-                    }
-
-                },
-                { id: Long, value: Boolean ->
-                    lifecycleScope.launch(Dispatchers.IO) {
-                        Log.d("parabox", "response received: ${id}")
-                        updateMessage.verifiedState(id, value)
-                    }
-                },
-                { id: Long, value: Boolean ->
-                    if (value) {
-                        Toast.makeText(this, "消息已撤回", Toast.LENGTH_SHORT).show()
-                        lifecycleScope.launch(Dispatchers.IO) {
-                            deleteMessage(id)
-                        }
-                    } else {
-                        Toast.makeText(this, "消息撤回失败", Toast.LENGTH_SHORT).show()
-                    }
-                },
                 this@PluginService,
                 lifecycleScope,
                 it.packageName,
@@ -130,7 +109,7 @@ class PluginService : LifecycleService() {
                 updateMessage,
                 deleteMessage,
             )
-            pluginConnectionMap.put(it.connectionType, pluginConnObj)
+            pluginConnectionMap[it.connectionType] = pluginConnObj
             pluginConnObj.connect()
         }
     }

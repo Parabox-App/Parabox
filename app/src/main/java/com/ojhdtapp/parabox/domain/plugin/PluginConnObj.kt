@@ -7,31 +7,24 @@ import android.content.ServiceConnection
 import android.os.*
 import android.util.Log
 import android.widget.Toast
-import androidx.lifecycle.lifecycleScope
+import com.ojhdtapp.messagedto.ParaboxMetadata
 import com.ojhdtapp.messagedto.ReceiveMessageDto
 import com.ojhdtapp.messagedto.SendMessageDto
-import com.ojhdtapp.parabox.data.local.entity.MessageVerifyStateUpdate
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.service.ConnKey
 import com.ojhdtapp.parabox.domain.use_case.DeleteMessage
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
 import com.ojhdtapp.parabox.domain.use_case.UpdateMessage
 import com.ojhdtapp.parabox.toolkit.ParaboxKey
-import com.ojhdtapp.parabox.toolkit.ParaboxMetadata
-import com.ojhdtapp.parabox.toolkit.ParaboxResult
+import com.ojhdtapp.paraboxdevelopmentkit.connector.ParaboxResult
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
-import javax.inject.Inject
 
 class PluginConnObj(
-    val onNewMessageReceived: (dto: ReceiveMessageDto) -> Unit,
-    val onMessageVerifyStateUpdate: (id: Long, value: Boolean) -> Unit,
-    val onRecallMessageVerifyStateUpdate: (id: Long, value: Boolean) -> Unit,
     private val ctx: Context,
     private val coroutineScope: CoroutineScope,
     private val pkg: String,
@@ -46,7 +39,7 @@ class PluginConnObj(
             sMessenger = Messenger(p1)
             isConnected = true
             // temp
-            refreshRunningStatus()
+            getUnreceivedMessage()
         }
 
         override fun onServiceDisconnected(p0: ComponentName?) {
@@ -75,7 +68,7 @@ class PluginConnObj(
         )
     }
 
-    fun disconnect(){
+    fun disconnect() {
         ctx.unbindService(serviceConnection)
     }
 //
@@ -89,11 +82,14 @@ class PluginConnObj(
             },
             timeoutMillis = 6000,
             onResult = {
+                Log.d("parabox", "result back!:${it}")
                 dto.messageId?.let { messageId ->
-                    if (it is ParaboxResult.Success) {
-                        updateMessage.verifiedState(messageId, true)
-                    } else {
-                        updateMessage.verifiedState(messageId, false)
+                    coroutineScope.launch(Dispatchers.IO) {
+                        if (it is ParaboxResult.Success) {
+                            updateMessage.verifiedState(messageId, true)
+                        } else {
+                            updateMessage.verifiedState(messageId, false)
+                        }
                     }
                 }
             }
@@ -118,44 +114,32 @@ class PluginConnObj(
         return runningStatus
     }
 
-    fun refreshRunningStatus() {
+    fun getUnreceivedMessage() {
         Log.d("parabox", "sMessenger welcome: $sMessenger")
         if (isConnected) {
-//            val timestamp = System.currentTimeMillis()
-//            sMessenger?.send(Message.obtain(null, ConnKey.MSG_MESSAGE, Bundle().apply {
-//                putInt("command", ConnKey.MSG_MESSAGE_CHECK_RUNNING_STATUS)
-//                putLong("timestamp", timestamp)
-//            }).apply {
-//                replyTo = cMessenger
-//            })
-            sMessenger?.send(
-                Message.obtain(null, 0 ,ParaboxKey.CLIENT_MAIN_APP, 0, Bundle().apply {
-                    putParcelable("metadata", ParaboxMetadata(
-                        0,
-                        System.currentTimeMillis(),
-                        ParaboxKey.CLIENT_MAIN_APP
-                    ))
-                }).apply {
-                    replyTo = cMessenger
-                }
+            sendCommand(
+                command = ParaboxKey.COMMAND_GET_UNRECEIVED_MESSAGE,
+                onResult = {}
             )
         }
     }
 
     fun recall(messageId: Long) {
         sendCommand(command = ParaboxKey.COMMAND_RECALL_MESSAGE,
-        extra = Bundle().apply {
-            putLong("messageId", messageId)
-        },
-        timeoutMillis = 3000,
-        onResult = {
-            if (it is ParaboxResult.Success) {
-                Toast.makeText(ctx, "消息已撤回", Toast.LENGTH_SHORT).show()
-                deleteMessage(messageId)
-            } else {
-                Toast.makeText(ctx, "消息撤回失败", Toast.LENGTH_SHORT).show()
-            }
-        })
+            extra = Bundle().apply {
+                putLong("messageId", messageId)
+            },
+            timeoutMillis = 3000,
+            onResult = {
+                if (it is ParaboxResult.Success) {
+                    Toast.makeText(ctx, "消息已撤回", Toast.LENGTH_SHORT).show()
+                    coroutineScope.launch(Dispatchers.IO) {
+                        deleteMessage(messageId)
+                    }
+                } else {
+                    Toast.makeText(ctx, "消息撤回失败", Toast.LENGTH_SHORT).show()
+                }
+            })
 //        if (isConnected) {
 //            val timestamp = System.currentTimeMillis()
 //            sMessenger?.send(Message.obtain(null, ConnKey.MSG_MESSAGE).apply {
@@ -241,7 +225,7 @@ class PluginConnObj(
                         "metadata", ParaboxMetadata(
                             commandOrRequest = command,
                             timestamp = timestamp,
-                            sender = ParaboxKey.CLIENT_CONTROLLER
+                            sender = ParaboxKey.CLIENT_MAIN_APP
                         )
                     )
                 }).apply {
@@ -281,18 +265,22 @@ class PluginConnObj(
         result: ParaboxResult,
         extra: Bundle = Bundle()
     ) {
-        val msg = Message.obtain(
-            null,
-            metadata.commandOrRequest,
-            ParaboxKey.CLIENT_MAIN_APP,
-            ParaboxKey.TYPE_REQUEST,
-            extra.apply {
-                putBoolean("isSuccess", isSuccess)
-                putParcelable("metadata", metadata)
-                putParcelable("result", result)
-            }).apply {
-            replyTo = cMessenger
-        }
+        val errorCode = if (!isSuccess) {
+            (result as ParaboxResult.Fail).errorCode
+        } else 0
+        val msg =
+            Message.obtain(
+                null,
+                metadata.commandOrRequest,
+                ParaboxKey.CLIENT_MAIN_APP,
+                ParaboxKey.TYPE_REQUEST,
+                extra.apply {
+                    putBoolean("isSuccess", isSuccess)
+                    putParcelable("metadata", metadata)
+                    putInt("errorCode", errorCode)
+                }).apply {
+                replyTo = cMessenger
+            }
         Log.d("parabox", "send back to service")
         sMessenger?.send(msg)
 
@@ -300,17 +288,20 @@ class PluginConnObj(
 
     inner class ConnHandler : Handler() {
         override fun handleMessage(msg: Message) {
-            Log.d("parabox", "msg comming!:${msg}")
-            val obj = msg.obj as Bundle
+            Log.d("parabox", "msg comming!:arg1:${msg.arg1};arg2:${msg.arg2};what:${msg.what}")
+            val obj = (msg.obj as Bundle)
             when (msg.arg2) {
                 ParaboxKey.TYPE_REQUEST -> {
-                    val metadata = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        obj.getParcelable("metadata", ParaboxMetadata::class.java)!!
-                    } else {
-                        obj.getParcelable<ParaboxMetadata>("metadata")!!
-                    }
+                    Log.d("parabox", "is request")
                     coroutineScope.launch {
                         try {
+                            obj.classLoader = ParaboxMetadata::class.java.classLoader
+                            val metadata =
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    obj.getParcelable("metadata", ParaboxMetadata::class.java)!!
+                                } else {
+                                    obj.getParcelable<ParaboxMetadata>("metadata")!!
+                                }
                             val deferred =
                                 CompletableDeferred<ParaboxResult>()
                             deferredMap[metadata.timestamp] = deferred
@@ -321,6 +312,7 @@ class PluginConnObj(
                                     obj.classLoader = ReceiveMessageDto::class.java.classLoader
                                     obj.getParcelable<ReceiveMessageDto>("dto").also {
                                         if (it == null) {
+                                            Log.d("parabox", "message is null")
                                             sendRequestResponse(
                                                 isSuccess = false,
                                                 metadata = metadata,
@@ -328,16 +320,16 @@ class PluginConnObj(
                                             )
                                         } else {
                                             Log.d("parabox", "transfer success! value: $it")
-                                            handleNewMessage(it)
+                                            launch(Dispatchers.IO) {
+                                                handleNewMessage(it)
+                                            }
                                             sendRequestResponse(
                                                 isSuccess = true,
                                                 metadata = metadata
                                             )
-//                                            onNewMessageReceived(it)
                                         }
                                     }
                                 }
-
                                 else -> {}
                             }
 
@@ -355,35 +347,52 @@ class PluginConnObj(
                             }
                         } catch (e: RemoteException) {
                             e.printStackTrace()
+                        } catch (e: ClassNotFoundException) {
+                            e.printStackTrace()
                         }
                     }
                 }
 
                 ParaboxKey.TYPE_COMMAND -> {
-                    val metadata = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        obj.getParcelable("metadata", ParaboxMetadata::class.java)!!
-                    } else {
-                        obj.getParcelable<ParaboxMetadata>("metadata")!!
-                    }
-                    val sendTimestamp = metadata.timestamp
-                    val isSuccess = obj.getBoolean("isSuccess")
-                    val result = if (isSuccess) {
-                        obj.getParcelable<ParaboxResult.Success>("result")
-                    } else {
-                        obj.getParcelable<ParaboxResult.Fail>("result")
-                    }
-                    result?.let {
+                    try {
+                        obj.classLoader = ParaboxMetadata::class.java.classLoader
+                        val metadata = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            obj.getParcelable("metadata", ParaboxMetadata::class.java)!!
+                        } else {
+                            obj.getParcelable<ParaboxMetadata>("metadata")!!
+                        }
+                        val sendTimestamp = metadata.timestamp
+                        val isSuccess = obj.getBoolean("isSuccess")
+                        val errorCode = obj.getInt("errorCode")
+                        val result = if (isSuccess) {
+                            ParaboxResult.Success(
+                                command = metadata.commandOrRequest,
+                                timestamp = metadata.timestamp,
+                                obj = obj
+                            )
+                        } else {
+                            ParaboxResult.Fail(
+                                command = metadata.commandOrRequest,
+                                timestamp = metadata.timestamp,
+                                errorCode = errorCode
+                            )
+                        }
                         Log.d("parabox", "try complete second deferred")
-                        deferredMap[sendTimestamp]?.complete(it)
+                        deferredMap[metadata.timestamp]?.complete(result)
+                    } catch (e: NullPointerException) {
+                        e.printStackTrace()
+                    } catch (e: ClassNotFoundException) {
+                        e.printStackTrace()
                     }
                 }
+
                 ParaboxKey.TYPE_NOTIFICATION -> {
                     when (msg.what) {
                         ParaboxKey.NOTIFICATION_STATE_UPDATE -> {
                             val state = obj.getInt("state", ParaboxKey.STATE_ERROR)
                             val message = obj.getString("message", "")
                             Log.d("parabox", "service state changed:${state}")
-                            runningStatus = when(state){
+                            runningStatus = when (state) {
                                 ParaboxKey.STATE_ERROR -> AppModel.RUNNING_STATUS_ERROR
                                 ParaboxKey.STATE_LOADING -> AppModel.RUNNING_STATUS_CHECKING
                                 ParaboxKey.STATE_PAUSE -> AppModel.RUNNING_STATUS_CHECKING
@@ -395,49 +404,6 @@ class PluginConnObj(
                     }
                 }
             }
-
-
-
-//            when (msg.what) {
-//                ConnKey.MSG_MESSAGE -> {
-//                    when ((msg.obj as Bundle).getInt("command", -1)) {
-//                        ConnKey.MSG_MESSAGE_RECEIVE -> {
-//                            msg.data.classLoader = ReceiveMessageDto::class.java.classLoader
-//                            msg.data.getParcelable<ReceiveMessageDto>("value")?.let {
-//                                Log.d("parabox", "transfer success! value: $it")
-//                                onNewMessageReceived(it)
-//                            }
-//                        }
-//
-//                        else -> {}
-//                    }
-//                }
-//
-//                ConnKey.MSG_COMMAND -> {}
-//                ConnKey.MSG_RESPONSE -> {
-//                    when ((msg.obj as Bundle).getInt("command", -1)) {
-//                        ConnKey.MSG_RESPONSE_CHECK_RUNNING_STATUS -> {
-//                            val isRunning = (msg.obj as Bundle).getBoolean("value") ?: false
-//                            runningStatus =
-//                                if (isRunning) AppModel.RUNNING_STATUS_RUNNING else AppModel.RUNNING_STATUS_ERROR
-//                        }
-//
-//                        ConnKey.MSG_RESPONSE_MESSAGE_SEND -> {
-//                            val stateSuccess = (msg.obj as Bundle).getBoolean("value") ?: false
-//                            val messageId = (msg.obj as Bundle).getLong("message_id")
-//                            onMessageVerifyStateUpdate(messageId, stateSuccess)
-//                        }
-//
-//                        ConnKey.MSG_RESPONSE_MESSAGE_RECALL -> {
-//                            val stateSuccess = (msg.obj as Bundle).getBoolean("value") ?: false
-//                            val messageId = (msg.obj as Bundle).getLong("message_id")
-//                            onRecallMessageVerifyStateUpdate(messageId, stateSuccess)
-//                        }
-//
-//                        else -> {}
-//                    }
-//                }
-//            }
             super.handleMessage(msg)
         }
     }
