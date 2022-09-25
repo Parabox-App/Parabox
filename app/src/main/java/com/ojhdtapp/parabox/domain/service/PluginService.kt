@@ -18,14 +18,17 @@ import com.ojhdtapp.parabox.domain.plugin.PluginConnObj
 import com.ojhdtapp.parabox.domain.use_case.DeleteMessage
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
 import com.ojhdtapp.parabox.domain.use_case.UpdateMessage
+import com.ojhdtapp.paraboxdevelopmentkit.connector.ParaboxResult
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -81,7 +84,7 @@ class PluginService : LifecycleService() {
 
 //        return super.onStartCommand(intent, flags, startId)
         return START_STICKY
-}
+    }
 
     override fun onDestroy() {
         Log.d("parabox", "onDestroy called")
@@ -94,18 +97,18 @@ class PluginService : LifecycleService() {
         appModelList.forEach { appModel ->
             val pluginConnObj = PluginConnObj(
                 ctx = this@PluginService,
-                coroutineScope =  lifecycleScope,
+                coroutineScope = lifecycleScope,
                 pkg = appModel.packageName,
                 cls = appModel.packageName + ".domain.service.ConnService",
                 connectionType = appModel.connectionType,
                 handleNewMessage = handleNewMessage,
                 updateMessage = updateMessage,
-                deleteMessage =  deleteMessage,
-                onRunningStatusChange = {connectionType, status ->
+                deleteMessage = deleteMessage,
+                onRunningStatusChange = { connectionType, status ->
                     Log.d("parabox", "stated changed received: $status")
                     pluginListListener?.onPluginListChange(
                         appModelList.map {
-                            if(it.connectionType == connectionType) it.copy(runningStatus = status) else it
+                            if (it.connectionType == connectionType) it.copy(runningStatus = status) else it
                         }
                     )
                 }
@@ -121,7 +124,7 @@ class PluginService : LifecycleService() {
         }
     }
 
-    private fun updateAppModelList(){
+    private fun updateAppModelList() {
         appModelList = installedPluginList.map {
             val connectionType = it.metaData?.getInt("connection_type") ?: 0
             val connectionName = it.metaData?.getString("connection_name") ?: "Unknown"
@@ -141,8 +144,8 @@ class PluginService : LifecycleService() {
             )
         }
     }
-    
-    fun setPluginListListener(listener: PluginListListener){
+
+    fun setPluginListListener(listener: PluginListListener) {
         pluginListListener = listener
     }
 
@@ -184,6 +187,20 @@ class PluginService : LifecycleService() {
             Looper.prepare()
             Toast.makeText(this, "插件未安装", Toast.LENGTH_SHORT).show()
             Looper.loop()
+        }
+    }
+
+    suspend fun refreshMessage(): Boolean {
+        return try {
+            withTimeout(5000) {
+                pluginConnectionMap.map {
+                    it.value.refreshMessage()
+                }.let { it ->
+                    it.all { it is ParaboxResult.Success }
+                }
+            }
+        } catch (e: TimeoutCancellationException) {
+            false
         }
     }
 }

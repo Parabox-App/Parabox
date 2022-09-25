@@ -483,7 +483,8 @@ fun MessagePage(
                         mainSharedViewModel,
                         sizeClass,
                         shimmerInstance,
-                        mainNavController
+                        mainNavController,
+                        onEvent
                     )
                     AreaState.SearchArea -> SearchArea(
                         Modifier,

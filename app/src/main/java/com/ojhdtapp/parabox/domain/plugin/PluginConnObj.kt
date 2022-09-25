@@ -22,6 +22,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
 class PluginConnObj(
     private val ctx: Context,
@@ -41,7 +44,9 @@ class PluginConnObj(
             isConnected = true
             sendNotification(ParaboxKey.NOTIFICATION_MAIN_APP_LAUNCH)
             getState()
-            refreshMessage()
+            coroutineScope.launch {
+                refreshMessage()
+            }
         }
 
         override fun onServiceDisconnected(p0: ComponentName?) {
@@ -124,7 +129,7 @@ class PluginConnObj(
                 Log.d("parabox", "state result back!: $it")
                 if (it is ParaboxResult.Success) {
                     val state = it.obj.getInt("state")
-                    val transformState = when(state){
+                    val transformState = when (state) {
                         ParaboxKey.STATE_ERROR -> AppModel.RUNNING_STATUS_ERROR
                         ParaboxKey.STATE_LOADING -> AppModel.RUNNING_STATUS_CHECKING
                         ParaboxKey.STATE_PAUSE -> AppModel.RUNNING_STATUS_CHECKING
@@ -138,14 +143,22 @@ class PluginConnObj(
         )
     }
 
-    fun refreshMessage() {
+    suspend fun refreshMessage(): ParaboxResult = suspendCoroutine<ParaboxResult> { cont ->
         Log.d("parabox", "sMessenger welcome: $sMessenger")
         if (isConnected) {
             sendCommand(
                 command = ParaboxKey.COMMAND_REFRESH_MESSAGE,
                 onResult = {
-
+                    cont.resume(it)
                 }
+            )
+        } else {
+            cont.resume(
+                ParaboxResult.Fail(
+                    ParaboxKey.COMMAND_REFRESH_MESSAGE,
+                    System.currentTimeMillis(),
+                    ParaboxKey.ERROR_DISCONNECTED
+                )
             )
         }
     }

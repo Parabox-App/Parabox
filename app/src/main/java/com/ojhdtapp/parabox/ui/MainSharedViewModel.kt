@@ -94,21 +94,23 @@ class MainSharedViewModel @Inject constructor(
 
     // New Contact
     private val _sendTargetType = mutableStateOf<Int>(SendTargetType.USER)
-    val sendTargetType : State<Int> = _sendTargetType
-    fun setSendTargetType(value : Int){
+    val sendTargetType: State<Int> = _sendTargetType
+    fun setSendTargetType(value: Int) {
         _sendTargetType.value = value
     }
 
     private val _selectedExtensionId = mutableStateOf<Int?>(null)
-    val selectedExtensionId : State<Int?> = _selectedExtensionId
-    fun setSelectedExtensionId(value : Int?){
+    val selectedExtensionId: State<Int?> = _selectedExtensionId
+    fun setSelectedExtensionId(value: Int?) {
         _selectedExtensionId.value = value
     }
+
     private val _idInput = mutableStateOf<String>("")
-    val idInput : State<String> = _idInput
-    fun setIdInput(value : String){
+    val idInput: State<String> = _idInput
+    fun setIdInput(value: String) {
         _idInput.value = value
     }
+
     fun groupContact(
         name: String,
         pluginConnections: List<PluginConnection>,
@@ -118,8 +120,16 @@ class MainSharedViewModel @Inject constructor(
         tags: List<String> = emptyList(),
         contactId: Long? = null,
     ) {
-        groupNewContact(name, pluginConnections, senderId, avatar, avatarUri, tags, contactId).onEach {
-            when(it){
+        groupNewContact(
+            name,
+            pluginConnections,
+            senderId,
+            avatar,
+            avatarUri,
+            tags,
+            contactId
+        ).onEach {
+            when (it) {
                 is Resource.Success -> {
                     _uiEventFlow.emit(MainSharedUiEvent.BottomSheetControl(false))
                     _selectedExtensionId.value = null
@@ -127,9 +137,11 @@ class MainSharedViewModel @Inject constructor(
                     _idInput.value = ""
                     Toast.makeText(context, "新建会话成功", Toast.LENGTH_SHORT).show()
                 }
+
                 is Resource.Error -> {
                     Toast.makeText(context, "会话编组失败", Toast.LENGTH_SHORT).show()
                 }
+
                 else -> {}
             }
         }.launchIn(viewModelScope)
@@ -175,7 +187,7 @@ class MainSharedViewModel @Inject constructor(
         } else {
             _quoteMessageState.value = value
         }
-        if(value != null && _atState.value?.target != value.profile.id){
+        if (value != null && _atState.value?.target != value.profile.id) {
             clearAt()
         }
     }
@@ -186,14 +198,15 @@ class MainSharedViewModel @Inject constructor(
 
     // At
     private val _atState = mutableStateOf<At?>(null)
-    val atState : State<At?> = _atState
-    fun setAtState(value : At?){
+    val atState: State<At?> = _atState
+    fun setAtState(value: At?) {
         _atState.value = value
-        if(value != null && value.target != _quoteMessageState.value?.profile?.id){
+        if (value != null && value.target != _quoteMessageState.value?.profile?.id) {
             clearQuoteMessage()
         }
     }
-    fun clearAt(){
+
+    fun clearAt() {
         _atState.value = null
     }
 
@@ -280,5 +293,12 @@ class MainSharedViewModel @Inject constructor(
     val audioPlayerProgressFraction: State<Float> = _audioPlayerProgressFraction
     fun setAudioPlayerProgressFraction(value: Float) {
         _audioPlayerProgressFraction.value = value
+    }
+
+    // Swipe Refresh
+    private val _isRefreshing = mutableStateOf<Boolean>(false)
+    val isRefreshing : State<Boolean> = _isRefreshing
+    fun setIsRefreshing(value : Boolean){
+        _isRefreshing.value = value
     }
 }

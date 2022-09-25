@@ -394,6 +394,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun refreshMessage() {
+        mainSharedViewModel.setIsRefreshing(true)
+        lifecycleScope.launch {
+            if (pluginService?.refreshMessage() == true) {
+                mainSharedViewModel.setIsRefreshing(false)
+            } else {
+                mainSharedViewModel.setIsRefreshing(false)
+                Toast.makeText(this@MainActivity, "部分消息未成功刷新", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     // Event
     fun onEvent(event: ActivityEvent) {
         when (event) {
@@ -483,6 +495,10 @@ class MainActivity : AppCompatActivity() {
 
             is ActivityEvent.Vibrate -> {
                 vibrate()
+            }
+
+            is ActivityEvent.RefreshMessage -> {
+                refreshMessage()
             }
         }
     }

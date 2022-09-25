@@ -27,4 +27,5 @@ sealed interface ActivityEvent {
     data class DownloadFile(val file: File) : ActivityEvent
     data class OpenFile(val file: File) : ActivityEvent
     object Vibrate : ActivityEvent
+    object RefreshMessage: ActivityEvent
 }
