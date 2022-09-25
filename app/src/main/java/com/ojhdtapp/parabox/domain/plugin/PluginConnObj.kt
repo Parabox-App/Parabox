@@ -11,9 +11,10 @@ import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.use_case.DeleteMessage
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
 import com.ojhdtapp.parabox.domain.use_case.UpdateMessage
-import com.ojhdtapp.parabox.toolkit.ParaboxKey
+import com.ojhdtapp.paraboxdevelopmentkit.connector.ParaboxKey
 import com.ojhdtapp.paraboxdevelopmentkit.connector.ParaboxMetadata
 import com.ojhdtapp.paraboxdevelopmentkit.connector.ParaboxResult
+import com.ojhdtapp.paraboxdevelopmentkit.connector.ParaboxUtil
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.ReceiveMessageDto
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendMessageDto
 import kotlinx.coroutines.CompletableDeferred
@@ -55,7 +56,7 @@ class PluginConnObj(
             isConnected = false
         }
     }
-    val deferredMap = mutableMapOf<Long, CompletableDeferred<ParaboxResult>>()
+    val deferredMap = mutableMapOf<String, CompletableDeferred<ParaboxResult>>()
 
     private var sMessenger: Messenger? = null
     private val cMessenger = Messenger(ConnHandler())
@@ -199,11 +200,12 @@ class PluginConnObj(
     ) {
         coroutineScope.launch {
             val timestamp = System.currentTimeMillis()
+            val key = "${timestamp}${ParaboxUtil.getRandomNumStr(8)}"
             try {
                 withTimeout(timeoutMillis) {
                     val deferred = CompletableDeferred<ParaboxResult>()
-                    deferredMap[timestamp] = deferred
-                    coreSendCommand(timestamp, command, extra)
+                    deferredMap[key] = deferred
+                    coreSendCommand(timestamp, key, command, extra)
                     Log.d("parabox", "command sent")
                     deferred.await().also {
                         Log.d("parabox", "successfully complete")
@@ -211,7 +213,7 @@ class PluginConnObj(
                     }
                 }
             } catch (e: TimeoutCancellationException) {
-                deferredMap[timestamp]?.cancel()
+                deferredMap[key]?.cancel()
                 onResult(
                     ParaboxResult.Fail(
                         command,
@@ -220,7 +222,7 @@ class PluginConnObj(
                     )
                 )
             } catch (e: RemoteException) {
-                deferredMap[timestamp]?.cancel()
+                deferredMap[key]?.cancel()
                 onResult(
                     ParaboxResult.Fail(
                         command,
@@ -232,9 +234,9 @@ class PluginConnObj(
         }
     }
 
-    private fun coreSendCommand(timestamp: Long, command: Int, extra: Bundle = Bundle()) {
+    private fun coreSendCommand(timestamp: Long, key: String, command: Int, extra: Bundle = Bundle()) {
         if (!isConnected) {
-            deferredMap[timestamp]?.complete(
+            deferredMap[key]?.complete(
                 ParaboxResult.Fail(
                     command, timestamp,
                     ParaboxKey.ERROR_DISCONNECTED
@@ -251,7 +253,8 @@ class PluginConnObj(
                         "metadata", ParaboxMetadata(
                             commandOrRequest = command,
                             timestamp = timestamp,
-                            sender = ParaboxKey.CLIENT_MAIN_APP
+                            sender = ParaboxKey.CLIENT_MAIN_APP,
+                            key = key
                         )
                     )
                 }).apply {
@@ -280,7 +283,7 @@ class PluginConnObj(
                 errorCode = errorCode!!
             )
         }.also {
-            deferredMap[metadata.timestamp]?.complete(it)
+            deferredMap[metadata.key]?.complete(it)
 //            coreSendCommandResponse(isSuccess, metadata, it)
         }
     }
@@ -345,7 +348,7 @@ class PluginConnObj(
                                 }
                             val deferred =
                                 CompletableDeferred<ParaboxResult>()
-                            deferredMap[metadata.timestamp] = deferred
+                            deferredMap[metadata.key] = deferred
 
                             // 指令种类判断
                             when (msg.what) {
@@ -420,7 +423,7 @@ class PluginConnObj(
                             )
                         }
                         Log.d("parabox", "try complete second deferred")
-                        deferredMap[metadata.timestamp]?.complete(result)
+                        deferredMap[metadata.key]?.complete(result)
                     } catch (e: NullPointerException) {
                         e.printStackTrace()
                     } catch (e: ClassNotFoundException) {
