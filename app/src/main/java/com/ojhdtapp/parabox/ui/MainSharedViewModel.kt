@@ -14,8 +14,8 @@ import androidx.paging.PagingData
 import androidx.paging.PagingSource
 import androidx.paging.cachedIn
 import androidx.paging.compose.collectAsLazyPagingItems
-import com.ojhdtapp.messagedto.SendTargetType
-import com.ojhdtapp.messagedto.message_content.At
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendTargetType
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.At
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.dataStore

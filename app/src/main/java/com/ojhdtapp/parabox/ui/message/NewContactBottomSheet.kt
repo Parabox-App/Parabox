@@ -32,8 +32,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.ojhdtapp.messagedto.ObjectIdUtil
-import com.ojhdtapp.messagedto.SendTargetType
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.ObjectIdUtil
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendTargetType
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.util.SegmentedControl

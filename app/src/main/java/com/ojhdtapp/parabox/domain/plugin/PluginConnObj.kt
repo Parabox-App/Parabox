@@ -7,15 +7,15 @@ import android.content.ServiceConnection
 import android.os.*
 import android.util.Log
 import android.widget.Toast
-import com.ojhdtapp.messagedto.ParaboxMetadata
-import com.ojhdtapp.messagedto.ReceiveMessageDto
-import com.ojhdtapp.messagedto.SendMessageDto
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.use_case.DeleteMessage
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
 import com.ojhdtapp.parabox.domain.use_case.UpdateMessage
 import com.ojhdtapp.parabox.toolkit.ParaboxKey
+import com.ojhdtapp.paraboxdevelopmentkit.connector.ParaboxMetadata
 import com.ojhdtapp.paraboxdevelopmentkit.connector.ParaboxResult
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.ReceiveMessageDto
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendMessageDto
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -115,7 +115,6 @@ class PluginConnObj(
 //            })
 //        }
     }
-
 
     fun getRunningStatus(): Int {
         return runningStatus

@@ -2,9 +2,9 @@ package com.ojhdtapp.parabox.ui.util
 
 import android.content.Intent
 import android.net.Uri
-import com.ojhdtapp.messagedto.PluginConnection
-import com.ojhdtapp.messagedto.SendMessageDto
-import com.ojhdtapp.messagedto.message_content.MessageContent
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.PluginConnection
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendMessageDto
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
 import com.ojhdtapp.parabox.domain.model.File
 
 sealed interface ActivityEvent {

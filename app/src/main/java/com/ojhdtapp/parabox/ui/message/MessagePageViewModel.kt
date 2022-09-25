@@ -7,8 +7,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.request.Tags
-import com.ojhdtapp.messagedto.ReceiveMessageDto
-import com.ojhdtapp.messagedto.SendMessageDto
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.ReceiveMessageDto
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendMessageDto
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Profile
@@ -510,12 +510,12 @@ class MessagePageViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             handleNewMessage(
                 ReceiveMessageDto(
-                    listOf(com.ojhdtapp.messagedto.message_content.PlainText("Hello at ${System.currentTimeMillis()}")),
-                    com.ojhdtapp.messagedto.Profile("Ojhdt", null, null),
-                    com.ojhdtapp.messagedto.Profile("Ojhdt-Group", null, null),
+                    listOf(com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText("Hello at ${System.currentTimeMillis()}")),
+                    com.ojhdtapp.paraboxdevelopmentkit.messagedto.Profile("Ojhdt", null, null),
+                    com.ojhdtapp.paraboxdevelopmentkit.messagedto.Profile("Ojhdt-Group", null, null),
                     System.currentTimeMillis(),
                     null,
-                    com.ojhdtapp.messagedto.PluginConnection(1, 1, 1)
+                    com.ojhdtapp.paraboxdevelopmentkit.messagedto.PluginConnection(1, 1, 1)
                 )
             )
         }

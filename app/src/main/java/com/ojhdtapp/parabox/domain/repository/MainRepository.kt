@@ -2,8 +2,8 @@ package com.ojhdtapp.parabox.domain.repository
 
 import androidx.paging.PagingSource
 import coil.request.Tags
-import com.ojhdtapp.messagedto.ReceiveMessageDto
-import com.ojhdtapp.messagedto.SendMessageDto
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.ReceiveMessageDto
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendMessageDto
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.local.entity.*
 import com.ojhdtapp.parabox.domain.model.*
@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface MainRepository {
     suspend fun handleNewMessage(dto: ReceiveMessageDto)
-    suspend fun handleNewMessage(contents: List<com.ojhdtapp.messagedto.message_content.MessageContent>, pluginConnection: com.ojhdtapp.messagedto.PluginConnection, timestamp: Long, sendType: Int) : Long
+    suspend fun handleNewMessage(contents: List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent>, pluginConnection: com.ojhdtapp.paraboxdevelopmentkit.messagedto.PluginConnection, timestamp: Long, sendType: Int) : Long
     suspend fun deleteGroupedContact(contactId: Long): Pair<ContactEntity?, List<ContactPluginConnectionCrossRef>>
     suspend fun restoreGroupedContact(pair: Pair<ContactEntity, List<ContactPluginConnectionCrossRef>>)
     fun updateMessageVerifiedState(id: Long, value: Boolean)

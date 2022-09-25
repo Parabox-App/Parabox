@@ -5,10 +5,10 @@ import android.util.Log
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.paging.PagingSource
-import com.ojhdtapp.messagedto.ReceiveMessageDto
-import com.ojhdtapp.messagedto.SendMessageDto
-import com.ojhdtapp.messagedto.message_content.MessageContent
-import com.ojhdtapp.messagedto.message_content.getContentString
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.ReceiveMessageDto
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendMessageDto
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.getContentString
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.dataStore
@@ -86,7 +86,7 @@ class MainRepositoryImpl @Inject constructor(
             }
             // If MessageContent Type is File ...
             if (messageIdDeferred.await() != -1L) {
-                dto.contents.filterIsInstance<com.ojhdtapp.messagedto.message_content.File>()
+                dto.contents.filterIsInstance<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.File>()
                     .forEach {
                         database.fileDao.insertFile(
                             FileEntity(
@@ -108,8 +108,8 @@ class MainRepositoryImpl @Inject constructor(
     }
 
     override suspend fun handleNewMessage(
-        contents: List<com.ojhdtapp.messagedto.message_content.MessageContent>,
-        pluginConnection: com.ojhdtapp.messagedto.PluginConnection,
+        contents: List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent>,
+        pluginConnection: com.ojhdtapp.paraboxdevelopmentkit.messagedto.PluginConnection,
         timestamp: Long,
         sendType: Int,
     ): Long {

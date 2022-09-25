@@ -72,7 +72,7 @@ import coil.request.ImageRequest
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
-import com.ojhdtapp.messagedto.message_content.*
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.*
 import com.ojhdtapp.parabox.BuildConfig
 import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.toDateAndTimeString

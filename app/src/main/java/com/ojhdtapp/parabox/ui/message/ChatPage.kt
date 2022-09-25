@@ -184,7 +184,7 @@ fun NormalChatPage(
     onRecallMessage: (type: Int, messageId: Long) -> Unit,
     onStopSplitting: () -> Unit = {},
     onBackClick: () -> Unit,
-    onSend: (contents: List<com.ojhdtapp.messagedto.message_content.MessageContent>) -> Unit,
+    onSend: (contents: List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent>) -> Unit,
     onStartRecording: () -> Unit,
     onStopRecording: () -> Unit,
     onStartAudioPlaying: (uri: Uri?, url: String?) -> Unit,
@@ -1127,7 +1127,7 @@ fun NormalChatPage(
                             onAvatarLongClick = {
                                 value.profile.id?.let { id ->
                                     mainSharedViewModel.setAtState(
-                                        com.ojhdtapp.messagedto.message_content.At(
+                                        com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.At(
                                             target = id,
                                             name = value.profile.name,
                                         )

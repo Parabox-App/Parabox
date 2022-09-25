@@ -2,9 +2,6 @@ package com.ojhdtapp.parabox.data.remote.dto
 
 import android.content.Context
 import android.media.MediaMetadataRetriever
-import com.ojhdtapp.messagedto.ReceiveMessageDto
-import com.ojhdtapp.messagedto.SendMessageDto
-import com.ojhdtapp.messagedto.message_content.getContentString
 import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.toDateAndTimeString
 import com.ojhdtapp.parabox.data.local.entity.ContactEntity
@@ -14,6 +11,8 @@ import com.ojhdtapp.parabox.domain.model.LatestMessage
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.model.Profile
 import com.ojhdtapp.parabox.domain.model.message_content.*
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.ReceiveMessageDto
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.getContentString
 
 fun ReceiveMessageDto.toContactEntity(): ContactEntity {
     return ContactEntity(
@@ -74,31 +73,31 @@ fun ReceiveMessageDto.toMessageEntity(context: Context): MessageEntity {
 //    )
 //}
 
-fun com.ojhdtapp.messagedto.Profile.toProfile(): Profile {
+fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.Profile.toProfile(): Profile {
     return Profile(this.name, this.avatar, null, this.id)
 }
 
-fun List<com.ojhdtapp.messagedto.message_content.MessageContent>.toMessageContentList(context: Context): List<MessageContent> {
+fun List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent>.toMessageContentList(context: Context): List<MessageContent> {
     return this.map {
         it.toMessageContent(context = context)
     }
 }
 
-fun com.ojhdtapp.messagedto.message_content.MessageContent.toMessageContent(context: Context): MessageContent {
+fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent.toMessageContent(context: Context): MessageContent {
     return when (this) {
-        is com.ojhdtapp.messagedto.message_content.PlainText -> PlainText(this.text)
-        is com.ojhdtapp.messagedto.message_content.Image -> Image(
+        is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText -> PlainText(this.text)
+        is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Image -> Image(
             url,
             width,
             height,
             uri?.toString()
         )
-        is com.ojhdtapp.messagedto.message_content.At -> com.ojhdtapp.parabox.domain.model.message_content.At(
+        is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.At -> com.ojhdtapp.parabox.domain.model.message_content.At(
             target,
             name
         )
-        is com.ojhdtapp.messagedto.message_content.AtAll -> com.ojhdtapp.parabox.domain.model.message_content.AtAll
-        is com.ojhdtapp.messagedto.message_content.Audio -> {
+        is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.AtAll -> com.ojhdtapp.parabox.domain.model.message_content.AtAll
+        is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Audio -> {
             val path = context.getExternalFilesDir("chat")!!
             val copiedPath = uri?.let {
                 FileUtil.copyFileToPath(
@@ -123,7 +122,7 @@ fun com.ojhdtapp.messagedto.message_content.MessageContent.toMessageContent(cont
                 copiedUri?.toString()
             )
         }
-        is com.ojhdtapp.messagedto.message_content.QuoteReply -> {
+        is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.QuoteReply -> {
             quoteMessageContent
             com.ojhdtapp.parabox.domain.model.message_content.QuoteReply(
                 quoteMessageSenderName,
@@ -132,7 +131,7 @@ fun com.ojhdtapp.messagedto.message_content.MessageContent.toMessageContent(cont
                 quoteMessageContent?.toMessageContentList(context)
             )
         }
-        is com.ojhdtapp.messagedto.message_content.File -> com.ojhdtapp.parabox.domain.model.message_content.File(
+        is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.File -> com.ojhdtapp.parabox.domain.model.message_content.File(
             url,
             name,
             extension,
@@ -145,6 +144,6 @@ fun com.ojhdtapp.messagedto.message_content.MessageContent.toMessageContent(cont
     }
 }
 
-fun com.ojhdtapp.messagedto.PluginConnection.toPluginConnection(): PluginConnection {
+fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.PluginConnection.toPluginConnection(): PluginConnection {
     return PluginConnection(this.connectionType, this.objectId, this.id)
 }

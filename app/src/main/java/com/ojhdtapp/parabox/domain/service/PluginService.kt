@@ -11,7 +11,6 @@ import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
-import com.ojhdtapp.messagedto.SendMessageDto
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.plugin.PluginConnObj
@@ -19,6 +18,7 @@ import com.ojhdtapp.parabox.domain.use_case.DeleteMessage
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
 import com.ojhdtapp.parabox.domain.use_case.UpdateMessage
 import com.ojhdtapp.paraboxdevelopmentkit.connector.ParaboxResult
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendMessageDto
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException

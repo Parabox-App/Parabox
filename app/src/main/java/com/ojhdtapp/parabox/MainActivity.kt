@@ -41,7 +41,6 @@ import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.android.material.datepicker.MaterialDatePicker
-import com.ojhdtapp.messagedto.SendMessageDto
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.data.local.entity.DownloadingState
 import com.ojhdtapp.parabox.domain.model.AppModel
@@ -57,6 +56,7 @@ import com.ojhdtapp.parabox.ui.theme.AppTheme
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.FixedInsets
 import com.ojhdtapp.parabox.ui.util.LocalFixedInsets
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendMessageDto
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
 import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine

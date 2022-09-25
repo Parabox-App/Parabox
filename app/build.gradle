@@ -94,8 +94,8 @@ dependencies {
     // Apache Commons
     implementation "commons-io:commons-io:2.7"
 
-    // Custom Dto
-    implementation 'com.github.ojhdt:ParaboxDto:1.17'
+    // Development Kit
+    implementation 'com.ojhdt:parabox-development-kit:1.0.1-SNAPSHOT'
 
     // Paging
     def paging_version = "3.1.1"

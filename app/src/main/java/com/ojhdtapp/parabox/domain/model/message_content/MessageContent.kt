@@ -26,27 +26,27 @@ fun List<MessageContent>.getContentString() : String{
     return builder.toString()
 }
 
-fun MessageContent.toMessageContent():com.ojhdtapp.messagedto.message_content.MessageContent{
+fun MessageContent.toMessageContent():com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent{
     return when(this){
-        is PlainText -> com.ojhdtapp.messagedto.message_content.PlainText(text)
-        is Image -> com.ojhdtapp.messagedto.message_content.Image(
+        is PlainText -> com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText(text)
+        is Image -> com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Image(
             url, width, height, uriString?.let { Uri.parse(it) }
         )
-        is AtAll -> com.ojhdtapp.messagedto.message_content.AtAll
-        is Audio -> com.ojhdtapp.messagedto.message_content.Audio(
+        is AtAll -> com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.AtAll
+        is Audio -> com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Audio(
             url, length, fileName, fileSize, uriString?.let { Uri.parse(it) }
         )
-        is QuoteReply -> com.ojhdtapp.messagedto.message_content.QuoteReply(
+        is QuoteReply -> com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.QuoteReply(
             quoteMessageSenderName, quoteMessageTimestamp, quoteMessageId, quoteMessageContent?.toMessageContentList()
         )
-        is File -> com.ojhdtapp.messagedto.message_content.File(
+        is File -> com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.File(
             url, name, extension, size, lastModifiedTime, expiryTime, uri
         )
-        else -> com.ojhdtapp.messagedto.message_content.PlainText(getContentString())
+        else -> com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText(getContentString())
     }
 }
 
-fun List<MessageContent>.toMessageContentList() : List<com.ojhdtapp.messagedto.message_content.MessageContent>{
+fun List<MessageContent>.toMessageContentList() : List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent>{
     return this.map {
         it.toMessageContent()
     }
