@@ -62,40 +62,31 @@ class PluginService : LifecycleService() {
         }
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Get Installed Plugin
-//        val installedPluginList = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
+    override fun onCreate() {
+        super.onCreate()
         installedPluginList = packageManager.queryIntentServices(Intent().apply {
             action = "com.ojhdtapp.parabox.PLUGIN"
         }, PackageManager.GET_META_DATA).map {
             it.serviceInfo.applicationInfo
         }
-        appModelList = installedPluginList.map {
-            val connectionType = it.metaData?.getInt("connection_type") ?: 0
-            val connectionName = it.metaData?.getString("connection_name") ?: "Unknown"
-            PluginService.pluginTypeMap[connectionType] = connectionName
-            AppModel(
-                name = it.loadLabel(packageManager).toString(),
-                icon = it.loadIcon(packageManager),
-                packageName = it.packageName,
-                version = packageManager.getPackageInfo(
-                    it.packageName,
-                    PackageManager.GET_META_DATA
-                ).versionName,
-                launchIntent = packageManager.getLaunchIntentForPackage(it.packageName),
-                runningStatus = AppModel.RUNNING_STATUS_CHECKING,
-                connectionType = connectionType,
-                connectionName = connectionName
-            )
-        }
+        updateAppModelList()
         bindPlugins()
-        return super.onStartCommand(intent, flags, startId)
     }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        super.onStartCommand(intent, flags, startId)
+        // Get Installed Plugin
+//        val installedPluginList = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
+        Log.d("parabox", "onStartCommand called")
+
+//        return super.onStartCommand(intent, flags, startId)
+        return START_STICKY
+}
 
     override fun onDestroy() {
         Log.d("parabox", "onDestroy called")
-        super.onDestroy()
         unbindPlugins()
+        super.onDestroy()
     }
 
     // Call Only Once
@@ -127,6 +118,27 @@ class PluginService : LifecycleService() {
     private fun unbindPlugins() {
         pluginConnectionMap.forEach {
             it.value.disconnect()
+        }
+    }
+
+    private fun updateAppModelList(){
+        appModelList = installedPluginList.map {
+            val connectionType = it.metaData?.getInt("connection_type") ?: 0
+            val connectionName = it.metaData?.getString("connection_name") ?: "Unknown"
+            PluginService.pluginTypeMap[connectionType] = connectionName
+            AppModel(
+                name = it.loadLabel(packageManager).toString(),
+                icon = it.loadIcon(packageManager),
+                packageName = it.packageName,
+                version = packageManager.getPackageInfo(
+                    it.packageName,
+                    PackageManager.GET_META_DATA
+                ).versionName,
+                launchIntent = packageManager.getLaunchIntentForPackage(it.packageName),
+                runningStatus = AppModel.RUNNING_STATUS_CHECKING,
+                connectionType = connectionType,
+                connectionName = connectionName
+            )
         }
     }
     

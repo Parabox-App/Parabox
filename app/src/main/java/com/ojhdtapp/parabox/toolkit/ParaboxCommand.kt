@@ -19,6 +19,7 @@ object ParaboxKey {
     const val COMMAND_GET_STATE = 2556516
 
     const val NOTIFICATION_STATE_UPDATE = 2556520
+    const val NOTIFICATION_MAIN_APP_LAUNCH = 2556521
 
     const val REQUEST_RECEIVE_MESSAGE = 2556530
 

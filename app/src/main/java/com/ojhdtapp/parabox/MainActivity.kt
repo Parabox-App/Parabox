@@ -402,6 +402,7 @@ class MainActivity : AppCompatActivity() {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 })
             }
+
             is ActivityEvent.SendMessage -> {
                 lifecycleScope.launch(Dispatchers.IO) {
                     val timestamp = System.currentTimeMillis()
@@ -421,12 +422,15 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
+
             is ActivityEvent.RecallMessage -> {
                 pluginService?.recallMessage(event.type, event.messageId)
             }
+
             is ActivityEvent.SetUserAvatar -> {
                 pickUserAvatar()
             }
+
             is ActivityEvent.StartRecording -> {
                 if (player?.isPlaying == true) {
                     stopPlaying()
@@ -434,9 +438,11 @@ class MainActivity : AppCompatActivity() {
                 }
                 startRecording()
             }
+
             is ActivityEvent.StopRecording -> {
                 stopRecording()
             }
+
             is ActivityEvent.StartAudioPlaying -> {
                 if (recorder != null) {
                     Toast.makeText(this, "请先结束录音", Toast.LENGTH_SHORT).show()
@@ -450,24 +456,31 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
+
             is ActivityEvent.StopAudioPlaying -> {
                 stopPlaying()
             }
+
             is ActivityEvent.PauseAudioPlaying -> {
                 pausePlaying()
             }
+
             is ActivityEvent.ResumeAudioPlaying -> {
                 resumePlaying()
             }
+
             is ActivityEvent.SetAudioProgress -> {
                 setProgress(event.fraction)
             }
+
             is ActivityEvent.DownloadFile -> {
                 downloadFile(event.file)
             }
+
             is ActivityEvent.OpenFile -> {
                 openFile(event.file)
             }
+
             is ActivityEvent.Vibrate -> {
                 vibrate()
             }
@@ -654,7 +667,7 @@ class MainActivity : AppCompatActivity() {
             override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
                 Log.d("parabox", "mainActivity - service connected")
                 pluginService = (p1 as PluginService.PluginServiceBinder).getService().also {
-                    it.setPluginListListener(object : PluginListListener{
+                    it.setPluginListListener(object : PluginListListener {
                         override fun onPluginListChange(pluginList: List<AppModel>) {
                             mainSharedViewModel.setPluginListStateFlow(pluginList)
                         }
@@ -674,10 +687,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onStop() {
-        if (pluginService != null) {
-            unbindService(pluginServiceConnection)
-            pluginService = null
-        }
+        unbindService(pluginServiceConnection)
+        pluginService = null
         super.onStop()
     }
 }

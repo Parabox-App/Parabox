@@ -39,6 +39,7 @@ class PluginConnObj(
             Log.d("parabox", "bind status: true")
             sMessenger = Messenger(p1)
             isConnected = true
+            sendNotification(ParaboxKey.NOTIFICATION_MAIN_APP_LAUNCH)
             getState()
             refreshMessage()
         }
@@ -142,7 +143,9 @@ class PluginConnObj(
         if (isConnected) {
             sendCommand(
                 command = ParaboxKey.COMMAND_REFRESH_MESSAGE,
-                onResult = {}
+                onResult = {
+
+                }
             )
         }
     }
@@ -297,6 +300,21 @@ class PluginConnObj(
 
     }
 
+    fun sendNotification(notification: Int, extra: Bundle = Bundle()) {
+        val timestamp = System.currentTimeMillis()
+        val msg = Message.obtain(
+            null,
+            notification,
+            0,
+            ParaboxKey.TYPE_NOTIFICATION,
+            extra.apply {
+                putLong("timestamp", timestamp)
+            }).apply {
+            replyTo = cMessenger
+        }
+        sMessenger?.send(msg)
+    }
+
     inner class ConnHandler : Handler() {
         override fun handleMessage(msg: Message) {
             Log.d("parabox", "msg comming!:arg1:${msg.arg1};arg2:${msg.arg2};what:${msg.what}")
@@ -399,6 +417,7 @@ class PluginConnObj(
                 }
 
                 ParaboxKey.TYPE_NOTIFICATION -> {
+                    val timestamp = obj.getLong("timestamp")
                     when (msg.what) {
                         ParaboxKey.NOTIFICATION_STATE_UPDATE -> {
                             val state = obj.getInt("state", ParaboxKey.STATE_ERROR)
