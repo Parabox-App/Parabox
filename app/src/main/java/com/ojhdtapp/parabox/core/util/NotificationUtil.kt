@@ -30,7 +30,9 @@ import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.message_content.Image
 import com.ojhdtapp.parabox.domain.model.message_content.getContentString
+import com.ojhdtapp.parabox.domain.notification.ReplyReceiver
 import com.ojhdtapp.parabox.domain.use_case.GetContacts
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendTargetType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -40,16 +42,20 @@ import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.util.Date
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.ClassCastException
 
 class NotificationUtil(
     val context: Context,
     val database: AppDatabase
 ) {
     companion object {
-        val GROUP_KEY_NEW_MESSAGE = "group_new_message"
-        val GROUP_KEY_INTERNAL = "group_internal"
+//        const val GROUP_KEY_NEW_MESSAGE = "group_new_message"
+//        const val GROUP_KEY_INTERNAL = "group_internal"
 
-        private const val KEY_TEXT_REPLY = "key_text_reply"
+        private const val REQUEST_CONTENT = 1
+        private const val REQUEST_BUBBLE = 2
+
+        const val KEY_TEXT_REPLY = "key_text_reply"
         val remoteInput: RemoteInput = RemoteInput.Builder(KEY_TEXT_REPLY).run {
             setLabel("输入回复")
             build()
@@ -147,6 +153,7 @@ class NotificationUtil(
     suspend fun sendNewMessageNotification(message: Message, contact: Contact, channelId: String) {
         Log.d("parabox", "sendNotification at channel:${channelId}")
         updateShortcuts(contact)
+        val isGroup = message.profile.name != contact.profile.name
         val userNameFlow: Flow<String> = context.dataStore.data
             .catch { exception ->
                 if (exception is IOException) {
@@ -182,11 +189,20 @@ class NotificationUtil(
                     PendingIntent.FLAG_IMMUTABLE
                 )
             }
-        //        val replyPendingIntent: PendingIntent =
-        //            PendingIntent.getBroadcast(context,
-        //                message.messageId.toInt(),
-        //                getMessageReplyIntent,
-        //                PendingIntent.FLAG_UPDATE_CURRENT)
+        val replyPendingIntent: PendingIntent =
+            PendingIntent.getBroadcast(
+                context,
+                message.messageId.toInt(),
+                Intent(context, ReplyReceiver::class.java).apply {
+                    putExtra("contactId", contact.contactId)
+                    putExtra("senderId", contact.senderId)
+                    putExtra(
+                        "sendTargetType",
+                        if (isGroup) SendTargetType.GROUP else SendTargetType.USER
+                    )
+                },
+                PendingIntent.FLAG_MUTABLE
+            )
 
         val notificationBuilder: Notification.Builder =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -237,6 +253,17 @@ class NotificationUtil(
                     .setShowWhen(true)
                     .setAutoCancel(true)
                     .setWhen(message.timestamp)
+                    .addAction(
+                        Notification.Action
+                            .Builder(
+                                Icon.createWithResource(context, R.drawable.baseline_send_24),
+                                "回复",
+                                replyPendingIntent
+                            )
+                            .addRemoteInput(remoteInput)
+                            .setAllowGeneratedReplies(true)
+                            .build()
+                    )
                     .setStyle(
                         Notification.MessagingStyle(user).apply {
                             // temp message
@@ -266,18 +293,24 @@ class NotificationUtil(
 //                                                )
 //                                            )
                                         val mimetype = "image/png"
-                                        val imageUri = withContext(Dispatchers.IO) {
-                                            val loader = ImageLoader(context)
-                                            val request = ImageRequest.Builder(context)
-                                                .data(it.url)
-                                                .allowHardware(false) // Disable hardware bitmaps.
-                                                .build()
-                                            val result =
-                                                (loader.execute(request) as SuccessResult).drawable
-                                            FileUtil.getUriFromBitmap(
-                                                (result as BitmapDrawable).bitmap
-                                            )
-                                        }
+                                        val imageUri =
+                                            try {
+                                                val loader = ImageLoader(context)
+                                                val request = ImageRequest.Builder(context)
+                                                    .data(it.url)
+                                                    .allowHardware(false) // Disable hardware bitmaps.
+                                                    .build()
+                                                val result =
+                                                    (loader.execute(request) as SuccessResult).drawable
+                                                FileUtil.getUriFromBitmap(
+                                                    context,
+                                                    (result as BitmapDrawable).bitmap
+                                                )
+                                            } catch (e: ClassCastException) {
+                                                e.printStackTrace()
+                                                null
+                                            }
+                                        Log.d("parabox", imageUri.toString())
                                         setData(mimetype, imageUri)
                                     }
                                 }
@@ -288,7 +321,7 @@ class NotificationUtil(
                                 }
                             }
 
-                            isGroupConversation = message.profile.name != contact.profile.name
+                            isGroupConversation = isGroup
                             conversationTitle = contact.profile.name
                         }
                     ).apply {

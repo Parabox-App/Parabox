@@ -3,10 +3,12 @@ package com.ojhdtapp.parabox.domain.service
 import android.app.Notification
 import android.app.NotificationManager
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Binder
+import android.os.Build
 import android.os.IBinder
 import android.os.Looper
 import android.util.Log
@@ -37,9 +39,18 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class PluginService : LifecycleService() {
     companion object {
+        const val REPLY_ACTION = "reply_action"
+
         val pluginTypeMap = mutableMapOf<Int, String>()
         fun queryPluginConnectionName(type: Int): String {
             return pluginTypeMap[type] ?: "Unknown"
+        }
+
+        fun getReplyIntent(context: Context, dto: SendMessageDto): Intent {
+            return Intent(context, PluginService::class.java).apply {
+                action = REPLY_ACTION
+                putExtra("dto", dto)
+            }
         }
     }
 
@@ -84,11 +95,16 @@ class PluginService : LifecycleService() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
-        // Get Installed Plugin
-//        val installedPluginList = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
-        Log.d("parabox", "onStartCommand called")
-
-//        return super.onStartCommand(intent, flags, startId)
+        if (intent?.action == REPLY_ACTION) {
+            val dto = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent.getParcelableExtra("dto", SendMessageDto::class.java)
+            } else {
+                intent.getParcelableExtra<SendMessageDto>("dto")
+            }
+            if (dto != null) {
+                sendMessage(dto)
+            }
+        }
         return START_STICKY
     }
 

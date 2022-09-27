@@ -17,4 +17,11 @@ data class PluginConnectionEntity(
             id = id
         )
     }
+    fun toKitPluginConnection(sendTargetType: Int): com.ojhdtapp.paraboxdevelopmentkit.messagedto.PluginConnection{
+        return com.ojhdtapp.paraboxdevelopmentkit.messagedto.PluginConnection(
+            connectionType = connectionType,
+            sendTargetType = sendTargetType,
+            id = id
+        )
+    }
 }

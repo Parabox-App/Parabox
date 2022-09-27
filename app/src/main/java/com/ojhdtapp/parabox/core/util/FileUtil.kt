@@ -35,9 +35,9 @@ object FileUtil {
         }
     }
 
-    fun getUriFromBitmap(bm: Bitmap): Uri {
+    fun getUriFromBitmap(context: Context,bm: Bitmap): Uri? {
 
-        val tempFile = File.createTempFile("temprentpk", ".png")
+        val tempFile = context.externalCacheDir?.let { File(it, "temp${System.currentTimeMillis().toDateAndTimeString()}.png") }
         val bytes = ByteArrayOutputStream()
         bm.compress(Bitmap.CompressFormat.PNG, 100, bytes)
         val bitmapData = bytes.toByteArray()
@@ -46,7 +46,7 @@ object FileUtil {
         fileOutPut.write(bitmapData)
         fileOutPut.flush()
         fileOutPut.close()
-        return Uri.fromFile(tempFile)
+        return getUriOfFile(context, tempFile!!)
     }
 
     fun getUriOfFile(context: Context, file: File): Uri? {
