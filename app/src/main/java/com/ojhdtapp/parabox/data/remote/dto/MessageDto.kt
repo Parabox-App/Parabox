@@ -7,7 +7,9 @@ import com.ojhdtapp.parabox.core.util.toDateAndTimeString
 import com.ojhdtapp.parabox.data.local.entity.ContactEntity
 import com.ojhdtapp.parabox.data.local.entity.FileEntity
 import com.ojhdtapp.parabox.data.local.entity.MessageEntity
+import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.LatestMessage
+import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.model.Profile
 import com.ojhdtapp.parabox.domain.model.message_content.*
@@ -41,6 +43,36 @@ fun ReceiveMessageDto.toMessageEntity(context: Context): MessageEntity {
         messageId = messageId ?: 0,
         sentByMe = false,
         verified = true
+    )
+}
+
+fun ReceiveMessageDto.toMessage(context: Context, messageIdInDatabase: Long = 0) : Message{
+    return Message(
+        contents = contents.toMessageContentList(context),
+        profile = profile.toProfile(),
+        timestamp = timestamp,
+        messageId = messageId ?: messageIdInDatabase,
+        sentByMe = false,
+        verified = true
+    )
+}
+
+fun ReceiveMessageDto.toContact(): Contact{
+    return Contact(
+        profile = subjectProfile.toProfile(),
+        latestMessage = LatestMessage(
+            sender = profile.name,
+            content = contents.getContentString(),
+            timestamp = timestamp,
+            unreadMessagesNum = 0,
+        ),
+        contactId = pluginConnection.objectId,
+        senderId = pluginConnection.objectId,
+        isHidden = false,
+        isPinned = false,
+        isArchived = false,
+        enableNotifications = true,
+        tags = emptyList()
     )
 }
 

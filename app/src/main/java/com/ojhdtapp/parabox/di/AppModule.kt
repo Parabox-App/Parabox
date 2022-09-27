@@ -3,6 +3,7 @@ package com.ojhdtapp.parabox.di
 import android.app.Application
 import android.content.Context
 import androidx.room.Room
+import com.ojhdtapp.parabox.core.util.NotificationUtil
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.Converters
 import com.ojhdtapp.parabox.data.repository.MainRepositoryImpl
@@ -33,9 +34,18 @@ object AppModule {
     @Singleton
     fun provideMainRepository(
         database: AppDatabase,
-        @ApplicationContext applicationContext: Context
+        @ApplicationContext applicationContext: Context,
+        notificationUtil: NotificationUtil
     ): MainRepository =
-        MainRepositoryImpl(database, applicationContext)
+        MainRepositoryImpl(database, applicationContext, notificationUtil)
+
+    @Provides
+    @Singleton
+    fun provideNotificationUtil(
+        @ApplicationContext applicationContext: Context,
+        database: AppDatabase,
+    ): NotificationUtil =
+        NotificationUtil(applicationContext, database)
 
     @Provides
     @Singleton

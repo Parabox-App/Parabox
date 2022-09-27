@@ -5,6 +5,7 @@ import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -14,6 +15,7 @@ import android.widget.Toast
 import androidx.compose.ui.text.toLowerCase
 import androidx.core.content.FileProvider
 import com.ojhdtapp.parabox.BuildConfig
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.text.DecimalFormat
@@ -31,6 +33,20 @@ object FileUtil {
             e.printStackTrace()
             null
         }
+    }
+
+    fun getUriFromBitmap(bm: Bitmap): Uri {
+
+        val tempFile = File.createTempFile("temprentpk", ".png")
+        val bytes = ByteArrayOutputStream()
+        bm.compress(Bitmap.CompressFormat.PNG, 100, bytes)
+        val bitmapData = bytes.toByteArray()
+
+        val fileOutPut = FileOutputStream(tempFile)
+        fileOutPut.write(bitmapData)
+        fileOutPut.flush()
+        fileOutPut.close()
+        return Uri.fromFile(tempFile)
     }
 
     fun getUriOfFile(context: Context, file: File): Uri? {

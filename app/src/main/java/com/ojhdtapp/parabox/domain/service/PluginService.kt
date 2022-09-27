@@ -1,5 +1,7 @@
 package com.ojhdtapp.parabox.domain.service
 
+import android.app.Notification
+import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
 import android.content.pm.ApplicationInfo
@@ -11,6 +13,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
+import com.ojhdtapp.parabox.core.util.NotificationUtil
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.plugin.PluginConnObj
@@ -48,6 +51,9 @@ class PluginService : LifecycleService() {
 
     @Inject
     lateinit var deleteMessage: DeleteMessage
+
+    @Inject
+    lateinit var notificationUtil: NotificationUtil
 
     private var installedPluginList = emptyList<ApplicationInfo>()
     private var appModelList = emptyList<AppModel>()
@@ -115,6 +121,12 @@ class PluginService : LifecycleService() {
             )
             pluginConnectionMap[appModel.connectionType] = pluginConnObj
             pluginConnObj.connect()
+            notificationUtil.createNotificationChannel(
+                appModel.connectionType.toString(),
+                appModel.connectionName,
+                "来自插件 ${appModel.connectionName} 的消息",
+                NotificationManager.IMPORTANCE_HIGH
+            )
         }
     }
 

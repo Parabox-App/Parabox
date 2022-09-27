@@ -10,6 +10,7 @@ import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendMessageDto
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.getContentString
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
+import com.ojhdtapp.parabox.core.util.NotificationUtil
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.parabox.data.local.AppDatabase
@@ -18,6 +19,7 @@ import com.ojhdtapp.parabox.data.remote.dto.*
 import com.ojhdtapp.parabox.domain.model.*
 import com.ojhdtapp.parabox.domain.model.message_content.getContentString
 import com.ojhdtapp.parabox.domain.repository.MainRepository
+import com.ojhdtapp.parabox.domain.service.PluginService
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -27,6 +29,7 @@ import javax.inject.Inject
 class MainRepositoryImpl @Inject constructor(
     private val database: AppDatabase,
     val context: Context,
+    private val notificationUtil: NotificationUtil,
 ) : MainRepository {
     override suspend fun handleNewMessage(dto: ReceiveMessageDto) {
         coroutineScope {
@@ -74,12 +77,21 @@ class MainRepositoryImpl @Inject constructor(
                 database.contactDao.updateContact(it.contactList.map {
                     it.copy(
                         profile = dto.subjectProfile.toProfile(),
-                        latestMessage = LatestMessage(
-                            sender = dto.profile.name,
-                            content = dto.contents.getContentString(),
-                            timestamp = dto.timestamp,
-                            unreadMessagesNum = (it.latestMessage?.unreadMessagesNum ?: 0) + 1
-                        ),
+                        latestMessage =
+                        if (it.latestMessage != null && it.latestMessage.timestamp < dto.timestamp) {
+                            LatestMessage(
+                                sender = dto.profile.name,
+                                content = dto.contents.getContentString(),
+                                timestamp = dto.timestamp,
+                                unreadMessagesNum = it.latestMessage.unreadMessagesNum + 1
+                            )
+                        } else it.latestMessage
+                            ?: LatestMessage(
+                                sender = dto.profile.name,
+                                content = dto.contents.getContentString(),
+                                timestamp = dto.timestamp,
+                                unreadMessagesNum = 1
+                            ),
                         isHidden = false
                     )
                 })
@@ -101,10 +113,18 @@ class MainRepositoryImpl @Inject constructor(
                         )
                     }
             }
+            // send Notification
+            notificationUtil.sendNewMessageNotification(
+                message = dto.toMessage(context, messageIdDeferred.await()),
+                contact = dto.toContact(),
+                channelId = dto.pluginConnection.connectionType.toString()
+            )
         }
 //        database.messageDao.insertMessage(dto.toMessageEntity())
 //        database.contactDao.insertContact(dto.toContactEntityWithUnreadMessagesNumUpdate(database.contactDao))
 //        database.contactMessageCrossRefDao.insertNewContactMessageCrossRef(dto.getContactMessageCrossRef())
+
+
     }
 
     override suspend fun handleNewMessage(
