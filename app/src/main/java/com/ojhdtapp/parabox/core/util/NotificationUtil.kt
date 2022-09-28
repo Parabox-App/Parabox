@@ -280,7 +280,7 @@ class NotificationUtil(
                             } else {
                                 tempMessageMap[contact.contactId]?.run {
                                     add(message to person)
-                                    if (size > 10) {
+                                    if (size > 6) {
                                         this.removeAt(0)
                                     }
                                 }

@@ -113,12 +113,24 @@ class MainRepositoryImpl @Inject constructor(
                         )
                     }
             }
-            // send Notification
-            notificationUtil.sendNewMessageNotification(
-                message = dto.toMessage(context, messageIdDeferred.await()),
-                contact = dto.toContact(),
-                channelId = dto.pluginConnection.connectionType.toString()
-            )
+            // Send Notification if Enabled ...
+            if (contactIdDeferred.await() == -1L) {
+                database.contactDao.getContactById(dto.pluginConnection.objectId).let {
+                    if (it?.enableNotifications == true) {
+                        notificationUtil.sendNewMessageNotification(
+                            message = dto.toMessage(context, messageIdDeferred.await()),
+                            contact = dto.toContact(),
+                            channelId = dto.pluginConnection.connectionType.toString()
+                        )
+                    }
+                }
+            } else {
+                notificationUtil.sendNewMessageNotification(
+                    message = dto.toMessage(context, messageIdDeferred.await()),
+                    contact = dto.toContact(),
+                    channelId = dto.pluginConnection.connectionType.toString()
+                )
+            }
         }
 //        database.messageDao.insertMessage(dto.toMessageEntity())
 //        database.contactDao.insertContact(dto.toContactEntityWithUnreadMessagesNumUpdate(database.contactDao))
