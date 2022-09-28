@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Person
 import android.app.RemoteInput
+import android.app.Service
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -54,6 +55,9 @@ class NotificationUtil(
 
         private const val REQUEST_CONTENT = 1
         private const val REQUEST_BUBBLE = 2
+
+        private const val SERVICE_STATE_CHANNEL_ID = "service_state_channel"
+        private const val FOREGROUND_PLUGIN_SERVICE_NOTIFICATION_ID = 999
 
         const val KEY_TEXT_REPLY = "key_text_reply"
         val remoteInput: RemoteInput = RemoteInput.Builder(KEY_TEXT_REPLY).run {
@@ -351,5 +355,56 @@ class NotificationUtil(
                 notificationBuilder
             }
         notificationManager.notify(contact.contactId.toInt(), notificationBuilder.build())
+    }
+
+    fun startForegroundService(context: Service) {
+        val pendingIntent: PendingIntent = Intent(context, MainActivity::class.java).apply {
+            action = Intent.ACTION_MAIN
+            addCategory(Intent.CATEGORY_LAUNCHER)
+        }.let {
+            PendingIntent.getActivity(
+                context, 0, it,
+                PendingIntent.FLAG_IMMUTABLE
+            )
+        }
+        createNotificationChannel(
+            SERVICE_STATE_CHANNEL_ID,
+            "服务状态",
+            "后台服务状态",
+            NotificationManager.IMPORTANCE_MIN
+        )
+        val notification: Notification =
+            Notification.Builder(context, SERVICE_STATE_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_launcher_background)
+                .setContentTitle("没有已连接的扩展")
+//                .setContentText("Parabox 正在后台运行")
+                .setContentIntent(pendingIntent)
+                .setTicker("Parabox 正在后台运行")
+                .build()
+        context.startForeground(FOREGROUND_PLUGIN_SERVICE_NOTIFICATION_ID, notification)
+    }
+
+    fun updateForegroundServiceNotification(title: String, text: String) {
+        val pendingIntent: PendingIntent = Intent(context, MainActivity::class.java).apply {
+            action = Intent.ACTION_MAIN
+            addCategory(Intent.CATEGORY_LAUNCHER)
+        }.let {
+            PendingIntent.getActivity(
+                context, 0, it,
+                PendingIntent.FLAG_IMMUTABLE
+            )
+        }
+        val notification: Notification =
+            Notification.Builder(context, SERVICE_STATE_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_android_black_24dp)
+                .setContentTitle(title)
+//                .setContentText(text)
+                .setContentIntent(pendingIntent)
+                .setTicker(title)
+                .build()
+        notificationManager.notify(
+            FOREGROUND_PLUGIN_SERVICE_NOTIFICATION_ID,
+            notification
+        )
     }
 }

@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.domain.service
 
+import android.app.ForegroundServiceStartNotAllowedException
 import android.app.Notification
 import android.app.NotificationManager
 import android.app.Service
@@ -13,6 +14,7 @@ import android.os.IBinder
 import android.os.Looper
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.ojhdtapp.parabox.core.util.NotificationUtil
@@ -84,6 +86,14 @@ class PluginService : LifecycleService() {
 
     override fun onCreate() {
         super.onCreate()
+        // Foreground Service
+        try {
+            notificationUtil.startForegroundService(this)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        // Query Plugins and Bind
         installedPluginList = packageManager.queryIntentServices(Intent().apply {
             action = "com.ojhdtapp.parabox.PLUGIN"
         }, PackageManager.GET_META_DATA).map {
@@ -111,6 +121,7 @@ class PluginService : LifecycleService() {
     override fun onDestroy() {
         Log.d("parabox", "onDestroy called")
         unbindPlugins()
+        stopForeground(STOP_FOREGROUND_DETACH)
         super.onDestroy()
     }
 
@@ -131,6 +142,13 @@ class PluginService : LifecycleService() {
                     pluginListListener?.onPluginListChange(
                         appModelList.map {
                             if (it.connectionType == connectionType) it.copy(runningStatus = status) else it
+                        }.also {
+                            val connectingPluginNum =
+                                it.count { it.runningStatus == AppModel.RUNNING_STATUS_RUNNING }
+                            notificationUtil.updateForegroundServiceNotification(
+                                if (connectingPluginNum == 0) "没有已连接的扩展" else "已连接 $connectingPluginNum 个扩展",
+                                "Parabox 正在后台运行",
+                            )
                         }
                     )
                 }
@@ -168,7 +186,7 @@ class PluginService : LifecycleService() {
                 launchIntent = packageManager.getLaunchIntentForPackage(it.packageName),
                 runningStatus = AppModel.RUNNING_STATUS_CHECKING,
                 connectionType = connectionType,
-                connectionName = connectionName
+                connectionName = connectionName,
             )
         }
     }
