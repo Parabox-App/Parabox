@@ -31,6 +31,7 @@ import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.message_content.Image
 import com.ojhdtapp.parabox.domain.model.message_content.getContentString
+import com.ojhdtapp.parabox.domain.notification.MarkAsReadReceiver
 import com.ojhdtapp.parabox.domain.notification.ReplyReceiver
 import com.ojhdtapp.parabox.domain.use_case.GetContacts
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendTargetType
@@ -212,6 +213,15 @@ class NotificationUtil(
                 },
                 PendingIntent.FLAG_MUTABLE
             )
+        val markAsReadPendingIntent: PendingIntent =
+            PendingIntent.getBroadcast(
+                context,
+                message.messageId.toInt(),
+                Intent(context, MarkAsReadReceiver::class.java).apply {
+                    putExtra("contact", contact)
+                },
+                PendingIntent.FLAG_MUTABLE
+            )
 
         val notificationBuilder: Notification.Builder =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -264,7 +274,7 @@ class NotificationUtil(
                     .setShowWhen(true)
                     .setAutoCancel(true)
                     .setWhen(message.timestamp)
-                    .addAction(
+                    .setActions(
                         Notification.Action
                             .Builder(
                                 Icon.createWithResource(context, R.drawable.baseline_send_24),
@@ -273,7 +283,12 @@ class NotificationUtil(
                             )
                             .addRemoteInput(remoteInput)
                             .setAllowGeneratedReplies(true)
-                            .build()
+                            .build(),
+                        Notification.Action.Builder(
+                        Icon.createWithResource(context, R.drawable.baseline_mark_chat_read_24),
+                            "标为已读",
+                            markAsReadPendingIntent
+                        ).build()
                     )
                     .setStyle(
                         Notification.MessagingStyle(user).apply {
@@ -357,6 +372,10 @@ class NotificationUtil(
         notificationManager.notify(contact.contactId.toInt(), notificationBuilder.build())
     }
 
+    fun clearNotification(id: Int){
+        notificationManager.cancel(id)
+    }
+
     fun startForegroundService(context: Service) {
         val pendingIntent: PendingIntent = Intent(context, MainActivity::class.java).apply {
             action = Intent.ACTION_MAIN
@@ -380,6 +399,7 @@ class NotificationUtil(
 //                .setContentText("Parabox 正在后台运行")
                 .setContentIntent(pendingIntent)
                 .setTicker("Parabox 正在后台运行")
+                .setOnlyAlertOnce(true)
                 .build()
         context.startForeground(FOREGROUND_PLUGIN_SERVICE_NOTIFICATION_ID, notification)
     }

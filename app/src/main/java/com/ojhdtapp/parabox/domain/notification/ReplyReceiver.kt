@@ -42,7 +42,6 @@ class ReplyReceiver : BroadcastReceiver() {
             val contact = intent.getParcelableExtra<Contact>("contact")
             val sendTargetType = intent.getIntExtra("sendTargetType", SendTargetType.GROUP)
             if (contact == null) {
-                Log.e("ReplyReceiver", "contact is null")
                 return@launch
             } else {
                 val pluginConnectionEntity = database.contactDao.getPluginConnectionById(contact.senderId)
