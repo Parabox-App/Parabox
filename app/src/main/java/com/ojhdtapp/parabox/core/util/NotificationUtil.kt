@@ -90,7 +90,13 @@ class NotificationUtil(
     }
 
     suspend fun updateShortcuts(importantContact: Contact? = null) {
-        var shortcuts = database.contactDao.getAllContacts().firstOrNull()?.map {
+        // Truncate the list if we can't show all of our contacts.
+        val maxCount = shortcutManager.maxShortcutCountPerActivity
+        var contects = database.contactDao.getAllContacts().firstOrNull() ?: emptyList()
+        if (contects.size > maxCount) {
+            contects = contects.take(maxCount)
+        }
+        var shortcuts = contects.map {
             val icon = it.profile.avatar?.let { url ->
                 withContext(Dispatchers.IO) {
                     val loader = ImageLoader(context)
@@ -136,24 +142,24 @@ class NotificationUtil(
                     })
                     .build()
             }
-        } ?: emptyList()
+        }
         // Move the important contact to the front of the shortcut list.
         if (importantContact != null) {
             shortcuts =
                 shortcuts.sortedByDescending { it.id == importantContact.contactId.toString() }
         }
-        // Truncate the list if we can't show all of our contacts.
-        val maxCount = shortcutManager.maxShortcutCountPerActivity
-        if (shortcuts.size > maxCount) {
-            shortcuts = shortcuts.take(maxCount)
-        }
         shortcutManager.addDynamicShortcuts(shortcuts)
     }
 
-    suspend fun sendNewMessageNotification(message: Message, contact: Contact, channelId: String) {
+    suspend fun sendNewMessageNotification(
+        message: Message,
+        contact: Contact,
+        channelId: String,
+        isGroupSpecify: Boolean? = null
+    ) {
         Log.d("parabox", "sendNotification at channel:${channelId}")
         updateShortcuts(contact)
-        val isGroup = message.profile.name != contact.profile.name
+        val isGroup = isGroupSpecify ?: (message.profile.name != contact.profile.name)
         val userNameFlow: Flow<String> = context.dataStore.data
             .catch { exception ->
                 if (exception is IOException) {
@@ -163,7 +169,7 @@ class NotificationUtil(
                 }
             }
             .map { settings ->
-                settings[DataStoreKeys.USER_NAME] ?: "Me"
+                settings[DataStoreKeys.USER_NAME] ?: "您"
             }
         val userAvatarFlow: Flow<String?> = context.dataStore.data
             .catch { exception ->
@@ -194,8 +200,7 @@ class NotificationUtil(
                 context,
                 message.messageId.toInt(),
                 Intent(context, ReplyReceiver::class.java).apply {
-                    putExtra("contactId", contact.contactId)
-                    putExtra("senderId", contact.senderId)
+                    putExtra("contact", contact)
                     putExtra(
                         "sendTargetType",
                         if (isGroup) SendTargetType.GROUP else SendTargetType.USER
@@ -211,7 +216,9 @@ class NotificationUtil(
                         Icon.createWithAdaptiveBitmapContentUri(it)
                     } ?: Icon.createWithResource(context, R.drawable.avatar)
                 } else {
-                    Icon.createWithResource(context, R.drawable.avatar)
+                    userAvatarFlow.firstOrNull()?.let {
+                        Icon.createWithContentUri(it)
+                    } ?: Icon.createWithResource(context, R.drawable.avatar)
                 }
                 val user =
                     Person.Builder().setName(userNameFlow.firstOrNull()).setIcon(userIcon).build()
@@ -294,7 +301,7 @@ class NotificationUtil(
 //                                            )
                                         val mimetype = "image/png"
                                         val imageUri =
-                                            try {
+                                            it.uriString?.let { Uri.parse(it) } ?: try {
                                                 val loader = ImageLoader(context)
                                                 val request = ImageRequest.Builder(context)
                                                     .data(it.url)

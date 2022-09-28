@@ -35,7 +35,7 @@ object FileUtil {
         }
     }
 
-    fun getUriFromBitmap(context: Context,bm: Bitmap): Uri? {
+    fun getUriFromBitmap(context: Context, bm: Bitmap): Uri? {
 
         val tempFile = context.externalCacheDir?.let { File(it, "temp${System.currentTimeMillis().toDateAndTimeString()}.png") }
         val bytes = ByteArrayOutputStream()

@@ -9,6 +9,8 @@ import androidx.lifecycle.lifecycleScope
 import com.ojhdtapp.parabox.core.util.NotificationUtil
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.domain.model.Contact
+import com.ojhdtapp.parabox.domain.model.Message
+import com.ojhdtapp.parabox.domain.model.Profile
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import com.ojhdtapp.parabox.domain.service.PluginService
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
@@ -31,25 +33,24 @@ class ReplyReceiver : BroadcastReceiver() {
     lateinit var database: AppDatabase
 
     @Inject
-    lateinit var repository: MainRepository
+    lateinit var notificationUtil: NotificationUtil
 
     @OptIn(DelicateCoroutinesApi::class)
     override fun onReceive(context: Context, intent: Intent) {
         // This method is called when the BroadcastReceiver is receiving an Intent broadcast.
-//        val contactId = intent.getLongExtra("contactId", -1L)
         GlobalScope.launch(Dispatchers.IO) {
-            val senderId = intent.getLongExtra("senderId", -1L)
+            val contact = intent.getParcelableExtra<Contact>("contact")
             val sendTargetType = intent.getIntExtra("sendTargetType", SendTargetType.GROUP)
-            if (senderId == -1L) {
-                Log.e("ReplyReceiver", "senderId is null")
+            if (contact == null) {
+                Log.e("ReplyReceiver", "contact is null")
                 return@launch
             } else {
-                val pluginConnectionEntity = database.contactDao.getPluginConnectionById(senderId)
+                val pluginConnectionEntity = database.contactDao.getPluginConnectionById(contact.senderId)
                 val timestamp = System.currentTimeMillis()
                 val results = RemoteInput.getResultsFromIntent(intent) ?: return@launch
                 // The message typed in the notification reply.
-                val input = results.getCharSequence(NotificationUtil.KEY_TEXT_REPLY)?.toString()
-                val contents = listOf(PlainText(text = input ?: ""))
+                val input = results.getCharSequence(NotificationUtil.KEY_TEXT_REPLY)?.toString()?: ""
+                val contents = listOf(PlainText(text = input))
                 val pluginConnection = pluginConnectionEntity.toKitPluginConnection(sendTargetType)
                 handleNewMessage(
                     contents,
@@ -64,8 +65,29 @@ class ReplyReceiver : BroadcastReceiver() {
                         messageId = it
                     )
                     context.startService(PluginService.getReplyIntent(context, dto))
+                    updateNotification(input, timestamp, it, sendTargetType, contact, pluginConnection.connectionType.toString())
                 }
             }
         }
+    }
+
+    private suspend fun updateNotification(
+        input: String,
+        timestamp: Long,
+        messageId: Long,
+        sendTargetType: Int,
+        contact: Contact,
+        channelId: String,
+    ) {
+        val message = Message(
+            contents = listOf(com.ojhdtapp.parabox.domain.model.message_content.PlainText(input)),
+            profile = Profile("您", null, null, null),
+            timestamp = timestamp,
+            messageId = messageId,
+            sentByMe = true,
+            verified = false,
+            sendType = sendTargetType
+        )
+        notificationUtil.sendNewMessageNotification(message, contact, channelId, sendTargetType == SendTargetType.GROUP)
     }
 }
