@@ -688,6 +688,7 @@ class MainActivity : AppCompatActivity() {
             override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
                 Log.d("parabox", "mainActivity - service connected")
                 pluginService = (p1 as PluginService.PluginServiceBinder).getService().also {
+                    mainSharedViewModel.setPluginListStateFlow(it.getAppModelList())
                     it.setPluginListListener(object : PluginListListener {
                         override fun onPluginListChange(pluginList: List<AppModel>) {
                             mainSharedViewModel.setPluginListStateFlow(pluginList)

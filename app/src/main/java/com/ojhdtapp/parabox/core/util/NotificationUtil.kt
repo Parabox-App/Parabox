@@ -186,7 +186,8 @@ class NotificationUtil(
         message: Message,
         contact: Contact,
         channelId: String,
-        isGroupSpecify: Boolean? = null
+        isGroupSpecify: Boolean? = null,
+        fromChat: Boolean = false,
     ) {
         Log.d("parabox", "sendNotification at channel:${channelId}")
         updateShortcuts(contact)
@@ -275,7 +276,7 @@ class NotificationUtil(
                         val bitmap = (result as BitmapDrawable).bitmap
                         Icon.createWithAdaptiveBitmap(bitmap)
                     }
-                }
+                } ?: Icon.createWithResource(context, R.drawable.avatar)
                 val person =
                     Person.Builder().setName(message.profile.name).setIcon(personIcon).build()
                 val groupIcon = contact.profile.avatar?.let { url ->
@@ -381,6 +382,36 @@ class NotificationUtil(
                     ).apply {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                             setLocusId(LocusId(contact.contactId.toString()))
+                        }
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
+                            setBubbleMetadata(
+                                Notification.BubbleMetadata
+                                    .Builder(
+                                        PendingIntent.getActivity(
+                                            context,
+                                            REQUEST_BUBBLE,
+                                            Intent(context, MainActivity::class.java)
+                                                .setAction(Intent.ACTION_VIEW)
+                                                .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                                                .putExtra("contactId", contact.contactId)
+                                                .putExtra("contact", contact),
+                                            PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                                        ),
+                                        personIcon
+                                    )
+                                    // The height of the expanded bubble.
+                                    .setDesiredHeightResId(R.dimen.bubble_height)
+                                    .apply {
+                                        // When the bubble is explicitly opened by the user, we can show the bubble
+                                        // automatically in the expanded state. This works only when the app is in
+                                        // the foreground.
+                                        if (fromChat) {
+                                            setAutoExpandBubble(true)
+                                            setSuppressNotification(true)
+                                        }
+                                    }
+                                    .build()
+                            )
                         }
                     }
             } else {

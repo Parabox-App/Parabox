@@ -75,6 +75,10 @@ class PluginService : LifecycleService() {
 
     override fun onBind(intent: Intent): IBinder {
         super.onBind(intent)
+        // Update List When Rebind
+        pluginListListener?.onPluginListChange(
+            appModelList
+        )
         return PluginServiceBinder()
     }
 
@@ -125,6 +129,8 @@ class PluginService : LifecycleService() {
         super.onDestroy()
     }
 
+    fun getAppModelList() : List<AppModel> = appModelList.toList()
+
     // Call Only Once
     private fun bindPlugins() {
         appModelList.forEach { appModel ->
@@ -139,18 +145,19 @@ class PluginService : LifecycleService() {
                 deleteMessage = deleteMessage,
                 onRunningStatusChange = { connectionType, status ->
                     Log.d("parabox", "stated changed received: $status")
-                    pluginListListener?.onPluginListChange(
-                        appModelList.map {
-                            if (it.connectionType == connectionType) it.copy(runningStatus = status) else it
-                        }.also {
-                            val connectingPluginNum =
-                                it.count { it.runningStatus == AppModel.RUNNING_STATUS_RUNNING }
-                            notificationUtil.updateForegroundServiceNotification(
-                                if (connectingPluginNum == 0) "没有已连接的扩展" else "已连接 $connectingPluginNum 个扩展",
-                                "Parabox 正在后台运行",
-                            )
-                        }
-                    )
+                    appModelList = appModelList.map {
+                        if (it.connectionType == connectionType) it.copy(runningStatus = status) else it
+                    }.also {
+                        // Send Update to Activity
+                        pluginListListener?.onPluginListChange(it)
+                        // Send Notification
+                        val connectingPluginNum =
+                            it.count { it.runningStatus == AppModel.RUNNING_STATUS_RUNNING }
+                        notificationUtil.updateForegroundServiceNotification(
+                            if (connectingPluginNum == 0) "没有已连接的扩展" else "已连接 $connectingPluginNum 个扩展",
+                            "Parabox 正在后台运行",
+                        )
+                    }
                 }
             )
             pluginConnectionMap[appModel.connectionType] = pluginConnObj

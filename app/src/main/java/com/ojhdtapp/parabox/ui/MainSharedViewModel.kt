@@ -47,7 +47,7 @@ class MainSharedViewModel @Inject constructor(
         loadMessageFromContact(targetContact)
 
         viewModelScope.launch {
-            delay(100)
+            delay(500)
             _uiEventFlow.emit(MainSharedUiEvent.NavigateToChat(targetContact))
         }
     }
