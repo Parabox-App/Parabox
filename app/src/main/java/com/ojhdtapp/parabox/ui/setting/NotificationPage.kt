@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
@@ -17,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
+import com.ojhdtapp.parabox.ui.util.NormalPreference
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,7 +68,36 @@ fun NotificationPage(
         LazyColumn(
             contentPadding = it
         ) {
+            item {
+                NormalPreference(
+                    title = "通知渠道",
+                    subtitle = "重要性级别，提示音，振动等",
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Outlined.NotificationsActive,
+                            contentDescription = "channel"
+                        )
+                    },
+                    onClick = {
 
+                    }
+                )
+            }
+            item {
+                NormalPreference(
+                    title = "系统通知设置",
+                    subtitle = "重要性级别，通知渠道，提示音，振动等",
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Outlined.NotificationsActive,
+                            contentDescription = "channel"
+                        )
+                    },
+                    onClick = {
+
+                    }
+                )
+            }
         }
     }
 }

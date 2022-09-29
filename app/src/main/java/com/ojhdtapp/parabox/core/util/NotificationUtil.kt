@@ -11,14 +11,17 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.LocusId
+import android.content.pm.PackageManager
 import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
-import android.graphics.BitmapFactory
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
+import androidx.core.content.ContextCompat.startActivity
 import androidx.core.content.getSystemService
 import androidx.datastore.preferences.core.emptyPreferences
 import coil.ImageLoader
@@ -33,7 +36,6 @@ import com.ojhdtapp.parabox.domain.model.message_content.Image
 import com.ojhdtapp.parabox.domain.model.message_content.getContentString
 import com.ojhdtapp.parabox.domain.notification.MarkAsReadReceiver
 import com.ojhdtapp.parabox.domain.notification.ReplyReceiver
-import com.ojhdtapp.parabox.domain.use_case.GetContacts
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendTargetType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -44,15 +46,15 @@ import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.util.Date
 import java.util.concurrent.CopyOnWriteArrayList
-import kotlin.ClassCastException
+
 
 class NotificationUtil(
     val context: Context,
     val database: AppDatabase
 ) {
     companion object {
-//        const val GROUP_KEY_NEW_MESSAGE = "group_new_message"
-//        const val GROUP_KEY_INTERNAL = "group_internal"
+        const val GROUP_KEY_NEW_MESSAGE = "group_new_message"
+        const val GROUP_KEY_INTERNAL = "group_internal"
 
         private const val REQUEST_CONTENT = 1
         private const val REQUEST_BUBBLE = 2
@@ -75,6 +77,30 @@ class NotificationUtil(
 
     private val tempMessageMap =
         mutableMapOf<Long, CopyOnWriteArrayList<Pair<Message, Person>>>()
+
+    fun openChannelSetting(channelId: String?) {
+        val intent = Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).apply {
+            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+            putExtra(Settings.EXTRA_CHANNEL_ID, channelId)
+        }
+        if (context.packageManager.resolveActivity(
+                intent,
+                PackageManager.MATCH_DEFAULT_ONLY
+            ) != null
+        ) {
+            context.startActivity(intent)
+        }
+    }
+
+    fun openNotificationSetting() {
+        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+        intent.putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+        if (context.packageManager.resolveActivity(
+                intent,
+                PackageManager.MATCH_DEFAULT_ONLY
+            ) != null
+        ) context.startActivity(intent)
+    }
 
     fun createNotificationChannel(
         channelId: String,
@@ -190,14 +216,15 @@ class NotificationUtil(
 
         val launchPendingIntent: PendingIntent =
             Intent(context, MainActivity::class.java).apply {
-                action = Intent.ACTION_MAIN.apply {
-                    putExtra("contactId", contact.contactId)
-                }
+                action = Intent.ACTION_VIEW
+                addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                putExtra("contactId", contact.contactId)
+                putExtra("contact", contact)
                 addCategory(Intent.CATEGORY_LAUNCHER)
             }.let {
                 PendingIntent.getActivity(
                     context, 0, it,
-                    PendingIntent.FLAG_IMMUTABLE
+                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
                 )
             }
         val replyPendingIntent: PendingIntent =
@@ -274,6 +301,7 @@ class NotificationUtil(
                     .setShowWhen(true)
                     .setAutoCancel(true)
                     .setWhen(message.timestamp)
+                    .setGroup(GROUP_KEY_NEW_MESSAGE)
                     .setActions(
                         Notification.Action
                             .Builder(
@@ -285,7 +313,7 @@ class NotificationUtil(
                             .setAllowGeneratedReplies(true)
                             .build(),
                         Notification.Action.Builder(
-                        Icon.createWithResource(context, R.drawable.baseline_mark_chat_read_24),
+                            Icon.createWithResource(context, R.drawable.baseline_mark_chat_read_24),
                             "标为已读",
                             markAsReadPendingIntent
                         ).build()
@@ -372,7 +400,7 @@ class NotificationUtil(
         notificationManager.notify(contact.contactId.toInt(), notificationBuilder.build())
     }
 
-    fun clearNotification(id: Int){
+    fun clearNotification(id: Int) {
         notificationManager.cancel(id)
     }
 
@@ -399,6 +427,8 @@ class NotificationUtil(
 //                .setContentText("Parabox 正在后台运行")
                 .setContentIntent(pendingIntent)
                 .setTicker("Parabox 正在后台运行")
+                .setCategory(Notification.CATEGORY_SERVICE)
+                .setGroup(GROUP_KEY_INTERNAL)
                 .setOnlyAlertOnce(true)
                 .build()
         context.startForeground(FOREGROUND_PLUGIN_SERVICE_NOTIFICATION_ID, notification)
@@ -419,7 +449,9 @@ class NotificationUtil(
                 .setSmallIcon(R.drawable.ic_android_black_24dp)
                 .setContentTitle(title)
 //                .setContentText(text)
+                .setCategory(Notification.CATEGORY_SERVICE)
                 .setContentIntent(pendingIntent)
+                .setGroup(GROUP_KEY_INTERNAL)
                 .setTicker(title)
                 .build()
         notificationManager.notify(

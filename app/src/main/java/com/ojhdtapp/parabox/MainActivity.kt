@@ -44,6 +44,7 @@ import com.google.android.material.datepicker.MaterialDatePicker
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.data.local.entity.DownloadingState
 import com.ojhdtapp.parabox.domain.model.AppModel
+import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.File
 import com.ojhdtapp.parabox.domain.service.PluginListListener
 import com.ojhdtapp.parabox.domain.service.PluginService
@@ -509,6 +510,10 @@ class MainActivity : AppCompatActivity() {
     )
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Navigate to Page
+        intent.getParcelableExtra<Contact>("contact")?.let {
+            mainSharedViewModel.navigateToChatPage(it)
+        }
 
         // Vibrator
         vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {

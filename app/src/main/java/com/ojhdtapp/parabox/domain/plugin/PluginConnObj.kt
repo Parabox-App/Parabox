@@ -88,7 +88,7 @@ class PluginConnObj(
             extra = Bundle().apply {
                 putParcelable("dto", dto)
             },
-            timeoutMillis = 6000,
+            timeoutMillis = 10000,
             onResult = {
                 Log.d("parabox", "result back!:${it}")
                 dto.messageId?.let { messageId ->

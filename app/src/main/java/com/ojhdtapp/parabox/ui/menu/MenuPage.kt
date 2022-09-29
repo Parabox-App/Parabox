@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.menu
 
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.Column
@@ -26,6 +27,7 @@ import com.google.accompanist.navigation.material.ExperimentalMaterialNavigation
 import com.ojhdtapp.parabox.ui.MainSharedUiEvent
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.NavGraphs
+import com.ojhdtapp.parabox.ui.destinations.ChatPageDestination
 import com.ojhdtapp.parabox.ui.destinations.FilePageDestination
 import com.ojhdtapp.parabox.ui.destinations.MessagePageDestination
 import com.ojhdtapp.parabox.ui.file.FilePage
@@ -44,6 +46,8 @@ import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.manualcomposablecalls.composable
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.dependency
+import com.ramcosta.composedestinations.navigation.navigate
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -97,6 +101,12 @@ fun MenuPage(
                         bottomSheetState.show()
                     } else {
                         bottomSheetState.hide()
+                    }
+                }
+                is MainSharedUiEvent.NavigateToChat -> {
+                    Log.d("parabox", "navigate to chat")
+                    if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
+                        navController.navigate(ChatPageDestination())
                     }
                 }
             }

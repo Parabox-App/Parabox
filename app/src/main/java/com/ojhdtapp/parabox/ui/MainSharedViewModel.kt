@@ -11,9 +11,7 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
-import androidx.paging.PagingSource
 import androidx.paging.cachedIn
-import androidx.paging.compose.collectAsLazyPagingItems
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendTargetType
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.At
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
@@ -24,10 +22,7 @@ import com.ojhdtapp.parabox.domain.use_case.DeleteMessage
 import com.ojhdtapp.parabox.domain.use_case.GetMessages
 import com.ojhdtapp.parabox.domain.use_case.GroupNewContact
 import com.ojhdtapp.parabox.ui.message.AudioRecorderState
-import com.ojhdtapp.parabox.ui.message.GroupInfoState
-import com.ojhdtapp.parabox.ui.message.MessagePageUiEvent
 import com.ojhdtapp.parabox.ui.message.MessageState
-import com.ojhdtapp.parabox.ui.util.SearchAppBar
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.*
@@ -46,6 +41,16 @@ class MainSharedViewModel @Inject constructor(
     // emit to this when wanting toasting
     private val _uiEventFlow = MutableSharedFlow<MainSharedUiEvent>()
     val uiEventFlow = _uiEventFlow.asSharedFlow()
+
+    // Activity Navigate
+    fun navigateToChatPage(targetContact: Contact) {
+        loadMessageFromContact(targetContact)
+
+        viewModelScope.launch {
+            delay(100)
+            _uiEventFlow.emit(MainSharedUiEvent.NavigateToChat(targetContact))
+        }
+    }
 
     // Badge
     private val _messageBadge = mutableStateOf<Int>(0)
@@ -297,8 +302,8 @@ class MainSharedViewModel @Inject constructor(
 
     // Swipe Refresh
     private val _isRefreshing = mutableStateOf<Boolean>(false)
-    val isRefreshing : State<Boolean> = _isRefreshing
-    fun setIsRefreshing(value : Boolean){
+    val isRefreshing: State<Boolean> = _isRefreshing
+    fun setIsRefreshing(value: Boolean) {
         _isRefreshing.value = value
     }
 }
