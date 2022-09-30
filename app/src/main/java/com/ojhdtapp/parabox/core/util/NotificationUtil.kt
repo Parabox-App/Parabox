@@ -153,8 +153,7 @@ class NotificationUtil(
                     .setCategories(setOf("com.ojhdtapp.parabox.bubbles.category.TEXT_SHARE_TARGET"))
                     .setIntent(Intent(context, MainActivity::class.java).apply {
                         action = Intent.ACTION_VIEW
-                        addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                        putExtra("contactId", it.contactId)
+                        data = Uri.parse("parabox://contact/${it.contactId}")
                     })
                     .setPerson(
                         Person.Builder()
@@ -172,8 +171,7 @@ class NotificationUtil(
                     .setCategories(setOf("com.ojhdtapp.parabox.bubbles.category.TEXT_SHARE_TARGET"))
                     .setIntent(Intent(context, MainActivity::class.java).apply {
                         action = Intent.ACTION_VIEW
-                        addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                        putExtra("contactId", it.contactId)
+                        data = Uri.parse("parabox://contact/${it.contactId}")
                     })
                     .build()
             }
@@ -223,6 +221,7 @@ class NotificationUtil(
             Intent(context, MainActivity::class.java).apply {
                 action = Intent.ACTION_VIEW
                 addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+//                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                 putExtra("contactId", contact.contactId)
                 putExtra("contact", contact)
                 addCategory(Intent.CATEGORY_LAUNCHER)
@@ -306,7 +305,7 @@ class NotificationUtil(
                     .setShowWhen(true)
                     .setAutoCancel(true)
                     .setWhen(message.timestamp)
-//                    .setGroup(GROUP_KEY_NEW_MESSAGE)
+                    .setGroup(GROUP_KEY_NEW_MESSAGE)
                     .setActions(
                         Notification.Action
                             .Builder(
@@ -463,7 +462,7 @@ class NotificationUtil(
                 .setContentIntent(pendingIntent)
                 .setTicker("Parabox 正在后台运行")
                 .setCategory(Notification.CATEGORY_SERVICE)
-//                .setGroup(GROUP_KEY_INTERNAL)
+                .setGroup(GROUP_KEY_INTERNAL)
                 .setOnlyAlertOnce(true)
                 .build()
         context.startForeground(FOREGROUND_PLUGIN_SERVICE_NOTIFICATION_ID, notification)
