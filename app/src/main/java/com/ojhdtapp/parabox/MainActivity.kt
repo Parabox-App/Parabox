@@ -532,19 +532,22 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        // Navigate to Page
+        intent?.getParcelableExtra<Contact>("contact")?.let {
+            Log.d("parabox", "notification navigated")
+            mainSharedViewModel.navigateToChatPage(it)
+        }
+    }
+
     @OptIn(
         ExperimentalAnimationApi::class, ExperimentalMaterialNavigationApi::class,
         ExperimentalMaterial3WindowSizeClassApi::class
     )
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Navigate to Page
-        Log.d("parabox", "notification onCreate")
-        intent.getParcelableExtra<Contact>("contact")?.let {
-            Log.d("parabox", "notification navigated")
-            mainSharedViewModel.navigateToChatPage(it)
-        }
 
         // Vibrator
         vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
