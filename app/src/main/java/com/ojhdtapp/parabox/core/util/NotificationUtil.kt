@@ -21,6 +21,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat.startActivity
 import androidx.core.content.getSystemService
 import androidx.datastore.preferences.core.emptyPreferences
@@ -59,7 +60,7 @@ class NotificationUtil(
         private const val REQUEST_CONTENT = 1
         private const val REQUEST_BUBBLE = 2
 
-        private const val SERVICE_STATE_CHANNEL_ID = "service_state_channel"
+        const val SERVICE_STATE_CHANNEL_ID = "service_state_channel"
         private const val FOREGROUND_PLUGIN_SERVICE_NOTIFICATION_ID = 999
 
         const val KEY_TEXT_REPLY = "key_text_reply"
@@ -383,7 +384,7 @@ class NotificationUtil(
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                             setLocusId(LocusId(contact.contactId.toString()))
                         }
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                             setBubbleMetadata(
                                 Notification.BubbleMetadata
                                     .Builder(
@@ -489,5 +490,18 @@ class NotificationUtil(
             FOREGROUND_PLUGIN_SERVICE_NOTIFICATION_ID,
             notification
         )
+    }
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    fun canBubble(contact: Contact, channelId: String): Boolean {
+        val channel = notificationManager.getNotificationChannel(
+            channelId,
+            contact.contactId.toString()
+        )
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            notificationManager.bubblePreference == NotificationManager.BUBBLE_PREFERENCE_ALL
+        } else {
+            notificationManager.areBubblesAllowed()
+        } || channel?.canBubble() == true
     }
 }

@@ -17,6 +17,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
@@ -82,6 +83,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var getFiles: GetFiles
+
+    @Inject
+    lateinit var notificationUtil: NotificationUtil
 
     var pluginService: PluginService? = null
     private lateinit var pluginServiceConnection: ServiceConnection
@@ -500,6 +504,30 @@ class MainActivity : AppCompatActivity() {
 
             is ActivityEvent.RefreshMessage -> {
                 refreshMessage()
+            }
+
+            is ActivityEvent.ShowInBubble -> {
+                lifecycleScope.launch {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && notificationUtil.canBubble(
+                            event.contact,
+                            event.channelId
+                        )
+                    ) {
+                        notificationUtil.sendNewMessageNotification(
+                            event.message,
+                            event.contact,
+                            event.channelId,
+                            true,
+                            true
+                        )
+                    } else {
+                        Toast.makeText(
+                            this@MainActivity,
+                            "当前会话未启用对话泡",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
             }
         }
     }

@@ -2,6 +2,7 @@ package com.ojhdtapp.parabox.ui.message
 
 import android.content.Context
 import android.net.Uri
+import android.os.Build
 import android.os.Build.VERSION.SDK_INT
 import android.util.Log
 import android.widget.Toast
@@ -61,6 +62,7 @@ import coil.request.ImageRequest
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.domain.model.Message
+import com.ojhdtapp.parabox.domain.model.Profile
 import com.ojhdtapp.parabox.domain.model.message_content.*
 import com.ojhdtapp.parabox.domain.service.PluginService
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
@@ -162,7 +164,26 @@ fun ChatPage(
                     },
                     onVibrate = {
                         onEvent(ActivityEvent.Vibrate)
-                    }
+                    },
+                    onShowInBubble = {
+                        if(messageState.contact != null && messageState.selectedPluginConnection != null){
+                            onEvent(ActivityEvent.ShowInBubble(
+                                contact = messageState.contact!!.copy(
+                                    profile = Profile("null", null, null, null)
+                                ),
+                                message = Message(
+                                    emptyList(),
+                                    Profile("null", null, null, null),
+                                    System.currentTimeMillis(),
+                                    Long.MIN_VALUE,
+                                    true,
+                                    true,
+                                    null
+                                ),
+                                channelId = messageState.selectedPluginConnection!!.connectionType.toString()
+                            ))
+                        }
+                    },
                 )
             }
         }
@@ -192,6 +213,7 @@ fun NormalChatPage(
     onResumeAudioPlaying: () -> Unit,
     onSetAudioProgressByFraction: (progressFraction: Float) -> Unit,
     onVibrate: () -> Unit,
+    onShowInBubble: () -> Unit,
 ) {
     // Util
     val coroutineScope = rememberCoroutineScope()
@@ -690,6 +712,20 @@ fun NormalChatPage(
                                                 contentDescription = null
                                             )
                                         })
+                                    if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
+                                        DropdownMenuItem(
+                                            text = { Text(text = "在对话泡中显示") },
+                                            onClick = {
+                                                menuExpanded = false
+                                                onShowInBubble()
+                                            },
+                                            leadingIcon = {
+                                                Icon(
+                                                    Icons.Outlined.BubbleChart,
+                                                    contentDescription = null
+                                                )
+                                            })
+                                    }
                                 }
                             }
                         }, colors = TopAppBarDefaults.smallTopAppBarColors(

@@ -2,10 +2,12 @@ package com.ojhdtapp.parabox.ui.util
 
 import android.content.Intent
 import android.net.Uri
+import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.PluginConnection
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendMessageDto
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
 import com.ojhdtapp.parabox.domain.model.File
+import com.ojhdtapp.parabox.domain.model.Message
 
 sealed interface ActivityEvent {
     data class LaunchIntent(val intent: Intent) : ActivityEvent
@@ -28,4 +30,5 @@ sealed interface ActivityEvent {
     data class OpenFile(val file: File) : ActivityEvent
     object Vibrate : ActivityEvent
     object RefreshMessage: ActivityEvent
+    data class ShowInBubble(val contact: Contact, val message: Message, val channelId: String) : ActivityEvent
 }
