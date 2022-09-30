@@ -304,7 +304,7 @@ class NotificationUtil(
                     .setShowWhen(true)
                     .setAutoCancel(true)
                     .setWhen(message.timestamp)
-                    .setGroup(GROUP_KEY_NEW_MESSAGE)
+//                    .setGroup(GROUP_KEY_NEW_MESSAGE)
                     .setActions(
                         Notification.Action
                             .Builder(
