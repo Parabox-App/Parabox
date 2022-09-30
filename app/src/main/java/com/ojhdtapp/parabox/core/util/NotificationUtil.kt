@@ -37,6 +37,7 @@ import com.ojhdtapp.parabox.domain.model.message_content.Image
 import com.ojhdtapp.parabox.domain.model.message_content.getContentString
 import com.ojhdtapp.parabox.domain.notification.MarkAsReadReceiver
 import com.ojhdtapp.parabox.domain.notification.ReplyReceiver
+import com.ojhdtapp.parabox.ui.bubble.BubbleActivity
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendTargetType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -391,9 +392,9 @@ class NotificationUtil(
                                         PendingIntent.getActivity(
                                             context,
                                             REQUEST_BUBBLE,
-                                            Intent(context, MainActivity::class.java)
+                                            Intent(context, BubbleActivity::class.java)
                                                 .setAction(Intent.ACTION_VIEW)
-                                                .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                                                 .putExtra("contactId", contact.contactId)
                                                 .putExtra("contact", contact),
                                             PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT

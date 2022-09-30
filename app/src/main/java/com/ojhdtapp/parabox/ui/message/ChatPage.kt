@@ -169,7 +169,7 @@ fun ChatPage(
                         if(messageState.contact != null && messageState.selectedPluginConnection != null){
                             onEvent(ActivityEvent.ShowInBubble(
                                 contact = messageState.contact!!.copy(
-                                    profile = Profile("null", null, null, null)
+                                    profile = Profile(messageState.contact?.profile?.name?: "会话", null, null, null)
                                 ),
                                 message = Message(
                                     emptyList(),

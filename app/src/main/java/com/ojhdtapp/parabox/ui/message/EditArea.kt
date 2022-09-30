@@ -60,6 +60,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.getTextAfterSelection
 import androidx.compose.ui.text.input.getTextBeforeSelection
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.core.content.FileProvider
@@ -91,6 +92,7 @@ import java.io.File
 @Composable
 fun EditArea(
     modifier: Modifier = Modifier,
+    height: Dp = 160.dp,
     isBottomSheetExpand: Boolean,
     packageNameList: List<String>,
     quoteMessageSelected: Message?,
@@ -701,7 +703,7 @@ fun EditArea(
                 if (it) {
                     Row(
                         modifier = Modifier
-                            .height(160.dp)
+                            .height(height)
                             .fillMaxWidth()
                             .navigationBarsPadding()
                             .padding(bottom = 4.dp)
@@ -1041,7 +1043,7 @@ fun EditArea(
                         if (it) {
                             Row(
                                 modifier = Modifier
-                                    .height(160.dp)
+                                    .height(height)
                                     .fillMaxWidth()
                                     .navigationBarsPadding()
                                     .padding(bottom = 4.dp)
@@ -1275,7 +1277,7 @@ fun EditArea(
                         } else {
                             Row(
                                 modifier = Modifier
-                                    .height(160.dp)
+                                    .height(height)
                                     .fillMaxWidth()
                                     .navigationBarsPadding()
                                     .padding(start = 14.dp, end = 14.dp, bottom = 4.dp)
