@@ -317,20 +317,25 @@ class BubbleActivity : AppCompatActivity() {
             is ActivityEvent.SetAudioProgress -> {
                 setProgress(event.fraction)
             }
-            
+
             is ActivityEvent.Vibrate -> {
                 vibrate()
             }
         }
     }
+
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Load Message
         intent.getParcelableExtra<Contact>("contact")?.let {
-            Log.d("parabox", "contact loaded: $it")
-            viewModel.loadMessageFromContact(it)
+            if (savedInstanceState == null) {
+                Log.d("parabox", "contact loaded: $it")
+                viewModel.loadMessageFromContact(it)
+            }
         }
+//        val contactId = intent.data?.lastPathSegment?.toLongOrNull() ?: return
+
 
         // Vibrator
         vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -343,7 +348,7 @@ class BubbleActivity : AppCompatActivity() {
         recordPath = "${externalCacheDir!!.absoluteFile}/audio_record.mp3"
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        setContent{
+        setContent {
             // System Ui
             val systemUiController = rememberSystemUiController()
             val useDarkIcons = isSystemInDarkTheme()
