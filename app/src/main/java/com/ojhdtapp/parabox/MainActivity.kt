@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.IntentSender
 import android.content.ServiceConnection
 import android.media.MediaPlayer
 import android.media.MediaRecorder
@@ -414,10 +415,9 @@ class MainActivity : AppCompatActivity() {
     // Event
     fun onEvent(event: ActivityEvent) {
         when (event) {
+
             is ActivityEvent.LaunchIntent -> {
-                startActivity(event.intent.apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                })
+                startActivity(event.intent)
             }
 
             is ActivityEvent.SendMessage -> {
@@ -538,8 +538,11 @@ class MainActivity : AppCompatActivity() {
     )
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         // Navigate to Page
+        Log.d("parabox", "notification onCreate")
         intent.getParcelableExtra<Contact>("contact")?.let {
+            Log.d("parabox", "notification navigated")
             mainSharedViewModel.navigateToChatPage(it)
         }
 
