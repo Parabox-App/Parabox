@@ -3,7 +3,6 @@ package com.ojhdtapp.parabox.ui.bubble
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.IntentSender
 import android.content.ServiceConnection
 import android.media.MediaPlayer
 import android.media.MediaRecorder
@@ -248,7 +247,9 @@ class BubbleActivity : AppCompatActivity() {
     fun onEvent(event: ActivityEvent) {
         when (event) {
             is ActivityEvent.LaunchIntent -> {
-                startActivity(event.intent)
+                startActivity(event.intent.apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                })
             }
 
             is ActivityEvent.SendMessage -> {
@@ -329,6 +330,7 @@ class BubbleActivity : AppCompatActivity() {
         // Load Message
         intent.getParcelableExtra<Contact>("contact")?.let {
             if (savedInstanceState == null) {
+                Log.d("parabox", "contact loaded: $it")
                 viewModel.loadMessageFromContact(it)
             }
         }

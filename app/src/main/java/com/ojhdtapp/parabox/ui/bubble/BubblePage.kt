@@ -1,7 +1,5 @@
 package com.ojhdtapp.parabox.ui.bubble
 
-import android.app.PendingIntent
-import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -33,7 +31,6 @@ import androidx.compose.ui.unit.dp
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import coil.imageLoader
-import com.ojhdtapp.parabox.MainActivity
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.message_content.*
@@ -70,11 +67,7 @@ fun BubblePage(
                 )
             )
         },
-        onLaunchApp = {
-            messageState.contact?.let{
-
-            }
-        },
+        onLaunchApp = { },
         onSend = {
             viewModel.clearQuoteMessage()
             viewModel.clearAt()

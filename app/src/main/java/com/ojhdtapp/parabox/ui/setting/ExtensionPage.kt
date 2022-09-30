@@ -1,6 +1,5 @@
 package com.ojhdtapp.parabox.ui.setting
 
-import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.expandVertically
@@ -140,9 +139,7 @@ fun ExtensionPage(
                     },
                     onClick = {
                         it.launchIntent?.let {
-                            onEvent(ActivityEvent.LaunchIntent(it.apply {
-                                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                            }))
+                            onEvent(ActivityEvent.LaunchIntent(it))
                         }
                     }
                 )

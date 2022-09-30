@@ -1,6 +1,5 @@
 package com.ojhdtapp.parabox.ui.util
 
-import android.app.PendingIntent
 import android.content.Intent
 import android.net.Uri
 import com.ojhdtapp.parabox.domain.model.Contact
@@ -12,7 +11,6 @@ import com.ojhdtapp.parabox.domain.model.Message
 
 sealed interface ActivityEvent {
     data class LaunchIntent(val intent: Intent) : ActivityEvent
-    data class LaunchPendingIntent(val pendingIntent: PendingIntent) : ActivityEvent
     data class SendMessage(
         val contents: List<MessageContent>,
         val pluginConnection: PluginConnection,
