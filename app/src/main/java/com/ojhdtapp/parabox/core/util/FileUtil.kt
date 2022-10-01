@@ -37,7 +37,7 @@ object FileUtil {
 
     fun getUriFromBitmap(context: Context, bm: Bitmap): Uri? {
 
-        val tempFile = context.externalCacheDir?.let { File(it, "temp${System.currentTimeMillis().toDateAndTimeString()}.png") }
+        val tempFile = context.externalCacheDir?.let { File(it, "temp_${System.currentTimeMillis().toDateAndTimeString()}.png") }
         val bytes = ByteArrayOutputStream()
         bm.compress(Bitmap.CompressFormat.PNG, 100, bytes)
         val bitmapData = bytes.toByteArray()
@@ -47,6 +47,15 @@ object FileUtil {
         fileOutPut.flush()
         fileOutPut.close()
         return getUriOfFile(context, tempFile!!)
+    }
+
+    fun getUriFromBitmapWithCleanCache(context: Context, bm: Bitmap): Uri? {
+        context.externalCacheDir?.listFiles()?.sortedByDescending { it.lastModified() }?.forEachIndexed() { index, file ->
+            if (index > 20) {
+                file.delete()
+            }
+        }
+        return getUriFromBitmap(context, bm)
     }
 
     fun getUriOfFile(context: Context, file: File): Uri? {

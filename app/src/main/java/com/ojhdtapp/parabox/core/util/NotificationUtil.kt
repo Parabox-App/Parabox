@@ -354,13 +354,7 @@ class NotificationUtil(
                                     if (it.first.sentByMe) null else it.second
                                 ).apply {
                                     it.first.contents.filterIsInstance<Image>().firstOrNull()?.let {
-//                                        val mimetype = MimeTypeMap.getSingleton()
-//                                            .getMimeTypeFromExtension(
-//                                                MimeTypeMap.getFileExtensionFromUrl(
-//                                                    it.url
-//                                                )
-//                                            )
-                                        val mimetype = "image/png"
+                                        val mimetype = "image/"
                                         val imageUri =
                                             it.uriString?.let { Uri.parse(it) } ?: try {
                                                 val loader = ImageLoader(context)
@@ -370,7 +364,7 @@ class NotificationUtil(
                                                     .build()
                                                 val result =
                                                     (loader.execute(request) as SuccessResult).drawable
-                                                FileUtil.getUriFromBitmap(
+                                                FileUtil.getUriFromBitmapWithCleanCache(
                                                     context,
                                                     (result as BitmapDrawable).bitmap
                                                 )
@@ -406,9 +400,7 @@ class NotificationUtil(
                                             Intent(context, BubbleActivity::class.java)
                                                 .setAction(Intent.ACTION_VIEW)
 //                                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                                                .setData(contactIdUri)
-                                                .putExtra("contactId", contact.contactId)
-                                                .putExtra("contact", contact),
+                                                .setData(contactIdUri),
                                             PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
                                         ),
                                         personIcon
