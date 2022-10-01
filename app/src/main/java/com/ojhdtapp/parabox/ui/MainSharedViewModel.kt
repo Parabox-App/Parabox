@@ -225,7 +225,7 @@ class MainSharedViewModel @Inject constructor(
             }
         }
         .map { settings ->
-            settings[DataStoreKeys.USER_NAME] ?: "User"
+            settings[DataStoreKeys.USER_NAME] ?: DataStoreKeys.DEFAULT_USER_NAME
         }
 
     fun setUserName(value: String) {

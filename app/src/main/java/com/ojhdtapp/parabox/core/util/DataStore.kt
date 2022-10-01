@@ -11,4 +11,6 @@ object DataStoreKeys{
     val SEND_MESSAGE_ID = longPreferencesKey("send_message_id")
     val USER_NAME = stringPreferencesKey("user_name")
     val USER_AVATAR = stringPreferencesKey("user_avatar")
+
+    const val DEFAULT_USER_NAME = "Me"
 }

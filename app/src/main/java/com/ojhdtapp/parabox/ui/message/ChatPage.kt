@@ -311,7 +311,7 @@ fun NormalChatPage(
     }
 
     // User Profile
-    val userName by mainSharedViewModel.userNameFlow.collectAsState(initial = "User")
+    val userName by mainSharedViewModel.userNameFlow.collectAsState(initial = DataStoreKeys.DEFAULT_USER_NAME)
     val avatarUri by mainSharedViewModel.userAvatarFlow.collectAsState(initial = null)
 
     // Delete Confirm Dialog
@@ -1184,7 +1184,7 @@ fun NormalChatPage(
 //                            mainSharedViewModel = mainSharedViewModel,
 //                            data = chatBlock,
 //                            sentByMe = chatBlock.messages.first().sentByMe,
-//                            userName = mainSharedViewModel.userNameFlow.collectAsState(initial = "User").value,
+//                            userName = mainSharedViewModel.userNameFlow.collectAsState(initial = DataStoreKeys.DEFAULT_USER_NAME).value,
 //                            avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
 //                        )
 //                    }

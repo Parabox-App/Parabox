@@ -29,6 +29,7 @@ import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
@@ -57,7 +58,7 @@ fun SettingPage(
 
     EditUserNameDialog(
         openDialog = viewModel.editUserNameDialogState.value,
-        userName = mainSharedViewModel.userNameFlow.collectAsState(initial = "User").value,
+        userName = mainSharedViewModel.userNameFlow.collectAsState(initial = DataStoreKeys.DEFAULT_USER_NAME).value,
         onConfirm = {
             viewModel.setEditUserNameDialogState(false)
             mainSharedViewModel.setUserName(it)
@@ -211,7 +212,7 @@ fun SettingPage(
                         item {
                             ThemeBlock(
                                 modifier = Modifier.fillMaxWidth(),
-                                userName = mainSharedViewModel.userNameFlow.collectAsState(initial = "User").value,
+                                userName = mainSharedViewModel.userNameFlow.collectAsState(initial = DataStoreKeys.DEFAULT_USER_NAME).value,
                                 version = "1.0",
                                 onBlockClick = {},
                                 onUserNameClick = {

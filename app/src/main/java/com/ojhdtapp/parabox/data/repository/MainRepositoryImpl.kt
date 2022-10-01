@@ -155,8 +155,8 @@ class MainRepositoryImpl @Inject constructor(
                     }
                 }
                 .map { settings ->
-                    settings[DataStoreKeys.USER_NAME] ?: "User"
-                }.firstOrNull() ?: "User"
+                    settings[DataStoreKeys.USER_NAME] ?: DataStoreKeys.DEFAULT_USER_NAME
+                }.firstOrNull() ?: DataStoreKeys.DEFAULT_USER_NAME
 
             val messageIdDeferred = async<Long> {
                 storeSendMessage(contents, timestamp, sendType)

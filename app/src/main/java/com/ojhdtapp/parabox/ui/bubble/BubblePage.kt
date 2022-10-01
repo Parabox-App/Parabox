@@ -211,7 +211,7 @@ fun BubbleChatPage(
     }
 
     // User Profile
-    val userName by viewModel.userNameFlow.collectAsState(initial = "User")
+    val userName by viewModel.userNameFlow.collectAsState(initial = DataStoreKeys.DEFAULT_USER_NAME)
     val avatarUri by viewModel.userAvatarFlow.collectAsState(initial = null)
 
     // Delete Confirm Dialog

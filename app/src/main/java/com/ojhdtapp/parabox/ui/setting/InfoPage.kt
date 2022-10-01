@@ -23,6 +23,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
@@ -82,7 +83,7 @@ fun InfoPage(
                 item {
                     ThemeBlock(
                         modifier = Modifier.fillMaxWidth(),
-                        userName = mainSharedViewModel.userNameFlow.collectAsState(initial = "User").value,
+                        userName = mainSharedViewModel.userNameFlow.collectAsState(initial = DataStoreKeys.DEFAULT_USER_NAME).value,
                         version = "1.0",
                         onBlockClick = {},
                         onUserNameClick = {

@@ -231,10 +231,8 @@ class NotificationUtil(
         val launchPendingIntent: PendingIntent =
             Intent(context, MainActivity::class.java).apply {
                 action = Intent.ACTION_VIEW
+                data = contactIdUri
                 addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                putExtra("contactId", contact.contactId)
-                putExtra("contact", contact)
-                addCategory(Intent.CATEGORY_LAUNCHER)
             }.let {
                 PendingIntent.getActivity(
                     context, 0, it,

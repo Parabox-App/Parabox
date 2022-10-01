@@ -41,6 +41,7 @@ import coil.decode.SvgDecoder
 import coil.request.ImageRequest
 import com.google.accompanist.flowlayout.FlowRow
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.core.HiltApplication
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.data.local.entity.DownloadingState
 import com.ojhdtapp.parabox.domain.model.File
@@ -115,7 +116,7 @@ fun FilePage(
     }
     UserProfileDialog(
         openDialog = mainSharedViewModel.showUserProfileDialogState.value,
-        userName = mainSharedViewModel.userNameFlow.collectAsState(initial = "User").value,
+        userName = mainSharedViewModel.userNameFlow.collectAsState(initial = DataStoreKeys.DEFAULT_USER_NAME).value,
         avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
         pluginList = mainSharedViewModel.pluginListStateFlow.collectAsState().value,
         sizeClass = sizeClass,
@@ -128,7 +129,7 @@ fun FilePage(
         onDismiss = { mainSharedViewModel.setShowUserProfileDialogState(false) })
     EditUserNameDialog(
         openDialog = mainSharedViewModel.editUserNameDialogState.value,
-        userName = mainSharedViewModel.userNameFlow.collectAsState(initial = "User").value,
+        userName = mainSharedViewModel.userNameFlow.collectAsState(initial = DataStoreKeys.DEFAULT_USER_NAME).value,
         onConfirm = {
             mainSharedViewModel.setEditUserNameDialogState(false)
             mainSharedViewModel.setUserName(it)

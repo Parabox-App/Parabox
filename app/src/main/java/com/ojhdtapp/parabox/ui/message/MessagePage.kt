@@ -58,6 +58,7 @@ import coil.request.ImageRequest
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.toTimeUntilNow
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.ui.MainSharedUiEvent
@@ -250,7 +251,7 @@ fun MessagePage(
         )
         UserProfileDialog(
             openDialog = mainSharedViewModel.showUserProfileDialogState.value,
-            userName = mainSharedViewModel.userNameFlow.collectAsState(initial = "User").value,
+            userName = mainSharedViewModel.userNameFlow.collectAsState(initial = DataStoreKeys.DEFAULT_USER_NAME).value,
             avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
             pluginList = mainSharedViewModel.pluginListStateFlow.collectAsState().value,
             sizeClass = sizeClass,
@@ -263,7 +264,7 @@ fun MessagePage(
             onDismiss = { mainSharedViewModel.setShowUserProfileDialogState(false) })
         EditUserNameDialog(
             openDialog = mainSharedViewModel.editUserNameDialogState.value,
-            userName = mainSharedViewModel.userNameFlow.collectAsState(initial = "User").value,
+            userName = mainSharedViewModel.userNameFlow.collectAsState(initial = DataStoreKeys.DEFAULT_USER_NAME).value,
             onConfirm = {
                 mainSharedViewModel.setEditUserNameDialogState(false)
                 mainSharedViewModel.setUserName(it)
