@@ -13,6 +13,10 @@ class GetContacts @Inject constructor(
         return repository.getAllUnhiddenContacts()
     }
 
+    fun personal() : Flow<Resource<List<Contact>>>{
+        return repository.getPersonalContacts()
+    }
+
     suspend fun queryById(contactId: Long) : Contact?{
         return repository.getContactById(contactId)
     }

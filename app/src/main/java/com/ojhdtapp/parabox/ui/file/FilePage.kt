@@ -722,6 +722,13 @@ fun SearchArea(
                                         },
                                     )
                                     DropdownMenuItem(
+                                        text = { Text(ExtensionFilter.Picture.label) },
+                                        onClick = {
+                                            onUpdateExtensionFilter(ExtensionFilter.Picture)
+                                            showExtensionFilterDropDownMenu = false
+                                        },
+                                    )
+                                    DropdownMenuItem(
                                         text = { Text(ExtensionFilter.Compressed.label) },
                                         onClick = {
                                             onUpdateExtensionFilter(ExtensionFilter.Compressed)

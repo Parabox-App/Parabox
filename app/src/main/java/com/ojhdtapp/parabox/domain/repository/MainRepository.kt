@@ -30,6 +30,8 @@ interface MainRepository {
     fun getAllHiddenContacts(): Flow<Resource<List<Contact>>>
     fun getAllUnhiddenContacts(): Flow<Resource<List<Contact>>>
     fun getArchivedContacts() : Flow<Resource<List<Contact>>>
+    fun getPersonalContacts() : Flow<Resource<List<Contact>>>
+    fun getGroupContacts(limit: Int): Flow<Resource<List<Contact>>>
     fun getPluginConnectionByContactId(contactId: Long): List<PluginConnection>
     fun getSpecifiedContactWithMessages(contactId: Long): Flow<Resource<ContactWithMessages>>
     fun getSpecifiedListOfContactWithMessages(contactIds: List<Long>): Flow<Resource<List<ContactWithMessages>>>

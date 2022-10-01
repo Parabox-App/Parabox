@@ -3,7 +3,6 @@
 package com.ojhdtapp.parabox.ui.message
 
 import android.os.Build
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
@@ -61,10 +60,8 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.toTimeUntilNow
 import com.ojhdtapp.parabox.domain.model.Contact
-import com.ojhdtapp.parabox.ui.MainSharedUiEvent
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.ChatPageDestination
-import com.ojhdtapp.parabox.ui.destinations.MessagePageDestination
 import com.ojhdtapp.parabox.ui.setting.EditUserNameDialog
 import com.ojhdtapp.parabox.ui.util.*
 import com.ramcosta.composedestinations.annotation.Destination
@@ -555,31 +552,6 @@ fun MessagePage(
 }
 
 @Composable
-fun RowScope.SearchArea(
-    modifier: Modifier = Modifier,
-    paddingValues: PaddingValues,
-    viewModel: MessagePageViewModel,
-    coroutineScope: CoroutineScope,
-    snackBarHostState: SnackbarHostState,
-    mainSharedViewModel: MainSharedViewModel,
-    sizeClass: WindowSizeClass,
-    shimmerInstance: Shimmer,
-    mainNavController: NavController
-) {
-    androidx.compose.material3.Surface(
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp
-    ) {
-        LazyColumn(
-            modifier = modifier.fillMaxSize(),
-            contentPadding = paddingValues
-        ) {
-
-        }
-    }
-}
-
-@Composable
 fun RowScope.ArchiveArea(
     modifier: Modifier = Modifier,
     paddingValues: PaddingValues,
@@ -914,7 +886,7 @@ fun ContactItem(
                     Text(
                         text = buildAnnotatedString {
                             if (subTitle.isNullOrEmpty()) {
-                                if (contact?.profile?.name != contact?.latestMessage?.sender) {
+                                if (contact?.profile?.name != contact?.latestMessage?.sender && contact?.latestMessage?.sender != null) {
                                     withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
                                         append(contact?.latestMessage?.sender ?: "")
                                         append(": ")

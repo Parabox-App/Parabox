@@ -161,6 +161,7 @@ class MainRepositoryImpl @Inject constructor(
             val messageIdDeferred = async<Long> {
                 storeSendMessage(contents, timestamp, sendType)
             }
+            // Used to create new Conversation only
             val contactIdDeferred = async<Long> {
                 database.contactDao.insertContact(
                     ContactEntity(
@@ -219,7 +220,7 @@ class MainRepositoryImpl @Inject constructor(
                 database.contactDao.updateContact(it.contactList.map {
                     it.copy(
                         latestMessage = LatestMessage(
-                            sender = userName,
+                            sender = it.latestMessage?.sender ?: userName,
                             content = contents.getContentString(),
                             timestamp = timestamp,
                             unreadMessagesNum = (it.latestMessage?.unreadMessagesNum ?: 0) + 1
@@ -384,6 +385,34 @@ class MainRepositoryImpl @Inject constructor(
             }
     }
 
+    override fun getPersonalContacts(): Flow<Resource<List<Contact>>> {
+        return flow {
+            emit(Resource.Loading<List<Contact>>())
+            emitAll(database.contactDao.getPersonalContacts()
+                .map<List<ContactEntity>, Resource<List<Contact>>> { contactEntityList ->
+                    Resource.Success(contactEntityList.map {
+                        it.toContact()
+                    }.sortedByDescending { it.latestMessage?.timestamp ?: 0 })
+                }.catch {
+                    emit(Resource.Error<List<Contact>>("获取数据时发生错误"))
+                })
+        }
+    }
+
+    override fun getGroupContacts(limit: Int): Flow<Resource<List<Contact>>> {
+        return flow {
+            emit(Resource.Loading<List<Contact>>())
+            emitAll(database.contactDao.getGroupContacts(limit)
+                .map<List<ContactEntity>, Resource<List<Contact>>> { contactEntityList ->
+                    Resource.Success(contactEntityList.map {
+                        it.toContact()
+                    }.sortedByDescending { it.latestMessage?.timestamp ?: 0 })
+                }.catch {
+                    emit(Resource.Error<List<Contact>>("获取数据时发生错误"))
+                })
+        }
+    }
+
     override fun getPluginConnectionByContactId(contactId: Long): List<PluginConnection> {
         return database.contactDao.getContactWithPluginConnections(contactId = contactId).pluginConnectionList.map { it.toPluginConnection() }
     }
@@ -392,13 +421,14 @@ class MainRepositoryImpl @Inject constructor(
     override fun getSpecifiedContactWithMessages(contactId: Long): Flow<Resource<ContactWithMessages>> {
         return flow<Resource<ContactWithMessages>> {
             emit(Resource.Loading())
-        }.flatMapConcat {
-            database.contactMessageCrossRefDao.getSpecifiedContactWithMessages(contactId)
-                .map<ContactWithMessagesEntity, Resource<ContactWithMessages>> {
-                    Resource.Success(it.toContactWithMessages())
-                }.catch {
-                    emit(Resource.Error<ContactWithMessages>("获取数据时发生错误"))
-                }
+            emitAll(
+                database.contactMessageCrossRefDao.getSpecifiedContactWithMessages(contactId)
+                    .map<ContactWithMessagesEntity, Resource<ContactWithMessages>> {
+                        Resource.Success(it.toContactWithMessages())
+                    }.catch {
+                        emit(Resource.Error<ContactWithMessages>("获取数据时发生错误"))
+                    }
+            )
         }
 //        return database.contactMessageCrossRefDao.getSpecifiedContactWithMessages(contactId)
 //            .map<List<ContactWithMessagesEntity>, Resource<List<ContactWithMessages>>> { contactWithMessagesEntityList ->
@@ -414,15 +444,16 @@ class MainRepositoryImpl @Inject constructor(
     override fun getSpecifiedListOfContactWithMessages(contactIds: List<Long>): Flow<Resource<List<ContactWithMessages>>> {
         return flow<Resource<List<ContactWithMessages>>> {
             emit(Resource.Loading())
-        }.flatMapConcat {
-            database.contactMessageCrossRefDao.getSpecifiedListOfContactWithMessages(contactIds)
-                .map<List<ContactWithMessagesEntity>, Resource<List<ContactWithMessages>>> { contactWithMessagesEntityList ->
-                    Resource.Success(contactWithMessagesEntityList.map {
-                        it.toContactWithMessages()
-                    })
-                }.catch {
-                    emit(Resource.Error<List<ContactWithMessages>>("获取数据时发生错误"))
-                }
+            emitAll(
+                database.contactMessageCrossRefDao.getSpecifiedListOfContactWithMessages(contactIds)
+                    .map<List<ContactWithMessagesEntity>, Resource<List<ContactWithMessages>>> { contactWithMessagesEntityList ->
+                        Resource.Success(contactWithMessagesEntityList.map {
+                            it.toContactWithMessages()
+                        })
+                    }.catch {
+                        emit(Resource.Error<List<ContactWithMessages>>("获取数据时发生错误"))
+                    }
+            )
         }
     }
 

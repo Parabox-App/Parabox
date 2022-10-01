@@ -10,12 +10,13 @@ import kotlinx.coroutines.flow.Flow
 interface ContactDao {
 
     @Query("SELECT EXISTS(SELECT * FROM contact_entity WHERE contactId = :contactId)")
-    suspend fun isExist(contactId: Long) : Boolean
+    suspend fun isExist(contactId: Long): Boolean
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertContact(contact: ContactEntity): Long
+
     @Query("DELETE FROM contact_entity WHERE contactId = :contactId")
-    suspend fun deleteContact(contactId: Long) : Int
+    suspend fun deleteContact(contactId: Long): Int
 
     @Update
     fun updateContact(contacts: List<ContactEntity>)
@@ -65,6 +66,12 @@ interface ContactDao {
     @Query("SELECT * FROM contact_entity WHERE NOT isHidden AND NOT isArchived")
     fun getAllUnhiddenContacts(): Flow<List<ContactEntity>>
 
+    @Query("SELECT * FROM contact_entity WHERE sender = name")
+    fun getPersonalContacts(): Flow<List<ContactEntity>>
+
+    @Query("SELECT * FROM contact_entity WHERE sender != name ORDER BY timestamp DESC LIMIT :limit")
+    fun getGroupContacts(limit: Int): Flow<List<ContactEntity>>
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insertPluginConnection(pluginConnection: PluginConnectionEntity): Long
 
@@ -79,6 +86,7 @@ interface ContactDao {
 
     @Delete
     fun deleteContactPluginConnectionCrossRef(crossRef: ContactPluginConnectionCrossRef)
+
     @Query("DELETE FROM contact_plugin_connection_cross_ref WHERE contactId = :contactId")
     suspend fun deleteContactPluginConnectionCrossRefByContactId(contactId: Long): Int
 
