@@ -49,6 +49,7 @@ import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.File
 import com.ojhdtapp.parabox.domain.service.PluginListListener
 import com.ojhdtapp.parabox.domain.service.PluginService
+import com.ojhdtapp.parabox.domain.use_case.GetContacts
 import com.ojhdtapp.parabox.domain.use_case.GetFiles
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
 import com.ojhdtapp.parabox.domain.use_case.UpdateFile
@@ -86,6 +87,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var notificationUtil: NotificationUtil
+
+    @Inject
+    lateinit var getContacts: GetContacts
 
     var pluginService: PluginService? = null
     private lateinit var pluginServiceConnection: ServiceConnection
@@ -532,6 +536,46 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun handleIntent(intent: Intent) {
+        when (intent.action) {
+            // Invoked when a dynamic shortcut is clicked.
+            Intent.ACTION_VIEW -> {
+                val id = intent.data?.lastPathSegment?.toLongOrNull()
+                if (id != null) {
+                    lifecycleScope.launch {
+                        withContext(Dispatchers.IO){
+                            getContacts.queryById(id)
+                        }.also {
+                            if (it != null) {
+                                mainSharedViewModel.navigateToChatPage(it)
+                            }
+                        }
+                    }
+                }
+            }
+            // Invoked when a text is shared through Direct Share.
+            Intent.ACTION_SEND -> {
+                val shortcutId = intent.getStringExtra(Intent.EXTRA_SHORTCUT_ID)
+                val text = intent.getStringExtra(Intent.EXTRA_TEXT)
+                shortcutId?.toLong()?.let { id ->
+                    lifecycleScope.launch {
+                        withContext(Dispatchers.IO){
+                            getContacts.queryById(id)
+                        }.also {
+                            if (it != null) {
+                                mainSharedViewModel.navigateToChatPage(it)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+    }
+
     @OptIn(
         ExperimentalAnimationApi::class, ExperimentalMaterialNavigationApi::class,
         ExperimentalMaterial3WindowSizeClassApi::class
@@ -539,8 +583,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Navigate to Page
-        intent.getParcelableExtra<Contact>("contact")?.let {
-            mainSharedViewModel.navigateToChatPage(it)
+        if(savedInstanceState == null) {
+            intent?.let(::handleIntent)
         }
 
         // Vibrator

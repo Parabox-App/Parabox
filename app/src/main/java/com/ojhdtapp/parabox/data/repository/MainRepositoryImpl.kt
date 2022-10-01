@@ -347,6 +347,10 @@ class MainRepositoryImpl @Inject constructor(
         return database.tagDao.hasTag(value)
     }
 
+    override suspend fun getContactById(contactId: Long): Contact? {
+        return database.contactDao.getContactById(contactId)?.toContact()
+    }
+
     override fun getAllHiddenContacts(): Flow<Resource<List<Contact>>> {
         return database.contactDao.getAllHiddenContacts()
             .map<List<ContactEntity>, Resource<List<Contact>>> { contactEntityList ->

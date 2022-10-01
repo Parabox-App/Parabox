@@ -12,4 +12,8 @@ class GetContacts @Inject constructor(
     operator fun invoke(): Flow<Resource<List<Contact>>> {
         return repository.getAllUnhiddenContacts()
     }
+
+    suspend fun queryById(contactId: Long) : Contact?{
+        return repository.getContactById(contactId)
+    }
 }

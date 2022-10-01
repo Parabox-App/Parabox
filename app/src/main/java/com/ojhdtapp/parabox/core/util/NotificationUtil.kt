@@ -126,6 +126,11 @@ class NotificationUtil(
         // Truncate the list if we can't show all of our contacts.
         val maxCount = shortcutManager.maxShortcutCountPerActivity
         var contects = database.contactDao.getAllContacts().firstOrNull() ?: emptyList()
+        // Move the important contact to the front of the shortcut list.
+        if (importantContact != null) {
+            contects =
+                contects.sortedByDescending { it.contactId == importantContact.contactId }
+        }
         if (contects.size > maxCount) {
             contects = contects.take(maxCount)
         }
@@ -172,14 +177,18 @@ class NotificationUtil(
                     .setIntent(Intent(context, MainActivity::class.java).apply {
                         action = Intent.ACTION_VIEW
                         data = Uri.parse("parabox://contact/${it.contactId}")
-                    })
+                    }).apply {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            setPerson(
+                                Person.Builder()
+                                    .setName(it.profile.name)
+                                    .setIcon(icon)
+                                    .build()
+                            )
+                        }
+                    }
                     .build()
             }
-        }
-        // Move the important contact to the front of the shortcut list.
-        if (importantContact != null) {
-            shortcuts =
-                shortcuts.sortedByDescending { it.id == importantContact.contactId.toString() }
         }
         shortcutManager.addDynamicShortcuts(shortcuts)
     }
