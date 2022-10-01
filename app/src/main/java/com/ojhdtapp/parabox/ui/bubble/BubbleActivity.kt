@@ -36,6 +36,7 @@ import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.service.PluginListListener
 import com.ojhdtapp.parabox.domain.service.PluginService
+import com.ojhdtapp.parabox.domain.use_case.GetContacts
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
 import com.ojhdtapp.parabox.ui.theme.AppTheme
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
@@ -47,6 +48,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import linc.com.amplituda.Amplituda
 import linc.com.amplituda.Compress
 import java.io.IOException
@@ -58,6 +60,9 @@ import kotlin.math.roundToInt
 class BubbleActivity : AppCompatActivity() {
     @Inject
     lateinit var handleNewMessage: HandleNewMessage
+
+    @Inject
+    lateinit var getContacts: GetContacts
 
     var pluginService: PluginService? = null
     private lateinit var pluginServiceConnection: ServiceConnection
@@ -193,7 +198,11 @@ class BubbleActivity : AppCompatActivity() {
             recorderJob = null
         viewModel.clearRecordAmplitudeStateList()
         recorderStartTime = System.currentTimeMillis()
-        recorder = MediaRecorder().apply {
+        recorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
+            MediaRecorder(this)
+        } else {
+            MediaRecorder()
+        }.apply {
             setAudioSource(MediaRecorder.AudioSource.MIC)
             setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
             setOutputFile(recordPath)
@@ -328,13 +337,18 @@ class BubbleActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Load Message
-        intent.getParcelableExtra<Contact>("contact")?.let {
-            if (savedInstanceState == null) {
-                Log.d("parabox", "contact loaded: $it")
-                viewModel.loadMessageFromContact(it)
+        val id = intent.data?.lastPathSegment?.toLongOrNull() ?: return
+        if (savedInstanceState == null) {
+            lifecycleScope.launch {
+                withContext(Dispatchers.IO) {
+                    getContacts.queryById(id)
+                }.also {
+                    if (it != null) {
+                        viewModel.loadMessageFromContact(it)
+                    }
+                }
             }
         }
-//        val contactId = intent.data?.lastPathSegment?.toLongOrNull() ?: return
 
 
         // Vibrator

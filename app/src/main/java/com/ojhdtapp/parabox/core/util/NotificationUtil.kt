@@ -24,6 +24,7 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat.startActivity
 import androidx.core.content.getSystemService
+import androidx.core.net.toUri
 import androidx.datastore.preferences.core.emptyPreferences
 import coil.ImageLoader
 import coil.request.ImageRequest
@@ -202,6 +203,7 @@ class NotificationUtil(
     ) {
         Log.d("parabox", "sendNotification at channel:${channelId}")
         updateShortcuts(contact)
+        val contactIdUri = "parabox://contact/${contact.contactId}".toUri()
         val isGroup = isGroupSpecify ?: (message.profile.name != contact.profile.name)
         val userNameFlow: Flow<String> = context.dataStore.data
             .catch { exception ->
@@ -403,7 +405,8 @@ class NotificationUtil(
                                             REQUEST_BUBBLE,
                                             Intent(context, BubbleActivity::class.java)
                                                 .setAction(Intent.ACTION_VIEW)
-                                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+//                                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                                .setData(contactIdUri)
                                                 .putExtra("contactId", contact.contactId)
                                                 .putExtra("contact", contact),
                                             PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT

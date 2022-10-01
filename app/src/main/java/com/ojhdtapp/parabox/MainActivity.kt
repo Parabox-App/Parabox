@@ -309,7 +309,11 @@ class MainActivity : AppCompatActivity() {
             recorderJob = null
         mainSharedViewModel.clearRecordAmplitudeStateList()
         recorderStartTime = System.currentTimeMillis()
-        recorder = MediaRecorder().apply {
+        recorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
+            MediaRecorder(this)
+        } else {
+            MediaRecorder()
+        }.apply {
             setAudioSource(MediaRecorder.AudioSource.MIC)
             setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
             setOutputFile(recordPath)
@@ -543,7 +547,7 @@ class MainActivity : AppCompatActivity() {
                 val id = intent.data?.lastPathSegment?.toLongOrNull()
                 if (id != null) {
                     lifecycleScope.launch {
-                        withContext(Dispatchers.IO){
+                        withContext(Dispatchers.IO) {
                             getContacts.queryById(id)
                         }.also {
                             if (it != null) {
@@ -559,7 +563,7 @@ class MainActivity : AppCompatActivity() {
                 val text = intent.getStringExtra(Intent.EXTRA_TEXT)
                 shortcutId?.toLong()?.let { id ->
                     lifecycleScope.launch {
-                        withContext(Dispatchers.IO){
+                        withContext(Dispatchers.IO) {
                             getContacts.queryById(id)
                         }.also {
                             if (it != null) {
@@ -574,6 +578,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
+        if (intent != null) {
+            handleIntent(intent)
+        }
     }
 
     @OptIn(
@@ -583,7 +590,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Navigate to Page
-        if(savedInstanceState == null) {
+        if (savedInstanceState == null) {
             intent?.let(::handleIntent)
         }
 

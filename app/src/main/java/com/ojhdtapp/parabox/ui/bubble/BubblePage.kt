@@ -473,17 +473,6 @@ fun BubbleChatPage(
                                     onDismissRequest = { menuExpanded = false },
                                     modifier = Modifier.width(192.dp)
                                 ) {
-                                    DropdownMenuItem(
-                                        text = { Text(text = "会话信息") },
-                                        onClick = {
-                                            menuExpanded = false
-                                        },
-                                        leadingIcon = {
-                                            Icon(
-                                                Icons.Outlined.Info,
-                                                contentDescription = null
-                                            )
-                                        })
                                     Box(
                                         modifier = Modifier
                                             .wrapContentSize(Alignment.BottomCenter)
