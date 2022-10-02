@@ -388,28 +388,33 @@ class MainRepositoryImpl @Inject constructor(
     override fun getPersonalContacts(): Flow<Resource<List<Contact>>> {
         return flow {
             emit(Resource.Loading<List<Contact>>())
-            emitAll(database.contactDao.getPersonalContacts()
-                .map<List<ContactEntity>, Resource<List<Contact>>> { contactEntityList ->
-                    Resource.Success(contactEntityList.map {
+            try {
+                database.contactDao.getPersonalContacts()
+                    .map {
                         it.toContact()
-                    }.sortedByDescending { it.latestMessage?.timestamp ?: 0 })
-                }.catch {
-                    emit(Resource.Error<List<Contact>>("获取数据时发生错误"))
-                })
+                    }.sortedByDescending { it.latestMessage?.timestamp ?: 0 }
+                    .also { emit(Resource.Success(it)) }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                emit(Resource.Error<List<Contact>>("获取数据时发生错误"))
+            }
+
         }
     }
 
     override fun getGroupContacts(limit: Int): Flow<Resource<List<Contact>>> {
         return flow {
             emit(Resource.Loading<List<Contact>>())
-            emitAll(database.contactDao.getGroupContacts(limit)
-                .map<List<ContactEntity>, Resource<List<Contact>>> { contactEntityList ->
-                    Resource.Success(contactEntityList.map {
+//            try {
+                database.contactDao.getGroupContacts(limit)
+                    .map {
                         it.toContact()
-                    }.sortedByDescending { it.latestMessage?.timestamp ?: 0 })
-                }.catch {
-                    emit(Resource.Error<List<Contact>>("获取数据时发生错误"))
-                })
+                    }.sortedByDescending { it.latestMessage?.timestamp ?: 0 }
+                    .also { emit(Resource.Success(it)) }
+//            } catch (e: Exception) {
+//                e.printStackTrace()
+//                emit(Resource.Error<List<Contact>>("获取数据时发生错误"))
+//            }
         }
     }
 

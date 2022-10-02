@@ -311,9 +311,13 @@ fun MessagePage(
                         when (it) {
                             SearchAppBar.SEARCH -> {
                                 viewModel.setAreaState(AreaState.SearchArea)
+                                viewModel.updatePersonalContactState()
+                                viewModel.updateGroupContactState()
                             }
                             SearchAppBar.NONE, SearchAppBar.SELECT, SearchAppBar.ARCHIVE_SELECT -> {
                                 viewModel.setAreaState(AreaState.MessageArea)
+                                viewModel.cancelPersonalContactUpdateJob()
+                                viewModel.cancelGroupContactUpdateJob()
                             }
                             else -> {}
                         }

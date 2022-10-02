@@ -27,7 +27,7 @@ import javax.inject.Inject
 @HiltViewModel
 class MessagePageViewModel @Inject constructor(
     private val handleNewMessage: HandleNewMessage,
-    getContacts: GetContacts,
+    val getContacts: GetContacts,
     val getGroupInfoPack: GetGroupInfoPack,
     val groupNewContact: GroupNewContact,
     val updateContact: UpdateContact,
@@ -131,6 +131,7 @@ class MessagePageViewModel @Inject constructor(
                             }.sortedByDescending { it.isPinned }
                         )
                     }
+
                     is Resource.Error -> ContactState(isLoading = false)
                 }
             }.stateIn(
@@ -162,6 +163,7 @@ class MessagePageViewModel @Inject constructor(
                             } else true
                         }.sortedByDescending { it.isPinned }
                     }
+
                     else -> emptyList()
                 }
             }.stateIn(
@@ -203,6 +205,54 @@ class MessagePageViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             deleteGroupedContact.revoke()
         }
+    }
+
+    private val _personalContactState = mutableStateOf<ContactState>(ContactState())
+    val personalContactState: State<ContactState> = _personalContactState
+    var personalContactUpdateJob: Job? = null
+    fun updatePersonalContactState() {
+        personalContactUpdateJob = viewModelScope.launch(Dispatchers.IO) {
+            getContacts.personal().collectLatest {
+                when (it) {
+                    is Resource.Loading -> _personalContactState.value =
+                        ContactState(isLoading = true)
+
+                    is Resource.Success -> _personalContactState.value =
+                        ContactState(isLoading = false, data = it.data!!)
+
+                    is Resource.Error -> {
+                        _uiEventFlow.emit(MessagePageUiEvent.ShowSnackBar(it.message!!))
+                    }
+                }
+            }
+        }
+    }
+
+    fun cancelPersonalContactUpdateJob() {
+        personalContactUpdateJob?.cancel()
+    }
+
+    private val _groupContactState = mutableStateOf<ContactState>(ContactState())
+    val groupContactState: State<ContactState> = _groupContactState
+    var groupContactUpdateJob: Job? = null
+    fun updateGroupContactState() {
+        groupContactUpdateJob = viewModelScope.launch(Dispatchers.IO) {
+            getContacts.group(limit = 6).collectLatest {
+                when (it) {
+                    is Resource.Loading -> _groupContactState.value = ContactState(isLoading = true)
+                    is Resource.Success -> _groupContactState.value =
+                        ContactState(isLoading = false, data = it.data!!)
+
+                    is Resource.Error -> {
+                        _uiEventFlow.emit(MessagePageUiEvent.ShowSnackBar(it.message!!))
+                    }
+                }
+            }
+        }
+    }
+
+    fun cancelGroupContactUpdateJob() {
+        groupContactUpdateJob?.cancel()
     }
 
     // Search
@@ -512,7 +562,11 @@ class MessagePageViewModel @Inject constructor(
                 ReceiveMessageDto(
                     listOf(com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText("Hello at ${System.currentTimeMillis()}")),
                     com.ojhdtapp.paraboxdevelopmentkit.messagedto.Profile("Ojhdt", null, null),
-                    com.ojhdtapp.paraboxdevelopmentkit.messagedto.Profile("Ojhdt-Group", null, null),
+                    com.ojhdtapp.paraboxdevelopmentkit.messagedto.Profile(
+                        "Ojhdt-Group",
+                        null,
+                        null
+                    ),
                     System.currentTimeMillis(),
                     null,
                     com.ojhdtapp.paraboxdevelopmentkit.messagedto.PluginConnection(1, 1, 1)

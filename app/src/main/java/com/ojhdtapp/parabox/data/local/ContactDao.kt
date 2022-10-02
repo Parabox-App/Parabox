@@ -67,10 +67,10 @@ interface ContactDao {
     fun getAllUnhiddenContacts(): Flow<List<ContactEntity>>
 
     @Query("SELECT * FROM contact_entity WHERE sender = name")
-    fun getPersonalContacts(): Flow<List<ContactEntity>>
+    suspend fun getPersonalContacts(): List<ContactEntity>
 
     @Query("SELECT * FROM contact_entity WHERE sender != name ORDER BY timestamp DESC LIMIT :limit")
-    fun getGroupContacts(limit: Int): Flow<List<ContactEntity>>
+    suspend fun getGroupContacts(limit: Int): List<ContactEntity>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insertPluginConnection(pluginConnection: PluginConnectionEntity): Long
