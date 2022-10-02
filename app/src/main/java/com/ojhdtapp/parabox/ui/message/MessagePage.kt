@@ -603,6 +603,7 @@ fun RowScope.ArchiveArea(
                 isExpanded = sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded,
                 noBackground = false,
                 shimmer = shimmerInstance,
+                username = mainSharedViewModel.userNameFlow.collectAsState(initial = DataStoreKeys.DEFAULT_USER_NAME).value,
                 onClick = {
                     if (viewModel.searchBarActivateState.value == SearchAppBar.SELECT) {
                         viewModel.addOrRemoveItemOfSelectedContactStateList(item)
@@ -734,6 +735,7 @@ fun ContactItem(
     isExpanded: Boolean = false,
     noBackground: Boolean = false,
     shimmer: Shimmer? = null,
+    username: String = "",
     onClick: () -> Unit = {},
     onLongClick: () -> Unit = {},
     onAvatarClick: () -> Unit = {},
@@ -892,7 +894,7 @@ fun ContactItem(
                             if (subTitle.isNullOrEmpty()) {
                                 if (contact?.profile?.name != contact?.latestMessage?.sender && contact?.latestMessage?.sender != null) {
                                     withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                                        append(contact?.latestMessage?.sender ?: "")
+                                        append(if(contact.latestMessage.sentByMe) username else contact.latestMessage.sender)
                                         append(": ")
                                     }
                                 }

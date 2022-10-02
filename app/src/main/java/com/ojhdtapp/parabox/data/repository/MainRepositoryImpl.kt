@@ -223,7 +223,8 @@ class MainRepositoryImpl @Inject constructor(
                             sender = it.latestMessage?.sender ?: userName,
                             content = contents.getContentString(),
                             timestamp = timestamp,
-                            unreadMessagesNum = (it.latestMessage?.unreadMessagesNum ?: 0) + 1
+                            unreadMessagesNum = (it.latestMessage?.unreadMessagesNum ?: 0) + 1,
+                            sentByMe = true,
                         ),
                         isHidden = false
                     )

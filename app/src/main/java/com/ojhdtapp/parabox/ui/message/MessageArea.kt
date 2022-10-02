@@ -45,6 +45,7 @@ import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.SwipeRefreshIndicator
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.FormUtil
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
@@ -465,6 +466,7 @@ fun RowScope.MessageArea(
                             isEditing = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact && item.contactId == messageState.contact?.contactId,
                             isExpanded = sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded,
                             shimmer = shimmerInstance,
+                            username = mainSharedViewModel.userNameFlow.collectAsState(initial = DataStoreKeys.DEFAULT_USER_NAME).value,
                             onClick = {
                                 if (viewModel.searchBarActivateState.value == SearchAppBar.SELECT) {
                                     viewModel.addOrRemoveItemOfSelectedContactStateList(item)
@@ -578,6 +580,7 @@ fun RowScope.MessageArea(
                             isEditing = false,
                             isExpanded = sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded,
                             shimmer = shimmerInstance,
+                            username = mainSharedViewModel.userNameFlow.collectAsState(initial = DataStoreKeys.DEFAULT_USER_NAME).value,
                             onClick = {
                                 if (viewModel.searchBarActivateState.value == SearchAppBar.ARCHIVE_SELECT) {
                                     viewModel.setSearchBarActivateState(SearchAppBar.NONE)
