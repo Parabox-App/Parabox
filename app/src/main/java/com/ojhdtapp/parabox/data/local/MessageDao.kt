@@ -4,8 +4,10 @@ import androidx.paging.PagingSource
 import androidx.room.*
 import com.ojhdtapp.parabox.data.local.entity.ContactEntity
 import com.ojhdtapp.parabox.data.local.entity.ContactPinnedStateUpdate
+import com.ojhdtapp.parabox.data.local.entity.ContactWithMessagesEntity
 import com.ojhdtapp.parabox.data.local.entity.MessageEntity
 import com.ojhdtapp.parabox.data.local.entity.MessageVerifyStateUpdate
+import com.ojhdtapp.parabox.domain.model.ContactWithMessages
 import com.ojhdtapp.parabox.domain.model.Message
 import kotlinx.coroutines.flow.Flow
 
@@ -38,10 +40,10 @@ interface MessageDao {
     @Query("SELECT * FROM message_entity WHERE name LIKE '%' || :query || '%' OR contentString LIKE '%' || :query || '%'")
     fun queryMessage(query: String): List<MessageEntity>
 
-    @Query("SELECT * FROM contact_entity " +
-            "INNER JOIN contact_message_cross_ref ON contact_message_cross_ref.contactId = contact_entity.contactId " +
-            "JOIN message_entity ON contact_message_cross_ref.messageId = message_entity.messageId " +
-            "WHERE message_entity.name LIKE '%' || :query || '%' OR message_entity.contentString LIKE '%' || :query || '%'" +
-            "GROUP BY contact_entity.contactId")
+    @Query("SELECT * FROM message_entity " +
+            "JOIN contact_message_cross_ref ON contact_message_cross_ref.messageId = message_entity.messageId " +
+            "JOIN contact_entity ON contact_entity.contactId = contact_message_cross_ref.contactId " +
+            "WHERE message_entity.name LIKE '%' || :query || '%' OR message_entity.contentString LIKE '%' || :query || '%' ")
     fun queryContactWithMessages(query: String) : Map<ContactEntity, List<MessageEntity>>
+
 }

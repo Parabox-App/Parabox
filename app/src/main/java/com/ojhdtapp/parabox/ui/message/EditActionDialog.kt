@@ -503,7 +503,7 @@ fun EditActionDialog(
                             enter = expandVertically(),
                             exit = shrinkVertically(),
                         ) {
-                            NormalPreference(title = "移除该群聊", subtitle = "高危操作！聊天记录将永久丢失",
+                            NormalPreference(title = "移除该群聊", subtitle = "高危操作！请谨慎处理",
                             warning = true,
                                 horizontalPadding = if (isCompact) 24.dp else 32.dp) {
                                 onEvent(EditActionDialogEvent.DeleteGrouped)

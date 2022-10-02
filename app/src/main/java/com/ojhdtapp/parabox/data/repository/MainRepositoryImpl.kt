@@ -76,7 +76,7 @@ class MainRepositoryImpl @Inject constructor(
             database.contactDao.getPluginConnectionWithContacts(dto.pluginConnection.objectId).let {
                 database.contactDao.updateContact(it.contactList.map {
                     it.copy(
-                        profile = dto.subjectProfile.toProfile(),
+                        profile = if (it.senderId == it.contactId) dto.subjectProfile.toProfile() else it.profile,
                         latestMessage =
                         if (it.latestMessage != null && it.latestMessage.timestamp < dto.timestamp) {
                             LatestMessage(
@@ -618,6 +618,9 @@ class MainRepositoryImpl @Inject constructor(
             if (query.isNotBlank()) {
                 try {
                     database.messageDao.queryContactWithMessages(query)
+                        .also {
+                            Log.d("parabox", "queryContactWithMessages: $it")
+                        }
                         .map {
                             ContactWithMessages(
                                 it.key.toContact(),
