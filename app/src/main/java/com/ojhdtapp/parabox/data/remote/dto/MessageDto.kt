@@ -38,6 +38,7 @@ fun ReceiveMessageDto.toContactEntity(): ContactEntity {
 fun ReceiveMessageDto.toMessageEntity(context: Context): MessageEntity {
     return MessageEntity(
         contents = contents.toMessageContentList(context),
+        contentString = contents.getContentString(),
         profile = profile.toProfile(),
         timestamp = timestamp,
         messageId = messageId ?: 0,

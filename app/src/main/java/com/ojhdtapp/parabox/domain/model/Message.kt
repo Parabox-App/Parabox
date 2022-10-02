@@ -5,6 +5,7 @@ import androidx.paging.PagingData
 import com.ojhdtapp.parabox.data.local.entity.MessageEntity
 import com.ojhdtapp.parabox.domain.model.chat.ChatBlock
 import com.ojhdtapp.parabox.domain.model.message_content.MessageContent
+import com.ojhdtapp.parabox.domain.model.message_content.getContentString
 import kotlin.math.abs
 
 data class Message(
@@ -19,6 +20,7 @@ data class Message(
     fun toMessageEntity(id: Int): MessageEntity {
         return MessageEntity(
             contents = contents,
+            contentString = contents.getContentString(),
             profile = profile,
             timestamp = timestamp,
             messageId = messageId,

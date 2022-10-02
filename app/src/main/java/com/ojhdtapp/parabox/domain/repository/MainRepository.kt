@@ -54,4 +54,6 @@ interface MainRepository {
     fun updateDownloadingState(state: DownloadingState, target: File)
     fun updateDownloadInfo(path: String?, downloadId: Long?, target: File)
     suspend fun deleteFile(fileId : Long)
+    fun queryContact(query: String) : Flow<Resource<List<Contact>>>
+    fun queryContactWithMessages(query: String): Flow<Resource<List<ContactWithMessages>>>
 }

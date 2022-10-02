@@ -11,10 +11,13 @@ import com.ojhdtapp.paraboxdevelopmentkit.messagedto.ReceiveMessageDto
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendMessageDto
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.domain.model.Contact
+import com.ojhdtapp.parabox.domain.model.ContactWithMessages
+import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.Profile
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.model.message_content.PlainText
 import com.ojhdtapp.parabox.domain.use_case.*
+import com.ojhdtapp.parabox.ui.file.FilePageUiEvent
 import com.ojhdtapp.parabox.ui.util.SearchAppBar
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -33,7 +36,8 @@ class MessagePageViewModel @Inject constructor(
     val updateContact: UpdateContact,
     val tagControl: TagControl,
     val getArchivedContacts: GetArchivedContacts,
-    val deleteGroupedContact: DeleteGroupedContact
+    val deleteGroupedContact: DeleteGroupedContact,
+    val queryContactAndMessage: QueryContactAndMessage,
 ) : ViewModel() {
     init {
         viewModelScope.launch {
@@ -211,8 +215,9 @@ class MessagePageViewModel @Inject constructor(
     val personalContactState: State<ContactState> = _personalContactState
     var personalContactUpdateJob: Job? = null
     fun updatePersonalContactState() {
+        personalContactUpdateJob?.cancel()
         personalContactUpdateJob = viewModelScope.launch(Dispatchers.IO) {
-            getContacts.personal().collectLatest {
+            getContacts.personal().onEach {
                 when (it) {
                     is Resource.Loading -> _personalContactState.value =
                         ContactState(isLoading = true)
@@ -224,7 +229,7 @@ class MessagePageViewModel @Inject constructor(
                         _uiEventFlow.emit(MessagePageUiEvent.ShowSnackBar(it.message!!))
                     }
                 }
-            }
+            }.launchIn(viewModelScope)
         }
     }
 
@@ -236,8 +241,9 @@ class MessagePageViewModel @Inject constructor(
     val groupContactState: State<ContactState> = _groupContactState
     var groupContactUpdateJob: Job? = null
     fun updateGroupContactState() {
+        groupContactUpdateJob?.cancel()
         groupContactUpdateJob = viewModelScope.launch(Dispatchers.IO) {
-            getContacts.group(limit = 6).collectLatest {
+            getContacts.group(limit = 6).onEach {
                 when (it) {
                     is Resource.Loading -> _groupContactState.value = ContactState(isLoading = true)
                     is Resource.Success -> _groupContactState.value =
@@ -247,7 +253,7 @@ class MessagePageViewModel @Inject constructor(
                         _uiEventFlow.emit(MessagePageUiEvent.ShowSnackBar(it.message!!))
                     }
                 }
-            }
+            }.launchIn(viewModelScope)
         }
     }
 
@@ -266,6 +272,77 @@ class MessagePageViewModel @Inject constructor(
     val searchText: State<String> = _searchText
     fun setSearchText(value: String) {
         _searchText.value = value
+        onSearch(value = value)
+    }
+
+    private var _contactSearchResultStateFlow = MutableStateFlow(ContactState())
+    val contactSearchResultStateFlow get() = _contactSearchResultStateFlow.asStateFlow()
+    private var _messageSearchResultStateFlow = MutableStateFlow(ContactWithMessagesState())
+    val messageSearchResultStateFlow get() = _messageSearchResultStateFlow.asStateFlow()
+
+    private var searchJob: Job? = null
+    fun onSearch(value: String, withoutDelay: Boolean = false) {
+        _searchText.value = value
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch(Dispatchers.IO) {
+            if (!withoutDelay) delay(800L)
+            queryContactAndMessage.contact(value)
+                .onEach { result ->
+                    when (result) {
+                        is Resource.Success -> {
+                            _contactSearchResultStateFlow.value = ContactState(
+                                isLoading = false,
+                                data = result.data!!
+                            )
+                        }
+
+                        is Resource.Loading -> {
+                            _contactSearchResultStateFlow.value = _contactSearchResultStateFlow.value.copy(
+                                isLoading = true
+                            )
+                        }
+
+                        is Resource.Error -> {
+                            _contactSearchResultStateFlow.value = _contactSearchResultStateFlow.value.copy(
+                                isLoading = false,
+                            )
+                            _uiEventFlow.emit(
+                                MessagePageUiEvent.ShowSnackBar(
+                                    result.message!!
+                                )
+                            )
+                        }
+                    }
+                }.launchIn(this)
+            queryContactAndMessage.groupedMessage(value)
+                .onEach {
+                    when (it) {
+                        is Resource.Success -> {
+                            _messageSearchResultStateFlow.value = ContactWithMessagesState(
+                                isLoading = false,
+                                data = it.data!!
+                            )
+                        }
+
+                        is Resource.Loading -> {
+                            _messageSearchResultStateFlow.value = _messageSearchResultStateFlow.value.copy(
+                                isLoading = true
+                            )
+                        }
+
+                        is Resource.Error -> {
+                            _messageSearchResultStateFlow.value = _messageSearchResultStateFlow.value.copy(
+                                isLoading = false
+                            )
+                            _uiEventFlow.emit(
+                                MessagePageUiEvent.ShowSnackBar(
+                                    it.message!!
+                                )
+                            )
+                        }
+                    }
+                }.launchIn(this)
+        }
     }
 
     // Badge

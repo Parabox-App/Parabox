@@ -72,6 +72,9 @@ interface ContactDao {
     @Query("SELECT * FROM contact_entity WHERE sender != name ORDER BY timestamp DESC LIMIT :limit")
     suspend fun getGroupContacts(limit: Int): List<ContactEntity>
 
+    @Query("SELECT * FROM contact_entity WHERE name LIKE '%' || :query || '%'")
+    fun queryContact(query: String): List<ContactEntity>
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insertPluginConnection(pluginConnection: PluginConnectionEntity): Long
 

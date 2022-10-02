@@ -255,6 +255,7 @@ class MainRepositoryImpl @Inject constructor(
         return database.messageDao.insertMessage(
             MessageEntity(
                 contents = contents.toMessageContentList(context),
+                contentString = contents.getContentString(),
                 profile = Profile("", null, null, null),
                 timestamp = timestamp,
                 messageId = sendId,
@@ -406,11 +407,11 @@ class MainRepositoryImpl @Inject constructor(
         return flow {
             emit(Resource.Loading<List<Contact>>())
 //            try {
-                database.contactDao.getGroupContacts(limit)
-                    .map {
-                        it.toContact()
-                    }.sortedByDescending { it.latestMessage?.timestamp ?: 0 }
-                    .also { emit(Resource.Success(it)) }
+            database.contactDao.getGroupContacts(limit)
+                .map {
+                    it.toContact()
+                }.sortedByDescending { it.latestMessage?.timestamp ?: 0 }
+                .also { emit(Resource.Success(it)) }
 //            } catch (e: Exception) {
 //                e.printStackTrace()
 //                emit(Resource.Error<List<Contact>>("获取数据时发生错误"))
@@ -590,5 +591,46 @@ class MainRepositoryImpl @Inject constructor(
 
     override suspend fun deleteFile(fileId: Long) {
         database.fileDao.deleteFileByFileId(fileId)
+    }
+
+    override fun queryContact(query: String): Flow<Resource<List<Contact>>> {
+        return flow {
+            emit(Resource.Loading<List<Contact>>())
+            if (query.isNotBlank()) {
+                try {
+                    database.contactDao.queryContact(query)
+                        .map { it.toContact() }.also {
+                            emit(Resource.Success(it))
+                        }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    emit(Resource.Error<List<Contact>>("获取数据时发生错误"))
+                }
+            } else {
+                emit(Resource.Success(emptyList()))
+            }
+        }
+    }
+
+    override fun queryContactWithMessages(query: String): Flow<Resource<List<ContactWithMessages>>> {
+        return flow {
+            emit(Resource.Loading<List<ContactWithMessages>>())
+            if (query.isNotBlank()) {
+                try {
+                    database.messageDao.queryContactWithMessages(query)
+                        .map {
+                            ContactWithMessages(
+                                it.key.toContact(),
+                                it.value.map { it.toMessage() })
+                        }
+                        .also { emit(Resource.Success(it)) }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    emit(Resource.Error<List<ContactWithMessages>>("获取数据时发生错误"))
+                }
+            } else {
+                emit(Resource.Success(emptyList()))
+            }
+        }
     }
 }

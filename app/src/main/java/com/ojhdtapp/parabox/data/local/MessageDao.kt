@@ -7,6 +7,7 @@ import com.ojhdtapp.parabox.data.local.entity.ContactPinnedStateUpdate
 import com.ojhdtapp.parabox.data.local.entity.MessageEntity
 import com.ojhdtapp.parabox.data.local.entity.MessageVerifyStateUpdate
 import com.ojhdtapp.parabox.domain.model.Message
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface MessageDao {
@@ -33,4 +34,14 @@ interface MessageDao {
             "WHERE contact_message_cross_ref.contactId IN (:contactIds) " +
             "ORDER BY message_entity.timestamp")
     fun getMessagesPagingSourceTest(contactIds: List<Long>): List<MessageEntity>
+
+    @Query("SELECT * FROM message_entity WHERE name LIKE '%' || :query || '%' OR contentString LIKE '%' || :query || '%'")
+    fun queryMessage(query: String): List<MessageEntity>
+
+    @Query("SELECT * FROM contact_entity " +
+            "INNER JOIN contact_message_cross_ref ON contact_message_cross_ref.contactId = contact_entity.contactId " +
+            "JOIN message_entity ON contact_message_cross_ref.messageId = message_entity.messageId " +
+            "WHERE message_entity.name LIKE '%' || :query || '%' OR message_entity.contentString LIKE '%' || :query || '%'" +
+            "GROUP BY contact_entity.contactId")
+    fun queryContactWithMessages(query: String) : Map<ContactEntity, List<MessageEntity>>
 }

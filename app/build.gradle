@@ -130,6 +130,7 @@ dependencies {
     implementation "com.google.accompanist:accompanist-flowlayout:$acc_version"
     implementation "com.google.accompanist:accompanist-permissions:$acc_version"
     implementation "com.google.accompanist:accompanist-swiperefresh:$acc_version"
+    implementation "com.google.accompanist:accompanist-placeholder-material:$acc_version"
 
     // Navigation Compose
     def nav_version = "2.5.2"

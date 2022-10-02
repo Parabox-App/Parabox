@@ -3,6 +3,7 @@ package com.ojhdtapp.parabox.ui.message
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.MaterialTheme
 import com.ojhdtapp.parabox.domain.model.Contact
+import com.ojhdtapp.parabox.domain.model.ContactWithMessages
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.model.Profile
 import com.ojhdtapp.parabox.domain.model.chat.ChatBlock
@@ -11,7 +12,7 @@ class MessagePageState {
 }
 
 data class ContactState(val isLoading: Boolean = true, val data: List<Contact> = emptyList())
-
+data class ContactWithMessagesState(val isLoading: Boolean = true, val data: List<ContactWithMessages> = emptyList())
 data class ArchivedContactState(val isHidden: Boolean = false, val data: List<Contact> = emptyList())
 data class MessageState(
     val state: Int = MessageState.NULL,

@@ -112,4 +112,10 @@ object AppModule {
     fun provideGetFilesUseCase(repository: MainRepository): GetFiles {
         return GetFiles(repository)
     }
+
+    @Provides
+    @Singleton
+    fun provideQueryContactAndMessageUseCase(repository: MainRepository): QueryContactAndMessage {
+        return QueryContactAndMessage(repository)
+    }
 }

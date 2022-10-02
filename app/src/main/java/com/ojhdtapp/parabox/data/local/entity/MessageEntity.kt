@@ -11,6 +11,7 @@ import com.ojhdtapp.parabox.domain.model.message_content.MessageContent
 @Entity(tableName = "message_entity")
 data class MessageEntity(
     val contents: List<MessageContent>,
+    val contentString: String,
     @Embedded val profile: Profile,
     val timestamp: Long,
     @PrimaryKey val messageId: Long,
