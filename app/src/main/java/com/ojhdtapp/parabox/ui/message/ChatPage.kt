@@ -1657,75 +1657,77 @@ fun SingleMessage(
                 }
             }
         }
-        DropdownMenu(
-            offset = DpOffset(0.dp, 4.dp),
-            expanded = clickingMessage == message,
-            onDismissRequest = onClickingDismiss
-        ) {
-            Row() {
-                if (message.sentByMe && !message.verified) {
+        MaterialTheme(shapes = MaterialTheme.shapes.copy(extraSmall = CircleShape)){
+            DropdownMenu(
+                offset = DpOffset(0.dp, 4.dp),
+                expanded = clickingMessage == message,
+                onDismissRequest = onClickingDismiss
+            ) {
+                Row(modifier = Modifier.padding(horizontal = 8.dp)) {
+                    if (message.sentByMe && !message.verified) {
+                        IconButton(onClick = {
+                            onClickingEvent(SingleMessageEvent.FailRetry)
+                            onClickingDismiss()
+                        }) {
+                            Icon(imageVector = Icons.Outlined.Refresh, contentDescription = "retry")
+                        }
+                    }
+                    if (message.verified) {
+                        IconButton(onClick = {
+                            onClickingEvent(SingleMessageEvent.Reply)
+                            onClickingDismiss()
+                        }) {
+                            Icon(imageVector = Icons.Outlined.Reply, contentDescription = "reply")
+                        }
+                    }
+                    if (message.sentByMe && message.verified) {
+                        IconButton(onClick = {
+                            onClickingEvent(SingleMessageEvent.Recall)
+                            onClickingDismiss()
+                        }) {
+                            Icon(imageVector = Icons.Outlined.Undo, contentDescription = "recall")
+                        }
+                    }
+                    if (message.contents.any { it is Image }) {
+                        IconButton(onClick = {
+                            onClickingEvent(SingleMessageEvent.Favorite)
+                            onClickingDismiss()
+                        }) {
+                            Icon(
+                                imageVector = Icons.Outlined.FavoriteBorder,
+                                contentDescription = "favorite"
+                            )
+                        }
+                    }
                     IconButton(onClick = {
-                        onClickingEvent(SingleMessageEvent.FailRetry)
+                        onLongClick()
                         onClickingDismiss()
                     }) {
-                        Icon(imageVector = Icons.Outlined.Refresh, contentDescription = "retry")
+                        Icon(imageVector = Icons.Outlined.Checklist, contentDescription = "select")
                     }
-                }
-                if (message.verified) {
                     IconButton(onClick = {
-                        onClickingEvent(SingleMessageEvent.Reply)
+                        onClickingEvent(SingleMessageEvent.Copy)
                         onClickingDismiss()
                     }) {
-                        Icon(imageVector = Icons.Outlined.Reply, contentDescription = "reply")
+                        Icon(imageVector = Icons.Outlined.ContentCopy, contentDescription = "copy")
                     }
-                }
-                if (message.sentByMe && message.verified) {
+                    if (message.contents.any { it is Image }) {
+                        IconButton(onClick = {
+                            onClickingEvent(SingleMessageEvent.Download)
+                            onClickingDismiss()
+                        }) {
+                            Icon(
+                                imageVector = Icons.Outlined.FileDownload,
+                                contentDescription = "download"
+                            )
+                        }
+                    }
                     IconButton(onClick = {
-                        onClickingEvent(SingleMessageEvent.Recall)
-                        onClickingDismiss()
+                        // Temp ClickingMessage
+                        onClickingEvent(SingleMessageEvent.Delete)
                     }) {
-                        Icon(imageVector = Icons.Outlined.Undo, contentDescription = "recall")
+                        Icon(imageVector = Icons.Outlined.DeleteOutline, contentDescription = "delete")
                     }
-                }
-                if (message.contents.any { it is Image }) {
-                    IconButton(onClick = {
-                        onClickingEvent(SingleMessageEvent.Favorite)
-                        onClickingDismiss()
-                    }) {
-                        Icon(
-                            imageVector = Icons.Outlined.FavoriteBorder,
-                            contentDescription = "favorite"
-                        )
-                    }
-                }
-                IconButton(onClick = {
-                    onLongClick()
-                    onClickingDismiss()
-                }) {
-                    Icon(imageVector = Icons.Outlined.Checklist, contentDescription = "select")
-                }
-                IconButton(onClick = {
-                    onClickingEvent(SingleMessageEvent.Copy)
-                    onClickingDismiss()
-                }) {
-                    Icon(imageVector = Icons.Outlined.ContentCopy, contentDescription = "copy")
-                }
-                if (message.contents.any { it is Image }) {
-                    IconButton(onClick = {
-                        onClickingEvent(SingleMessageEvent.Download)
-                        onClickingDismiss()
-                    }) {
-                        Icon(
-                            imageVector = Icons.Outlined.FileDownload,
-                            contentDescription = "download"
-                        )
-                    }
-                }
-                IconButton(onClick = {
-                    // Temp ClickingMessage
-                    onClickingEvent(SingleMessageEvent.Delete)
-                }) {
-                    Icon(imageVector = Icons.Outlined.DeleteOutline, contentDescription = "delete")
                 }
             }
         }

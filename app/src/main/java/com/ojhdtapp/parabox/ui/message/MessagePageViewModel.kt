@@ -243,7 +243,7 @@ class MessagePageViewModel @Inject constructor(
     fun updateGroupContactState() {
         groupContactUpdateJob?.cancel()
         groupContactUpdateJob = viewModelScope.launch(Dispatchers.IO) {
-            getContacts.group(limit = 6).onEach {
+            getContacts.group(limit = 8).onEach {
                 when (it) {
                     is Resource.Loading -> _groupContactState.value = ContactState(isLoading = true)
                     is Resource.Success -> _groupContactState.value =
