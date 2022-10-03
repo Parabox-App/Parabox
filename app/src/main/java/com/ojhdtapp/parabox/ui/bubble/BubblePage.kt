@@ -30,6 +30,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
+import coil.annotation.ExperimentalCoilApi
 import coil.imageLoader
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.domain.model.Message
@@ -112,7 +113,7 @@ fun BubblePage(
 
 @OptIn(
     ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class,
-    ExperimentalAnimationApi::class
+    ExperimentalAnimationApi::class, ExperimentalCoilApi::class
 )
 @Composable
 fun BubbleChatPage(
@@ -971,14 +972,22 @@ fun BubbleChatPage(
                                         value
                                     )
                                 } else {
-                                    clickingMessage = value
+                                    if (value.contents.any { it is Image }) {
+                                        TODO("launch image viewer")
+                                    } else {
+                                        clickingMessage = value
+                                    }
                                 }
                             },
                             onMessageLongClick = {
                                 focusManager.clearFocus()
-                                viewModel.addOrRemoveItemOfSelectedMessageStateList(
-                                    value
-                                )
+                                if (value.contents.any { it is Image }) {
+                                    clickingMessage = value
+                                } else {
+                                    mainSharedViewModel.addOrRemoveItemOfSelectedMessageStateList(
+                                        value
+                                    )
+                                }
                             },
                             onQuoteReplyClick = { messageId ->
                                 coroutineScope.launch {

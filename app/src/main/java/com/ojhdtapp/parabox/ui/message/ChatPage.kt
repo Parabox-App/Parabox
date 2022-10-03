@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -317,13 +318,13 @@ fun NormalChatPage(
             if (it is MainSharedUiEvent.NavigateToChatMessage) {
                 lazyPagingItems.itemSnapshotList.items.map { it.messageId }
                     .lastIndexOf(it.message.messageId).let { index ->
-                    if (index != -1) {
-                        scrollState.animateScrollToItem(index)
-                    } else {
-                        Toast.makeText(context, "无法定位消息", Toast.LENGTH_SHORT)
-                            .show()
+                        if (index != -1) {
+                            scrollState.animateScrollToItem(index)
+                        } else {
+                            Toast.makeText(context, "无法定位消息", Toast.LENGTH_SHORT)
+                                .show()
+                        }
                     }
-                }
             }
         }
     }
@@ -434,15 +435,15 @@ fun NormalChatPage(
         mutableStateOf(0)
     }
     // Search
-    var searchText by remember{
+    var searchText by remember {
         mutableStateOf("")
     }
-    var enableSearch by remember{
+    var enableSearch by remember {
         mutableStateOf(false)
     }
-    val searchResult by remember{
+    val searchResult by remember {
         derivedStateOf {
-            if(searchText.isBlank()) emptyList()
+            if (searchText.isBlank()) emptyList()
             else
 //            lazyPagingItems.itemSnapshotList.items.filter {
 //                it.contents.getContentString().contains(searchText)
@@ -454,19 +455,21 @@ fun NormalChatPage(
                 }
         }
     }
-    var searchExpanded by remember{
+    var searchExpanded by remember {
         mutableStateOf(false)
     }
     BottomSheetScaffold(
 //        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         scaffoldState = scaffoldState,
         topBar = {
-            Crossfade(targetState = when{
-                enableSearch -> 1
-                mainSharedViewModel.selectedMessageStateList.isNotEmpty() -> 2
-                else -> 3
-            }) {
-                when(it){
+            Crossfade(
+                targetState = when {
+                    enableSearch -> 1
+                    mainSharedViewModel.selectedMessageStateList.isNotEmpty() -> 2
+                    else -> 3
+                }
+            ) {
+                when (it) {
                     1 -> {
                         TopAppBar(
                             title = {
@@ -502,7 +505,10 @@ fun NormalChatPage(
                                                 focusManager.clearFocus()
                                                 searchExpanded = true
                                             }) {
-                                                Icon(Icons.Outlined.Search, contentDescription = null)
+                                                Icon(
+                                                    Icons.Outlined.Search,
+                                                    contentDescription = null
+                                                )
                                             }
                                         },
                                         colors = TextFieldDefaults.textFieldColors(
@@ -518,17 +524,25 @@ fun NormalChatPage(
                                     ) {
                                         searchResult.forEach {
                                             DropdownMenuItem(
-                                                text = {Text(text = it.second.contents.getContentString(), maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis)},
+                                                text = {
+                                                    Text(
+                                                        text = it.second.contents.getContentString(),
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                },
                                                 onClick = {
-                                                    coroutineScope.launch{
+                                                    coroutineScope.launch {
                                                         scrollState.animateScrollToItem(it.first)
                                                     }
                                                 },
                                                 leadingIcon = {
                                                     AsyncImage(
                                                         model = ImageRequest.Builder(LocalContext.current)
-                                                            .data(it.second.profile.avatar ?: it.second.profile.avatarUri)
+                                                            .data(
+                                                                it.second.profile.avatar
+                                                                    ?: it.second.profile.avatarUri
+                                                            )
                                                             .crossfade(true)
                                                             .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
                                                             .build(),
@@ -550,7 +564,8 @@ fun NormalChatPage(
                             navigationIcon = {
                                 IconButton(onClick = {
                                     enableSearch = false
-                                    searchExpanded = false}) {
+                                    searchExpanded = false
+                                }) {
                                     Icon(
                                         imageVector = Icons.Outlined.Close,
                                         contentDescription = "close"
@@ -563,6 +578,7 @@ fun NormalChatPage(
 //                        scrollBehavior = scrollBehavior
                         )
                     }
+
                     2 -> {
                         TopAppBar(
                             title = {
@@ -695,6 +711,7 @@ fun NormalChatPage(
 //                        scrollBehavior = scrollBehavior
                         )
                     }
+
                     3 -> {
                         TopAppBar(
                             title = {
@@ -1281,14 +1298,22 @@ fun NormalChatPage(
                                         value
                                     )
                                 } else {
-                                    clickingMessage = value
+                                    if (value.contents.any { it is Image }) {
+                                        TODO("launch image viewer")
+                                    } else {
+                                        clickingMessage = value
+                                    }
                                 }
                             },
                             onMessageLongClick = {
                                 focusManager.clearFocus()
-                                mainSharedViewModel.addOrRemoveItemOfSelectedMessageStateList(
-                                    value
-                                )
+                                if (value.contents.any { it is Image }) {
+                                    clickingMessage = value
+                                } else {
+                                    mainSharedViewModel.addOrRemoveItemOfSelectedMessageStateList(
+                                        value
+                                    )
+                                }
                             },
                             onQuoteReplyClick = { messageId ->
                                 coroutineScope.launch {
@@ -1698,134 +1723,158 @@ fun SingleMessage(
             if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
         }
     )
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .wrapContentSize(align = if (message.sentByMe) Alignment.TopEnd else Alignment.TopStart)
-    ) {
-        Row(verticalAlignment = Alignment.Bottom) {
-            if (message.sentByMe && !message.verified) {
-                if (abs(System.currentTimeMillis() - message.timestamp) > 5000) {
-                    Icon(
-                        modifier = Modifier.padding(bottom = 11.dp, end = 4.dp),
-                        imageVector = Icons.Outlined.ErrorOutline,
-                        contentDescription = "error",
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                } else {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .padding(bottom = 14.dp, end = 4.dp)
-                            .size(18.dp),
-                        strokeWidth = 2.dp
-                    )
-                }
-            }
-            Column(
-                modifier = modifier
-                    .clip(
-                        RoundedCornerShape(
-                            topStart = topStartRadius,
-                            topEnd = topEndRadius,
-                            bottomStart = bottomStartRadius,
-                            bottomEnd = bottomEndRadius
+    SelectionContainer {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .wrapContentSize(align = if (message.sentByMe) Alignment.TopEnd else Alignment.TopStart)
+        ) {
+            Row(verticalAlignment = Alignment.Bottom) {
+                if (message.sentByMe && !message.verified) {
+                    if (abs(System.currentTimeMillis() - message.timestamp) > 5000) {
+                        Icon(
+                            modifier = Modifier.padding(bottom = 11.dp, end = 4.dp),
+                            imageVector = Icons.Outlined.ErrorOutline,
+                            contentDescription = "error",
+                            tint = MaterialTheme.colorScheme.error
                         )
-                    )
-                    .background(
-                        backgroundColor
-                    )
-//                    .combinedClickable(onClick = onClick, onLongClick = onLongClick)
-                    .clickable { onClick() }
-                    .animateContentSize()
-            ) {
-                message.contents.forEachIndexed { index, messageContent ->
-                    messageContent.toLayout(
-                        textColor,
-                        reverseTextColor,
-                        context,
-                        density,
-                        index,
-                        topStartRadius,
-                        topEndRadius,
-                        message,
-                        bottomEndRadius,
-                        bottomStartRadius,
-                        onQuoteReplyClick = onQuoteReplyClick,
-                        onAudioClick = onAudioClick,
-                    )
+                    } else {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .padding(bottom = 14.dp, end = 4.dp)
+                                .size(18.dp),
+                            strokeWidth = 2.dp
+                        )
+                    }
+                }
+                Column(
+                    modifier = modifier
+                        .clip(
+                            RoundedCornerShape(
+                                topStart = topStartRadius,
+                                topEnd = topEndRadius,
+                                bottomStart = bottomStartRadius,
+                                bottomEnd = bottomEndRadius
+                            )
+                        )
+                        .background(
+                            backgroundColor
+                        )
+                        .combinedClickable(
+                            enabled = !isSelected,
+                            onClick = onClick,
+                            onLongClick = onLongClick)
+//                        .clickable(enabled = isSelected, onClick = onClick)
+                        .animateContentSize()
+                ) {
+                    message.contents.forEachIndexed { index, messageContent ->
+                        messageContent.toLayout(
+                            textColor,
+                            reverseTextColor,
+                            context,
+                            density,
+                            index,
+                            topStartRadius,
+                            topEndRadius,
+                            message,
+                            bottomEndRadius,
+                            bottomStartRadius,
+                            isSelected,
+                            onQuoteReplyClick = onQuoteReplyClick,
+                            onAudioClick = onAudioClick,
+                        )
+                    }
                 }
             }
-        }
-        MaterialTheme(shapes = MaterialTheme.shapes.copy(extraSmall = CircleShape)){
-            DropdownMenu(
-                offset = DpOffset(0.dp, 4.dp),
-                expanded = clickingMessage == message,
-                onDismissRequest = onClickingDismiss
-            ) {
-                Row(modifier = Modifier.padding(horizontal = 8.dp)) {
-                    if (message.sentByMe && !message.verified) {
-                        IconButton(onClick = {
-                            onClickingEvent(SingleMessageEvent.FailRetry)
-                            onClickingDismiss()
-                        }) {
-                            Icon(imageVector = Icons.Outlined.Refresh, contentDescription = "retry")
+            MaterialTheme(shapes = MaterialTheme.shapes.copy(extraSmall = CircleShape)) {
+                DropdownMenu(
+                    offset = DpOffset(0.dp, 4.dp),
+                    expanded = clickingMessage == message,
+                    onDismissRequest = onClickingDismiss
+                ) {
+                    Row(modifier = Modifier.padding(horizontal = 8.dp)) {
+                        if (message.sentByMe && !message.verified) {
+                            IconButton(onClick = {
+                                onClickingEvent(SingleMessageEvent.FailRetry)
+                                onClickingDismiss()
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Refresh,
+                                    contentDescription = "retry"
+                                )
+                            }
                         }
-                    }
-                    if (message.verified) {
-                        IconButton(onClick = {
-                            onClickingEvent(SingleMessageEvent.Reply)
-                            onClickingDismiss()
-                        }) {
-                            Icon(imageVector = Icons.Outlined.Reply, contentDescription = "reply")
+                        if (message.verified) {
+                            IconButton(onClick = {
+                                onClickingEvent(SingleMessageEvent.Reply)
+                                onClickingDismiss()
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Reply,
+                                    contentDescription = "reply"
+                                )
+                            }
                         }
-                    }
-                    if (message.sentByMe && message.verified) {
-                        IconButton(onClick = {
-                            onClickingEvent(SingleMessageEvent.Recall)
-                            onClickingDismiss()
-                        }) {
-                            Icon(imageVector = Icons.Outlined.Undo, contentDescription = "recall")
+                        if (message.sentByMe && message.verified) {
+                            IconButton(onClick = {
+                                onClickingEvent(SingleMessageEvent.Recall)
+                                onClickingDismiss()
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Undo,
+                                    contentDescription = "recall"
+                                )
+                            }
                         }
-                    }
-                    if (message.contents.any { it is Image }) {
-                        IconButton(onClick = {
-                            onClickingEvent(SingleMessageEvent.Favorite)
-                            onClickingDismiss()
-                        }) {
-                            Icon(
-                                imageVector = Icons.Outlined.FavoriteBorder,
-                                contentDescription = "favorite"
-                            )
+                        if (message.contents.any { it is Image }) {
+                            IconButton(onClick = {
+                                onClickingEvent(SingleMessageEvent.Favorite)
+                                onClickingDismiss()
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.FavoriteBorder,
+                                    contentDescription = "favorite"
+                                )
+                            }
                         }
-                    }
-                    IconButton(onClick = {
-                        onLongClick()
-                        onClickingDismiss()
-                    }) {
-                        Icon(imageVector = Icons.Outlined.Checklist, contentDescription = "select")
-                    }
-                    IconButton(onClick = {
-                        onClickingEvent(SingleMessageEvent.Copy)
-                        onClickingDismiss()
-                    }) {
-                        Icon(imageVector = Icons.Outlined.ContentCopy, contentDescription = "copy")
-                    }
-                    if (message.contents.any { it is Image }) {
                         IconButton(onClick = {
-                            onClickingEvent(SingleMessageEvent.Download)
+                            onLongClick()
                             onClickingDismiss()
                         }) {
                             Icon(
-                                imageVector = Icons.Outlined.FileDownload,
-                                contentDescription = "download"
+                                imageVector = Icons.Outlined.Checklist,
+                                contentDescription = "select"
                             )
                         }
-                    }
-                    IconButton(onClick = {
-                        // Temp ClickingMessage
-                        onClickingEvent(SingleMessageEvent.Delete)
-                    }) {
-                        Icon(imageVector = Icons.Outlined.DeleteOutline, contentDescription = "delete")
+                        IconButton(onClick = {
+                            onClickingEvent(SingleMessageEvent.Copy)
+                            onClickingDismiss()
+                        }) {
+                            Icon(
+                                imageVector = Icons.Outlined.ContentCopy,
+                                contentDescription = "copy"
+                            )
+                        }
+                        if (message.contents.any { it is Image }) {
+                            IconButton(onClick = {
+                                onClickingEvent(SingleMessageEvent.Download)
+                                onClickingDismiss()
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.FileDownload,
+                                    contentDescription = "download"
+                                )
+                            }
+                        }
+                        IconButton(onClick = {
+                            // Temp ClickingMessage
+                            onClickingEvent(SingleMessageEvent.Delete)
+                        }) {
+                            Icon(
+                                imageVector = Icons.Outlined.DeleteOutline,
+                                contentDescription = "delete"
+                            )
+                        }
                     }
                 }
             }
@@ -1846,6 +1895,7 @@ private fun MessageContent.toLayout(
     message: Message,
     bottomEndRadius: Dp,
     bottomStartRadius: Dp,
+    isSelected: Boolean,
     onQuoteReplyClick: (messageId: Long) -> Unit = {},
     onAudioClick: (uri: Uri?, url: String?) -> Unit,
 ) {
@@ -1856,14 +1906,39 @@ private fun MessageContent.toLayout(
             color = textColor,
         )
 
-        is PlainText -> SelectionContainer {
-            Text(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
-                text = text,
-                color = textColor
-            )
-        }
-
+        is PlainText ->
+            if (isSelected) {
+                Text(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+                    text = text,
+                    color = textColor
+                )
+            } else {
+                DisableSelection {
+                    Text(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+                        text = text,
+                        color = textColor
+                    )
+                }
+            }
+//                SelectionContainer {
+//                    if(isSelected){
+//                        Text(
+//                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+//                            text = text,
+//                            color = textColor
+//                        )
+//                    } else {
+//                        DisableSelection {
+//                            Text(
+//                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+//                                text = text,
+//                                color = textColor
+//                            )
+//                        }
+//                    }
+//                }
         is Image -> {
 //            var imageWidth by remember {
 //                mutableStateOf(80.dp)
@@ -1993,6 +2068,7 @@ private fun MessageContent.toLayout(
                             message,
                             0.dp,
                             0.dp,
+                            isSelected,
                             onAudioClick = onAudioClick
                         )
                     }
