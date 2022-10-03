@@ -19,6 +19,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -32,6 +34,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
@@ -43,6 +46,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.*
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -428,340 +433,428 @@ fun NormalChatPage(
     var memeUpdateFlag by remember {
         mutableStateOf(0)
     }
+    // Search
+    var searchText by remember{
+        mutableStateOf("")
+    }
+    var enableSearch by remember{
+        mutableStateOf(false)
+    }
+    val searchResult by remember{
+        derivedStateOf {
+            if(searchText.isBlank()) emptyList()
+            else
+//            lazyPagingItems.itemSnapshotList.items.filter {
+//                it.contents.getContentString().contains(searchText)
+//            }
+                lazyPagingItems.itemSnapshotList.items.mapIndexed { index, message ->
+                    index to message
+                }.filter {
+                    it.second.contents.getContentString().contains(searchText)
+                }
+        }
+    }
+    var searchExpanded by remember{
+        mutableStateOf(false)
+    }
     BottomSheetScaffold(
 //        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         scaffoldState = scaffoldState,
         topBar = {
-            Crossfade(targetState = mainSharedViewModel.selectedMessageStateList.isNotEmpty()) {
-                if (it) {
-                    //                            AnimatedVisibility(
-//                                visible = mainSharedViewModel.selectedMessageStateList.size == 1,
-//                                enter = fadeIn(),
-//                                exit = fadeOut()
-//                            ) {
-//                                IconButton(onClick = {
-//                                    if (mainSharedViewModel.selectedMessageStateList.size == 1) {
-//                                        mainSharedViewModel.setQuoteMessage(
-//                                            mainSharedViewModel.selectedMessageStateList.firstOrNull(),
-//                                            name = userName
-//                                        )
-//                                    }
-//                                    mainSharedViewModel.clearSelectedMessageStateList()
-//                                }) {
-//                                    Icon(
-//                                        imageVector = Icons.Outlined.Reply,
-//                                        contentDescription = "reply"
-//                                    )
-//
-//                                }
-//                            }
-                    TopAppBar(
-                        title = {
-                            AnimatedContent(targetState = mainSharedViewModel.selectedMessageStateList.size.toString(),
-                                transitionSpec = {
-                                    // Compare the incoming number with the previous number.
-                                    if (targetState > initialState) {
-                                        // If the target number is larger, it slides up and fades in
-                                        // while the initial (smaller) number slides up and fades out.
-                                        slideInVertically { height -> height } + fadeIn() with
-                                                slideOutVertically { height -> -height } + fadeOut()
-                                    } else {
-                                        // If the target number is smaller, it slides down and fades in
-                                        // while the initial number slides down and fades out.
-                                        slideInVertically { height -> -height } + fadeIn() with
-                                                slideOutVertically { height -> height } + fadeOut()
-                                    }.using(
-                                        // Disable clipping since the faded slide-in/out should
-                                        // be displayed out of bounds.
-                                        SizeTransform(clip = false)
+            Crossfade(targetState = when{
+                enableSearch -> 1
+                mainSharedViewModel.selectedMessageStateList.isNotEmpty() -> 2
+                else -> 3
+            }) {
+                when(it){
+                    1 -> {
+                        TopAppBar(
+                            title = {
+                                Box(
+                                    modifier = Modifier
+                                        .wrapContentSize(Alignment.TopStart)
+                                ) {
+                                    androidx.compose.material3.TextField(
+                                        value = searchText,
+                                        onValueChange = {
+                                            searchText = it
+                                            searchExpanded = true
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 8.dp),
+                                        placeholder = {
+                                            Text(text = "于此会话中搜索")
+                                        },
+                                        singleLine = true,
+                                        keyboardOptions = KeyboardOptions(
+                                            keyboardType = KeyboardType.Text,
+                                            imeAction = ImeAction.Search
+                                        ),
+                                        keyboardActions = KeyboardActions(
+                                            onSearch = {
+                                                focusManager.clearFocus()
+                                                searchExpanded = true
+                                            }
+                                        ),
+                                        trailingIcon = {
+                                            IconButton(onClick = {
+                                                focusManager.clearFocus()
+                                                searchExpanded = true
+                                            }) {
+                                                Icon(Icons.Outlined.Search, contentDescription = null)
+                                            }
+                                        },
+                                        colors = TextFieldDefaults.textFieldColors(
+                                            containerColor = Color.Transparent,
+                                            focusedIndicatorColor = Color.Transparent,
+                                            unfocusedIndicatorColor = Color.Transparent,
+                                            disabledIndicatorColor = Color.Transparent
+                                        )
                                     )
-                                }) { num ->
-                                Text(text = num, style = MaterialTheme.typography.titleLarge)
-                            }
-                        },
-                        modifier = Modifier
-                            .background(color = appBarContainerColor)
-                            .statusBarsPadding(),
-                        navigationIcon = {
-                            IconButton(onClick = { mainSharedViewModel.clearSelectedMessageStateList() }) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Close,
-                                    contentDescription = "close"
-                                )
-                            }
-                        },
-                        actions = {
-                            //                            AnimatedVisibility(
-                            //                                visible = mainSharedViewModel.selectedMessageStateList.size == 1,
-                            //                                enter = fadeIn(),
-                            //                                exit = fadeOut()
-                            //                            ) {
-                            //                                IconButton(onClick = {
-                            //                                    if (mainSharedViewModel.selectedMessageStateList.size == 1) {
-                            //                                        mainSharedViewModel.setQuoteMessage(
-                            //                                            mainSharedViewModel.selectedMessageStateList.firstOrNull(),
-                            //                                            name = userName
-                            //                                        )
-                            //                                    }
-                            //                                    mainSharedViewModel.clearSelectedMessageStateList()
-                            //                                }) {
-                            //                                    Icon(
-                            //                                        imageVector = Icons.Outlined.Reply,
-                            //                                        contentDescription = "reply"
-                            //                                    )
-                            //
-                            //                                }
-                            //                            }
-                            AnimatedVisibility(
-                                visible = mainSharedViewModel.selectedMessageStateList.size == 1,
-                                enter = fadeIn(),
-                                exit = fadeOut()
-                            ) {
+                                    RoundedCornerDropdownMenu(
+                                        expanded = searchExpanded && searchResult.isNotEmpty(),
+                                        onDismissRequest = { searchExpanded = false },
+                                    ) {
+                                        searchResult.forEach {
+                                            DropdownMenuItem(
+                                                text = {Text(text = it.second.contents.getContentString(), maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis)},
+                                                onClick = {
+                                                    coroutineScope.launch{
+                                                        scrollState.animateScrollToItem(it.first)
+                                                    }
+                                                },
+                                                leadingIcon = {
+                                                    AsyncImage(
+                                                        model = ImageRequest.Builder(LocalContext.current)
+                                                            .data(it.second.profile.avatar ?: it.second.profile.avatarUri)
+                                                            .crossfade(true)
+                                                            .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
+                                                            .build(),
+                                                        contentDescription = "avatar",
+                                                        contentScale = ContentScale.Crop,
+                                                        modifier = Modifier
+                                                            .size(24.dp)
+                                                            .clip(CircleShape)
+                                                    )
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                            },
+                            modifier = Modifier
+                                .background(color = appBarContainerColor)
+                                .statusBarsPadding(),
+                            navigationIcon = {
                                 IconButton(onClick = {
-                                    Toast.makeText(
-                                        context,
-                                        "内容已复制到剪贴板",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                    clipboardManager.setText(AnnotatedString(mainSharedViewModel.selectedMessageStateList.first().contents.getContentString()))
-                                    mainSharedViewModel.clearSelectedMessageStateList()
+                                    enableSearch = false
+                                    searchExpanded = false}) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Close,
+                                        contentDescription = "close"
+                                    )
+                                }
+                            },
+                            colors = TopAppBarDefaults.smallTopAppBarColors(
+                                containerColor = appBarContainerColor,
+                            )
+//                        scrollBehavior = scrollBehavior
+                        )
+                    }
+                    2 -> {
+                        TopAppBar(
+                            title = {
+                                AnimatedContent(targetState = mainSharedViewModel.selectedMessageStateList.size.toString(),
+                                    transitionSpec = {
+                                        // Compare the incoming number with the previous number.
+                                        if (targetState > initialState) {
+                                            // If the target number is larger, it slides up and fades in
+                                            // while the initial (smaller) number slides up and fades out.
+                                            slideInVertically { height -> height } + fadeIn() with
+                                                    slideOutVertically { height -> -height } + fadeOut()
+                                        } else {
+                                            // If the target number is smaller, it slides down and fades in
+                                            // while the initial number slides down and fades out.
+                                            slideInVertically { height -> -height } + fadeIn() with
+                                                    slideOutVertically { height -> height } + fadeOut()
+                                        }.using(
+                                            // Disable clipping since the faded slide-in/out should
+                                            // be displayed out of bounds.
+                                            SizeTransform(clip = false)
+                                        )
+                                    }) { num ->
+                                    Text(text = num, style = MaterialTheme.typography.titleLarge)
+                                }
+                            },
+                            modifier = Modifier
+                                .background(color = appBarContainerColor)
+                                .statusBarsPadding(),
+                            navigationIcon = {
+                                IconButton(onClick = { mainSharedViewModel.clearSelectedMessageStateList() }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Close,
+                                        contentDescription = "close"
+                                    )
+                                }
+                            },
+                            actions = {
+                                AnimatedVisibility(
+                                    visible = mainSharedViewModel.selectedMessageStateList.size == 1,
+                                    enter = fadeIn(),
+                                    exit = fadeOut()
+                                ) {
+                                    IconButton(onClick = {
+                                        Toast.makeText(
+                                            context,
+                                            "内容已复制到剪贴板",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        clipboardManager.setText(AnnotatedString(mainSharedViewModel.selectedMessageStateList.first().contents.getContentString()))
+                                        mainSharedViewModel.clearSelectedMessageStateList()
+                                    }) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.ContentCopy,
+                                            contentDescription = "copy"
+                                        )
+                                    }
+                                }
+                                Box(
+                                    modifier = Modifier
+                                        .wrapContentSize(Alignment.TopStart)
+                                ) {
+                                    IconButton(onClick = { menuExpanded = !menuExpanded }) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.MoreVert,
+                                            contentDescription = "more"
+                                        )
+                                    }
+                                    RoundedCornerDropdownMenu(
+                                        expanded = menuExpanded,
+                                        onDismissRequest = { menuExpanded = false },
+                                        modifier = Modifier.width(192.dp)
+                                    ) {
+                                        if (mainSharedViewModel.selectedMessageStateList.size == 1 && mainSharedViewModel.selectedMessageStateList.firstOrNull()?.sentByMe == true) {
+                                            DropdownMenuItem(
+                                                text = { Text(text = "尝试撤回") },
+                                                onClick = {
+                                                    if (mainSharedViewModel.selectedMessageStateList.size == 1) {
+                                                        val message =
+                                                            mainSharedViewModel.selectedMessageStateList.first()
+                                                        onRecallMessage(
+                                                            message.sendType!!,
+                                                            message.messageId
+                                                        )
+                                                    }
+                                                    menuExpanded = false
+                                                },
+                                                leadingIcon = {
+                                                    Icon(
+                                                        Icons.Outlined.Undo,
+                                                        contentDescription = null
+                                                    )
+                                                })
+                                        }
+                                        if (mainSharedViewModel.selectedMessageStateList.size == 1) {
+                                            DropdownMenuItem(
+                                                text = { Text(text = "回复") },
+                                                onClick = {
+                                                    if (mainSharedViewModel.selectedMessageStateList.size == 1)
+                                                        mainSharedViewModel.setQuoteMessage(
+                                                            mainSharedViewModel.selectedMessageStateList.firstOrNull(),
+                                                            userName
+                                                        )
+                                                    mainSharedViewModel.clearSelectedMessageStateList()
+                                                    menuExpanded = false
+                                                },
+                                                leadingIcon = {
+                                                    Icon(
+                                                        Icons.Outlined.Reply,
+                                                        contentDescription = null
+                                                    )
+                                                })
+                                        }
+                                        DropdownMenuItem(
+                                            text = { Text(text = "从聊天记录移除") },
+                                            onClick = {
+                                                menuExpanded = false
+                                                showDeleteMessageConfirmDialog = true
+                                            },
+                                            leadingIcon = {
+                                                Icon(
+                                                    Icons.Outlined.DeleteOutline,
+                                                    contentDescription = null
+                                                )
+                                            })
+                                    }
+                                }
+                            }, colors = TopAppBarDefaults.smallTopAppBarColors(
+                                containerColor = appBarContainerColor
+                            )
+//                        scrollBehavior = scrollBehavior
+                        )
+                    }
+                    3 -> {
+                        TopAppBar(
+                            title = {
+                                Text(
+                                    text = messageState.contact?.profile?.name ?: "会话",
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            },
+                            modifier = Modifier
+                                .background(color = appBarContainerColor)
+                                .statusBarsPadding(),
+                            navigationIcon = {
+                                IconButton(onClick = { onBackClick() }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.ArrowBack,
+                                        contentDescription = "back"
+                                    )
+                                }
+                            },
+                            actions = {
+                                IconButton(onClick = {
+                                    enableSearch = true
+                                    searchText = ""
                                 }) {
                                     Icon(
-                                        imageVector = Icons.Outlined.ContentCopy,
-                                        contentDescription = "copy"
+                                        imageVector = Icons.Outlined.Search,
+                                        contentDescription = "search"
                                     )
                                 }
-                            }
-                            Box(
-                                modifier = Modifier
-                                    .wrapContentSize(Alignment.TopStart)
-                            ) {
-                                IconButton(onClick = { menuExpanded = !menuExpanded }) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.MoreVert,
-                                        contentDescription = "more"
-                                    )
-                                }
-                                RoundedCornerDropdownMenu(
-                                    expanded = menuExpanded,
-                                    onDismissRequest = { menuExpanded = false },
-                                    modifier = Modifier.width(192.dp)
+                                Box(
+                                    modifier = Modifier
+                                        .wrapContentSize(Alignment.TopStart)
                                 ) {
-                                    if (mainSharedViewModel.selectedMessageStateList.size == 1 && mainSharedViewModel.selectedMessageStateList.firstOrNull()?.sentByMe == true) {
-                                        DropdownMenuItem(
-                                            text = { Text(text = "尝试撤回") },
-                                            onClick = {
-                                                if (mainSharedViewModel.selectedMessageStateList.size == 1) {
-                                                    val message =
-                                                        mainSharedViewModel.selectedMessageStateList.first()
-                                                    onRecallMessage(
-                                                        message.sendType!!,
-                                                        message.messageId
-                                                    )
-                                                }
-                                                menuExpanded = false
-                                            },
-                                            leadingIcon = {
-                                                Icon(
-                                                    Icons.Outlined.Undo,
-                                                    contentDescription = null
-                                                )
-                                            })
+                                    IconButton(onClick = { menuExpanded = !menuExpanded }) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.MoreVert,
+                                            contentDescription = "more"
+                                        )
                                     }
-                                    if (mainSharedViewModel.selectedMessageStateList.size == 1) {
-                                        DropdownMenuItem(
-                                            text = { Text(text = "回复") },
-                                            onClick = {
-                                                if (mainSharedViewModel.selectedMessageStateList.size == 1)
-                                                    mainSharedViewModel.setQuoteMessage(
-                                                        mainSharedViewModel.selectedMessageStateList.firstOrNull(),
-                                                        userName
-                                                    )
-                                                mainSharedViewModel.clearSelectedMessageStateList()
-                                                menuExpanded = false
-                                            },
-                                            leadingIcon = {
-                                                Icon(
-                                                    Icons.Outlined.Reply,
-                                                    contentDescription = null
-                                                )
-                                            })
-                                    }
-                                    DropdownMenuItem(
-                                        text = { Text(text = "从聊天记录移除") },
-                                        onClick = {
-                                            menuExpanded = false
-                                            showDeleteMessageConfirmDialog = true
-                                        },
-                                        leadingIcon = {
-                                            Icon(
-                                                Icons.Outlined.DeleteOutline,
-                                                contentDescription = null
-                                            )
-                                        })
-                                }
-                            }
-                        }, colors = TopAppBarDefaults.smallTopAppBarColors(
-                            containerColor = appBarContainerColor
-                        )
-//                        scrollBehavior = scrollBehavior
-                    )
-                } else {
-                    TopAppBar(
-                        title = {
-                            Text(
-                                text = messageState.contact?.profile?.name ?: "会话",
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        },
-                        modifier = Modifier
-                            .background(color = appBarContainerColor)
-                            .statusBarsPadding(),
-                        navigationIcon = {
-                            IconButton(onClick = { onBackClick() }) {
-                                Icon(
-                                    imageVector = Icons.Outlined.ArrowBack,
-                                    contentDescription = "back"
-                                )
-                            }
-                        },
-                        actions = {
-                            IconButton(onClick = { }) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Search,
-                                    contentDescription = "search"
-                                )
-                            }
-                            Box(
-                                modifier = Modifier
-                                    .wrapContentSize(Alignment.TopStart)
-                            ) {
-                                IconButton(onClick = { menuExpanded = !menuExpanded }) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.MoreVert,
-                                        contentDescription = "more"
-                                    )
-                                }
-                                RoundedCornerDropdownMenu(
-                                    expanded = menuExpanded,
-                                    onDismissRequest = { menuExpanded = false },
-                                    modifier = Modifier.width(192.dp)
-                                ) {
-                                    DropdownMenuItem(
-                                        text = { Text(text = "会话信息") },
-                                        onClick = {
-                                            menuExpanded = false
-                                        },
-                                        leadingIcon = {
-                                            Icon(
-                                                Icons.Outlined.Info,
-                                                contentDescription = null
-                                            )
-                                        })
-                                    if (isInSplitScreen) {
-                                        DropdownMenuItem(
-                                            text = { Text(text = "解除分屏") },
-                                            onClick = {
-                                                menuExpanded = false
-                                                onStopSplitting()
-                                            },
-                                            leadingIcon = {
-                                                Icon(
-                                                    Icons.Outlined.VerticalSplit,
-                                                    contentDescription = null
-                                                )
-                                            })
-                                    }
-                                    Box(
-                                        modifier = Modifier
-                                            .wrapContentSize(Alignment.BottomCenter)
+                                    RoundedCornerDropdownMenu(
+                                        expanded = menuExpanded,
+                                        onDismissRequest = { menuExpanded = false },
+                                        modifier = Modifier.width(192.dp)
                                     ) {
-                                        var pluginConnectionMenuExpanded by remember(
-                                            menuExpanded
-                                        ) {
-                                            mutableStateOf(false)
-                                        }
                                         DropdownMenuItem(
-                                            text = { Text(text = "消息发送出口") },
+                                            text = { Text(text = "会话信息") },
                                             onClick = {
-                                                pluginConnectionMenuExpanded =
-                                                    !pluginConnectionMenuExpanded
+                                                menuExpanded = false
                                             },
                                             leadingIcon = {
                                                 Icon(
-                                                    Icons.Outlined.ManageAccounts,
-                                                    contentDescription = null
-                                                )
-                                            },
-                                            trailingIcon = {
-                                                Icon(
-                                                    Icons.Outlined.ArrowRight,
+                                                    Icons.Outlined.Info,
                                                     contentDescription = null
                                                 )
                                             })
-                                        RoundedCornerDropdownMenu(
-                                            expanded = pluginConnectionMenuExpanded,
-                                            onDismissRequest = {
-                                                pluginConnectionMenuExpanded = false
-                                            }) {
-                                            messageState.pluginConnectionList.forEach {
-                                                val connectionName by remember {
-                                                    mutableStateOf(
-                                                        PluginService.queryPluginConnectionName(
-                                                            it.connectionType
-                                                        )
+                                        if (isInSplitScreen) {
+                                            DropdownMenuItem(
+                                                text = { Text(text = "解除分屏") },
+                                                onClick = {
+                                                    menuExpanded = false
+                                                    onStopSplitting()
+                                                },
+                                                leadingIcon = {
+                                                    Icon(
+                                                        Icons.Outlined.VerticalSplit,
+                                                        contentDescription = null
                                                     )
+                                                })
+                                        }
+                                        Box(
+                                            modifier = Modifier
+                                                .wrapContentSize(Alignment.BottomCenter)
+                                        ) {
+                                            var pluginConnectionMenuExpanded by remember(
+                                                menuExpanded
+                                            ) {
+                                                mutableStateOf(false)
+                                            }
+                                            DropdownMenuItem(
+                                                text = { Text(text = "消息发送出口") },
+                                                onClick = {
+                                                    pluginConnectionMenuExpanded =
+                                                        !pluginConnectionMenuExpanded
+                                                },
+                                                leadingIcon = {
+                                                    Icon(
+                                                        Icons.Outlined.ManageAccounts,
+                                                        contentDescription = null
+                                                    )
+                                                },
+                                                trailingIcon = {
+                                                    Icon(
+                                                        Icons.Outlined.ArrowRight,
+                                                        contentDescription = null
+                                                    )
+                                                })
+                                            RoundedCornerDropdownMenu(
+                                                expanded = pluginConnectionMenuExpanded,
+                                                onDismissRequest = {
+                                                    pluginConnectionMenuExpanded = false
+                                                }) {
+                                                messageState.pluginConnectionList.forEach {
+                                                    val connectionName by remember {
+                                                        mutableStateOf(
+                                                            PluginService.queryPluginConnectionName(
+                                                                it.connectionType
+                                                            )
+                                                        )
+                                                    }
+                                                    DropdownMenuItem(
+                                                        text = { Text(text = "$connectionName - ${it.id}") },
+                                                        onClick = {
+                                                            mainSharedViewModel.updateSelectedPluginConnection(
+                                                                it
+                                                            )
+                                                        },
+                                                        trailingIcon = {
+                                                            Icon(
+                                                                imageVector = if (it.objectId == messageState.selectedPluginConnection?.objectId) Icons.Outlined.RadioButtonChecked else Icons.Outlined.RadioButtonUnchecked,
+                                                                contentDescription = "radio"
+                                                            )
+                                                        })
                                                 }
-                                                DropdownMenuItem(
-                                                    text = { Text(text = "$connectionName - ${it.id}") },
-                                                    onClick = {
-                                                        mainSharedViewModel.updateSelectedPluginConnection(
-                                                            it
-                                                        )
-                                                    },
-                                                    trailingIcon = {
-                                                        Icon(
-                                                            imageVector = if (it.objectId == messageState.selectedPluginConnection?.objectId) Icons.Outlined.RadioButtonChecked else Icons.Outlined.RadioButtonUnchecked,
-                                                            contentDescription = "radio"
-                                                        )
-                                                    })
                                             }
                                         }
-                                    }
-                                    DropdownMenuItem(
-                                        text = { Text(text = "刷新") },
-                                        onClick = {
-                                            menuExpanded = false
-                                            lazyPagingItems.refresh()
-                                        },
-                                        leadingIcon = {
-                                            Icon(
-                                                Icons.Outlined.Refresh,
-                                                contentDescription = null
-                                            )
-                                        })
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                                         DropdownMenuItem(
-                                            text = { Text(text = "在对话泡中显示") },
+                                            text = { Text(text = "刷新") },
                                             onClick = {
                                                 menuExpanded = false
-                                                onShowInBubble()
+                                                lazyPagingItems.refresh()
                                             },
                                             leadingIcon = {
                                                 Icon(
-                                                    Icons.Outlined.BubbleChart,
+                                                    Icons.Outlined.Refresh,
                                                     contentDescription = null
                                                 )
                                             })
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                            DropdownMenuItem(
+                                                text = { Text(text = "在对话泡中显示") },
+                                                onClick = {
+                                                    menuExpanded = false
+                                                    onShowInBubble()
+                                                },
+                                                leadingIcon = {
+                                                    Icon(
+                                                        Icons.Outlined.BubbleChart,
+                                                        contentDescription = null
+                                                    )
+                                                })
+                                        }
                                     }
                                 }
-                            }
-                        }, colors = TopAppBarDefaults.smallTopAppBarColors(
-                            containerColor = appBarContainerColor
-                        )
+                            }, colors = TopAppBarDefaults.smallTopAppBarColors(
+                                containerColor = appBarContainerColor
+                            )
 //                        scrollBehavior = scrollBehavior,
-                    )
+                        )
+                    }
                 }
             }
         },
@@ -985,6 +1078,11 @@ fun NormalChatPage(
         }
         BackHandler(enabled = mainSharedViewModel.selectedMessageStateList.size != 0) {
             mainSharedViewModel.clearSelectedMessageStateList()
+        }
+        BackHandler(enabled = enableSearch) {
+            enableSearch = false
+            searchText = ""
+            searchExpanded = false
         }
         BackHandler(enabled = scaffoldState.bottomSheetState.isExpanded) {
             coroutineScope.launch {
