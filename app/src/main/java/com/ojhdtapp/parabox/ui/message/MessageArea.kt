@@ -52,6 +52,7 @@ import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.ChatPageDestination
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.HashTagEditor
+import com.ojhdtapp.parabox.ui.util.RoundedCornerDropdownMenu
 import com.ojhdtapp.parabox.ui.util.SearchAppBar
 import com.ramcosta.composedestinations.navigation.navigate
 import com.valentinilk.shimmer.Shimmer
@@ -230,7 +231,7 @@ fun RowScope.MessageArea(
                                     contentDescription = "expand",
                                     modifier = Modifier.size(FilterChipDefaults.IconSize)
                                 )
-                                DropdownMenu(
+                                RoundedCornerDropdownMenu(
                                     expanded = showDropDownMenu,
                                     onDismissRequest = { showDropDownMenu = false },
                                     //                                modifier = Modifier.width(192.dp)

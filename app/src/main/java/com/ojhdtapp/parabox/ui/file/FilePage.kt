@@ -619,7 +619,7 @@ fun SearchArea(
                                     contentDescription = "expand",
                                     modifier = Modifier.size(FilterChipDefaults.IconSize)
                                 )
-                                DropdownMenu(
+                                RoundedCornerDropdownMenu(
                                     expanded = showSizeFilterDropDownMenu,
                                     onDismissRequest = { showSizeFilterDropDownMenu = false },
                                 ) {
@@ -675,7 +675,7 @@ fun SearchArea(
                                     contentDescription = "expand",
                                     modifier = Modifier.size(FilterChipDefaults.IconSize)
                                 )
-                                DropdownMenu(
+                                RoundedCornerDropdownMenu(
                                     expanded = showExtensionFilterDropDownMenu,
                                     onDismissRequest = { showExtensionFilterDropDownMenu = false },
                                 ) {
@@ -766,7 +766,7 @@ fun SearchArea(
                                     contentDescription = "expand",
                                     modifier = Modifier.size(FilterChipDefaults.IconSize)
                                 )
-                                DropdownMenu(
+                                RoundedCornerDropdownMenu(
                                     expanded = showTimeFilterDropDownMenu,
                                     onDismissRequest = { showTimeFilterDropDownMenu = false },
                                 ) {

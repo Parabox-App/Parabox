@@ -42,6 +42,7 @@ import com.ojhdtapp.parabox.data.local.entity.DownloadingState
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.File
 import com.ojhdtapp.parabox.ui.message.DropdownMenuItemEvent
+import com.ojhdtapp.parabox.ui.util.RoundedCornerDropdownMenu
 
 object SearchAppBar {
     const val NONE = 0
@@ -345,7 +346,7 @@ fun SelectContentField(
                     }) {
                         Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = "more")
                     }
-                    DropdownMenu(
+                    RoundedCornerDropdownMenu(
                         expanded = expanded,
                         onDismissRequest = { expanded = false },
                         modifier = Modifier.width(192.dp)
@@ -574,7 +575,7 @@ fun FileSelectContentField(
                     }) {
                         Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = "more")
                     }
-                    DropdownMenu(
+                    RoundedCornerDropdownMenu(
                         expanded = expanded,
                         onDismissRequest = { expanded = false },
                         modifier = Modifier.width(192.dp)
@@ -665,7 +666,7 @@ fun SelectSpecContentField(
             }) {
                 Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = "more")
             }
-            DropdownMenu(
+            RoundedCornerDropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
                 modifier = Modifier.width(192.dp)
@@ -730,7 +731,7 @@ fun PageContentField(
             }) {
                 Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = "more")
             }
-            DropdownMenu(
+            RoundedCornerDropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
                 modifier = Modifier.width(192.dp)

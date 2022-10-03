@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.ui.util
 
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.MaterialTheme
@@ -15,7 +16,7 @@ import androidx.compose.ui.window.PopupProperties
 fun RoundedCornerDropdownMenu(
     expanded: Boolean,
     onDismissRequest: () -> Unit,
-    roundedCorner: Dp = 8.dp,
+    roundedCorner: Dp = 24.dp,
     modifier: Modifier = Modifier,
     offset: DpOffset = DpOffset(0.dp, 0.dp),
     properties: PopupProperties = PopupProperties(focusable = true),

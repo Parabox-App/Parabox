@@ -35,6 +35,7 @@ import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.NormalPreference
 import com.ojhdtapp.parabox.ui.util.PreferencesCategory
+import com.ojhdtapp.parabox.ui.util.RoundedCornerDropdownMenu
 import com.ojhdtapp.parabox.ui.util.SettingNavGraph
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -122,7 +123,7 @@ fun SettingPage(
                                             contentDescription = "more"
                                         )
                                     }
-                                    DropdownMenu(
+                                    RoundedCornerDropdownMenu(
                                         expanded = expanded,
                                         onDismissRequest = { expanded = false },
                                         modifier = Modifier.width(192.dp)
@@ -177,7 +178,7 @@ fun SettingPage(
                                             contentDescription = "more"
                                         )
                                     }
-                                    DropdownMenu(
+                                    RoundedCornerDropdownMenu(
                                         expanded = expanded,
                                         onDismissRequest = { expanded = false },
                                         modifier = Modifier.width(192.dp)

@@ -69,6 +69,7 @@ import com.ojhdtapp.parabox.ui.MainSharedUiEvent
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.ChatPageDestination
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
+import com.ojhdtapp.parabox.ui.util.RoundedCornerDropdownMenu
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -541,7 +542,7 @@ fun NormalChatPage(
                                         contentDescription = "more"
                                     )
                                 }
-                                DropdownMenu(
+                                RoundedCornerDropdownMenu(
                                     expanded = menuExpanded,
                                     onDismissRequest = { menuExpanded = false },
                                     modifier = Modifier.width(192.dp)
@@ -642,7 +643,7 @@ fun NormalChatPage(
                                         contentDescription = "more"
                                     )
                                 }
-                                DropdownMenu(
+                                RoundedCornerDropdownMenu(
                                     expanded = menuExpanded,
                                     onDismissRequest = { menuExpanded = false },
                                     modifier = Modifier.width(192.dp)
@@ -699,7 +700,7 @@ fun NormalChatPage(
                                                     contentDescription = null
                                                 )
                                             })
-                                        DropdownMenu(
+                                        RoundedCornerDropdownMenu(
                                             expanded = pluginConnectionMenuExpanded,
                                             onDismissRequest = {
                                                 pluginConnectionMenuExpanded = false

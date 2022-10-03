@@ -300,7 +300,7 @@ fun <T> SimpleMenuPreference(
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        DropdownMenu(
+        RoundedCornerDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
         ) {

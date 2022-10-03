@@ -42,6 +42,7 @@ import com.ojhdtapp.parabox.ui.message.MessageBlock
 import com.ojhdtapp.parabox.ui.message.MessageState
 import com.ojhdtapp.parabox.ui.message.SingleMessageEvent
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
+import com.ojhdtapp.parabox.ui.util.RoundedCornerDropdownMenu
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -375,7 +376,7 @@ fun BubbleChatPage(
                                         contentDescription = "more"
                                     )
                                 }
-                                DropdownMenu(
+                                RoundedCornerDropdownMenu(
                                     expanded = menuExpanded,
                                     onDismissRequest = { menuExpanded = false },
                                     modifier = Modifier.width(192.dp)
@@ -468,7 +469,7 @@ fun BubbleChatPage(
                                         contentDescription = "more"
                                     )
                                 }
-                                DropdownMenu(
+                                RoundedCornerDropdownMenu(
                                     expanded = menuExpanded,
                                     onDismissRequest = { menuExpanded = false },
                                     modifier = Modifier.width(192.dp)
@@ -500,7 +501,7 @@ fun BubbleChatPage(
                                                     contentDescription = null
                                                 )
                                             })
-                                        DropdownMenu(
+                                        RoundedCornerDropdownMenu(
                                             expanded = pluginConnectionMenuExpanded,
                                             onDismissRequest = {
                                                 pluginConnectionMenuExpanded = false
