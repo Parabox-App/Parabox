@@ -9,6 +9,6 @@ object AtAll: MessageContent {
     @IgnoredOnParcel
     val type = MessageContent.AT_ALL
     override fun getContentString(): String {
-        return "全体成员"
+        return "@全体成员"
     }
 }

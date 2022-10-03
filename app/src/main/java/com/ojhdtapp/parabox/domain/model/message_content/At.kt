@@ -8,6 +8,6 @@ data class At(val target: Long, val name: String) : MessageContent {
     @IgnoredOnParcel
     val type = MessageContent.AT
     override fun getContentString(): String {
-        return name.trimStart()
+        return "@${name.trimStart()}"
     }
 }

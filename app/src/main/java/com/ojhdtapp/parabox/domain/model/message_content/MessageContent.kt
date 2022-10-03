@@ -18,10 +18,13 @@ interface MessageContent : Parcelable {
     fun getContentString() : String
 }
 
-fun List<MessageContent>.getContentString() : String{
+fun List<MessageContent>.getContentString(): String {
     val builder = StringBuilder()
-    forEach {
-        builder.append(it.getContentString())
+    forEachIndexed { index, messageContent ->
+        builder.append(messageContent.getContentString())
+        if (index != lastIndex) {
+            builder.append(" ")
+        }
     }
     return builder.toString()
 }

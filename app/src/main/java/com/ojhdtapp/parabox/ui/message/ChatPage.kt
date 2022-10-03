@@ -1751,7 +1751,7 @@ private fun MessageContent.toLayout(
     when (this) {
         is At, AtAll -> Text(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
-            text = "@${getContentString()}",
+            text = "${getContentString()}",
             color = textColor,
         )
 
