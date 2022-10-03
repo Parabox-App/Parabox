@@ -474,9 +474,6 @@ fun RowScope.MessageArea(
                                     if (viewModel.searchBarActivateState.value != SearchAppBar.ARCHIVE_SELECT) {
                                         viewModel.clearContactUnreadNum(item.contactId)
                                         mainSharedViewModel.loadMessageFromContact(item)
-                                        //                                    mainSharedViewModel.receiveAndUpdateMessageFromContact(
-                                        //                                        contact = item,
-                                        //                                    )
                                         if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
                                             mainNavController.navigate(ChatPageDestination())
                                         }

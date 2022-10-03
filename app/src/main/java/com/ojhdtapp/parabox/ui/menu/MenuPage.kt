@@ -104,7 +104,6 @@ fun MenuPage(
                     }
                 }
                 is MainSharedUiEvent.NavigateToChat -> {
-                    Log.d("parabox", "navigate to chat")
                     if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
                         navController.navigate(ChatPageDestination())
                     }

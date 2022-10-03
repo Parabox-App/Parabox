@@ -45,10 +45,19 @@ class MainSharedViewModel @Inject constructor(
     // Activity Navigate
     fun navigateToChatPage(targetContact: Contact) {
         loadMessageFromContact(targetContact)
-
         viewModelScope.launch {
             delay(500)
             _uiEventFlow.emit(MainSharedUiEvent.NavigateToChat(targetContact))
+        }
+    }
+
+    fun navigateToChatPage(targetContact: Contact, message: Message) {
+        loadMessageFromContact(targetContact)
+        viewModelScope.launch {
+            delay(500)
+            _uiEventFlow.emit(MainSharedUiEvent.NavigateToChat(targetContact))
+            delay(500)
+            _uiEventFlow.emit(MainSharedUiEvent.NavigateToChatMessage(message))
         }
     }
 

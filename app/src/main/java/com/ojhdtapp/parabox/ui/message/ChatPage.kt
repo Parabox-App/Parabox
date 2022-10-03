@@ -65,6 +65,7 @@ import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.Profile
 import com.ojhdtapp.parabox.domain.model.message_content.*
 import com.ojhdtapp.parabox.domain.service.PluginService
+import com.ojhdtapp.parabox.ui.MainSharedUiEvent
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.ChatPageDestination
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
@@ -133,7 +134,8 @@ fun ChatPage(
                         val selectedPluginConnection = messageState.selectedPluginConnection
                             ?: messageState.pluginConnectionList.firstOrNull()
                         if (selectedPluginConnection == null) {
-                            Toast.makeText(context, "未选择有效的发送出口", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "未选择有效的发送出口", Toast.LENGTH_SHORT)
+                                .show()
                         } else {
                             onEvent(
                                 ActivityEvent.SendMessage(
@@ -166,22 +168,29 @@ fun ChatPage(
                         onEvent(ActivityEvent.Vibrate)
                     },
                     onShowInBubble = {
-                        if(messageState.contact != null && messageState.selectedPluginConnection != null){
-                            onEvent(ActivityEvent.ShowInBubble(
-                                contact = messageState.contact!!.copy(
-                                    profile = Profile(messageState.contact?.profile?.name?: "会话", null, null, null)
-                                ),
-                                message = Message(
-                                    emptyList(),
-                                    Profile("null", null, null, null),
-                                    System.currentTimeMillis(),
-                                    Long.MIN_VALUE,
-                                    true,
-                                    true,
-                                    null
-                                ),
-                                channelId = messageState.selectedPluginConnection!!.connectionType.toString()
-                            ))
+                        if (messageState.contact != null && messageState.selectedPluginConnection != null) {
+                            onEvent(
+                                ActivityEvent.ShowInBubble(
+                                    contact = messageState.contact!!.copy(
+                                        profile = Profile(
+                                            messageState.contact?.profile?.name ?: "会话",
+                                            null,
+                                            null,
+                                            null
+                                        )
+                                    ),
+                                    message = Message(
+                                        emptyList(),
+                                        Profile("null", null, null, null),
+                                        System.currentTimeMillis(),
+                                        Long.MIN_VALUE,
+                                        true,
+                                        true,
+                                        null
+                                    ),
+                                    channelId = messageState.selectedPluginConnection!!.connectionType.toString()
+                                )
+                            )
                         }
                     },
                 )
@@ -295,6 +304,21 @@ fun NormalChatPage(
     val fabExtended by remember {
         derivedStateOf {
             scrollState.firstVisibleItemIndex > 2
+        }
+    }
+    LaunchedEffect(true) {
+        mainSharedViewModel.uiEventFlow.collect {
+            if (it is MainSharedUiEvent.NavigateToChatMessage) {
+                lazyPagingItems.itemSnapshotList.items.map { it.messageId }
+                    .lastIndexOf(it.message.messageId).let { index ->
+                    if (index != -1) {
+                        scrollState.animateScrollToItem(index)
+                    } else {
+                        Toast.makeText(context, "无法定位消息", Toast.LENGTH_SHORT)
+                            .show()
+                    }
+                }
+            }
         }
     }
 
@@ -493,7 +517,11 @@ fun NormalChatPage(
                                 exit = fadeOut()
                             ) {
                                 IconButton(onClick = {
-                                    Toast.makeText(context, "内容已复制到剪贴板", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(
+                                        context,
+                                        "内容已复制到剪贴板",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                     clipboardManager.setText(AnnotatedString(mainSharedViewModel.selectedMessageStateList.first().contents.getContentString()))
                                     mainSharedViewModel.clearSelectedMessageStateList()
                                 }) {
@@ -712,7 +740,7 @@ fun NormalChatPage(
                                                 contentDescription = null
                                             )
                                         })
-                                    if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                                         DropdownMenuItem(
                                             text = { Text(text = "在对话泡中显示") },
                                             onClick = {
@@ -766,7 +794,11 @@ fun NormalChatPage(
                                         if (it != -1) {
                                             scrollState.animateScrollToItem(it)
                                         } else {
-                                            Toast.makeText(context, "无法定位消息", Toast.LENGTH_SHORT)
+                                            Toast.makeText(
+                                                context,
+                                                "无法定位消息",
+                                                Toast.LENGTH_SHORT
+                                            )
                                                 .show()
                                         }
                                     }
@@ -784,6 +816,7 @@ fun NormalChatPage(
                                 mainSharedViewModel.audioRecorderState.value.let {
                                     it !is AudioRecorderState.Ready
                                 } -> 1
+
                                 mainSharedViewModel.recordAmplitudeStateList.isNotEmpty() && mainSharedViewModel.isAudioPlaying.value -> 2
                                 mainSharedViewModel.recordAmplitudeStateList.isNotEmpty() -> 3
                                 mainSharedViewModel.atState.value != null -> 4
@@ -796,22 +829,27 @@ fun NormalChatPage(
                                     imageVector = Icons.Outlined.SettingsVoice,
                                     contentDescription = "voice"
                                 )
+
                                 2 -> Icon(
                                     imageVector = Icons.Outlined.Pause,
                                     contentDescription = "pause"
                                 )
+
                                 3 -> Icon(
                                     imageVector = Icons.Outlined.PlayArrow,
                                     contentDescription = "resume"
                                 )
+
                                 4 -> Icon(
                                     imageVector = Icons.Outlined.AlternateEmail,
                                     contentDescription = "at"
                                 )
+
                                 5 -> Icon(
                                     imageVector = Icons.Outlined.Reply,
                                     contentDescription = "reply"
                                 )
+
                                 else -> Icon(
                                     imageVector = Icons.Outlined.ArrowDownward,
                                     contentDescription = "to_latest"
@@ -1026,9 +1064,11 @@ fun NormalChatPage(
                                             lazyPagingItems.refresh()
                                         }
                                     }
+
                                     is SingleMessageEvent.Recall -> {
                                         onRecallMessage(value.sendType!!, value.messageId)
                                     }
+
                                     is SingleMessageEvent.Favorite -> {
                                         val path = context.getExternalFilesDir("meme")!!
                                         val images = value.contents.filter { it is Image }
@@ -1071,17 +1111,24 @@ fun NormalChatPage(
                                             Toast.LENGTH_SHORT
                                         ).show()
                                     }
+
                                     is SingleMessageEvent.Copy -> {
-                                        Toast.makeText(context, "内容已复制到剪贴板", Toast.LENGTH_SHORT)
+                                        Toast.makeText(
+                                            context,
+                                            "内容已复制到剪贴板",
+                                            Toast.LENGTH_SHORT
+                                        )
                                             .show()
                                         clipboardManager.setText(AnnotatedString(value.contents.getContentString()))
                                     }
+
                                     is SingleMessageEvent.Reply -> {
                                         mainSharedViewModel.setQuoteMessage(
                                             value,
                                             userName
                                         )
                                     }
+
                                     is SingleMessageEvent.Download -> {
                                         try {
                                             val images = value.contents.filter { it is Image }
@@ -1123,6 +1170,7 @@ fun NormalChatPage(
                                             ).show()
                                         }
                                     }
+
                                     is SingleMessageEvent.Delete -> {
                                         showDeleteClickingMessageConfirmDialog = true
                                     }
@@ -1151,7 +1199,11 @@ fun NormalChatPage(
                                         if (it != -1) {
                                             scrollState.animateScrollToItem(it)
                                         } else {
-                                            Toast.makeText(context, "无法定位消息", Toast.LENGTH_SHORT)
+                                            Toast.makeText(
+                                                context,
+                                                "无法定位消息",
+                                                Toast.LENGTH_SHORT
+                                            )
                                                 .show()
                                         }
                                     }
@@ -1702,6 +1754,7 @@ private fun MessageContent.toLayout(
             text = "@${getContentString()}",
             color = textColor,
         )
+
         is PlainText -> SelectionContainer {
             Text(
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
@@ -1709,6 +1762,7 @@ private fun MessageContent.toLayout(
                 color = textColor
             )
         }
+
         is Image -> {
 //            var imageWidth by remember {
 //                mutableStateOf(80.dp)
@@ -1784,6 +1838,7 @@ private fun MessageContent.toLayout(
                     )
             )
         }
+
         is QuoteReply -> {
             Surface(
                 modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = 8.dp),
@@ -1849,6 +1904,7 @@ private fun MessageContent.toLayout(
                 }
             }
         }
+
         is Audio -> {
             Row(
                 modifier = Modifier.padding(start = 1.dp, end = 12.dp, top = 1.dp, bottom = 1.dp),
@@ -1881,6 +1937,7 @@ private fun MessageContent.toLayout(
                 )
             }
         }
+
         is File -> {
             Row(
                 modifier = Modifier.padding(12.dp),

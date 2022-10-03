@@ -273,7 +273,7 @@ fun RowScope.SearchArea(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .clickable {
-                                                    mainSharedViewModel.loadMessageFromContact(cm.contact)
+                                                    mainSharedViewModel.navigateToChatPage(cm.contact, it)
                                                     if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
                                                         mainNavController.navigate(
                                                             ChatPageDestination()
