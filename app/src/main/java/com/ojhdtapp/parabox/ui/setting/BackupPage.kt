@@ -6,6 +6,12 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.CleaningServices
+import androidx.compose.material.icons.outlined.DeleteSweep
+import androidx.compose.material.icons.outlined.FileOpen
+import androidx.compose.material.icons.outlined.NotificationsActive
+import androidx.compose.material.icons.outlined.Restore
+import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
@@ -17,6 +23,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
+import com.ojhdtapp.parabox.ui.util.NormalPreference
+import com.ojhdtapp.parabox.ui.util.PreferencesCategory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,12 +69,57 @@ fun BackupPage(
             )
         },
     ) {
-        // Plugin List State
-        val pluginList by mainSharedViewModel.pluginListStateFlow.collectAsState()
         LazyColumn(
             contentPadding = it
         ) {
+            item {
+                NormalPreference(
+                    title = "备份",
+                    subtitle = "将会话，聊天记录导出到文件中（不包含图片）",
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Outlined.FileOpen,
+                            contentDescription = "backup"
+                        )
+                    },
+                    onClick = {
 
+                    }
+                )
+            }
+            item {
+                NormalPreference(
+                    title = "还原",
+                    subtitle = "从备份文件还原记录",
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Outlined.Restore,
+                            contentDescription = "restore"
+                        )
+                    },
+                    onClick = {
+
+                    }
+                )
+            }
+            item {
+                PreferencesCategory(text = "空间管理")
+            }
+            item {
+                NormalPreference(
+                    title = "清理缓存",
+                    subtitle = "应用缓存已占用\n缓存清理不影响聊天记录",
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Outlined.DeleteSweep,
+                            contentDescription = "clean cache"
+                        )
+                    },
+                    onClick = {
+
+                    }
+                )
+            }
         }
     }
 }

@@ -83,6 +83,9 @@ dependencies {
     implementation "androidx.compose.material:material-icons-extended:$compose_version"
     implementation "com.google.android.material:material:1.8.0-alpha01"
 
+    // Icon
+    implementation 'com.github.Gurupreet:FontAwesomeCompose:1.1.0'
+
     // Image Previewer
     implementation 'com.github.ojhdt:ImageViewer:1.0.1-alpha.2'
 

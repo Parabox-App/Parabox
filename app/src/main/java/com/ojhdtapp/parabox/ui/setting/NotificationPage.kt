@@ -19,6 +19,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.NormalPreference
+import com.ojhdtapp.parabox.ui.util.PreferencesCategory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -97,6 +98,9 @@ fun NotificationPage(
 
                     }
                 )
+            }
+            item {
+                PreferencesCategory(text = "会话通知设置")
             }
         }
     }

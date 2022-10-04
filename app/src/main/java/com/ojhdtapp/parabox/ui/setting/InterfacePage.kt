@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Colorize
 import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
@@ -17,6 +18,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
+import com.ojhdtapp.parabox.ui.util.NormalPreference
+import com.ojhdtapp.parabox.ui.util.PreferencesCategory
+import com.ojhdtapp.parabox.ui.util.SimpleMenuPreference
+import com.ojhdtapp.parabox.ui.util.SwitchPreference
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,12 +66,29 @@ fun InterfacePage(
             )
         },
     ) {
-        // Plugin List State
-        val pluginList by mainSharedViewModel.pluginListStateFlow.collectAsState()
         LazyColumn(
             contentPadding = it
         ) {
-
+            item {
+                PreferencesCategory(text = "主题")
+            }
+            item {
+                SwitchPreference(
+                    title = "Monet",
+                    subtitleOn = "应用色彩将响应壁纸变化",
+                    subtitleOff = "应用色彩响应壁纸变化（需要 Android 12）",
+                    initialChecked = true,
+                    onCheckedChange = {})
+            }
+            item {
+                SimpleMenuPreference(
+                    title = "主题色",
+                    optionsMap = mapOf(0 to "蓝色"),
+                    onSelect = {})
+            }
+            item {
+                PreferencesCategory(text = "语言")
+            }
         }
     }
 }
