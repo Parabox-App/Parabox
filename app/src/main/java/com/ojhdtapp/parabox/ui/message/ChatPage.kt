@@ -49,7 +49,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.*
-import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -468,14 +467,13 @@ fun NormalChatPage(
     }
     // Image Preview
     val imageViewerState = rememberPreviewerState()
-    val imageMap =
-        produceState(initialValue = emptyMap<Long, ImageBitmap>(), key1 = lazyPagingItems.itemSnapshotList){
-            Log.d("parabox", "downloading image!")
-            value = lazyPagingItems.itemSnapshotList.items.fold(mutableMapOf<Long, ImageBitmap>()) { acc, message ->
+    val imageList =
+        produceState(initialValue = emptyList<Pair<Long, ImageBitmap>>(), key1 = lazyPagingItems.itemSnapshotList){
+            value = lazyPagingItems.itemSnapshotList.items.fold(mutableListOf<Pair<Long, ImageBitmap>>()) { acc, message ->
                 message.contents.filterIsInstance<Image>().forEachIndexed { index, t ->
                     if(t.uriString != null){
                         FileUtil.getBitmapFromUri(context, Uri.parse(t.uriString))?.let{
-                            acc.put("${message.messageId}${index}".toLong(), it.asImageBitmap())
+                            acc.add("${message.messageId}${index}".toLong() to it.asImageBitmap())
                         }
                     } else if (t.url != null){
                         val loader = ImageLoader(context)
@@ -485,16 +483,16 @@ fun NormalChatPage(
                             .build()
                         val result = (loader.execute(request) as SuccessResult).drawable
                         val bitmap = (result as BitmapDrawable).bitmap
-                        acc.put("${message.messageId}${index}".toLong(), bitmap.asImageBitmap())
+                        acc.add("${message.messageId}${index}".toLong() to bitmap.asImageBitmap())
                     }
                 }
                 acc
-            }
+            }.reversed()
         }
-    ImagePreviewer(modifier = Modifier.zIndex(9f), count = imageMap.value.size, state = imageViewerState,
+    ImagePreviewer(modifier = Modifier.zIndex(9f), count = imageList.value.size, state = imageViewerState,
         imageLoader = { index ->
-            if (index < imageMap.value.size){
-                imageMap.value.toList()[index].second
+            if (index < imageList.value.size){
+                imageList.value[index].second
             } else {
                 ImageBitmap(1, 1)
             }
@@ -1342,8 +1340,10 @@ fun NormalChatPage(
                                     )
                                 } else {
                                     if (value.contents.any { it is Image }) {
-                                        val index = imageMap.value.toList().indexOfLast { it.first == "${value.messageId}0".toLong() }
-                                        imageViewerState.show(index)
+                                        val index = imageList.value.indexOfLast { it.first == "${value.messageId}0".toLong() }
+                                        if (index != -1) {
+                                            imageViewerState.show(index)
+                                        }
                                     } else {
                                         clickingMessage = value
                                     }
