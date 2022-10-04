@@ -6,6 +6,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -56,6 +57,20 @@ object FileUtil {
             }
         }
         return getUriFromBitmap(context, bm)
+    }
+
+    fun getBitmapFromUri(context: Context, uri: Uri): Bitmap? {
+        return try {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+                MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+            } else {
+                val source = ImageDecoder.createSource(context.contentResolver, uri)
+                ImageDecoder.decodeBitmap(source)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 
     fun getUriOfFile(context: Context, file: File): Uri? {

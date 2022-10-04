@@ -984,7 +984,7 @@ fun BubbleChatPage(
                                 if (value.contents.any { it is Image }) {
                                     clickingMessage = value
                                 } else {
-                                    mainSharedViewModel.addOrRemoveItemOfSelectedMessageStateList(
+                                    viewModel.addOrRemoveItemOfSelectedMessageStateList(
                                         value
                                     )
                                 }

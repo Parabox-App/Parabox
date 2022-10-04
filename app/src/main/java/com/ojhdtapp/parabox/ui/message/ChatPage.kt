@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.ui.message
 
 import android.content.Context
+import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Build.VERSION.SDK_INT
@@ -43,9 +44,12 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.*
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -54,6 +58,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
@@ -65,6 +70,7 @@ import coil.decode.ImageDecoderDecoder
 import coil.imageLoader
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import coil.request.SuccessResult
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.domain.model.Message
@@ -76,6 +82,8 @@ import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.ChatPageDestination
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.RoundedCornerDropdownMenu
+import com.origeek.imageViewer.ImagePreviewer
+import com.origeek.imageViewer.rememberPreviewerState
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -458,6 +466,41 @@ fun NormalChatPage(
     var searchExpanded by remember {
         mutableStateOf(false)
     }
+    // Image Preview
+    val imageViewerState = rememberPreviewerState()
+    val imageMap =
+        produceState(initialValue = emptyMap<Long, ImageBitmap>(), key1 = lazyPagingItems.itemSnapshotList){
+            Log.d("parabox", "downloading image!")
+            value = lazyPagingItems.itemSnapshotList.items.fold(mutableMapOf<Long, ImageBitmap>()) { acc, message ->
+                message.contents.filterIsInstance<Image>().forEachIndexed { index, t ->
+                    if(t.uriString != null){
+                        FileUtil.getBitmapFromUri(context, Uri.parse(t.uriString))?.let{
+                            acc.put("${message.messageId}${index}".toLong(), it.asImageBitmap())
+                        }
+                    } else if (t.url != null){
+                        val loader = ImageLoader(context)
+                        val request = ImageRequest.Builder(context)
+                            .data(t.url)
+                            .allowHardware(false)
+                            .build()
+                        val result = (loader.execute(request) as SuccessResult).drawable
+                        val bitmap = (result as BitmapDrawable).bitmap
+                        acc.put("${message.messageId}${index}".toLong(), bitmap.asImageBitmap())
+                    }
+                }
+                acc
+            }
+        }
+    ImagePreviewer(modifier = Modifier.zIndex(9f), count = imageMap.value.size, state = imageViewerState,
+        imageLoader = { index ->
+            if (index < imageMap.value.size){
+                imageMap.value.toList()[index].second
+            } else {
+                ImageBitmap(1, 1)
+            }
+        }
+    )
+
     BottomSheetScaffold(
 //        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         scaffoldState = scaffoldState,
@@ -1299,7 +1342,8 @@ fun NormalChatPage(
                                     )
                                 } else {
                                     if (value.contents.any { it is Image }) {
-                                        TODO("launch image viewer")
+                                        val index = imageMap.value.toList().indexOfLast { it.first == "${value.messageId}0".toLong() }
+                                        imageViewerState.show(index)
                                     } else {
                                         clickingMessage = value
                                     }
@@ -1763,7 +1807,8 @@ fun SingleMessage(
                         .combinedClickable(
                             enabled = !isSelected,
                             onClick = onClick,
-                            onLongClick = onLongClick)
+                            onLongClick = onLongClick
+                        )
 //                        .clickable(enabled = isSelected, onClick = onClick)
                         .animateContentSize()
                 ) {
