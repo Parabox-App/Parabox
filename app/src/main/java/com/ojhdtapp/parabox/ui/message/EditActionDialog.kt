@@ -455,7 +455,7 @@ fun EditActionDialog(
                                     )
                                 }
                             },
-                            enabled = contact != null,
+                            enabled = contact != null && !contact.isArchived,
                             horizontalPadding = if (isCompact) 24.dp else 32.dp,
                         )
                     }

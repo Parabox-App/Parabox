@@ -469,6 +469,9 @@ fun NormalChatPage(
     }
     // Image Preview
     val imageViewerState = rememberPreviewerState()
+    LaunchedEffect(messageState){
+        imageViewerState.hide()
+    }
     val imageList =
         produceState(
             initialValue = emptyList<Pair<Long, ImageBitmap>>(),
@@ -499,9 +502,6 @@ fun NormalChatPage(
                     }.reversed()
             }
         }
-    LaunchedEffect(imageList.value){
-        Log.d("parabox", "imageList:${imageList.value}")
-    }
     var showImagePreviewerToolbar by remember {
         mutableStateOf(true)
     }
@@ -1017,17 +1017,6 @@ fun NormalChatPage(
                                         onDismissRequest = { menuExpanded = false },
                                         modifier = Modifier.width(192.dp)
                                     ) {
-                                        DropdownMenuItem(
-                                            text = { Text(text = "会话信息") },
-                                            onClick = {
-                                                menuExpanded = false
-                                            },
-                                            leadingIcon = {
-                                                Icon(
-                                                    Icons.Outlined.Info,
-                                                    contentDescription = null
-                                                )
-                                            })
                                         if (isInSplitScreen) {
                                             DropdownMenuItem(
                                                 text = { Text(text = "解除分屏") },

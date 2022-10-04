@@ -116,7 +116,7 @@ class MainRepositoryImpl @Inject constructor(
             // Send Notification if Enabled ...
             if (contactIdDeferred.await() == -1L) {
                 database.contactDao.getContactById(dto.pluginConnection.objectId).let {
-                    if (it?.enableNotifications == true) {
+                    if (it?.enableNotifications == true && it.isArchived == false) {
                         notificationUtil.sendNewMessageNotification(
                             message = dto.toMessage(context, messageIdDeferred.await()),
                             contact = dto.toContact(),
