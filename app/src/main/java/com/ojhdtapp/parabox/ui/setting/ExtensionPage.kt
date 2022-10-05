@@ -103,7 +103,7 @@ fun ExtensionPage(
                 key = { it.packageName }) {
                 NormalPreference(
                     title = it.name,
-                    subtitle = it.packageName,
+                    subtitle = "${it.packageName}\n版本 ${it.version}",
                     leadingIcon = {
                         AsyncImage(
                             model = it.icon,

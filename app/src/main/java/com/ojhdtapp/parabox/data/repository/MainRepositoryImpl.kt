@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.paging.PagingSource
+import com.ojhdtapp.parabox.core.HiltApplication
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.ReceiveMessageDto
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendMessageDto
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
@@ -114,22 +115,24 @@ class MainRepositoryImpl @Inject constructor(
                     }
             }
             // Send Notification if Enabled ...
-            if (contactIdDeferred.await() == -1L) {
-                database.contactDao.getContactById(dto.pluginConnection.objectId).let {
-                    if (it?.enableNotifications == true && it.isArchived == false) {
-                        notificationUtil.sendNewMessageNotification(
-                            message = dto.toMessage(context, messageIdDeferred.await()),
-                            contact = dto.toContact(),
-                            channelId = dto.pluginConnection.connectionType.toString()
-                        )
+            if(HiltApplication.inBackground){
+                if (contactIdDeferred.await() == -1L) {
+                    database.contactDao.getContactById(dto.pluginConnection.objectId).let {
+                        if (it?.enableNotifications == true && it.isArchived == false) {
+                            notificationUtil.sendNewMessageNotification(
+                                message = dto.toMessage(context, messageIdDeferred.await()),
+                                contact = dto.toContact(),
+                                channelId = dto.pluginConnection.connectionType.toString()
+                            )
+                        }
                     }
+                } else {
+                    notificationUtil.sendNewMessageNotification(
+                        message = dto.toMessage(context, messageIdDeferred.await()),
+                        contact = dto.toContact(),
+                        channelId = dto.pluginConnection.connectionType.toString()
+                    )
                 }
-            } else {
-                notificationUtil.sendNewMessageNotification(
-                    message = dto.toMessage(context, messageIdDeferred.await()),
-                    contact = dto.toContact(),
-                    channelId = dto.pluginConnection.connectionType.toString()
-                )
             }
         }
 //        database.messageDao.insertMessage(dto.toMessageEntity())

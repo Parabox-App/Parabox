@@ -66,6 +66,10 @@ android {
     }
 }
 
+configurations {
+    all*.exclude group: 'com.google.guava', module: 'listenablefuture'
+}
+
 dependencies {
     implementation 'androidx.core:core-ktx:1.9.0'
     implementation 'androidx.core:core-google-shortcuts:1.0.1'
@@ -83,7 +87,18 @@ dependencies {
     implementation "androidx.compose.material:material-icons-extended:$compose_version"
     implementation "com.google.android.material:material:1.8.0-alpha01"
 
-    // Icon
+    // Google Drive Api
+    implementation 'com.google.android.gms:play-services-auth:20.1.0'
+    implementation('com.google.api-client:google-api-client-android:1.26.0') {
+        exclude group: 'org.apache.httpcomponents'
+        exclude module: 'guava-jdk5'
+    }
+    implementation('com.google.apis:google-api-services-drive:v3-rev136-1.25.0') {
+        exclude group: 'org.apache.httpcomponents'
+        exclude module: 'guava-jdk5'
+    }
+
+    // FontAwesome Icon
     implementation 'com.github.Gurupreet:FontAwesomeCompose:1.1.0'
 
     // Image Previewer
@@ -156,6 +171,8 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycle_version"
     // optional - helpers for implementing LifecycleOwner in a Service
     implementation "androidx.lifecycle:lifecycle-service:$lifecycle_version"
+    // optional - ProcessLifecycleOwner provides a lifecycle for the whole application process
+    implementation("androidx.lifecycle:lifecycle-process:$lifecycle_version")
 
     // Coroutine Lifecycle Scopes
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4"

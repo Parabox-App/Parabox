@@ -93,61 +93,61 @@ fun InfoPage(
                     )
                 }
             }
-            item(key = "extension_status") {
-                AnimatedVisibility(
-                    visible = pluginList.isNotEmpty(),
-                    enter = expandVertically(),
-                    exit = shrinkVertically()
-                ) {
-                    PreferencesCategory(text = "扩展")
-                }
-            }
-            items(
-                items = pluginList,
-                key = { it.packageName }) {
-                NormalPreference(
-                    title = it.name,
-                    subtitle = it.packageName,
-                    leadingIcon = {
-                        AsyncImage(
-                            model = it.icon,
-                            contentDescription = "icon",
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clip(
-                                    CircleShape
-                                )
-                        )
-                    },
-                    trailingIcon = {
-                        when (it.runningStatus) {
-                            AppModel.RUNNING_STATUS_DISABLED -> Icon(
-                                imageVector = Icons.Outlined.Block,
-                                contentDescription = "disabled"
-                            )
-                            AppModel.RUNNING_STATUS_ERROR -> Icon(
-                                imageVector = Icons.Outlined.ErrorOutline,
-                                contentDescription = "error",
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                            AppModel.RUNNING_STATUS_RUNNING -> Icon(
-                                imageVector = Icons.Outlined.CheckCircleOutline,
-                                contentDescription = "running",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            AppModel.RUNNING_STATUS_CHECKING -> CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                strokeWidth = 2.dp
-                            )
-                        }
-                    },
-                    onClick = {
-                        it.launchIntent?.let {
-                            onEvent(ActivityEvent.LaunchIntent(it))
-                        }
-                    }
-                )
-            }
+//            item(key = "extension_status") {
+//                AnimatedVisibility(
+//                    visible = pluginList.isNotEmpty(),
+//                    enter = expandVertically(),
+//                    exit = shrinkVertically()
+//                ) {
+//                    PreferencesCategory(text = "扩展状态")
+//                }
+//            }
+//            items(
+//                items = pluginList,
+//                key = { it.packageName }) {
+//                NormalPreference(
+//                    title = it.name,
+//                    subtitle = it.version,
+//                    leadingIcon = {
+//                        AsyncImage(
+//                            model = it.icon,
+//                            contentDescription = "icon",
+//                            modifier = Modifier
+//                                .size(24.dp)
+//                                .clip(
+//                                    CircleShape
+//                                )
+//                        )
+//                    },
+//                    trailingIcon = {
+//                        when (it.runningStatus) {
+//                            AppModel.RUNNING_STATUS_DISABLED -> Icon(
+//                                imageVector = Icons.Outlined.Block,
+//                                contentDescription = "disabled"
+//                            )
+//                            AppModel.RUNNING_STATUS_ERROR -> Icon(
+//                                imageVector = Icons.Outlined.ErrorOutline,
+//                                contentDescription = "error",
+//                                tint = MaterialTheme.colorScheme.error
+//                            )
+//                            AppModel.RUNNING_STATUS_RUNNING -> Icon(
+//                                imageVector = Icons.Outlined.CheckCircleOutline,
+//                                contentDescription = "running",
+//                                tint = MaterialTheme.colorScheme.primary
+//                            )
+//                            AppModel.RUNNING_STATUS_CHECKING -> CircularProgressIndicator(
+//                                modifier = Modifier.size(24.dp),
+//                                strokeWidth = 2.dp
+//                            )
+//                        }
+//                    },
+//                    onClick = {
+//                        it.launchIntent?.let {
+//                            onEvent(ActivityEvent.LaunchIntent(it))
+//                        }
+//                    }
+//                )
+//            }
         }
     }
 }
