@@ -9,14 +9,21 @@ import javax.inject.Inject
 class GetContacts @Inject constructor(
     val repository: MainRepository
 ) {
+    // Flow
     operator fun invoke(): Flow<Resource<List<Contact>>> {
         return repository.getAllUnhiddenContacts()
     }
 
+    fun all(): Flow<Resource<List<Contact>>>{
+        return repository.getAllContacts()
+    }
+
+    // Once
     fun personal() : Flow<Resource<List<Contact>>>{
         return repository.getPersonalContacts()
     }
 
+    // Once
     fun group(limit: Int) : Flow<Resource<List<Contact>>>{
         return repository.getGroupContacts(limit)
     }

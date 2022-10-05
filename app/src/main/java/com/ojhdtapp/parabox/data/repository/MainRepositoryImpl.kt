@@ -357,6 +357,24 @@ class MainRepositoryImpl @Inject constructor(
         return database.contactDao.getContactById(contactId)?.toContact()
     }
 
+    override fun getAllContacts(): Flow<Resource<List<Contact>>> {
+        return flow {
+            emit(Resource.Loading<List<Contact>>())
+            try {
+                emitAll(
+                    database.contactDao.getAllContacts().map {
+                        Resource.Success(
+                            it.map { it.toContact() }
+                        )
+                    }
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+                emit(Resource.Error<List<Contact>>("获取数据时发生错误"))
+            }
+        }
+    }
+
     override fun getAllHiddenContacts(): Flow<Resource<List<Contact>>> {
         return database.contactDao.getAllHiddenContacts()
             .map<List<ContactEntity>, Resource<List<Contact>>> { contactEntityList ->

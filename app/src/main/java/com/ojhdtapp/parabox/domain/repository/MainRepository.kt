@@ -27,6 +27,7 @@ interface MainRepository {
     fun addContactTag(value: String)
     fun checkContactTag(value: String): Boolean
     suspend fun getContactById(contactId: Long): Contact?
+    fun getAllContacts(): Flow<Resource<List<Contact>>>
     fun getAllHiddenContacts(): Flow<Resource<List<Contact>>>
     fun getAllUnhiddenContacts(): Flow<Resource<List<Contact>>>
     fun getArchivedContacts() : Flow<Resource<List<Contact>>>

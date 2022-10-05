@@ -102,7 +102,7 @@ dependencies {
     implementation 'com.github.Gurupreet:FontAwesomeCompose:1.1.0'
 
     // Image Previewer
-    implementation 'com.github.ojhdt:ImageViewer:1.0.1-alpha.2'
+    implementation 'com.github.jvziyaoyao:ImageViewer:1.0.1-alpha.3'
 
     // ML-Kit
     implementation 'com.google.mlkit:entity-extraction:16.0.0-beta4'

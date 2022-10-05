@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 object GoogleDriveUtil {
+    const val SERVICE_CODE = 1001
     fun isUserSignedIn(context: Context): Boolean {
         val account = GoogleSignIn.getLastSignedInAccount(context)
         return account != null

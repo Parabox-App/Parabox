@@ -25,6 +25,7 @@ import com.guru.fontawesomecomposelib.FaIcon
 import com.guru.fontawesomecomposelib.FaIcons
 import com.ojhdtapp.parabox.MainActivity
 import com.ojhdtapp.parabox.core.util.FileUtil
+import com.ojhdtapp.parabox.core.util.GoogleDriveUtil
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.NormalPreference
@@ -63,6 +64,17 @@ fun CloudPage(
             if (gDriveTotalSpace == 0L) 0 else (gDriveAppUsedSpace * 100 / gDriveTotalSpace).toInt()
         }
     }
+    val selectableService by remember{
+        derivedStateOf{
+            buildMap<Int, String> {
+                put(0, "无")
+                if(gDriveLogin) put(GoogleDriveUtil.SERVICE_CODE, "Google Drive")
+            }
+        }
+    }
+    val defaultBackupService by viewModel.defaultBackupServiceFlow.collectAsState(initial = 0)
+    val autoBackup by viewModel.autoBackupFlow.collectAsState(initial = false)
+    val autoDeleteLocalFile by viewModel.autoDeleteLocalFileFlow.collectAsState(initial = false)
     val gDriveLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
@@ -230,27 +242,31 @@ fun CloudPage(
             item {
                 SimpleMenuPreference(
                     title = "默认云端服务",
-                    optionsMap = mapOf(0 to "Google Drive"),
-                    onSelect = {})
+                    optionsMap = selectableService,
+                    selectedKey = defaultBackupService,
+                    onSelect = viewModel::setDefaultBackupService)
             }
             item {
                 SwitchPreference(
                     title = "自动备份",
                     subtitleOff = "于合适网络环境下自动下载文件，使用默认云端服务备份",
                     subtitleOn = "启用",
-                    initialChecked = false,
-                    onCheckedChange = {})
+                    initialChecked = autoBackup,
+                    onCheckedChange = viewModel::setAutoBackup,
+                    enabled = defaultBackupService != 0)
             }
             item {
-                NormalPreference(title = "目标会话", subtitle = "对选中会话应用自动备份") {}
+                NormalPreference(title = "目标会话", subtitle = "对选中会话应用自动备份", enabled = defaultBackupService != 0) {}
             }
             item {
                 SwitchPreference(
                     title = "同时删除本地文件",
                     subtitleOff = "备份完成后自动删除本地文件",
                     subtitleOn = "启用",
-                    initialChecked = false,
-                    onCheckedChange = {})
+                    initialChecked = autoDeleteLocalFile,
+                    onCheckedChange = viewModel::setAutoDeleteLocalFile,
+                    enabled = autoBackup && defaultBackupService != 0
+                )
             }
         }
     }

@@ -12,6 +12,10 @@ object DataStoreKeys{
     val USER_NAME = stringPreferencesKey("user_name")
     val USER_AVATAR = stringPreferencesKey("user_avatar")
 
+    val SETTINGS_DEFAULT_BACKUP_SERVICE = intPreferencesKey("settings_default_backup_service")
+    val SETTINGS_AUTO_BACKUP = booleanPreferencesKey("settings_auto_backup")
+    val SETTINGS_AUTO_DELETE_LOCAL_FILE = booleanPreferencesKey("settings_auto_delete_local_file")
+
     val GOOGLE_MAIL = stringPreferencesKey("google_mail")
     val GOOGLE_NAME = stringPreferencesKey("google_name")
     val GOOGLE_LOGIN = booleanPreferencesKey("google_login")

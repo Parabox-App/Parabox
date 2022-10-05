@@ -10,7 +10,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ojhdtapp.parabox.ui.theme.fontSize
@@ -41,7 +40,8 @@ fun SwitchPreference(
     var checked by remember {
         mutableStateOf(initialChecked)
     }
-    val textColor by animateColorAsState(targetValue = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.outline)
+    val titleTextColor by animateColorAsState(targetValue = if(enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline)
+    val subTitleTextColor by animateColorAsState(targetValue = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.outline)
     Surface() {
         Row(
             modifier = modifier
@@ -60,7 +60,8 @@ fun SwitchPreference(
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleLarge,
-                    fontSize = MaterialTheme.fontSize.title
+                    fontSize = MaterialTheme.fontSize.title,
+                    color = titleTextColor,
                 )
                 if (checked) {
                     subtitleOn?.let {
@@ -68,7 +69,7 @@ fun SwitchPreference(
                         Text(
                             text = it,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = textColor,
+                            color = subTitleTextColor,
                         )
                     }
                 } else {
@@ -77,7 +78,7 @@ fun SwitchPreference(
                         Text(
                             text = it,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = textColor,
+                            color = subTitleTextColor,
                         )
                     }
                 }
@@ -161,6 +162,7 @@ fun NormalPreference(
     subtitle: String? = null,
     selected: Boolean = false,
     warning: Boolean = false,
+    enabled: Boolean = true,
     roundedCorner: Boolean = false,
     horizontalPadding: Dp = 24.dp,
     onLeadingIconClick: (() -> Unit)? = null,
@@ -172,6 +174,7 @@ fun NormalPreference(
         targetValue = when {
             warning -> MaterialTheme.colorScheme.error
             selected -> MaterialTheme.colorScheme.onSecondaryContainer
+            !enabled -> MaterialTheme.colorScheme.outline
             else -> MaterialTheme.colorScheme.onSurface
         }
     )
@@ -179,6 +182,7 @@ fun NormalPreference(
         targetValue = when {
             warning -> MaterialTheme.colorScheme.error
             selected -> MaterialTheme.colorScheme.onSecondaryContainer
+            !enabled -> MaterialTheme.colorScheme.outline
             else -> MaterialTheme.colorScheme.onSurfaceVariant
         }
     )
@@ -195,7 +199,7 @@ fun NormalPreference(
             if (onLeadingIconClick != null && leadingIcon != null) {
                 Row(
                     modifier = Modifier
-                        .clickable { onLeadingIconClick() }
+                        .clickable { if(enabled) onLeadingIconClick() }
                         .padding(start = horizontalPadding, top = 16.dp, bottom = 16.dp)
                         .fillMaxHeight(),
                     horizontalArrangement = Arrangement.Start,
@@ -213,7 +217,7 @@ fun NormalPreference(
             }
             Row(
                 modifier = Modifier
-                    .clickable { onClick() }
+                    .clickable { if(enabled) onClick() }
                     .padding(
                         start = if (onLeadingIconClick != null && leadingIcon != null) 16.dp else horizontalPadding,
                         end = if (onTrailingIconClick != null && trailingIcon != null) 16.dp else horizontalPadding,
@@ -261,7 +265,7 @@ fun NormalPreference(
             if (onTrailingIconClick != null && trailingIcon != null) {
                 Row(
                     modifier = Modifier
-                        .clickable { onTrailingIconClick() }
+                        .clickable { if(enabled) onTrailingIconClick() }
                         .padding(end = horizontalPadding, top = 16.dp, bottom = 16.dp)
                         .fillMaxHeight(),
                     horizontalArrangement = Arrangement.Start,
