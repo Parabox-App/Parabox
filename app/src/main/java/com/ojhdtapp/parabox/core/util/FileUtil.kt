@@ -265,7 +265,7 @@ object FileUtil {
 
     fun getSizeString(size: Long): String {
         val format = DecimalFormat("#.##")
-        return when (size) {
+        return when (size.coerceAtLeast(0)) {
             in 0 until 1024 -> "${size}B"
             in 1024 until 1048576 -> "${format.format(size.toDouble() / 1024)}KB"
             in 1048576 until 1073741824 -> "${format.format(size.toDouble() / 1048576)}MB"

@@ -118,6 +118,9 @@ fun FilePage(
         openDialog = mainSharedViewModel.showUserProfileDialogState.value,
         userName = mainSharedViewModel.userNameFlow.collectAsState(initial = DataStoreKeys.DEFAULT_USER_NAME).value,
         avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
+        gDriveLogin = mainSharedViewModel.googleLoginFlow.collectAsState(initial = false).value,
+        gDriveTotalSpace = mainSharedViewModel.googleTotalSpaceFlow.collectAsState(initial = 0L).value,
+        gDriveUsedSpace = mainSharedViewModel.googleUsedSpaceFlow.collectAsState(initial = 0L).value,
         pluginList = mainSharedViewModel.pluginListStateFlow.collectAsState().value,
         sizeClass = sizeClass,
         onUpdateName = {
@@ -269,7 +272,8 @@ fun MainArea(
 ) {
     LazyVerticalGrid(
         modifier = Modifier
-            .fillMaxSize().padding(horizontal = if(sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) 64.dp else 0.dp),
+            .fillMaxSize()
+            .padding(horizontal = if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) 64.dp else 0.dp),
         columns = GridCells.Adaptive(352.dp),
         contentPadding = paddingValues
     ) {

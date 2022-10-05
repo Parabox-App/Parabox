@@ -30,7 +30,10 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import com.guru.fontawesomecomposelib.FaIcon
+import com.guru.fontawesomecomposelib.FaIcons
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.ui.message.GroupInfoState
 
@@ -44,6 +47,9 @@ fun UserProfileDialog(
     openDialog: Boolean,
     userName: String = "",
     avatarUri: String? = null,
+    gDriveLogin: Boolean,
+    gDriveTotalSpace: Long,
+    gDriveUsedSpace: Long,
     pluginList: List<AppModel>,
     sizeClass: WindowSizeClass,
     onUpdateName: () -> Unit,
@@ -65,6 +71,11 @@ fun UserProfileDialog(
                 WindowWidthSizeClass.Medium -> 32.dp
                 WindowWidthSizeClass.Expanded -> 0.dp
                 else -> 16.dp
+            }
+            val gDriveUsedSpacePercent = remember{
+                derivedStateOf {
+                    if (gDriveTotalSpace == 0L) 0 else (gDriveUsedSpace * 100 / gDriveTotalSpace).toInt()
+                }
             }
             Surface(
                 modifier = modifier
@@ -145,40 +156,40 @@ fun UserProfileDialog(
                     Divider(
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
                     )
-                    PreferencesCategory(text = "已连接服务")
-                    NormalPreference(
-                        title = "Google Drive",
-                        subtitle = "已使用 75% 的存储空间",
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Outlined.Cloud,
-                                contentDescription = "cloud",
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
-                        },
-                        trailingIcon = {
-                            var progress by remember { mutableStateOf(0.75f) }
-//                            val animatedProgress by animateFloatAsState(
-//                                targetValue = progress,
-//                                animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec
-//                            )
-                            val animatedProgress = remember {
-                                Animatable(0f, Float.Companion.VectorConverter)
-                            }
-                            LaunchedEffect(progress, openDialog) {
-                                animatedProgress.animateTo(
-                                    progress,
-                                    ProgressIndicatorDefaults.ProgressAnimationSpec
+                    if(gDriveLogin) {
+                        PreferencesCategory(text = "已连接服务")
+                    }
+                    if(gDriveLogin){
+                        NormalPreference(
+                            title = "Google Drive",
+                            subtitle = "已使用 ${gDriveUsedSpacePercent.value}% 的存储空间（${FileUtil.getSizeString(gDriveUsedSpace)} / ${FileUtil.getSizeString(gDriveTotalSpace)}）",
+                            leadingIcon = {
+                                FaIcon(modifier = Modifier.padding(end = 4.dp),faIcon = FaIcons.GoogleDrive, tint = MaterialTheme.colorScheme.onSurface)
+                            },
+                            trailingIcon = {
+                                val progress by remember {
+                                    derivedStateOf {
+                                        if (gDriveTotalSpace == 0L) 0f else gDriveUsedSpace.toFloat()  / gDriveTotalSpace.toFloat()
+                                    }
+                                }
+                                val animatedProgress = remember {
+                                    Animatable(0f, Float.Companion.VectorConverter)
+                                }
+                                LaunchedEffect(progress, openDialog) {
+                                    animatedProgress.animateTo(
+                                        progress,
+                                        ProgressIndicatorDefaults.ProgressAnimationSpec
+                                    )
+                                }
+                                CircularProgressIndicator(
+                                    progress = animatedProgress.value,
+                                    modifier = Modifier.size(24.dp),
+                                    strokeWidth = 2.dp
                                 )
                             }
-                            CircularProgressIndicator(
-                                progress = animatedProgress.value,
-                                modifier = Modifier.size(24.dp),
-                                strokeWidth = 2.dp
-                            )
-                        }
-                    ) {
+                        ) {
 
+                        }
                     }
                     if (pluginList.isNotEmpty()) {
                         Divider(

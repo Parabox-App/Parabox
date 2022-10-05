@@ -35,11 +35,12 @@ import kotlinx.coroutines.launch
 @Composable
 fun InfoPage(
     modifier: Modifier = Modifier,
+    viewModel: SettingPageViewModel,
     mainSharedViewModel: MainSharedViewModel,
     sizeClass: WindowSizeClass,
     onEvent: (ActivityEvent) -> Unit
 ) {
-    val viewModel = hiltViewModel<SettingPageViewModel>()
+
     val coroutineScope = rememberCoroutineScope()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(

@@ -23,6 +23,8 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.guru.fontawesomecomposelib.FaIcon
+import com.guru.fontawesomecomposelib.FaIcons
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
@@ -34,11 +36,12 @@ import kotlinx.coroutines.launch
 @Composable
 fun ExtensionPage(
     modifier: Modifier = Modifier,
+    viewModel: SettingPageViewModel,
     mainSharedViewModel: MainSharedViewModel,
     sizeClass: WindowSizeClass,
     onEvent: (ActivityEvent) -> Unit
 ) {
-    val viewModel = hiltViewModel<SettingPageViewModel>()
+
     val coroutineScope = rememberCoroutineScope()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
@@ -88,10 +91,10 @@ fun ExtensionPage(
                         Text(modifier = Modifier.padding(vertical = 16.dp),text = "未发现可用扩展", style = MaterialTheme.typography.labelLarge)
                         FilledTonalButton(
                             onClick = { /*TODO*/ }) {
-                            Icon(
+                            FaIcon(
                                 modifier = Modifier.padding(end = 8.dp).size(ButtonDefaults.IconSize),
-                                imageVector = Icons.Outlined.Shop,
-                                contentDescription = "get extension over appstore",
+                                faIcon = FaIcons.GooglePlay,
+                                tint = MaterialTheme.colorScheme.onSurface
                             )
                             Text(text = "从应用商店获取")
                         }

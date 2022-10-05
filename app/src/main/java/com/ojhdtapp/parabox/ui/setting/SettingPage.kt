@@ -504,41 +504,49 @@ fun SettingPage(
                 ) {
                     when (it) {
                         SettingPageState.INFO -> InfoPage(
+                            viewModel = viewModel,
                             mainSharedViewModel = mainSharedViewModel,
                             sizeClass = sizeClass,
                             onEvent = onEvent,
                         )
                         SettingPageState.EXTENSION -> ExtensionPage(
+                            viewModel = viewModel,
                             mainSharedViewModel = mainSharedViewModel,
                             sizeClass = sizeClass,
                             onEvent = onEvent,
                         )
                         SettingPageState.CLOUD -> CloudPage(
+                            viewModel = viewModel,
                             mainSharedViewModel = mainSharedViewModel,
                             sizeClass = sizeClass,
                             onEvent = onEvent
                         )
                         SettingPageState.BACKUP -> BackupPage(
+                            viewModel = viewModel,
                             mainSharedViewModel = mainSharedViewModel,
                             sizeClass = sizeClass,
                             onEvent = onEvent
                         )
                         SettingPageState.NOTIFICATION -> NotificationPage(
+                            viewModel = viewModel,
                             mainSharedViewModel = mainSharedViewModel,
                             sizeClass = sizeClass,
                             onEvent = onEvent
                         )
                         SettingPageState.INTERFACE -> InterfacePage(
+                            viewModel = viewModel,
                             mainSharedViewModel = mainSharedViewModel,
                             sizeClass = sizeClass,
                             onEvent = onEvent
                         )
                         SettingPageState.EXPERIMENTAL -> ExperimentalPage(
+                            viewModel = viewModel,
                             mainSharedViewModel = mainSharedViewModel,
                             sizeClass = sizeClass,
                             onEvent = onEvent
                         )
                         SettingPageState.SUPPORT -> SupportPage(
+                            viewModel = viewModel,
                             mainSharedViewModel = mainSharedViewModel,
                             sizeClass = sizeClass,
                             onEvent = onEvent

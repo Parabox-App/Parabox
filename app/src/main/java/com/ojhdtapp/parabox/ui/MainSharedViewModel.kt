@@ -315,4 +315,52 @@ class MainSharedViewModel @Inject constructor(
     fun setIsRefreshing(value: Boolean) {
         _isRefreshing.value = value
     }
+
+    // Google Drive
+    val googleLoginFlow: Flow<Boolean> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.GOOGLE_LOGIN] ?: false
+        }
+
+    val googleTotalSpaceFlow: Flow<Long> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.GOOGLE_TOTAL_SPACE] ?: 0L
+        }
+
+    val googleUsedSpaceFlow: Flow<Long> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.GOOGLE_USED_SPACE] ?: 0L
+        }
+    val googleAppUsedSpaceFlow: Flow<Long> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.GOOGLE_APP_USED_SPACE] ?: 0L
+        }
 }

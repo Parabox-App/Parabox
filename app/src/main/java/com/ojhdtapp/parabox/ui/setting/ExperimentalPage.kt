@@ -29,11 +29,12 @@ import com.ojhdtapp.parabox.ui.util.SwitchPreference
 @Composable
 fun ExperimentalPage(
     modifier: Modifier = Modifier,
+    viewModel: SettingPageViewModel,
     mainSharedViewModel: MainSharedViewModel,
     sizeClass: WindowSizeClass,
     onEvent: (ActivityEvent) -> Unit
 ) {
-    val viewModel = hiltViewModel<SettingPageViewModel>()
+
     val coroutineScope = rememberCoroutineScope()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
@@ -117,13 +118,13 @@ fun ExperimentalPage(
                 )
             }
             item {
-                PreferencesCategory(text = "通知及气泡")
+                PreferencesCategory(text = "通知及对话泡")
             }
             item {
                 SwitchPreference(
                     title = "允许返回主页",
-                    subtitleOn = "返回按钮将于气泡会话界面显示",
-                    subtitleOff = "将在气泡会话界面显示返回按钮。开启后可于悬浮窗使用完整应用功能",
+                    subtitleOn = "返回按钮将于对话泡界面显示",
+                    subtitleOff = "将在对话泡界面显示返回按钮。开启后可于悬浮窗使用完整应用功能",
                     initialChecked = false,
                     onCheckedChange = {}
                 )

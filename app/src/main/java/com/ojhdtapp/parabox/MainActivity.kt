@@ -41,7 +41,12 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.Scope
 import com.google.android.material.datepicker.MaterialDatePicker
+import com.google.api.services.drive.DriveScopes
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.data.local.entity.DownloadingState
 import com.ojhdtapp.parabox.domain.model.AppModel
@@ -419,6 +424,31 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    fun getGoogleLoginAuth(): GoogleSignInClient {
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestEmail()
+            .requestProfile()
+            .requestScopes(
+                Scope(DriveScopes.DRIVE),
+                Scope(DriveScopes.DRIVE_APPDATA),
+                Scope(DriveScopes.DRIVE_FILE),
+            )
+            .build()
+        return GoogleSignIn.getClient(this, gso)
+    }
+    fun getGoogleDriveInformation(){
+        lifecycleScope.launch {
+            GoogleDriveUtil.getDriveInformation(this@MainActivity)?.also {
+                this@MainActivity.dataStore.edit { preferences ->
+                    preferences[DataStoreKeys.GOOGLE_WORK_FOLDER_ID] = it.workFolderId
+                    preferences[DataStoreKeys.GOOGLE_TOTAL_SPACE] = it.totalSpace
+                    preferences[DataStoreKeys.GOOGLE_USED_SPACE] = it.usedSpace
+                    preferences[DataStoreKeys.GOOGLE_APP_USED_SPACE] = it.appUsedSpace
+                }
+            }
+        }
+    }
+
     // Event
     fun onEvent(event: ActivityEvent) {
         when (event) {
@@ -658,15 +688,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Receive Status Flow
-//        lifecycleScope.launch {
-//            repeatOnLifecycle(Lifecycle.State.STARTED) {
-//                delay(2000)
-//                pluginService?.getPluginListFlow()?.collectLatest {
-//                    mainSharedViewModel.setPluginListStateFlow(it)
-//                }
-//            }
-//        }
+        // Google Drive
+        getGoogleDriveInformation()
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {

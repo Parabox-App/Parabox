@@ -27,11 +27,12 @@ import com.ojhdtapp.parabox.ui.util.SwitchPreference
 @Composable
 fun InterfacePage(
     modifier: Modifier = Modifier,
+    viewModel: SettingPageViewModel,
     mainSharedViewModel: MainSharedViewModel,
     sizeClass: WindowSizeClass,
     onEvent: (ActivityEvent) -> Unit
 ) {
-    val viewModel = hiltViewModel<SettingPageViewModel>()
+
     val coroutineScope = rememberCoroutineScope()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
@@ -76,7 +77,7 @@ fun InterfacePage(
                 SwitchPreference(
                     title = "Monet",
                     subtitleOn = "应用色彩将响应壁纸变化",
-                    subtitleOff = "应用色彩响应壁纸变化（需要 Android 12）",
+                    subtitleOff = "应用色彩响应壁纸变化（需要系统版本为 Android 12 或更高）",
                     initialChecked = true,
                     onCheckedChange = {})
             }

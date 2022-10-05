@@ -12,5 +12,14 @@ object DataStoreKeys{
     val USER_NAME = stringPreferencesKey("user_name")
     val USER_AVATAR = stringPreferencesKey("user_avatar")
 
+    val GOOGLE_MAIL = stringPreferencesKey("google_mail")
+    val GOOGLE_NAME = stringPreferencesKey("google_name")
+    val GOOGLE_LOGIN = booleanPreferencesKey("google_login")
+    val GOOGLE_AVATAR = stringPreferencesKey("google_avatar")
+    val GOOGLE_WORK_FOLDER_ID = stringPreferencesKey("google_work_folder_id")
+    val GOOGLE_TOTAL_SPACE = longPreferencesKey("google_total_space")
+    val GOOGLE_USED_SPACE = longPreferencesKey("google_used_space")
+    val GOOGLE_APP_USED_SPACE = longPreferencesKey("google_app_used_space")
+
     const val DEFAULT_USER_NAME = "Me"
 }

@@ -25,11 +25,12 @@ import com.ojhdtapp.parabox.ui.util.PreferencesCategory
 @Composable
 fun NotificationPage(
     modifier: Modifier = Modifier,
+    viewModel: SettingPageViewModel,
     mainSharedViewModel: MainSharedViewModel,
     sizeClass: WindowSizeClass,
     onEvent: (ActivityEvent) -> Unit
 ) {
-    val viewModel = hiltViewModel<SettingPageViewModel>()
+
     val coroutineScope = rememberCoroutineScope()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
