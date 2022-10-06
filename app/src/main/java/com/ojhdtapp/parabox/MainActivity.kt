@@ -21,6 +21,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -35,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.core.os.LocaleListCompat
 import androidx.core.view.WindowCompat
 import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.Lifecycle
@@ -50,6 +52,7 @@ import com.google.android.gms.common.api.Scope
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.api.services.drive.DriveScopes
 import com.ojhdtapp.parabox.core.util.*
+import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.DownloadingState
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.model.Contact
@@ -72,6 +75,7 @@ import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultA
 import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.navigation.dependency
 import dagger.hilt.android.AndroidEntryPoint
+import de.raphaelebner.roomdatabasebackup.core.RoomBackup
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collectLatest
 import linc.com.amplituda.Amplituda
@@ -98,6 +102,9 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var getContacts: GetContacts
 
+    @Inject
+    lateinit var appDatabase: AppDatabase
+
     var pluginService: PluginService? = null
     private lateinit var pluginServiceConnection: ServiceConnection
     private lateinit var userAvatarPickerLauncher: ActivityResultLauncher<Intent>
@@ -113,6 +120,7 @@ class MainActivity : AppCompatActivity() {
     private var amplituda: Amplituda? = null
 
     lateinit var vibrator: Vibrator
+    lateinit var backup: RoomBackup
 
     // Shared ViewModel
     val mainSharedViewModel by viewModels<MainSharedViewModel>()
@@ -316,7 +324,7 @@ class MainActivity : AppCompatActivity() {
             recorderJob = null
         mainSharedViewModel.clearRecordAmplitudeStateList()
         recorderStartTime = System.currentTimeMillis()
-        recorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
+        recorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             MediaRecorder(this)
         } else {
             MediaRecorder()
@@ -436,6 +444,51 @@ class MainActivity : AppCompatActivity() {
         ) startActivity(intent)
     }
 
+    private fun backupDatabase() {
+        backup
+            .database(appDatabase)
+            .enableLogDebug(true)
+            .backupLocation(RoomBackup.BACKUP_FILE_LOCATION_CUSTOM_DIALOG)
+            .apply {
+                onCompleteListener { success, message, exitCode ->
+                    if (success) {
+                        Toast.makeText(this@MainActivity, "备份完成", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(
+                            this@MainActivity,
+                            "备份失败 错误代码:${exitCode}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
+            .backup()
+    }
+
+    private fun restoreDatabase() {
+        backup
+            .database(appDatabase)
+            .enableLogDebug(true)
+            .backupLocation(RoomBackup.BACKUP_FILE_LOCATION_CUSTOM_DIALOG)
+            .apply {
+                onCompleteListener { success, message, exitCode ->
+                    if (success) {
+                        Toast.makeText(this@MainActivity, "恢复完成 即将重启", Toast.LENGTH_SHORT).show()
+                        lifecycleScope.launch {
+                            restartApp(Intent(this@MainActivity, MainActivity::class.java))
+                        }
+                    } else {
+                        Toast.makeText(
+                            this@MainActivity,
+                            "恢复失败 错误代码:${exitCode}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
+            .restore()
+    }
+
     fun getGoogleLoginAuth(): GoogleSignInClient {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
@@ -448,7 +501,8 @@ class MainActivity : AppCompatActivity() {
             .build()
         return GoogleSignIn.getClient(this, gso)
     }
-    fun getGoogleDriveInformation(){
+
+    fun getGoogleDriveInformation() {
         lifecycleScope.launch {
             GoogleDriveUtil.getDriveInformation(this@MainActivity)?.also {
                 this@MainActivity.dataStore.edit { preferences ->
@@ -583,6 +637,12 @@ class MainActivity : AppCompatActivity() {
             is ActivityEvent.LaunchNotificationSetting -> {
                 launchNotificationSetting()
             }
+            is ActivityEvent.Backup -> {
+                backupDatabase()
+            }
+            is ActivityEvent.Restore -> {
+                restoreDatabase()
+            }
         }
     }
 
@@ -706,6 +766,9 @@ class MainActivity : AppCompatActivity() {
 
         // Google Drive
         getGoogleDriveInformation()
+
+        // Backup
+        backup = RoomBackup(this)
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {

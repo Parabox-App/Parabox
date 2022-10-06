@@ -87,6 +87,10 @@ dependencies {
     implementation "androidx.compose.material:material-icons-extended:$compose_version"
     implementation "com.google.android.material:material:1.8.0-alpha01"
 
+    // AppCompact
+    def appcompat_version = "1.7.0-alpha01"
+    implementation "androidx.appcompat:appcompat:$appcompat_version"
+
     // Google Drive Api
     implementation 'com.google.android.gms:play-services-auth:20.1.0'
     implementation('com.google.api-client:google-api-client-android:1.26.0') {

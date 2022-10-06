@@ -100,6 +100,12 @@ fun InterfacePage(
             item {
                 PreferencesCategory(text = "语言")
             }
+            item {
+                SimpleMenuPreference(
+                    title = "语言",
+                    optionsMap = mapOf("zh-rCN" to "中文（中国）", "en" to "英语", "ja" to "日语"),
+                    onSelect = {})
+            }
         }
     }
 }

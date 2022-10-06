@@ -85,7 +85,7 @@ fun BackupPage(
                         )
                     },
                     onClick = {
-
+                        onEvent(ActivityEvent.Backup)
                     }
                 )
             }
@@ -100,7 +100,7 @@ fun BackupPage(
                         )
                     },
                     onClick = {
-
+                        onEvent(ActivityEvent.Restore)
                     }
                 )
             }
