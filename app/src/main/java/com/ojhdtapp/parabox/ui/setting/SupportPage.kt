@@ -24,23 +24,30 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import com.guru.fontawesomecomposelib.FaIcon
 import com.guru.fontawesomecomposelib.FaIcons
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.NormalPreference
 import com.ojhdtapp.parabox.ui.util.PreferencesCategory
+import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.RootNavGraph
+import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
 @OptIn(ExperimentalMaterial3Api::class)
+@Destination
+@RootNavGraph(start = false)
 @Composable
 fun SupportPage(
     modifier: Modifier = Modifier,
-    viewModel: SettingPageViewModel,
+    navigator: DestinationsNavigator,
+    mainNavController: NavController,
     mainSharedViewModel: MainSharedViewModel,
     sizeClass: WindowSizeClass,
     onEvent: (ActivityEvent) -> Unit
 ) {
-
+    val viewModel = hiltViewModel<SettingPageViewModel>()
     val coroutineScope = rememberCoroutineScope()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
@@ -62,7 +69,7 @@ fun SupportPage(
                 navigationIcon = {
                     if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
                         IconButton(onClick = {
-
+                            mainNavController.navigateUp()
                         }) {
                             Icon(
                                 imageVector = Icons.Outlined.ArrowBack,
@@ -134,8 +141,10 @@ fun SupportPage(
                     title = "Github",
                     subtitle = "星标，创建克隆，发起提案",
                     leadingIcon = {
-                        FaIcon(modifier = Modifier.padding(end = 4.dp),
-                            faIcon = FaIcons.Github, tint = MaterialTheme.colorScheme.onSurface)
+                        FaIcon(
+                            modifier = Modifier.padding(end = 4.dp),
+                            faIcon = FaIcons.Github, tint = MaterialTheme.colorScheme.onSurface
+                        )
                     },
                     onClick = {
 
@@ -147,7 +156,11 @@ fun SupportPage(
                     title = "加入 Telegram 群组",
                     subtitle = "获取最新动态，提出建议，讨论错误",
                     leadingIcon = {
-                        FaIcon(modifier = Modifier.padding(end = 4.dp),faIcon = FaIcons.Telegram, tint = MaterialTheme.colorScheme.onSurface)
+                        FaIcon(
+                            modifier = Modifier.padding(end = 4.dp),
+                            faIcon = FaIcons.Telegram,
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
                     },
                     onClick = {
 

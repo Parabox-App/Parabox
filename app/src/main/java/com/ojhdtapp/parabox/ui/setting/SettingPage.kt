@@ -32,6 +32,13 @@ import coil.compose.AsyncImage
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
+import com.ojhdtapp.parabox.ui.destinations.BackupPageDestination
+import com.ojhdtapp.parabox.ui.destinations.CloudPageDestination
+import com.ojhdtapp.parabox.ui.destinations.ExperimentalPageDestination
+import com.ojhdtapp.parabox.ui.destinations.ExtensionPageDestination
+import com.ojhdtapp.parabox.ui.destinations.InterfacePageDestination
+import com.ojhdtapp.parabox.ui.destinations.NotificationPageDestination
+import com.ojhdtapp.parabox.ui.destinations.SupportPageDestination
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.NormalPreference
 import com.ojhdtapp.parabox.ui.util.PreferencesCategory
@@ -39,6 +46,7 @@ import com.ojhdtapp.parabox.ui.util.RoundedCornerDropdownMenu
 import com.ojhdtapp.parabox.ui.util.SettingNavGraph
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import com.ramcosta.composedestinations.navigation.navigate
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
@@ -48,7 +56,7 @@ import kotlinx.coroutines.launch
 fun SettingPage(
     modifier: Modifier = Modifier,
     navigator: DestinationsNavigator,
-    navController: NavController,
+    mainNavController: NavController,
     mainSharedViewModel: MainSharedViewModel,
     sizeClass: WindowSizeClass,
     drawerState: DrawerState,
@@ -300,7 +308,7 @@ fun SettingPage(
                                 roundedCorner = true,
                             ) {
                                 if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
-
+                                    mainNavController.navigate(ExtensionPageDestination)
                                 } else {
                                     viewModel.setSelectedSetting(SettingPageState.INFO)
                                 }
@@ -329,7 +337,7 @@ fun SettingPage(
                             roundedCorner = true,
                         ) {
                             if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
-
+                                mainNavController.navigate(ExtensionPageDestination)
                             } else {
                                 viewModel.setSelectedSetting(SettingPageState.EXTENSION)
                             }
@@ -354,7 +362,7 @@ fun SettingPage(
                             roundedCorner = true,
                         ) {
                             if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
-
+                                mainNavController.navigate(CloudPageDestination)
                             } else {
                                 viewModel.setSelectedSetting(SettingPageState.CLOUD)
                             }
@@ -379,7 +387,7 @@ fun SettingPage(
                             roundedCorner = true,
                         ) {
                             if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
-
+                                mainNavController.navigate(BackupPageDestination)
                             } else {
                                 viewModel.setSelectedSetting(SettingPageState.BACKUP)
                             }
@@ -407,7 +415,7 @@ fun SettingPage(
                             roundedCorner = true,
                         ) {
                             if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
-
+                                mainNavController.navigate(NotificationPageDestination)
                             } else {
                                 viewModel.setSelectedSetting(SettingPageState.NOTIFICATION)
                             }
@@ -432,7 +440,7 @@ fun SettingPage(
                             roundedCorner = true,
                         ) {
                             if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
-
+                                mainNavController.navigate(InterfacePageDestination)
                             } else {
                                 viewModel.setSelectedSetting(SettingPageState.INTERFACE)
                             }
@@ -460,7 +468,7 @@ fun SettingPage(
                             roundedCorner = true,
                         ) {
                             if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
-
+                                mainNavController.navigate(ExperimentalPageDestination)
                             } else {
                                 viewModel.setSelectedSetting(SettingPageState.EXPERIMENTAL)
                             }
@@ -485,7 +493,7 @@ fun SettingPage(
                             roundedCorner = true,
                         ) {
                             if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
-
+                                mainNavController.navigate(SupportPageDestination)
                             } else {
                                 viewModel.setSelectedSetting(SettingPageState.SUPPORT)
                             }
@@ -504,49 +512,57 @@ fun SettingPage(
                 ) {
                     when (it) {
                         SettingPageState.INFO -> InfoPage(
-                            viewModel = viewModel,
+                            navigator = navigator,
+                            mainNavController = mainNavController,
                             mainSharedViewModel = mainSharedViewModel,
                             sizeClass = sizeClass,
                             onEvent = onEvent,
                         )
                         SettingPageState.EXTENSION -> ExtensionPage(
-                            viewModel = viewModel,
+                            navigator = navigator,
+                            mainNavController = mainNavController,
                             mainSharedViewModel = mainSharedViewModel,
                             sizeClass = sizeClass,
                             onEvent = onEvent,
                         )
                         SettingPageState.CLOUD -> CloudPage(
-                            viewModel = viewModel,
+                            navigator = navigator,
+                            mainNavController = mainNavController,
                             mainSharedViewModel = mainSharedViewModel,
                             sizeClass = sizeClass,
                             onEvent = onEvent
                         )
                         SettingPageState.BACKUP -> BackupPage(
-                            viewModel = viewModel,
+                            navigator = navigator,
+                            mainNavController = mainNavController,
                             mainSharedViewModel = mainSharedViewModel,
                             sizeClass = sizeClass,
                             onEvent = onEvent
                         )
                         SettingPageState.NOTIFICATION -> NotificationPage(
-                            viewModel = viewModel,
+                            navigator = navigator,
+                            mainNavController = mainNavController,
                             mainSharedViewModel = mainSharedViewModel,
                             sizeClass = sizeClass,
                             onEvent = onEvent
                         )
                         SettingPageState.INTERFACE -> InterfacePage(
-                            viewModel = viewModel,
+                            navigator = navigator,
+                            mainNavController = mainNavController,
                             mainSharedViewModel = mainSharedViewModel,
                             sizeClass = sizeClass,
                             onEvent = onEvent
                         )
                         SettingPageState.EXPERIMENTAL -> ExperimentalPage(
-                            viewModel = viewModel,
+                            navigator = navigator,
+                            mainNavController = mainNavController,
                             mainSharedViewModel = mainSharedViewModel,
                             sizeClass = sizeClass,
                             onEvent = onEvent
                         )
                         SettingPageState.SUPPORT -> SupportPage(
-                            viewModel = viewModel,
+                            navigator = navigator,
+                            mainNavController = mainNavController,
                             mainSharedViewModel = mainSharedViewModel,
                             sizeClass = sizeClass,
                             onEvent = onEvent

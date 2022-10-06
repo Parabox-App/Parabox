@@ -28,12 +28,16 @@ import com.ojhdtapp.parabox.ui.MainSharedUiEvent
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.NavGraphs
 import com.ojhdtapp.parabox.ui.destinations.ChatPageDestination
+import com.ojhdtapp.parabox.ui.destinations.ExtensionPageDestination
 import com.ojhdtapp.parabox.ui.destinations.FilePageDestination
 import com.ojhdtapp.parabox.ui.destinations.MessagePageDestination
+import com.ojhdtapp.parabox.ui.destinations.SettingPageDestination
 import com.ojhdtapp.parabox.ui.file.FilePage
 import com.ojhdtapp.parabox.ui.message.AudioRecorderState
 import com.ojhdtapp.parabox.ui.message.MessagePage
 import com.ojhdtapp.parabox.ui.message.NewContactBottomSheet
+import com.ojhdtapp.parabox.ui.setting.ExtensionPage
+import com.ojhdtapp.parabox.ui.setting.SettingPage
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.NavigationBar
 import com.ojhdtapp.parabox.ui.util.NavigationDrawer
@@ -186,6 +190,16 @@ fun MenuPage(
                         }
                         composable(FilePageDestination) {
                             FilePage(
+                                navigator = destinationsNavigator,
+                                mainNavController = navController,
+                                mainSharedViewModel = mainSharedViewModel,
+                                sizeClass = sizeClass,
+                                drawerState = drawerState,
+                                onEvent = onEvent
+                            )
+                        }
+                        composable(SettingPageDestination) {
+                            SettingPage(
                                 navigator = destinationsNavigator,
                                 mainNavController = navController,
                                 mainSharedViewModel = mainSharedViewModel,

@@ -15,23 +15,31 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.theme.Theme
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.PreferencesCategory
 import com.ojhdtapp.parabox.ui.util.SimpleMenuPreference
 import com.ojhdtapp.parabox.ui.util.SwitchPreference
+import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.RootNavGraph
+import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
 @OptIn(ExperimentalMaterial3Api::class)
+@Destination
+@RootNavGraph(start = false)
 @Composable
 fun InterfacePage(
     modifier: Modifier = Modifier,
-    viewModel: SettingPageViewModel,
+    navigator: DestinationsNavigator,
+    mainNavController: NavController,
     mainSharedViewModel: MainSharedViewModel,
     sizeClass: WindowSizeClass,
     onEvent: (ActivityEvent) -> Unit
 ) {
-
+    val viewModel = hiltViewModel<SettingPageViewModel>()
     val coroutineScope = rememberCoroutineScope()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     // Dynamic Color
@@ -55,7 +63,7 @@ fun InterfacePage(
                 navigationIcon = {
                     if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
                         IconButton(onClick = {
-
+                            mainNavController.navigateUp()
                         }) {
                             Icon(
                                 imageVector = Icons.Outlined.ArrowBack,
