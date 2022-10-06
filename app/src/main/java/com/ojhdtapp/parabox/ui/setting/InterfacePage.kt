@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.Colorize
 import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
@@ -16,10 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
-import com.ojhdtapp.parabox.ui.util.NormalPreference
 import com.ojhdtapp.parabox.ui.util.PreferencesCategory
 import com.ojhdtapp.parabox.ui.util.SimpleMenuPreference
 import com.ojhdtapp.parabox.ui.util.SwitchPreference
@@ -36,6 +33,8 @@ fun InterfacePage(
 
     val coroutineScope = rememberCoroutineScope()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    // Dynamic Color
+    val enableDynamicColor by viewModel.enableDynamicColorFlow.collectAsState(initial = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -79,13 +78,14 @@ fun InterfacePage(
                     title = "Monet 动态取色",
                     subtitleOn = "应用色彩将响应壁纸变化",
                     subtitleOff = "应用色彩响应壁纸变化（需要系统版本为 Android 12 或更高）",
-                    initialChecked = viewModel.enableDynamicColorFlow.collectAsState(initial = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S).value,
+                    checked = enableDynamicColor,
                     onCheckedChange =  viewModel::setEnableDynamicColor)
             }
             item {
                 SimpleMenuPreference(
                     title = "主题色",
                     optionsMap = mapOf(0 to "蓝色"),
+                    enabled = !enableDynamicColor,
                     onSelect = {})
             }
             item {

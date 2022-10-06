@@ -445,7 +445,7 @@ fun EditActionDialog(
                             title = "新消息通知",
                             subtitleOn = "开启",
                             subtitleOff = "你将不会收到新消息通知",
-                            initialChecked = contact?.enableNotifications ?: false,
+                            checked = contact?.enableNotifications ?: false && contact?.isArchived == false,
                             onCheckedChange = {
                                 contact?.contactId?.let { id ->
                                     onEvent(
@@ -464,7 +464,7 @@ fun EditActionDialog(
                             title = "置顶聊天",
                             subtitleOn = "该聊天将始终固定于列表顶部",
                             subtitleOff = "不置顶该聊天",
-                            initialChecked = contact?.isPinned ?: false,
+                            checked = contact?.isPinned ?: false,
                             onCheckedChange = {
                                 contact?.contactId?.let { id ->
                                     onEvent(
@@ -483,7 +483,7 @@ fun EditActionDialog(
                             title = "归档",
                             subtitleOn = "归档后，你将不会收到新消息通知",
                             subtitleOff = "禁用",
-                            initialChecked = contact?.isArchived ?: false,
+                            checked = contact?.isArchived ?: false,
                             onCheckedChange = {
                                 contact?.contactId?.let { id ->
                                     onEvent(

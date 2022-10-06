@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.ui.setting
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -78,7 +79,7 @@ fun ContactListDialog(
             ) {
                 Column(modifier = Modifier.padding(24.dp)) {
                     Text(text = "会话列表", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 16.dp))
-                    LazyColumn(modifier = Modifier.heightIn(0.dp, 400.dp)) {
+                    LazyColumn(modifier = Modifier.heightIn(0.dp, 400.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         if (loading) {
                             item {
                                 Box(
@@ -91,7 +92,7 @@ fun ContactListDialog(
                                 }
                             }
                         } else {
-                            items(items = contactList, key = { it.contactId }) {
+                            items(items = contactList, key = { it.contactId },) {
                                 MultiSelectItem(contact = it, onValueChange = onValueChange, contactCheck = contactCheck)
                             }
                         }

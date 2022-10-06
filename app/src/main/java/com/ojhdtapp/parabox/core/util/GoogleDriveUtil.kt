@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.net.SocketException
 
 object GoogleDriveUtil {
     const val SERVICE_CODE = 1001
@@ -39,25 +40,29 @@ object GoogleDriveUtil {
         return null
     }
 
-    suspend fun getDriveInformation(context: Context) : GoogleDriveInformation? {
+    suspend fun getDriveInformation(context: Context): GoogleDriveInformation? {
         return coroutineScope {
             withContext(Dispatchers.Default) {
-                getDriveService(context)?.let { driveService ->
-                    val about = driveService.about().get().setFields("storageQuota").execute()
-                    val storageQuota = about.storageQuota
-                    val totalSpace = storageQuota.limit
-                    val usedSpace = storageQuota.usage
-                    val freeSpace = totalSpace - usedSpace
+                try {
+                    getDriveService(context)?.let { driveService ->
+                        val about = driveService.about().get().setFields("storageQuota").execute()
+                        val storageQuota = about.storageQuota
+                        val totalSpace = storageQuota.limit
+                        val usedSpace = storageQuota.usage
+                        val freeSpace = totalSpace - usedSpace
 
-                    val folderId =
-                        getFolderId(context, "Parabox") ?: createFolder(context, "Parabox")
-                    val appUsedSpace = getFolderSize(context, folderId!!)
-                    GoogleDriveInformation(
-                        folderId,
-                        totalSpace,
-                        usedSpace,
-                        appUsedSpace
-                    )
+                        val folderId =
+                            getFolderId(context, "Parabox") ?: createFolder(context, "Parabox")
+                        val appUsedSpace = getFolderSize(context, folderId!!)
+                        GoogleDriveInformation(
+                            folderId,
+                            totalSpace,
+                            usedSpace,
+                            appUsedSpace
+                        )
+                    }
+                } catch (e: SocketException) {
+                    null
                 }
             }
         }
@@ -127,6 +132,7 @@ object GoogleDriveUtil {
             }
         }
     }
+
     suspend fun uploadFile(context: Context, folderId: String, fileName: String, filePath: String) {
         coroutineScope {
             launch {
@@ -134,7 +140,8 @@ object GoogleDriveUtil {
                     val fileMetadata = com.google.api.services.drive.model.File()
                     fileMetadata.name = fileName
                     fileMetadata.parents = listOf(folderId)
-                    val mediaContent = com.google.api.client.http.FileContent("image/jpeg", java.io.File(filePath))
+                    val mediaContent =
+                        com.google.api.client.http.FileContent("image/jpeg", java.io.File(filePath))
                     val file = driveService.files().create(fileMetadata, mediaContent)
                         .setFields("id")
                         .execute()

@@ -269,7 +269,7 @@ fun CloudPage(
                     title = "自动备份",
                     subtitleOff = "于合适网络环境下自动下载文件，使用默认云端服务备份",
                     subtitleOn = "启用",
-                    initialChecked = autoBackup,
+                    checked = autoBackup && defaultBackupService != 0,
                     onCheckedChange = viewModel::setAutoBackup,
                     enabled = defaultBackupService != 0)
             }
@@ -283,7 +283,7 @@ fun CloudPage(
                     title = "同时删除本地文件",
                     subtitleOff = "备份完成后自动删除本地文件",
                     subtitleOn = "启用",
-                    initialChecked = autoDeleteLocalFile,
+                    checked = autoDeleteLocalFile && autoBackup && defaultBackupService != 0,
                     onCheckedChange = viewModel::setAutoDeleteLocalFile,
                     enabled = autoBackup && defaultBackupService != 0
                 )

@@ -32,14 +32,11 @@ fun SwitchPreference(
     title: String,
     subtitleOn: String? = null,
     subtitleOff: String? = null,
-    initialChecked: Boolean,
+    checked: Boolean,
     onCheckedChange: (value: Boolean) -> Unit,
     enabled: Boolean = true,
     horizontalPadding: Dp = 24.dp
 ) {
-    var checked by remember(initialChecked) {
-        mutableStateOf(initialChecked)
-    }
     val titleTextColor by animateColorAsState(targetValue = if(enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline)
     val subTitleTextColor by animateColorAsState(targetValue = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.outline)
     Surface() {
@@ -47,8 +44,7 @@ fun SwitchPreference(
             modifier = modifier
                 .clickable {
                     if (enabled) {
-                        checked = !checked
-                        onCheckedChange(!initialChecked)
+                        onCheckedChange(!checked)
                     }
                 }
                 .padding(horizontalPadding, 16.dp)
@@ -86,7 +82,6 @@ fun SwitchPreference(
             Spacer(modifier = Modifier.width(48.dp))
             Switch(checked = checked, onCheckedChange = {
                 onCheckedChange(it)
-                checked = !checked
             }, enabled = enabled,
                 thumbContent = if (checked) {
                     {
@@ -291,14 +286,19 @@ fun <T> SimpleMenuPreference(
     title: String,
     selectedKey: T? = null,
     optionsMap: Map<T, String>,
+    enabled: Boolean = true,
     onSelect: (selected: T) -> Unit
 ) {
     var expanded by remember {
         mutableStateOf(false)
     }
+    val titleColor = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline
+    val subTitleColor = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.outline
     Row(
         modifier = modifier
-            .clickable { expanded = true }
+            .clickable {
+                if(enabled) expanded = true
+            }
             .padding(24.dp, 16.dp)
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.Start,
@@ -319,13 +319,14 @@ fun <T> SimpleMenuPreference(
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleLarge,
-                fontSize = MaterialTheme.fontSize.title
+                fontSize = MaterialTheme.fontSize.title,
+                color = titleColor
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = selectedKey?.let { optionsMap[it] } ?: optionsMap.values.first(),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface
+                color = subTitleColor
             )
 
         }
