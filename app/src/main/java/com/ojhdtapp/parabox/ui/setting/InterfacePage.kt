@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
+import com.ojhdtapp.parabox.ui.theme.Theme
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.PreferencesCategory
 import com.ojhdtapp.parabox.ui.util.SimpleMenuPreference
@@ -79,14 +80,22 @@ fun InterfacePage(
                     subtitleOn = "应用色彩将响应壁纸变化",
                     subtitleOff = "应用色彩响应壁纸变化（需要系统版本为 Android 12 或更高）",
                     checked = enableDynamicColor,
-                    onCheckedChange =  viewModel::setEnableDynamicColor)
+                    onCheckedChange = viewModel::setEnableDynamicColor
+                )
             }
             item {
                 SimpleMenuPreference(
                     title = "主题色",
-                    optionsMap = mapOf(0 to "蓝色"),
+                    selectedKey = viewModel.themeFlow.collectAsState(initial = Theme.DEFAULT).value,
+                    optionsMap = mapOf(
+                        Theme.DEFAULT to "藤紫",
+                        Theme.SAKURA to "樱花",
+                        Theme.GARDENIA to "栀子",
+                        Theme.WATER to "清水"
+                    ),
                     enabled = !enableDynamicColor,
-                    onSelect = {})
+                    onSelect = viewModel::setTheme
+                )
             }
             item {
                 PreferencesCategory(text = "语言")

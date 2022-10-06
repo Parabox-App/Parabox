@@ -20,6 +20,7 @@ import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.use_case.GetContacts
+import com.ojhdtapp.parabox.ui.theme.Theme
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
@@ -255,6 +256,24 @@ class SettingPageViewModel @Inject constructor(
         viewModelScope.launch {
             context.dataStore.edit { preferences ->
                 preferences[DataStoreKeys.SETTINGS_ENABLE_DYNAMIC_COLOR] = value
+            }
+        }
+    }
+    val themeFlow: Flow<Int> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.SETTINGS_THEME] ?: Theme.DEFAULT
+        }
+    fun setTheme(value: Int) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.SETTINGS_THEME] = value
             }
         }
     }

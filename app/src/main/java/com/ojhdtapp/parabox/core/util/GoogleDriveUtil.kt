@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.IOException
 import java.net.SocketException
 
 object GoogleDriveUtil {
@@ -62,6 +63,8 @@ object GoogleDriveUtil {
                         )
                     }
                 } catch (e: SocketException) {
+                    null
+                } catch (e: IOException) {
                     null
                 }
             }
