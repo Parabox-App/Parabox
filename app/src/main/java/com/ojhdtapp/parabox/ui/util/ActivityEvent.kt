@@ -31,4 +31,5 @@ sealed interface ActivityEvent {
     object Vibrate : ActivityEvent
     object RefreshMessage: ActivityEvent
     data class ShowInBubble(val contact: Contact, val message: Message, val channelId: String) : ActivityEvent
+    object LaunchNotificationSetting: ActivityEvent
 }

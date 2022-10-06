@@ -1,23 +1,35 @@
 package com.ojhdtapp.parabox.ui.setting
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
+import androidx.core.content.ContextCompat
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.ojhdtapp.parabox.core.util.CacheUtil
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
+import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.GoogleDriveUtil
+import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.dataStore
+import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.use_case.GetContacts
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -32,18 +44,28 @@ class SettingPageViewModel @Inject constructor(
     val getContacts: GetContacts,
 ) : ViewModel() {
 
-    val contactFlow : StateFlow<List<Context>> = getContacts.all()
-        .onEach { result ->
-            result.onSuccess { contacts ->
-                if (contacts.isEmpty()) {
-                    _isContactEmpty.value = true
-                } else {
-                    _isContactEmpty.value = false
+    private val _contactLoadingState = mutableStateOf<Boolean>(true)
+    val contactLoadingState: State<Boolean> = _contactLoadingState
+    val contactStateFlow: StateFlow<List<Contact>> = getContacts.all()
+        .map { resource ->
+            when (resource) {
+                is Resource.Error -> {
+                    _contactLoadingState.value = false
+                    emptyList()
+                }
+
+                is Resource.Loading -> {
+                    _contactLoadingState.value = true
+                    emptyList()
+                }
+
+                is Resource.Success -> {
+                    _contactLoadingState.value = false
+                    resource.data!!
                 }
             }
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
-        .launchIn(viewModelScope)
     val googleLoginFlow: Flow<Boolean> = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {
@@ -111,6 +133,8 @@ class SettingPageViewModel @Inject constructor(
         }
     }
 
+    // Cloud Service
+
     val defaultBackupServiceFlow: Flow<Int> = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {
@@ -122,13 +146,15 @@ class SettingPageViewModel @Inject constructor(
         .map { settings ->
             settings[DataStoreKeys.SETTINGS_DEFAULT_BACKUP_SERVICE] ?: 0
         }
-    fun setDefaultBackupService(value: Int){
+
+    fun setDefaultBackupService(value: Int) {
         viewModelScope.launch {
             context.dataStore.edit { preferences ->
                 preferences[DataStoreKeys.SETTINGS_DEFAULT_BACKUP_SERVICE] = value
             }
         }
     }
+
     val autoBackupFlow: Flow<Boolean> = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {
@@ -140,13 +166,19 @@ class SettingPageViewModel @Inject constructor(
         .map { settings ->
             settings[DataStoreKeys.SETTINGS_AUTO_BACKUP] ?: false
         }
-    fun setAutoBackup(value: Boolean){
+
+    fun setAutoBackup(value: Boolean) {
         viewModelScope.launch {
             context.dataStore.edit { preferences ->
                 preferences[DataStoreKeys.SETTINGS_AUTO_BACKUP] = value
             }
         }
     }
+
+    fun onContactBackupChange(target: Contact, value: Boolean) {
+
+    }
+
     val autoDeleteLocalFileFlow: Flow<Boolean> = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {
@@ -158,10 +190,71 @@ class SettingPageViewModel @Inject constructor(
         .map { settings ->
             settings[DataStoreKeys.SETTINGS_AUTO_DELETE_LOCAL_FILE] ?: false
         }
-    fun setAutoDeleteLocalFile(value: Boolean){
+
+    fun setAutoDeleteLocalFile(value: Boolean) {
         viewModelScope.launch {
             context.dataStore.edit { preferences ->
                 preferences[DataStoreKeys.SETTINGS_AUTO_DELETE_LOCAL_FILE] = value
+            }
+        }
+    }
+
+    // Backup & Restore
+
+    private val _cacheSizeStateFlow =
+        MutableStateFlow(FileUtil.getSizeString(CacheUtil.getCacheSize(context)))
+    val cacheSizeStateFlow: StateFlow<String> = _cacheSizeStateFlow.asStateFlow()
+    private val _cleaningCache = mutableStateOf<Boolean>(false)
+    val cleaningCache : State<Boolean> = _cleaningCache
+    fun setCleaningCache(value: Boolean) {
+        _cleaningCache.value = value
+    }
+    fun clearCache() {
+        if (!cleaningCache.value) {
+            setCleaningCache(true)
+            viewModelScope.launch {
+                CacheUtil.clearCache(context)
+                delay(1000)
+                _cacheSizeStateFlow.value = FileUtil.getSizeString(CacheUtil.getCacheSize(context))
+                setCleaningCache(false)
+            }
+        }
+    }
+
+    // Notification
+    private val _notificationPermissionGrantedStateFlow = MutableStateFlow(
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        } else true
+    )
+    val notificationPermissionGrantedStateFlow: StateFlow<Boolean> =
+        _notificationPermissionGrantedStateFlow.asStateFlow()
+    fun onNotificationPermissionResult(value: Boolean) {
+        _notificationPermissionGrantedStateFlow.tryEmit(value)
+    }
+    fun onContactNotificationChange(target: Contact, value: Boolean) {
+
+    }
+
+    // Interface
+    val enableDynamicColorFlow: Flow<Boolean> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.SETTINGS_ENABLE_DYNAMIC_COLOR] ?: (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+        }
+    fun setEnableDynamicColor(value: Boolean) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.SETTINGS_ENABLE_DYNAMIC_COLOR] = value
             }
         }
     }

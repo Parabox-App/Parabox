@@ -37,7 +37,7 @@ fun SwitchPreference(
     enabled: Boolean = true,
     horizontalPadding: Dp = 24.dp
 ) {
-    var checked by remember {
+    var checked by remember(initialChecked) {
         mutableStateOf(initialChecked)
     }
     val titleTextColor by animateColorAsState(targetValue = if(enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline)

@@ -49,6 +49,24 @@ fun CloudPage(
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val context = LocalContext.current
     val snackBarHostState = remember { SnackbarHostState() }
+    // Contact Dialog
+    var showDialog by remember{
+        mutableStateOf(false)
+    }
+    ContactListDialog(
+        modifier = Modifier,
+        showDialog = showDialog,
+        contactList = viewModel.contactStateFlow.collectAsState().value,
+        contactCheck = { false},
+        onValueChange = { target, value ->
+            viewModel.onContactBackupChange(target, value)
+        },
+        loading = viewModel.contactLoadingState.value,
+        sizeClass = sizeClass,
+        onDismiss = {
+            showDialog = false
+        }
+    )
     // Google Drive
     val gDriveLogin by viewModel.googleLoginFlow.collectAsState(initial = false)
     val gDriveTotalSpace by viewModel.googleTotalSpaceFlow.collectAsState(initial = 0L)
@@ -256,7 +274,9 @@ fun CloudPage(
                     enabled = defaultBackupService != 0)
             }
             item {
-                NormalPreference(title = "目标会话", subtitle = "对选中会话应用自动备份", enabled = defaultBackupService != 0) {}
+                NormalPreference(title = "目标会话", subtitle = "对选中会话应用自动备份", enabled = defaultBackupService != 0) {
+                    showDialog = true
+                }
             }
             item {
                 SwitchPreference(

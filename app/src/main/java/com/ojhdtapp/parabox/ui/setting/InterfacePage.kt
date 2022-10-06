@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.setting
 
+import android.os.Build
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -75,11 +76,11 @@ fun InterfacePage(
             }
             item {
                 SwitchPreference(
-                    title = "Monet",
+                    title = "Monet 动态取色",
                     subtitleOn = "应用色彩将响应壁纸变化",
                     subtitleOff = "应用色彩响应壁纸变化（需要系统版本为 Android 12 或更高）",
-                    initialChecked = true,
-                    onCheckedChange = {})
+                    initialChecked = viewModel.enableDynamicColorFlow.collectAsState(initial = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S).value,
+                    onCheckedChange =  viewModel::setEnableDynamicColor)
             }
             item {
                 SimpleMenuPreference(

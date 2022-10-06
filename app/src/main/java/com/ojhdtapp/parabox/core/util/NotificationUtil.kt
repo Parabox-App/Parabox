@@ -95,16 +95,6 @@ class NotificationUtil(
         }
     }
 
-    fun openNotificationSetting() {
-        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
-        intent.putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-        if (context.packageManager.resolveActivity(
-                intent,
-                PackageManager.MATCH_DEFAULT_ONLY
-            ) != null
-        ) context.startActivity(intent)
-    }
-
     fun createNotificationChannel(
         channelId: String,
         channelName: String,

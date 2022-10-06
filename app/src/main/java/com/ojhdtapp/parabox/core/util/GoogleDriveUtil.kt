@@ -127,6 +127,22 @@ object GoogleDriveUtil {
             }
         }
     }
+    suspend fun uploadFile(context: Context, folderId: String, fileName: String, filePath: String) {
+        coroutineScope {
+            launch {
+                getDriveService(context)?.let { driveService ->
+                    val fileMetadata = com.google.api.services.drive.model.File()
+                    fileMetadata.name = fileName
+                    fileMetadata.parents = listOf(folderId)
+                    val mediaContent = com.google.api.client.http.FileContent("image/jpeg", java.io.File(filePath))
+                    val file = driveService.files().create(fileMetadata, mediaContent)
+                        .setFields("id")
+                        .execute()
+                    Log.d("GoogleDriveUtil", "File ID: " + file.id)
+                }
+            }
+        }
+    }
 }
 
 data class GoogleDriveInformation(

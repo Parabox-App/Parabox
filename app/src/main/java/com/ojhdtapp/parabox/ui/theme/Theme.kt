@@ -11,7 +11,17 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.datastore.preferences.core.emptyPreferences
+import com.ojhdtapp.parabox.core.util.DataStoreKeys
+import com.ojhdtapp.parabox.core.util.dataStore
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
+import java.io.IOException
 
 private val LightThemeColors = lightColorScheme(
 
@@ -79,7 +89,23 @@ fun AppTheme(
     useDarkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable() () -> Unit
 ) {
-    val enableDynamicColor = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val context = LocalContext.current
+    val enableDynamicColorFlow = remember {
+        context.dataStore.data
+            .catch { exception ->
+                if (exception is IOException) {
+                    emit(emptyPreferences())
+                } else {
+                    throw exception
+                }
+            }
+            .map { settings ->
+                settings[DataStoreKeys.SETTINGS_ENABLE_DYNAMIC_COLOR]
+                    ?: (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+            }
+    }
+    val enableDynamicColor = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+            enableDynamicColorFlow.collectAsState(initial = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S).value
     val colors = when {
         enableDynamicColor && !useDarkTheme -> dynamicLightColorScheme(LocalContext.current)
         enableDynamicColor && useDarkTheme -> dynamicDarkColorScheme(LocalContext.current)

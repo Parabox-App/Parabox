@@ -38,6 +38,7 @@ fun BackupPage(
 
     val coroutineScope = rememberCoroutineScope()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val cacheSize = viewModel.cacheSizeStateFlow.collectAsState()
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -109,15 +110,21 @@ fun BackupPage(
             item {
                 NormalPreference(
                     title = "清理缓存",
-                    subtitle = "应用缓存已占用\n缓存清理不影响聊天记录",
+                    subtitle = "应用缓存已占用 ${cacheSize.value}\n缓存清理不影响聊天记录",
+                    enabled = !viewModel.cleaningCache.value,
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Outlined.DeleteSweep,
-                            contentDescription = "clean cache"
+                            contentDescription = "clean cache",
+                            tint = if (viewModel.cleaningCache.value) {
+                                MaterialTheme.colorScheme.outline
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            }
                         )
                     },
                     onClick = {
-
+                        viewModel.clearCache()
                     }
                 )
             }

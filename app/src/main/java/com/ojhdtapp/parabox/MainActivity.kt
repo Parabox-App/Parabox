@@ -5,11 +5,13 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.pm.PackageManager
 import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.net.Uri
 import android.os.*
 import android.provider.MediaStore
+import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -424,6 +426,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun launchNotificationSetting() {
+        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+        intent.putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+        if (packageManager.resolveActivity(
+                intent,
+                PackageManager.MATCH_DEFAULT_ONLY
+            ) != null
+        ) startActivity(intent)
+    }
+
     fun getGoogleLoginAuth(): GoogleSignInClient {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
@@ -566,6 +578,10 @@ class MainActivity : AppCompatActivity() {
                         ).show()
                     }
                 }
+            }
+
+            is ActivityEvent.LaunchNotificationSetting -> {
+                launchNotificationSetting()
             }
         }
     }

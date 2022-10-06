@@ -1,15 +1,16 @@
 package com.ojhdtapp.parabox.ui.setting
 
 import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -40,11 +41,13 @@ import com.ojhdtapp.parabox.domain.model.Contact
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun ContactBackupDialog(
+fun ContactListDialog(
     modifier: Modifier = Modifier,
     showDialog: Boolean,
-    contactList: List<Contact>?,
+    contactList: List<Contact>,
+    contactCheck: (Contact) -> Boolean,
     onValueChange: (target: Contact, value: Boolean) -> Unit,
+    loading: Boolean,
     sizeClass: WindowSizeClass,
     onDismiss: () -> Unit,
 ) {
@@ -73,10 +76,10 @@ fun ContactBackupDialog(
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 2.dp
             ) {
-                Column() {
-                    Text(text = "目标会话", style = MaterialTheme.typography.titleLarge)
-                    LazyColumn() {
-                        if (contactList == null) {
+                Column(modifier = Modifier.padding(24.dp)) {
+                    Text(text = "会话列表", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 16.dp))
+                    LazyColumn(modifier = Modifier.heightIn(0.dp, 400.dp)) {
+                        if (loading) {
                             item {
                                 Box(
                                     modifier = Modifier
@@ -89,7 +92,7 @@ fun ContactBackupDialog(
                             }
                         } else {
                             items(items = contactList, key = { it.contactId }) {
-                                MultiSelectItem(contact = it, onValueChange = onValueChange)
+                                MultiSelectItem(contact = it, onValueChange = onValueChange, contactCheck = contactCheck)
                             }
                         }
                     }
@@ -103,6 +106,7 @@ fun ContactBackupDialog(
 fun MultiSelectItem(
     modifier: Modifier = Modifier,
     contact: Contact,
+    contactCheck: (Contact) -> Boolean,
     onValueChange: (target: Contact, value: Boolean) -> Unit
 ) {
     Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -118,13 +122,14 @@ fun MultiSelectItem(
                 .size(24.dp)
                 .clip(CircleShape)
         )
+        Spacer(modifier = Modifier.width(16.dp))
         Text(
+            modifier = Modifier.weight(1f),
             text = contact.profile.name,
             style = MaterialTheme.typography.bodyMedium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
-        Spacer(modifier = Modifier.weight(1f))
-        Checkbox(checked = false, onCheckedChange = { onValueChange(contact, it) })
+        Checkbox(checked = contactCheck(contact), onCheckedChange = { onValueChange(contact, it) })
     }
 }

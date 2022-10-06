@@ -124,7 +124,7 @@ fun ExperimentalPage(
                 SwitchPreference(
                     title = "允许返回主页",
                     subtitleOn = "返回按钮将于对话泡界面显示",
-                    subtitleOff = "将在对话泡界面显示返回按钮。开启后可于悬浮窗使用完整应用功能",
+                    subtitleOff = "将在对话泡界面显示主页按钮。开启后可于悬浮窗使用完整应用功能",
                     initialChecked = false,
                     onCheckedChange = {}
                 )
