@@ -45,6 +45,9 @@ interface ContactDao {
     @Update(entity = ContactEntity::class)
     fun updateUnreadMessagesNum(obj: ContactUnreadMessagesNumUpdate)
 
+    @Update(entity = ContactEntity::class)
+    fun updateShouldBackup(obj: ContactShouldBackupUpdate)
+
     @Query("SELECT * FROM contact_entity WHERE contactId = :id LIMIT 1")
     suspend fun getContactById(id: Long): ContactEntity?
 

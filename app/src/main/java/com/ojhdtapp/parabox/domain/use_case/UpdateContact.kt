@@ -34,4 +34,8 @@ class UpdateContact @Inject constructor(
     fun unreadMessagesNum(id: Long, value: Int){
         repository.updateContactUnreadMessagesNum(id, value)
     }
+
+    fun backup(id: Long, value: Boolean){
+        repository.updateContactBackupState(id, value)
+    }
 }

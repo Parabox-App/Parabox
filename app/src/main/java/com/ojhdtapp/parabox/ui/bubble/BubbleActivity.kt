@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.ojhdtapp.parabox.MainActivity
 import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.model.Contact
@@ -329,6 +330,10 @@ class BubbleActivity : AppCompatActivity() {
 
             is ActivityEvent.Vibrate -> {
                 vibrate()
+            }
+            is ActivityEvent.LaunchApp -> {
+                val intent = Intent(this, MainActivity::class.java)
+                startActivity(intent)
             }
         }
     }

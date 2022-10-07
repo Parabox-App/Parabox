@@ -100,8 +100,9 @@ fun ExtensionPage(
                         FilledTonalButton(
                             onClick = { /*TODO*/ }) {
                             FaIcon(
-                                modifier = Modifier.padding(end = 8.dp).size(ButtonDefaults.IconSize),
+                                modifier = Modifier.padding(end = 8.dp),
                                 faIcon = FaIcons.GooglePlay,
+                                size = ButtonDefaults.IconSize,
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
                             Text(text = "从应用商店获取")

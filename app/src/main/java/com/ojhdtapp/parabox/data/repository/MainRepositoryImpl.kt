@@ -34,6 +34,11 @@ class MainRepositoryImpl @Inject constructor(
 ) : MainRepository {
     override suspend fun handleNewMessage(dto: ReceiveMessageDto) {
         coroutineScope {
+            // Properties
+            val allowForegroundNotification = context.dataStore.data.map { preferences ->
+                preferences[DataStoreKeys.SETTINGS_ALLOW_FOREGROUND_NOTIFICATION] ?: false
+            }.first()
+
             val messageIdDeferred = async<Long> {
                 database.messageDao.insertMessage(dto.toMessageEntity(context))
             }
@@ -115,10 +120,10 @@ class MainRepositoryImpl @Inject constructor(
                     }
             }
             // Send Notification if Enabled ...
-            if(HiltApplication.inBackground){
+            if (allowForegroundNotification || HiltApplication.inBackground) {
                 if (contactIdDeferred.await() == -1L) {
                     database.contactDao.getContactById(dto.pluginConnection.objectId).let {
-                        if (it?.enableNotifications == true && it.isArchived == false) {
+                        if (it?.enableNotifications == true && !it.isArchived) {
                             notificationUtil.sendNewMessageNotification(
                                 message = dto.toMessage(context, messageIdDeferred.await()),
                                 contact = dto.toContact(),
@@ -314,8 +319,11 @@ class MainRepositoryImpl @Inject constructor(
     }
 
     override fun updateContactArchivedState(id: Long, value: Boolean) {
-        Log.d("parabox", "$id:$value")
         database.contactDao.updateArchivedState(ContactArchivedStateUpdate(id, value))
+    }
+
+    override fun updateContactBackupState(id: Long, value: Boolean) {
+        database.contactDao.updateShouldBackup(ContactShouldBackupUpdate(id, value))
     }
 
     override fun updateContactTag(id: Long, tag: List<String>) {

@@ -72,6 +72,7 @@ fun ReceiveMessageDto.toContact(): Contact{
         isHidden = false,
         isPinned = false,
         isArchived = false,
+        shouldBackup = false,
         enableNotifications = true,
         tags = emptyList()
     )

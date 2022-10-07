@@ -69,7 +69,9 @@ fun BubblePage(
                 )
             )
         },
-        onLaunchApp = { },
+        onLaunchApp = {
+            onEvent(ActivityEvent.LaunchApp)
+        },
         onSend = {
             viewModel.clearQuoteMessage()
             viewModel.clearAt()
@@ -164,6 +166,7 @@ fun BubbleChatPage(
     val scaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberBottomSheetState(BottomSheetValue.Collapsed)
     )
+    val allowBubbleHome = viewModel.allowBubbleHomeFlow.collectAsState(initial = false).value
     LaunchedEffect(key1 = scaffoldState.bottomSheetState.targetValue) {
         if (scaffoldState.bottomSheetState.progress.fraction != 1f && scaffoldState.bottomSheetState.progress.fraction != 0f)
             onVibrate()
@@ -454,11 +457,13 @@ fun BubbleChatPage(
                             .background(color = appBarContainerColor)
                             .statusBarsPadding(),
                         actions = {
-                            IconButton(onClick = { onLaunchApp() }) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Launch,
-                                    contentDescription = "launch app"
-                                )
+                            if(allowBubbleHome){
+                                IconButton(onClick = { onLaunchApp() }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Home,
+                                        contentDescription = "launch app"
+                                    )
+                                }
                             }
                             Box(
                                 modifier = Modifier

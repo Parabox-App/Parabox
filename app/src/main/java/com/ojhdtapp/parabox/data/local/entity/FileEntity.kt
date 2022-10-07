@@ -21,6 +21,8 @@ data class FileEntity(
     val relatedMessageId: Long,
     @PrimaryKey(autoGenerate = true) val fileId: Long = 0,
     val downloadId: Long? = null,
+    val cloudType: Int? = null,
+    val cloudId: String? = null,
 ) {
     fun toFile() = File(
         url,
@@ -33,7 +35,9 @@ data class FileEntity(
         downloadPath,
         relatedMessageId,
         fileId,
-        downloadId
+        downloadId,
+        cloudType,
+        cloudId
     )
 }
 

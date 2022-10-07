@@ -15,6 +15,7 @@ data class ContactEntity(
     val isPinned : Boolean = false,
     val isArchived: Boolean = false,
     val enableNotifications : Boolean = true,
+    val shouldBackup: Boolean = false,
     val tags: List<String>,
     @PrimaryKey(autoGenerate = true) val contactId: Long = 0,
 ){
@@ -25,6 +26,7 @@ data class ContactEntity(
         isPinned = isPinned,
         isArchived = isArchived,
         enableNotifications = enableNotifications,
+        shouldBackup = shouldBackup,
         contactId = contactId,
         senderId = senderId,
         tags = tags
@@ -88,4 +90,12 @@ data class ContactUnreadMessagesNumUpdate(
     val contactId: Long,
     @ColumnInfo(name = "unreadMessagesNum")
     val unreadMessagesNum: Int,
+)
+
+@Entity
+data class ContactShouldBackupUpdate(
+    @ColumnInfo(name = "contactId")
+    val contactId: Long,
+    @ColumnInfo(name = "shouldBackup")
+    val shouldBackup: Boolean,
 )

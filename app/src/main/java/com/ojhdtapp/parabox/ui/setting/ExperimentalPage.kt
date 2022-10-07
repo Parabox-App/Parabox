@@ -103,6 +103,7 @@ fun ExperimentalPage(
                     subtitleOn = "启用",
                     subtitleOff = "在静态文本中以及输入时识别特定实体（地址，日期，邮箱等）",
                     checked = false,
+                    enabled = false,
                     onCheckedChange = {}
                 )
             }
@@ -110,8 +111,9 @@ fun ExperimentalPage(
                 SwitchPreference(
                     title = "智能回复",
                     subtitleOn = "启用",
-                    subtitleOff = "根据对话的完整上下文生成回复建议",
+                    subtitleOff = "根据对话的完整上下文生成回复建议（仅支持英语）",
                     checked = false,
+                    enabled = false,
                     onCheckedChange = {}
                 )
             }
@@ -121,6 +123,7 @@ fun ExperimentalPage(
                     subtitleOn = "启用",
                     subtitleOff = "将会话内容翻译成您的语言",
                     checked = false,
+                    enabled = false,
                     onCheckedChange = {}
                 )
             }
@@ -132,8 +135,8 @@ fun ExperimentalPage(
                     title = "允许返回主页",
                     subtitleOn = "返回按钮将于对话泡界面显示",
                     subtitleOff = "将在对话泡界面显示主页按钮。开启后可于悬浮窗使用完整应用功能",
-                    checked = false,
-                    onCheckedChange = {}
+                    checked = viewModel.allowBubbleHomeFlow.collectAsState(initial = false).value,
+                    onCheckedChange = viewModel::setAllowBubbleHome
                 )
             }
             item {
@@ -141,8 +144,8 @@ fun ExperimentalPage(
                     title = "允许前台发送通知",
                     subtitleOn = "无视应用状态发送通知",
                     subtitleOff = "仅当应用进入后台才发送通知",
-                    checked = false,
-                    onCheckedChange = {}
+                    checked = viewModel.allowForegroundNotificationFlow.collectAsState(initial = false).value,
+                    onCheckedChange = viewModel::setAllowForegroundNotification
                 )
             }
         }

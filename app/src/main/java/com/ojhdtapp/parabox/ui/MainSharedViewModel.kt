@@ -12,9 +12,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendTargetType
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.At
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
+import com.ojhdtapp.parabox.core.util.GoogleDriveUtil
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.parabox.domain.model.*
@@ -363,4 +365,23 @@ class MainSharedViewModel @Inject constructor(
         .map { settings ->
             settings[DataStoreKeys.GOOGLE_APP_USED_SPACE] ?: 0L
         }
+    fun saveGoogleDriveAccount(account: GoogleSignInAccount?) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.GOOGLE_NAME] = account?.displayName ?: ""
+                preferences[DataStoreKeys.GOOGLE_MAIL] = account?.email ?: ""
+                preferences[DataStoreKeys.GOOGLE_LOGIN] = account != null
+                preferences[DataStoreKeys.GOOGLE_AVATAR] = account?.photoUrl.toString()
+                preferences[DataStoreKeys.SETTINGS_DEFAULT_BACKUP_SERVICE] = 0
+            }
+            GoogleDriveUtil.getDriveInformation(context)?.also {
+                context.dataStore.edit { preferences ->
+                    preferences[DataStoreKeys.GOOGLE_WORK_FOLDER_ID] = it.workFolderId
+                    preferences[DataStoreKeys.GOOGLE_TOTAL_SPACE] = it.totalSpace
+                    preferences[DataStoreKeys.GOOGLE_USED_SPACE] = it.usedSpace
+                    preferences[DataStoreKeys.GOOGLE_APP_USED_SPACE] = it.appUsedSpace
+                }
+            }
+        }
+    }
 }

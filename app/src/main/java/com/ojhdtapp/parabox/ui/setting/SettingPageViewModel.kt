@@ -20,9 +20,11 @@ import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.use_case.GetContacts
+import com.ojhdtapp.parabox.domain.use_case.UpdateContact
 import com.ojhdtapp.parabox.ui.theme.Theme
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,6 +45,7 @@ import javax.inject.Inject
 class SettingPageViewModel @Inject constructor(
     @ApplicationContext val context: Context,
     val getContacts: GetContacts,
+    val updateContact: UpdateContact
 ) : ViewModel() {
 
     private val _contactLoadingState = mutableStateOf<Boolean>(true)
@@ -177,7 +180,9 @@ class SettingPageViewModel @Inject constructor(
     }
 
     fun onContactBackupChange(target: Contact, value: Boolean) {
-
+        viewModelScope.launch(Dispatchers.IO){
+            updateContact.backup(target.contactId, value)
+        }
     }
 
     val autoDeleteLocalFileFlow: Flow<Boolean> = context.dataStore.data
@@ -237,7 +242,9 @@ class SettingPageViewModel @Inject constructor(
         _notificationPermissionGrantedStateFlow.tryEmit(value)
     }
     fun onContactNotificationChange(target: Contact, value: Boolean) {
-
+        viewModelScope.launch(Dispatchers.IO){
+            updateContact.notificationState(target.contactId, value)
+        }
     }
 
     // Interface
@@ -274,6 +281,44 @@ class SettingPageViewModel @Inject constructor(
         viewModelScope.launch {
             context.dataStore.edit { preferences ->
                 preferences[DataStoreKeys.SETTINGS_THEME] = value
+            }
+        }
+    }
+
+    // Experimental
+    val allowBubbleHomeFlow: Flow<Boolean> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.SETTINGS_ALLOW_BUBBLE_HOME] ?: false
+        }
+    fun setAllowBubbleHome(value: Boolean) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.SETTINGS_ALLOW_BUBBLE_HOME] = value
+            }
+        }
+    }
+    val allowForegroundNotificationFlow: Flow<Boolean> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.SETTINGS_ALLOW_FOREGROUND_NOTIFICATION] ?: false
+        }
+    fun setAllowForegroundNotification(value: Boolean) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.SETTINGS_ALLOW_FOREGROUND_NOTIFICATION] = value
             }
         }
     }

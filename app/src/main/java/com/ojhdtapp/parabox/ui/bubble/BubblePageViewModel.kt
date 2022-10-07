@@ -212,4 +212,17 @@ class BubblePageViewModel @Inject constructor(
     fun setAudioPlayerProgressFraction(value: Float) {
         _audioPlayerProgressFraction.value = value
     }
+
+    // Return Home
+    val allowBubbleHomeFlow = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.SETTINGS_ALLOW_BUBBLE_HOME] ?: false
+        }
 }

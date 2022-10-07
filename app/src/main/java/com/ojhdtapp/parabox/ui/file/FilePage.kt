@@ -1,8 +1,14 @@
 package com.ojhdtapp.parabox.ui.file
 
 import android.app.Activity
+import android.app.Instrumentation
+import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.ManagedActivityResultLauncher
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
@@ -40,6 +46,10 @@ import coil.compose.AsyncImage
 import coil.decode.SvgDecoder
 import coil.request.ImageRequest
 import com.google.accompanist.flowlayout.FlowRow
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.guru.fontawesomecomposelib.FaIcon
+import com.guru.fontawesomecomposelib.FaIcons
+import com.ojhdtapp.parabox.MainActivity
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.HiltApplication
 import com.ojhdtapp.parabox.core.util.*
@@ -88,6 +98,46 @@ fun FilePage(
             }
         }
     }
+    // Google Drive
+    val gDriveLogin by mainSharedViewModel.googleLoginFlow.collectAsState(initial = false)
+    val gDriveTotalSpace by mainSharedViewModel.googleTotalSpaceFlow.collectAsState(initial = 0L)
+    val gDriveUsedSpace by mainSharedViewModel.googleUsedSpaceFlow.collectAsState(initial = 0L)
+    val gDriveUsedSpacePercent = remember{
+        derivedStateOf {
+            if (gDriveTotalSpace == 0L) 0 else (gDriveUsedSpace * 100 / gDriveTotalSpace).toInt()
+        }
+    }
+    val gDriveAppUsedSpace by mainSharedViewModel.googleAppUsedSpaceFlow.collectAsState(initial = 0L)
+    val gDriveAppUsedSpacePercent = remember{
+        derivedStateOf {
+            if (gDriveTotalSpace == 0L) 0 else (gDriveAppUsedSpace * 100 / gDriveTotalSpace).toInt()
+        }
+    }
+    val gDriveLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                val intent = result.data
+                if (result.data != null) {
+                    val googleSignInAccount = GoogleSignIn.getSignedInAccountFromIntent(intent)
+                    googleSignInAccount.addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            val account = task.result
+                            if (account != null) {
+                                mainSharedViewModel.saveGoogleDriveAccount(account)
+                                coroutineScope.launch {
+                                    snackBarHostState.showSnackbar("成功连接 Google Drive")
+                                }
+                            }
+                        } else {
+                            mainSharedViewModel.saveGoogleDriveAccount(null)
+                            coroutineScope.launch {
+                                snackBarHostState.showSnackbar("连接取消")
+                            }
+                        }
+                    }
+                }
+            }
+        }
     // Delete File Confirm
     var deleteFileConfirm by remember {
         mutableStateOf(false)
@@ -224,6 +274,19 @@ fun FilePage(
                     onEvent = onEvent,
                     searchAppBarState = viewModel.searchBarActivateState.value,
                     sizeClass = sizeClass,
+                    gDriveLogin = gDriveLogin,
+                    gDriveTotalSpace = gDriveTotalSpace,
+                    gDriveUsedSpace = gDriveUsedSpace,
+                    gDriveUsedSpacePercent = gDriveUsedSpacePercent.value,
+                    gDriveAppUsedSpace = gDriveAppUsedSpace,
+                    gDriveAppUsedSpacePercent = gDriveAppUsedSpacePercent.value,
+                    gDriveLauncher = gDriveLauncher,
+                    onLogoutGoogleDrive = {
+                        mainSharedViewModel.saveGoogleDriveAccount(null)
+                        coroutineScope.launch {
+                            snackBarHostState.showSnackbar("已退出登录")
+                        }
+                    },
                     onChangeSearchAppBarState = {
                         viewModel.setSearchBarActivateState(it)
                     },
@@ -264,12 +327,21 @@ fun MainArea(
     paddingValues: PaddingValues,
     searchAppBarState: Int,
     sizeClass: WindowSizeClass,
+    gDriveLogin: Boolean,
+    gDriveTotalSpace: Long,
+    gDriveUsedSpace: Long,
+    gDriveUsedSpacePercent: Int,
+    gDriveAppUsedSpace: Long,
+    gDriveAppUsedSpacePercent: Int,
+    gDriveLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>,
+    onLogoutGoogleDrive: () -> Unit,
     onChangeSearchAppBarState: (state: Int) -> Unit,
     onEvent: (ActivityEvent) -> Unit,
     onChangeArea: (area: Int) -> Unit,
     onAddOrRemoveFile: (file: File) -> Unit,
     onSetRecentFilter: (type: Int, value: Boolean) -> Unit
 ) {
+    val context = LocalContext.current
     LazyVerticalGrid(
         modifier = Modifier
             .fillMaxSize()
@@ -555,6 +627,115 @@ fun MainArea(
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
+                }
+            }
+        }
+        item{
+            if (!gDriveLogin) {
+                OutlinedCard(modifier = Modifier.padding(horizontal = 16.dp),shape = RoundedCornerShape(24.dp)) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Surface(shape = CircleShape, color = MaterialTheme.colorScheme.secondaryContainer) {
+                            Box(modifier = Modifier.size(72.dp), contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Outlined.CloudOff,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(24.dp),
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
+                        }
+                        Text(
+                            modifier = Modifier.padding(top = 16.dp),
+                            text = "未连接云端服务",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            modifier = Modifier.padding(vertical = 16.dp),
+                            text = "连接云端服务可将您的会话文件备份至云端",
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                        FilledTonalButton(
+                            onClick = {
+                                val signInIntent =
+                                    (context as MainActivity).getGoogleLoginAuth().signInIntent
+                                gDriveLauncher.launch(signInIntent)
+                            }) {
+                            Icon(
+                                imageVector = Icons.Outlined.Cloud,
+                                contentDescription = "cloud",
+                                modifier = Modifier
+                                    .padding(end = 8.dp)
+                                    .size(ButtonDefaults.IconSize),
+                            )
+                            Text(text = "连接云端服务")
+                        }
+                    }
+                }
+            }
+        }
+        item {
+            if (gDriveLogin) {
+                var expanded by remember {
+                    mutableStateOf(false)
+                }
+                Box(modifier = Modifier.wrapContentSize()){
+                    OutlinedCard(modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(), onClick = {
+                        expanded = true
+                    }) {
+                        Row(modifier = Modifier.padding(16.dp)) {
+                            Surface(
+                                modifier = Modifier.size(48.dp),
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.secondaryContainer
+                            ) {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    FaIcon(
+                                        faIcon = FaIcons.GoogleDrive,
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column() {
+                                Text(
+                                    text = "Google Drive",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                LinearProgressIndicator(
+                                    progress = 0.6f,
+                                    modifier = Modifier.padding(vertical = 4.dp)
+                                )
+                                Text(
+                                    text = "已使用 ${gDriveUsedSpacePercent}% 的存储空间（${FileUtil.getSizeString(gDriveUsedSpace)} / ${FileUtil.getSizeString(gDriveTotalSpace)}）",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "其中应用使用 ${gDriveAppUsedSpacePercent}%（${FileUtil.getSizeString(gDriveAppUsedSpace)}）",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                    RoundedCornerDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false}) {
+                        DropdownMenuItem(text = { Text(text = "退出登录") }, onClick = {
+                            expanded = false
+                            (context as MainActivity).getGoogleLoginAuth().signOut()
+                                .addOnCompleteListener {
+                                    onLogoutGoogleDrive()
+                                }
+                        })
+                    }
                 }
             }
         }

@@ -77,7 +77,7 @@ fun ContactListDialog(
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 2.dp
             ) {
-                Column(modifier = Modifier.padding(24.dp)) {
+                Column(modifier = Modifier.padding(24.dp).fillMaxWidth()) {
                     Text(text = "会话列表", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 16.dp))
                     LazyColumn(modifier = Modifier.heightIn(0.dp, 400.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         if (loading) {
@@ -92,6 +92,18 @@ fun ContactListDialog(
                                 }
                             }
                         } else {
+                            item{
+                                if(contactList.isEmpty()){
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(176.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(text = "暂无会话")
+                                    }
+                                }
+                            }
                             items(items = contactList, key = { it.contactId },) {
                                 MultiSelectItem(contact = it, onValueChange = onValueChange, contactCheck = contactCheck)
                             }
