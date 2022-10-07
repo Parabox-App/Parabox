@@ -293,7 +293,7 @@ class NotificationUtil(
                     }
                 }
                 Notification.Builder(context, channelId)
-                    .setSmallIcon(R.drawable.ic_android_black_24dp)
+                    .setSmallIcon(R.drawable.ic_stat_name)
                     .setLargeIcon(groupIcon)
                     .setContentTitle(contact.profile.name)
                     .setCategory(Notification.CATEGORY_MESSAGE)
@@ -410,7 +410,7 @@ class NotificationUtil(
                     }
             } else {
                 val notificationBuilder = Notification.Builder(context, channelId)
-                    .setSmallIcon(R.drawable.ic_android_black_24dp)
+                    .setSmallIcon(R.drawable.ic_stat_name)
                     .setContentTitle(contact.profile.name)
                     .setContentText(message.contents.getContentString())
                     .setContentIntent(launchPendingIntent)
@@ -447,7 +447,7 @@ class NotificationUtil(
         )
         val notification: Notification =
             Notification.Builder(context, SERVICE_STATE_CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_launcher_background)
+                .setSmallIcon(R.drawable.ic_stat_name)
                 .setContentTitle("没有已连接的扩展")
 //                .setContentText("Parabox 正在后台运行")
                 .setContentIntent(pendingIntent)
@@ -471,7 +471,7 @@ class NotificationUtil(
         }
         val notification: Notification =
             Notification.Builder(context, SERVICE_STATE_CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_android_black_24dp)
+                .setSmallIcon(R.drawable.ic_stat_name)
                 .setContentTitle(title)
 //                .setContentText(text)
                 .setCategory(Notification.CATEGORY_SERVICE)
