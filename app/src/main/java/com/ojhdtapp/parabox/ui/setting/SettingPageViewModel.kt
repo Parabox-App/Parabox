@@ -32,10 +32,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.io.IOException
@@ -275,7 +272,7 @@ class SettingPageViewModel @Inject constructor(
             }
         }
         .map { settings ->
-            settings[DataStoreKeys.SETTINGS_THEME] ?: Theme.DEFAULT
+            settings[DataStoreKeys.SETTINGS_THEME] ?: Theme.WILLOW
         }
     fun setTheme(value: Int) {
         viewModelScope.launch {

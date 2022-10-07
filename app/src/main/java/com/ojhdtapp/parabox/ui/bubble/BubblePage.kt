@@ -1,11 +1,13 @@
 package com.ojhdtapp.parabox.ui.bubble
 
+import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -23,15 +25,23 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.*
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
+import coil.ImageLoader
 import coil.annotation.ExperimentalCoilApi
 import coil.imageLoader
+import coil.request.ImageRequest
+import coil.request.SuccessResult
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.message_content.*
@@ -44,6 +54,8 @@ import com.ojhdtapp.parabox.ui.message.MessageState
 import com.ojhdtapp.parabox.ui.message.SingleMessageEvent
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.RoundedCornerDropdownMenu
+import com.origeek.imageViewer.ImagePreviewer
+import com.origeek.imageViewer.rememberPreviewerState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -307,6 +319,247 @@ fun BubbleChatPage(
     // Meme Related
     var memeUpdateFlag by remember {
         mutableStateOf(0)
+    }
+    // Image Preview
+    val imageViewerState = rememberPreviewerState()
+    LaunchedEffect(messageState){
+        imageViewerState.hide()
+    }
+    val imageList =
+        produceState(
+            initialValue = emptyList<Pair<Long, ImageBitmap>>(),
+            key1 = lazyPagingItems.itemSnapshotList
+        ) {
+            if (!imageViewerState.show) {
+                value =
+                    lazyPagingItems.itemSnapshotList.items.fold(mutableListOf<Pair<Long, ImageBitmap>>()) { acc, message ->
+                        val imageMessageList = message.contents.filterIsInstance<Image>()
+                        val lastIndex = imageMessageList.lastIndex
+                        imageMessageList.reversed().forEachIndexed { index, t ->
+                            if (t.uriString != null) {
+                                FileUtil.getBitmapFromUri(context, Uri.parse(t.uriString))?.let {
+                                    acc.add("${message.messageId}${(lastIndex - index).coerceIn(0, lastIndex)}".toLong() to it.asImageBitmap())
+                                }
+                            } else if (t.url != null) {
+                                val loader = ImageLoader(context)
+                                val request = ImageRequest.Builder(context)
+                                    .data(t.url)
+                                    .allowHardware(false)
+                                    .build()
+                                val result = (loader.execute(request) as SuccessResult).drawable
+                                val bitmap = (result as BitmapDrawable).bitmap
+                                acc.add("${message.messageId}${(lastIndex - index).coerceIn(0, lastIndex)}".toLong() to bitmap.asImageBitmap())
+                            }
+                        }
+                        acc
+                    }.reversed()
+            }
+        }
+    var showImagePreviewerToolbar by remember {
+        mutableStateOf(true)
+    }
+    var imagePreviewerMenuExpanded by remember {
+        mutableStateOf(false)
+    }
+    ImagePreviewer(modifier = Modifier.zIndex(9f),
+        count = imageList.value.size,
+        state = imageViewerState,
+        imageLoader = { index ->
+            if (index < imageList.value.size) {
+                imageList.value[index].second
+            } else {
+                ImageBitmap(1, 1)
+            }
+        },
+        foreground = { total, current ->
+            AnimatedVisibility(
+                showImagePreviewerToolbar,
+                enter = expandVertically(),
+                exit = shrinkVertically()
+            ) {
+                TopAppBar(
+                    modifier = Modifier
+                        .background(Color.Black.copy(alpha = 0.5f))
+                        .statusBarsPadding(),
+                    title = {},
+                    navigationIcon = {
+                        IconButton(onClick = { imageViewerState.hide() }) {
+                            Icon(
+                                imageVector = Icons.Outlined.ArrowBack,
+                                contentDescription = "back"
+                            )
+                        }
+                    },
+                    actions = {
+                        Box(
+                            modifier = Modifier
+                                .wrapContentSize(Alignment.TopStart)
+                        ) {
+                            IconButton(onClick = { imagePreviewerMenuExpanded = !imagePreviewerMenuExpanded }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.MoreVert,
+                                    contentDescription = "more"
+                                )
+                            }
+                            RoundedCornerDropdownMenu(
+                                expanded = imagePreviewerMenuExpanded,
+                                onDismissRequest = { imagePreviewerMenuExpanded = false },
+                                modifier = Modifier.width(192.dp)
+                            ) {
+                                DropdownMenuItem(
+                                    text = {
+                                        Text("添加到表情")
+                                    },
+                                    onClick = {
+                                        imagePreviewerMenuExpanded = false
+                                        try {
+                                            val imageId = imageList.value.getOrNull(current)?.first
+                                            if (imageId == null) throw NoSuchElementException("id lost")
+                                            val imageIndex = imageId.toString().last().digitToInt()
+                                            val messageId = imageId.toString().let{
+                                                it.substring(0, it.length - 1).toLong()
+                                            }
+                                            val message = lazyPagingItems.itemSnapshotList.items.findLast { it.messageId == messageId }
+                                            val image =
+                                                message?.contents?.filterIsInstance<Image>()?.getOrNull(imageIndex)
+                                                    ?: throw NoSuchElementException("image lost")
+                                            val path = context.getExternalFilesDir("meme")!!
+                                            if (message.sentByMe) {
+                                                image.uriString?.let { uriString ->
+                                                    FileUtil.copyFileToPath(
+                                                        context, path,
+                                                        "Image_${
+                                                            System.currentTimeMillis()
+                                                                .toDateAndTimeString()
+                                                        }.jpg",
+                                                        Uri.parse(uriString)
+                                                    )
+                                                }
+                                            } else {
+                                                image.url?.let { url ->
+                                                    context.imageLoader.diskCache?.get(url)
+                                                        ?.use { snapshot ->
+                                                            val imageFile = snapshot.data.toFile()
+                                                            FileUtil.copyFileToPath(
+                                                                context,
+                                                                path,
+                                                                "Image_${
+                                                                    System.currentTimeMillis()
+                                                                        .toDateAndTimeString()
+                                                                }.jpg",
+                                                                imageFile
+                                                            )
+                                                        }
+                                                }
+
+                                            }
+                                            memeUpdateFlag++
+                                            Toast.makeText(
+                                                context,
+                                                "已添加 1 张图片到自定义表情",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        } catch (e: NoSuchElementException){
+                                            Toast.makeText(
+                                                context,
+                                                "无法定位图片",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Outlined.FavoriteBorder,
+                                            contentDescription = "favorite"
+                                        )
+                                    })
+                                DropdownMenuItem(
+                                    text = {
+                                        Text("保存到本地")
+                                    },
+                                    onClick = {
+                                        imagePreviewerMenuExpanded = false
+                                        try {
+                                            val imageId = imageList.value.getOrNull(current)?.first
+                                            if (imageId == null) throw NoSuchElementException("id lost")
+                                            val imageIndex = imageId.toString().last().digitToInt()
+                                            val messageId = imageId.toString().let{
+                                                it.substring(0, it.length - 1).toLong()
+                                            }
+                                            val message = lazyPagingItems.itemSnapshotList.items.findLast { it.messageId == messageId }
+                                            val image =
+                                                message?.contents?.filterIsInstance<Image>()?.getOrNull(imageIndex)
+                                                    ?: throw NoSuchElementException("image lost")
+                                            if (message.sentByMe) {
+                                                image.uriString?.let { uriString ->
+                                                    FileUtil.saveImageToExternalStorage(
+                                                        context,
+                                                        Uri.parse(uriString)
+                                                    )
+                                                }
+                                            } else {
+                                                image.url?.let { url ->
+                                                    context.imageLoader.diskCache?.get(url)
+                                                        ?.use { snapshot ->
+                                                            val imageFile =
+                                                                snapshot.data.toFile()
+                                                            FileUtil.saveImageToExternalStorage(
+                                                                context,
+                                                                imageFile
+                                                            )
+                                                        }
+                                                }
+                                            }
+                                            memeUpdateFlag++
+                                            Toast.makeText(
+                                                context,
+                                                "已将 1 张图片保存到 /Pictures/Parabox",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        } catch (e: NoSuchElementException){
+                                            Toast.makeText(
+                                                context,
+                                                "无法定位图片",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Outlined.FileDownload,
+                                            contentDescription = "download"
+                                        )
+                                    })
+                            }
+                        }
+                    },
+                    colors = TopAppBarDefaults.smallTopAppBarColors(
+                        containerColor = Color.Transparent,
+                        navigationIconContentColor = Color(red = 230, green = 225, blue = 229),
+                        titleContentColor = Color(red = 230, green = 225, blue = 229),
+                        actionIconContentColor = Color(red = 230, green = 225, blue = 229),
+                    )
+                )
+            }
+        },
+        onTap = {
+            showImagePreviewerToolbar = !showImagePreviewerToolbar
+        }
+    )
+    val useDarkIcons = isSystemInDarkTheme()
+    val systemUiController = rememberSystemUiController()
+    LaunchedEffect(imageViewerState.show){
+        if (imageViewerState.show) {
+            systemUiController.setSystemBarsColor(
+                color = Color.Transparent,
+                darkIcons = false
+            )
+        } else {
+            systemUiController.setSystemBarsColor(
+                color = Color.Transparent,
+                darkIcons = !useDarkIcons
+            )
+        }
     }
     BottomSheetScaffold(
 //        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -978,7 +1231,11 @@ fun BubbleChatPage(
                                     )
                                 } else {
                                     if (value.contents.any { it is Image }) {
-                                        TODO("launch image viewer")
+                                        val index =
+                                            imageList.value.indexOfLast { it.first == "${value.messageId}0".toLong() }
+                                        if (index != -1) {
+                                            imageViewerState.show(index)
+                                        }
                                     } else {
                                         clickingMessage = value
                                     }

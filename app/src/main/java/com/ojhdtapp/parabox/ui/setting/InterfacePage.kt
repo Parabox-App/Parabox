@@ -94,9 +94,10 @@ fun InterfacePage(
             item {
                 SimpleMenuPreference(
                     title = "主题色",
-                    selectedKey = viewModel.themeFlow.collectAsState(initial = Theme.DEFAULT).value,
+                    selectedKey = viewModel.themeFlow.collectAsState(initial = Theme.WILLOW).value,
                     optionsMap = mapOf(
-                        Theme.DEFAULT to "藤紫",
+                        Theme.WILLOW to "柳染",
+                        Theme.PURPLE to "藤紫",
                         Theme.SAKURA to "樱花",
                         Theme.GARDENIA to "栀子",
                         Theme.WATER to "清水"

@@ -2,35 +2,87 @@ package com.ojhdtapp.parabox.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.darkColors
-import androidx.compose.material.lightColors
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.datastore.preferences.core.emptyPreferences
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.dataStore
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import java.io.IOException
 
 object Theme {
-    const val DEFAULT = 0
+    const val WILLOW = 0
     const val SAKURA = 1
     const val GARDENIA = 2
     const val WATER = 3
+    const val PURPLE = 4
 }
+private val WillowLightThemeColors = lightColorScheme(
+    primary = willow_theme_light_primary,
+    onPrimary = willow_theme_light_onPrimary,
+    primaryContainer = willow_theme_light_primaryContainer,
+    onPrimaryContainer = willow_theme_light_onPrimaryContainer,
+    secondary = willow_theme_light_secondary,
+    onSecondary = willow_theme_light_onSecondary,
+    secondaryContainer = willow_theme_light_secondaryContainer,
+    onSecondaryContainer = willow_theme_light_onSecondaryContainer,
+    tertiary = willow_theme_light_tertiary,
+    onTertiary = willow_theme_light_onTertiary,
+    tertiaryContainer = willow_theme_light_tertiaryContainer,
+    onTertiaryContainer = willow_theme_light_onTertiaryContainer,
+    error = willow_theme_light_error,
+    errorContainer = willow_theme_light_errorContainer,
+    onError = willow_theme_light_onError,
+    onErrorContainer = willow_theme_light_onErrorContainer,
+    background = willow_theme_light_background,
+    onBackground = willow_theme_light_onBackground,
+    surface = willow_theme_light_surface,
+    onSurface = willow_theme_light_onSurface,
+    surfaceVariant = willow_theme_light_surfaceVariant,
+    onSurfaceVariant = willow_theme_light_onSurfaceVariant,
+    outline = willow_theme_light_outline,
+    inverseOnSurface = willow_theme_light_inverseOnSurface,
+    inverseSurface = willow_theme_light_inverseSurface,
+    inversePrimary = willow_theme_light_inversePrimary,
+)
+private val WillowDarkThemeColors = darkColorScheme(
+    primary = willow_theme_dark_primary,
+    onPrimary = willow_theme_dark_onPrimary,
+    primaryContainer = willow_theme_dark_primaryContainer,
+    onPrimaryContainer = willow_theme_dark_onPrimaryContainer,
+    secondary = willow_theme_dark_secondary,
+    onSecondary = willow_theme_dark_onSecondary,
+    secondaryContainer = willow_theme_dark_secondaryContainer,
+    onSecondaryContainer = willow_theme_dark_onSecondaryContainer,
+    tertiary = willow_theme_dark_tertiary,
+    onTertiary = willow_theme_dark_onTertiary,
+    tertiaryContainer = willow_theme_dark_tertiaryContainer,
+    onTertiaryContainer = willow_theme_dark_onTertiaryContainer,
+    error = willow_theme_dark_error,
+    errorContainer = willow_theme_dark_errorContainer,
+    onError = willow_theme_dark_onError,
+    onErrorContainer = willow_theme_dark_onErrorContainer,
+    background = willow_theme_dark_background,
+    onBackground = willow_theme_dark_onBackground,
+    surface = willow_theme_dark_surface,
+    onSurface = willow_theme_dark_onSurface,
+    surfaceVariant = willow_theme_dark_surfaceVariant,
+    onSurfaceVariant = willow_theme_dark_onSurfaceVariant,
+    outline = willow_theme_dark_outline,
+    inverseOnSurface = willow_theme_dark_inverseOnSurface,
+    inverseSurface = willow_theme_dark_inverseSurface,
+    inversePrimary = willow_theme_dark_inversePrimary,
+)
 
-private val LightThemeColors = lightColorScheme(
+private val PurpleLightThemeColors = lightColorScheme(
 
     primary = md_theme_light_primary,
     onPrimary = md_theme_light_onPrimary,
@@ -60,7 +112,7 @@ private val LightThemeColors = lightColorScheme(
     inversePrimary = md_theme_light_inversePrimary,
 //	shadow = md_theme_light_shadow,
 )
-private val DarkThemeColors = darkColorScheme(
+private val PurpleDarkThemeColors = darkColorScheme(
 
     primary = md_theme_dark_primary,
     onPrimary = md_theme_dark_onPrimary,
@@ -293,25 +345,27 @@ fun AppTheme(
             }
             .map { settings ->
                 settings[DataStoreKeys.SETTINGS_THEME]
-                    ?: Theme.DEFAULT
+                    ?: Theme.WILLOW
             }
     }
-    val theme = themeFlow.collectAsState(initial = Theme.DEFAULT).value
+    val theme = themeFlow.collectAsState(initial = Theme.WILLOW).value
     val colors = when {
         enableDynamicColor && !useDarkTheme -> dynamicLightColorScheme(LocalContext.current)
         enableDynamicColor && useDarkTheme -> dynamicDarkColorScheme(LocalContext.current)
         useDarkTheme -> when (theme) {
+            Theme.PURPLE -> PurpleDarkThemeColors
             Theme.SAKURA -> SakuraDarkThemeColors
             Theme.GARDENIA -> GardeniaDarkThemeColors
             Theme.WATER -> WaterDarkThemeColors
-            else -> DarkThemeColors
+            else -> WillowDarkThemeColors
         }
 
         else -> when (theme) {
+            Theme.PURPLE -> PurpleLightThemeColors
             Theme.SAKURA -> SakuraLightThemeColors
             Theme.GARDENIA -> GardeniaLightThemeColors
             Theme.WATER -> WaterLightThemeColors
-            else -> LightThemeColors
+            else -> WillowLightThemeColors
         }
     }
 
