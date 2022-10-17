@@ -96,7 +96,11 @@ fun ExtensionPage(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Text(modifier = Modifier.padding(vertical = 16.dp),text = "未发现可用扩展", style = MaterialTheme.typography.labelLarge)
+                        Text(
+                            modifier = Modifier.padding(vertical = 16.dp),
+                            text = "未发现可用扩展",
+                            style = MaterialTheme.typography.labelLarge
+                        )
                         FilledTonalButton(
                             onClick = { /*TODO*/ }) {
                             FaIcon(
@@ -133,16 +137,19 @@ fun ExtensionPage(
                                 imageVector = Icons.Outlined.Block,
                                 contentDescription = "disabled"
                             )
+
                             AppModel.RUNNING_STATUS_ERROR -> Icon(
                                 imageVector = Icons.Outlined.ErrorOutline,
                                 contentDescription = "error",
                                 tint = MaterialTheme.colorScheme.error
                             )
+
                             AppModel.RUNNING_STATUS_RUNNING -> Icon(
                                 imageVector = Icons.Outlined.CheckCircleOutline,
                                 contentDescription = "running",
                                 tint = MaterialTheme.colorScheme.primary
                             )
+
                             AppModel.RUNNING_STATUS_CHECKING -> CircularProgressIndicator(
                                 modifier = Modifier.size(24.dp),
                                 strokeWidth = 2.dp
@@ -155,6 +162,18 @@ fun ExtensionPage(
                         }
                     }
                 )
+            }
+            item {
+                NormalPreference(
+                    title = "重置插件连接",
+                    subtitle = "断开并重新连接插件，不会影响插件运行状态",
+                    leadingIcon = {
+                        Icon(imageVector = Icons.Outlined.LinkOff, contentDescription = "reset link")
+                    },
+                    enabled = pluginList.isNotEmpty()
+                ) {
+                    
+                }
             }
         }
     }

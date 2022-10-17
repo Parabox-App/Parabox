@@ -272,13 +272,13 @@ class PluginConnObj(
     ) {
         if (isSuccess) {
             ParaboxResult.Success(
-                command = metadata.commandOrRequest,
+                commandOrRequest = metadata.commandOrRequest,
                 timestamp = metadata.timestamp,
                 obj = extra,
             )
         } else {
             ParaboxResult.Fail(
-                command = metadata.commandOrRequest,
+                commandOrRequest = metadata.commandOrRequest,
                 timestamp = metadata.timestamp,
                 errorCode = errorCode!!
             )
@@ -411,13 +411,13 @@ class PluginConnObj(
                         val errorCode = obj.getInt("errorCode")
                         val result = if (isSuccess) {
                             ParaboxResult.Success(
-                                command = metadata.commandOrRequest,
+                                commandOrRequest = metadata.commandOrRequest,
                                 timestamp = metadata.timestamp,
                                 obj = obj
                             )
                         } else {
                             ParaboxResult.Fail(
-                                command = metadata.commandOrRequest,
+                                commandOrRequest = metadata.commandOrRequest,
                                 timestamp = metadata.timestamp,
                                 errorCode = errorCode
                             )

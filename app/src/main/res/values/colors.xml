@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="purple_700">#FF3700B3</color>
+
     <color name="willow_light_primary">#3A6A1D</color>
     <color name="willow_light_onPrimary">#FFFFFF</color>
     <color name="willow_light_primaryContainer">#BAF395</color>

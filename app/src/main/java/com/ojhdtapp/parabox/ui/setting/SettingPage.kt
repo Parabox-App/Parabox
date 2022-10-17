@@ -22,13 +22,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import coil.ImageLoader
 import coil.compose.AsyncImage
+import coil.decode.SvgDecoder
+import coil.request.ImageRequest
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
@@ -590,6 +596,7 @@ fun ThemeBlock(
             .padding(horizontal = padding),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        val context = LocalContext.current
         var shapeState by remember {
             mutableStateOf(true)
         }
@@ -618,7 +625,21 @@ fun ThemeBlock(
                     },
                 contentAlignment = Alignment.Center
             ) {
-
+                val imageLoader = ImageLoader.Builder(context)
+                    .components {
+                        add(SvgDecoder.Factory())
+                    }
+                    .build()
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(R.drawable.ic_launcher_foreground_dynamic)
+                        .crossfade(true)
+                        .build(),
+                    imageLoader = imageLoader,
+                    contentDescription = null,
+                    contentScale = ContentScale.Inside,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
         }
         Spacer(modifier = Modifier.width(padding))
