@@ -88,6 +88,13 @@ fun RowScope.SearchArea(
                     modifier = modifier.fillMaxSize(),
                     contentPadding = paddingValues
                 ) {
+                    item{
+                        if(viewModel.personalContactState.value.data.isEmpty() && viewModel.groupContactState.value.data.isEmpty()){
+                            Box(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
+                                Text(text = "无搜索结果", style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
+                    }
                     item {
                         if (viewModel.personalContactState.value.data.isNotEmpty()) {
                             Text(

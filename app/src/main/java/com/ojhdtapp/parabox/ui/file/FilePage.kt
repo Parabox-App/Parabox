@@ -103,13 +103,13 @@ fun FilePage(
     val gDriveLogin by mainSharedViewModel.googleLoginFlow.collectAsState(initial = false)
     val gDriveTotalSpace by mainSharedViewModel.googleTotalSpaceFlow.collectAsState(initial = 0L)
     val gDriveUsedSpace by mainSharedViewModel.googleUsedSpaceFlow.collectAsState(initial = 0L)
-    val gDriveUsedSpacePercent = remember{
+    val gDriveUsedSpacePercent = remember {
         derivedStateOf {
             if (gDriveTotalSpace == 0L) 0 else (gDriveUsedSpace * 100 / gDriveTotalSpace).toInt()
         }
     }
     val gDriveAppUsedSpace by mainSharedViewModel.googleAppUsedSpaceFlow.collectAsState(initial = 0L)
-    val gDriveAppUsedSpacePercent = remember{
+    val gDriveAppUsedSpacePercent = remember {
         derivedStateOf {
             if (gDriveTotalSpace == 0L) 0 else (gDriveAppUsedSpace * 100 / gDriveTotalSpace).toInt()
         }
@@ -229,6 +229,7 @@ fun FilePage(
                             }
                             viewModel.setSearchBarActivateState(SearchAppBar.NONE)
                         }
+
                         is DropdownMenuItemEvent.SaveToCloud -> {}
                         is DropdownMenuItemEvent.DeleteFile -> {
                             deleteFileConfirm = true
@@ -294,6 +295,7 @@ fun FilePage(
                     onChangeArea = { viewModel.setArea(it) },
                     onAddOrRemoveFile = { viewModel.addOrRemoveItemOfSelectedFileList(it.fileId) }
                 )
+
                 FilePageState.SEARCH_AREA -> SearchArea(
                     mainState = mainState,
                     searchText = viewModel.searchText.value,
@@ -309,6 +311,7 @@ fun FilePage(
                     onUpdateTimeFilter = viewModel::setFilter,
                     onAddOrRemoveFile = { viewModel.addOrRemoveItemOfSelectedFileList(it.fileId) }
                 )
+
                 else -> {
                     AlertDialogDefaults.containerColor
                 }
@@ -390,7 +393,11 @@ fun MainArea(
                                 )
                         },
                         label = { Text(text = "文档") },
-                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+                        border = FilterChipDefaults.filterChipBorder(
+                            borderColor = MaterialTheme.colorScheme.outline.copy(
+                                alpha = 0.4f
+                            )
+                        )
                     )
                     FilterChip(
                         modifier = Modifier
@@ -412,7 +419,11 @@ fun MainArea(
                                 )
                         },
                         label = { Text(text = "演示文稿") },
-                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+                        border = FilterChipDefaults.filterChipBorder(
+                            borderColor = MaterialTheme.colorScheme.outline.copy(
+                                alpha = 0.4f
+                            )
+                        )
                     )
                     FilterChip(
                         modifier = Modifier
@@ -434,7 +445,11 @@ fun MainArea(
                                 )
                         },
                         label = { Text(text = "电子表格") },
-                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+                        border = FilterChipDefaults.filterChipBorder(
+                            borderColor = MaterialTheme.colorScheme.outline.copy(
+                                alpha = 0.4f
+                            )
+                        )
                     )
                     FilterChip(
                         modifier = Modifier
@@ -456,7 +471,11 @@ fun MainArea(
                                 )
                         },
                         label = { Text(text = "视频") },
-                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+                        border = FilterChipDefaults.filterChipBorder(
+                            borderColor = MaterialTheme.colorScheme.outline.copy(
+                                alpha = 0.4f
+                            )
+                        )
                     )
                     FilterChip(
                         modifier = Modifier
@@ -478,7 +497,11 @@ fun MainArea(
                                 )
                         },
                         label = { Text(text = "音频") },
-                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+                        border = FilterChipDefaults.filterChipBorder(
+                            borderColor = MaterialTheme.colorScheme.outline.copy(
+                                alpha = 0.4f
+                            )
+                        )
                     )
                     FilterChip(
                         modifier = Modifier
@@ -500,7 +523,11 @@ fun MainArea(
                                 )
                         },
                         label = { Text(text = "图片") },
-                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+                        border = FilterChipDefaults.filterChipBorder(
+                            borderColor = MaterialTheme.colorScheme.outline.copy(
+                                alpha = 0.4f
+                            )
+                        )
                     )
                     FilterChip(
                         modifier = Modifier
@@ -519,7 +546,11 @@ fun MainArea(
                                 )
                         },
                         label = { Text(text = "便携式文档") },
-                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+                        border = FilterChipDefaults.filterChipBorder(
+                            borderColor = MaterialTheme.colorScheme.outline.copy(
+                                alpha = 0.4f
+                            )
+                        )
                     )
                     FilterChip(
                         modifier = Modifier
@@ -541,7 +572,11 @@ fun MainArea(
                                 )
                         },
                         label = { Text(text = "压缩文件") },
-                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+                        border = FilterChipDefaults.filterChipBorder(
+                            borderColor = MaterialTheme.colorScheme.outline.copy(
+                                alpha = 0.4f
+                            )
+                        )
                     )
                 }
                 if (mainState.recentFilterData.isEmpty()) {
@@ -553,7 +588,7 @@ fun MainArea(
                         .build()
                     AsyncImage(
                         model = ImageRequest.Builder(context)
-                            .data(if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.empty_2_dynamic else R.drawable.empty_2)
+                            .data(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.empty_2_dynamic else R.drawable.empty_2)
                             .crossfade(true)
                             .build(),
                         imageLoader = imageLoader,
@@ -631,16 +666,27 @@ fun MainArea(
                 }
             }
         }
-        item{
+        item {
             if (!gDriveLogin) {
-                OutlinedCard(modifier = Modifier.padding(horizontal = 16.dp),shape = RoundedCornerShape(24.dp)) {
+                OutlinedCard(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    shape = RoundedCornerShape(24.dp)
+                ) {
                     Column(
-                        modifier = Modifier.fillMaxWidth().padding(24.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Surface(shape = CircleShape, color = MaterialTheme.colorScheme.secondaryContainer) {
-                            Box(modifier = Modifier.size(72.dp), contentAlignment = Alignment.Center) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.secondaryContainer
+                        ) {
+                            Box(
+                                modifier = Modifier.size(72.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
                                 Icon(
                                     imageVector = Icons.Outlined.CloudOff,
                                     contentDescription = null,
@@ -683,7 +729,7 @@ fun MainArea(
                 var expanded by remember {
                     mutableStateOf(false)
                 }
-                Box(modifier = Modifier.wrapContentSize()){
+                Box(modifier = Modifier.wrapContentSize()) {
                     OutlinedCard(modifier = Modifier
                         .padding(16.dp)
                         .fillMaxWidth(), onClick = {
@@ -716,19 +762,29 @@ fun MainArea(
                                     modifier = Modifier.padding(vertical = 4.dp)
                                 )
                                 Text(
-                                    text = "已使用 ${gDriveUsedSpacePercent}% 的存储空间（${FileUtil.getSizeString(gDriveUsedSpace)} / ${FileUtil.getSizeString(gDriveTotalSpace)}）",
+                                    text = "已使用 ${gDriveUsedSpacePercent}% 的存储空间（${
+                                        FileUtil.getSizeString(
+                                            gDriveUsedSpace
+                                        )
+                                    } / ${FileUtil.getSizeString(gDriveTotalSpace)}）",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
-                                    text = "其中应用使用 ${gDriveAppUsedSpacePercent}%（${FileUtil.getSizeString(gDriveAppUsedSpace)}）",
+                                    text = "其中应用使用 ${gDriveAppUsedSpacePercent}%（${
+                                        FileUtil.getSizeString(
+                                            gDriveAppUsedSpace
+                                        )
+                                    }）",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
                     }
-                    RoundedCornerDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false}) {
+                    RoundedCornerDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }) {
                         DropdownMenuItem(text = { Text(text = "退出登录") }, onClick = {
                             expanded = false
                             (context as MainActivity).getGoogleLoginAuth().signOut()
@@ -841,7 +897,11 @@ fun SearchArea(
                             }
                         },
                         label = { Text(text = mainState.sizeFilter.label) },
-                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+                        border = FilterChipDefaults.filterChipBorder(
+                            borderColor = MaterialTheme.colorScheme.outline.copy(
+                                alpha = 0.4f
+                            )
+                        )
                     )
                     FilterChip(
                         modifier = Modifier
@@ -932,7 +992,11 @@ fun SearchArea(
                             }
                         },
                         label = { Text(text = mainState.extensionFilter.label) },
-                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+                        border = FilterChipDefaults.filterChipBorder(
+                            borderColor = MaterialTheme.colorScheme.outline.copy(
+                                alpha = 0.4f
+                            )
+                        )
                     )
                     FilterChip(
                         modifier = Modifier
@@ -1003,7 +1067,7 @@ fun SearchArea(
                                         text = { Text("自定义范围") },
                                         onClick = {
                                             showTimeFilterDropDownMenu = false
-                                            if(!timeRangePicker.isAdded){
+                                            if (!timeRangePicker.isAdded) {
                                                 timeRangePicker.show(
                                                     (context as AppCompatActivity).supportFragmentManager,
                                                     "time_range_picker"
@@ -1015,9 +1079,25 @@ fun SearchArea(
                             }
                         },
                         label = { Text(text = mainState.timeFilter.label) },
-                        border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+                        border = FilterChipDefaults.filterChipBorder(
+                            borderColor = MaterialTheme.colorScheme.outline.copy(
+                                alpha = 0.4f
+                            )
+                        )
                     )
                     Spacer(modifier = Modifier.width(16.dp))
+                }
+            }
+            item {
+                if (mainState.filterData.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(text = "无搜索结果", style = MaterialTheme.typography.bodyMedium)
+                    }
                 }
             }
             itemsIndexed(
@@ -1140,6 +1220,7 @@ fun FileItem(
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                             }
+
                             is DownloadingState.Downloading -> {
                                 val progress by animateFloatAsState(targetValue = file.downloadingState.progress)
                                 CircularProgressIndicator(
@@ -1154,6 +1235,7 @@ fun FileItem(
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                             }
+
                             is DownloadingState.Failure -> {
                                 Icon(
                                     imageVector = Icons.Outlined.Warning,
@@ -1161,6 +1243,7 @@ fun FileItem(
                                     tint = MaterialTheme.colorScheme.error
                                 )
                             }
+
                             is DownloadingState.Done -> {
                                 Icon(
                                     imageVector = Icons.Outlined.FileDownloadDone,
