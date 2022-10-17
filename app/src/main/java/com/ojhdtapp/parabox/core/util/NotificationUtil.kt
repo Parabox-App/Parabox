@@ -18,11 +18,9 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
-import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
 import androidx.annotation.RequiresApi
-import androidx.core.content.ContextCompat.startActivity
 import androidx.core.content.getSystemService
 import androidx.core.net.toUri
 import androidx.datastore.preferences.core.emptyPreferences
@@ -257,11 +255,11 @@ class NotificationUtil(
                 val userIcon = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     userAvatarFlow.firstOrNull()?.let {
                         Icon.createWithAdaptiveBitmapContentUri(it)
-                    } ?: Icon.createWithResource(context, R.drawable.avatar)
+                    } ?: Icon.createWithResource(context, if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar)
                 } else {
                     userAvatarFlow.firstOrNull()?.let {
                         Icon.createWithContentUri(it)
-                    } ?: Icon.createWithResource(context, R.drawable.avatar)
+                    } ?: Icon.createWithResource(context, if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar)
                 }
                 val user =
                     Person.Builder().setName(userNameFlow.firstOrNull()).setIcon(userIcon).build()
@@ -277,7 +275,7 @@ class NotificationUtil(
                         val bitmap = (result as BitmapDrawable).bitmap
                         Icon.createWithAdaptiveBitmap(bitmap)
                     }
-                } ?: Icon.createWithResource(context, R.drawable.avatar)
+                } ?: Icon.createWithResource(context, if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar)
                 val person =
                     Person.Builder().setName(message.profile.name).setIcon(personIcon).build()
                 val groupIcon = contact.profile.avatar?.let { url ->

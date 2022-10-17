@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.message
 
+import android.os.Build
 import androidx.compose.animation.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -136,7 +137,7 @@ fun EditActionDialog(
                                             bottomEnd = 24.dp
                                         )
                                     ),
-                                painter = painterResource(id = R.drawable.background),
+                                painter = painterResource(id = if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.background_dynamic else R.drawable.background),
                                 contentDescription = "background",
                                 contentScale = ContentScale.Crop
                             )
@@ -174,7 +175,7 @@ fun EditActionDialog(
                                 ) {
                                     AsyncImage(
                                         model = ImageRequest.Builder(LocalContext.current)
-                                            .data(contact?.profile?.avatar ?: R.drawable.avatar)
+                                            .data(contact?.profile?.avatar ?: if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar)
                                             .crossfade(true)
                                             .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
                                             .build(),

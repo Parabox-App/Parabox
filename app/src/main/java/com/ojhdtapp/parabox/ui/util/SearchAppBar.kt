@@ -1,11 +1,10 @@
 package com.ojhdtapp.parabox.ui.util
 
 import android.net.Uri
-import android.util.Log
+import android.os.Build
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateIntAsState
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -35,14 +34,12 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.data.local.entity.DownloadingState
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.File
 import com.ojhdtapp.parabox.ui.message.DropdownMenuItemEvent
-import com.ojhdtapp.parabox.ui.util.RoundedCornerDropdownMenu
 
 object SearchAppBar {
     const val NONE = 0
@@ -253,7 +250,7 @@ fun SearchContentField(
             IconButton(onClick = { onAvatarClick() }) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
-                        .data(avatarUri?.let { Uri.parse(it) } ?: R.drawable.avatar)
+                        .data(avatarUri?.let { Uri.parse(it) } ?: if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar)
                         .crossfade(true)
                         .build(),
                     contentDescription = "avatar",

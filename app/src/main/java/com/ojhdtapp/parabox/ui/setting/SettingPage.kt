@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.setting
 
+import android.os.Build
 import androidx.compose.animation.*
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.animateDpAsState
@@ -632,7 +633,7 @@ fun ThemeBlock(
                     .build()
                 AsyncImage(
                     model = ImageRequest.Builder(context)
-                        .data(R.drawable.ic_launcher_foreground_dynamic)
+                        .data(if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.ic_launcher_foreground_dynamic else R.drawable.ic_launcher_foreground)
                         .crossfade(true)
                         .build(),
                     imageLoader = imageLoader,

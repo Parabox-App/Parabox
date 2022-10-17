@@ -1,12 +1,11 @@
 package com.ojhdtapp.parabox.ui.util
 
 import android.net.Uri
+import android.os.Build
 import androidx.compose.animation.*
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.VectorConverter
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,7 +34,6 @@ import com.guru.fontawesomecomposelib.FaIcons
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.domain.model.AppModel
-import com.ojhdtapp.parabox.ui.message.GroupInfoState
 
 @OptIn(
     ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class,
@@ -113,7 +111,7 @@ fun UserProfileDialog(
                         ) {
                             AsyncImage(
                                 model = ImageRequest.Builder(LocalContext.current)
-                                    .data(avatarUri?.let { Uri.parse(it) } ?: R.drawable.avatar)
+                                    .data(avatarUri?.let { Uri.parse(it) } ?: if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar)
                                     .crossfade(true)
                                     .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
                                     .build(),

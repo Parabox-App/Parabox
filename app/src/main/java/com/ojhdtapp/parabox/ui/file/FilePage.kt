@@ -3,6 +3,7 @@ package com.ojhdtapp.parabox.ui.file
 import android.app.Activity
 import android.app.Instrumentation
 import android.content.Intent
+import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.ManagedActivityResultLauncher
@@ -552,7 +553,7 @@ fun MainArea(
                         .build()
                     AsyncImage(
                         model = ImageRequest.Builder(context)
-                            .data(R.drawable.empty_2)
+                            .data(if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.empty_2_dynamic else R.drawable.empty_2)
                             .crossfade(true)
                             .build(),
                         imageLoader = imageLoader,

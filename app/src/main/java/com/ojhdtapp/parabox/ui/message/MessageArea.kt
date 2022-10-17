@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.message
 
+import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
@@ -623,7 +624,7 @@ fun RowScope.MessageArea(
                             .build()
                         AsyncImage(
                             model = ImageRequest.Builder(context)
-                                .data(R.drawable.empty)
+                                .data(if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.empty_dynamic else R.drawable.empty)
                                 .crossfade(true)
                                 .build(),
                             imageLoader = imageLoader,
