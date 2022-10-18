@@ -164,15 +164,20 @@ fun ExtensionPage(
                 )
             }
             item {
-                NormalPreference(
-                    title = "重置扩展连接",
-                    subtitle = "断开并重新连接扩展，不会影响扩展运行状态",
-                    leadingIcon = {
-                        Icon(imageVector = Icons.Outlined.LinkOff, contentDescription = "reset link")
-                    },
-                    enabled = pluginList.isNotEmpty()
-                ) {
-                    onEvent(ActivityEvent.ResetExtension)
+                if (pluginList.isNotEmpty()) {
+                    NormalPreference(
+                        title = "重置扩展连接",
+                        subtitle = "断开并重新连接扩展，不会影响扩展运行状态",
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Outlined.LinkOff,
+                                contentDescription = "reset link"
+                            )
+                        },
+                        enabled = true
+                    ) {
+                        onEvent(ActivityEvent.ResetExtension)
+                    }
                 }
             }
         }
