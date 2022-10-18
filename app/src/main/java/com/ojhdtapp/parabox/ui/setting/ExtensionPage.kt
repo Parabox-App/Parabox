@@ -165,14 +165,14 @@ fun ExtensionPage(
             }
             item {
                 NormalPreference(
-                    title = "重置插件连接",
-                    subtitle = "断开并重新连接插件，不会影响插件运行状态",
+                    title = "重置扩展连接",
+                    subtitle = "断开并重新连接扩展，不会影响扩展运行状态",
                     leadingIcon = {
                         Icon(imageVector = Icons.Outlined.LinkOff, contentDescription = "reset link")
                     },
                     enabled = pluginList.isNotEmpty()
                 ) {
-                    
+                    onEvent(ActivityEvent.ResetExtension)
                 }
             }
         }

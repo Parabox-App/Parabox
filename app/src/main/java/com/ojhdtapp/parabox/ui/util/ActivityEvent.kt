@@ -35,4 +35,5 @@ sealed interface ActivityEvent {
     object LaunchNotificationSetting: ActivityEvent
     object Backup: ActivityEvent
     object Restore: ActivityEvent
+    object ResetExtension: ActivityEvent
 }

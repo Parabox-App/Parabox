@@ -98,11 +98,7 @@ class PluginService : LifecycleService() {
         }
 
         // Query Plugins and Bind
-        installedPluginList = packageManager.queryIntentServices(Intent().apply {
-            action = "com.ojhdtapp.parabox.PLUGIN"
-        }, PackageManager.GET_META_DATA).map {
-            it.serviceInfo.applicationInfo
-        }
+        updateInstalledPluginList()
         updateAppModelList()
         bindPlugins()
     }
@@ -174,6 +170,14 @@ class PluginService : LifecycleService() {
     private fun unbindPlugins() {
         pluginConnectionMap.forEach {
             it.value.disconnect()
+        }
+    }
+
+    private fun updateInstalledPluginList(){
+        installedPluginList = packageManager.queryIntentServices(Intent().apply {
+            action = "com.ojhdtapp.parabox.PLUGIN"
+        }, PackageManager.GET_META_DATA).map {
+            it.serviceInfo.applicationInfo
         }
     }
 
@@ -255,6 +259,14 @@ class PluginService : LifecycleService() {
         } catch (e: TimeoutCancellationException) {
             false
         }
+    }
+
+    fun reset(){
+        unbindPlugins()
+        pluginConnectionMap.clear()
+        updateInstalledPluginList()
+        updateAppModelList()
+        bindPlugins()
     }
 }
 

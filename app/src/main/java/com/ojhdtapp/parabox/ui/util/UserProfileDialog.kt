@@ -151,9 +151,11 @@ fun UserProfileDialog(
                             onUpdateAvatar()
                         }
                     )
-                    Divider(
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
-                    )
+                    if(gDriveLogin) {
+                        Divider(
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+                        )
+                    }
                     if(gDriveLogin) {
                         PreferencesCategory(text = "已连接服务")
                     }

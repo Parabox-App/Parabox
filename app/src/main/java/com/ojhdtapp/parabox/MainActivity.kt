@@ -488,6 +488,14 @@ class MainActivity : AppCompatActivity() {
             }
             .restore()
     }
+    
+    private fun resetPluginConnection(){
+        pluginService?.also{
+            it.reset()
+            Toast.makeText(this, "已重置扩展连接", Toast.LENGTH_SHORT).show()
+        }
+
+    }
 
     fun getGoogleLoginAuth(): GoogleSignInClient {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -642,6 +650,9 @@ class MainActivity : AppCompatActivity() {
             }
             is ActivityEvent.Restore -> {
                 restoreDatabase()
+            }
+            is ActivityEvent.ResetExtension -> {
+                resetPluginConnection()
             }
         }
     }
