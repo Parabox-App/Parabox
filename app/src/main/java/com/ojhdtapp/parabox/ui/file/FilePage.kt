@@ -580,33 +580,40 @@ fun MainArea(
                     )
                 }
                 if (mainState.recentFilterData.isEmpty()) {
-                    val context = LocalContext.current
-                    val imageLoader = ImageLoader.Builder(context)
-                        .components {
-                            add(SvgDecoder.Factory())
-                        }
-                        .build()
-                    AsyncImage(
-                        model = ImageRequest.Builder(context)
-                            .data(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.empty_2_dynamic else R.drawable.empty_2)
-                            .crossfade(true)
-                            .build(),
-                        imageLoader = imageLoader,
-                        contentDescription = null,
-                        contentScale = ContentScale.FillWidth,
+                    Column(
                         modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .width(224.dp)
-                            .padding(top = 32.dp, bottom = 16.dp)
-                    )
-                    Text(
-                        modifier = Modifier
-                            .padding(bottom = 32.dp)
-                            .align(Alignment.CenterHorizontally),
-                        text = "暂无可显示的文件",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                            .fillMaxWidth()
+                            .defaultMinSize(minHeight = 320.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        val context = LocalContext.current
+                        val imageLoader = ImageLoader.Builder(context)
+                            .components {
+                                add(SvgDecoder.Factory())
+                            }
+                            .build()
+                        AsyncImage(
+                            model = ImageRequest.Builder(context)
+                                .data(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.empty_2_dynamic else R.drawable.empty_2)
+                                .crossfade(true)
+                                .build(),
+                            imageLoader = imageLoader,
+                            contentDescription = null,
+                            contentScale = ContentScale.FillWidth,
+                            modifier = Modifier
+                                .align(Alignment.CenterHorizontally)
+                                .width(224.dp)
+                                .padding(bottom = 16.dp)
+                        )
+                        Text(
+                            modifier = Modifier
+                                .align(Alignment.CenterHorizontally),
+                            text = "暂无可显示的文件",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 } else {
                     mainState.recentFilterData.take(5)
                         .forEachIndexed { index, file ->
@@ -669,7 +676,9 @@ fun MainArea(
         item {
             if (!gDriveLogin) {
                 OutlinedCard(
-                    modifier = Modifier.padding(horizontal = 16.dp),
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .animateItemPlacement(),
                     shape = RoundedCornerShape(24.dp)
                 ) {
                     Column(

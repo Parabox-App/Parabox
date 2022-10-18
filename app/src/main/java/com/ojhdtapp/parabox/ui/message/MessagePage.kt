@@ -414,7 +414,6 @@ fun MessagePage(
             floatingActionButton = {
                 if (sizeClass.widthSizeClass != WindowWidthSizeClass.Medium) {
                     ExtendedFloatingActionButton(
-                        modifier = Modifier.navigationBarsPadding(),
                         text = { Text(text = "发起会话") },
                         icon = {
                             Icon(

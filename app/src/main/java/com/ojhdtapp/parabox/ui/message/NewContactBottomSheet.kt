@@ -5,6 +5,7 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -123,14 +124,16 @@ fun NewContactBottomSheet(
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         } else {
+                            val scrollState = rememberLazyListState()
                             LazyRow(
+                                state = scrollState,
                                 modifier = Modifier
                                     .weight(1f)
                                     .fillMaxHeight(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                items(items = pluginList.sortedBy { mainSharedViewModel.selectedExtensionId.value == it.connectionType }) {
+                                items(items = pluginList.sortedByDescending { mainSharedViewModel.selectedExtensionId.value == it.connectionType }, key = {it.connectionType}) {
                                     FilterChip(
                                         modifier = Modifier
                                             .animateItemPlacement()

@@ -88,7 +88,8 @@ fun InterfacePage(
                     subtitleOn = "应用色彩将响应壁纸变化",
                     subtitleOff = "应用色彩响应壁纸变化（需要系统版本为 Android 12 或更高）",
                     checked = enableDynamicColor,
-                    onCheckedChange = viewModel::setEnableDynamicColor
+                    onCheckedChange = viewModel::setEnableDynamicColor,
+                    enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
                 )
             }
             item {
@@ -112,7 +113,7 @@ fun InterfacePage(
             item {
                 SimpleMenuPreference(
                     title = "语言",
-                    optionsMap = mapOf("zh-rCN" to "中文（中国）", "en" to "英语", "ja" to "日语"),
+                    optionsMap = mapOf("zh-rCN" to "中文（中国）", "en" to "English", "ja" to "日本語"),
                     onSelect = {})
             }
         }
