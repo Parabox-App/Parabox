@@ -434,16 +434,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun launchNotificationSetting() {
-        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
-        intent.putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
-        if (packageManager.resolveActivity(
-                intent,
-                PackageManager.MATCH_DEFAULT_ONLY
-            ) != null
-        ) startActivity(intent)
-    }
-
     private fun backupDatabase() {
         backup
             .database(appDatabase)
@@ -640,10 +630,6 @@ class MainActivity : AppCompatActivity() {
                         ).show()
                     }
                 }
-            }
-
-            is ActivityEvent.LaunchNotificationSetting -> {
-                launchNotificationSetting()
             }
             is ActivityEvent.Backup -> {
                 backupDatabase()

@@ -76,6 +76,7 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.*
 import com.ojhdtapp.parabox.BuildConfig
 import com.ojhdtapp.parabox.core.util.FileUtil
+import com.ojhdtapp.parabox.core.util.launchSetting
 import com.ojhdtapp.parabox.core.util.toDateAndTimeString
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.message_content.toMessageContentList
@@ -282,6 +283,7 @@ fun EditArea(
                 TextButton(
                     onClick = {
                         permissionDeniedDialog.value = false
+                        context.launchSetting()
                     }
                 ) {
                     Text("转到设置")

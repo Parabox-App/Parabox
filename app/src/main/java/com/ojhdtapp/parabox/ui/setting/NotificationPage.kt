@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.ojhdtapp.parabox.core.util.launchNotificationSetting
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.NormalPreference
@@ -138,7 +139,7 @@ fun NotificationPage(
                         )
                     },
                     onClick = {
-                        onEvent(ActivityEvent.LaunchNotificationSetting)
+                        context.launchNotificationSetting()
                     }
                 )
             }

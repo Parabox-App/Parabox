@@ -29,5 +29,7 @@ object DataStoreKeys{
     val GOOGLE_USED_SPACE = longPreferencesKey("google_used_space")
     val GOOGLE_APP_USED_SPACE = longPreferencesKey("google_app_used_space")
 
+    val REQUEST_NOTIFICATION_PERMISSION_FIRST_TIME = booleanPreferencesKey("show_notification_first_time")
+
     const val DEFAULT_USER_NAME = "Me"
 }

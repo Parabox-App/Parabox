@@ -1,5 +1,8 @@
 package com.ojhdtapp.parabox.ui.setting
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
@@ -22,11 +25,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.guru.fontawesomecomposelib.FaIcon
 import com.guru.fontawesomecomposelib.FaIcons
+import com.ojhdtapp.parabox.core.util.BrowserUtil
+import com.ojhdtapp.parabox.core.util.launchNotificationSetting
+import com.ojhdtapp.parabox.core.util.launchPlayStore
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.NormalPreference
@@ -49,6 +56,7 @@ fun SupportPage(
 ) {
     val viewModel = hiltViewModel<SettingPageViewModel>()
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -99,7 +107,10 @@ fun SupportPage(
                         )
                     },
                     onClick = {
-
+                        BrowserUtil.launchURL(
+                            context = context,
+                            url = "https://docs.parabox.ojhdt.dev/"
+                        )
                     }
                 )
             }
@@ -114,7 +125,11 @@ fun SupportPage(
                         )
                     },
                     onClick = {
-
+                        BrowserUtil.composeEmail(
+                            context = context,
+                            addresses = arrayOf("ojhdtmail@gmail.com"),
+                            subject = "Parabox 用户反馈"
+                        )
                     }
                 )
             }
@@ -132,7 +147,7 @@ fun SupportPage(
                         )
                     },
                     onClick = {
-
+                        BrowserUtil.launchURL(context = context, url = "https://parabox.ojhdt.dev/")
                     }
                 )
             }
@@ -147,7 +162,10 @@ fun SupportPage(
                         )
                     },
                     onClick = {
-
+                        BrowserUtil.launchURL(
+                            context = context,
+                            url = "https://github.com/ojhdt/parabox"
+                        )
                     }
                 )
             }
@@ -196,7 +214,7 @@ fun SupportPage(
                         )
                     },
                     onClick = {
-
+                        context.launchPlayStore(context.packageName)
                     }
                 )
             }
@@ -211,7 +229,6 @@ fun SupportPage(
                         )
                     },
                     onClick = {
-
                     }
                 )
             }

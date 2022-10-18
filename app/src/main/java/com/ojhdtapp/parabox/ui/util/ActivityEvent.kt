@@ -32,7 +32,6 @@ sealed interface ActivityEvent {
     object RefreshMessage: ActivityEvent
     data class ShowInBubble(val contact: Contact, val message: Message, val channelId: String) : ActivityEvent
     object LaunchApp : ActivityEvent
-    object LaunchNotificationSetting: ActivityEvent
     object Backup: ActivityEvent
     object Restore: ActivityEvent
     object ResetExtension: ActivityEvent

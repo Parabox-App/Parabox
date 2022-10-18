@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.datastore.preferences.core.edit
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
@@ -58,6 +59,8 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
+import com.ojhdtapp.parabox.core.util.dataStore
+import com.ojhdtapp.parabox.core.util.launchSetting
 import com.ojhdtapp.parabox.core.util.toTimeUntilNow
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
@@ -70,6 +73,7 @@ import com.ramcosta.composedestinations.navigation.navigate
 import com.valentinilk.shimmer.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
@@ -113,6 +117,7 @@ fun MessagePage(
     val contactState by viewModel.contactStateFlow.collectAsState()
     val archivedContact by viewModel.archivedContactStateFlow.collectAsState()
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
     var showDeleteGroupedContactConfirm by remember {
         mutableStateOf(false)
     }
@@ -123,8 +128,14 @@ fun MessagePage(
     }
     val notificationPermissionDeniedDialog = remember { mutableStateOf(false) }
     LaunchedEffect(true) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && notificationPermissionState?.status?.isGranted == false) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+            && notificationPermissionState?.status?.isGranted == false
+            && context.dataStore.data.first()[DataStoreKeys.REQUEST_NOTIFICATION_PERMISSION_FIRST_TIME] != false
+        ) {
             notificationPermissionDeniedDialog.value = true
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.REQUEST_NOTIFICATION_PERMISSION_FIRST_TIME] = false
+            }
         }
         viewModel.uiEventFlow.collectLatest { it ->
             when (it) {
@@ -191,6 +202,7 @@ fun MessagePage(
                     androidx.compose.material3.TextButton(
                         onClick = {
                             notificationPermissionDeniedDialog.value = false
+                            context.launchSetting()
                         }
                     ) {
                         Text("转到设置")
