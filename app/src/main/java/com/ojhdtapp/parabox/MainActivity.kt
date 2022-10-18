@@ -18,6 +18,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.contract.ActivityResultContracts.CreateDocument
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
@@ -124,6 +125,10 @@ class MainActivity : AppCompatActivity() {
 
     // Shared ViewModel
     val mainSharedViewModel by viewModels<MainSharedViewModel>()
+
+    // Backup and Restore
+    private lateinit var backupLocationSelector: ActivityResultLauncher<String>
+    private lateinit var restoreLocationSelector: ActivityResultLauncher<Array<String>>
 
     private fun openFile(file: File) {
         file.downloadPath?.let {
@@ -438,11 +443,12 @@ class MainActivity : AppCompatActivity() {
         backup
             .database(appDatabase)
             .enableLogDebug(true)
-            .backupLocation(RoomBackup.BACKUP_FILE_LOCATION_CUSTOM_DIALOG)
+            .backupLocation(RoomBackup.BACKUP_FILE_LOCATION_EXTERNAL)
             .apply {
                 onCompleteListener { success, message, exitCode ->
                     if (success) {
-                        Toast.makeText(this@MainActivity, "备份完成", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@MainActivity, "请选择存储路径", Toast.LENGTH_SHORT).show()
+                        backupLocationSelector.launch("Backup_${System.currentTimeMillis().toDateAndTimeString()}.sqlite3")
                     } else {
                         Toast.makeText(
                             this@MainActivity,
@@ -455,16 +461,20 @@ class MainActivity : AppCompatActivity() {
             .backup()
     }
 
-    private fun restoreDatabase() {
+    private fun restoreDatabase(file: java.io.File) {
         backup
             .database(appDatabase)
             .enableLogDebug(true)
-            .backupLocation(RoomBackup.BACKUP_FILE_LOCATION_CUSTOM_DIALOG)
+            .backupLocation(RoomBackup.BACKUP_FILE_LOCATION_CUSTOM_FILE)
+            .backupLocationCustomFile(file)
             .apply {
                 onCompleteListener { success, message, exitCode ->
                     if (success) {
-                        Toast.makeText(this@MainActivity, "恢复完成 即将重启", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@MainActivity, "恢复完成 即将重启", Toast.LENGTH_SHORT)
+                            .show()
+                        file.delete()
                         lifecycleScope.launch {
+                            delay(1000)
                             restartApp(Intent(this@MainActivity, MainActivity::class.java))
                         }
                     } else {
@@ -478,9 +488,9 @@ class MainActivity : AppCompatActivity() {
             }
             .restore()
     }
-    
-    private fun resetPluginConnection(){
-        pluginService?.also{
+
+    private fun resetPluginConnection() {
+        pluginService?.also {
             it.reset()
             Toast.makeText(this, "已重置扩展连接", Toast.LENGTH_SHORT).show()
         }
@@ -631,12 +641,20 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
+
             is ActivityEvent.Backup -> {
                 backupDatabase()
             }
+
             is ActivityEvent.Restore -> {
-                restoreDatabase()
+                restoreLocationSelector.launch(arrayOf(
+                    "application/vnd.sqlite3",
+                    "application/x-sqlite3",
+                    "application/octet-stream",
+                    "application/x-trash",
+                ))
             }
+
             is ActivityEvent.ResetExtension -> {
                 resetPluginConnection()
             }
@@ -739,6 +757,42 @@ class MainActivity : AppCompatActivity() {
                 // decision.
             }
         }
+
+        backupLocationSelector =
+            registerForActivityResult(CreateDocument("application/vnd.sqlite3")) { uri ->
+                if (uri != null) {
+                    getExternalFilesDir("backup")?.also { dir ->
+                        dir.listFiles()?.firstOrNull()?.also { file ->
+                            contentResolver.openOutputStream(uri)?.use { output ->
+                                file.inputStream().use { input ->
+                                    input.copyTo(output)
+                                }
+                            }
+                            file.delete()
+                        }
+                        Toast.makeText(this, "备份已完成", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Toast.makeText(this, "操作取消", Toast.LENGTH_SHORT).show()
+                }
+
+            }
+
+        restoreLocationSelector =
+                registerForActivityResult(ActivityResultContracts.OpenDocument()){ uri ->
+                    uri?.let {
+                        contentResolver.openInputStream(uri)?.use { input ->
+                            getExternalFilesDir("backup")?.also { dir ->
+                                dir.listFiles()?.forEach { it.delete() }
+                                val file = java.io.File(dir, "chat.db")
+                                file.outputStream().use { output ->
+                                    input.copyTo(output)
+                                }
+                                restoreDatabase(file = file)
+                            }
+                        }
+                    }
+                }
 
         // File Download Process
         lifecycleScope.launch(Dispatchers.IO) {
