@@ -66,7 +66,7 @@ fun CloudPage(
         modifier = Modifier,
         showDialog = showDialog,
         contactList = viewModel.contactStateFlow.collectAsState().value.filter { it.contactId == it.senderId },
-        contactCheck = { false},
+        contactCheck = { it.shouldBackup},
         onValueChange = { target, value ->
             viewModel.onContactBackupChange(target, value)
         },

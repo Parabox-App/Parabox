@@ -42,6 +42,7 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import androidx.work.WorkQuery
 import androidx.work.workDataOf
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
@@ -504,8 +505,9 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    fun backupFile() {
+    fun backupFileToCloudService() {
         val workManager = WorkManager.getInstance(this)
+
         lifecycleScope.launch(Dispatchers.IO) {
             val enableAutoBackup =
                 dataStore.data.first()[DataStoreKeys.SETTINGS_AUTO_BACKUP] ?: false
@@ -557,6 +559,14 @@ class MainActivity : AppCompatActivity() {
                         .then(uploadRequest)
                         .then(cleanUpRequest)
                         .enqueue()
+
+                    launch(Dispatchers.Main) {
+                        workManager.getWorkInfosByTagLiveData("${it.fileId}").observe(this@MainActivity) {
+                            it.forEach {
+                                Log.d("parabox", "work:${it.state.name}:${it.progress}")
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -887,6 +897,9 @@ class MainActivity : AppCompatActivity() {
 
         // Backup
         backup = RoomBackup(this)
+
+        // Cloud Backup
+        backupFileToCloudService()
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {

@@ -110,7 +110,7 @@ class MainRepositoryImpl @Inject constructor(
                                 size = it.size,
                                 timestamp = it.lastModifiedTime,
                                 profileName = dto.subjectProfile.name,
-                                relatedContactId = contactIdDeferred.await(),
+                                relatedContactId = dto.pluginConnection.objectId,
                                 relatedMessageId = messageIdDeferred.await()
                             )
                         )

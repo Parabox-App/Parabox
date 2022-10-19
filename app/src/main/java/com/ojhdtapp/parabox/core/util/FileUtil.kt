@@ -38,8 +38,10 @@ object FileUtil {
     }
 
     fun getUriFromBitmap(context: Context, bm: Bitmap): Uri? {
-
-        val tempFile = context.externalCacheDir?.let { File(it, "temp_${System.currentTimeMillis().toDateAndTimeString()}.png") }
+        val targetDir = File(context.externalCacheDir, "bm")
+        if (!targetDir.exists()) targetDir.mkdirs()
+        val tempFile =
+            File(targetDir, "temp_${System.currentTimeMillis().toDateAndTimeString()}.png")
         val bytes = ByteArrayOutputStream()
         bm.compress(Bitmap.CompressFormat.PNG, 100, bytes)
         val bitmapData = bytes.toByteArray()
@@ -48,15 +50,18 @@ object FileUtil {
         fileOutPut.write(bitmapData)
         fileOutPut.flush()
         fileOutPut.close()
-        return getUriOfFile(context, tempFile!!)
+        return getUriOfFile(context, tempFile)
     }
 
     fun getUriFromBitmapWithCleanCache(context: Context, bm: Bitmap): Uri? {
-        context.externalCacheDir?.listFiles()?.sortedByDescending { it.lastModified() }?.forEachIndexed() { index, file ->
-            if (index > 20) {
-                file.delete()
+        val targetDir = File(context.externalCacheDir, "bm")
+        if (!targetDir.exists()) targetDir.mkdirs()
+        targetDir.listFiles()?.sortedByDescending { it.lastModified() }
+            ?.forEachIndexed() { index, file ->
+                if (index > 20) {
+                    file.delete()
+                }
             }
-        }
         return getUriFromBitmap(context, bm)
     }
 
@@ -276,22 +281,24 @@ object FileUtil {
 
     fun getAvailableFileName(context: Context, acquireName: String, withNumber: Int = 0): String {
         val separatorIndex = acquireName.lastIndexOf('.')
-        if(separatorIndex == -1) throw IndexOutOfBoundsException("no separator found in name")
-        else{
+        if (separatorIndex == -1) throw IndexOutOfBoundsException("no separator found in name")
+        else {
             val path = File(
                 Environment.getExternalStoragePublicDirectory("${Environment.DIRECTORY_DOWNLOADS}/Parabox"),
-                acquireName.substringBeforeLast('.') + (if(withNumber == 0) "" else "-${withNumber}") + "." + acquireName.substringAfterLast('.')
+                acquireName.substringBeforeLast('.') + (if (withNumber == 0) "" else "-${withNumber}") + "." + acquireName.substringAfterLast(
+                    '.'
+                )
             )
-            if(!path.exists()) return acquireName
+            if (!path.exists()) return acquireName
             else return getAvailableFileName(context, acquireName, withNumber + 1)
         }
     }
 
-    fun openFile(context: Context, file: File, extension: String){
+    fun openFile(context: Context, file: File, extension: String) {
         val mineType = MimeTypeMap.getSingleton()
             .getMimeTypeFromExtension(extension.lowercase(Locale.getDefault()))
         val uri = getUriOfFile(context, file)
-        Intent().apply{
+        Intent().apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             setAction(Intent.ACTION_VIEW)
             setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
