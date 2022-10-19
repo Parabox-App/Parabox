@@ -190,6 +190,12 @@ fun FilePage(
         },
         onDismiss = { mainSharedViewModel.setEditUserNameDialogState(false) }
     )
+    WorkInfoDialog(
+        showDialog = mainSharedViewModel.workInfoDialogState.value,
+        workInfoMap = mainSharedViewModel.workInfoMap,
+        sizeClass = sizeClass,
+        onDismiss = { mainSharedViewModel.setWorkInfoDialogState(false) }
+    )
     Scaffold(modifier = modifier,
         snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
         topBar = {
@@ -293,7 +299,10 @@ fun FilePage(
                         viewModel.setSearchBarActivateState(it)
                     },
                     onChangeArea = { viewModel.setArea(it) },
-                    onAddOrRemoveFile = { viewModel.addOrRemoveItemOfSelectedFileList(it.fileId) }
+                    onAddOrRemoveFile = { viewModel.addOrRemoveItemOfSelectedFileList(it.fileId) },
+                    onShowWorkInfoDialog = {
+                        mainSharedViewModel.setWorkInfoDialogState(true)
+                    }
                 )
 
                 FilePageState.SEARCH_AREA -> SearchArea(
@@ -343,7 +352,8 @@ fun MainArea(
     onEvent: (ActivityEvent) -> Unit,
     onChangeArea: (area: Int) -> Unit,
     onAddOrRemoveFile: (file: File) -> Unit,
-    onSetRecentFilter: (type: Int, value: Boolean) -> Unit
+    onSetRecentFilter: (type: Int, value: Boolean) -> Unit,
+    onShowWorkInfoDialog:()-> Unit,
 ) {
     val context = LocalContext.current
     LazyVerticalGrid(
@@ -674,8 +684,45 @@ fun MainArea(
             }
         }
         item {
+            Surface(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 3.dp,
+                onClick = {
+                    onShowWorkInfoDialog()
+                }
+            ) {
+                Row(
+                    modifier = Modifier
+                        .height(48.dp)
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Backup,
+                        contentDescription = "backup",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                    Text(
+                        modifier = Modifier.weight(1f),
+                        text = "1 项备份任务正在进行",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Icon(
+                        imageVector = Icons.Outlined.NavigateNext,
+                        contentDescription = "next",
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                }
+            }
+        }
+        item {
             Crossfade(
-                targetState = gDriveLogin
+                targetState = gDriveLogin,
+                modifier = Modifier.padding(vertical = 16.dp)
             ) {
                 if (it) {
                     Column() {
@@ -684,7 +731,7 @@ fun MainArea(
                         }
                         Box(modifier = Modifier.wrapContentSize()) {
                             OutlinedCard(modifier = Modifier
-                                .padding(16.dp)
+                                .padding(horizontal = 16.dp)
                                 .fillMaxWidth(), onClick = {
                                 expanded = true
                             }) {

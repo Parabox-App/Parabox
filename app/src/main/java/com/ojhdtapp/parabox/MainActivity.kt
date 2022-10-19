@@ -552,20 +552,17 @@ class MainActivity : AppCompatActivity() {
                             )
                         )
                         .build()
-                    workManager.beginUniqueWork(
+                    val continuation = workManager.beginUniqueWork(
                         "${it.fileId}",
                         ExistingWorkPolicy.KEEP,
                         downloadRequest
                     )
                         .then(uploadRequest)
                         .then(cleanUpRequest)
-                        .enqueue()
-
+                    continuation.enqueue()
                     launch(Dispatchers.Main) {
-                        workManager.getWorkInfosByTagLiveData("${it.fileId}").observe(this@MainActivity) {
-                            it.forEach {
-                                Log.d("parabox", "work:${it.state.name}:${it.progress}")
-                            }
+                        continuation.workInfosLiveData.observe(this@MainActivity){ workInfoList ->
+                            mainSharedViewModel.putWorkInfo(it, workInfoList)
                         }
                     }
                 }

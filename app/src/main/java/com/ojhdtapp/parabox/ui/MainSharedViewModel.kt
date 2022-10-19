@@ -5,6 +5,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
@@ -12,6 +13,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
+import androidx.work.WorkInfo
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendTargetType
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.At
@@ -383,5 +385,21 @@ class MainSharedViewModel @Inject constructor(
                 }
             }
         }
+    }
+    private val _workInfoMap = mutableStateMapOf<File, List<WorkInfo>>()
+    val workInfoMap get() = _workInfoMap
+    fun putWorkInfo(file: File, workInfoList: List<WorkInfo>) {
+        _workInfoMap[file] = workInfoList
+    }
+    // WorkInfo
+    private val _workInfoDialogState = mutableStateOf<Boolean>(false)
+    val workInfoDialogState: State<Boolean> = _workInfoDialogState
+    fun setWorkInfoDialogState(value: Boolean) {
+        _workInfoDialogState.value = value
+    }
+    private val _workInfoStateFlow = MutableStateFlow<Map<File, List<WorkInfo>>>(emptyMap())
+    val workInfoStateFlow get() = _workInfoStateFlow.asStateFlow()
+    fun setWorkInfoStateFlow(value: Map<File, List<WorkInfo>>) {
+        _workInfoStateFlow.value = value
     }
 }

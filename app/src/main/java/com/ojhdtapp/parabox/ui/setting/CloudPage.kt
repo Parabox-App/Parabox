@@ -309,9 +309,9 @@ fun CloudPage(
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = "启用自动备份后，将在满足以下条件时自动备份您的目标会话文件：\n" +
-                                "处于 Wi-Fi 网络连接时；\n" +
-                                "未处于“电量不足模式；”\n" +
-                                "设备处于空闲状态；\n" +
+                                "处于 Wi-Fi 网络连接时\n" +
+                                "未处于“电量不足模式”\n" +
+                                "设备处于空闲状态\n" +
                                 "未处于“存储空间不足”状态。",
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant

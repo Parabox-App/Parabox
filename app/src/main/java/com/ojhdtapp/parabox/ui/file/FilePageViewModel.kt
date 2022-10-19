@@ -6,11 +6,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.WorkManager
 import com.ojhdtapp.parabox.core.util.Resource
+import com.ojhdtapp.parabox.domain.model.File
 import com.ojhdtapp.parabox.domain.use_case.DeleteFile
 import com.ojhdtapp.parabox.domain.use_case.GetFiles
 import com.ojhdtapp.parabox.ui.util.SearchAppBar
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
