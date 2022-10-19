@@ -6,6 +6,7 @@ import android.database.Cursor
 import android.database.CursorIndexOutOfBoundsException
 import android.net.Uri
 import android.os.Environment
+import android.util.Log
 import android.webkit.MimeTypeMap
 import android.widget.Toast
 import com.ojhdtapp.parabox.data.local.entity.DownloadingState
@@ -89,7 +90,7 @@ object DownloadManagerUtil {
                         emit(DownloadingState.Done)
                     }
 
-                    if (downloading.get()) delay(1000)
+                    if (downloading.get()) delay(500)
                 }
             } catch (e: CursorIndexOutOfBoundsException) {
                 emit(DownloadingState.Failure)
@@ -122,7 +123,7 @@ object DownloadManagerUtil {
                 if (bytesDownloaded == bytesTotal) {
                     return true
                 }
-                if (downloading.get()) delay(1000)
+                if (downloading.get()) delay(500)
             }
             return false
         } catch (e: CursorIndexOutOfBoundsException) {

@@ -602,7 +602,7 @@ class MainRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getFilesByContactIdsStatic(contactIds: List<Long>): List<File> {
-        return database.fileDao.getFilesByContactIdsStatic(contactIds).map { it.toFile() }
+        return database.fileDao.getShouldBackupFiles(contactIds).map { it.toFile() }
     }
 
     override fun updateDownloadingState(state: DownloadingState, target: File) {

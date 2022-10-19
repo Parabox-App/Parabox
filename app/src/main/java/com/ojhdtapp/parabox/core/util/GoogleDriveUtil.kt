@@ -2,6 +2,7 @@ package com.ojhdtapp.parabox.core.util
 
 import android.content.Context
 import android.util.Log
+import android.webkit.MimeTypeMap
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.api.client.extensions.android.http.AndroidHttp
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
@@ -146,13 +147,15 @@ object GoogleDriveUtil {
         return coroutineScope {
             withContext(Dispatchers.IO) {
                 try {
+                    val minetype = MimeTypeMap.getSingleton()
+                        .getMimeTypeFromExtension(FileUtil.getExtension(fileName))
                     getDriveService(context)?.let { driveService ->
                         val fileMetadata = com.google.api.services.drive.model.File()
                         fileMetadata.name = fileName
                         fileMetadata.parents = listOf(folderId)
                         val mediaContent =
                             com.google.api.client.http.FileContent(
-                                "image/jpeg",
+                                minetype,
                                 java.io.File(filePath)
                             )
                         val file = driveService.files().create(fileMetadata, mediaContent)

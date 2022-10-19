@@ -307,4 +307,8 @@ object FileUtil {
             context.startActivity(it)
         }
     }
+
+    fun getExtension(fileName: String): String {
+        return fileName.substringAfterLast('.', "*/*")
+    }
 }

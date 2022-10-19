@@ -2,18 +2,23 @@ package com.ojhdtapp.parabox.domain.worker
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
+import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.ojhdtapp.parabox.domain.use_case.UpdateFile
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
 
-class CleanUpFileWorker @Inject constructor(
-    appContext: Context,
-    workerParams: WorkerParameters,
-    val updateFile: UpdateFile
+@HiltWorker
+class CleanUpFileWorker @AssistedInject constructor(
+    @Assisted appContext: Context,
+    @Assisted workerParams: WorkerParameters,
+    private val updateFile: UpdateFile
 ) : CoroutineWorker(appContext, workerParams) {
     override suspend fun doWork(): Result {
         return withContext(Dispatchers.IO) {

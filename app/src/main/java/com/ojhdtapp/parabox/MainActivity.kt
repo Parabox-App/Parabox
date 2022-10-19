@@ -519,7 +519,6 @@ class MainActivity : AppCompatActivity() {
                 }
                 val constraints = Constraints.Builder()
                     .setRequiredNetworkType(NetworkType.UNMETERED)
-                    .setRequiresDeviceIdle(true)
                     .setRequiresStorageNotLow(true)
                     .build()
                 files.forEach {
