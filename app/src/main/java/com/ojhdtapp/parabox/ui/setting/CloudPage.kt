@@ -292,10 +292,31 @@ fun CloudPage(
                     title = "同时删除本地文件",
                     subtitleOff = "备份完成后自动删除本地文件",
                     subtitleOn = "启用",
-                    checked = autoDeleteLocalFile && autoBackup && defaultBackupService != 0,
+//                    checked = autoDeleteLocalFile && autoBackup && defaultBackupService != 0,
+                    checked = true,
                     onCheckedChange = viewModel::setAutoDeleteLocalFile,
-                    enabled = autoBackup && defaultBackupService != 0
+//                    enabled = autoBackup && defaultBackupService != 0,
+                    enabled = false
                 )
+            }
+            item {
+                Column(modifier = Modifier.padding(24.dp, 16.dp)) {
+                    Icon(
+                        imageVector = Icons.Outlined.Info,
+                        contentDescription = "info",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "启用自动备份后，将在满足以下条件时自动备份您的目标会话文件：\n" +
+                                "处于 Wi-Fi 网络连接时；\n" +
+                                "未处于“电量不足模式；”\n" +
+                                "设备处于空闲状态；\n" +
+                                "未处于“存储空间不足”状态。",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }

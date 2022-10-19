@@ -674,133 +674,136 @@ fun MainArea(
             }
         }
         item {
-            if (!gDriveLogin) {
-                OutlinedCard(
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp)
-                        .animateItemPlacement(),
-                    shape = RoundedCornerShape(24.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.secondaryContainer
-                        ) {
-                            Box(
-                                modifier = Modifier.size(72.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.CloudOff,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(24.dp),
-                                    tint = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
+            Crossfade(
+                targetState = gDriveLogin
+            ) {
+                if (it) {
+                    Column() {
+                        var expanded by remember {
+                            mutableStateOf(false)
+                        }
+                        Box(modifier = Modifier.wrapContentSize()) {
+                            OutlinedCard(modifier = Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(), onClick = {
+                                expanded = true
+                            }) {
+                                Row(modifier = Modifier.padding(16.dp)) {
+                                    Surface(
+                                        modifier = Modifier.size(48.dp),
+                                        shape = CircleShape,
+                                        color = MaterialTheme.colorScheme.secondaryContainer
+                                    ) {
+                                        Box(
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            FaIcon(
+                                                faIcon = FaIcons.GoogleDrive,
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.width(16.dp))
+                                    Column() {
+                                        Text(
+                                            text = "Google Drive",
+                                            style = MaterialTheme.typography.titleMedium
+                                        )
+                                        LinearProgressIndicator(
+                                            progress = 0.6f,
+                                            modifier = Modifier.padding(vertical = 4.dp)
+                                        )
+                                        Text(
+                                            text = "已使用 ${gDriveUsedSpacePercent}% 的存储空间（${
+                                                FileUtil.getSizeString(
+                                                    gDriveUsedSpace
+                                                )
+                                            } / ${FileUtil.getSizeString(gDriveTotalSpace)}）",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Text(
+                                            text = "其中应用使用 ${gDriveAppUsedSpacePercent}%（${
+                                                FileUtil.getSizeString(
+                                                    gDriveAppUsedSpace
+                                                )
+                                            }）",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                            RoundedCornerDropdownMenu(
+                                expanded = expanded,
+                                onDismissRequest = { expanded = false }) {
+                                DropdownMenuItem(text = { Text(text = "退出登录") }, onClick = {
+                                    expanded = false
+                                    (context as MainActivity).getGoogleLoginAuth().signOut()
+                                        .addOnCompleteListener {
+                                            onLogoutGoogleDrive()
+                                        }
+                                })
                             }
                         }
-                        Text(
-                            modifier = Modifier.padding(top = 16.dp),
-                            text = "未连接云端服务",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Text(
-                            modifier = Modifier.padding(vertical = 16.dp),
-                            text = "连接云端服务可将您的会话文件备份至云端",
-                            style = MaterialTheme.typography.labelLarge
-                        )
-                        FilledTonalButton(
-                            onClick = {
-                                val signInIntent =
-                                    (context as MainActivity).getGoogleLoginAuth().signInIntent
-                                gDriveLauncher.launch(signInIntent)
-                            }) {
-                            Icon(
-                                imageVector = Icons.Outlined.Cloud,
-                                contentDescription = "cloud",
-                                modifier = Modifier
-                                    .padding(end = 8.dp)
-                                    .size(ButtonDefaults.IconSize),
-                            )
-                            Text(text = "连接云端服务")
-                        }
                     }
-                }
-            }
-        }
-        item {
-            if (gDriveLogin) {
-                var expanded by remember {
-                    mutableStateOf(false)
-                }
-                Box(modifier = Modifier.wrapContentSize()) {
-                    OutlinedCard(modifier = Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth(), onClick = {
-                        expanded = true
-                    }) {
-                        Row(modifier = Modifier.padding(16.dp)) {
+                } else {
+                    OutlinedCard(
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp)
+                            .animateItemPlacement(),
+                        shape = CardDefaults.outlinedShape
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
                             Surface(
-                                modifier = Modifier.size(48.dp),
                                 shape = CircleShape,
                                 color = MaterialTheme.colorScheme.secondaryContainer
                             ) {
                                 Box(
-                                    modifier = Modifier.fillMaxSize(),
+                                    modifier = Modifier.size(72.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    FaIcon(
-                                        faIcon = FaIcons.GoogleDrive,
-                                        tint = MaterialTheme.colorScheme.primary
+                                    Icon(
+                                        imageVector = Icons.Outlined.CloudOff,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(24.dp),
+                                        tint = MaterialTheme.colorScheme.onSecondaryContainer
                                     )
                                 }
                             }
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column() {
-                                Text(
-                                    text = "Google Drive",
-                                    style = MaterialTheme.typography.titleMedium
+                            Text(
+                                modifier = Modifier.padding(top = 16.dp),
+                                text = "未连接云端服务",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Text(
+                                modifier = Modifier.padding(vertical = 16.dp),
+                                text = "连接云端服务可将您的会话文件备份至云端",
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                            FilledTonalButton(
+                                onClick = {
+                                    val signInIntent =
+                                        (context as MainActivity).getGoogleLoginAuth().signInIntent
+                                    gDriveLauncher.launch(signInIntent)
+                                }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Cloud,
+                                    contentDescription = "cloud",
+                                    modifier = Modifier
+                                        .padding(end = 8.dp)
+                                        .size(ButtonDefaults.IconSize),
                                 )
-                                LinearProgressIndicator(
-                                    progress = 0.6f,
-                                    modifier = Modifier.padding(vertical = 4.dp)
-                                )
-                                Text(
-                                    text = "已使用 ${gDriveUsedSpacePercent}% 的存储空间（${
-                                        FileUtil.getSizeString(
-                                            gDriveUsedSpace
-                                        )
-                                    } / ${FileUtil.getSizeString(gDriveTotalSpace)}）",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = "其中应用使用 ${gDriveAppUsedSpacePercent}%（${
-                                        FileUtil.getSizeString(
-                                            gDriveAppUsedSpace
-                                        )
-                                    }）",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                                Text(text = "连接云端服务")
                             }
                         }
-                    }
-                    RoundedCornerDropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }) {
-                        DropdownMenuItem(text = { Text(text = "退出登录") }, onClick = {
-                            expanded = false
-                            (context as MainActivity).getGoogleLoginAuth().signOut()
-                                .addOnCompleteListener {
-                                    onLogoutGoogleDrive()
-                                }
-                        })
                     }
                 }
             }

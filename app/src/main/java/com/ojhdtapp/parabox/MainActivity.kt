@@ -519,7 +519,9 @@ class MainActivity : AppCompatActivity() {
                 }
                 val constraints = Constraints.Builder()
                     .setRequiredNetworkType(NetworkType.UNMETERED)
+                    .setRequiresBatteryNotLow(true)
                     .setRequiresStorageNotLow(true)
+                    .setRequiresDeviceIdle(true)
                     .build()
                 files.forEach {
                     val downloadRequest = OneTimeWorkRequestBuilder<DownloadFileWorker>()
