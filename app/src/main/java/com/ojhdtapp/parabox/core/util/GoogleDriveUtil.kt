@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.FileOutputStream
 import java.io.IOException
 import java.net.SocketException
 
@@ -136,19 +137,52 @@ object GoogleDriveUtil {
         }
     }
 
-    suspend fun uploadFile(context: Context, folderId: String, fileName: String, filePath: String) {
-        coroutineScope {
-            launch {
-                getDriveService(context)?.let { driveService ->
-                    val fileMetadata = com.google.api.services.drive.model.File()
-                    fileMetadata.name = fileName
-                    fileMetadata.parents = listOf(folderId)
-                    val mediaContent =
-                        com.google.api.client.http.FileContent("image/jpeg", java.io.File(filePath))
-                    val file = driveService.files().create(fileMetadata, mediaContent)
-                        .setFields("id")
-                        .execute()
-                    Log.d("GoogleDriveUtil", "File ID: " + file.id)
+    suspend fun uploadFile(
+        context: Context,
+        folderId: String,
+        fileName: String,
+        filePath: String
+    ): String? {
+        return coroutineScope {
+            withContext(Dispatchers.IO) {
+                try {
+                    getDriveService(context)?.let { driveService ->
+                        val fileMetadata = com.google.api.services.drive.model.File()
+                        fileMetadata.name = fileName
+                        fileMetadata.parents = listOf(folderId)
+                        val mediaContent =
+                            com.google.api.client.http.FileContent(
+                                "image/jpeg",
+                                java.io.File(filePath)
+                            )
+                        val file = driveService.files().create(fileMetadata, mediaContent)
+                            .execute()
+                        Log.d("GoogleDriveUtil", "File ID: " + file.id)
+                        file.id
+                    }
+                } catch (e: Exception) {
+                    null
+                }
+            }
+        }
+    }
+
+    suspend fun downloadFile(
+        context: Context,
+        fileId: String
+    ){
+        return coroutineScope {
+            withContext(Dispatchers.IO) {
+                try {
+                    getDriveService(context)?.let { driveService ->
+                        val file = driveService.files().get(fileId).execute()
+                        val fileContent = driveService.files().get(fileId).executeMediaAsInputStream()
+                        val fileOutputStream = FileOutputStream(file.name)
+                        fileContent.copyTo(fileOutputStream)
+                        fileOutputStream.close()
+                    }
+                } catch (e: Exception) {
+                    null
                 }
             }
         }

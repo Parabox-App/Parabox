@@ -16,4 +16,8 @@ class GetFiles @Inject constructor(
     fun allStatic() : List<File>{
         return repository.getAllFilesStatic()
     }
+
+    suspend fun byContactIdsStatic(contactIds: List<Long>) : List<File>{
+        return repository.getFilesByContactIdsStatic(contactIds)
+    }
 }

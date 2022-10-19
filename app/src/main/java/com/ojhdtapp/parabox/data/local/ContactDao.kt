@@ -74,6 +74,8 @@ interface ContactDao {
 
     @Query("SELECT * FROM contact_entity WHERE sender != name ORDER BY timestamp DESC LIMIT :limit")
     suspend fun getGroupContacts(limit: Int): List<ContactEntity>
+    @Query("SELECT * FROM contact_entity WHERE shouldBackup AND senderId = contactId")
+    suspend fun getShouldBackupContacts(): List<ContactEntity>
 
     @Query("SELECT * FROM contact_entity WHERE name LIKE '%' || :query || '%'")
     fun queryContact(query: String): List<ContactEntity>

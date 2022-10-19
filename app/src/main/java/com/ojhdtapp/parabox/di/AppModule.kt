@@ -10,6 +10,7 @@ import com.ojhdtapp.parabox.data.repository.MainRepositoryImpl
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import com.ojhdtapp.parabox.domain.use_case.*
 import com.ojhdtapp.parabox.domain.util.GsonParser
+import com.ojhdtapp.parabox.domain.worker.UploadFileWorker
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

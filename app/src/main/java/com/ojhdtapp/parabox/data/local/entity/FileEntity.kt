@@ -1,12 +1,9 @@
 package com.ojhdtapp.parabox.data.local.entity
 
-import android.os.Parcelable
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.ojhdtapp.parabox.domain.model.File
-import kotlinx.parcelize.Parcelize
-import kotlinx.parcelize.IgnoredOnParcel
 
 @Entity(tableName = "file_entity")
 data class FileEntity(
@@ -18,6 +15,7 @@ data class FileEntity(
     val profileName: String,
     val downloadingState: DownloadingState = DownloadingState.None,
     val downloadPath: String? = null,
+    val relatedContactId: Long,
     val relatedMessageId: Long,
     @PrimaryKey(autoGenerate = true) val fileId: Long = 0,
     val downloadId: Long? = null,
@@ -33,6 +31,7 @@ data class FileEntity(
         profileName,
         downloadingState,
         downloadPath,
+        relatedContactId,
         relatedMessageId,
         fileId,
         downloadId,
@@ -49,6 +48,7 @@ data class FileDownloadingStateUpdate(
     val downloadingState: DownloadingState,
 )
 
+@Entity
 data class FileDownloadInfoUpdate(
     @ColumnInfo(name = "fileId")
     val fileId: Long,
@@ -56,6 +56,16 @@ data class FileDownloadInfoUpdate(
     val downloadPath: String?,
     @ColumnInfo(name = "downloadId")
     val downloadId: Long?
+)
+
+@Entity
+data class FileCloudInfoUpdate(
+    @ColumnInfo(name = "fileId")
+    val fileId: Long,
+    @ColumnInfo(name = "cloudType")
+    val cloudType: Int,
+    @ColumnInfo(name = "cloudId")
+    val cloudId: String
 )
 
 sealed class DownloadingState {

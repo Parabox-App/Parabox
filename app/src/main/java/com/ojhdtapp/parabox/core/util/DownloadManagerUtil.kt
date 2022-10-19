@@ -45,6 +45,27 @@ object DownloadManagerUtil {
         }
     }
 
+    fun downloadWithManagerToUri(context: Context, url: String, destinationUri: Uri): Long? {
+        return try {
+            val downloadManager =
+                context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            val request = DownloadManager.Request(Uri.parse(url)).apply {
+                setMimeType(
+                    MimeTypeMap.getSingleton()
+                        .getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(url))
+                )
+                setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI)
+                setAllowedOverRoaming(false)
+                setNotificationVisibility(DownloadManager.Request.VISIBILITY_HIDDEN)
+                setDestinationUri(destinationUri)
+            }
+            downloadManager.enqueue(request)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
     fun retrieve(context: Context, id: Long): Flow<DownloadingState> {
         val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
         return flow {
@@ -80,4 +101,32 @@ object DownloadManagerUtil {
     private fun status(cursor: Cursor) = cursor.intValue(DownloadManager.COLUMN_STATUS)
     private fun Cursor.column(which: String) = this.getColumnIndex(which)
     private fun Cursor.intValue(which: String): Int = this.getInt(column(which))
+
+    suspend fun retrieveResultOnly(context: Context, id: Long) : Boolean{
+        val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        try {
+            val downloading = AtomicBoolean(true)
+
+            while (downloading.get()) {
+                val query = DownloadManager.Query().setFilterById(id)
+                val cursor = downloadManager.query(query)
+
+                cursor.moveToFirst()
+
+                val bytesDownloaded =
+                    cursor.intValue(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)
+                val bytesTotal = cursor.intValue(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)
+
+                if (isSuccessful(cursor)) downloading.set(false)
+                cursor.close()
+                if (bytesDownloaded == bytesTotal) {
+                    return true
+                }
+                if (downloading.get()) delay(1000)
+            }
+            return false
+        } catch (e: CursorIndexOutOfBoundsException) {
+            return false
+        }
+    }
 }

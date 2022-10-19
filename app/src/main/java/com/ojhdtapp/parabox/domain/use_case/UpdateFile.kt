@@ -15,4 +15,8 @@ class UpdateFile @Inject constructor(
     fun downloadInfo(path: String?, downloadId: Long?, target: File) {
         repository.updateDownloadInfo(path, downloadId, target)
     }
+
+    fun cloudInfo(cloudType: Int, cloudId: String, targetId: Long) {
+        repository.updateCloudInfo(cloudType, cloudId, targetId)
+    }
 }

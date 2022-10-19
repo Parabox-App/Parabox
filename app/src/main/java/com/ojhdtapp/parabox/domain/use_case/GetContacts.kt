@@ -28,6 +28,10 @@ class GetContacts @Inject constructor(
         return repository.getGroupContacts(limit)
     }
 
+    suspend fun shouldBackup(): List<Contact>{
+        return repository.getShouldBackupContacts()
+    }
+
     suspend fun queryById(contactId: Long) : Contact?{
         return repository.getContactById(contactId)
     }

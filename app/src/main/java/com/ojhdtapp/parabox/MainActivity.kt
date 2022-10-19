@@ -5,24 +5,19 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
-import android.content.pm.PackageManager
 import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.net.Uri
 import android.os.*
 import android.provider.MediaStore
-import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.CreateDocument
 import androidx.activity.viewModels
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -37,12 +32,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.core.os.LocaleListCompat
 import androidx.core.view.WindowCompat
 import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.work.Constraints
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
@@ -50,13 +50,11 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.Scope
-import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.api.services.drive.DriveScopes
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.DownloadingState
 import com.ojhdtapp.parabox.domain.model.AppModel
-import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.File
 import com.ojhdtapp.parabox.domain.service.PluginListListener
 import com.ojhdtapp.parabox.domain.service.PluginService
@@ -64,6 +62,9 @@ import com.ojhdtapp.parabox.domain.use_case.GetContacts
 import com.ojhdtapp.parabox.domain.use_case.GetFiles
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
 import com.ojhdtapp.parabox.domain.use_case.UpdateFile
+import com.ojhdtapp.parabox.domain.worker.CleanUpFileWorker
+import com.ojhdtapp.parabox.domain.worker.DownloadFileWorker
+import com.ojhdtapp.parabox.domain.worker.UploadFileWorker
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.NavGraphs
 import com.ojhdtapp.parabox.ui.theme.AppTheme
@@ -79,6 +80,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import de.raphaelebner.roomdatabasebackup.core.RoomBackup
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import linc.com.amplituda.Amplituda
 import linc.com.amplituda.Compress
 import java.io.IOException
@@ -447,8 +449,13 @@ class MainActivity : AppCompatActivity() {
             .apply {
                 onCompleteListener { success, message, exitCode ->
                     if (success) {
-                        Toast.makeText(this@MainActivity, "请选择存储路径", Toast.LENGTH_SHORT).show()
-                        backupLocationSelector.launch("Backup_${System.currentTimeMillis().toDateAndTimeString()}.sqlite3")
+                        Toast.makeText(this@MainActivity, "请选择存储路径", Toast.LENGTH_SHORT)
+                            .show()
+                        backupLocationSelector.launch(
+                            "Backup_${
+                                System.currentTimeMillis().toDateAndTimeString()
+                            }.sqlite3"
+                        )
                     } else {
                         Toast.makeText(
                             this@MainActivity,
@@ -495,6 +502,64 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "已重置扩展连接", Toast.LENGTH_SHORT).show()
         }
 
+    }
+
+    fun backupFile() {
+        val workManager = WorkManager.getInstance(this)
+        lifecycleScope.launch(Dispatchers.IO) {
+            val enableAutoBackup =
+                dataStore.data.first()[DataStoreKeys.SETTINGS_AUTO_BACKUP] ?: false
+            val defaultBackupService =
+                dataStore.data.first()[DataStoreKeys.SETTINGS_DEFAULT_BACKUP_SERVICE] ?: 0
+            if (enableAutoBackup && defaultBackupService != 0) {
+                val files = getContacts.shouldBackup().map { it.contactId }.let {
+                    getFiles.byContactIdsStatic(it)
+                }
+                val constraints = Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.UNMETERED)
+                    .setRequiresDeviceIdle(true)
+                    .setRequiresStorageNotLow(true)
+                    .build()
+                files.forEach {
+                    val downloadRequest = OneTimeWorkRequestBuilder<DownloadFileWorker>()
+                        .setConstraints(constraints)
+                        .addTag("${it.fileId}")
+                        .setInputData(
+                            workDataOf(
+                                "url" to it.url,
+                                "name" to it.name,
+                            )
+                        )
+                        .build()
+                    val uploadRequest = OneTimeWorkRequestBuilder<UploadFileWorker>()
+                        .setConstraints(constraints)
+                        .addTag("${it.fileId}")
+                        .setInputData(
+                            workDataOf(
+                                "default_backup_service" to defaultBackupService,
+                            )
+                        )
+                        .build()
+                    val cleanUpRequest = OneTimeWorkRequestBuilder<CleanUpFileWorker>()
+                        .setConstraints(constraints)
+                        .addTag("${it.fileId}")
+                        .setInputData(
+                            workDataOf(
+                                "fileId" to it.fileId,
+                            )
+                        )
+                        .build()
+                    workManager.beginUniqueWork(
+                        "${it.fileId}",
+                        ExistingWorkPolicy.KEEP,
+                        downloadRequest
+                    )
+                        .then(uploadRequest)
+                        .then(cleanUpRequest)
+                        .enqueue()
+                }
+            }
+        }
     }
 
     fun getGoogleLoginAuth(): GoogleSignInClient {
@@ -647,12 +712,14 @@ class MainActivity : AppCompatActivity() {
             }
 
             is ActivityEvent.Restore -> {
-                restoreLocationSelector.launch(arrayOf(
-                    "application/vnd.sqlite3",
-                    "application/x-sqlite3",
-                    "application/octet-stream",
-                    "application/x-trash",
-                ))
+                restoreLocationSelector.launch(
+                    arrayOf(
+                        "application/vnd.sqlite3",
+                        "application/x-sqlite3",
+                        "application/octet-stream",
+                        "application/x-trash",
+                    )
+                )
             }
 
             is ActivityEvent.ResetExtension -> {
@@ -779,20 +846,20 @@ class MainActivity : AppCompatActivity() {
             }
 
         restoreLocationSelector =
-                registerForActivityResult(ActivityResultContracts.OpenDocument()){ uri ->
-                    uri?.let {
-                        contentResolver.openInputStream(uri)?.use { input ->
-                            getExternalFilesDir("backup")?.also { dir ->
-                                dir.listFiles()?.forEach { it.delete() }
-                                val file = java.io.File(dir, "chat.db")
-                                file.outputStream().use { output ->
-                                    input.copyTo(output)
-                                }
-                                restoreDatabase(file = file)
+            registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+                uri?.let {
+                    contentResolver.openInputStream(uri)?.use { input ->
+                        getExternalFilesDir("backup")?.also { dir ->
+                            dir.listFiles()?.forEach { it.delete() }
+                            val file = java.io.File(dir, "chat.db")
+                            file.outputStream().use { output ->
+                                input.copyTo(output)
                             }
+                            restoreDatabase(file = file)
                         }
                     }
                 }
+            }
 
         // File Download Process
         lifecycleScope.launch(Dispatchers.IO) {

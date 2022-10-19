@@ -34,6 +34,7 @@ interface MainRepository {
     fun getArchivedContacts() : Flow<Resource<List<Contact>>>
     fun getPersonalContacts() : Flow<Resource<List<Contact>>>
     fun getGroupContacts(limit: Int): Flow<Resource<List<Contact>>>
+    suspend fun getShouldBackupContacts() : List<Contact>
     fun getPluginConnectionByContactId(contactId: Long): List<PluginConnection>
     fun getSpecifiedContactWithMessages(contactId: Long): Flow<Resource<ContactWithMessages>>
     fun getSpecifiedListOfContactWithMessages(contactIds: List<Long>): Flow<Resource<List<ContactWithMessages>>>
@@ -53,8 +54,10 @@ interface MainRepository {
 
     fun getFiles(query: String = "") : Flow<Resource<List<File>>>
     fun getAllFilesStatic() : List<File>
+    suspend fun getFilesByContactIdsStatic(contactIds: List<Long>) : List<File>
     fun updateDownloadingState(state: DownloadingState, target: File)
     fun updateDownloadInfo(path: String?, downloadId: Long?, target: File)
+    fun updateCloudInfo(cloudType: Int, cloudId: String, targetId: Long)
     suspend fun deleteFile(fileId : Long)
     fun queryContact(query: String) : Flow<Resource<List<Contact>>>
     fun queryContactWithMessages(query: String): Flow<Resource<List<ContactWithMessages>>>

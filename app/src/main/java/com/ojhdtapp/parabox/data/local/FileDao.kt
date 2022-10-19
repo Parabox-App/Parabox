@@ -2,6 +2,7 @@ package com.ojhdtapp.parabox.data.local
 
 import androidx.room.*
 import com.ojhdtapp.parabox.data.local.entity.FileAndMessage
+import com.ojhdtapp.parabox.data.local.entity.FileCloudInfoUpdate
 import com.ojhdtapp.parabox.data.local.entity.FileDownloadInfoUpdate
 import com.ojhdtapp.parabox.data.local.entity.FileDownloadingStateUpdate
 import com.ojhdtapp.parabox.data.local.entity.FileEntity
@@ -16,6 +17,8 @@ interface FileDao {
     fun updateDownloadingState(obj: FileDownloadingStateUpdate)
     @Update(entity = FileEntity::class)
     fun updateDownloadInfo(obj: FileDownloadInfoUpdate)
+    @Update(entity = FileEntity::class)
+    fun updateCloudInfo(obj: FileCloudInfoUpdate)
     @Query("DELETE FROM file_entity WHERE fileId = :fileId")
     suspend fun deleteFileByFileId(fileId: Long)
 
@@ -30,6 +33,9 @@ interface FileDao {
 
     @Query("SELECT * FROM file_entity WHERE extension in (:extension)")
     fun getFilesByExtensions(extension:List<String>): Flow<List<FileEntity>>
+
+    @Query("SELECT * FROM file_entity WHERE relatedContactId IN (:contactIds)")
+    suspend fun getFilesByContactIdsStatic(contactIds: List<Long>): List<FileEntity>
 
     @Transaction
     @Query("SELECT * FROM file_entity WHERE fileId = :fileId LIMIT 1")

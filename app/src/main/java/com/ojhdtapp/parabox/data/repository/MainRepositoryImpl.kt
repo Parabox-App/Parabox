@@ -7,7 +7,6 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.paging.PagingSource
 import com.ojhdtapp.parabox.core.HiltApplication
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.ReceiveMessageDto
-import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendMessageDto
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.getContentString
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
@@ -18,10 +17,7 @@ import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.*
 import com.ojhdtapp.parabox.data.remote.dto.*
 import com.ojhdtapp.parabox.domain.model.*
-import com.ojhdtapp.parabox.domain.model.message_content.getContentString
 import com.ojhdtapp.parabox.domain.repository.MainRepository
-import com.ojhdtapp.parabox.domain.service.PluginService
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import java.io.IOException
@@ -114,6 +110,7 @@ class MainRepositoryImpl @Inject constructor(
                                 size = it.size,
                                 timestamp = it.lastModifiedTime,
                                 profileName = dto.subjectProfile.name,
+                                relatedContactId = contactIdDeferred.await(),
                                 relatedMessageId = messageIdDeferred.await()
                             )
                         )
@@ -449,6 +446,10 @@ class MainRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun getShouldBackupContacts(): List<Contact> {
+        return database.contactDao.getShouldBackupContacts().map { it.toContact() }
+    }
+
     override fun getPluginConnectionByContactId(contactId: Long): List<PluginConnection> {
         return database.contactDao.getContactWithPluginConnections(contactId = contactId).pluginConnectionList.map { it.toPluginConnection() }
     }
@@ -600,6 +601,10 @@ class MainRepositoryImpl @Inject constructor(
         return database.fileDao.getAllFilesStatic().map { it.toFile() }
     }
 
+    override suspend fun getFilesByContactIdsStatic(contactIds: List<Long>): List<File> {
+        return database.fileDao.getFilesByContactIdsStatic(contactIds).map { it.toFile() }
+    }
+
     override fun updateDownloadingState(state: DownloadingState, target: File) {
         database.fileDao.updateDownloadingState(
             FileDownloadingStateUpdate(
@@ -615,6 +620,16 @@ class MainRepositoryImpl @Inject constructor(
                 target.fileId,
                 path,
                 downloadId
+            )
+        )
+    }
+
+    override fun updateCloudInfo(cloudType: Int, cloudId: String, targetId: Long) {
+        database.fileDao.updateCloudInfo(
+            FileCloudInfoUpdate(
+                targetId,
+                cloudType,
+                cloudId
             )
         )
     }
