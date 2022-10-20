@@ -177,7 +177,7 @@ object GoogleDriveUtil {
                     val result = driveService.files().list()
                         .setQ("'$folderId' in parents")
                         .setSpaces("drive")
-                        .setFields("nextPageToken, files(id, name, size, fullFileExtension, createdTime)")
+                        .setFields("nextPageToken, files(id, name, size, fullFileExtension, createdTime, webContentLink)")
                         .execute()
                     result.files
                 }

@@ -19,6 +19,7 @@ import java.io.File
 class DownloadFileWorker(private val appContext: Context, workerParams: WorkerParameters) :
     CoroutineWorker(appContext, workerParams) {
     override suspend fun doWork(): Result {
+        Log.d("parabox", "download file worker start")
         return withContext(Dispatchers.IO) {
             val url = inputData.getString("url")
             val fileName = inputData.getString("name")

@@ -1,6 +1,8 @@
 package com.ojhdtapp.parabox.ui.file
 
+import android.util.Log
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,10 +24,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -37,12 +41,17 @@ import com.ojhdtapp.parabox.domain.model.File
 fun WorkInfoDialog(
     modifier: Modifier = Modifier,
     showDialog: Boolean,
-    workInfoMap: Map<File, List<WorkInfo>>,
+    workInfoMap: SnapshotStateMap<File, List<WorkInfo>>,
     onCancel: (fileId: Long) -> Unit,
     sizeClass: WindowSizeClass,
     onDismiss: () -> Unit,
 ) {
     if (showDialog) {
+        val workInfoList by remember{
+            derivedStateOf {
+                workInfoMap.toList()
+            }
+        }
         Dialog(
             onDismissRequest = {
                 onDismiss()
@@ -84,9 +93,9 @@ fun WorkInfoDialog(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
                     )
-                    LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
+                    LazyColumn(modifier = Modifier.heightIn(max = 300.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         item {
-                            if (workInfoMap.isEmpty()) {
+                            if (workInfoList.isEmpty()) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -97,7 +106,7 @@ fun WorkInfoDialog(
                                 }
                             }
                         }
-                        items(items = workInfoMap.toList(), key = { it.first.fileId }) {
+                        items(items = workInfoList, key = { it.first.fileId }) {
                             WorkInfoItem(
                                 file = it.first,
                                 workInfoList = it.second,
@@ -120,11 +129,10 @@ fun WorkInfoItem(
     workInfoList: List<WorkInfo>,
     onClick: () -> Unit
 ) {
-    val cancelable by remember{
+    val cancelable by remember {
         derivedStateOf {
-            !workInfoList.any {
-                it.state == WorkInfo.State.CANCELLED
-            }
+            !workInfoList.any { it.state == WorkInfo.State.CANCELLED }
+                    && !workInfoList.all { it.state == WorkInfo.State.SUCCEEDED }
         }
     }
     val des = remember {
@@ -162,6 +170,7 @@ fun WorkInfoItem(
                         else -> "正在执行"
                     }
                 }
+
                 else -> "未知进度"
             }
 
@@ -172,7 +181,9 @@ fun WorkInfoItem(
             Text(
                 text = file.name,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                overflow = TextOverflow.Ellipsis,
+                maxLines = 1,
             )
             Text(
                 text = des.value,

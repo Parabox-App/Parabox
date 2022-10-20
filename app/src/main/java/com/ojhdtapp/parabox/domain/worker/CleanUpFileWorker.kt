@@ -21,6 +21,7 @@ class CleanUpFileWorker @AssistedInject constructor(
     private val updateFile: UpdateFile
 ) : CoroutineWorker(appContext, workerParams) {
     override suspend fun doWork(): Result {
+        Log.d("parabox", "clean up file worker start")
         return withContext(Dispatchers.IO) {
             val fileId = inputData.getLong("fileId", 0L)
             val service = inputData.getInt("service", 0)

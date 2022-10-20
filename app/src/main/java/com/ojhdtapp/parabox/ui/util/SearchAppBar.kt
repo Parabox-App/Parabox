@@ -106,12 +106,13 @@ fun SearchAppBar(
             tonalElevation = 3.dp,
             shadowElevation = shadowElevation.value,
         ) {
-            Box(modifier = Modifier
-                .fillMaxSize()
-                .clickable {
-                    if (activateState == SearchAppBar.NONE)
-                        onActivateStateChanged(SearchAppBar.SEARCH)
-                }, contentAlignment = Alignment.BottomCenter
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable {
+                        if (activateState == SearchAppBar.NONE)
+                            onActivateStateChanged(SearchAppBar.SEARCH)
+                    }, contentAlignment = Alignment.BottomCenter
             ) {
                 when (activateState) {
                     SearchAppBar.SELECT -> {
@@ -125,6 +126,7 @@ fun SearchAppBar(
                             onDropdownMenuItemEvent = onDropdownMenuItemEvent
                         )
                     }
+
                     SearchAppBar.SEARCH, SearchAppBar.NONE -> {
                         SearchContentField(
                             modifier = Modifier.align(Alignment.BottomCenter),
@@ -141,6 +143,7 @@ fun SearchAppBar(
                             onAvatarClick = onAvatarClick
                         )
                     }
+
                     SearchAppBar.ARCHIVE_SELECT -> {
                         SelectSpecContentField(
                             modifier = Modifier.align(Alignment.BottomCenter),
@@ -149,6 +152,7 @@ fun SearchAppBar(
                             onDropdownMenuItemEvent = onDropdownMenuItemEvent
                         )
                     }
+
                     SearchAppBar.ARCHIVE -> {
                         PageContentField(
                             modifier = Modifier.align(Alignment.BottomCenter),
@@ -158,6 +162,7 @@ fun SearchAppBar(
                             onDropdownMenuItemEvent = onDropdownMenuItemEvent
                         )
                     }
+
                     SearchAppBar.FILE_SELECT -> {
                         FileSelectContentField(
                             modifier = Modifier.align(Alignment.BottomCenter),
@@ -168,6 +173,7 @@ fun SearchAppBar(
                             onDropdownMenuItemEvent = onDropdownMenuItemEvent
                         )
                     }
+
                     else -> {}
                 }
             }
@@ -250,7 +256,8 @@ fun SearchContentField(
             IconButton(onClick = { onAvatarClick() }) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
-                        .data(avatarUri?.let { Uri.parse(it) } ?: if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar)
+                        .data(avatarUri?.let { Uri.parse(it) }
+                            ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar)
                         .crossfade(true)
                         .build(),
                     contentDescription = "avatar",
@@ -577,44 +584,50 @@ fun FileSelectContentField(
                         onDismissRequest = { expanded = false },
                         modifier = Modifier.width(192.dp)
                     ) {
-                        DropdownMenuItem(
-                            text = { Text(text = "保存至云端") },
-                            onClick = {
-                                onDropdownMenuItemEvent(DropdownMenuItemEvent.SaveToCloud)
-                                onActivateStateChanged(SearchAppBar.NONE)
-                                expanded = false
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Outlined.CloudUpload,
-                                    contentDescription = null
-                                )
-                            })
-                        DropdownMenuItem(
-                            text = { Text(text = "跳转至上下文") },
-                            onClick = {
-                                onDropdownMenuItemEvent(DropdownMenuItemEvent.RedirectToConversation)
-                                onActivateStateChanged(SearchAppBar.NONE)
-                                expanded = false
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Outlined.OpenInNew,
-                                    contentDescription = null
-                                )
-                            })
-                        DropdownMenuItem(
-                            text = { Text(text = "删除记录") },
-                            onClick = {
-                                onDropdownMenuItemEvent(DropdownMenuItemEvent.DeleteFile)
-                                expanded = false
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Outlined.DeleteOutline,
-                                    contentDescription = null
-                                )
-                            })
+                        if (it.any { it.cloudId == null }) {
+                            DropdownMenuItem(
+                                text = { Text(text = "保存至云端") },
+                                onClick = {
+                                    onDropdownMenuItemEvent(DropdownMenuItemEvent.SaveToCloud)
+                                    onActivateStateChanged(SearchAppBar.NONE)
+                                    expanded = false
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.CloudUpload,
+                                        contentDescription = null
+                                    )
+                                })
+                        }
+                        if (it.size == 1 && it.firstOrNull()?.relatedMessageId != null) {
+                            DropdownMenuItem(
+                                text = { Text(text = "跳转至上下文") },
+                                onClick = {
+                                    onDropdownMenuItemEvent(DropdownMenuItemEvent.RedirectToConversation)
+                                    onActivateStateChanged(SearchAppBar.NONE)
+                                    expanded = false
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.OpenInNew,
+                                        contentDescription = null
+                                    )
+                                })
+                        }
+                        if (it.any { it.cloudId == null }) {
+                            DropdownMenuItem(
+                                text = { Text(text = "删除记录") },
+                                onClick = {
+                                    onDropdownMenuItemEvent(DropdownMenuItemEvent.DeleteFile)
+                                    expanded = false
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.DeleteOutline,
+                                        contentDescription = null
+                                    )
+                                })
+                        }
                     }
                 }
             }

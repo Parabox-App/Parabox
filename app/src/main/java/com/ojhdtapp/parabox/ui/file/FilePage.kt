@@ -243,9 +243,17 @@ fun FilePage(
                                 }
                             }
                             viewModel.setSearchBarActivateState(SearchAppBar.NONE)
+                            viewModel.clearSelectedFiles()
                         }
 
-                        is DropdownMenuItemEvent.SaveToCloud -> {}
+                        is DropdownMenuItemEvent.SaveToCloud -> {
+                            viewModel.selectedFilesId
+                                .forEach { id ->
+                                mainState.data.firstOrNull { it.cloudId == null && it.fileId == id }?.also {
+                                    onEvent(ActivityEvent.SaveToCloud(it))
+                                }
+                            }
+                        }
                         is DropdownMenuItemEvent.DeleteFile -> {
                             deleteFileConfirm = true
                         }
@@ -723,7 +731,11 @@ fun MainArea(
                         workInfoMap.count { it.value.any { !it.state.isFinished } }
                     }
                 }
-                AnimatedVisibility(visible = workInfoMap.isNotEmpty()) {
+                AnimatedVisibility(
+                    visible = workInfoMap.isNotEmpty(),
+                    enter = expandVertically(),
+                    exit = shrinkVertically(),
+                ) {
                     Surface(
                         modifier = Modifier.padding(horizontal = 16.dp),
                         shape = CircleShape,
@@ -747,7 +759,7 @@ fun MainArea(
                             )
                             Text(
                                 modifier = Modifier.weight(1f),
-                                text = if (runningWork != 0) "$runningWork 项备份任务正在进行" else "备份已完成",
+                                text = if (runningWork != 0) "$runningWork 项备份任务正在进行" else "暂无运行中的备份任务",
                                 color = MaterialTheme.colorScheme.onSurface,
                                 style = MaterialTheme.typography.bodyMedium
                             )

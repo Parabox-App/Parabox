@@ -574,6 +574,63 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    fun backupFileToCloudService(file: File){
+        val workManager = WorkManager.getInstance(this)
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            val defaultBackupService =
+                dataStore.data.first()[DataStoreKeys.SETTINGS_DEFAULT_BACKUP_SERVICE] ?: 0
+            if (defaultBackupService != 0) {
+                val constraints = Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.UNMETERED)
+                    .setRequiresBatteryNotLow(true)
+                    .setRequiresStorageNotLow(true)
+                    .build()
+                val downloadRequest = OneTimeWorkRequestBuilder<DownloadFileWorker>()
+                    .setConstraints(constraints)
+                    .addTag("${file.fileId}")
+                    .setInputData(
+                        workDataOf(
+                            "url" to file.url,
+                            "name" to file.name,
+                        )
+                    )
+                    .build()
+                val uploadRequest = OneTimeWorkRequestBuilder<UploadFileWorker>()
+                    .setConstraints(constraints)
+                    .addTag("${file.fileId}")
+                    .setInputData(
+                        workDataOf(
+                            "default_backup_service" to defaultBackupService,
+                        )
+                    )
+                    .build()
+                val cleanUpRequest = OneTimeWorkRequestBuilder<CleanUpFileWorker>()
+                    .setConstraints(constraints)
+                    .addTag("${file.fileId}")
+                    .setInputData(
+                        workDataOf(
+                            "fileId" to file.fileId,
+                        )
+                    )
+                    .build()
+                val continuation = workManager.beginUniqueWork(
+                    "${file.fileId}",
+                    ExistingWorkPolicy.KEEP,
+                    downloadRequest
+                )
+                    .then(uploadRequest)
+                    .then(cleanUpRequest)
+                continuation.enqueue()
+                launch(Dispatchers.Main) {
+                    continuation.workInfosLiveData.observe(this@MainActivity){ workInfoList ->
+                        mainSharedViewModel.putWorkInfo(file, workInfoList)
+                    }
+                }
+            }
+        }
+    }
+
     fun cancelBackupWorkByTag(tag: String){
         val workManager = WorkManager.getInstance(this)
         workManager.cancelAllWorkByTag(tag)
@@ -745,6 +802,10 @@ class MainActivity : AppCompatActivity() {
 
             is ActivityEvent.ResetExtension -> {
                 resetPluginConnection()
+            }
+
+            is ActivityEvent.SaveToCloud -> {
+                backupFileToCloudService(event.file)
             }
 
             is ActivityEvent.CancelBackupWork -> {

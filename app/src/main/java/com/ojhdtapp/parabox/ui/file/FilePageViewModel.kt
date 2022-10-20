@@ -71,7 +71,7 @@ class FilePageViewModel @Inject constructor(
             context.dataStore.data.first().get(DataStoreKeys.GOOGLE_WORK_FOLDER_ID)?.let {
                 GoogleDriveUtil.getFileList(context = context, it)?.map {
                     File(
-                        url = null,
+                        url = it.webContentLink,
                         name = it.name,
                         extension = it.fullFileExtension ?: FileUtil.getExtension(it.name),
                         size = it.getSize(),

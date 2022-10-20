@@ -21,6 +21,7 @@ class UploadFileWorker(
 ) :
     CoroutineWorker(appContext, workerParams) {
     override suspend fun doWork(): Result {
+        Log.d("parabox", "upload file worker start")
         return withContext(Dispatchers.IO) {
             val service = inputData.getInt("default_backup_service", 0)
             when (service) {
