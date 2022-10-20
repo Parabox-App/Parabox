@@ -4,7 +4,7 @@ import com.ojhdtapp.parabox.data.local.entity.DownloadingState
 import com.ojhdtapp.parabox.data.local.entity.FileEntity
 
 data class File(
-    val url: String,
+    val url: String?,
     val name: String,
     val extension: String,
     val size: Long,
@@ -12,8 +12,8 @@ data class File(
     val profileName: String,
     val downloadingState: DownloadingState = DownloadingState.None,
     val downloadPath: String? = null,
-    val relatedContactId: Long,
-    val relatedMessageId: Long,
+    val relatedContactId: Long? = null,
+    val relatedMessageId: Long? = null,
     val fileId : Long,
     val downloadId: Long? = null,
     val cloudType: Int? = null,

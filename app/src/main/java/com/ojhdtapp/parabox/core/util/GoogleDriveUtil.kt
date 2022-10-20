@@ -130,7 +130,7 @@ object GoogleDriveUtil {
                         .execute()
                     var size = 0L
                     result.files.forEach {
-                        size += it.size
+                        size += it.getSize()
                     }
                     size
                 } ?: 0L
@@ -177,7 +177,7 @@ object GoogleDriveUtil {
                     val result = driveService.files().list()
                         .setQ("'$folderId' in parents")
                         .setSpaces("drive")
-                        .setFields("nextPageToken, files(id, name, size)")
+                        .setFields("nextPageToken, files(id, name, size, fullFileExtension, createdTime)")
                         .execute()
                     result.files
                 }

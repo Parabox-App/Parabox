@@ -7,7 +7,7 @@ import com.ojhdtapp.parabox.domain.model.File
 
 @Entity(tableName = "file_entity")
 data class FileEntity(
-    val url: String,
+    val url: String?,
     val name: String,
     val extension: String,
     val size: Long,
@@ -15,8 +15,8 @@ data class FileEntity(
     val profileName: String,
     val downloadingState: DownloadingState = DownloadingState.None,
     val downloadPath: String? = null,
-    val relatedContactId: Long,
-    val relatedMessageId: Long,
+    val relatedContactId: Long?,
+    val relatedMessageId: Long?,
     @PrimaryKey(autoGenerate = true) val fileId: Long = 0,
     val downloadId: Long? = null,
     val cloudType: Int? = null,

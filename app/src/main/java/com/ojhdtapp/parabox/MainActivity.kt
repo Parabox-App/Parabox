@@ -144,20 +144,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun downloadFile(file: File) {
-        val path = FileUtil.getAvailableFileName(this, file.name)
-        DownloadManagerUtil.downloadWithManager(
-            this,
-            file.url,
-            path
-        )?.also {
-            lifecycleScope.launch(Dispatchers.IO) {
-                updateFile.downloadInfo(path, it, file)
-                repeatOnLifecycle(Lifecycle.State.STARTED) {
-                    DownloadManagerUtil.retrieve(this@MainActivity, it).collectLatest {
-                        if (it is DownloadingState.Done) {
-                            updateFile.downloadInfo(path, null, file)
+        if(file.url != null) {
+            val path = FileUtil.getAvailableFileName(this, file.name)
+            DownloadManagerUtil.downloadWithManager(
+                this,
+                file.url,
+                path
+            )?.also {
+                lifecycleScope.launch(Dispatchers.IO) {
+                    updateFile.downloadInfo(path, it, file)
+                    repeatOnLifecycle(Lifecycle.State.STARTED) {
+                        DownloadManagerUtil.retrieve(this@MainActivity, it).collectLatest {
+                            if (it is DownloadingState.Done) {
+                                updateFile.downloadInfo(path, null, file)
+                            }
+                            updateFile.downloadState(it, file)
                         }
-                        updateFile.downloadState(it, file)
                     }
                 }
             }
@@ -434,8 +436,10 @@ class MainActivity : AppCompatActivity() {
         mainSharedViewModel.setIsRefreshing(true)
         lifecycleScope.launch {
             if (pluginService?.refreshMessage() == true) {
+                delay(500)
                 mainSharedViewModel.setIsRefreshing(false)
             } else {
+                delay(500)
                 mainSharedViewModel.setIsRefreshing(false)
                 Toast.makeText(this@MainActivity, "部分消息未成功刷新", Toast.LENGTH_SHORT).show()
             }
@@ -521,7 +525,7 @@ class MainActivity : AppCompatActivity() {
                     .setRequiredNetworkType(NetworkType.UNMETERED)
                     .setRequiresBatteryNotLow(true)
                     .setRequiresStorageNotLow(true)
-                    .setRequiresDeviceIdle(true)
+//                    .setRequiresDeviceIdle(true)
                     .build()
                 files.forEach {
                     val downloadRequest = OneTimeWorkRequestBuilder<DownloadFileWorker>()

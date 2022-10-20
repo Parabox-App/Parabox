@@ -93,6 +93,7 @@ fun FilePage(
     }
     LaunchedEffect(key1 = true) {
         viewModel.onSearch("", withoutDelay = true)
+        viewModel.updateGoogleDriveFilesStateFlow()
         viewModel.uiEventFlow.collectLatest {
             when (it) {
                 is FilePageUiEvent.ShowSnackBar -> {
