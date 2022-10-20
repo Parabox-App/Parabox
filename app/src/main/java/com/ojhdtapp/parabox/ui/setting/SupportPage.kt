@@ -13,8 +13,10 @@ import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Cake
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.GTranslate
+import androidx.compose.material.icons.outlined.Gavel
 import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.NotificationsActive
+import androidx.compose.material.icons.outlined.PrivacyTip
 import androidx.compose.material.icons.outlined.QuestionAnswer
 import androidx.compose.material.icons.outlined.StarRate
 import androidx.compose.material.icons.outlined.Web
@@ -31,16 +33,19 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.guru.fontawesomecomposelib.FaIcon
 import com.guru.fontawesomecomposelib.FaIcons
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.BrowserUtil
 import com.ojhdtapp.parabox.core.util.launchNotificationSetting
 import com.ojhdtapp.parabox.core.util.launchPlayStore
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
+import com.ojhdtapp.parabox.ui.destinations.LicensePageDestination
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.NormalPreference
 import com.ojhdtapp.parabox.ui.util.PreferencesCategory
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import com.ramcosta.composedestinations.navigation.navigate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Destination
@@ -57,6 +62,37 @@ fun SupportPage(
     val viewModel = hiltViewModel<SettingPageViewModel>()
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
+
+    AgreementDialog(
+        showDialog = viewModel.showTermsDialog.value,
+        icon = {
+            Icon(imageVector = Icons.Outlined.Gavel, contentDescription = "terms")
+        },
+        title = "用户协议",
+        contentResId = R.string.terms,
+        onConfirm = {
+            viewModel.setShowTermsDialog(false)
+        },
+        onDismiss = {
+            viewModel.setShowTermsDialog(false)
+        },
+    )
+
+    AgreementDialog(
+        showDialog = viewModel.showPrivacyDialog.value,
+        icon = {
+            Icon(imageVector = Icons.Outlined.PrivacyTip, contentDescription = "privacy")
+        },
+        title = "隐私政策",
+        contentResId = R.string.privacy,
+        onConfirm = {
+            viewModel.setShowPrivacyDialog(false)
+        },
+        onDismiss = {
+            viewModel.setShowPrivacyDialog(false)
+        },
+    )
+
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -237,17 +273,17 @@ fun SupportPage(
             }
             item {
                 NormalPreference(
-                    title = "免责声明",
+                    title = "用户协议",
                     onClick = {
-
+                        viewModel.setShowTermsDialog(true)
                     }
                 )
             }
             item {
                 NormalPreference(
-                    title = "隐私协议",
+                    title = "隐私政策",
                     onClick = {
-
+                        viewModel.setShowPrivacyDialog(true)
                     }
                 )
             }
@@ -255,7 +291,7 @@ fun SupportPage(
                 NormalPreference(
                     title = "开放源代码许可",
                     onClick = {
-
+                        mainNavController.navigate(LicensePageDestination)
                     }
                 )
             }

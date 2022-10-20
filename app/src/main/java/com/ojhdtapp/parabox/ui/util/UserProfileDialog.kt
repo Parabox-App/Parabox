@@ -34,6 +34,7 @@ import com.guru.fontawesomecomposelib.FaIcons
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.domain.model.AppModel
+import com.ojhdtapp.parabox.ui.setting.AgreementDialog
 
 @OptIn(
     ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class,
@@ -64,6 +65,40 @@ fun UserProfileDialog(
                 usePlatformDefaultWidth = false,
             )
         ) {
+            var showPrivacyDialog by remember{
+                mutableStateOf(false)
+            }
+            var showTermsDialog by remember{
+                mutableStateOf(false)
+            }
+            AgreementDialog(
+                showDialog = showPrivacyDialog,
+                icon = {
+                    Icon(imageVector = Icons.Outlined.PrivacyTip, contentDescription = "privacy")
+                },
+                title = "隐私政策",
+                contentResId = R.string.privacy,
+                onConfirm = {
+                    showPrivacyDialog = false
+                },
+                onDismiss = {
+                    showPrivacyDialog = false
+                },
+            )
+            AgreementDialog(
+                showDialog = showTermsDialog,
+                icon = {
+                    Icon(imageVector = Icons.Outlined.Gavel, contentDescription = "terms")
+                },
+                title = "用户协议",
+                contentResId = R.string.terms,
+                onConfirm = {
+                    showTermsDialog = false
+                },
+                onDismiss = {
+                    showTermsDialog = false
+                },
+            )
             val horizontalPadding = when (sizeClass.widthSizeClass) {
                 WindowWidthSizeClass.Compact -> 16.dp
                 WindowWidthSizeClass.Medium -> 32.dp
@@ -247,16 +282,16 @@ fun UserProfileDialog(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        TextButton(onClick = { /*TODO*/ }) {
-                            Text(text = "免责声明", style = MaterialTheme.typography.labelMedium)
+                        TextButton(onClick = { showTermsDialog = true }) {
+                            Text(text = "用户协议", style = MaterialTheme.typography.labelMedium)
                         }
                         Text(
                             text = "•",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
-                        TextButton(onClick = { /*TODO*/ }) {
-                            Text(text = "开放源代码许可", style = MaterialTheme.typography.labelMedium)
+                        TextButton(onClick = { showPrivacyDialog = true }) {
+                            Text(text = "隐私政策", style = MaterialTheme.typography.labelMedium)
                         }
                     }
                 }

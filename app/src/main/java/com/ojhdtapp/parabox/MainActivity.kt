@@ -610,6 +610,10 @@ class MainActivity : AppCompatActivity() {
                 })
             }
 
+            is ActivityEvent.LaunchURL -> {
+                BrowserUtil.launchURL(this, event.url)
+            }
+
             is ActivityEvent.SendMessage -> {
                 lifecycleScope.launch(Dispatchers.IO) {
                     val timestamp = System.currentTimeMillis()

@@ -177,7 +177,7 @@ class SettingPageViewModel @Inject constructor(
     }
 
     fun onContactBackupChange(target: Contact, value: Boolean) {
-        viewModelScope.launch(Dispatchers.IO){
+        viewModelScope.launch(Dispatchers.IO) {
             updateContact.backup(target.contactId, value)
         }
     }
@@ -208,10 +208,11 @@ class SettingPageViewModel @Inject constructor(
         MutableStateFlow(FileUtil.getSizeString(CacheUtil.getCacheSize(context)))
     val cacheSizeStateFlow: StateFlow<String> = _cacheSizeStateFlow.asStateFlow()
     private val _cleaningCache = mutableStateOf<Boolean>(false)
-    val cleaningCache : State<Boolean> = _cleaningCache
+    val cleaningCache: State<Boolean> = _cleaningCache
     fun setCleaningCache(value: Boolean) {
         _cleaningCache.value = value
     }
+
     fun clearCache() {
         if (!cleaningCache.value) {
             setCleaningCache(true)
@@ -235,11 +236,13 @@ class SettingPageViewModel @Inject constructor(
     )
     val notificationPermissionGrantedStateFlow: StateFlow<Boolean> =
         _notificationPermissionGrantedStateFlow.asStateFlow()
+
     fun onNotificationPermissionResult(value: Boolean) {
         _notificationPermissionGrantedStateFlow.tryEmit(value)
     }
+
     fun onContactNotificationChange(target: Contact, value: Boolean) {
-        viewModelScope.launch(Dispatchers.IO){
+        viewModelScope.launch(Dispatchers.IO) {
             updateContact.notificationState(target.contactId, value)
         }
     }
@@ -254,8 +257,10 @@ class SettingPageViewModel @Inject constructor(
             }
         }
         .map { settings ->
-            settings[DataStoreKeys.SETTINGS_ENABLE_DYNAMIC_COLOR] ?: (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+            settings[DataStoreKeys.SETTINGS_ENABLE_DYNAMIC_COLOR]
+                ?: (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
         }
+
     fun setEnableDynamicColor(value: Boolean) {
         viewModelScope.launch {
             context.dataStore.edit { preferences ->
@@ -263,6 +268,7 @@ class SettingPageViewModel @Inject constructor(
             }
         }
     }
+
     val themeFlow: Flow<Int> = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {
@@ -274,6 +280,7 @@ class SettingPageViewModel @Inject constructor(
         .map { settings ->
             settings[DataStoreKeys.SETTINGS_THEME] ?: Theme.WILLOW
         }
+
     fun setTheme(value: Int) {
         viewModelScope.launch {
             context.dataStore.edit { preferences ->
@@ -294,6 +301,7 @@ class SettingPageViewModel @Inject constructor(
         .map { settings ->
             settings[DataStoreKeys.SETTINGS_ALLOW_BUBBLE_HOME] ?: false
         }
+
     fun setAllowBubbleHome(value: Boolean) {
         viewModelScope.launch {
             context.dataStore.edit { preferences ->
@@ -301,6 +309,7 @@ class SettingPageViewModel @Inject constructor(
             }
         }
     }
+
     val allowForegroundNotificationFlow: Flow<Boolean> = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {
@@ -312,6 +321,7 @@ class SettingPageViewModel @Inject constructor(
         .map { settings ->
             settings[DataStoreKeys.SETTINGS_ALLOW_FOREGROUND_NOTIFICATION] ?: false
         }
+
     fun setAllowForegroundNotification(value: Boolean) {
         viewModelScope.launch {
             context.dataStore.edit { preferences ->
@@ -332,4 +342,82 @@ class SettingPageViewModel @Inject constructor(
     fun setSelectedSetting(value: Int) {
         _selectedSetting.value = value
     }
+
+    // Privacy Dialog
+    private val _showPrivacyDialog = mutableStateOf<Boolean>(false)
+    val showPrivacyDialog: State<Boolean> = _showPrivacyDialog
+    fun setShowPrivacyDialog(value: Boolean) {
+        _showPrivacyDialog.value = value
+    }
+
+    // Terms Dialog
+    private val _showTermsDialog = mutableStateOf<Boolean>(false)
+    val showTermsDialog: State<Boolean> = _showTermsDialog
+    fun setShowTermsDialog(value: Boolean) {
+        _showTermsDialog.value = value
+    }
+
+    // Licenses
+    val licenseList = listOf<License>(
+        License(
+            "Accompanist",
+            "https://github.com/google/accompanist",
+            "Apache Software License 2.0",
+        ),
+        License(
+            "AndroidX",
+            "https://developer.android.com/jetpack/androidx",
+            "Apache Software License 2.0"
+        ),
+        License(
+            "AndroidX DataStore",
+            "https://developer.android.com/jetpack/androidx/releases/datastore",
+            "Apache Software License 2.0"
+        ),
+        License(
+            "AndroidX Lifecycle",
+            "https://developer.android.com/jetpack/androidx/releases/lifecycle",
+            "Apache Software License 2.0"
+        ),
+        License(
+            "AndroidX Compose",
+            "https://developer.android.com/jetpack/androidx/releases/compose",
+            "Apache Software License 2.0"
+        ),
+        License(
+            "AndroidX Compose Material",
+            "https://developer.android.com/jetpack/androidx/releases/compose-material",
+            "Apache Software License 2.0"
+        ),
+        License(
+            "Coil",
+            "https://github.com/coil-kt/coil/blob/main/LICENSE.txt",
+            "Apache Software License 2.0"
+        ),
+        License(
+            "Kotlin",
+            "https://github.com/JetBrains/kotlin",
+            "Apache Software License 2.0"
+        ),
+        License(
+            "Android-Room-Database-Backup",
+            "https://github.com/rafi0101/Android-Room-Database-Backup/blob/master/LICENSE",
+            "MIT License"
+        ),
+        License(
+            "ImageViewer",
+            "https://github.com/jvziyaoyao/ImageViewer/blob/main/LICENSE",
+            "MIT License"
+        ),
+        License(
+            "Compose-Extended-Gestures",
+            "https://github.com/SmartToolFactory/Compose-Extended-Gestures/blob/master/LICENSE.md",
+            "Apache Software License 2.0"
+        ),
+        License(
+            "Amplituda",
+            "https://github.com/lincollincol/Amplituda/blob/master/LICENSE",
+            "Apache Software License 2.0"
+        )
+    )
 }
