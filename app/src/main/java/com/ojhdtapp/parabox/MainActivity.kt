@@ -570,6 +570,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    fun cancelBackupWorkByTag(tag: String){
+        val workManager = WorkManager.getInstance(this)
+        workManager.cancelAllWorkByTag(tag)
+    }
+
     fun getGoogleLoginAuth(): GoogleSignInClient {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
@@ -732,6 +737,10 @@ class MainActivity : AppCompatActivity() {
 
             is ActivityEvent.ResetExtension -> {
                 resetPluginConnection()
+            }
+
+            is ActivityEvent.CancelBackupWork -> {
+                cancelBackupWorkByTag(event.tag)
             }
         }
     }

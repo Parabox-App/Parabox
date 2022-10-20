@@ -20,6 +20,7 @@ import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -37,6 +38,7 @@ fun WorkInfoDialog(
     modifier: Modifier = Modifier,
     showDialog: Boolean,
     workInfoMap: Map<File, List<WorkInfo>>,
+    onCancel: (fileId: Long) -> Unit,
     sizeClass: WindowSizeClass,
     onDismiss: () -> Unit,
 ) {
@@ -99,7 +101,9 @@ fun WorkInfoDialog(
                             WorkInfoItem(
                                 file = it.first,
                                 workInfoList = it.second,
-                                onClick = {}
+                                onClick = {
+                                    onCancel(it.first.fileId)
+                                }
                             )
                         }
                     }
@@ -116,19 +120,51 @@ fun WorkInfoItem(
     workInfoList: List<WorkInfo>,
     onClick: () -> Unit
 ) {
-    val currentStep = remember {
+    val cancelable by remember{
         derivedStateOf {
-            workInfoList.count { it.state == WorkInfo.State.SUCCEEDED }
+            !workInfoList.any {
+                it.state == WorkInfo.State.CANCELLED
+            }
         }
     }
-    val currentStepDes = remember {
+    val des = remember {
         derivedStateOf {
-            when (currentStep.value) {
-                0 -> "正在下载(0/3)"
-                1 -> "正在上传(1/3)"
-                2 -> "正在清理(2/3)"
-                else -> "已完成"
+            when {
+                workInfoList.any {
+                    it.state == WorkInfo.State.CANCELLED
+                } -> "已取消"
+
+                workInfoList.any {
+                    it.state == WorkInfo.State.FAILED
+                } -> {
+                    var count = 0
+                    workInfoList.forEach { count += it.runAttemptCount }
+                    "操作失败(第${count}次尝试)"
+                }
+
+                workInfoList.all {
+                    it.state == WorkInfo.State.SUCCEEDED
+                } -> "已完成"
+
+                workInfoList.all {
+                    it.state == WorkInfo.State.ENQUEUED || it.state == WorkInfo.State.BLOCKED
+                } -> "已暂停"
+
+                workInfoList.any {
+                    it.state == WorkInfo.State.RUNNING
+                } -> {
+                    val currentStep =
+                        workInfoList.count { it.state == WorkInfo.State.SUCCEEDED } + 1
+                    when (currentStep) {
+                        1 -> "正在下载($currentStep/3)"
+                        2 -> "正在上传($currentStep/3)"
+                        3 -> "正在清理($currentStep/3)"
+                        else -> "正在执行"
+                    }
+                }
+                else -> "未知进度"
             }
+
         }
     }
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -139,12 +175,12 @@ fun WorkInfoItem(
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = currentStepDes.value,
+                text = des.value,
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        OutlinedButton(onClick = { /*TODO*/ }, enabled = true) {
+        OutlinedButton(onClick = onClick, enabled = cancelable) {
             Text(text = "取消")
         }
     }

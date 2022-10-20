@@ -42,6 +42,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.work.WorkInfo
 import coil.ImageLoader
 import coil.compose.AsyncImage
 import coil.decode.SvgDecoder
@@ -83,6 +84,7 @@ fun FilePage(
     val mainState by viewModel.fileStateFlow.collectAsState()
     val snackBarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
     BackHandler(enabled = mainState.area != FilePageState.MAIN_AREA) {
         viewModel.setArea(FilePageState.MAIN_AREA)
     }
@@ -193,6 +195,9 @@ fun FilePage(
     WorkInfoDialog(
         showDialog = mainSharedViewModel.workInfoDialogState.value,
         workInfoMap = mainSharedViewModel.workInfoMap,
+        onCancel = {
+            onEvent(ActivityEvent.CancelBackupWork(it.toString()))
+        },
         sizeClass = sizeClass,
         onDismiss = { mainSharedViewModel.setWorkInfoDialogState(false) }
     )
@@ -289,6 +294,7 @@ fun FilePage(
                     gDriveAppUsedSpace = gDriveAppUsedSpace,
                     gDriveAppUsedSpacePercent = gDriveAppUsedSpacePercent.value,
                     gDriveLauncher = gDriveLauncher,
+                    workInfoMap = mainSharedViewModel.workInfoMap,
                     onLogoutGoogleDrive = {
                         mainSharedViewModel.saveGoogleDriveAccount(null)
                         coroutineScope.launch {
@@ -347,13 +353,14 @@ fun MainArea(
     gDriveAppUsedSpace: Long,
     gDriveAppUsedSpacePercent: Int,
     gDriveLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>,
+    workInfoMap: Map<File, List<WorkInfo>>,
     onLogoutGoogleDrive: () -> Unit,
     onChangeSearchAppBarState: (state: Int) -> Unit,
     onEvent: (ActivityEvent) -> Unit,
     onChangeArea: (area: Int) -> Unit,
     onAddOrRemoveFile: (file: File) -> Unit,
     onSetRecentFilter: (type: Int, value: Boolean) -> Unit,
-    onShowWorkInfoDialog:()-> Unit,
+    onShowWorkInfoDialog: () -> Unit,
 ) {
     val context = LocalContext.current
     LazyVerticalGrid(
@@ -684,38 +691,45 @@ fun MainArea(
             }
         }
         item {
-            Surface(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 3.dp,
-                onClick = {
-                    onShowWorkInfoDialog()
+            val runningWork by remember {
+                derivedStateOf {
+                    workInfoMap.count { it.value.any { !it.state.isFinished } }
                 }
-            ) {
-                Row(
-                    modifier = Modifier
-                        .height(48.dp)
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+            }
+            AnimatedVisibility(visible = workInfoMap.isNotEmpty()) {
+                Surface(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 3.dp,
+                    onClick = {
+                        onShowWorkInfoDialog()
+                    }
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Backup,
-                        contentDescription = "backup",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
-                    Text(
-                        modifier = Modifier.weight(1f),
-                        text = "1 项备份任务正在进行",
-                        color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Icon(
-                        imageVector = Icons.Outlined.NavigateNext,
-                        contentDescription = "next",
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
+                    Row(
+                        modifier = Modifier
+                            .height(48.dp)
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = if (runningWork != 0) Icons.Outlined.Backup else Icons.Outlined.CloudDone,
+                            contentDescription = "backup",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                        Text(
+                            modifier = Modifier.weight(1f),
+                            text = if (runningWork != 0) "$runningWork 项备份任务正在进行" else "备份已完成",
+                            color = MaterialTheme.colorScheme.onSurface,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Icon(
+                            imageVector = Icons.Outlined.NavigateNext,
+                            contentDescription = "next",
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                    }
                 }
             }
         }

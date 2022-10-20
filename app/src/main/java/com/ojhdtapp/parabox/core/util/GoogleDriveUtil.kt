@@ -170,6 +170,21 @@ object GoogleDriveUtil {
         }
     }
 
+    suspend fun getFileList(context: Context, folderId: String): List<com.google.api.services.drive.model.File>? {
+        return coroutineScope {
+            withContext(Dispatchers.Default) {
+                getDriveService(context)?.let { driveService ->
+                    val result = driveService.files().list()
+                        .setQ("'$folderId' in parents")
+                        .setSpaces("drive")
+                        .setFields("nextPageToken, files(id, name, size)")
+                        .execute()
+                    result.files
+                }
+            }
+        }
+    }
+
     suspend fun downloadFile(
         context: Context,
         fileId: String
