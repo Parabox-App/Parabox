@@ -66,7 +66,6 @@ class FilePageViewModel @Inject constructor(
     // Google Drive Files
     private val googleDriveFilesStateFlow =
         MutableStateFlow<Resource<List<File>>>(Resource.Loading())
-
     fun updateGoogleDriveFilesStateFlow() {
         viewModelScope.launch {
             context.dataStore.data.first().get(DataStoreKeys.GOOGLE_WORK_FOLDER_ID)?.let {
@@ -86,9 +85,16 @@ class FilePageViewModel @Inject constructor(
                     googleDriveFilesStateFlow.emit(
                         Resource.Success(it)
                     )
+                    setIsRefreshing(false)
                 }
             }
         }
+    }
+    // Swipe Refresh
+    private val _isRefreshing = mutableStateOf<Boolean>(false)
+    val isRefreshing: State<Boolean> = _isRefreshing
+    fun setIsRefreshing(value: Boolean) {
+        _isRefreshing.value = value
     }
 
     // Search

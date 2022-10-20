@@ -91,6 +91,7 @@ fun RowScope.MessageArea(
         },
         indicator = { state, trigger ->
             SwipeRefreshIndicator(
+                modifier = Modifier.offset(y = paddingValues.calculateTopPadding()),
                 state = state, refreshTriggerDistance = trigger,
                 scale = true,
                 contentColor = MaterialTheme.colorScheme.primary,

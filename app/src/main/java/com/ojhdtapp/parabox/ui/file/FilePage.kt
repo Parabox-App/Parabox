@@ -48,6 +48,9 @@ import coil.compose.AsyncImage
 import coil.decode.SvgDecoder
 import coil.request.ImageRequest
 import com.google.accompanist.flowlayout.FlowRow
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.SwipeRefreshIndicator
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.guru.fontawesomecomposelib.FaIcon
 import com.guru.fontawesomecomposelib.FaIcons
@@ -296,6 +299,7 @@ fun FilePage(
                     gDriveAppUsedSpacePercent = gDriveAppUsedSpacePercent.value,
                     gDriveLauncher = gDriveLauncher,
                     workInfoMap = mainSharedViewModel.workInfoMap,
+                    isRefreshing = viewModel.isRefreshing.value,
                     onLogoutGoogleDrive = {
                         mainSharedViewModel.saveGoogleDriveAccount(null)
                         coroutineScope.launch {
@@ -309,6 +313,10 @@ fun FilePage(
                     onAddOrRemoveFile = { viewModel.addOrRemoveItemOfSelectedFileList(it.fileId) },
                     onShowWorkInfoDialog = {
                         mainSharedViewModel.setWorkInfoDialogState(true)
+                    },
+                    onRefresh = {
+                        viewModel.setIsRefreshing(true)
+                        viewModel.updateGoogleDriveFilesStateFlow()
                     }
                 )
 
@@ -355,6 +363,7 @@ fun MainArea(
     gDriveAppUsedSpacePercent: Int,
     gDriveLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>,
     workInfoMap: Map<File, List<WorkInfo>>,
+    isRefreshing: Boolean,
     onLogoutGoogleDrive: () -> Unit,
     onChangeSearchAppBarState: (state: Int) -> Unit,
     onEvent: (ActivityEvent) -> Unit,
@@ -362,508 +371,526 @@ fun MainArea(
     onAddOrRemoveFile: (file: File) -> Unit,
     onSetRecentFilter: (type: Int, value: Boolean) -> Unit,
     onShowWorkInfoDialog: () -> Unit,
+    onRefresh: () -> Unit,
 ) {
     val context = LocalContext.current
-    LazyVerticalGrid(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) 64.dp else 0.dp),
-        columns = GridCells.Adaptive(352.dp),
-        contentPadding = paddingValues
+    SwipeRefresh(
+        state = rememberSwipeRefreshState(isRefreshing = isRefreshing),
+        onRefresh = onRefresh,
+        indicator = { state, trigger ->
+            SwipeRefreshIndicator(
+                modifier = Modifier.offset(y = paddingValues.calculateTopPadding()),
+                state = state, refreshTriggerDistance = trigger,
+                scale = true,
+                contentColor = MaterialTheme.colorScheme.primary,
+                backgroundColor = MaterialTheme.colorScheme.surface
+            )
+        }
     ) {
-        item {
-            Column(
-                modifier = Modifier
-                    .padding(horizontal = 16.dp)
-                    .animateItemPlacement()
-            ) {
-                Box(
+        LazyVerticalGrid(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) 64.dp else 0.dp),
+            columns = GridCells.Adaptive(352.dp),
+            contentPadding = paddingValues
+        ) {
+            item {
+                Column(
                     modifier = Modifier
-                        .padding(vertical = 8.dp)
+                        .padding(horizontal = 16.dp)
+                        .animateItemPlacement()
                 ) {
-                    Text(
-                        text = "最近的",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-                FlowRow(
-                    modifier = Modifier.padding(bottom = 8.dp),
-                    mainAxisSpacing = 8.dp
-                ) {
-                    FilterChip(
+                    Box(
                         modifier = Modifier
-                            .animateContentSize(),
-                        selected = mainState.enableRecentDocsFilter,
-                        onClick = {
-                            onSetRecentFilter(
-                                ExtensionFilter.DOCS,
-                                !mainState.enableRecentDocsFilter
-                            )
-                        },
-                        enabled = true,
-                        leadingIcon = {
-                            if (mainState.enableRecentDocsFilter)
-                                Icon(
-                                    imageVector = Icons.Outlined.Done,
-                                    contentDescription = "",
-                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                )
-                        },
-                        label = { Text(text = "文档") },
-                        border = FilterChipDefaults.filterChipBorder(
-                            borderColor = MaterialTheme.colorScheme.outline.copy(
-                                alpha = 0.4f
-                            )
-                        )
-                    )
-                    FilterChip(
-                        modifier = Modifier
-                            .animateContentSize(),
-                        selected = mainState.enableRecentSlidesFilter,
-                        onClick = {
-                            onSetRecentFilter(
-                                ExtensionFilter.SLIDES,
-                                !mainState.enableRecentSlidesFilter
-                            )
-                        },
-                        enabled = true,
-                        leadingIcon = {
-                            if (mainState.enableRecentSlidesFilter)
-                                Icon(
-                                    imageVector = Icons.Outlined.Done,
-                                    contentDescription = "",
-                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                )
-                        },
-                        label = { Text(text = "演示文稿") },
-                        border = FilterChipDefaults.filterChipBorder(
-                            borderColor = MaterialTheme.colorScheme.outline.copy(
-                                alpha = 0.4f
-                            )
-                        )
-                    )
-                    FilterChip(
-                        modifier = Modifier
-                            .animateContentSize(),
-                        selected = mainState.enableRecentSheetsFilter,
-                        onClick = {
-                            onSetRecentFilter(
-                                ExtensionFilter.SHEETS,
-                                !mainState.enableRecentSheetsFilter
-                            )
-                        },
-                        enabled = true,
-                        leadingIcon = {
-                            if (mainState.enableRecentSheetsFilter)
-                                Icon(
-                                    imageVector = Icons.Outlined.Done,
-                                    contentDescription = "",
-                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                )
-                        },
-                        label = { Text(text = "电子表格") },
-                        border = FilterChipDefaults.filterChipBorder(
-                            borderColor = MaterialTheme.colorScheme.outline.copy(
-                                alpha = 0.4f
-                            )
-                        )
-                    )
-                    FilterChip(
-                        modifier = Modifier
-                            .animateContentSize(),
-                        selected = mainState.enableRecentVideoFilter,
-                        onClick = {
-                            onSetRecentFilter(
-                                ExtensionFilter.VIDEO,
-                                !mainState.enableRecentVideoFilter
-                            )
-                        },
-                        enabled = true,
-                        leadingIcon = {
-                            if (mainState.enableRecentVideoFilter)
-                                Icon(
-                                    imageVector = Icons.Outlined.Done,
-                                    contentDescription = "",
-                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                )
-                        },
-                        label = { Text(text = "视频") },
-                        border = FilterChipDefaults.filterChipBorder(
-                            borderColor = MaterialTheme.colorScheme.outline.copy(
-                                alpha = 0.4f
-                            )
-                        )
-                    )
-                    FilterChip(
-                        modifier = Modifier
-                            .animateContentSize(),
-                        selected = mainState.enableRecentAudioFilter,
-                        onClick = {
-                            onSetRecentFilter(
-                                ExtensionFilter.AUDIO,
-                                !mainState.enableRecentAudioFilter
-                            )
-                        },
-                        enabled = true,
-                        leadingIcon = {
-                            if (mainState.enableRecentAudioFilter)
-                                Icon(
-                                    imageVector = Icons.Outlined.Done,
-                                    contentDescription = "",
-                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                )
-                        },
-                        label = { Text(text = "音频") },
-                        border = FilterChipDefaults.filterChipBorder(
-                            borderColor = MaterialTheme.colorScheme.outline.copy(
-                                alpha = 0.4f
-                            )
-                        )
-                    )
-                    FilterChip(
-                        modifier = Modifier
-                            .animateContentSize(),
-                        selected = mainState.enableRecentPictureFilter,
-                        onClick = {
-                            onSetRecentFilter(
-                                ExtensionFilter.PICTURE,
-                                !mainState.enableRecentPictureFilter
-                            )
-                        },
-                        enabled = true,
-                        leadingIcon = {
-                            if (mainState.enableRecentPictureFilter)
-                                Icon(
-                                    imageVector = Icons.Outlined.Done,
-                                    contentDescription = "",
-                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                )
-                        },
-                        label = { Text(text = "图片") },
-                        border = FilterChipDefaults.filterChipBorder(
-                            borderColor = MaterialTheme.colorScheme.outline.copy(
-                                alpha = 0.4f
-                            )
-                        )
-                    )
-                    FilterChip(
-                        modifier = Modifier
-                            .animateContentSize(),
-                        selected = mainState.enableRecentPDFFilter,
-                        onClick = {
-                            onSetRecentFilter(ExtensionFilter.PDF, !mainState.enableRecentPDFFilter)
-                        },
-                        enabled = true,
-                        leadingIcon = {
-                            if (mainState.enableRecentPDFFilter)
-                                Icon(
-                                    imageVector = Icons.Outlined.Done,
-                                    contentDescription = "",
-                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                )
-                        },
-                        label = { Text(text = "便携式文档") },
-                        border = FilterChipDefaults.filterChipBorder(
-                            borderColor = MaterialTheme.colorScheme.outline.copy(
-                                alpha = 0.4f
-                            )
-                        )
-                    )
-                    FilterChip(
-                        modifier = Modifier
-                            .animateContentSize(),
-                        selected = mainState.enableRecentCompressedFilter,
-                        onClick = {
-                            onSetRecentFilter(
-                                ExtensionFilter.COMPRESSED,
-                                !mainState.enableRecentCompressedFilter
-                            )
-                        },
-                        enabled = true,
-                        leadingIcon = {
-                            if (mainState.enableRecentCompressedFilter)
-                                Icon(
-                                    imageVector = Icons.Outlined.Done,
-                                    contentDescription = "",
-                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                )
-                        },
-                        label = { Text(text = "压缩文件") },
-                        border = FilterChipDefaults.filterChipBorder(
-                            borderColor = MaterialTheme.colorScheme.outline.copy(
-                                alpha = 0.4f
-                            )
-                        )
-                    )
-                }
-                if (mainState.recentFilterData.isEmpty()) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .defaultMinSize(minHeight = 320.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                            .padding(vertical = 8.dp)
                     ) {
-                        val context = LocalContext.current
-                        val imageLoader = ImageLoader.Builder(context)
-                            .components {
-                                add(SvgDecoder.Factory())
-                            }
-                            .build()
-                        AsyncImage(
-                            model = ImageRequest.Builder(context)
-                                .data(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.empty_2_dynamic else R.drawable.empty_2)
-                                .crossfade(true)
-                                .build(),
-                            imageLoader = imageLoader,
-                            contentDescription = null,
-                            contentScale = ContentScale.FillWidth,
-                            modifier = Modifier
-                                .align(Alignment.CenterHorizontally)
-                                .width(224.dp)
-                                .padding(bottom = 16.dp)
-                        )
                         Text(
+                            text = "最近的",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    FlowRow(
+                        modifier = Modifier.padding(bottom = 8.dp),
+                        mainAxisSpacing = 8.dp
+                    ) {
+                        FilterChip(
                             modifier = Modifier
-                                .align(Alignment.CenterHorizontally),
-                            text = "暂无可显示的文件",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                .animateContentSize(),
+                            selected = mainState.enableRecentDocsFilter,
+                            onClick = {
+                                onSetRecentFilter(
+                                    ExtensionFilter.DOCS,
+                                    !mainState.enableRecentDocsFilter
+                                )
+                            },
+                            enabled = true,
+                            leadingIcon = {
+                                if (mainState.enableRecentDocsFilter)
+                                    Icon(
+                                        imageVector = Icons.Outlined.Done,
+                                        contentDescription = "",
+                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                    )
+                            },
+                            label = { Text(text = "文档") },
+                            border = FilterChipDefaults.filterChipBorder(
+                                borderColor = MaterialTheme.colorScheme.outline.copy(
+                                    alpha = 0.4f
+                                )
+                            )
+                        )
+                        FilterChip(
+                            modifier = Modifier
+                                .animateContentSize(),
+                            selected = mainState.enableRecentSlidesFilter,
+                            onClick = {
+                                onSetRecentFilter(
+                                    ExtensionFilter.SLIDES,
+                                    !mainState.enableRecentSlidesFilter
+                                )
+                            },
+                            enabled = true,
+                            leadingIcon = {
+                                if (mainState.enableRecentSlidesFilter)
+                                    Icon(
+                                        imageVector = Icons.Outlined.Done,
+                                        contentDescription = "",
+                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                    )
+                            },
+                            label = { Text(text = "演示文稿") },
+                            border = FilterChipDefaults.filterChipBorder(
+                                borderColor = MaterialTheme.colorScheme.outline.copy(
+                                    alpha = 0.4f
+                                )
+                            )
+                        )
+                        FilterChip(
+                            modifier = Modifier
+                                .animateContentSize(),
+                            selected = mainState.enableRecentSheetsFilter,
+                            onClick = {
+                                onSetRecentFilter(
+                                    ExtensionFilter.SHEETS,
+                                    !mainState.enableRecentSheetsFilter
+                                )
+                            },
+                            enabled = true,
+                            leadingIcon = {
+                                if (mainState.enableRecentSheetsFilter)
+                                    Icon(
+                                        imageVector = Icons.Outlined.Done,
+                                        contentDescription = "",
+                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                    )
+                            },
+                            label = { Text(text = "电子表格") },
+                            border = FilterChipDefaults.filterChipBorder(
+                                borderColor = MaterialTheme.colorScheme.outline.copy(
+                                    alpha = 0.4f
+                                )
+                            )
+                        )
+                        FilterChip(
+                            modifier = Modifier
+                                .animateContentSize(),
+                            selected = mainState.enableRecentVideoFilter,
+                            onClick = {
+                                onSetRecentFilter(
+                                    ExtensionFilter.VIDEO,
+                                    !mainState.enableRecentVideoFilter
+                                )
+                            },
+                            enabled = true,
+                            leadingIcon = {
+                                if (mainState.enableRecentVideoFilter)
+                                    Icon(
+                                        imageVector = Icons.Outlined.Done,
+                                        contentDescription = "",
+                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                    )
+                            },
+                            label = { Text(text = "视频") },
+                            border = FilterChipDefaults.filterChipBorder(
+                                borderColor = MaterialTheme.colorScheme.outline.copy(
+                                    alpha = 0.4f
+                                )
+                            )
+                        )
+                        FilterChip(
+                            modifier = Modifier
+                                .animateContentSize(),
+                            selected = mainState.enableRecentAudioFilter,
+                            onClick = {
+                                onSetRecentFilter(
+                                    ExtensionFilter.AUDIO,
+                                    !mainState.enableRecentAudioFilter
+                                )
+                            },
+                            enabled = true,
+                            leadingIcon = {
+                                if (mainState.enableRecentAudioFilter)
+                                    Icon(
+                                        imageVector = Icons.Outlined.Done,
+                                        contentDescription = "",
+                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                    )
+                            },
+                            label = { Text(text = "音频") },
+                            border = FilterChipDefaults.filterChipBorder(
+                                borderColor = MaterialTheme.colorScheme.outline.copy(
+                                    alpha = 0.4f
+                                )
+                            )
+                        )
+                        FilterChip(
+                            modifier = Modifier
+                                .animateContentSize(),
+                            selected = mainState.enableRecentPictureFilter,
+                            onClick = {
+                                onSetRecentFilter(
+                                    ExtensionFilter.PICTURE,
+                                    !mainState.enableRecentPictureFilter
+                                )
+                            },
+                            enabled = true,
+                            leadingIcon = {
+                                if (mainState.enableRecentPictureFilter)
+                                    Icon(
+                                        imageVector = Icons.Outlined.Done,
+                                        contentDescription = "",
+                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                    )
+                            },
+                            label = { Text(text = "图片") },
+                            border = FilterChipDefaults.filterChipBorder(
+                                borderColor = MaterialTheme.colorScheme.outline.copy(
+                                    alpha = 0.4f
+                                )
+                            )
+                        )
+                        FilterChip(
+                            modifier = Modifier
+                                .animateContentSize(),
+                            selected = mainState.enableRecentPDFFilter,
+                            onClick = {
+                                onSetRecentFilter(
+                                    ExtensionFilter.PDF,
+                                    !mainState.enableRecentPDFFilter
+                                )
+                            },
+                            enabled = true,
+                            leadingIcon = {
+                                if (mainState.enableRecentPDFFilter)
+                                    Icon(
+                                        imageVector = Icons.Outlined.Done,
+                                        contentDescription = "",
+                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                    )
+                            },
+                            label = { Text(text = "便携式文档") },
+                            border = FilterChipDefaults.filterChipBorder(
+                                borderColor = MaterialTheme.colorScheme.outline.copy(
+                                    alpha = 0.4f
+                                )
+                            )
+                        )
+                        FilterChip(
+                            modifier = Modifier
+                                .animateContentSize(),
+                            selected = mainState.enableRecentCompressedFilter,
+                            onClick = {
+                                onSetRecentFilter(
+                                    ExtensionFilter.COMPRESSED,
+                                    !mainState.enableRecentCompressedFilter
+                                )
+                            },
+                            enabled = true,
+                            leadingIcon = {
+                                if (mainState.enableRecentCompressedFilter)
+                                    Icon(
+                                        imageVector = Icons.Outlined.Done,
+                                        contentDescription = "",
+                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                    )
+                            },
+                            label = { Text(text = "压缩文件") },
+                            border = FilterChipDefaults.filterChipBorder(
+                                borderColor = MaterialTheme.colorScheme.outline.copy(
+                                    alpha = 0.4f
+                                )
+                            )
                         )
                     }
-                } else {
-                    mainState.recentFilterData.take(5)
-                        .forEachIndexed { index, file ->
-                            FileItem(
-                                modifier = Modifier
-                                    .padding(top = 3.dp)
-                                    .animateItemPlacement(),
-                                file = file,
-                                searchText = searchText,
-                                isFirst = index == 0,
-                                isLast = index == min(mainState.recentFilterData.lastIndex, 4),
-                                isSelected = selectedFileIdList.contains(file.fileId),
-                                onClick = {
-                                    if (searchAppBarState == SearchAppBar.FILE_SELECT) {
-                                        onAddOrRemoveFile(file)
-                                    } else {
-                                        if (file.downloadingState is DownloadingState.None || file.downloadingState is DownloadingState.Failure) {
-                                            onEvent(ActivityEvent.DownloadFile(file))
-                                        } else if (file.downloadingState is DownloadingState.Done) {
-                                            onEvent(ActivityEvent.OpenFile(file))
-                                        }
-                                    }
-                                },
-                                onLongClick = {
-                                    onChangeSearchAppBarState(SearchAppBar.FILE_SELECT)
-                                    onAddOrRemoveFile(file)
-                                },
-                                onAvatarClick = {
-                                    onChangeSearchAppBarState(SearchAppBar.FILE_SELECT)
-                                    onAddOrRemoveFile(file)
-                                })
-                        }
-                    TextButton(
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
-                        onClick = { onChangeArea(FilePageState.SEARCH_AREA) }
-                    ) {
-                        Text(text = "查看完整列表")
-                    }
-                }
-            }
-        }
-        item {
-            Column(
-                modifier = Modifier
-                    .padding(horizontal = 16.dp)
-                    .animateItemPlacement()
-            ) {
-                Box(
-                    modifier = Modifier
-                        .padding(vertical = 8.dp)
-                ) {
-                    Text(
-                        text = "云服务",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-        }
-        item {
-            val runningWork by remember {
-                derivedStateOf {
-                    workInfoMap.count { it.value.any { !it.state.isFinished } }
-                }
-            }
-            AnimatedVisibility(visible = workInfoMap.isNotEmpty()) {
-                Surface(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surface,
-                    tonalElevation = 3.dp,
-                    onClick = {
-                        onShowWorkInfoDialog()
-                    }
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .height(48.dp)
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = if (runningWork != 0) Icons.Outlined.Backup else Icons.Outlined.CloudDone,
-                            contentDescription = "backup",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(horizontal = 16.dp)
-                        )
-                        Text(
-                            modifier = Modifier.weight(1f),
-                            text = if (runningWork != 0) "$runningWork 项备份任务正在进行" else "备份已完成",
-                            color = MaterialTheme.colorScheme.onSurface,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Icon(
-                            imageVector = Icons.Outlined.NavigateNext,
-                            contentDescription = "next",
-                            modifier = Modifier.padding(horizontal = 16.dp)
-                        )
-                    }
-                }
-            }
-        }
-        item {
-            Crossfade(
-                targetState = gDriveLogin,
-                modifier = Modifier.padding(vertical = 16.dp)
-            ) {
-                if (it) {
-                    Column() {
-                        var expanded by remember {
-                            mutableStateOf(false)
-                        }
-                        Box(modifier = Modifier.wrapContentSize()) {
-                            OutlinedCard(modifier = Modifier
-                                .padding(horizontal = 16.dp)
-                                .fillMaxWidth(), onClick = {
-                                expanded = true
-                            }) {
-                                Row(modifier = Modifier.padding(16.dp)) {
-                                    Surface(
-                                        modifier = Modifier.size(48.dp),
-                                        shape = CircleShape,
-                                        color = MaterialTheme.colorScheme.secondaryContainer
-                                    ) {
-                                        Box(
-                                            modifier = Modifier.fillMaxSize(),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            FaIcon(
-                                                faIcon = FaIcons.GoogleDrive,
-                                                tint = MaterialTheme.colorScheme.primary
-                                            )
-                                        }
-                                    }
-                                    Spacer(modifier = Modifier.width(16.dp))
-                                    Column() {
-                                        Text(
-                                            text = "Google Drive",
-                                            style = MaterialTheme.typography.titleMedium
-                                        )
-                                        LinearProgressIndicator(
-                                            progress = 0.6f,
-                                            modifier = Modifier.padding(vertical = 4.dp)
-                                        )
-                                        Text(
-                                            text = "已使用 ${gDriveUsedSpacePercent}% 的存储空间（${
-                                                FileUtil.getSizeString(
-                                                    gDriveUsedSpace
-                                                )
-                                            } / ${FileUtil.getSizeString(gDriveTotalSpace)}）",
-                                            style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        Text(
-                                            text = "其中应用使用 ${gDriveAppUsedSpacePercent}%（${
-                                                FileUtil.getSizeString(
-                                                    gDriveAppUsedSpace
-                                                )
-                                            }）",
-                                            style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-                            }
-                            RoundedCornerDropdownMenu(
-                                expanded = expanded,
-                                onDismissRequest = { expanded = false }) {
-                                DropdownMenuItem(text = { Text(text = "退出登录") }, onClick = {
-                                    expanded = false
-                                    (context as MainActivity).getGoogleLoginAuth().signOut()
-                                        .addOnCompleteListener {
-                                            onLogoutGoogleDrive()
-                                        }
-                                })
-                            }
-                        }
-                    }
-                } else {
-                    OutlinedCard(
-                        modifier = Modifier
-                            .padding(horizontal = 16.dp)
-                            .animateItemPlacement(),
-                        shape = CardDefaults.outlinedShape
-                    ) {
+                    if (mainState.recentFilterData.isEmpty()) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(24.dp),
+                                .defaultMinSize(minHeight = 320.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ) {
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.secondaryContainer
-                            ) {
-                                Box(
-                                    modifier = Modifier.size(72.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.CloudOff,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(24.dp),
-                                        tint = MaterialTheme.colorScheme.onSecondaryContainer
-                                    )
+                            val context = LocalContext.current
+                            val imageLoader = ImageLoader.Builder(context)
+                                .components {
+                                    add(SvgDecoder.Factory())
+                                }
+                                .build()
+                            AsyncImage(
+                                model = ImageRequest.Builder(context)
+                                    .data(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.empty_2_dynamic else R.drawable.empty_2)
+                                    .crossfade(true)
+                                    .build(),
+                                imageLoader = imageLoader,
+                                contentDescription = null,
+                                contentScale = ContentScale.FillWidth,
+                                modifier = Modifier
+                                    .align(Alignment.CenterHorizontally)
+                                    .width(224.dp)
+                                    .padding(bottom = 16.dp)
+                            )
+                            Text(
+                                modifier = Modifier
+                                    .align(Alignment.CenterHorizontally),
+                                text = "暂无可显示的文件",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    } else {
+                        mainState.recentFilterData.take(5)
+                            .forEachIndexed { index, file ->
+                                FileItem(
+                                    modifier = Modifier
+                                        .padding(top = 3.dp)
+                                        .animateItemPlacement(),
+                                    file = file,
+                                    searchText = searchText,
+                                    isFirst = index == 0,
+                                    isLast = index == min(mainState.recentFilterData.lastIndex, 4),
+                                    isSelected = selectedFileIdList.contains(file.fileId),
+                                    onClick = {
+                                        if (searchAppBarState == SearchAppBar.FILE_SELECT) {
+                                            onAddOrRemoveFile(file)
+                                        } else {
+                                            if (file.downloadingState is DownloadingState.None || file.downloadingState is DownloadingState.Failure) {
+                                                onEvent(ActivityEvent.DownloadFile(file))
+                                            } else if (file.downloadingState is DownloadingState.Done) {
+                                                onEvent(ActivityEvent.OpenFile(file))
+                                            }
+                                        }
+                                    },
+                                    onLongClick = {
+                                        onChangeSearchAppBarState(SearchAppBar.FILE_SELECT)
+                                        onAddOrRemoveFile(file)
+                                    },
+                                    onAvatarClick = {
+                                        onChangeSearchAppBarState(SearchAppBar.FILE_SELECT)
+                                        onAddOrRemoveFile(file)
+                                    })
+                            }
+                        TextButton(
+                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                            onClick = { onChangeArea(FilePageState.SEARCH_AREA) }
+                        ) {
+                            Text(text = "查看完整列表")
+                        }
+                    }
+                }
+            }
+            item {
+                Column(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .animateItemPlacement()
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .padding(vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = "云服务",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
+            item {
+                val runningWork by remember {
+                    derivedStateOf {
+                        workInfoMap.count { it.value.any { !it.state.isFinished } }
+                    }
+                }
+                AnimatedVisibility(visible = workInfoMap.isNotEmpty()) {
+                    Surface(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surface,
+                        tonalElevation = 3.dp,
+                        onClick = {
+                            onShowWorkInfoDialog()
+                        }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .height(48.dp)
+                                .fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = if (runningWork != 0) Icons.Outlined.Backup else Icons.Outlined.CloudDone,
+                                contentDescription = "backup",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(horizontal = 16.dp)
+                            )
+                            Text(
+                                modifier = Modifier.weight(1f),
+                                text = if (runningWork != 0) "$runningWork 项备份任务正在进行" else "备份已完成",
+                                color = MaterialTheme.colorScheme.onSurface,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Icon(
+                                imageVector = Icons.Outlined.NavigateNext,
+                                contentDescription = "next",
+                                modifier = Modifier.padding(horizontal = 16.dp)
+                            )
+                        }
+                    }
+                }
+            }
+            item {
+                Crossfade(
+                    targetState = gDriveLogin,
+                    modifier = Modifier.padding(vertical = 16.dp)
+                ) {
+                    if (it) {
+                        Column() {
+                            var expanded by remember {
+                                mutableStateOf(false)
+                            }
+                            Box(modifier = Modifier.wrapContentSize()) {
+                                OutlinedCard(modifier = Modifier
+                                    .padding(horizontal = 16.dp)
+                                    .fillMaxWidth(), onClick = {
+                                    expanded = true
+                                }) {
+                                    Row(modifier = Modifier.padding(16.dp)) {
+                                        Surface(
+                                            modifier = Modifier.size(48.dp),
+                                            shape = CircleShape,
+                                            color = MaterialTheme.colorScheme.secondaryContainer
+                                        ) {
+                                            Box(
+                                                modifier = Modifier.fillMaxSize(),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                FaIcon(
+                                                    faIcon = FaIcons.GoogleDrive,
+                                                    tint = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.width(16.dp))
+                                        Column() {
+                                            Text(
+                                                text = "Google Drive",
+                                                style = MaterialTheme.typography.titleMedium
+                                            )
+                                            LinearProgressIndicator(
+                                                progress = 0.6f,
+                                                modifier = Modifier.padding(vertical = 4.dp)
+                                            )
+                                            Text(
+                                                text = "已使用 ${gDriveUsedSpacePercent}% 的存储空间（${
+                                                    FileUtil.getSizeString(
+                                                        gDriveUsedSpace
+                                                    )
+                                                } / ${FileUtil.getSizeString(gDriveTotalSpace)}）",
+                                                style = MaterialTheme.typography.labelMedium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Text(
+                                                text = "其中应用使用 ${gDriveAppUsedSpacePercent}%（${
+                                                    FileUtil.getSizeString(
+                                                        gDriveAppUsedSpace
+                                                    )
+                                                }）",
+                                                style = MaterialTheme.typography.labelMedium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                }
+                                RoundedCornerDropdownMenu(
+                                    expanded = expanded,
+                                    onDismissRequest = { expanded = false }) {
+                                    DropdownMenuItem(text = { Text(text = "退出登录") }, onClick = {
+                                        expanded = false
+                                        (context as MainActivity).getGoogleLoginAuth().signOut()
+                                            .addOnCompleteListener {
+                                                onLogoutGoogleDrive()
+                                            }
+                                    })
                                 }
                             }
-                            Text(
-                                modifier = Modifier.padding(top = 16.dp),
-                                text = "未连接云端服务",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Text(
-                                modifier = Modifier.padding(vertical = 16.dp),
-                                text = "连接云端服务可将您的会话文件备份至云端",
-                                style = MaterialTheme.typography.labelLarge
-                            )
-                            FilledTonalButton(
-                                onClick = {
-                                    val signInIntent =
-                                        (context as MainActivity).getGoogleLoginAuth().signInIntent
-                                    gDriveLauncher.launch(signInIntent)
-                                }) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Cloud,
-                                    contentDescription = "cloud",
-                                    modifier = Modifier
-                                        .padding(end = 8.dp)
-                                        .size(ButtonDefaults.IconSize),
+                        }
+                    } else {
+                        OutlinedCard(
+                            modifier = Modifier
+                                .padding(horizontal = 16.dp)
+                                .animateItemPlacement(),
+                            shape = CardDefaults.outlinedShape
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.secondaryContainer
+                                ) {
+                                    Box(
+                                        modifier = Modifier.size(72.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.CloudOff,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(24.dp),
+                                            tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                        )
+                                    }
+                                }
+                                Text(
+                                    modifier = Modifier.padding(top = 16.dp),
+                                    text = "未连接云端服务",
+                                    style = MaterialTheme.typography.titleMedium
                                 )
-                                Text(text = "连接云端服务")
+                                Text(
+                                    modifier = Modifier.padding(vertical = 16.dp),
+                                    text = "连接云端服务可将您的会话文件备份至云端",
+                                    style = MaterialTheme.typography.labelLarge
+                                )
+                                FilledTonalButton(
+                                    onClick = {
+                                        val signInIntent =
+                                            (context as MainActivity).getGoogleLoginAuth().signInIntent
+                                        gDriveLauncher.launch(signInIntent)
+                                    }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Cloud,
+                                        contentDescription = "cloud",
+                                        modifier = Modifier
+                                            .padding(end = 8.dp)
+                                            .size(ButtonDefaults.IconSize),
+                                    )
+                                    Text(text = "连接云端服务")
+                                }
                             }
                         }
                     }
