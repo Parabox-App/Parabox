@@ -25,6 +25,7 @@ import com.ojhdtapp.parabox.domain.model.*
 import com.ojhdtapp.parabox.domain.use_case.DeleteMessage
 import com.ojhdtapp.parabox.domain.use_case.GetMessages
 import com.ojhdtapp.parabox.domain.use_case.GroupNewContact
+import com.ojhdtapp.parabox.domain.use_case.UpdateContact
 import com.ojhdtapp.parabox.ui.message.AudioRecorderState
 import com.ojhdtapp.parabox.ui.message.MessageState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -40,6 +41,7 @@ class MainSharedViewModel @Inject constructor(
     private val getMessages: GetMessages,
     private val deleteMessage: DeleteMessage,
     private val groupNewContact: GroupNewContact,
+    private val updateContact: UpdateContact,
 ) : ViewModel() {
 
     // emit to this when wanting toasting
@@ -101,6 +103,13 @@ class MainSharedViewModel @Inject constructor(
 
     fun receiveMessagePagingDataFlow(pluginConnectionObjectIdList: List<Long>): Flow<PagingData<Message>> {
         return getMessages.pagingFlow(pluginConnectionObjectIdList)
+            .onEach {
+                viewModelScope.launch(Dispatchers.IO) {
+                    messageStateFlow.value.contact?.contactId?.let {
+                        updateContact.unreadMessagesNum(it, 0)
+                    }
+                }
+            }
             .cachedIn(viewModelScope)
     }
 
