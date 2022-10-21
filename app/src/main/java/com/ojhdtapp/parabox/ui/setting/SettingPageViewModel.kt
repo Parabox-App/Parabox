@@ -12,6 +12,7 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.ojhdtapp.parabox.BuildConfig
 import com.ojhdtapp.parabox.core.util.CacheUtil
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.FileUtil
@@ -382,42 +383,42 @@ class SettingPageViewModel @Inject constructor(
         License(
             "Accompanist",
             "https://github.com/google/accompanist",
-            "Apache Software License 2.0",
+            "Apache License 2.0",
         ),
         License(
             "AndroidX",
             "https://developer.android.com/jetpack/androidx",
-            "Apache Software License 2.0"
+            "Apache License 2.0"
         ),
         License(
             "AndroidX DataStore",
             "https://developer.android.com/jetpack/androidx/releases/datastore",
-            "Apache Software License 2.0"
+            "Apache License 2.0"
         ),
         License(
             "AndroidX Lifecycle",
             "https://developer.android.com/jetpack/androidx/releases/lifecycle",
-            "Apache Software License 2.0"
+            "Apache License 2.0"
         ),
         License(
             "AndroidX Compose",
             "https://developer.android.com/jetpack/androidx/releases/compose",
-            "Apache Software License 2.0"
+            "Apache License 2.0"
         ),
         License(
             "AndroidX Compose Material",
             "https://developer.android.com/jetpack/androidx/releases/compose-material",
-            "Apache Software License 2.0"
+            "Apache License 2.0"
         ),
         License(
             "Coil",
             "https://github.com/coil-kt/coil/blob/main/LICENSE.txt",
-            "Apache Software License 2.0"
+            "Apache License 2.0"
         ),
         License(
             "Kotlin",
             "https://github.com/JetBrains/kotlin",
-            "Apache Software License 2.0"
+            "Apache License 2.0"
         ),
         License(
             "Android-Room-Database-Backup",
@@ -432,12 +433,12 @@ class SettingPageViewModel @Inject constructor(
         License(
             "Compose-Extended-Gestures",
             "https://github.com/SmartToolFactory/Compose-Extended-Gestures/blob/master/LICENSE.md",
-            "Apache Software License 2.0"
+            "Apache License 2.0"
         ),
         License(
             "Amplituda",
             "https://github.com/lincollincol/Amplituda/blob/master/LICENSE",
-            "Apache Software License 2.0"
+            "Apache License 2.0"
         )
     )
 }

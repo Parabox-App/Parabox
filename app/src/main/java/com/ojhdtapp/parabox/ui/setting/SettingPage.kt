@@ -35,6 +35,7 @@ import coil.ImageLoader
 import coil.compose.AsyncImage
 import coil.decode.SvgDecoder
 import coil.request.ImageRequest
+import com.ojhdtapp.parabox.BuildConfig
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.domain.model.AppModel
@@ -123,38 +124,38 @@ fun SettingPage(
                                 .statusBarsPadding(),
                             title = { Text("设置") },
                             actions = {
-                                var expanded by remember {
-                                    mutableStateOf(false)
-                                }
-                                Box(
-                                    modifier = Modifier
-                                        .wrapContentSize(Alignment.TopStart)
-                                ) {
-                                    IconButton(onClick = {
-                                        expanded = !expanded
-                                    }) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.MoreVert,
-                                            contentDescription = "more"
-                                        )
-                                    }
-                                    RoundedCornerDropdownMenu(
-                                        expanded = expanded,
-                                        onDismissRequest = { expanded = false },
-                                        modifier = Modifier.width(192.dp)
-                                    ) {
-                                        DropdownMenuItem(
-                                            text = {
-                                                Text(
-                                                    text = "开放源代码许可",
-                                                    style = MaterialTheme.typography.bodyMedium
-                                                )
-                                            },
-                                            onClick = {
-                                                expanded = false
-                                            })
-                                    }
-                                }
+//                                var expanded by remember {
+//                                    mutableStateOf(false)
+//                                }
+//                                Box(
+//                                    modifier = Modifier
+//                                        .wrapContentSize(Alignment.TopStart)
+//                                ) {
+//                                    IconButton(onClick = {
+//                                        expanded = !expanded
+//                                    }) {
+//                                        Icon(
+//                                            imageVector = Icons.Outlined.MoreVert,
+//                                            contentDescription = "more"
+//                                        )
+//                                    }
+//                                    RoundedCornerDropdownMenu(
+//                                        expanded = expanded,
+//                                        onDismissRequest = { expanded = false },
+//                                        modifier = Modifier.width(192.dp)
+//                                    ) {
+//                                        DropdownMenuItem(
+//                                            text = {
+//                                                Text(
+//                                                    text = "开放源代码许可",
+//                                                    style = MaterialTheme.typography.bodyMedium
+//                                                )
+//                                            },
+//                                            onClick = {
+//                                                expanded = false
+//                                            })
+//                                    }
+//                                }
                             },
                             scrollBehavior = exitUntilCollapsedScrollBehavior
                         )
@@ -229,7 +230,7 @@ fun SettingPage(
                             ThemeBlock(
                                 modifier = Modifier.fillMaxWidth(),
                                 userName = mainSharedViewModel.userNameFlow.collectAsState(initial = DataStoreKeys.DEFAULT_USER_NAME).value,
-                                version = "1.0",
+                                version = BuildConfig.VERSION_NAME,
                                 onBlockClick = {},
                                 onUserNameClick = {
                                     viewModel.setEditUserNameDialogState(true)

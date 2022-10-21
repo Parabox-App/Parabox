@@ -30,6 +30,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
@@ -63,6 +64,7 @@ import com.ojhdtapp.parabox.ui.setting.EditUserNameDialog
 import com.ojhdtapp.parabox.ui.util.*
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.lang.Integer.min
@@ -242,23 +244,28 @@ fun FilePage(
                             viewModel.setSearchBarActivateState(SearchAppBar.NONE)
                             viewModel.clearSelectedFiles()
                         }
+
                         is DropdownMenuItemEvent.CloudDownloadFile -> {
                             viewModel.selectedFilesId.forEach { id ->
-                                mainState.data.firstOrNull { it.cloudType != null && it.cloudType != 0 && it.cloudId != null && it.fileId == id }?.also {
-                                    onEvent(ActivityEvent.DownloadFile(it))
-                                }
+                                mainState.data.firstOrNull { it.cloudType != null && it.cloudType != 0 && it.cloudId != null && it.fileId == id }
+                                    ?.also {
+                                        onEvent(ActivityEvent.DownloadFile(it))
+                                    }
                             }
                             viewModel.setSearchBarActivateState(SearchAppBar.NONE)
                             viewModel.clearSelectedFiles()
                         }
+
                         is DropdownMenuItemEvent.SaveToCloud -> {
                             viewModel.selectedFilesId
                                 .forEach { id ->
-                                mainState.data.firstOrNull { it.cloudId == null && it.fileId == id }?.also {
-                                    onEvent(ActivityEvent.SaveToCloud(it))
+                                    mainState.data.firstOrNull { it.cloudId == null && it.fileId == id }
+                                        ?.also {
+                                            onEvent(ActivityEvent.SaveToCloud(it))
+                                        }
                                 }
-                            }
                         }
+
                         is DropdownMenuItemEvent.DeleteFile -> {
                             deleteFileConfirm = true
                         }
@@ -328,8 +335,22 @@ fun FilePage(
                         mainSharedViewModel.setWorkInfoDialogState(true)
                     },
                     onRefresh = {
-                        viewModel.setIsRefreshing(true)
-                        viewModel.updateGoogleDriveFilesStateFlow()
+                        when{
+                            gDriveLogin -> {
+                                viewModel.setIsRefreshing(true)
+                                viewModel.updateGoogleDriveFilesStateFlow()
+                            }
+                            else -> {
+                                coroutineScope.launch {
+                                    snackBarHostState.showSnackbar("未连接云服务")
+                                }
+                                coroutineScope.launch {
+                                    viewModel.setIsRefreshing(true)
+                                    delay(500)
+                                    viewModel.setIsRefreshing(false)
+                                }
+                            }
+                        }
                     }
                 )
 
@@ -728,185 +749,176 @@ fun MainArea(
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
-                }
-            }
-            item {
-                val runningWork by remember(workInfoPairList) {
-                    derivedStateOf {
-                        workInfoPairList.count { it.second.any { !it.state.isFinished } }
-                    }
-                }
-                AnimatedVisibility(
-                    visible = workInfoPairList.isNotEmpty(),
-                    enter = expandVertically(),
-                    exit = shrinkVertically(),
-                ) {
-                    Surface(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.surface,
-                        tonalElevation = 3.dp,
-                        onClick = {
-                            onShowWorkInfoDialog()
+                    val runningWork by remember(workInfoPairList) {
+                        derivedStateOf {
+                            workInfoPairList.count { it.second.any { !it.state.isFinished } }
                         }
+                    }
+                    AnimatedVisibility(
+                        visible = workInfoPairList.isNotEmpty(),
+                        enter = expandVertically(),
+                        exit = shrinkVertically(),
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .height(48.dp)
-                                .fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
+                        Surface(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surface,
+                            tonalElevation = 3.dp,
+                            onClick = {
+                                onShowWorkInfoDialog()
+                            }
                         ) {
-                            Icon(
-                                imageVector = if (runningWork != 0) Icons.Outlined.Backup else Icons.Outlined.CloudDone,
-                                contentDescription = "backup",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(horizontal = 16.dp)
-                            )
-                            Text(
-                                modifier = Modifier.weight(1f),
-                                text = if (runningWork != 0) "$runningWork 项备份任务正在进行" else "暂无运行中的备份任务",
-                                color = MaterialTheme.colorScheme.onSurface,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Icon(
-                                imageVector = Icons.Outlined.NavigateNext,
-                                contentDescription = "next",
-                                modifier = Modifier.padding(horizontal = 16.dp)
-                            )
+                            Row(
+                                modifier = Modifier
+                                    .height(48.dp)
+                                    .fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = if (runningWork != 0) Icons.Outlined.Backup else Icons.Outlined.CloudDone,
+                                    contentDescription = "backup",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(horizontal = 16.dp)
+                                )
+                                Text(
+                                    modifier = Modifier.weight(1f),
+                                    text = if (runningWork != 0) "$runningWork 项备份任务正在进行" else "暂无运行中的备份任务",
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Icon(
+                                    imageVector = Icons.Outlined.NavigateNext,
+                                    contentDescription = "next",
+                                    modifier = Modifier.padding(horizontal = 16.dp)
+                                )
+                            }
                         }
                     }
-                }
-            }
-            item {
-                Crossfade(
-                    targetState = gDriveLogin,
-                    modifier = Modifier.padding(vertical = 16.dp)
-                ) {
-                    if (it) {
-                        Column() {
-                            var expanded by remember {
-                                mutableStateOf(false)
-                            }
-                            Box(modifier = Modifier.wrapContentSize()) {
-                                OutlinedCard(modifier = Modifier
-                                    .padding(horizontal = 16.dp)
-                                    .fillMaxWidth(), onClick = {
-                                    expanded = true
-                                }) {
-                                    Row(modifier = Modifier.padding(16.dp)) {
-                                        Surface(
-                                            modifier = Modifier.size(48.dp),
-                                            shape = CircleShape,
-                                            color = MaterialTheme.colorScheme.secondaryContainer
-                                        ) {
-                                            Box(
-                                                modifier = Modifier.fillMaxSize(),
-                                                contentAlignment = Alignment.Center
+                    Crossfade(
+                        targetState = gDriveLogin,
+                    ) {
+                        if (it) {
+                            Column() {
+                                var expanded by remember {
+                                    mutableStateOf(false)
+                                }
+                                Box(modifier = Modifier.wrapContentSize()) {
+                                    OutlinedCard(modifier = Modifier
+                                        .fillMaxWidth(), onClick = {
+                                        expanded = true
+                                    }) {
+                                        Row(modifier = Modifier.padding(16.dp)) {
+                                            Surface(
+                                                modifier = Modifier.size(48.dp),
+                                                shape = CircleShape,
+                                                color = MaterialTheme.colorScheme.secondaryContainer
                                             ) {
-                                                FaIcon(
-                                                    faIcon = FaIcons.GoogleDrive,
-                                                    tint = MaterialTheme.colorScheme.primary
+                                                Box(
+                                                    modifier = Modifier.fillMaxSize(),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    FaIcon(
+                                                        faIcon = FaIcons.GoogleDrive,
+                                                        tint = MaterialTheme.colorScheme.primary
+                                                    )
+                                                }
+                                            }
+                                            Spacer(modifier = Modifier.width(16.dp))
+                                            Column() {
+                                                Text(
+                                                    text = "Google Drive",
+                                                    style = MaterialTheme.typography.titleMedium
+                                                )
+                                                LinearProgressIndicator(
+                                                    progress = 0.6f,
+                                                    modifier = Modifier
+                                                        .padding(vertical = 4.dp)
+                                                        .clip(CircleShape),
+                                                )
+                                                Text(
+                                                    text = "已使用 ${gDriveUsedSpacePercent}% 的存储空间（${
+                                                        FileUtil.getSizeString(
+                                                            gDriveUsedSpace
+                                                        )
+                                                    } / ${FileUtil.getSizeString(gDriveTotalSpace)}）",
+                                                    style = MaterialTheme.typography.labelMedium,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                                Text(
+                                                    text = "其中应用使用 ${gDriveAppUsedSpacePercent}%（${
+                                                        FileUtil.getSizeString(
+                                                            gDriveAppUsedSpace
+                                                        )
+                                                    }）",
+                                                    style = MaterialTheme.typography.labelMedium,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                                 )
                                             }
                                         }
-                                        Spacer(modifier = Modifier.width(16.dp))
-                                        Column() {
-                                            Text(
-                                                text = "Google Drive",
-                                                style = MaterialTheme.typography.titleMedium
-                                            )
-                                            LinearProgressIndicator(
-                                                progress = 0.6f,
-                                                modifier = Modifier.padding(vertical = 4.dp).clip(CircleShape),
-                                            )
-                                            Text(
-                                                text = "已使用 ${gDriveUsedSpacePercent}% 的存储空间（${
-                                                    FileUtil.getSizeString(
-                                                        gDriveUsedSpace
-                                                    )
-                                                } / ${FileUtil.getSizeString(gDriveTotalSpace)}）",
-                                                style = MaterialTheme.typography.labelMedium,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                            Text(
-                                                text = "其中应用使用 ${gDriveAppUsedSpacePercent}%（${
-                                                    FileUtil.getSizeString(
-                                                        gDriveAppUsedSpace
-                                                    )
-                                                }）",
-                                                style = MaterialTheme.typography.labelMedium,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    }
+                                    RoundedCornerDropdownMenu(
+                                        expanded = expanded,
+                                        onDismissRequest = { expanded = false }) {
+                                        DropdownMenuItem(text = { Text(text = "退出登录") }, onClick = {
+                                            expanded = false
+                                            (context as MainActivity).getGoogleLoginAuth().signOut()
+                                                .addOnCompleteListener {
+                                                    onLogoutGoogleDrive()
+                                                }
+                                        })
+                                    }
+                                }
+                            }
+                        } else {
+                            OutlinedCard() {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(24.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = MaterialTheme.colorScheme.secondaryContainer
+                                    ) {
+                                        Box(
+                                            modifier = Modifier.size(72.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Outlined.CloudOff,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(24.dp),
+                                                tint = MaterialTheme.colorScheme.onSecondaryContainer
                                             )
                                         }
                                     }
-                                }
-                                RoundedCornerDropdownMenu(
-                                    expanded = expanded,
-                                    onDismissRequest = { expanded = false }) {
-                                    DropdownMenuItem(text = { Text(text = "退出登录") }, onClick = {
-                                        expanded = false
-                                        (context as MainActivity).getGoogleLoginAuth().signOut()
-                                            .addOnCompleteListener {
-                                                onLogoutGoogleDrive()
-                                            }
-                                    })
-                                }
-                            }
-                        }
-                    } else {
-                        OutlinedCard(
-                            modifier = Modifier
-                                .padding(horizontal = 16.dp)
-                                .animateItemPlacement(),
-                            shape = CardDefaults.outlinedShape
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(24.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.secondaryContainer
-                                ) {
-                                    Box(
-                                        modifier = Modifier.size(72.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.CloudOff,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(24.dp),
-                                            tint = MaterialTheme.colorScheme.onSecondaryContainer
-                                        )
-                                    }
-                                }
-                                Text(
-                                    modifier = Modifier.padding(top = 16.dp),
-                                    text = "未连接云端服务",
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                                Text(
-                                    modifier = Modifier.padding(vertical = 16.dp),
-                                    text = "连接云端服务可将您的会话文件备份至云端",
-                                    style = MaterialTheme.typography.labelLarge
-                                )
-                                FilledTonalButton(
-                                    onClick = {
-                                        val signInIntent =
-                                            (context as MainActivity).getGoogleLoginAuth().signInIntent
-                                        gDriveLauncher.launch(signInIntent)
-                                    }) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Cloud,
-                                        contentDescription = "cloud",
-                                        modifier = Modifier
-                                            .padding(end = 8.dp)
-                                            .size(ButtonDefaults.IconSize),
+                                    Text(
+                                        modifier = Modifier.padding(top = 16.dp),
+                                        text = "未连接云端服务",
+                                        style = MaterialTheme.typography.titleMedium
                                     )
-                                    Text(text = "连接云端服务")
+                                    Text(
+                                        modifier = Modifier.padding(vertical = 16.dp),
+                                        text = "连接云端服务可将您的会话文件备份至云端",
+                                        style = MaterialTheme.typography.labelLarge
+                                    )
+                                    FilledTonalButton(
+                                        onClick = {
+                                            val signInIntent =
+                                                (context as MainActivity).getGoogleLoginAuth().signInIntent
+                                            gDriveLauncher.launch(signInIntent)
+                                        }) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Cloud,
+                                            contentDescription = "cloud",
+                                            modifier = Modifier
+                                                .padding(end = 8.dp)
+                                                .size(ButtonDefaults.IconSize),
+                                        )
+                                        Text(text = "连接云端服务")
+                                    }
                                 }
                             }
                         }
@@ -1436,13 +1448,27 @@ fun FileItem(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            Text(
+            Column(
                 modifier = Modifier
-                    .padding(top = 4.dp)
-                    .align(Alignment.Top),
-                text = file.timestamp.toTimeUntilNow(),
-                style = MaterialTheme.typography.labelMedium
-            )
+                    .fillMaxHeight()
+                    .padding(vertical = 4.dp),
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = file.timestamp.toTimeUntilNow(),
+                    style = MaterialTheme.typography.labelMedium
+                )
+                if (file.cloudId != null) {
+                    Icon(
+                        modifier = Modifier
+                            .size(16.dp),
+                        imageVector = Icons.Outlined.CloudDone,
+                        contentDescription = "cloud done",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
         }
     }
 }

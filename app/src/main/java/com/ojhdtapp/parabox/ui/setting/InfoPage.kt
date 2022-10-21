@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.ojhdtapp.parabox.BuildConfig
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
@@ -93,7 +94,7 @@ fun InfoPage(
                     ThemeBlock(
                         modifier = Modifier.fillMaxWidth(),
                         userName = mainSharedViewModel.userNameFlow.collectAsState(initial = DataStoreKeys.DEFAULT_USER_NAME).value,
-                        version = "1.0",
+                        version = BuildConfig.VERSION_NAME,
                         onBlockClick = {},
                         onUserNameClick = {
                             viewModel.setEditUserNameDialogState(true)
