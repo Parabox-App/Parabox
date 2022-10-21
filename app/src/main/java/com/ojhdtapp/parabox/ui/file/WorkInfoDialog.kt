@@ -39,17 +39,17 @@ import com.ojhdtapp.parabox.domain.model.File
 fun WorkInfoDialog(
     modifier: Modifier = Modifier,
     showDialog: Boolean,
-    workInfoPairList: List<Pair<File, List<WorkInfo>>>,
+    workInfoMap: Map<String, Pair<File, List<WorkInfo>>>,
     onCancel: (fileId: Long) -> Unit,
     sizeClass: WindowSizeClass,
     onDismiss: () -> Unit,
 ) {
     if (showDialog) {
-//        val workInfoPlainList by remember{
-//            derivedStateOf {
-//                workInfoPairList.toList()
-//            }
-//        }
+        val workInfoPlainList by remember{
+            derivedStateOf {
+                workInfoMap.toList()
+            }
+        }
         Dialog(
             onDismissRequest = {
                 onDismiss()
@@ -93,7 +93,7 @@ fun WorkInfoDialog(
                     )
                     LazyColumn(modifier = Modifier.heightIn(max = 300.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         item {
-                            if (workInfoPairList.isEmpty()) {
+                            if (workInfoMap.isEmpty()) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -104,17 +104,17 @@ fun WorkInfoDialog(
                                 }
                             }
                         }
-                        items(items = workInfoPairList) {
-                            val workInfoList by remember(workInfoPairList) {
+                        items(items = workInfoPlainList, key = {it.first}) {
+                            val workInfoList by remember(workInfoPlainList) {
                                 derivedStateOf {
-                                    it.second
+                                    it.second.second
                                 }
                             }
                             WorkInfoItem(
-                                file = it.first,
+                                file = it.second.first,
                                 workInfoList = workInfoList,
                                 onClick = {
-                                    onCancel(it.first.fileId)
+                                    onCancel(it.second.first.fileId)
                                 }
                             )
                         }

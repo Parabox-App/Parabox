@@ -195,7 +195,7 @@ fun FilePage(
     )
     WorkInfoDialog(
         showDialog = mainSharedViewModel.workInfoDialogState.value,
-        workInfoPairList = mainSharedViewModel.workInfoMap.values.toList(),
+        workInfoMap = mainSharedViewModel.workInfoMap,
         onCancel = {
             onEvent(ActivityEvent.CancelBackupWork(it, it.toString()))
         },
@@ -242,7 +242,15 @@ fun FilePage(
                             viewModel.setSearchBarActivateState(SearchAppBar.NONE)
                             viewModel.clearSelectedFiles()
                         }
-
+                        is DropdownMenuItemEvent.CloudDownloadFile -> {
+                            viewModel.selectedFilesId.forEach { id ->
+                                mainState.data.firstOrNull { it.cloudType != null && it.cloudType != 0 && it.cloudId != null && it.fileId == id }?.also {
+                                    onEvent(ActivityEvent.DownloadFile(it))
+                                }
+                            }
+                            viewModel.setSearchBarActivateState(SearchAppBar.NONE)
+                            viewModel.clearSelectedFiles()
+                        }
                         is DropdownMenuItemEvent.SaveToCloud -> {
                             viewModel.selectedFilesId
                                 .forEach { id ->

@@ -182,6 +182,26 @@ class SettingPageViewModel @Inject constructor(
         }
     }
 
+    val autoBackupFileMaxSizeFlow : Flow<Float> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.SETTINGS_AUTO_BACKUP_FILE_MAX_SIZE] ?: 10f
+        }
+
+    fun setAutoBackupFileMaxSize(value: Float) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.SETTINGS_AUTO_BACKUP_FILE_MAX_SIZE] = value
+            }
+        }
+    }
+
     val autoDeleteLocalFileFlow: Flow<Boolean> = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {

@@ -34,11 +34,13 @@ import com.ojhdtapp.parabox.ui.util.NormalPreference
 import com.ojhdtapp.parabox.ui.util.PreferencesCategory
 import com.ojhdtapp.parabox.ui.util.RoundedCornerDropdownMenu
 import com.ojhdtapp.parabox.ui.util.SimpleMenuPreference
+import com.ojhdtapp.parabox.ui.util.SliderPreference
 import com.ojhdtapp.parabox.ui.util.SwitchPreference
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Destination
@@ -59,14 +61,14 @@ fun CloudPage(
     val context = LocalContext.current
     val snackBarHostState = remember { SnackbarHostState() }
     // Contact Dialog
-    var showDialog by remember{
+    var showDialog by remember {
         mutableStateOf(false)
     }
     ContactListDialog(
         modifier = Modifier,
         showDialog = showDialog,
         contactList = viewModel.contactStateFlow.collectAsState().value.filter { it.contactId == it.senderId },
-        contactCheck = { it.shouldBackup},
+        contactCheck = { it.shouldBackup },
         onValueChange = { target, value ->
             viewModel.onContactBackupChange(target, value)
         },
@@ -80,27 +82,28 @@ fun CloudPage(
     val gDriveLogin by viewModel.googleLoginFlow.collectAsState(initial = false)
     val gDriveTotalSpace by viewModel.googleTotalSpaceFlow.collectAsState(initial = 0L)
     val gDriveUsedSpace by viewModel.googleUsedSpaceFlow.collectAsState(initial = 0L)
-    val gDriveUsedSpacePercent = remember{
+    val gDriveUsedSpacePercent = remember {
         derivedStateOf {
             if (gDriveTotalSpace == 0L) 0 else (gDriveUsedSpace * 100 / gDriveTotalSpace).toInt()
         }
     }
     val gDriveAppUsedSpace by viewModel.googleAppUsedSpaceFlow.collectAsState(initial = 0L)
-    val gDriveAppUsedSpacePercent = remember{
+    val gDriveAppUsedSpacePercent = remember {
         derivedStateOf {
             if (gDriveTotalSpace == 0L) 0 else (gDriveAppUsedSpace * 100 / gDriveTotalSpace).toInt()
         }
     }
-    val selectableService by remember{
-        derivedStateOf{
+    val selectableService by remember {
+        derivedStateOf {
             buildMap<Int, String> {
                 put(0, "无")
-                if(gDriveLogin) put(GoogleDriveUtil.SERVICE_CODE, "Google Drive")
+                if (gDriveLogin) put(GoogleDriveUtil.SERVICE_CODE, "Google Drive")
             }
         }
     }
     val defaultBackupService by viewModel.defaultBackupServiceFlow.collectAsState(initial = 0)
     val autoBackup by viewModel.autoBackupFlow.collectAsState(initial = false)
+    val autoBackupFileMaxSize by viewModel.autoBackupFileMaxSizeFlow.collectAsState(initial = 10f)
     val autoDeleteLocalFile by viewModel.autoDeleteLocalFileFlow.collectAsState(initial = false)
     val gDriveLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -203,7 +206,7 @@ fun CloudPage(
                     var expanded by remember {
                         mutableStateOf(false)
                     }
-                    Box(modifier = Modifier.wrapContentSize()){
+                    Box(modifier = Modifier.wrapContentSize()) {
                         OutlinedCard(modifier = Modifier
                             .padding(16.dp)
                             .fillMaxWidth(), onClick = {
@@ -236,19 +239,29 @@ fun CloudPage(
                                         modifier = Modifier.padding(vertical = 4.dp)
                                     )
                                     Text(
-                                        text = "已使用 ${gDriveUsedSpacePercent.value}% 的存储空间（${FileUtil.getSizeString(gDriveUsedSpace)} / ${FileUtil.getSizeString(gDriveTotalSpace)}）",
+                                        text = "已使用 ${gDriveUsedSpacePercent.value}% 的存储空间（${
+                                            FileUtil.getSizeString(
+                                                gDriveUsedSpace
+                                            )
+                                        } / ${FileUtil.getSizeString(gDriveTotalSpace)}）",
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Text(
-                                        text = "其中应用使用 ${gDriveAppUsedSpacePercent.value}%（${FileUtil.getSizeString(gDriveAppUsedSpace)}）",
+                                        text = "其中应用使用 ${gDriveAppUsedSpacePercent.value}%（${
+                                            FileUtil.getSizeString(
+                                                gDriveAppUsedSpace
+                                            )
+                                        }）",
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
                         }
-                        RoundedCornerDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false}) {
+                        RoundedCornerDropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }) {
                             DropdownMenuItem(text = { Text(text = "退出登录") }, onClick = {
                                 expanded = false
                                 (context as MainActivity).getGoogleLoginAuth().signOut()
@@ -271,7 +284,8 @@ fun CloudPage(
                     title = "默认云端服务",
                     optionsMap = selectableService,
                     selectedKey = defaultBackupService,
-                    onSelect = viewModel::setDefaultBackupService)
+                    onSelect = viewModel::setDefaultBackupService
+                )
             }
             item {
                 SwitchPreference(
@@ -280,12 +294,32 @@ fun CloudPage(
                     subtitleOn = "启用",
                     checked = autoBackup && defaultBackupService != 0,
                     onCheckedChange = viewModel::setAutoBackup,
-                    enabled = defaultBackupService != 0)
+                    enabled = defaultBackupService != 0
+                )
             }
             item {
-                NormalPreference(title = "目标会话", subtitle = "对选中会话应用自动备份", enabled = defaultBackupService != 0) {
+                NormalPreference(
+                    title = "目标会话",
+                    subtitle = "对选中会话应用自动备份",
+                    enabled = defaultBackupService != 0
+                ) {
                     showDialog = true
                 }
+            }
+            item {
+                SliderPreference(
+                    title = "自动备份文件大小上限",
+                    subTitle =
+                    when (autoBackupFileMaxSize) {
+                        100f -> "无限制"
+                        else -> "${autoBackupFileMaxSize.toInt()}MB"
+                    },
+                    value = autoBackupFileMaxSize,
+                    valueRange = 10f..100f,
+                    steps = 8,
+                    enabled = autoBackup && defaultBackupService != 0,
+                    onValueChange = viewModel::setAutoBackupFileMaxSize,
+                )
             }
             item {
                 SwitchPreference(

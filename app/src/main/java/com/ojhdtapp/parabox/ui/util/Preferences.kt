@@ -27,6 +27,50 @@ fun PreferencesCategory(modifier: Modifier = Modifier, text: String) {
 }
 
 @Composable
+fun SliderPreference(
+    modifier: Modifier = Modifier,
+    title: String,
+    subTitle: String,
+    value: Float,
+    valueRange: ClosedFloatingPointRange<Float>,
+    steps: Int,
+    enabled: Boolean,
+    onValueChange: (Float) -> Unit,
+) {
+    val titleTextColor by animateColorAsState(targetValue = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline)
+    val subTitleTextColor by animateColorAsState(targetValue = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.outline)
+    Surface() {
+        Column(
+            modifier = modifier.padding(24.dp, 16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontSize = MaterialTheme.fontSize.title,
+                    color = titleTextColor,
+                )
+                Text(
+                    text = subTitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = subTitleTextColor,
+                )
+            }
+            Slider(
+                value = value, onValueChange = onValueChange,
+                valueRange = valueRange,
+                steps = steps,
+                enabled = enabled
+            )
+        }
+    }
+}
+
+@Composable
 fun SwitchPreference(
     modifier: Modifier = Modifier,
     title: String,
@@ -37,7 +81,7 @@ fun SwitchPreference(
     enabled: Boolean = true,
     horizontalPadding: Dp = 24.dp
 ) {
-    val titleTextColor by animateColorAsState(targetValue = if(enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline)
+    val titleTextColor by animateColorAsState(targetValue = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline)
     val subTitleTextColor by animateColorAsState(targetValue = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.outline)
     Surface() {
         Row(
@@ -194,7 +238,7 @@ fun NormalPreference(
             if (onLeadingIconClick != null && leadingIcon != null) {
                 Row(
                     modifier = Modifier
-                        .clickable { if(enabled) onLeadingIconClick() }
+                        .clickable { if (enabled) onLeadingIconClick() }
                         .padding(start = horizontalPadding, top = 16.dp, bottom = 16.dp)
                         .fillMaxHeight(),
                     horizontalArrangement = Arrangement.Start,
@@ -212,7 +256,7 @@ fun NormalPreference(
             }
             Row(
                 modifier = Modifier
-                    .clickable { if(enabled) onClick() }
+                    .clickable { if (enabled) onClick() }
                     .padding(
                         start = if (onLeadingIconClick != null && leadingIcon != null) 16.dp else horizontalPadding,
                         end = if (onTrailingIconClick != null && trailingIcon != null) 16.dp else horizontalPadding,
@@ -260,7 +304,7 @@ fun NormalPreference(
             if (onTrailingIconClick != null && trailingIcon != null) {
                 Row(
                     modifier = Modifier
-                        .clickable { if(enabled) onTrailingIconClick() }
+                        .clickable { if (enabled) onTrailingIconClick() }
                         .padding(end = horizontalPadding, top = 16.dp, bottom = 16.dp)
                         .fillMaxHeight(),
                     horizontalArrangement = Arrangement.Start,
@@ -292,12 +336,14 @@ fun <T> SimpleMenuPreference(
     var expanded by remember {
         mutableStateOf(false)
     }
-    val titleColor = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline
-    val subTitleColor = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.outline
+    val titleColor =
+        if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline
+    val subTitleColor =
+        if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.outline
     Row(
         modifier = modifier
             .clickable {
-                if(enabled) expanded = true
+                if (enabled) expanded = true
             }
             .padding(24.dp, 16.dp)
             .fillMaxWidth(),

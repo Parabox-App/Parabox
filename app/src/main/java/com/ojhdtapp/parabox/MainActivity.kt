@@ -143,15 +143,29 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun downloadFile(file: File) {
-        if (file.url != null) {
-            val path = FileUtil.getAvailableFileName(this, file.name)
-            DownloadManagerUtil.downloadWithManager(
-                this,
-                file.url,
-                path
-            )?.also {
-                lifecycleScope.launch(Dispatchers.IO) {
+    private fun downloadFile(file: File, cloudFirst: Boolean = false) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            val url = if (cloudFirst) {
+                when (file.cloudType) {
+                    GoogleDriveUtil.SERVICE_CODE -> file.cloudId?.let {
+                        GoogleDriveUtil.getContentUrl(
+                            this@MainActivity,
+                            it
+                        )
+                    }
+
+                    else -> null
+                }
+            } else {
+                file.url
+            } ?: file.url
+            if (url != null) {
+                val path = FileUtil.getAvailableFileName(this@MainActivity, file.name)
+                DownloadManagerUtil.downloadWithManager(
+                    this@MainActivity,
+                    url,
+                    path
+                )?.also {
                     updateFile.downloadInfo(path, it, file)
                     repeatOnLifecycle(Lifecycle.State.STARTED) {
                         DownloadManagerUtil.retrieve(this@MainActivity, it).collectLatest {
@@ -517,9 +531,15 @@ class MainActivity : AppCompatActivity() {
                 dataStore.data.first()[DataStoreKeys.SETTINGS_AUTO_BACKUP] ?: false
             val defaultBackupService =
                 dataStore.data.first()[DataStoreKeys.SETTINGS_DEFAULT_BACKUP_SERVICE] ?: 0
+            val autoBackupFileMaxSize =
+                (dataStore.data.first()[DataStoreKeys.SETTINGS_AUTO_BACKUP_FILE_MAX_SIZE]
+                    ?: 10f).let {
+                    if (it == 100f) Long.MAX_VALUE
+                    else it.toLong() * 1024 * 1024
+                }
             if (enableAutoBackup && defaultBackupService != 0) {
                 val files = getContacts.shouldBackup().map { it.contactId }.let {
-                    getFiles.byContactIdsStatic(it)
+                    getFiles.byContactIdsStatic(it).filter { it.size < autoBackupFileMaxSize }
                 }
                 val constraints = Constraints.Builder()
                     .setRequiredNetworkType(NetworkType.UNMETERED)
@@ -756,6 +776,10 @@ class MainActivity : AppCompatActivity() {
 
             is ActivityEvent.DownloadFile -> {
                 downloadFile(event.file)
+            }
+
+            is ActivityEvent.DownloadCloudFile -> {
+                downloadFile(event.file, true)
             }
 
             is ActivityEvent.OpenFile -> {

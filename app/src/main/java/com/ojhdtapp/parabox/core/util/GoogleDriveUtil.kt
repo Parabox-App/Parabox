@@ -194,6 +194,24 @@ object GoogleDriveUtil {
         }
     }
 
+    suspend fun getContentUrl(context: Context, fileId: String) : String?{
+        return coroutineScope {
+            withContext(Dispatchers.Default) {
+                try {
+                    getDriveService(context)?.let { driveService ->
+                        val result = driveService.files().get(fileId)
+                            .setFields("webContentLink")
+                            .execute()
+                        result.webContentLink
+                    }
+                } catch (e: SocketTimeoutException) {
+                    e.printStackTrace()
+                    null
+                }
+            }
+        }
+    }
+
     suspend fun downloadFile(
         context: Context,
         fileId: String

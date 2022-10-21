@@ -28,6 +28,7 @@ sealed interface ActivityEvent {
     data class SetAudioProgress(val fraction: Float) : ActivityEvent
     object StopAudioPlaying : ActivityEvent
     data class DownloadFile(val file: File) : ActivityEvent
+    data class DownloadCloudFile(val file: File) : ActivityEvent
     data class OpenFile(val file: File) : ActivityEvent
     object Vibrate : ActivityEvent
     object RefreshMessage: ActivityEvent

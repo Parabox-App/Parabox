@@ -561,6 +561,13 @@ fun FileSelectContentField(
         }
         Spacer(modifier = Modifier.weight(1f))
         Crossfade(targetState = selection) {
+            if (it.isNotEmpty() && it.all { it.cloudId != null && it.cloudType != null && it.cloudType != 0 }) {
+                IconButton(onClick = { onDropdownMenuItemEvent(DropdownMenuItemEvent.CloudDownloadFile) }) {
+                    Icon(imageVector = Icons.Outlined.CloudDownload, contentDescription = "cloud download")
+                }
+            }
+        }
+        Crossfade(targetState = selection) {
             if (it.isNotEmpty() && it.any { it.downloadingState is DownloadingState.None || it.downloadingState is DownloadingState.Failure }) {
                 IconButton(onClick = { onDropdownMenuItemEvent(DropdownMenuItemEvent.DownloadFile) }) {
                     Icon(imageVector = Icons.Outlined.FileDownload, contentDescription = "download")

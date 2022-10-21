@@ -38,6 +38,7 @@ sealed class DropdownMenuItemEvent{
     object Info: DropdownMenuItemEvent()
     object DeleteGrouped: DropdownMenuItemEvent()
     object DownloadFile : DropdownMenuItemEvent()
+    object CloudDownloadFile: DropdownMenuItemEvent()
     object SaveToCloud: DropdownMenuItemEvent()
     object DeleteFile: DropdownMenuItemEvent()
     object RedirectToConversation: DropdownMenuItemEvent()
