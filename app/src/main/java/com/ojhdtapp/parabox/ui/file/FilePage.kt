@@ -106,15 +106,15 @@ fun FilePage(
         }
     }
     // Google Drive
-    val gDriveLogin by mainSharedViewModel.googleLoginFlow.collectAsState(initial = false)
-    val gDriveTotalSpace by mainSharedViewModel.googleTotalSpaceFlow.collectAsState(initial = 0L)
-    val gDriveUsedSpace by mainSharedViewModel.googleUsedSpaceFlow.collectAsState(initial = 0L)
+    val gDriveLogin by mainSharedViewModel.googleLoginFlow.collectAsState()
+    val gDriveTotalSpace by mainSharedViewModel.googleTotalSpaceFlow.collectAsState()
+    val gDriveUsedSpace by mainSharedViewModel.googleUsedSpaceFlow.collectAsState()
     val gDriveUsedSpacePercent = remember {
         derivedStateOf {
             if (gDriveTotalSpace == 0L) 0 else (gDriveUsedSpace * 100 / gDriveTotalSpace).toInt()
         }
     }
-    val gDriveAppUsedSpace by mainSharedViewModel.googleAppUsedSpaceFlow.collectAsState(initial = 0L)
+    val gDriveAppUsedSpace by mainSharedViewModel.googleAppUsedSpaceFlow.collectAsState()
     val gDriveAppUsedSpacePercent = remember {
         derivedStateOf {
             if (gDriveTotalSpace == 0L) 0 else (gDriveAppUsedSpace * 100 / gDriveTotalSpace).toInt()
@@ -812,7 +812,7 @@ fun MainArea(
                                             )
                                             LinearProgressIndicator(
                                                 progress = 0.6f,
-                                                modifier = Modifier.padding(vertical = 4.dp)
+                                                modifier = Modifier.padding(vertical = 4.dp).clip(CircleShape),
                                             )
                                             Text(
                                                 text = "已使用 ${gDriveUsedSpacePercent}% 的存储空间（${

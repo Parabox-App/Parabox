@@ -27,6 +27,7 @@ import com.ojhdtapp.parabox.domain.use_case.GetMessages
 import com.ojhdtapp.parabox.domain.use_case.GroupNewContact
 import com.ojhdtapp.parabox.domain.use_case.UpdateContact
 import com.ojhdtapp.parabox.ui.message.AudioRecorderState
+import com.ojhdtapp.parabox.ui.message.ContactState
 import com.ojhdtapp.parabox.ui.message.MessageState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -330,7 +331,7 @@ class MainSharedViewModel @Inject constructor(
     }
 
     // Google Drive
-    val googleLoginFlow: Flow<Boolean> = context.dataStore.data
+    val googleLoginFlow = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {
                 emit(emptyPreferences())
@@ -340,9 +341,13 @@ class MainSharedViewModel @Inject constructor(
         }
         .map { settings ->
             settings[DataStoreKeys.GOOGLE_LOGIN] ?: false
-        }
+        }.stateIn(
+            initialValue = false,
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000)
+        )
 
-    val googleTotalSpaceFlow: Flow<Long> = context.dataStore.data
+    val googleTotalSpaceFlow = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {
                 emit(emptyPreferences())
@@ -352,9 +357,13 @@ class MainSharedViewModel @Inject constructor(
         }
         .map { settings ->
             settings[DataStoreKeys.GOOGLE_TOTAL_SPACE] ?: 0L
-        }
+        }.stateIn(
+            initialValue = 0L,
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000)
+        )
 
-    val googleUsedSpaceFlow: Flow<Long> = context.dataStore.data
+    val googleUsedSpaceFlow = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {
                 emit(emptyPreferences())
@@ -364,8 +373,12 @@ class MainSharedViewModel @Inject constructor(
         }
         .map { settings ->
             settings[DataStoreKeys.GOOGLE_USED_SPACE] ?: 0L
-        }
-    val googleAppUsedSpaceFlow: Flow<Long> = context.dataStore.data
+        }.stateIn(
+            initialValue = 0L,
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000)
+        )
+    val googleAppUsedSpaceFlow = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {
                 emit(emptyPreferences())
@@ -375,7 +388,11 @@ class MainSharedViewModel @Inject constructor(
         }
         .map { settings ->
             settings[DataStoreKeys.GOOGLE_APP_USED_SPACE] ?: 0L
-        }
+        }.stateIn(
+            initialValue = 0L,
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000)
+        )
     fun saveGoogleDriveAccount(account: GoogleSignInAccount?) {
         viewModelScope.launch {
             context.dataStore.edit { preferences ->

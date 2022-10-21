@@ -17,6 +17,7 @@ import kotlinx.coroutines.withContext
 import java.io.FileOutputStream
 import java.io.IOException
 import java.net.SocketException
+import java.net.SocketTimeoutException
 
 object GoogleDriveUtil {
     const val SERVICE_CODE = 1001
@@ -170,16 +171,24 @@ object GoogleDriveUtil {
         }
     }
 
-    suspend fun getFileList(context: Context, folderId: String): List<com.google.api.services.drive.model.File>? {
+    suspend fun getFileList(
+        context: Context,
+        folderId: String
+    ): List<com.google.api.services.drive.model.File>? {
         return coroutineScope {
             withContext(Dispatchers.Default) {
-                getDriveService(context)?.let { driveService ->
-                    val result = driveService.files().list()
-                        .setQ("'$folderId' in parents")
-                        .setSpaces("drive")
-                        .setFields("nextPageToken, files(id, name, size, fullFileExtension, createdTime, webContentLink)")
-                        .execute()
-                    result.files
+                try {
+                    getDriveService(context)?.let { driveService ->
+                        val result = driveService.files().list()
+                            .setQ("'$folderId' in parents")
+                            .setSpaces("drive")
+                            .setFields("nextPageToken, files(id, name, size, fullFileExtension, createdTime, webContentLink)")
+                            .execute()
+                        result.files
+                    }
+                } catch (e: SocketTimeoutException) {
+                    e.printStackTrace()
+                    null
                 }
             }
         }
@@ -188,13 +197,14 @@ object GoogleDriveUtil {
     suspend fun downloadFile(
         context: Context,
         fileId: String
-    ){
+    ) {
         return coroutineScope {
             withContext(Dispatchers.IO) {
                 try {
                     getDriveService(context)?.let { driveService ->
                         val file = driveService.files().get(fileId).execute()
-                        val fileContent = driveService.files().get(fileId).executeMediaAsInputStream()
+                        val fileContent =
+                            driveService.files().get(fileId).executeMediaAsInputStream()
                         val fileOutputStream = FileOutputStream(file.name)
                         fileContent.copyTo(fileOutputStream)
                         fileOutputStream.close()

@@ -525,7 +525,7 @@ class MainActivity : AppCompatActivity() {
                     .setRequiredNetworkType(NetworkType.UNMETERED)
                     .setRequiresBatteryNotLow(true)
                     .setRequiresStorageNotLow(true)
-                    .setRequiresDeviceIdle(true)
+//                    .setRequiresDeviceIdle(true)
                     .build()
                 files.forEach {
                     val downloadRequest = OneTimeWorkRequestBuilder<DownloadFileWorker>()
@@ -817,6 +817,7 @@ class MainActivity : AppCompatActivity() {
 
             is ActivityEvent.CancelBackupWork -> {
                 cancelBackupWorkByTag(event.tag)
+//                mainSharedViewModel.workInfoMap.remove(event.tag)
                 lifecycleScope.launch(Dispatchers.IO) {
                     updateFile.cloudInfo(0, null, event.fileId)
                 }
