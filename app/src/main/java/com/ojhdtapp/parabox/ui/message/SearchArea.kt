@@ -24,6 +24,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
@@ -88,10 +90,24 @@ fun RowScope.SearchArea(
                     modifier = modifier.fillMaxSize(),
                     contentPadding = paddingValues
                 ) {
-                    item{
-                        if(viewModel.personalContactState.value.data.isEmpty() && viewModel.groupContactState.value.data.isEmpty()){
-                            Box(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
-                                Text(text = "无搜索结果", style = MaterialTheme.typography.bodyMedium)
+                    item {
+                        if (viewModel.personalContactState.value.data.isEmpty() && viewModel.groupContactState.value.data.isEmpty()) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 32.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Search,
+                                    contentDescription = "search result",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    text = "无搜索结果",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
                             }
                         }
                     }
@@ -206,11 +222,26 @@ fun RowScope.SearchArea(
                     contentPadding = paddingValues,
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    item{
-                        if(messageSearchResult.value.data.isEmpty() && contactSearchResult.value.data.isEmpty()
-                                && !messageSearchResult.value.isLoading && !contactSearchResult.value.isLoading){
-                            Box(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
-                                Text(text = "无搜索结果", style = MaterialTheme.typography.bodyMedium)
+                    item {
+                        if (messageSearchResult.value.data.isEmpty() && contactSearchResult.value.data.isEmpty()
+                            && !messageSearchResult.value.isLoading && !contactSearchResult.value.isLoading
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 32.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Search,
+                                    contentDescription = "search result",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    text = "无搜索结果",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
                             }
                         }
                     }
@@ -280,7 +311,10 @@ fun RowScope.SearchArea(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .clickable {
-                                                    mainSharedViewModel.navigateToChatPage(cm.contact, it)
+                                                    mainSharedViewModel.navigateToChatPage(
+                                                        cm.contact,
+                                                        it
+                                                    )
                                                     if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
                                                         mainNavController.navigate(
                                                             ChatPageDestination()

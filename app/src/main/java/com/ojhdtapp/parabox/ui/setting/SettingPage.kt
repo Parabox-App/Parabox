@@ -179,38 +179,38 @@ fun SettingPage(
                                 }
                             },
                             actions = {
-                                var expanded by remember {
-                                    mutableStateOf(false)
-                                }
-                                Box(
-                                    modifier = Modifier
-                                        .wrapContentSize(Alignment.TopStart)
-                                ) {
-                                    IconButton(onClick = {
-                                        expanded = !expanded
-                                    }) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.MoreVert,
-                                            contentDescription = "more"
-                                        )
-                                    }
-                                    RoundedCornerDropdownMenu(
-                                        expanded = expanded,
-                                        onDismissRequest = { expanded = false },
-                                        modifier = Modifier.width(192.dp)
-                                    ) {
-                                        DropdownMenuItem(
-                                            text = {
-                                                Text(
-                                                    text = "开放源代码许可",
-                                                    style = MaterialTheme.typography.bodyMedium
-                                                )
-                                            },
-                                            onClick = {
-                                                expanded = false
-                                            })
-                                    }
-                                }
+//                                var expanded by remember {
+//                                    mutableStateOf(false)
+//                                }
+//                                Box(
+//                                    modifier = Modifier
+//                                        .wrapContentSize(Alignment.TopStart)
+//                                ) {
+//                                    IconButton(onClick = {
+//                                        expanded = !expanded
+//                                    }) {
+//                                        Icon(
+//                                            imageVector = Icons.Outlined.MoreVert,
+//                                            contentDescription = "more"
+//                                        )
+//                                    }
+//                                    RoundedCornerDropdownMenu(
+//                                        expanded = expanded,
+//                                        onDismissRequest = { expanded = false },
+//                                        modifier = Modifier.width(192.dp)
+//                                    ) {
+//                                        DropdownMenuItem(
+//                                            text = {
+//                                                Text(
+//                                                    text = "开放源代码许可",
+//                                                    style = MaterialTheme.typography.bodyMedium
+//                                                )
+//                                            },
+//                                            onClick = {
+//                                                expanded = false
+//                                            })
+//                                    }
+//                                }
                             },
                             scrollBehavior = pinnedScrollBehavior
                         )

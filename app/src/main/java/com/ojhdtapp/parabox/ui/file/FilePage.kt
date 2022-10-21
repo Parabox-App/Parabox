@@ -1220,13 +1220,22 @@ fun SearchArea(
             }
             item {
                 if (mainState.filterData.isEmpty()) {
-                    Box(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 16.dp),
-                        contentAlignment = Alignment.Center
+                            .padding(vertical = 32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(text = "无搜索结果", style = MaterialTheme.typography.bodyMedium)
+                        Icon(
+                            imageVector = Icons.Outlined.Search,
+                            contentDescription = "search result",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "无搜索结果",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
                     }
                 }
             }
