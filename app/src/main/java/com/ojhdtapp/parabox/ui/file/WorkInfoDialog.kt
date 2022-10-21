@@ -41,13 +41,13 @@ import com.ojhdtapp.parabox.domain.model.File
 fun WorkInfoDialog(
     modifier: Modifier = Modifier,
     showDialog: Boolean,
-    workInfoMap: SnapshotStateMap<File, List<WorkInfo>>,
+    workInfoMap: Map<File, List<WorkInfo>>,
     onCancel: (fileId: Long) -> Unit,
     sizeClass: WindowSizeClass,
     onDismiss: () -> Unit,
 ) {
     if (showDialog) {
-        val workInfoList by remember{
+        val workInfoPlainList by remember{
             derivedStateOf {
                 workInfoMap.toList()
             }
@@ -95,7 +95,7 @@ fun WorkInfoDialog(
                     )
                     LazyColumn(modifier = Modifier.heightIn(max = 300.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         item {
-                            if (workInfoList.isEmpty()) {
+                            if (workInfoPlainList.isEmpty()) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -106,10 +106,15 @@ fun WorkInfoDialog(
                                 }
                             }
                         }
-                        items(items = workInfoList, key = { it.first.fileId }) {
+                        items(items = workInfoPlainList, key = { it.first.fileId }) {
+                            val workInfoList by remember(workInfoPlainList) {
+                                derivedStateOf {
+                                    it.second
+                                }
+                            }
                             WorkInfoItem(
                                 file = it.first,
-                                workInfoList = it.second,
+                                workInfoList = workInfoList,
                                 onClick = {
                                     onCancel(it.first.fileId)
                                 }
@@ -129,13 +134,13 @@ fun WorkInfoItem(
     workInfoList: List<WorkInfo>,
     onClick: () -> Unit
 ) {
-    val cancelable by remember {
+    val cancelable by remember(workInfoList) {
         derivedStateOf {
             !workInfoList.any { it.state == WorkInfo.State.CANCELLED }
                     && !workInfoList.all { it.state == WorkInfo.State.SUCCEEDED }
         }
     }
-    val des = remember {
+    val des = remember(workInfoList) {
         derivedStateOf {
             when {
                 workInfoList.any {
