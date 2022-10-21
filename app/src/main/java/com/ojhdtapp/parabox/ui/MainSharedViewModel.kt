@@ -412,10 +412,10 @@ class MainSharedViewModel @Inject constructor(
             }
         }
     }
-    private val _workInfoMap = mutableStateMapOf<File, List<WorkInfo>>()
+    private val _workInfoMap = mutableStateMapOf<String, Pair<File, List<WorkInfo>>>()
     val workInfoMap get() = _workInfoMap
-    fun putWorkInfo(file: File, workInfoList: List<WorkInfo>) {
-        _workInfoMap[file] = workInfoList
+    fun putWorkInfo(tag: String, file: File, workInfoList: List<WorkInfo>) {
+        _workInfoMap[tag] = file to workInfoList
     }
     // WorkInfo
     private val _workInfoDialogState = mutableStateOf<Boolean>(false)

@@ -1,10 +1,8 @@
 package com.ojhdtapp.parabox.ui.file
 
 import android.app.Activity
-import android.app.Instrumentation
 import android.content.Intent
 import android.os.Build
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -56,7 +54,6 @@ import com.guru.fontawesomecomposelib.FaIcon
 import com.guru.fontawesomecomposelib.FaIcons
 import com.ojhdtapp.parabox.MainActivity
 import com.ojhdtapp.parabox.R
-import com.ojhdtapp.parabox.core.HiltApplication
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.data.local.entity.DownloadingState
 import com.ojhdtapp.parabox.domain.model.File
@@ -198,7 +195,7 @@ fun FilePage(
     )
     WorkInfoDialog(
         showDialog = mainSharedViewModel.workInfoDialogState.value,
-        workInfoMap = mainSharedViewModel.workInfoMap,
+        workInfoPairList = mainSharedViewModel.workInfoMap.values.toList(),
         onCancel = {
             onEvent(ActivityEvent.CancelBackupWork(it, it.toString()))
         },
@@ -306,7 +303,7 @@ fun FilePage(
                     gDriveAppUsedSpace = gDriveAppUsedSpace,
                     gDriveAppUsedSpacePercent = gDriveAppUsedSpacePercent.value,
                     gDriveLauncher = gDriveLauncher,
-                    workInfoMap = mainSharedViewModel.workInfoMap,
+                    workInfoPairList = mainSharedViewModel.workInfoMap.values.toList(),
                     isRefreshing = viewModel.isRefreshing.value,
                     onLogoutGoogleDrive = {
                         mainSharedViewModel.saveGoogleDriveAccount(null)
@@ -370,7 +367,7 @@ fun MainArea(
     gDriveAppUsedSpace: Long,
     gDriveAppUsedSpacePercent: Int,
     gDriveLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>,
-    workInfoMap: Map<File, List<WorkInfo>>,
+    workInfoPairList: List<Pair<File, List<WorkInfo>>>,
     isRefreshing: Boolean,
     onLogoutGoogleDrive: () -> Unit,
     onChangeSearchAppBarState: (state: Int) -> Unit,
@@ -726,13 +723,13 @@ fun MainArea(
                 }
             }
             item {
-                val runningWork by remember {
+                val runningWork by remember(workInfoPairList) {
                     derivedStateOf {
-                        workInfoMap.count { it.value.any { !it.state.isFinished } }
+                        workInfoPairList.count { it.second.any { !it.state.isFinished } }
                     }
                 }
                 AnimatedVisibility(
-                    visible = workInfoMap.isNotEmpty(),
+                    visible = workInfoPairList.isNotEmpty(),
                     enter = expandVertically(),
                     exit = shrinkVertically(),
                 ) {

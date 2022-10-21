@@ -528,9 +528,10 @@ class MainActivity : AppCompatActivity() {
 //                    .setRequiresDeviceIdle(true)
                     .build()
                 files.forEach {
+                    val tag = it.fileId.toString()
                     val downloadRequest = OneTimeWorkRequestBuilder<DownloadFileWorker>()
                         .setConstraints(constraints)
-                        .addTag("${it.fileId}")
+                        .addTag(tag)
                         .setInputData(
                             workDataOf(
                                 "url" to it.url,
@@ -540,7 +541,7 @@ class MainActivity : AppCompatActivity() {
                         .build()
                     val uploadRequest = OneTimeWorkRequestBuilder<UploadFileWorker>()
                         .setConstraints(constraints)
-                        .addTag("${it.fileId}")
+                        .addTag(tag)
                         .setInputData(
                             workDataOf(
                                 "default_backup_service" to defaultBackupService,
@@ -549,7 +550,7 @@ class MainActivity : AppCompatActivity() {
                         .build()
                     val cleanUpRequest = OneTimeWorkRequestBuilder<CleanUpFileWorker>()
                         .setConstraints(constraints)
-                        .addTag("${it.fileId}")
+                        .addTag(tag)
                         .setInputData(
                             workDataOf(
                                 "fileId" to it.fileId,
@@ -557,7 +558,7 @@ class MainActivity : AppCompatActivity() {
                         )
                         .build()
                     val continuation = workManager.beginUniqueWork(
-                        "${it.fileId}",
+                        tag,
                         ExistingWorkPolicy.KEEP,
                         downloadRequest
                     )
@@ -566,9 +567,9 @@ class MainActivity : AppCompatActivity() {
                     continuation.enqueue()
                     launch(Dispatchers.Main) {
                         files.forEach {
-                            workManager.getWorkInfosByTagLiveData("${it.fileId}")
+                            workManager.getWorkInfosByTagLiveData(tag)
                                 .observe(this@MainActivity) { workInfoList ->
-                                    mainSharedViewModel.putWorkInfo(it, workInfoList)
+                                    mainSharedViewModel.putWorkInfo(tag, it, workInfoList)
                                 }
                         }
 //                        continuation.workInfosLiveData.observe(this@MainActivity) { workInfoList ->
@@ -588,6 +589,7 @@ class MainActivity : AppCompatActivity() {
             val defaultBackupService =
                 dataStore.data.first()[DataStoreKeys.SETTINGS_DEFAULT_BACKUP_SERVICE] ?: 0
             if (defaultBackupService != 0) {
+                val tag = file.fileId.toString()
                 val constraints = Constraints.Builder()
                     .setRequiredNetworkType(NetworkType.UNMETERED)
                     .setRequiresBatteryNotLow(true)
@@ -595,7 +597,7 @@ class MainActivity : AppCompatActivity() {
                     .build()
                 val downloadRequest = OneTimeWorkRequestBuilder<DownloadFileWorker>()
                     .setConstraints(constraints)
-                    .addTag("${file.fileId}")
+                    .addTag(tag)
                     .setInputData(
                         workDataOf(
                             "url" to file.url,
@@ -605,7 +607,7 @@ class MainActivity : AppCompatActivity() {
                     .build()
                 val uploadRequest = OneTimeWorkRequestBuilder<UploadFileWorker>()
                     .setConstraints(constraints)
-                    .addTag("${file.fileId}")
+                    .addTag(tag)
                     .setInputData(
                         workDataOf(
                             "default_backup_service" to defaultBackupService,
@@ -614,7 +616,7 @@ class MainActivity : AppCompatActivity() {
                     .build()
                 val cleanUpRequest = OneTimeWorkRequestBuilder<CleanUpFileWorker>()
                     .setConstraints(constraints)
-                    .addTag("${file.fileId}")
+                    .addTag(tag)
                     .setInputData(
                         workDataOf(
                             "fileId" to file.fileId,
@@ -622,7 +624,7 @@ class MainActivity : AppCompatActivity() {
                     )
                     .build()
                 val continuation = workManager.beginUniqueWork(
-                    "${file.fileId}",
+                    tag,
                     ExistingWorkPolicy.KEEP,
                     downloadRequest
                 )
@@ -631,7 +633,7 @@ class MainActivity : AppCompatActivity() {
                 continuation.enqueue()
                 launch(Dispatchers.Main) {
                     continuation.workInfosLiveData.observe(this@MainActivity) { workInfoList ->
-                        mainSharedViewModel.putWorkInfo(file, workInfoList)
+                        mainSharedViewModel.putWorkInfo(tag, file, workInfoList)
                     }
                 }
             }
@@ -817,7 +819,7 @@ class MainActivity : AppCompatActivity() {
 
             is ActivityEvent.CancelBackupWork -> {
                 cancelBackupWorkByTag(event.tag)
-//                mainSharedViewModel.workInfoMap.remove(event.tag)
+                mainSharedViewModel.workInfoMap.remove(event.tag)
                 lifecycleScope.launch(Dispatchers.IO) {
                     updateFile.cloudInfo(0, null, event.fileId)
                 }

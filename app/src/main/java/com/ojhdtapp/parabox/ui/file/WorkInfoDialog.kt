@@ -1,6 +1,5 @@
 package com.ojhdtapp.parabox.ui.file
 
-import android.util.Log
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,7 +23,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -41,17 +39,17 @@ import com.ojhdtapp.parabox.domain.model.File
 fun WorkInfoDialog(
     modifier: Modifier = Modifier,
     showDialog: Boolean,
-    workInfoMap: Map<File, List<WorkInfo>>,
+    workInfoPairList: List<Pair<File, List<WorkInfo>>>,
     onCancel: (fileId: Long) -> Unit,
     sizeClass: WindowSizeClass,
     onDismiss: () -> Unit,
 ) {
     if (showDialog) {
-        val workInfoPlainList by remember{
-            derivedStateOf {
-                workInfoMap.toList()
-            }
-        }
+//        val workInfoPlainList by remember{
+//            derivedStateOf {
+//                workInfoPairList.toList()
+//            }
+//        }
         Dialog(
             onDismissRequest = {
                 onDismiss()
@@ -95,7 +93,7 @@ fun WorkInfoDialog(
                     )
                     LazyColumn(modifier = Modifier.heightIn(max = 300.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         item {
-                            if (workInfoPlainList.isEmpty()) {
+                            if (workInfoPairList.isEmpty()) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -106,8 +104,8 @@ fun WorkInfoDialog(
                                 }
                             }
                         }
-                        items(items = workInfoPlainList, key = { it.first.fileId }) {
-                            val workInfoList by remember(workInfoPlainList) {
+                        items(items = workInfoPairList) {
+                            val workInfoList by remember(workInfoPairList) {
                                 derivedStateOf {
                                     it.second
                                 }
