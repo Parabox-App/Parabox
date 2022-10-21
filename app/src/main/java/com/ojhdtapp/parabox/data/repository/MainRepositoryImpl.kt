@@ -624,7 +624,7 @@ class MainRepositoryImpl @Inject constructor(
         )
     }
 
-    override fun updateCloudInfo(cloudType: Int, cloudId: String, targetId: Long) {
+    override fun updateCloudInfo(cloudType: Int?, cloudId: String?, targetId: Long) {
         database.fileDao.updateCloudInfo(
             FileCloudInfoUpdate(
                 targetId,

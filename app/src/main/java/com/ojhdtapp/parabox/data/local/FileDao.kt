@@ -36,7 +36,7 @@ interface FileDao {
 
     @Query("SELECT * FROM file_entity WHERE relatedContactId IN (:contactIds)")
     suspend fun getFilesByContactIdsStatic(contactIds: List<Long>): List<FileEntity>
-    @Query("SELECT * FROM file_entity WHERE relatedContactId IN (:contactIds) AND cloudType != 0 AND cloudId IS NULL")
+    @Query("SELECT * FROM file_entity WHERE relatedContactId IN (:contactIds) AND cloudType IS NULL AND cloudId IS NULL")
     suspend fun getShouldBackupFiles(contactIds: List<Long>) : List<FileEntity>
 
     @Transaction

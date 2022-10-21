@@ -37,5 +37,5 @@ sealed interface ActivityEvent {
     object Restore: ActivityEvent
     object ResetExtension: ActivityEvent
     data class SaveToCloud(val file: File) : ActivityEvent
-    data class CancelBackupWork(val tag: String): ActivityEvent
+    data class CancelBackupWork(val fileId: Long, val tag: String): ActivityEvent
 }

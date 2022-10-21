@@ -144,7 +144,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun downloadFile(file: File) {
-        if(file.url != null) {
+        if (file.url != null) {
             val path = FileUtil.getAvailableFileName(this, file.name)
             DownloadManagerUtil.downloadWithManager(
                 this,
@@ -525,7 +525,7 @@ class MainActivity : AppCompatActivity() {
                     .setRequiredNetworkType(NetworkType.UNMETERED)
                     .setRequiresBatteryNotLow(true)
                     .setRequiresStorageNotLow(true)
-//                    .setRequiresDeviceIdle(true)
+                    .setRequiresDeviceIdle(true)
                     .build()
                 files.forEach {
                     val downloadRequest = OneTimeWorkRequestBuilder<DownloadFileWorker>()
@@ -565,19 +565,26 @@ class MainActivity : AppCompatActivity() {
                         .then(cleanUpRequest)
                     continuation.enqueue()
                     launch(Dispatchers.Main) {
-                        continuation.workInfosLiveData.observe(this@MainActivity){ workInfoList ->
-                            mainSharedViewModel.putWorkInfo(it, workInfoList)
+                        files.forEach {
+                            workManager.getWorkInfosByTagLiveData("${it.fileId}")
+                                .observe(this@MainActivity) { workInfoList ->
+                                    mainSharedViewModel.putWorkInfo(it, workInfoList)
+                                }
                         }
+//                        continuation.workInfosLiveData.observe(this@MainActivity) { workInfoList ->
+//                            mainSharedViewModel.putWorkInfo(it, workInfoList)
+//                        }
                     }
                 }
             }
         }
     }
 
-    fun backupFileToCloudService(file: File){
+    fun backupFileToCloudService(file: File) {
         val workManager = WorkManager.getInstance(this)
 
         lifecycleScope.launch(Dispatchers.IO) {
+            updateFile.cloudInfo(null, null, file.fileId)
             val defaultBackupService =
                 dataStore.data.first()[DataStoreKeys.SETTINGS_DEFAULT_BACKUP_SERVICE] ?: 0
             if (defaultBackupService != 0) {
@@ -623,7 +630,7 @@ class MainActivity : AppCompatActivity() {
                     .then(cleanUpRequest)
                 continuation.enqueue()
                 launch(Dispatchers.Main) {
-                    continuation.workInfosLiveData.observe(this@MainActivity){ workInfoList ->
+                    continuation.workInfosLiveData.observe(this@MainActivity) { workInfoList ->
                         mainSharedViewModel.putWorkInfo(file, workInfoList)
                     }
                 }
@@ -631,7 +638,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun cancelBackupWorkByTag(tag: String){
+    fun cancelBackupWorkByTag(tag: String) {
         val workManager = WorkManager.getInstance(this)
         workManager.cancelAllWorkByTag(tag)
     }
@@ -810,6 +817,9 @@ class MainActivity : AppCompatActivity() {
 
             is ActivityEvent.CancelBackupWork -> {
                 cancelBackupWorkByTag(event.tag)
+                lifecycleScope.launch(Dispatchers.IO) {
+                    updateFile.cloudInfo(0, null, event.fileId)
+                }
             }
         }
     }

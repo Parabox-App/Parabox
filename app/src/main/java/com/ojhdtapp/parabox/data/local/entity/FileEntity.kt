@@ -63,9 +63,9 @@ data class FileCloudInfoUpdate(
     @ColumnInfo(name = "fileId")
     val fileId: Long,
     @ColumnInfo(name = "cloudType")
-    val cloudType: Int,
+    val cloudType: Int?,
     @ColumnInfo(name = "cloudId")
-    val cloudId: String
+    val cloudId: String?
 )
 
 sealed class DownloadingState {

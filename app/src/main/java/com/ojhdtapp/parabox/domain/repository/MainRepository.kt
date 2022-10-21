@@ -57,7 +57,7 @@ interface MainRepository {
     suspend fun getFilesByContactIdsStatic(contactIds: List<Long>) : List<File>
     fun updateDownloadingState(state: DownloadingState, target: File)
     fun updateDownloadInfo(path: String?, downloadId: Long?, target: File)
-    fun updateCloudInfo(cloudType: Int, cloudId: String, targetId: Long)
+    fun updateCloudInfo(cloudType: Int?, cloudId: String?, targetId: Long)
     suspend fun deleteFile(fileId : Long)
     fun queryContact(query: String) : Flow<Resource<List<Contact>>>
     fun queryContactWithMessages(query: String): Flow<Resource<List<ContactWithMessages>>>

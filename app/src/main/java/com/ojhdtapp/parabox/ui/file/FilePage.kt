@@ -200,7 +200,7 @@ fun FilePage(
         showDialog = mainSharedViewModel.workInfoDialogState.value,
         workInfoMap = mainSharedViewModel.workInfoMap,
         onCancel = {
-            onEvent(ActivityEvent.CancelBackupWork(it.toString()))
+            onEvent(ActivityEvent.CancelBackupWork(it, it.toString()))
         },
         sizeClass = sizeClass,
         onDismiss = { mainSharedViewModel.setWorkInfoDialogState(false) }
