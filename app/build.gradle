@@ -5,6 +5,7 @@ plugins {
     id 'org.jetbrains.kotlin.plugin.parcelize'
     id 'dagger.hilt.android.plugin'
     id 'com.google.devtools.ksp' version '1.6.21-1.0.6'
+    id 'com.google.gms.google-services'
 }
 
 android {
@@ -86,6 +87,11 @@ dependencies {
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
     implementation "androidx.compose.material:material-icons-extended:$compose_version"
     implementation "com.google.android.material:material:1.8.0-alpha01"
+
+    // Firebase
+    implementation platform('com.google.firebase:firebase-bom:31.0.1')
+    implementation 'com.google.firebase:firebase-analytics-ktx'
+    implementation 'com.google.firebase:firebase-messaging-ktx'
 
     // WorkManager
     implementation "androidx.work:work-runtime-ktx:2.7.1"

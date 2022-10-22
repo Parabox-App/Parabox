@@ -223,6 +223,19 @@ class SettingPageViewModel @Inject constructor(
         }
     }
 
+    // Firebase
+    val fcmTokenFlow = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.FCM_TOKEN] ?: ""
+        }
+
     // Backup & Restore
 
     private val _cacheSizeStateFlow =

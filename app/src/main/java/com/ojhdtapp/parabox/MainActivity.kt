@@ -51,7 +51,12 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.Scope
+import com.google.android.gms.tasks.OnCompleteListener
 import com.google.api.services.drive.DriveScopes
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.analytics.ktx.analytics
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.messaging.FirebaseMessaging
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.DownloadingState
@@ -125,6 +130,8 @@ class MainActivity : AppCompatActivity() {
 
     lateinit var vibrator: Vibrator
     lateinit var backup: RoomBackup
+
+    private lateinit var analytics: FirebaseAnalytics
 
     // Shared ViewModel
     val mainSharedViewModel by viewModels<MainSharedViewModel>()
@@ -665,6 +672,24 @@ class MainActivity : AppCompatActivity() {
         workManager.cancelAllWorkByTag(tag)
     }
 
+    private fun queryFCMToken() {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                Log.w("parabox", "Fetching FCM registration token failed", task.exception)
+                return@OnCompleteListener
+            }
+
+            // Get new FCM registration token
+            val token = task.result
+            Log.d("parabox", "FCM token: $token")
+            lifecycleScope.launch {
+                dataStore.edit { settings ->
+                    settings[DataStoreKeys.FCM_TOKEN] = token
+                }
+            }
+        })
+    }
+
     fun getGoogleLoginAuth(): GoogleSignInClient {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
@@ -1013,6 +1038,12 @@ class MainActivity : AppCompatActivity() {
 
         // Cloud Backup
         backupFileToCloudService()
+
+        // Obtain the FirebaseAnalytics instance.
+        analytics = Firebase.analytics
+
+        // Query FCM Token
+        queryFCMToken()
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {

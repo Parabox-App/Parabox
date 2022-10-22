@@ -35,6 +35,8 @@ import coil.ImageLoader
 import coil.compose.AsyncImage
 import coil.decode.SvgDecoder
 import coil.request.ImageRequest
+import com.guru.fontawesomecomposelib.FaIcon
+import com.guru.fontawesomecomposelib.FaIcons
 import com.ojhdtapp.parabox.BuildConfig
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
@@ -44,6 +46,7 @@ import com.ojhdtapp.parabox.ui.destinations.BackupPageDestination
 import com.ojhdtapp.parabox.ui.destinations.CloudPageDestination
 import com.ojhdtapp.parabox.ui.destinations.ExperimentalPageDestination
 import com.ojhdtapp.parabox.ui.destinations.ExtensionPageDestination
+import com.ojhdtapp.parabox.ui.destinations.FCMPageDestination
 import com.ojhdtapp.parabox.ui.destinations.InterfacePageDestination
 import com.ojhdtapp.parabox.ui.destinations.NotificationPageDestination
 import com.ojhdtapp.parabox.ui.destinations.SupportPageDestination
@@ -373,6 +376,31 @@ fun SettingPage(
                                 mainNavController.navigate(CloudPageDestination)
                             } else {
                                 viewModel.setSelectedSetting(SettingPageState.CLOUD)
+                            }
+                        }
+                    }
+                    item(key = "fcm") {
+                        NormalPreference(
+                            modifier = Modifier.padding(horizontal = if (sizeClass.widthSizeClass != WindowWidthSizeClass.Compact) 16.dp else 0.dp),
+                            leadingIcon =
+                            if (sizeClass.widthSizeClass != WindowWidthSizeClass.Medium) {
+                                {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Sync,
+                                        contentDescription = "fcm"
+                                    )
+                                }
+                            } else null,
+                            title = "Firebase 云消息传递",
+                            subtitle = "在不同设备间同步消息",
+                            selected = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact
+                                    && viewModel.selectedSetting.value == SettingPageState.FCM,
+                            roundedCorner = true,
+                        ) {
+                            if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
+                                mainNavController.navigate(FCMPageDestination)
+                            } else {
+                                viewModel.setSelectedSetting(SettingPageState.FCM)
                             }
                         }
                     }

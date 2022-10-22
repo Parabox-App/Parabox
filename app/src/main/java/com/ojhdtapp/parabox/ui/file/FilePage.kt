@@ -789,7 +789,7 @@ fun MainArea(
                                 Icon(
                                     imageVector = Icons.Outlined.NavigateNext,
                                     contentDescription = "next",
-                                    modifier = Modifier.padding(horizontal = 16.dp)
+                                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp)
                                 )
                             }
                         }
