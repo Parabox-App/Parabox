@@ -40,9 +40,10 @@ object AppModule {
     fun provideMainRepository(
         database: AppDatabase,
         @ApplicationContext applicationContext: Context,
-        notificationUtil: NotificationUtil
+        notificationUtil: NotificationUtil,
+        fcmApiHelper: FcmApiHelper
     ): MainRepository =
-        MainRepositoryImpl(database, applicationContext, notificationUtil)
+        MainRepositoryImpl(database, applicationContext, notificationUtil, fcmApiHelper)
 
     @Provides
     @Singleton
@@ -68,7 +69,13 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideFcmApiHelper(fcmService: FcmService) = FcmApiHelper(fcmService)
+    fun provideFcmApiHelper(
+        fcmService: FcmService,
+        @ApplicationContext applicationContext: Context
+    ) = FcmApiHelper(
+        applicationContext,
+        fcmService,
+    )
 
     @Provides
     @Singleton

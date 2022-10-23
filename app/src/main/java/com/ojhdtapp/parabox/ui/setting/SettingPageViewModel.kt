@@ -269,20 +269,12 @@ class SettingPageViewModel @Inject constructor(
             _fcmStateFlow.value = FcmConstants.Status.Loading
 
             viewModelScope.launch {
-                val url = fcmUrlFlow.first()
-                if (url.isNotBlank()) {
-                    val httpUrl = "http://${url}/"
-                    Log.d("parabox", "checkFcmState: $httpUrl")
-                    fcmApiHelper.getVersion(httpUrl).also {
-                        if (it.isSuccessful) {
-                            _fcmStateFlow.value = FcmConstants.Status.Success(it.body()!!.version)
-                        } else {
-                            _fcmStateFlow.value = FcmConstants.Status.Failure
-                        }
-                        isCheckingFCM = false
+                fcmApiHelper.getVersion().also {
+                    if (it?.isSuccessful == true) {
+                        _fcmStateFlow.value = FcmConstants.Status.Success(it.body()!!.version)
+                    } else {
+                        _fcmStateFlow.value = FcmConstants.Status.Failure
                     }
-                } else {
-                    _fcmStateFlow.value = FcmConstants.Status.Failure
                     isCheckingFCM = false
                 }
             }
@@ -325,6 +317,27 @@ class SettingPageViewModel @Inject constructor(
         viewModelScope.launch {
             context.dataStore.edit { preferences ->
                 preferences[DataStoreKeys.SETTINGS_FCM_HTTPS] = value
+            }
+        }
+    }
+
+    val fcmTargetTokensFlow = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.FCM_TARGET_TOKENS] ?: emptySet()
+        }
+
+    fun setFcmTargetTokens(value: Set<String>) {
+        Log.d("parabox", "setFcmTargetTokens: $value")
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.FCM_TARGET_TOKENS] = value
             }
         }
     }

@@ -36,6 +36,7 @@ object DataStoreKeys{
     val REQUEST_NOTIFICATION_PERMISSION_FIRST_TIME = booleanPreferencesKey("show_notification_first_time")
 
     val FCM_TOKEN = stringPreferencesKey("fcm_token")
+    val FCM_TARGET_TOKENS = stringSetPreferencesKey("fcm_target_tokens")
 
     const val DEFAULT_USER_NAME = "Me"
 }

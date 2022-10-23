@@ -16,10 +16,12 @@ import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.*
 import com.ojhdtapp.parabox.data.remote.dto.*
+import com.ojhdtapp.parabox.domain.fcm.FcmApiHelper
 import com.ojhdtapp.parabox.domain.model.*
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import retrofit2.awaitResponse
 import java.io.IOException
 import javax.inject.Inject
 
@@ -27,12 +29,16 @@ class MainRepositoryImpl @Inject constructor(
     private val database: AppDatabase,
     val context: Context,
     private val notificationUtil: NotificationUtil,
+    private val fcmApiHelper: FcmApiHelper,
 ) : MainRepository {
     override suspend fun handleNewMessage(dto: ReceiveMessageDto) {
         coroutineScope {
             // Properties
             val allowForegroundNotification = context.dataStore.data.map { preferences ->
                 preferences[DataStoreKeys.SETTINGS_ALLOW_FOREGROUND_NOTIFICATION] ?: false
+            }.first()
+            val enableFcm = context.dataStore.data.map { preferences ->
+                preferences[DataStoreKeys.SETTINGS_ENABLE_FCM] ?: false
             }.first()
 
             val messageIdDeferred = async<Long> {
@@ -136,12 +142,21 @@ class MainRepositoryImpl @Inject constructor(
                     )
                 }
             }
-        }
+            // fcm if enabled
+            if (enableFcm) {
+                fcmApiHelper.pushReceiveDto(dto).also {
+                    if (it?.isSuccessful == true) {
+                        Log.d("parabox", "fcm success")
+                    } else {
+                        Log.d("parabox", "fcm failed")
+                    }
+                }
+            }
 //        database.messageDao.insertMessage(dto.toMessageEntity())
 //        database.contactDao.insertContact(dto.toContactEntityWithUnreadMessagesNumUpdate(database.contactDao))
 //        database.contactMessageCrossRefDao.insertNewContactMessageCrossRef(dto.getContactMessageCrossRef())
 
-
+        }
     }
 
     override suspend fun handleNewMessage(
@@ -482,7 +497,9 @@ class MainRepositoryImpl @Inject constructor(
         return flow<Resource<List<ContactWithMessages>>> {
             emit(Resource.Loading())
             emitAll(
-                database.contactMessageCrossRefDao.getSpecifiedListOfContactWithMessages(contactIds)
+                database.contactMessageCrossRefDao.getSpecifiedListOfContactWithMessages(
+                    contactIds
+                )
                     .map<List<ContactWithMessagesEntity>, Resource<List<ContactWithMessages>>> { contactWithMessagesEntityList ->
                         Resource.Success(contactWithMessagesEntityList.map {
                             it.toContactWithMessages()

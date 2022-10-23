@@ -97,6 +97,7 @@ fun FCMPage(
     val state = viewModel.fcmStateFlow.collectAsState()
     val fcmUrl = viewModel.fcmUrlFlow.collectAsState(initial = "")
     val useHttps = viewModel.fcmHttpsFlow.collectAsState(initial = false)
+    val targetTokens = viewModel.fcmTargetTokensFlow.collectAsState(initial = emptySet())
 
     LaunchedEffect(key1 = Unit) {
         if (enabled.value)
@@ -106,7 +107,6 @@ fun FCMPage(
     var showEditUrlDialog by remember {
         mutableStateOf(false)
     }
-
 
     if (showEditUrlDialog) {
         var tempUrl by remember {
@@ -199,6 +199,51 @@ fun FCMPage(
             }
         )
     }
+
+    var showEditTokenDialog by remember {
+        mutableStateOf(false)
+    }
+    if (showEditTokenDialog) {
+        var tempTokens by remember {
+            mutableStateOf(buildString {
+                targetTokens.value.forEachIndexed { index, s ->
+                    append(s)
+                    if (index != targetTokens.value.size - 1)
+                        append(",\n")
+                }
+            })
+        }
+        AlertDialog(
+            onDismissRequest = { showEditTokenDialog = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    showEditTokenDialog = false
+                    viewModel.setFcmTargetTokens(
+                        if (tempTokens.isBlank()) emptySet<String>()
+                        else tempTokens.split(",").map { it.trim() }.toSet()
+                    )
+                }) {
+                    Text(text = "保存")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { tempTokens = "" }) {
+                    Text(text = "清空输入")
+                }
+            },
+            title = {
+                Text(text = "目标设备 Token")
+            },
+            text = {
+                OutlinedTextField(
+                    value = tempTokens, onValueChange = { tempTokens = it },
+                    label = { Text(text = "Token") },
+                    supportingText = { Text(text = "多个 Token 请用英式逗号分隔") },
+                )
+            },
+        )
+    }
+
 
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -327,6 +372,18 @@ fun FCMPage(
                             subtitle = "未选择",
                         ) {}
                     }
+                }
+            }
+            item {
+                NormalPreference(
+                    title = "目标设备 Token",
+                    subtitle = when {
+                        targetTokens.value.isEmpty() -> "未设置"
+                        else -> "已设置 ${targetTokens.value.size} 个 token"
+                    },
+                    enabled = enabled.value,
+                ) {
+                    showEditTokenDialog = true
                 }
             }
             item {
