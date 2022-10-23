@@ -673,21 +673,25 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun queryFCMToken() {
-        FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task ->
-            if (!task.isSuccessful) {
-                Log.w("parabox", "Fetching FCM registration token failed", task.exception)
-                return@OnCompleteListener
-            }
+        lifecycleScope.launch {
+            if(dataStore.data.first()[DataStoreKeys.SETTINGS_ENABLE_FCM] == true){
+                FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task ->
+                    if (!task.isSuccessful) {
+                        Log.w("parabox", "Fetching FCM registration token failed", task.exception)
+                        return@OnCompleteListener
+                    }
 
-            // Get new FCM registration token
-            val token = task.result
-            Log.d("parabox", "FCM token: $token")
-            lifecycleScope.launch {
-                dataStore.edit { settings ->
-                    settings[DataStoreKeys.FCM_TOKEN] = token
-                }
+                    // Get new FCM registration token
+                    val token = task.result
+                    Log.d("parabox", "FCM token: $token")
+                    lifecycleScope.launch {
+                        dataStore.edit { settings ->
+                            settings[DataStoreKeys.FCM_TOKEN] = token
+                        }
+                    }
+                })
             }
-        })
+        }
     }
 
     fun getGoogleLoginAuth(): GoogleSignInClient {

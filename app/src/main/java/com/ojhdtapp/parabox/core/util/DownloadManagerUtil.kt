@@ -6,6 +6,7 @@ import android.database.Cursor
 import android.database.CursorIndexOutOfBoundsException
 import android.net.Uri
 import android.os.Environment
+import android.os.Looper
 import android.util.Log
 import android.webkit.MimeTypeMap
 import android.widget.Toast
@@ -37,11 +38,16 @@ object DownloadManagerUtil {
                     "Parabox" + File.separator + fileName
                 )
             }
-            Toast.makeText(context, "开始下载${fileName}到/Download/Parabox", Toast.LENGTH_SHORT).show()
+            Looper.prepare()
+            Toast.makeText(context, "开始下载${fileName}到/Download/Parabox", Toast.LENGTH_SHORT)
+                .show()
+            Looper.loop()
             downloadManager.enqueue(request)
         } catch (e: Exception) {
             e.printStackTrace()
+            Looper.prepare()
             Toast.makeText(context, "下载失败", Toast.LENGTH_SHORT).show()
+            Looper.loop()
             null
         }
     }
@@ -103,7 +109,7 @@ object DownloadManagerUtil {
     private fun Cursor.column(which: String) = this.getColumnIndex(which)
     private fun Cursor.intValue(which: String): Int = this.getInt(column(which))
 
-    suspend fun retrieveResultOnly(context: Context, id: Long) : Boolean{
+    suspend fun retrieveResultOnly(context: Context, id: Long): Boolean {
         val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
         try {
             val downloading = AtomicBoolean(true)

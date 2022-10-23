@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ojhdtapp.parabox.ui.theme.fontSize
@@ -375,6 +376,43 @@ fun <T> SimpleMenuPreference(
                 color = subTitleColor
             )
 
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MainSwitch(
+    modifier: Modifier = Modifier,
+    title: String,
+    checked: Boolean,
+    onCheckedChange: (value: Boolean) -> Unit,
+    enabled: Boolean
+) {
+    val switchColor by animateColorAsState(targetValue = if (checked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface)
+    Surface(
+        modifier = modifier.padding(horizontal = 16.dp),
+        color = switchColor,
+        shape = RoundedCornerShape(32.dp),
+        onClick = {
+            if (enabled) onCheckedChange(!checked)
+        },
+        tonalElevation = 3.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp, 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                fontSize = MaterialTheme.fontSize.title,
+                color = if (checked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+            )
+            Switch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
         }
     }
 }

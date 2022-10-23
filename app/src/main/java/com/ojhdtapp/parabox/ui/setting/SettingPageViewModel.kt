@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
@@ -12,13 +13,14 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
-import com.ojhdtapp.parabox.BuildConfig
 import com.ojhdtapp.parabox.core.util.CacheUtil
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.GoogleDriveUtil
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.dataStore
+import com.ojhdtapp.parabox.domain.fcm.FcmApiHelper
+import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.use_case.GetContacts
 import com.ojhdtapp.parabox.domain.use_case.UpdateContact
@@ -33,6 +35,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -43,7 +46,8 @@ import javax.inject.Inject
 class SettingPageViewModel @Inject constructor(
     @ApplicationContext val context: Context,
     val getContacts: GetContacts,
-    val updateContact: UpdateContact
+    val updateContact: UpdateContact,
+    val fcmApiHelper: FcmApiHelper
 ) : ViewModel() {
 
     private val _contactLoadingState = mutableStateOf<Boolean>(true)
@@ -183,7 +187,7 @@ class SettingPageViewModel @Inject constructor(
         }
     }
 
-    val autoBackupFileMaxSizeFlow : Flow<Float> = context.dataStore.data
+    val autoBackupFileMaxSizeFlow: Flow<Float> = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {
                 emit(emptyPreferences())
@@ -224,6 +228,26 @@ class SettingPageViewModel @Inject constructor(
     }
 
     // Firebase
+    val enableFCMFlow: Flow<Boolean> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.SETTINGS_ENABLE_FCM] ?: false
+        }
+
+    fun setEnableFCM(value: Boolean) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.SETTINGS_ENABLE_FCM] = value
+            }
+        }
+    }
+
     val fcmTokenFlow = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {
@@ -235,6 +259,75 @@ class SettingPageViewModel @Inject constructor(
         .map { settings ->
             settings[DataStoreKeys.FCM_TOKEN] ?: ""
         }
+
+    private val _fcmStateFlow = MutableStateFlow<FcmConstants.Status>(FcmConstants.Status.Loading)
+    val fcmStateFlow get() = _fcmStateFlow.asStateFlow()
+    var isCheckingFCM = false
+    fun checkFcmState() {
+        if (!isCheckingFCM) {
+            isCheckingFCM = true
+            _fcmStateFlow.value = FcmConstants.Status.Loading
+
+            viewModelScope.launch {
+                val url = fcmUrlFlow.first()
+                if (url.isNotBlank()) {
+                    val httpUrl = "http://${url}/"
+                    Log.d("parabox", "checkFcmState: $httpUrl")
+                    fcmApiHelper.getVersion(httpUrl).also {
+                        if (it.isSuccessful) {
+                            _fcmStateFlow.value = FcmConstants.Status.Success(it.body()!!.version)
+                        } else {
+                            _fcmStateFlow.value = FcmConstants.Status.Failure
+                        }
+                        isCheckingFCM = false
+                    }
+                } else {
+                    _fcmStateFlow.value = FcmConstants.Status.Failure
+                    isCheckingFCM = false
+                }
+            }
+        }
+    }
+
+    val fcmUrlFlow = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.SETTINGS_FCM_URL] ?: ""
+        }
+
+    fun setFCMUrl(value: String) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.SETTINGS_FCM_URL] = value
+            }
+        }
+    }
+
+    val fcmHttpsFlow = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.SETTINGS_FCM_HTTPS] ?: false
+        }
+
+    fun setFCMHttps(value: Boolean) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.SETTINGS_FCM_HTTPS] = value
+            }
+        }
+    }
 
     // Backup & Restore
 

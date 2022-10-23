@@ -7,6 +7,8 @@ import com.ojhdtapp.parabox.core.util.NotificationUtil
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.Converters
 import com.ojhdtapp.parabox.data.repository.MainRepositoryImpl
+import com.ojhdtapp.parabox.domain.fcm.FcmApiHelper
+import com.ojhdtapp.parabox.domain.fcm.FcmService
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import com.ojhdtapp.parabox.domain.use_case.*
 import com.ojhdtapp.parabox.domain.util.GsonParser
@@ -16,6 +18,8 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
 
 @Module
@@ -47,6 +51,24 @@ object AppModule {
         database: AppDatabase,
     ): NotificationUtil =
         NotificationUtil(applicationContext, database)
+
+    @Provides
+    @Singleton
+    fun provideRetrofit(): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl("https://www.google.com/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideFcmService(retrofit: Retrofit): FcmService =
+        retrofit.create(FcmService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideFcmApiHelper(fcmService: FcmService) = FcmApiHelper(fcmService)
 
     @Provides
     @Singleton
