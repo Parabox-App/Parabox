@@ -568,6 +568,13 @@ fun SettingPage(
                             sizeClass = sizeClass,
                             onEvent = onEvent
                         )
+                        SettingPageState.FCM -> FCMPage(
+                            navigator = navigator,
+                            mainNavController = mainNavController,
+                            mainSharedViewModel = mainSharedViewModel,
+                            sizeClass = sizeClass,
+                            onEvent = onEvent
+                        )
                         SettingPageState.BACKUP -> BackupPage(
                             navigator = navigator,
                             mainNavController = mainNavController,

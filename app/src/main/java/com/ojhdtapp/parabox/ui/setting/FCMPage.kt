@@ -46,6 +46,7 @@ import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.NormalPreference
+import com.ojhdtapp.parabox.ui.util.PreferencesCategory
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -124,6 +125,9 @@ fun FCMPage(
                 }
             }
             item {
+                PreferencesCategory(text = "连接状态")
+            }
+            item {
                 NormalPreference(
                     modifier = Modifier.animateContentSize(),
                     title = "Token",
@@ -136,6 +140,9 @@ fun FCMPage(
                         }
                     }
                 }
+            }
+            item{
+                PreferencesCategory(text = "连接配置")
             }
         }
     }
