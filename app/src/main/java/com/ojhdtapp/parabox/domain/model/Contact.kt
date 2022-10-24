@@ -16,6 +16,7 @@ data class Contact(
     val isArchived: Boolean = false,
     val shouldBackup: Boolean = false,
     val enableNotifications: Boolean = true,
+    val disableFCM: Boolean = false,
 ) : Parcelable {
 //    override fun equals(other: Any?): Boolean {
 //        return if (other is Contact) {
@@ -37,6 +38,7 @@ data class Contact(
             isArchived = isArchived,
             shouldBackup = shouldBackup,
             enableNotifications = enableNotifications,
+            disableFCM = disableFCM,
             tags = tags
         )
     }

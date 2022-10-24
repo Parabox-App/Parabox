@@ -8,7 +8,13 @@ import android.content.ServiceConnection
 import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.net.Uri
-import android.os.*
+import android.os.Build
+import android.os.Bundle
+import android.os.Environment
+import android.os.IBinder
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
@@ -18,11 +24,17 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.CreateDocument
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.animation.*
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
@@ -42,7 +54,6 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import androidx.work.WorkQuery
 import androidx.work.workDataOf
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
@@ -57,9 +68,18 @@ import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.ktx.analytics
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.messaging.FirebaseMessaging
-import com.ojhdtapp.parabox.core.util.*
+import com.ojhdtapp.parabox.core.util.BrowserUtil
+import com.ojhdtapp.parabox.core.util.DataStoreKeys
+import com.ojhdtapp.parabox.core.util.DownloadManagerUtil
+import com.ojhdtapp.parabox.core.util.FileUtil
+import com.ojhdtapp.parabox.core.util.GoogleDriveUtil
+import com.ojhdtapp.parabox.core.util.NotificationUtil
+import com.ojhdtapp.parabox.core.util.dataStore
+import com.ojhdtapp.parabox.core.util.toDateAndTimeString
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.DownloadingState
+import com.ojhdtapp.parabox.domain.fcm.FcmApiHelper
+import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.model.File
 import com.ojhdtapp.parabox.domain.service.PluginListListener
@@ -68,6 +88,7 @@ import com.ojhdtapp.parabox.domain.use_case.GetContacts
 import com.ojhdtapp.parabox.domain.use_case.GetFiles
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
 import com.ojhdtapp.parabox.domain.use_case.UpdateFile
+import com.ojhdtapp.parabox.domain.use_case.UpdateMessage
 import com.ojhdtapp.parabox.domain.worker.CleanUpFileWorker
 import com.ojhdtapp.parabox.domain.worker.DownloadFileWorker
 import com.ojhdtapp.parabox.domain.worker.UploadFileWorker
@@ -84,15 +105,21 @@ import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.navigation.dependency
 import dagger.hilt.android.AndroidEntryPoint
 import de.raphaelebner.roomdatabasebackup.core.RoomBackup
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import linc.com.amplituda.Amplituda
 import linc.com.amplituda.Compress
 import java.io.IOException
 import javax.inject.Inject
 import kotlin.math.abs
 import kotlin.math.roundToInt
+
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -113,6 +140,12 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var appDatabase: AppDatabase
+
+    @Inject
+    lateinit var fcmApiHelper: FcmApiHelper
+
+    @Inject
+    lateinit var updateMessage: UpdateMessage
 
     var pluginService: PluginService? = null
     private lateinit var pluginServiceConnection: ServiceConnection
@@ -508,7 +541,8 @@ class MainActivity : AppCompatActivity() {
                         file.delete()
                         lifecycleScope.launch {
                             delay(1000)
-                            restartApp(Intent(this@MainActivity, MainActivity::class.java))
+//                            restartApp(Intent(this@MainActivity, MainActivity::class.java))
+                            onEvent(ActivityEvent.RestartApp)
                         }
                     } else {
                         Toast.makeText(
@@ -674,7 +708,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun queryFCMToken() {
         lifecycleScope.launch {
-            if(dataStore.data.first()[DataStoreKeys.SETTINGS_ENABLE_FCM] == true){
+            if (dataStore.data.first()[DataStoreKeys.SETTINGS_ENABLE_FCM] == true) {
                 FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task ->
                     if (!task.isSuccessful) {
                         Log.w("parabox", "Fetching FCM registration token failed", task.exception)
@@ -733,6 +767,15 @@ class MainActivity : AppCompatActivity() {
                 BrowserUtil.launchURL(this, event.url)
             }
 
+            is ActivityEvent.RestartApp -> {
+                val ctx = applicationContext
+                val pm = ctx.packageManager
+                val intent = pm.getLaunchIntentForPackage(ctx.packageName)
+                val mainIntent = Intent.makeRestartActivityTask(intent!!.component)
+                ctx.startActivity(mainIntent)
+                Runtime.getRuntime().exit(0)
+            }
+
             is ActivityEvent.SendMessage -> {
                 lifecycleScope.launch(Dispatchers.IO) {
                     val timestamp = System.currentTimeMillis()
@@ -748,7 +791,22 @@ class MainActivity : AppCompatActivity() {
                             pluginConnection = event.pluginConnection,
                             messageId = it
                         )
-                        pluginService?.sendMessage(dto)
+
+                        val fcmRole = dataStore.data.map { preferences ->
+                            preferences[DataStoreKeys.SETTINGS_FCM_ROLE]
+                                ?: FcmConstants.Role.SENDER.ordinal
+                        }.first()
+                        if (fcmRole == FcmConstants.Role.SENDER.ordinal) {
+                            pluginService?.sendMessage(dto)
+                        } else {
+                            if(fcmApiHelper.pushSendDto(dto)?.isSuccessful == true){
+                                updateMessage.verifiedState(it, true)
+                                Log.d("parabox", "FCM push success")
+                            } else {
+                                updateMessage.verifiedState(it, false)
+                                Log.d("parabox", "FCM push failed")
+                            }
+                        }
                     }
                 }
             }
@@ -1143,34 +1201,52 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onStart() {
-        val pluginServiceBinderIntent = Intent(this, PluginService::class.java)
-        pluginServiceConnection = object : ServiceConnection {
-            override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
-                Log.d("parabox", "mainActivity - service connected")
-                pluginService = (p1 as PluginService.PluginServiceBinder).getService().also {
-                    mainSharedViewModel.setPluginListStateFlow(it.getAppModelList())
-                    it.setPluginListListener(object : PluginListListener {
-                        override fun onPluginListChange(pluginList: List<AppModel>) {
-                            mainSharedViewModel.setPluginListStateFlow(pluginList)
-                        }
-                    })
+        lifecycleScope.launch(Dispatchers.Main) {
+            val fcmRole = dataStore.data.map { preferences ->
+                preferences[DataStoreKeys.SETTINGS_FCM_ROLE]
+                    ?: FcmConstants.Role.SENDER.ordinal
+            }.first()
+            if (fcmRole == FcmConstants.Role.SENDER.ordinal) {
+                val pluginServiceBinderIntent = Intent(this@MainActivity, PluginService::class.java)
+                pluginServiceConnection = object : ServiceConnection {
+                    override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
+                        Log.d("parabox", "mainActivity - service connected")
+                        pluginService =
+                            (p1 as PluginService.PluginServiceBinder).getService().also {
+                                mainSharedViewModel.setPluginListStateFlow(it.getAppModelList())
+                                it.setPluginListListener(object : PluginListListener {
+                                    override fun onPluginListChange(pluginList: List<AppModel>) {
+                                        mainSharedViewModel.setPluginListStateFlow(pluginList)
+                                    }
+                                })
+                            }
+                    }
+
+                    override fun onServiceDisconnected(p0: ComponentName?) {
+                        Log.d("parabox", "mainActivity - service disconnected")
+                        pluginService = null
+                    }
+
                 }
-            }
+                startService(pluginServiceBinderIntent)
+                bindService(pluginServiceBinderIntent, pluginServiceConnection, BIND_AUTO_CREATE)
 
-            override fun onServiceDisconnected(p0: ComponentName?) {
-                Log.d("parabox", "mainActivity - service disconnected")
-                pluginService = null
             }
-
         }
-        startService(pluginServiceBinderIntent)
-        bindService(pluginServiceBinderIntent, pluginServiceConnection, BIND_AUTO_CREATE)
         super.onStart()
     }
 
     override fun onStop() {
-        unbindService(pluginServiceConnection)
-        pluginService = null
+        lifecycleScope.launch(Dispatchers.Main) {
+            val fcmRole = dataStore.data.map { preferences ->
+                preferences[DataStoreKeys.SETTINGS_FCM_ROLE]
+                    ?: FcmConstants.Role.SENDER.ordinal
+            }.first()
+            if (fcmRole == FcmConstants.Role.SENDER.ordinal) {
+                unbindService(pluginServiceConnection)
+                pluginService = null
+            }
+        }
         super.onStop()
     }
 }

@@ -12,6 +12,7 @@ import com.ojhdtapp.parabox.domain.model.Message
 sealed interface ActivityEvent {
     data class LaunchIntent(val intent: Intent) : ActivityEvent
     data class LaunchURL(val url: String) : ActivityEvent
+    object RestartApp : ActivityEvent
     data class SendMessage(
         val contents: List<MessageContent>,
         val pluginConnection: PluginConnection,

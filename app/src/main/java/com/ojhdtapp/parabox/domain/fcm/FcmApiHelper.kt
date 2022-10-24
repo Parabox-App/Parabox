@@ -5,6 +5,7 @@ import android.util.Log
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.ReceiveMessageDto
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendMessageDto
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
@@ -49,6 +50,26 @@ class FcmApiHelper @Inject constructor(
             val httpUrl = "http://${url}/receive/"
             try {
                 fcmService.pushReceiveDto(httpUrl, FcmReceiveModel(receiveMessageDto, tokensSet))
+            } catch (e: SocketTimeoutException) {
+                e.printStackTrace()
+                null
+            } catch (e: IOException) {
+                e.printStackTrace()
+                null
+            }
+        } else null
+    }
+
+    suspend fun pushSendDto(
+        sendMessageDto: SendMessageDto
+    ) = coroutineScope {
+        val url = context.dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_URL] ?: ""
+        val loopbackToken =
+            context.dataStore.data.first()[DataStoreKeys.FCM_LOOPBACK_TOKEN] ?: ""
+        if (url.isNotBlank() && loopbackToken.isNotBlank()) {
+            val httpUrl = "http://${url}/send/"
+            try {
+                fcmService.pushSendDto(httpUrl, FcmSendModel(sendMessageDto, loopbackToken))
             } catch (e: SocketTimeoutException) {
                 e.printStackTrace()
                 null

@@ -1,6 +1,5 @@
 package com.ojhdtapp.parabox.ui.setting
 
-import android.text.InputType
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
@@ -32,6 +31,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
@@ -53,14 +53,10 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.ojhdtapp.parabox.BuildConfig
-import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
@@ -94,7 +90,7 @@ fun FCMPage(
         SnackbarHostState()
     }
 
-    val enabled = viewModel.enableFCMFlow.collectAsState(initial = false)
+    val enabled = viewModel.enableFCMStateFlow.collectAsState(initial = false)
     val token = viewModel.fcmTokenFlow.collectAsState(initial = "")
     val state = viewModel.fcmStateFlow.collectAsState()
     val fcmUrl = viewModel.fcmUrlFlow.collectAsState(initial = "")
@@ -282,6 +278,24 @@ fun FCMPage(
         )
     }
 
+    var showContactDialog by remember {
+        mutableStateOf(false)
+    }
+    ContactListDialog(
+        modifier = Modifier,
+        showDialog = showContactDialog,
+        contactList = viewModel.contactStateFlow.collectAsState().value.filter { it.contactId == it.senderId },
+        contactCheck = { it.disableFCM },
+        onValueChange = { target, value ->
+            viewModel.onContactDisableFCMChange(target, value)
+        },
+        loading = viewModel.contactLoadingState.value,
+        sizeClass = sizeClass,
+        onDismiss = {
+            showContactDialog = false
+        }
+    )
+
 
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -421,6 +435,17 @@ fun FCMPage(
                     ),
                     selectedKey = role.value,
                     onSelect = {
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar(
+                                message = "重启应用后生效",
+                                actionLabel = "立即重启",
+                                withDismissAction = true
+                            ).also {
+                                if (it == SnackbarResult.ActionPerformed) {
+                                    onEvent(ActivityEvent.RestartApp)
+                                }
+                            }
+                        }
                         viewModel.setFCMRole(it)
                     },
                     enabled = enabled.value
@@ -428,7 +453,7 @@ fun FCMPage(
             }
             item {
                 Crossfade(targetState = role.value) {
-                    when(it){
+                    when (it) {
                         FcmConstants.Role.SENDER.ordinal -> {
                             NormalPreference(
                                 title = "转发目标设备 Token",
@@ -441,6 +466,7 @@ fun FCMPage(
                                 showEditTokensDialog = true
                             }
                         }
+
                         FcmConstants.Role.RECEIVER.ordinal -> {
                             NormalPreference(
                                 title = "回送目标设备 Token",
@@ -451,6 +477,29 @@ fun FCMPage(
                             }
                         }
                     }
+                }
+            }
+            item {
+                PreferencesCategory(text = "功能配置")
+            }
+            item {
+                SimpleMenuPreference(
+                    title = "对象存储服务",
+                    enabled = enabled.value,
+                    optionsMap = mapOf(
+                        0 to "无",
+                        FcmConstants.CloudStorage.GOOGLE_DRIVE to "Google Drive"
+                    ),
+                    onSelect = {})
+            }
+            item {
+                NormalPreference(
+                    title = "受限会话",
+                    subtitle = "对选定会话限制推送\n" +
+                            "因 FCM 存在消息限额（4000条/小时/设备），可手动对消息量大而重要性低的会话应用推送限制。",
+                    enabled = enabled.value,
+                ) {
+                    showContactDialog = true
                 }
             }
             item {

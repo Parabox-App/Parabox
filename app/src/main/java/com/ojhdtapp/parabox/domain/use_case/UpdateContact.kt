@@ -38,4 +38,8 @@ class UpdateContact @Inject constructor(
     fun backup(id: Long, value: Boolean){
         repository.updateContactBackupState(id, value)
     }
+
+    fun disableFCM(id: Long, value: Boolean){
+        repository.updateContactDisableFCMState(id, value)
+    }
 }

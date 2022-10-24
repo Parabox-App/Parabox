@@ -17,4 +17,8 @@ interface FcmService {
     @Headers("Content-Type: application/json")
     @POST
     suspend fun pushReceiveDto(@Url url: String, @Body fcmReceiveModel: FcmReceiveModel ) : Response<ResponseBody>
+
+    @Headers("Content-Type: application/json")
+    @POST
+    suspend fun pushSendDto(@Url url: String, @Body fcmSendModel: FcmSendModel ) : Response<ResponseBody>
 }

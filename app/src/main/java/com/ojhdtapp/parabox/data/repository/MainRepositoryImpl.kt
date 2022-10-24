@@ -127,35 +127,45 @@ class MainRepositoryImpl @Inject constructor(
                     }
             }
             // Send Notification if Enabled ...
-            if (allowForegroundNotification || HiltApplication.inBackground) {
-                if (contactIdDeferred.await() == -1L) {
-                    database.contactDao.getContactById(dto.pluginConnection.objectId).let {
-                        if (it?.enableNotifications == true && !it.isArchived) {
-                            notificationUtil.sendNewMessageNotification(
-                                message = dto.toMessage(context, messageIdDeferred.await()),
-                                contact = dto.toContact(),
-                                channelId = dto.pluginConnection.connectionType.toString()
-                            )
+            // if FCM Enabled...
+            if (contactIdDeferred.await() == -1L) {
+                database.contactDao.getContactById(dto.pluginConnection.objectId).let {
+                    if ((allowForegroundNotification || HiltApplication.inBackground) && it?.enableNotifications == true && !it.isArchived) {
+                        notificationUtil.sendNewMessageNotification(
+                            message = dto.toMessage(context, messageIdDeferred.await()),
+                            contact = dto.toContact(),
+                            channelId = dto.pluginConnection.connectionType.toString()
+                        )
+                    }
+                    if (enableFcm && fcmRole == FcmConstants.Role.SENDER.ordinal && it?.disableFCM != true) {
+                        fcmApiHelper.pushReceiveDto(dto).also {
+                            if (it?.isSuccessful == true) {
+                                Log.d("parabox", "fcm success")
+                            } else {
+                                Log.d("parabox", "fcm failed")
+                            }
                         }
                     }
-                } else {
+                }
+            } else {
+                if (allowForegroundNotification || HiltApplication.inBackground) {
                     notificationUtil.sendNewMessageNotification(
                         message = dto.toMessage(context, messageIdDeferred.await()),
                         contact = dto.toContact(),
                         channelId = dto.pluginConnection.connectionType.toString()
                     )
                 }
-            }
-            // fcm if enabled
-            if (enableFcm && fcmRole == FcmConstants.Role.SENDER.ordinal) {
-                fcmApiHelper.pushReceiveDto(dto).also {
-                    if (it?.isSuccessful == true) {
-                        Log.d("parabox", "fcm success")
-                    } else {
-                        Log.d("parabox", "fcm failed")
+                if (enableFcm && fcmRole == FcmConstants.Role.SENDER.ordinal) {
+                    fcmApiHelper.pushReceiveDto(dto).also {
+                        if (it?.isSuccessful == true) {
+                            Log.d("parabox", "fcm success")
+                        } else {
+                            Log.d("parabox", "fcm failed")
+                        }
                     }
                 }
             }
+
 //        database.messageDao.insertMessage(dto.toMessageEntity())
 //        database.contactDao.insertContact(dto.toContactEntityWithUnreadMessagesNumUpdate(database.contactDao))
 //        database.contactMessageCrossRefDao.insertNewContactMessageCrossRef(dto.getContactMessageCrossRef())
@@ -359,6 +369,10 @@ class MainRepositoryImpl @Inject constructor(
 
     override fun updateContactUnreadMessagesNum(id: Long, value: Int) {
         database.contactDao.updateUnreadMessagesNum(ContactUnreadMessagesNumUpdate(id, value))
+    }
+
+    override fun updateContactDisableFCMState(id: Long, value: Boolean) {
+        database.contactDao.updateDisableFCMState(ContactDisableFCMStateUpdate(id, value))
     }
 
     override fun getContactTags(): Flow<List<Tag>> {

@@ -10,4 +10,8 @@ object FcmConstants {
     enum class Role {
         SENDER, RECEIVER
     }
+
+    enum class CloudStorage{
+        GOOGLE_DRIVE,
+    }
 }

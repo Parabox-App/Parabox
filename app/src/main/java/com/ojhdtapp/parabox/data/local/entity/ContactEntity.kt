@@ -16,6 +16,7 @@ data class ContactEntity(
     val isArchived: Boolean = false,
     val enableNotifications : Boolean = true,
     val shouldBackup: Boolean = false,
+    val disableFCM: Boolean = false,
     val tags: List<String>,
     @PrimaryKey(autoGenerate = true) val contactId: Long = 0,
 ){
@@ -27,6 +28,7 @@ data class ContactEntity(
         isArchived = isArchived,
         enableNotifications = enableNotifications,
         shouldBackup = shouldBackup,
+        disableFCM = disableFCM,
         contactId = contactId,
         senderId = senderId,
         tags = tags
@@ -98,4 +100,11 @@ data class ContactShouldBackupUpdate(
     val contactId: Long,
     @ColumnInfo(name = "shouldBackup")
     val shouldBackup: Boolean,
+)
+@Entity
+data class ContactDisableFCMStateUpdate(
+    @ColumnInfo(name = "contactId")
+    val contactId: Long,
+    @ColumnInfo(name = "disableFCM")
+    val disableFCM: Boolean,
 )

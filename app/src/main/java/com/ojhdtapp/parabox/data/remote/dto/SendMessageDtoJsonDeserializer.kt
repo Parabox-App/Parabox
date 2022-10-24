@@ -4,26 +4,24 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonDeserializationContext
 import com.google.gson.JsonDeserializer
 import com.google.gson.JsonElement
-import com.google.gson.JsonObject
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.PluginConnection
-import com.ojhdtapp.paraboxdevelopmentkit.messagedto.Profile
-import com.ojhdtapp.paraboxdevelopmentkit.messagedto.ReceiveMessageDto
-import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
-import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendMessageDto
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.At
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.AtAll
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Audio
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.File
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Image
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.QuoteReply
 import java.lang.reflect.Type
 
-class ReceiveMessageDtoJsonDeserializer : JsonDeserializer<ReceiveMessageDto> {
+class SendMessageDtoJsonDeserializer : JsonDeserializer<SendMessageDto> {
     override fun deserialize(
         json: JsonElement?,
         typeOfT: Type?,
         context: JsonDeserializationContext?
-    ): ReceiveMessageDto? {
+    ): SendMessageDto? {
         return json?.asJsonObject?.let {
             val contents = mutableListOf<MessageContent>()
             if (it.has("contents")) {
@@ -31,24 +29,7 @@ class ReceiveMessageDtoJsonDeserializer : JsonDeserializer<ReceiveMessageDto> {
                     getMessageContentList(it.get("contents").asJsonArray)
                 )
             }
-            val profile = if (it.has("profile")) {
-                val profileObj = it.get("profile").asJsonObject
-                Profile(
-                    profileObj.get("name").asString,
-                    profileObj.get("avatar").asString,
-                    profileObj.get("id").asLong
-                )
-            } else null
-            val subjectProfile = if (it.has("subjectProfile")) {
-                val profileObj = it.get("subjectProfile").asJsonObject
-                Profile(
-                    profileObj.get("name").asString,
-                    profileObj.get("avatar").asString,
-                    profileObj.get("id").asLong
-                )
-            } else null
             val timestamp = it.get("timestamp").asLong
-            val messageId = it.get("messageId")?.asLong
             val pluginConnection = if (it.has("pluginConnection")) {
                 val pluginConnectionObj = it.get("pluginConnection").asJsonObject
                 PluginConnection(
@@ -57,14 +38,13 @@ class ReceiveMessageDtoJsonDeserializer : JsonDeserializer<ReceiveMessageDto> {
                     pluginConnectionObj.get("id").asLong
                 )
             } else null
-            if (profile != null && subjectProfile != null && pluginConnection != null) {
-                ReceiveMessageDto(
+            val messageId = it.get("messageId")?.asLong
+            if (pluginConnection != null) {
+                SendMessageDto(
                     contents,
-                    profile,
-                    subjectProfile,
                     timestamp,
-                    messageId,
-                    pluginConnection
+                    pluginConnection,
+                    messageId
                 )
             } else null
         }

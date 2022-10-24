@@ -26,8 +26,11 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.guru.fontawesomecomposelib.FaIcon
 import com.guru.fontawesomecomposelib.FaIcons
+import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
+import com.ojhdtapp.parabox.ui.destinations.ExtensionPageDestination
+import com.ojhdtapp.parabox.ui.destinations.FCMPageDestination
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.NormalPreference
 import com.ojhdtapp.parabox.ui.util.PreferencesCategory
@@ -35,6 +38,7 @@ import com.ojhdtapp.parabox.ui.util.SettingNavGraph
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import com.ramcosta.composedestinations.navigation.navigate
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,7 +53,7 @@ fun ExtensionPage(
     sizeClass: WindowSizeClass,
     onEvent: (ActivityEvent) -> Unit
 ) {
-
+    val viewModel = hiltViewModel<SettingPageViewModel>()
     val coroutineScope = rememberCoroutineScope()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
@@ -86,30 +90,56 @@ fun ExtensionPage(
     ) {
         // Plugin List State
         val pluginList by mainSharedViewModel.pluginListStateFlow.collectAsState()
+        val fcmRole =
+            viewModel.fcmRoleFlow.collectAsState(initial = FcmConstants.Role.SENDER.ordinal)
         LazyColumn(
             contentPadding = it
         ) {
             item() {
                 if (pluginList.isEmpty()) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            modifier = Modifier.padding(vertical = 16.dp),
-                            text = "未发现可用扩展",
-                            style = MaterialTheme.typography.labelLarge
-                        )
-                        FilledTonalButton(
-                            onClick = { /*TODO*/ }) {
-                            FaIcon(
-                                modifier = Modifier.padding(end = 8.dp),
-                                faIcon = FaIcons.GooglePlay,
-                                size = ButtonDefaults.IconSize,
-                                tint = MaterialTheme.colorScheme.onSurface
+                    if (fcmRole.value == FcmConstants.Role.RECEIVER.ordinal) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                modifier = Modifier.padding(vertical = 16.dp),
+                                text = "已启用 FCM 接收端模式，扩展功能已被禁用",
+                                style = MaterialTheme.typography.labelLarge
                             )
-                            Text(text = "从应用商店获取")
+                            FilledTonalButton(
+                                onClick = {
+                                    if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
+                                        mainNavController.navigate(FCMPageDestination)
+                                    } else {
+                                        viewModel.setSelectedSetting(SettingPageState.FCM)
+                                    }
+                                }) {
+                                Text(text = "转到设置")
+                            }
+                        }
+                    } else {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                modifier = Modifier.padding(vertical = 16.dp),
+                                text = "未发现可用扩展",
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                            FilledTonalButton(
+                                onClick = { }) {
+                                FaIcon(
+                                    modifier = Modifier.padding(end = 8.dp),
+                                    faIcon = FaIcons.GooglePlay,
+                                    size = ButtonDefaults.IconSize,
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(text = "从应用商店获取")
+                            }
                         }
                     }
                 }

@@ -3,11 +3,13 @@ package com.ojhdtapp.parabox.di
 import android.app.Application
 import android.content.Context
 import androidx.room.Room
+import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.ojhdtapp.parabox.core.util.NotificationUtil
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.Converters
 import com.ojhdtapp.parabox.data.remote.dto.ReceiveMessageDtoJsonDeserializer
+import com.ojhdtapp.parabox.data.remote.dto.SendMessageDtoJsonDeserializer
 import com.ojhdtapp.parabox.data.repository.MainRepositoryImpl
 import com.ojhdtapp.parabox.domain.fcm.FcmApiHelper
 import com.ojhdtapp.parabox.domain.fcm.FcmService
@@ -16,6 +18,7 @@ import com.ojhdtapp.parabox.domain.use_case.*
 import com.ojhdtapp.parabox.domain.util.GsonParser
 import com.ojhdtapp.parabox.domain.worker.UploadFileWorker
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.ReceiveMessageDto
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendMessageDto
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -82,10 +85,16 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideGson() = GsonBuilder().registerTypeAdapter(
-        ReceiveMessageDto::class.java,
-        ReceiveMessageDtoJsonDeserializer()
-    ).create()
+    fun provideGson(): Gson = GsonBuilder()
+        .registerTypeAdapter(
+            ReceiveMessageDto::class.java,
+            ReceiveMessageDtoJsonDeserializer()
+        )
+        .registerTypeAdapter(
+            SendMessageDto::class.java,
+            SendMessageDtoJsonDeserializer()
+        )
+        .create()
 
     @Provides
     @Singleton

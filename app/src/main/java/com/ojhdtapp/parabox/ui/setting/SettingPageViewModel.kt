@@ -35,7 +35,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -228,7 +227,7 @@ class SettingPageViewModel @Inject constructor(
     }
 
     // Firebase
-    val enableFCMFlow: Flow<Boolean> = context.dataStore.data
+    val enableFCMStateFlow: StateFlow<Boolean> = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {
                 emit(emptyPreferences())
@@ -238,7 +237,7 @@ class SettingPageViewModel @Inject constructor(
         }
         .map { settings ->
             settings[DataStoreKeys.SETTINGS_ENABLE_FCM] ?: false
-        }
+        }.stateIn(viewModelScope, SharingStarted.Lazily, false)
 
     fun setEnableFCM(value: Boolean) {
         viewModelScope.launch {
@@ -379,6 +378,12 @@ class SettingPageViewModel @Inject constructor(
             context.dataStore.edit { preferences ->
                 preferences[DataStoreKeys.FCM_LOOPBACK_TOKEN] = value
             }
+        }
+    }
+
+    fun onContactDisableFCMChange(target: Contact, value: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            updateContact.disableFCM(target.contactId, value)
         }
     }
 
