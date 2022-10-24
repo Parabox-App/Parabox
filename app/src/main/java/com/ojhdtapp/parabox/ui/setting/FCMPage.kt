@@ -2,6 +2,7 @@ package com.ojhdtapp.parabox.ui.setting
 
 import android.text.InputType
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.expandVertically
@@ -66,6 +67,7 @@ import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.MainSwitch
 import com.ojhdtapp.parabox.ui.util.NormalPreference
 import com.ojhdtapp.parabox.ui.util.PreferencesCategory
+import com.ojhdtapp.parabox.ui.util.SimpleMenuPreference
 import com.ojhdtapp.parabox.ui.util.SwitchPreference
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
@@ -97,7 +99,9 @@ fun FCMPage(
     val state = viewModel.fcmStateFlow.collectAsState()
     val fcmUrl = viewModel.fcmUrlFlow.collectAsState(initial = "")
     val useHttps = viewModel.fcmHttpsFlow.collectAsState(initial = false)
+    val role = viewModel.fcmRoleFlow.collectAsState(initial = FcmConstants.Role.SENDER.ordinal)
     val targetTokens = viewModel.fcmTargetTokensFlow.collectAsState(initial = emptySet())
+    val loopbackToken = viewModel.fcmLoopbackTokenFlow.collectAsState(initial = "")
 
     LaunchedEffect(key1 = Unit) {
         if (enabled.value)
@@ -200,10 +204,10 @@ fun FCMPage(
         )
     }
 
-    var showEditTokenDialog by remember {
+    var showEditTokensDialog by remember {
         mutableStateOf(false)
     }
-    if (showEditTokenDialog) {
+    if (showEditTokensDialog) {
         var tempTokens by remember {
             mutableStateOf(buildString {
                 targetTokens.value.forEachIndexed { index, s ->
@@ -214,10 +218,10 @@ fun FCMPage(
             })
         }
         AlertDialog(
-            onDismissRequest = { showEditTokenDialog = false },
+            onDismissRequest = { showEditTokensDialog = false },
             confirmButton = {
                 TextButton(onClick = {
-                    showEditTokenDialog = false
+                    showEditTokensDialog = false
                     viewModel.setFcmTargetTokens(
                         if (tempTokens.isBlank()) emptySet<String>()
                         else tempTokens.split(",").map { it.trim() }.toSet()
@@ -232,13 +236,47 @@ fun FCMPage(
                 }
             },
             title = {
-                Text(text = "目标设备 Token")
+                Text(text = "转发目标设备 Token")
             },
             text = {
                 OutlinedTextField(
                     value = tempTokens, onValueChange = { tempTokens = it },
                     label = { Text(text = "Token") },
                     supportingText = { Text(text = "多个 Token 请用英式逗号分隔") },
+                )
+            },
+        )
+    }
+
+    var showEditLoopbackTokenDialog by remember {
+        mutableStateOf(false)
+    }
+    if (showEditLoopbackTokenDialog) {
+        var tempToken by remember {
+            mutableStateOf(loopbackToken.value)
+        }
+        AlertDialog(
+            onDismissRequest = { showEditLoopbackTokenDialog = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    showEditLoopbackTokenDialog = false
+                    viewModel.setFcmLoopbackToken(tempToken)
+                }) {
+                    Text(text = "保存")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { tempToken = "" }) {
+                    Text(text = "清空输入")
+                }
+            },
+            title = {
+                Text(text = "回送目标设备 Token")
+            },
+            text = {
+                OutlinedTextField(
+                    value = tempToken, onValueChange = { tempToken = it },
+                    label = { Text(text = "Token") },
                 )
             },
         )
@@ -375,15 +413,44 @@ fun FCMPage(
                 }
             }
             item {
-                NormalPreference(
-                    title = "目标设备 Token",
-                    subtitle = when {
-                        targetTokens.value.isEmpty() -> "未设置"
-                        else -> "已设置 ${targetTokens.value.size} 个 token"
+                SimpleMenuPreference(
+                    title = "角色",
+                    optionsMap = mapOf(
+                        FcmConstants.Role.SENDER.ordinal to "转发端",
+                        FcmConstants.Role.RECEIVER.ordinal to "接收端"
+                    ),
+                    selectedKey = role.value,
+                    onSelect = {
+                        viewModel.setFCMRole(it)
                     },
-                    enabled = enabled.value,
-                ) {
-                    showEditTokenDialog = true
+                    enabled = enabled.value
+                )
+            }
+            item {
+                Crossfade(targetState = role.value) {
+                    when(it){
+                        FcmConstants.Role.SENDER.ordinal -> {
+                            NormalPreference(
+                                title = "转发目标设备 Token",
+                                subtitle = when {
+                                    targetTokens.value.isEmpty() -> "未设置"
+                                    else -> "已设置 ${targetTokens.value.size} 个 token"
+                                },
+                                enabled = enabled.value,
+                            ) {
+                                showEditTokensDialog = true
+                            }
+                        }
+                        FcmConstants.Role.RECEIVER.ordinal -> {
+                            NormalPreference(
+                                title = "回送目标设备 Token",
+                                subtitle = loopbackToken.value.ifBlank { "未设置" },
+                                enabled = enabled.value,
+                            ) {
+                                showEditLoopbackTokenDialog = true
+                            }
+                        }
+                    }
                 }
             }
             item {

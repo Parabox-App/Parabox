@@ -19,6 +19,7 @@ object DataStoreKeys{
     val SETTINGS_ENABLE_FCM = booleanPreferencesKey("settings_enable_fcm")
     val SETTINGS_FCM_URL = stringPreferencesKey("settings_fcm_url")
     val SETTINGS_FCM_HTTPS = booleanPreferencesKey("settings_fcm_https")
+    val SETTINGS_FCM_ROLE = intPreferencesKey("settings_fcm_role")
     val SETTINGS_ENABLE_DYNAMIC_COLOR = booleanPreferencesKey("settings_enable_dynamic_color")
     val SETTINGS_THEME = intPreferencesKey("settings_theme")
     val SETTINGS_ALLOW_BUBBLE_HOME = booleanPreferencesKey("settings_allow_bubble_home")
@@ -37,6 +38,7 @@ object DataStoreKeys{
 
     val FCM_TOKEN = stringPreferencesKey("fcm_token")
     val FCM_TARGET_TOKENS = stringSetPreferencesKey("fcm_target_tokens")
+    val FCM_LOOPBACK_TOKEN = stringPreferencesKey("fcm_loopback_token")
 
     const val DEFAULT_USER_NAME = "Me"
 }

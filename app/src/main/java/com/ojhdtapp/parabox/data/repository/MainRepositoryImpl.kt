@@ -17,6 +17,7 @@ import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.*
 import com.ojhdtapp.parabox.data.remote.dto.*
 import com.ojhdtapp.parabox.domain.fcm.FcmApiHelper
+import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.domain.model.*
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import kotlinx.coroutines.*
@@ -39,6 +40,9 @@ class MainRepositoryImpl @Inject constructor(
             }.first()
             val enableFcm = context.dataStore.data.map { preferences ->
                 preferences[DataStoreKeys.SETTINGS_ENABLE_FCM] ?: false
+            }.first()
+            val fcmRole = context.dataStore.data.map { preferences ->
+                preferences[DataStoreKeys.SETTINGS_FCM_ROLE] ?: FcmConstants.Role.SENDER.ordinal
             }.first()
 
             val messageIdDeferred = async<Long> {
@@ -143,7 +147,7 @@ class MainRepositoryImpl @Inject constructor(
                 }
             }
             // fcm if enabled
-            if (enableFcm) {
+            if (enableFcm && fcmRole == FcmConstants.Role.SENDER.ordinal) {
                 fcmApiHelper.pushReceiveDto(dto).also {
                     if (it?.isSuccessful == true) {
                         Log.d("parabox", "fcm success")
