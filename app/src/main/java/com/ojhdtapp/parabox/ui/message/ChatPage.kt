@@ -492,9 +492,14 @@ fun NormalChatPage(
                                     .data(t.url)
                                     .allowHardware(false)
                                     .build()
-                                val result = (loader.execute(request) as SuccessResult).drawable
-                                val bitmap = (result as BitmapDrawable).bitmap
-                                acc.add("${message.messageId}${(lastIndex - index).coerceIn(0, lastIndex)}".toLong() to bitmap.asImageBitmap())
+                                val bitmap = try {
+                                    val result = (loader.execute(request) as SuccessResult).drawable
+                                    (result as BitmapDrawable).bitmap.asImageBitmap()
+                                } catch(e: Exception) {
+                                    e.printStackTrace()
+                                    ImageBitmap(1, 1)
+                                }
+                                acc.add("${message.messageId}${(lastIndex - index).coerceIn(0, lastIndex)}".toLong() to bitmap)
                             }
                         }
                         acc
