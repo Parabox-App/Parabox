@@ -20,6 +20,7 @@ object DataStoreKeys{
     val SETTINGS_FCM_URL = stringPreferencesKey("settings_fcm_url")
     val SETTINGS_FCM_HTTPS = booleanPreferencesKey("settings_fcm_https")
     val SETTINGS_FCM_ROLE = intPreferencesKey("settings_fcm_role")
+    val SETTINGS_FCM_CLOUD_STORAGE = intPreferencesKey("settings_fcm_cloud_storage")
     val SETTINGS_ENABLE_DYNAMIC_COLOR = booleanPreferencesKey("settings_enable_dynamic_color")
     val SETTINGS_THEME = intPreferencesKey("settings_theme")
     val SETTINGS_ALLOW_BUBBLE_HOME = booleanPreferencesKey("settings_allow_bubble_home")

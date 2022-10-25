@@ -78,6 +78,7 @@ import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.parabox.core.util.toDateAndTimeString
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.DownloadingState
+import com.ojhdtapp.parabox.data.remote.dto.replaceUriWithUrl
 import com.ojhdtapp.parabox.domain.fcm.FcmApiHelper
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.domain.model.AppModel
@@ -489,13 +490,25 @@ class MainActivity : AppCompatActivity() {
     private fun refreshMessage() {
         mainSharedViewModel.setIsRefreshing(true)
         lifecycleScope.launch {
-            if (pluginService?.refreshMessage() == true) {
-                delay(500)
-                mainSharedViewModel.setIsRefreshing(false)
-            } else {
-                delay(500)
-                mainSharedViewModel.setIsRefreshing(false)
-                Toast.makeText(this@MainActivity, "部分消息未成功刷新", Toast.LENGTH_SHORT).show()
+            val fcmRole = dataStore.data.map { preferences ->
+                preferences[DataStoreKeys.SETTINGS_FCM_ROLE] ?: FcmConstants.Role.SENDER.ordinal
+            }.first()
+            when (fcmRole) {
+                FcmConstants.Role.SENDER.ordinal -> {
+                    if (pluginService?.refreshMessage() == true) {
+                        delay(500)
+                        mainSharedViewModel.setIsRefreshing(false)
+                    } else {
+                        delay(500)
+                        mainSharedViewModel.setIsRefreshing(false)
+                        Toast.makeText(this@MainActivity, "通信时发生错误", Toast.LENGTH_SHORT)
+                            .show()
+                    }
+                }
+
+                FcmConstants.Role.RECEIVER.ordinal -> {
+
+                }
             }
         }
     }
@@ -792,14 +805,31 @@ class MainActivity : AppCompatActivity() {
                             messageId = it
                         )
 
-                        val fcmRole = dataStore.data.map { preferences ->
-                            preferences[DataStoreKeys.SETTINGS_FCM_ROLE]
-                                ?: FcmConstants.Role.SENDER.ordinal
-                        }.first()
-                        if (fcmRole == FcmConstants.Role.SENDER.ordinal) {
+                        val enableFcm =
+                            dataStore.data.first()[DataStoreKeys.SETTINGS_ENABLE_FCM] ?: false
+                        val fcmRole = dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_ROLE]
+                            ?: FcmConstants.Role.SENDER.ordinal
+                        if (!enableFcm || fcmRole == FcmConstants.Role.SENDER.ordinal) {
                             pluginService?.sendMessage(dto)
                         } else {
-                            if(fcmApiHelper.pushSendDto(dto)?.isSuccessful == true){
+                            val fcmCloudStorage =
+                                dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_CLOUD_STORAGE]
+                                    ?: FcmConstants.CloudStorage.NONE.ordinal
+                            val gDriveLogin =
+                                dataStore.data.first()[DataStoreKeys.GOOGLE_LOGIN] ?: false
+                            val dtoWithoutUri = when {
+                                fcmCloudStorage == FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal && gDriveLogin -> {
+                                    dto.copy(
+                                        contents = dto.contents.replaceUriWithUrl(baseContext)
+                                    )
+                                }
+
+                                else -> dto
+                            }
+                            if (fcmApiHelper.pushSendDto(
+                                    dtoWithoutUri
+                                )?.isSuccessful == true
+                            ) {
                                 updateMessage.verifiedState(it, true)
                                 Log.d("parabox", "FCM push success")
                             } else {
@@ -1202,11 +1232,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         lifecycleScope.launch(Dispatchers.Main) {
-            val fcmRole = dataStore.data.map { preferences ->
-                preferences[DataStoreKeys.SETTINGS_FCM_ROLE]
-                    ?: FcmConstants.Role.SENDER.ordinal
-            }.first()
-            if (fcmRole == FcmConstants.Role.SENDER.ordinal) {
+            val enableFcm = dataStore.data.first()[DataStoreKeys.SETTINGS_ENABLE_FCM] ?: false
+            val fcmRole = dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_ROLE]
+                ?: FcmConstants.Role.SENDER.ordinal
+            if (!enableFcm || fcmRole == FcmConstants.Role.SENDER.ordinal) {
                 val pluginServiceBinderIntent = Intent(this@MainActivity, PluginService::class.java)
                 pluginServiceConnection = object : ServiceConnection {
                     override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
@@ -1238,11 +1267,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStop() {
         lifecycleScope.launch(Dispatchers.Main) {
-            val fcmRole = dataStore.data.map { preferences ->
-                preferences[DataStoreKeys.SETTINGS_FCM_ROLE]
-                    ?: FcmConstants.Role.SENDER.ordinal
-            }.first()
-            if (fcmRole == FcmConstants.Role.SENDER.ordinal) {
+            val enableFcm = dataStore.data.first()[DataStoreKeys.SETTINGS_ENABLE_FCM] ?: false
+            val fcmRole = dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_ROLE]
+                ?: FcmConstants.Role.SENDER.ordinal
+            if (!enableFcm || fcmRole == FcmConstants.Role.SENDER.ordinal) {
                 unbindService(pluginServiceConnection)
                 pluginService = null
             }

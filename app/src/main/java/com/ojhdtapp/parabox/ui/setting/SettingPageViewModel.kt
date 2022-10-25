@@ -381,6 +381,26 @@ class SettingPageViewModel @Inject constructor(
         }
     }
 
+    val fcmCloudStorageFlow = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.SETTINGS_FCM_CLOUD_STORAGE] ?: FcmConstants.CloudStorage.NONE.ordinal
+        }
+
+    fun setFCMCloudStorage(value: Int) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.SETTINGS_FCM_CLOUD_STORAGE] = value
+            }
+        }
+    }
+
     fun onContactDisableFCMChange(target: Contact, value: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
             updateContact.disableFCM(target.contactId, value)

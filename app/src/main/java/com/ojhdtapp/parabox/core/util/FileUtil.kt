@@ -11,11 +11,15 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import android.provider.OpenableColumns
 import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.compose.ui.text.toLowerCase
 import androidx.core.content.FileProvider
 import com.ojhdtapp.parabox.BuildConfig
+import com.ojhdtapp.parabox.domain.fcm.FcmConstants
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.first
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -24,6 +28,28 @@ import java.util.*
 
 object FileUtil {
 
+    suspend fun getContentUrlWithSelectedCloudStorage(
+        context: Context,
+        fileName: String,
+        filePath: String
+    ): String? =
+        coroutineScope {
+            context.dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_CLOUD_STORAGE]?.let { cloudStorage ->
+                when (cloudStorage) {
+                    FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal -> {
+                        val folderId =
+                            GoogleDriveUtil.getFolderId(context, "ParaboxTemp")
+                                ?: GoogleDriveUtil.createFolder(context, "ParaboxTemp")
+                        folderId?.let {
+                            GoogleDriveUtil.uploadFile(context, it, fileName, filePath)?.let {
+                                GoogleDriveUtil.getContentUrl(context, it)
+                            }
+                        }
+                    }
+                    else -> null
+                }
+            }
+        }
 
     fun createTmpFileFromUri(context: Context, uri: Uri, fileName: String): File? {
         return try {
@@ -311,4 +337,16 @@ object FileUtil {
     fun getExtension(fileName: String): String {
         return fileName.substringAfterLast('.', "*/*")
     }
+
+    fun getFileName(context: Context, uri: Uri): String? = when(uri.scheme) {
+        ContentResolver.SCHEME_CONTENT -> getContentFileName(context, uri)
+        else -> uri.path?.let(::File)?.name
+    }
+
+    private fun getContentFileName(context: Context, uri: Uri): String? = runCatching {
+        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            cursor.moveToFirst()
+            return@use cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME).let(cursor::getString)
+        }
+    }.getOrNull()
 }

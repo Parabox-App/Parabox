@@ -12,6 +12,7 @@ object FcmConstants {
     }
 
     enum class CloudStorage{
+        NONE,
         GOOGLE_DRIVE,
     }
 }

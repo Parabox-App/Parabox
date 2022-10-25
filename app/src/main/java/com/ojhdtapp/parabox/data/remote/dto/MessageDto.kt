@@ -2,6 +2,7 @@ package com.ojhdtapp.parabox.data.remote.dto
 
 import android.content.Context
 import android.media.MediaMetadataRetriever
+import android.net.Uri
 import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.toDateAndTimeString
 import com.ojhdtapp.parabox.data.local.entity.ContactEntity
@@ -47,7 +48,7 @@ fun ReceiveMessageDto.toMessageEntity(context: Context): MessageEntity {
     )
 }
 
-fun ReceiveMessageDto.toMessage(context: Context, messageIdInDatabase: Long = 0) : Message{
+fun ReceiveMessageDto.toMessage(context: Context, messageIdInDatabase: Long = 0): Message {
     return Message(
         contents = contents.toMessageContentList(context),
         profile = profile.toProfile(),
@@ -58,7 +59,7 @@ fun ReceiveMessageDto.toMessage(context: Context, messageIdInDatabase: Long = 0)
     )
 }
 
-fun ReceiveMessageDto.toContact(): Contact{
+fun ReceiveMessageDto.toContact(): Contact {
     return Contact(
         profile = subjectProfile.toProfile(),
         latestMessage = LatestMessage(
@@ -111,13 +112,17 @@ fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.Profile.toProfile(): Profile {
     return Profile(this.name, this.avatar, null, this.id)
 }
 
-fun List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent>.toMessageContentList(context: Context): List<MessageContent> {
+fun List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent>.toMessageContentList(
+    context: Context
+): List<MessageContent> {
     return this.map {
         it.toMessageContent(context = context)
     }
 }
 
-fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent.toMessageContent(context: Context): MessageContent {
+fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent.toMessageContent(
+    context: Context
+): MessageContent {
     return when (this) {
         is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText -> PlainText(this.text)
         is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Image -> Image(
@@ -126,10 +131,12 @@ fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
             height,
             uri?.toString()
         )
+
         is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.At -> com.ojhdtapp.parabox.domain.model.message_content.At(
             target,
             name
         )
+
         is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.AtAll -> com.ojhdtapp.parabox.domain.model.message_content.AtAll
         is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Audio -> {
             val path = context.getExternalFilesDir("chat")!!
@@ -156,6 +163,7 @@ fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
                 copiedUri?.toString()
             )
         }
+
         is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.QuoteReply -> {
             quoteMessageContent
             com.ojhdtapp.parabox.domain.model.message_content.QuoteReply(
@@ -165,6 +173,7 @@ fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
                 quoteMessageContent?.toMessageContentList(context)
             )
         }
+
         is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.File -> com.ojhdtapp.parabox.domain.model.message_content.File(
             url,
             name,
@@ -174,10 +183,52 @@ fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
             expiryTime,
             uri
         )
+
         else -> PlainText(this.getContentString())
     }
 }
 
 fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.PluginConnection.toPluginConnection(): PluginConnection {
     return PluginConnection(this.connectionType, this.objectId, this.id)
+}
+
+suspend fun List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent>.replaceUriWithUrl(
+    context: Context
+): List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent> {
+    return this.map {
+        when (it) {
+            is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Image -> {
+                it.copy(
+                    url = it.uri?.path?.let { path ->
+                        FileUtil.getContentUrlWithSelectedCloudStorage(
+                            context, path, FileUtil.getFileName(
+                                context,
+                                it.uri!!
+                            ) ?: "${System.currentTimeMillis().toDateAndTimeString()}.jpg"
+                        )
+                    },
+                    uri = null
+                )
+            }
+
+            is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Audio -> {
+                it.copy(
+                    url = it.uri?.path?.let { path ->
+                        FileUtil.getContentUrlWithSelectedCloudStorage(context, path, it.fileName)
+                    },
+                    uri = null
+                )
+            }
+
+            is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.QuoteReply -> {
+                it.copy(quoteMessageContent = it.quoteMessageContent?.replaceUriWithUrl(context))
+            }
+
+            is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.File -> {
+                it
+            }
+
+            else -> it
+        }
+    }
 }

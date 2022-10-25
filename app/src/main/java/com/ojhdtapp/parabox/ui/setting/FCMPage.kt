@@ -1,5 +1,8 @@
 package com.ojhdtapp.parabox.ui.setting
 
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
@@ -41,6 +44,7 @@ import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,10 +57,14 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.ojhdtapp.parabox.MainActivity
+import com.ojhdtapp.parabox.core.util.GoogleDriveUtil
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
@@ -83,6 +91,7 @@ fun FCMPage(
     onEvent: (ActivityEvent) -> Unit
 ) {
     val viewModel = hiltViewModel<SettingPageViewModel>()
+    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val clipboardManager: ClipboardManager = LocalClipboardManager.current
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -98,6 +107,34 @@ fun FCMPage(
     val role = viewModel.fcmRoleFlow.collectAsState(initial = FcmConstants.Role.SENDER.ordinal)
     val targetTokens = viewModel.fcmTargetTokensFlow.collectAsState(initial = emptySet())
     val loopbackToken = viewModel.fcmLoopbackTokenFlow.collectAsState(initial = "")
+
+    val gDriveLogin by viewModel.googleLoginFlow.collectAsState(initial = false)
+    val cloudStorage = viewModel.fcmCloudStorageFlow.collectAsState(initial = FcmConstants.CloudStorage.NONE.ordinal)
+    val gDriveLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                val intent = result.data
+                if (result.data != null) {
+                    val googleSignInAccount = GoogleSignIn.getSignedInAccountFromIntent(intent)
+                    googleSignInAccount.addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            val account = task.result
+                            if (account != null) {
+                                viewModel.saveGoogleDriveAccount(account)
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar("成功连接 Google Drive")
+                                }
+                            }
+                        } else {
+                            viewModel.saveGoogleDriveAccount(null)
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar("连接取消")
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
     LaunchedEffect(key1 = Unit) {
         if (enabled.value)
@@ -487,10 +524,26 @@ fun FCMPage(
                     title = "对象存储服务",
                     enabled = enabled.value,
                     optionsMap = mapOf(
-                        0 to "无",
-                        FcmConstants.CloudStorage.GOOGLE_DRIVE to "Google Drive"
+                        FcmConstants.CloudStorage.NONE.ordinal to "无",
+                        FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal to "Google Drive",
                     ),
-                    onSelect = {})
+                    selectedKey = cloudStorage.value,
+                    onSelect = viewModel::setFCMCloudStorage)
+            }
+            item{
+                Crossfade(targetState = cloudStorage.value) {
+                    when(it){
+                        FcmConstants.CloudStorage.NONE.ordinal -> {}
+                        FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal -> {
+                            val subTitle = if (gDriveLogin) "已连接" else "未连接"
+                            NormalPreference(title = "Google Drive", subtitle = subTitle) {
+                                val signInIntent =
+                                    (context as MainActivity).getGoogleLoginAuth().signInIntent
+                                gDriveLauncher.launch(signInIntent)
+                            }
+                        }
+                    }
+                }
             }
             item {
                 NormalPreference(
