@@ -198,26 +198,54 @@ suspend fun List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.M
     return this.map {
         when (it) {
             is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Image -> {
-                it.copy(
-                    url = it.uri?.path?.let { path ->
-                        FileUtil.getContentUrlWithSelectedCloudStorage(
-                            context, path, FileUtil.getFileName(
-                                context,
-                                it.uri!!
-                            ) ?: "${System.currentTimeMillis().toDateAndTimeString()}.jpg"
-                        )
-                    },
-                    uri = null
-                )
+//                val url = it.uri?.path?.let { path ->
+//                    FileUtil.getContentUrlWithSelectedCloudStorage(
+//                        context, FileUtil.getFileName(
+//                            context,
+//                            it.uri!!
+//                        ) ?: "${System.currentTimeMillis().toDateAndTimeString()}.jpg",
+//                        path
+//                    )
+//                }
+                val url = it.uri?.let {
+                    FileUtil.getContentUrlWithSelectedCloudStorage(
+                        context,
+                        FileUtil.getFileName(
+                            context,
+                            it
+                        ) ?: "Image_${System.currentTimeMillis().toDateAndTimeString()}.jpg",
+                        it
+                    )
+                }
+                if (url != null) {
+                    it.copy(
+                        url = url,
+                        uri = null
+                    )
+                } else {
+                    com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText(text = "[图片]")
+                }
             }
 
             is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Audio -> {
-                it.copy(
-                    url = it.uri?.path?.let { path ->
-                        FileUtil.getContentUrlWithSelectedCloudStorage(context, path, it.fileName)
-                    },
-                    uri = null
-                )
+//                val url = it.uri?.path?.let { path ->
+//                    FileUtil.getContentUrlWithSelectedCloudStorage(context, it.fileName, path)
+//                }
+                val url = it.uri?.let { uri ->
+                    FileUtil.getContentUrlWithSelectedCloudStorage(
+                        context,
+                        it.fileName,
+                        uri,
+                    )
+                }
+                if (url != null) {
+                    it.copy(
+                        url = url,
+                        uri = null
+                    )
+                } else {
+                    com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText(text = "[语音]")
+                }
             }
 
             is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.QuoteReply -> {

@@ -14,7 +14,7 @@ fun ReceiveMessageDto.getFcmNotification(): FcmNotification {
     val imageUrl = contents.filterIsInstance<Image>().firstOrNull()?.url
     return FcmNotification(
         title = subjectProfile.name,
-        body = "${if (profile.name != subjectProfile.name) profile.name + ":" else ""}${contents.getContentString()}",
+        body = "${if (profile.name != subjectProfile.name) profile.name + "：" else ""}${contents.getContentString()}",
         image = imageUrl
     )
 }

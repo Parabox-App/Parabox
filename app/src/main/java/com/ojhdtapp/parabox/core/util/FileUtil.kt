@@ -10,6 +10,7 @@ import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.webkit.MimeTypeMap
@@ -22,7 +23,9 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.io.IOException
 import java.text.DecimalFormat
 import java.util.*
 
@@ -50,6 +53,27 @@ object FileUtil {
                 }
             }
         }
+
+    suspend fun getContentUrlWithSelectedCloudStorage(
+        context: Context,
+        fileName: String,
+        fileUri: Uri,
+    ): String? {
+        return try {
+            val inputPFD: ParcelFileDescriptor? =
+                context.contentResolver.openFileDescriptor(fileUri, "r")
+            val fd = inputPFD!!.fileDescriptor
+            val inputStream = FileInputStream(fd)
+            val tempFile = File.createTempFile(fileName, "", context.externalCacheDir)
+            inputStream.use {
+                org.apache.commons.io.FileUtils.copyInputStreamToFile(it, tempFile)
+            }
+            getContentUrlWithSelectedCloudStorage(context, fileName, tempFile.absolutePath)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
 
     fun createTmpFileFromUri(context: Context, uri: Uri, fileName: String): File? {
         return try {
@@ -338,7 +362,7 @@ object FileUtil {
         return fileName.substringAfterLast('.', "*/*")
     }
 
-    fun getFileName(context: Context, uri: Uri): String? = when(uri.scheme) {
+    fun getFileName(context: Context, uri: Uri): String? = when (uri.scheme) {
         ContentResolver.SCHEME_CONTENT -> getContentFileName(context, uri)
         else -> uri.path?.let(::File)?.name
     }
@@ -346,7 +370,8 @@ object FileUtil {
     private fun getContentFileName(context: Context, uri: Uri): String? = runCatching {
         context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
             cursor.moveToFirst()
-            return@use cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME).let(cursor::getString)
+            return@use cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME)
+                .let(cursor::getString)
         }
     }.getOrNull()
 }

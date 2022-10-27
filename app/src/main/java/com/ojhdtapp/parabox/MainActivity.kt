@@ -124,6 +124,9 @@ import kotlin.math.roundToInt
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
+    companion object {
+        var inBackground: Boolean = false
+    }
     @Inject
     lateinit var handleNewMessage: HandleNewMessage
 
@@ -1231,6 +1234,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onStart() {
+        inBackground = false
         lifecycleScope.launch(Dispatchers.Main) {
             val enableFcm = dataStore.data.first()[DataStoreKeys.SETTINGS_ENABLE_FCM] ?: false
             val fcmRole = dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_ROLE]
@@ -1266,6 +1270,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onStop() {
+        inBackground = true
         lifecycleScope.launch(Dispatchers.Main) {
             val enableFcm = dataStore.data.first()[DataStoreKeys.SETTINGS_ENABLE_FCM] ?: false
             val fcmRole = dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_ROLE]

@@ -70,6 +70,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 }
 
                 "send" -> {
+                    Log.d("parabox", "message send json: $dtoJson")
                     val dto = dtoJson?.let { gson.fromJson(it, SendMessageDto::class.java) }
                     Log.d("parabox", "Message data payload: $dto")
                     dto?.also {

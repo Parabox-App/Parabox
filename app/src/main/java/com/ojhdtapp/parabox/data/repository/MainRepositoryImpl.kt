@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.paging.PagingSource
+import com.ojhdtapp.parabox.MainActivity
 import com.ojhdtapp.parabox.core.HiltApplication
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.ReceiveMessageDto
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
@@ -130,7 +131,7 @@ class MainRepositoryImpl @Inject constructor(
             // if FCM Enabled...
             if (contactIdDeferred.await() == -1L) {
                 database.contactDao.getContactById(dto.pluginConnection.objectId).let {
-                    if ((allowForegroundNotification || HiltApplication.inBackground) && it?.enableNotifications == true && !it.isArchived) {
+                    if ((allowForegroundNotification || MainActivity.inBackground) && it?.enableNotifications == true && !it.isArchived) {
                         notificationUtil.sendNewMessageNotification(
                             message = dto.toMessage(context, messageIdDeferred.await()),
                             contact = dto.toContact(),
@@ -148,7 +149,7 @@ class MainRepositoryImpl @Inject constructor(
                     }
                 }
             } else {
-                if (allowForegroundNotification || HiltApplication.inBackground) {
+                if (allowForegroundNotification || MainActivity.inBackground) {
                     notificationUtil.sendNewMessageNotification(
                         message = dto.toMessage(context, messageIdDeferred.await()),
                         contact = dto.toContact(),

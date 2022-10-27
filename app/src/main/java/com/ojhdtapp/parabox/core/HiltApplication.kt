@@ -11,31 +11,9 @@ import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
 @HiltAndroidApp
-class HiltApplication : Application(), DefaultLifecycleObserver, Configuration.Provider {
+class HiltApplication : Application(), Configuration.Provider {
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
-    companion object {
-        var inBackground: Boolean = false
-    }
-
-    override fun onCreate() {
-        super<Application>.onCreate()
-        ProcessLifecycleOwner.get().lifecycle.addObserver(this)
-    }
-    @Override
-    override fun onResume(owner: LifecycleOwner) {
-        super.onResume(owner)
-        Log.d("parabox", "application on resume")
-        inBackground = false
-    }
-
-    @Override
-    override fun onPause(owner: LifecycleOwner) {
-        super.onPause(owner)
-        Log.d("parabox", "application on pause")
-        inBackground = true
-    }
-
     override fun getWorkManagerConfiguration(): Configuration {
         return Configuration.Builder()
             .setWorkerFactory(workerFactory)

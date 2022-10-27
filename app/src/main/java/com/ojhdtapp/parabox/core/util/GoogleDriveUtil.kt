@@ -161,10 +161,10 @@ object GoogleDriveUtil {
                             )
                         val file = driveService.files().create(fileMetadata, mediaContent)
                             .execute()
-                        Log.d("GoogleDriveUtil", "File ID: " + file.id)
                         file.id
                     }
                 } catch (e: Exception) {
+                    e.printStackTrace()
                     null
                 }
             }
