@@ -49,7 +49,7 @@ class FcmApiHelper @Inject constructor(
         if (url.isNotBlank() && tokensSet.isNotEmpty()) {
             val httpUrl = "http://${url}/receive/"
             try {
-                fcmService.pushReceiveDto(httpUrl, FcmReceiveModel(receiveMessageDto, tokensSet))
+                fcmService.pushReceiveDto(httpUrl, FcmReceiveModel(receiveMessageDto, receiveMessageDto.getFcmNotification(), tokensSet))
             } catch (e: SocketTimeoutException) {
                 e.printStackTrace()
                 null

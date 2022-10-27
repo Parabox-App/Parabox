@@ -25,12 +25,14 @@ class HiltApplication : Application(), DefaultLifecycleObserver, Configuration.P
     @Override
     override fun onResume(owner: LifecycleOwner) {
         super.onResume(owner)
+        Log.d("parabox", "application on resume")
         inBackground = false
     }
 
     @Override
     override fun onPause(owner: LifecycleOwner) {
         super.onPause(owner)
+        Log.d("parabox", "application on pause")
         inBackground = true
     }
 

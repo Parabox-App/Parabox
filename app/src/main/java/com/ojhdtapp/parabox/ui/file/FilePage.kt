@@ -760,7 +760,7 @@ fun MainArea(
                         exit = shrinkVertically(),
                     ) {
                         Surface(
-                            modifier = Modifier.padding(horizontal = 16.dp),
+                            modifier = Modifier.padding(bottom = 16.dp),
                             shape = CircleShape,
                             color = MaterialTheme.colorScheme.surface,
                             tonalElevation = 3.dp,
@@ -789,7 +789,7 @@ fun MainArea(
                                 Icon(
                                     imageVector = Icons.Outlined.NavigateNext,
                                     contentDescription = "next",
-                                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp)
+                                    modifier = Modifier.padding(horizontal = 16.dp)
                                 )
                             }
                         }
