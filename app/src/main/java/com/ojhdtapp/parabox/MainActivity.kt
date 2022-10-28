@@ -127,6 +127,7 @@ class MainActivity : AppCompatActivity() {
     companion object {
         var inBackground: Boolean = false
     }
+
     @Inject
     lateinit var handleNewMessage: HandleNewMessage
 
@@ -189,34 +190,36 @@ class MainActivity : AppCompatActivity() {
 
     private fun downloadFile(file: File, cloudFirst: Boolean = false) {
         lifecycleScope.launch(Dispatchers.IO) {
-            val url = if (cloudFirst) {
-                when (file.cloudType) {
-                    GoogleDriveUtil.SERVICE_CODE -> file.cloudId?.let {
-                        GoogleDriveUtil.getContentUrl(
-                            this@MainActivity,
-                            it
-                        )
-                    }
-
-                    else -> null
+            when (file.cloudType) {
+                GoogleDriveUtil.SERVICE_CODE -> file.cloudId?.let {
+                    GoogleDriveUtil.downloadFile(
+                        baseContext,
+                        it,
+                        java.io.File(
+                            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                            "Parabox"
+                        ),
+                    )
                 }
-            } else {
-                file.url
-            } ?: file.url
-            if (url != null) {
-                val path = FileUtil.getAvailableFileName(this@MainActivity, file.name)
-                DownloadManagerUtil.downloadWithManager(
-                    this@MainActivity,
-                    url,
-                    path
-                )?.also {
-                    updateFile.downloadInfo(path, it, file)
-                    repeatOnLifecycle(Lifecycle.State.STARTED) {
-                        DownloadManagerUtil.retrieve(this@MainActivity, it).collectLatest {
-                            if (it is DownloadingState.Done) {
-                                updateFile.downloadInfo(path, null, file)
+
+                else -> {
+                    val url = file.url
+                    if (url != null) {
+                        val path = FileUtil.getAvailableFileName(this@MainActivity, file.name)
+                        DownloadManagerUtil.downloadWithManager(
+                            this@MainActivity,
+                            url,
+                            path
+                        )?.also {
+                            updateFile.downloadInfo(path, it, file)
+                            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                                DownloadManagerUtil.retrieve(this@MainActivity, it).collectLatest {
+                                    if (it is DownloadingState.Done) {
+                                        updateFile.downloadInfo(path, null, file)
+                                    }
+                                    updateFile.downloadState(it, file)
+                                }
                             }
-                            updateFile.downloadState(it, file)
                         }
                     }
                 }

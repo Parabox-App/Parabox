@@ -3,20 +3,30 @@ package com.ojhdtapp.parabox.domain.service
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
+import android.graphics.drawable.BitmapDrawable
 import android.os.IBinder
 import android.util.Log
+import androidx.core.net.toUri
 import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.LifecycleService
+import coil.ImageLoader
+import coil.request.ImageRequest
+import coil.request.SuccessResult
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.google.gson.Gson
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
+import com.ojhdtapp.parabox.core.util.DownloadUtil
+import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.dataStore
+import com.ojhdtapp.parabox.core.util.toDateAndTimeString
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.ReceiveMessageDto
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendMessageDto
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Audio
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Image
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -34,6 +44,9 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     @Inject
     lateinit var handleNewMessage: HandleNewMessage
+
+    @Inject
+    lateinit var downloadUtil: DownloadUtil
 
     @OptIn(DelicateCoroutinesApi::class)
     override fun onNewToken(token: String) {
@@ -70,7 +83,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 }
 
                 "send" -> {
-                    Log.d("parabox", "message send json: $dtoJson")
                     val dto = dtoJson?.let { gson.fromJson(it, SendMessageDto::class.java) }
                     Log.d("parabox", "Message data payload: $dto")
                     dto?.also {
@@ -80,14 +92,57 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                                     ?: FcmConstants.Role.SENDER.ordinal
                             }.first()
                             if (fcmRole == FcmConstants.Role.SENDER.ordinal) {
+                                val downloadedContent = dto.contents.map {
+                                    when (it) {
+                                        is Image -> {
+                                            val downloadedUri =
+                                                it.url?.let { url ->
+                                                    downloadUtil.downloadUrl(
+                                                        url,
+                                                        "Image_${
+                                                            System.currentTimeMillis()
+                                                                .toDateAndTimeString()
+                                                        }.jpg",
+                                                        baseContext.getExternalFilesDir("chat")!!
+                                                    )?.let {
+                                                        FileUtil.getUriOfFile(baseContext, it)
+                                                    }
+                                                }
+                                            it.copy(uri = downloadedUri)
+                                        }
+
+                                        is Audio -> {
+                                            val downloadedUri =
+                                                it.url?.let { url ->
+                                                    downloadUtil.downloadUrl(
+                                                        url,
+                                                        "Audio_${
+                                                            System.currentTimeMillis()
+                                                                .toDateAndTimeString()
+                                                        }.mp3",
+                                                        baseContext.getExternalFilesDir("chat")!!
+                                                    )?.let {
+                                                        FileUtil.getUriOfFile(baseContext, it)
+                                                    }
+                                                }
+                                            it.copy(uri = downloadedUri)
+                                        }
+
+                                        else -> it
+                                    }
+                                }
+                                Log.d("parabox", "downloadedContent: $downloadedContent")
                                 handleNewMessage(
-                                    dto.contents,
+                                    downloadedContent,
                                     dto.pluginConnection,
                                     dto.timestamp,
                                     dto.pluginConnection.connectionType
                                 ).also {
                                     // Update messageId to latest
-                                    bindOnceAndSend(dto.copy(messageId = it))
+                                    bindOnceAndSend(dto.copy(
+                                        contents = downloadedContent,
+                                        messageId = it
+                                    ))
                                 }
                             }
                         }
@@ -110,6 +165,29 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             object : ServiceConnection {
                 override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
                     val service = (p1 as PluginService.PluginServiceBinder).getService()
+                    service.getAppModelList().map { it.packageName }.forEach { packageName ->
+                        dto.contents.map {
+                            when (it) {
+                                is Image -> {
+                                    grantUriPermission(
+                                        packageName,
+                                        it.uri,
+                                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                    )
+                                }
+
+                                is Audio -> {
+                                    grantUriPermission(
+                                        packageName,
+                                        it.uri,
+                                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                    )
+                                }
+
+                                else -> {}
+                            }
+                        }
+                    }
                     service.sendMessage(dto)
                     unbindService(this)
                 }

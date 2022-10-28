@@ -5,6 +5,8 @@ import android.content.Context
 import androidx.room.Room
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.ojhdtapp.parabox.core.util.DownloadUtil
+import com.ojhdtapp.parabox.core.util.DownloadUtilService
 import com.ojhdtapp.parabox.core.util.NotificationUtil
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.Converters
@@ -81,6 +83,21 @@ object AppModule {
     ) = FcmApiHelper(
         applicationContext,
         fcmService,
+    )
+
+    @Provides
+    @Singleton
+    fun provideDownloadUtilService(retrofit: Retrofit): DownloadUtilService =
+        retrofit.create(DownloadUtilService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideDownloadUtil(
+        downloadUtilService: DownloadUtilService,
+        @ApplicationContext applicationContext: Context
+    ) = DownloadUtil(
+        applicationContext,
+        downloadUtilService,
     )
 
     @Provides

@@ -14,6 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.net.SocketException
@@ -194,7 +195,7 @@ object GoogleDriveUtil {
         }
     }
 
-    suspend fun getContentUrl(context: Context, fileId: String) : String?{
+    suspend fun getContentUrl(context: Context, fileId: String): String? {
         return coroutineScope {
             withContext(Dispatchers.Default) {
                 try {
@@ -214,18 +215,19 @@ object GoogleDriveUtil {
 
     suspend fun downloadFile(
         context: Context,
-        fileId: String
-    ) {
+        fileId: String,
+        path: File
+    ): File? {
         return coroutineScope {
             withContext(Dispatchers.IO) {
                 try {
                     getDriveService(context)?.let { driveService ->
                         val file = driveService.files().get(fileId).execute()
-                        val fileContent =
-                            driveService.files().get(fileId).executeMediaAsInputStream()
-                        val fileOutputStream = FileOutputStream(file.name)
-                        fileContent.copyTo(fileOutputStream)
-                        fileOutputStream.close()
+                        val targetFile = File(path, file.name)
+                        FileOutputStream(file.name).use {
+                            driveService.files().get(fileId).executeAndDownloadTo(it)
+                        }
+                        targetFile
                     }
                 } catch (e: Exception) {
                     null
