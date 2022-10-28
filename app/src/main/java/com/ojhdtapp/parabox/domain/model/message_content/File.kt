@@ -1,6 +1,5 @@
 package com.ojhdtapp.parabox.domain.model.message_content
 
-import com.ojhdtapp.parabox.domain.model.message_content.MessageContent
 import kotlinx.parcelize.Parcelize
 import kotlinx.parcelize.IgnoredOnParcel
 
@@ -12,7 +11,7 @@ data class File(
     val size: Long,
     val lastModifiedTime: Long,
     val expiryTime: Long? = null,
-    val uri: String? = null
+    val uriString: String? = null
 ): MessageContent {
     @IgnoredOnParcel
     val type = MessageContent.FILE

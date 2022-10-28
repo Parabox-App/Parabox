@@ -67,6 +67,8 @@ import com.ojhdtapp.parabox.MainActivity
 import com.ojhdtapp.parabox.core.util.GoogleDriveUtil
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
+import com.ojhdtapp.parabox.ui.destinations.CloudPageDestination
+import com.ojhdtapp.parabox.ui.destinations.FCMPageDestination
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.MainSwitch
 import com.ojhdtapp.parabox.ui.util.NormalPreference
@@ -76,6 +78,7 @@ import com.ojhdtapp.parabox.ui.util.SwitchPreference
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import com.ramcosta.composedestinations.navigation.navigate
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -109,32 +112,16 @@ fun FCMPage(
     val loopbackToken = viewModel.fcmLoopbackTokenFlow.collectAsState(initial = "")
 
     val gDriveLogin by viewModel.googleLoginFlow.collectAsState(initial = false)
-    val cloudStorage = viewModel.fcmCloudStorageFlow.collectAsState(initial = FcmConstants.CloudStorage.NONE.ordinal)
-    val gDriveLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == Activity.RESULT_OK) {
-                val intent = result.data
-                if (result.data != null) {
-                    val googleSignInAccount = GoogleSignIn.getSignedInAccountFromIntent(intent)
-                    googleSignInAccount.addOnCompleteListener { task ->
-                        if (task.isSuccessful) {
-                            val account = task.result
-                            if (account != null) {
-                                viewModel.saveGoogleDriveAccount(account)
-                                coroutineScope.launch {
-                                    snackbarHostState.showSnackbar("成功连接 Google Drive")
-                                }
-                            }
-                        } else {
-                            viewModel.saveGoogleDriveAccount(null)
-                            coroutineScope.launch {
-                                snackbarHostState.showSnackbar("连接取消")
-                            }
-                        }
-                    }
-                }
+
+    val selectableService by remember {
+        derivedStateOf {
+            buildMap<Int, String> {
+                put(FcmConstants.CloudStorage.NONE.ordinal, "无")
+                if (gDriveLogin) put(FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal, "Google Drive")
             }
         }
+    }
+    val cloudStorage = viewModel.fcmCloudStorageFlow.collectAsState(initial = FcmConstants.CloudStorage.NONE.ordinal)
 
     LaunchedEffect(key1 = Unit) {
         if (enabled.value)
@@ -520,28 +507,22 @@ fun FCMPage(
                 PreferencesCategory(text = "功能配置")
             }
             item {
-                SimpleMenuPreference(
-                    title = "对象存储服务",
-                    enabled = enabled.value,
-                    optionsMap = mapOf(
-                        FcmConstants.CloudStorage.NONE.ordinal to "无",
-                        FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal to "Google Drive",
-                    ),
-                    selectedKey = cloudStorage.value,
-                    onSelect = viewModel::setFCMCloudStorage)
-            }
-            item{
-                Crossfade(targetState = cloudStorage.value) {
-                    when(it){
-                        FcmConstants.CloudStorage.NONE.ordinal -> {}
-                        FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal -> {
-                            val subTitle = if (gDriveLogin) "已连接" else "未连接"
-                            NormalPreference(title = "Google Drive", subtitle = subTitle) {
-                                val signInIntent =
-                                    (context as MainActivity).getGoogleLoginAuth().signInIntent
-                                gDriveLauncher.launch(signInIntent)
+                Crossfade(targetState = selectableService.size <= 1) {
+                    if(it){
+                        NormalPreference(title = "对象存储服务", subtitle = "暂无可用，请新增云端服务") {
+                            if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
+                                mainNavController.navigate(CloudPageDestination)
+                            } else {
+                                viewModel.setSelectedSetting(SettingPageState.CLOUD)
                             }
                         }
+                    }else{
+                        SimpleMenuPreference(
+                            title = "对象存储服务",
+                            enabled = enabled.value,
+                            optionsMap = selectableService,
+                            selectedKey = cloudStorage.value,
+                            onSelect = viewModel::setFCMCloudStorage)
                     }
                 }
             }

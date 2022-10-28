@@ -14,6 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -224,12 +225,14 @@ object GoogleDriveUtil {
                     getDriveService(context)?.let { driveService ->
                         val file = driveService.files().get(fileId).execute()
                         val targetFile = File(path, file.name)
-                        FileOutputStream(file.name).use {
-                            driveService.files().get(fileId).executeAndDownloadTo(it)
+                        targetFile.outputStream().use { fos ->
+                            driveService.files().get(fileId).executeMediaAndDownloadTo(fos)
                         }
+
                         targetFile
                     }
                 } catch (e: Exception) {
+                    e.printStackTrace()
                     null
                 }
             }

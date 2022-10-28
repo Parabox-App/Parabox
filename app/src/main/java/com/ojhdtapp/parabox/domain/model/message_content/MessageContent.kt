@@ -2,8 +2,6 @@ package com.ojhdtapp.parabox.domain.model.message_content
 
 import android.net.Uri
 import android.os.Parcelable
-import com.ojhdtapp.parabox.data.remote.dto.toMessageContent
-import com.ojhdtapp.parabox.data.remote.dto.toMessageContentList
 
 interface MessageContent : Parcelable {
     companion object{
@@ -33,7 +31,7 @@ fun MessageContent.toMessageContent():com.ojhdtapp.paraboxdevelopmentkit.message
     return when(this){
         is PlainText -> com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText(text)
         is Image -> com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Image(
-            url, width, height, uriString?.let { Uri.parse(it) }
+            url, width, height, fileName, uriString?.let { Uri.parse(it) }
         )
         is AtAll -> com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.AtAll
         is Audio -> com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Audio(
@@ -43,7 +41,7 @@ fun MessageContent.toMessageContent():com.ojhdtapp.paraboxdevelopmentkit.message
             quoteMessageSenderName, quoteMessageTimestamp, quoteMessageId, quoteMessageContent?.toMessageContentList()
         )
         is File -> com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.File(
-            url, name, extension, size, lastModifiedTime, expiryTime, uri
+            url, name, extension, size, lastModifiedTime, expiryTime, uriString?.let{ Uri.parse(it)}
         )
         else -> com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText(getContentString())
     }

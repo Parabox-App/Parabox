@@ -78,7 +78,7 @@ import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.parabox.core.util.toDateAndTimeString
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.DownloadingState
-import com.ojhdtapp.parabox.data.remote.dto.replaceUriWithUrl
+import com.ojhdtapp.parabox.data.remote.dto.saveLocalResourcesToCloud
 import com.ojhdtapp.parabox.domain.fcm.FcmApiHelper
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.domain.model.AppModel
@@ -826,7 +826,7 @@ class MainActivity : AppCompatActivity() {
                             val dtoWithoutUri = when {
                                 fcmCloudStorage == FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal && gDriveLogin -> {
                                     dto.copy(
-                                        contents = dto.contents.replaceUriWithUrl(baseContext)
+                                        contents = dto.contents.saveLocalResourcesToCloud(baseContext)
                                     )
                                 }
 

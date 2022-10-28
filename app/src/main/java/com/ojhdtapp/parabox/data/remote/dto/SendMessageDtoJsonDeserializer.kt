@@ -4,6 +4,7 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonDeserializationContext
 import com.google.gson.JsonDeserializer
 import com.google.gson.JsonElement
+import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.PluginConnection
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendMessageDto
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.At
@@ -71,22 +72,26 @@ class SendMessageDtoJsonDeserializer : JsonDeserializer<SendMessageDto> {
                         }
 
                         MessageContent.AUDIO -> {
-                            val url = contentObject.get("url").asString
+                            val url = contentObject.get("url")?.asString
                             val length = contentObject.get("length").asLong
                             val fileName = contentObject.get("fileName").asString
                             val fileSize = contentObject.get("fileSize").asLong
                             val uri = null
-                            contents.add(Audio(url, length, fileName, fileSize, uri))
+                            val cloudType = contentObject.get("cloudType")?.asInt ?: FcmConstants.CloudStorage.NONE.ordinal
+                            val cloudId = contentObject.get("cloudId")?.asString
+                            contents.add(Audio(url, length, fileName, fileSize, uri, cloudType, cloudId))
                         }
 
                         MessageContent.FILE -> {
-                            val url = contentObject.get("url").asString
+                            val url = contentObject.get("url")?.asString
                             val name = contentObject.get("name").asString
                             val extension = contentObject.get("extension").asString
                             val size = contentObject.get("size").asLong
                             val lastModifiedTime = contentObject.get("lastModifiedTime").asLong
-                            val expiryTime = contentObject.get("expiryTime").asLong
+                            val expiryTime = contentObject.get("expiryTime")?.asLong
                             val uri = null
+                            val cloudType = contentObject.get("cloudType")?.asInt ?: FcmConstants.CloudStorage.NONE.ordinal
+                            val cloudId = contentObject.get("cloudId")?.asString
                             contents.add(
                                 File(
                                     url,
@@ -95,17 +100,22 @@ class SendMessageDtoJsonDeserializer : JsonDeserializer<SendMessageDto> {
                                     size,
                                     lastModifiedTime,
                                     expiryTime,
-                                    uri
+                                    uri,
+                                    cloudType,
+                                    cloudId
                                 )
                             )
                         }
 
                         MessageContent.IMAGE -> {
-                            val url = contentObject.get("url").asString
                             val width = contentObject.get("width").asInt
                             val height = contentObject.get("height").asInt
                             val uri = null
-                            contents.add(Image(url, width, height, uri))
+                            val url = contentObject.get("url")?.asString
+                            val fileName = contentObject.get("fileName")?.asString
+                            val cloudType = contentObject.get("cloudType")?.asInt ?: FcmConstants.CloudStorage.NONE.ordinal
+                            val cloudId = contentObject.get("cloudId")?.asString
+                            contents.add(Image(url, width, height, fileName, uri, cloudType, cloudId))
                         }
 
                         MessageContent.PLAIN_TEXT -> {

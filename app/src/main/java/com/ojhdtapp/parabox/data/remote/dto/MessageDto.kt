@@ -2,11 +2,9 @@ package com.ojhdtapp.parabox.data.remote.dto
 
 import android.content.Context
 import android.media.MediaMetadataRetriever
-import android.net.Uri
 import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.toDateAndTimeString
 import com.ojhdtapp.parabox.data.local.entity.ContactEntity
-import com.ojhdtapp.parabox.data.local.entity.FileEntity
 import com.ojhdtapp.parabox.data.local.entity.MessageEntity
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.LatestMessage
@@ -129,6 +127,7 @@ fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
             url,
             width,
             height,
+            fileName?:"Image_${System.currentTimeMillis().toDateAndTimeString()}.png",
             uri?.toString()
         )
 
@@ -144,9 +143,7 @@ fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
                 FileUtil.copyFileToPath(
                     context,
                     path,
-                    "${
-                        System.currentTimeMillis().toDateAndTimeString()
-                    }.${fileName.substringAfterLast('.')}",
+                    fileName ?: "Audio_${System.currentTimeMillis().toDateAndTimeString()}.mp3",
                     it
                 )
             }
@@ -158,7 +155,7 @@ fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
                         setDataSource(copiedPath.absolutePath)
                     }.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLong() ?: 0L
                 } else length,
-                fileName,
+                fileName ?: "Audio_${System.currentTimeMillis().toDateAndTimeString()}.mp3",
                 fileSize,
                 copiedUri?.toString()
             )
@@ -181,7 +178,7 @@ fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
             size,
             lastModifiedTime,
             expiryTime,
-            uri
+            uri?.toString()
         )
 
         else -> PlainText(this.getContentString())
@@ -192,7 +189,7 @@ fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.PluginConnection.toPluginConne
     return PluginConnection(this.connectionType, this.objectId, this.id)
 }
 
-suspend fun List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent>.replaceUriWithUrl(
+suspend fun List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent>.saveLocalResourcesToCloud(
     context: Context
 ): List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent> {
     return this.map {
@@ -207,8 +204,8 @@ suspend fun List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.M
 //                        path
 //                    )
 //                }
-                val url = it.uri?.let {
-                    FileUtil.getContentUrlWithSelectedCloudStorage(
+                val cloudResourceInfo = it.uri?.let {
+                    FileUtil.getCloudResourceInfoWithSelectedCloudStorage(
                         context,
                         FileUtil.getFileName(
                             context,
@@ -217,10 +214,11 @@ suspend fun List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.M
                         it
                     )
                 }
-                if (url != null) {
+                if (cloudResourceInfo != null) {
                     it.copy(
-                        url = url,
-                        uri = null
+                        cloudType = cloudResourceInfo.cloudType,
+                        url = cloudResourceInfo.url,
+                        cloudId = cloudResourceInfo.cloudId
                     )
                 } else {
                     com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText(text = "[图片]")
@@ -228,20 +226,21 @@ suspend fun List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.M
             }
 
             is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Audio -> {
-//                val url = it.uri?.path?.let { path ->
-//                    FileUtil.getContentUrlWithSelectedCloudStorage(context, it.fileName, path)
-//                }
-                val url = it.uri?.let { uri ->
-                    FileUtil.getContentUrlWithSelectedCloudStorage(
+                val cloudResourceInfo = it.uri?.let {
+                    FileUtil.getCloudResourceInfoWithSelectedCloudStorage(
                         context,
-                        it.fileName,
-                        uri,
+                        FileUtil.getFileName(
+                            context,
+                            it
+                        ) ?: "Image_${System.currentTimeMillis().toDateAndTimeString()}.jpg",
+                        it
                     )
                 }
-                if (url != null) {
+                if (cloudResourceInfo != null) {
                     it.copy(
-                        url = url,
-                        uri = null
+                        cloudType = cloudResourceInfo.cloudType,
+                        url = cloudResourceInfo.url,
+                        cloudId = cloudResourceInfo.cloudId
                     )
                 } else {
                     com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText(text = "[语音]")
@@ -249,11 +248,26 @@ suspend fun List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.M
             }
 
             is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.QuoteReply -> {
-                it.copy(quoteMessageContent = it.quoteMessageContent?.replaceUriWithUrl(context))
+                it.copy(quoteMessageContent = it.quoteMessageContent?.saveLocalResourcesToCloud(context))
             }
 
             is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.File -> {
-                it
+                val cloudResourceInfo = it.uri?.let { uri ->
+                    FileUtil.getCloudResourceInfoWithSelectedCloudStorage(
+                        context,
+                        it.name,
+                        uri
+                    )
+                }
+                if (cloudResourceInfo != null) {
+                    it.copy(
+                        cloudType = cloudResourceInfo.cloudType,
+                        url = cloudResourceInfo.url,
+                        cloudId = cloudResourceInfo.cloudId
+                    )
+                } else {
+                    com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText(text = "[文件]")
+                }
             }
 
             else -> it

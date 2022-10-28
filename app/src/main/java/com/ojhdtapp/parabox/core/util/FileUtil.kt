@@ -1,6 +1,5 @@
 package com.ojhdtapp.parabox.core.util
 
-import android.app.DownloadManager
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
@@ -14,8 +13,6 @@ import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.webkit.MimeTypeMap
-import android.widget.Toast
-import androidx.compose.ui.text.toLowerCase
 import androidx.core.content.FileProvider
 import com.ojhdtapp.parabox.BuildConfig
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
@@ -25,17 +22,22 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.io.IOException
 import java.text.DecimalFormat
 import java.util.*
 
 object FileUtil {
 
-    suspend fun getContentUrlWithSelectedCloudStorage(
+    data class CloudResourceInfo(
+        val cloudType: Int,
+        val url: String? = null,
+        val cloudId: String? = null,
+    )
+
+    suspend fun getCloudResourceInfoWithSelectedCloudStorage(
         context: Context,
         fileName: String,
         filePath: String
-    ): String? =
+    ): CloudResourceInfo? =
         coroutineScope {
             context.dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_CLOUD_STORAGE]?.let { cloudStorage ->
                 when (cloudStorage) {
@@ -44,21 +46,26 @@ object FileUtil {
                             GoogleDriveUtil.getFolderId(context, "ParaboxTemp")
                                 ?: GoogleDriveUtil.createFolder(context, "ParaboxTemp")
                         folderId?.let {
-                            GoogleDriveUtil.uploadFile(context, it, fileName, filePath)?.let {
-                                GoogleDriveUtil.getContentUrl(context, it)
-                            }
+                            val cloudId =
+                                GoogleDriveUtil.uploadFile(context, it, fileName, filePath)
+                            CloudResourceInfo(
+                                cloudType = FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal,
+                                url = null,
+                                cloudId = cloudId
+                            )
                         }
                     }
+
                     else -> null
                 }
             }
         }
 
-    suspend fun getContentUrlWithSelectedCloudStorage(
+    suspend fun getCloudResourceInfoWithSelectedCloudStorage(
         context: Context,
         fileName: String,
         fileUri: Uri,
-    ): String? {
+    ): CloudResourceInfo? {
         return try {
             val inputPFD: ParcelFileDescriptor? =
                 context.contentResolver.openFileDescriptor(fileUri, "r")
@@ -68,7 +75,7 @@ object FileUtil {
             inputStream.use {
                 org.apache.commons.io.FileUtils.copyInputStreamToFile(it, tempFile)
             }
-            getContentUrlWithSelectedCloudStorage(context, fileName, tempFile.absolutePath)
+            getCloudResourceInfoWithSelectedCloudStorage(context, fileName, tempFile.absolutePath)
         } catch (e: Exception) {
             e.printStackTrace()
             null

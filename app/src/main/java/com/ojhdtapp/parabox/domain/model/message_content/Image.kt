@@ -5,7 +5,7 @@ import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
-data class Image(val url: String?, val width: Int, val height: Int, val uriString: String?) : MessageContent{
+data class Image(val url: String?, val width: Int, val height: Int, val fileName: String, val uriString: String?) : MessageContent{
     @IgnoredOnParcel
     val type = MessageContent.IMAGE
     override fun getContentString(): String {
