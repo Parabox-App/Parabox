@@ -217,7 +217,10 @@ fun SupportPage(
                         )
                     },
                     onClick = {
-
+                        BrowserUtil.launchURL(
+                            context = context,
+                            url = "https://t.me/parabox_support"
+                        )
                     }
                 )
             }

@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -40,7 +41,6 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Destination
@@ -60,24 +60,14 @@ fun CloudPage(
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val context = LocalContext.current
     val snackBarHostState = remember { SnackbarHostState() }
-    // Contact Dialog
-    var showDialog by remember {
+
+    var showCloudDialog by remember {
         mutableStateOf(false)
     }
-    ContactListDialog(
-        modifier = Modifier,
-        showDialog = showDialog,
-        contactList = viewModel.contactStateFlow.collectAsState().value.filter { it.contactId == it.senderId },
-        contactCheck = { it.shouldBackup },
-        onValueChange = { target, value ->
-            viewModel.onContactBackupChange(target, value)
-        },
-        loading = viewModel.contactLoadingState.value,
-        sizeClass = sizeClass,
-        onDismiss = {
-            showDialog = false
-        }
-    )
+    var showContactDialog by remember {
+        mutableStateOf(false)
+    }
+
     // Google Drive
     val gDriveLogin by viewModel.googleLoginFlow.collectAsState(initial = false)
     val gDriveTotalSpace by viewModel.googleTotalSpaceFlow.collectAsState(initial = 0L)
@@ -112,6 +102,7 @@ fun CloudPage(
                 if (result.data != null) {
                     val googleSignInAccount = GoogleSignIn.getSignedInAccountFromIntent(intent)
                     googleSignInAccount.addOnCompleteListener { task ->
+                        showCloudDialog = false
                         if (task.isSuccessful) {
                             val account = task.result
                             if (account != null) {
@@ -130,6 +121,64 @@ fun CloudPage(
                 }
             }
         }
+
+    // Cloud Dialog
+    if (showCloudDialog) {
+        AlertDialog(
+            onDismissRequest = { showCloudDialog = false },
+            confirmButton = {},
+            icon = {
+                Icon(
+                    imageVector = Icons.Outlined.Cloud,
+                    contentDescription = "select cloud storage"
+                )
+            },
+            title = { Text(text = "连接云端服务") },
+            text = {
+                LazyColumn() {
+                    item {
+                        Surface(onClick = {
+                            val signInIntent =
+                                (context as MainActivity).getGoogleLoginAuth().signInIntent
+                            gDriveLauncher.launch(signInIntent)
+                        }) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                FaIcon(
+                                    modifier = Modifier.padding(16.dp),
+                                    faIcon = FaIcons.GoogleDrive,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = "Google Drive",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        )
+    }
+
+    // Contact Dialog
+    ContactListDialog(
+        modifier = Modifier,
+        showDialog = showContactDialog,
+        contactList = viewModel.contactStateFlow.collectAsState().value.filter { it.contactId == it.senderId },
+        contactCheck = { it.shouldBackup },
+        onValueChange = { target, value ->
+            viewModel.onContactBackupChange(target, value)
+        },
+        loading = viewModel.contactLoadingState.value,
+        sizeClass = sizeClass,
+        onDismiss = {
+            showContactDialog = false
+        }
+    )
+
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
@@ -185,9 +234,7 @@ fun CloudPage(
                         )
                         FilledTonalButton(
                             onClick = {
-                                val signInIntent =
-                                    (context as MainActivity).getGoogleLoginAuth().signInIntent
-                                gDriveLauncher.launch(signInIntent)
+                                showCloudDialog = true
                             }) {
                             Icon(
                                 imageVector = Icons.Outlined.Cloud,
@@ -303,7 +350,7 @@ fun CloudPage(
                     subtitle = "对选中会话应用自动备份",
                     enabled = defaultBackupService != 0
                 ) {
-                    showDialog = true
+                    showContactDialog = true
                 }
             }
             item {

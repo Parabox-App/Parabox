@@ -3,6 +3,7 @@ package com.ojhdtapp.parabox.core.util
 import android.content.Context
 import android.util.Log
 import android.webkit.MimeTypeMap
+import android.widget.Toast
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.api.client.extensions.android.http.AndroidHttp
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
@@ -224,15 +225,18 @@ object GoogleDriveUtil {
                 try {
                     getDriveService(context)?.let { driveService ->
                         val file = driveService.files().get(fileId).execute()
-                        val targetFile = File(path, file.name)
+                        Toast.makeText(context, "开始下载${file.name}到/Download/Parabox", Toast.LENGTH_SHORT)
+                            .show()
+                        val targetFile = File(path, FileUtil.getAvailableFileName(context, file.name))
                         targetFile.outputStream().use { fos ->
                             driveService.files().get(fileId).executeMediaAndDownloadTo(fos)
                         }
-
                         targetFile
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
+                    Toast.makeText(context, "下载失败", Toast.LENGTH_SHORT)
+                        .show()
                     null
                 }
             }

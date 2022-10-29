@@ -515,7 +515,14 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 FcmConstants.Role.RECEIVER.ordinal -> {
-
+                    // only check fcm connection... for lazy
+                    fcmApiHelper.getVersion().also {
+                        if (it?.isSuccessful != true) {
+                            Toast.makeText(this@MainActivity, "与 FCM 服务器连接断开", Toast.LENGTH_SHORT)
+                                .show()
+                        }
+                        mainSharedViewModel.setIsRefreshing(false)
+                    }
                 }
             }
         }

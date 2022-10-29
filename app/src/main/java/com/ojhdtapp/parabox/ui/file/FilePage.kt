@@ -87,6 +87,11 @@ fun FilePage(
     val snackBarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
+
+    var showCloudDialog by remember {
+        mutableStateOf(false)
+    }
+
     BackHandler(enabled = mainState.area != FilePageState.MAIN_AREA) {
         viewModel.setArea(FilePageState.MAIN_AREA)
     }
@@ -169,6 +174,46 @@ fun FilePage(
                     Text(text = "取消")
                 }
             })
+    }
+    // Cloud Dialog
+    if (showCloudDialog) {
+        AlertDialog(
+            onDismissRequest = { showCloudDialog = false },
+            confirmButton = {},
+            icon = {
+                Icon(
+                    imageVector = Icons.Outlined.Cloud,
+                    contentDescription = "select cloud storage"
+                )
+            },
+            title = { Text(text = "连接云端服务") },
+            text = {
+                LazyColumn() {
+                    item {
+                        Surface(onClick = {
+                            val signInIntent =
+                                (context as MainActivity).getGoogleLoginAuth().signInIntent
+                            gDriveLauncher.launch(signInIntent)
+                        }) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                FaIcon(
+                                    modifier = Modifier.padding(16.dp),
+                                    faIcon = FaIcons.GoogleDrive,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = "Google Drive",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        )
     }
     UserProfileDialog(
         openDialog = mainSharedViewModel.showUserProfileDialogState.value,
@@ -334,6 +379,9 @@ fun FilePage(
                     onShowWorkInfoDialog = {
                         mainSharedViewModel.setWorkInfoDialogState(true)
                     },
+                    onShowCloudDialog = {
+                        showCloudDialog = true
+                    },
                     onRefresh = {
                         when{
                             gDriveLogin -> {
@@ -405,6 +453,7 @@ fun MainArea(
     onAddOrRemoveFile: (file: File) -> Unit,
     onSetRecentFilter: (type: Int, value: Boolean) -> Unit,
     onShowWorkInfoDialog: () -> Unit,
+    onShowCloudDialog: () -> Unit,
     onRefresh: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -906,9 +955,10 @@ fun MainArea(
                                     )
                                     FilledTonalButton(
                                         onClick = {
-                                            val signInIntent =
-                                                (context as MainActivity).getGoogleLoginAuth().signInIntent
-                                            gDriveLauncher.launch(signInIntent)
+                                            onShowCloudDialog()
+//                                            val signInIntent =
+//                                                (context as MainActivity).getGoogleLoginAuth().signInIntent
+//                                            gDriveLauncher.launch(signInIntent)
                                         }) {
                                         Icon(
                                             imageVector = Icons.Outlined.Cloud,
