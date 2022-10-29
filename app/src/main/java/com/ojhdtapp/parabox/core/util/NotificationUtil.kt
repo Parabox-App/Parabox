@@ -114,16 +114,16 @@ class NotificationUtil(
     suspend fun updateShortcuts(importantContact: Contact? = null) {
         // Truncate the list if we can't show all of our contacts.
         val maxCount = shortcutManager.maxShortcutCountPerActivity
-        var contects = database.contactDao.getAllContacts().firstOrNull() ?: emptyList()
+        var contacts = database.contactDao.getAllContacts().firstOrNull() ?: emptyList()
         // Move the important contact to the front of the shortcut list.
         if (importantContact != null) {
-            contects =
-                contects.sortedByDescending { it.contactId == importantContact.contactId }
+            contacts =
+                contacts.sortedByDescending { it.contactId == importantContact.contactId }
         }
-        if (contects.size > maxCount) {
-            contects = contects.take(maxCount)
+        if (contacts.size > maxCount) {
+            contacts = contacts.take(maxCount)
         }
-        var shortcuts = contects.map {
+        var shortcuts = contacts.map {
             val icon = it.profile.avatar?.let { url ->
                 withContext(Dispatchers.IO) {
                     val loader = ImageLoader(context)
@@ -179,7 +179,7 @@ class NotificationUtil(
                     .build()
             }
         }
-        shortcutManager.addDynamicShortcuts(shortcuts)
+        shortcutManager.dynamicShortcuts = shortcuts
     }
 
     suspend fun sendNewMessageNotification(
@@ -255,39 +255,58 @@ class NotificationUtil(
                 val userIcon = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     userAvatarFlow.firstOrNull()?.let {
                         Icon.createWithAdaptiveBitmapContentUri(it)
-                    } ?: Icon.createWithResource(context, if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar)
+                    } ?: Icon.createWithResource(
+                        context,
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar
+                    )
                 } else {
                     userAvatarFlow.firstOrNull()?.let {
                         Icon.createWithContentUri(it)
-                    } ?: Icon.createWithResource(context, if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar)
+                    } ?: Icon.createWithResource(
+                        context,
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar
+                    )
                 }
                 val user =
                     Person.Builder().setName(userNameFlow.firstOrNull()).setIcon(userIcon).build()
 
                 val personIcon = message.profile.avatar?.let { url ->
                     withContext(Dispatchers.IO) {
-                        val loader = ImageLoader(context)
-                        val request = ImageRequest.Builder(context)
-                            .data(url)
-                            .allowHardware(false) // Disable hardware bitmaps.
-                            .build()
-                        val result = (loader.execute(request) as SuccessResult).drawable
-                        val bitmap = (result as BitmapDrawable).bitmap
-                        Icon.createWithAdaptiveBitmap(bitmap)
+                        try {
+                            val loader = ImageLoader(context)
+                            val request = ImageRequest.Builder(context)
+                                .data(url)
+                                .allowHardware(false) // Disable hardware bitmaps.
+                                .build()
+                            val result = (loader.execute(request) as SuccessResult).drawable
+                            val bitmap = (result as BitmapDrawable).bitmap
+                            Icon.createWithAdaptiveBitmap(bitmap)
+                        } catch (e: ClassCastException) {
+                            e.printStackTrace()
+                            null
+                        }
                     }
-                } ?: Icon.createWithResource(context, if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar)
+                } ?: Icon.createWithResource(
+                    context,
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar
+                )
                 val person =
                     Person.Builder().setName(message.profile.name).setIcon(personIcon).build()
                 val groupIcon = contact.profile.avatar?.let { url ->
                     withContext(Dispatchers.IO) {
-                        val loader = ImageLoader(context)
-                        val request = ImageRequest.Builder(context)
-                            .data(url)
-                            .allowHardware(false) // Disable hardware bitmaps.
-                            .build()
-                        val result = (loader.execute(request) as SuccessResult).drawable
-                        val bitmap = (result as BitmapDrawable).bitmap
-                        Icon.createWithAdaptiveBitmap(bitmap)
+                        try {
+                            val loader = ImageLoader(context)
+                            val request = ImageRequest.Builder(context)
+                                .data(url)
+                                .allowHardware(false) // Disable hardware bitmaps.
+                                .build()
+                            val result = (loader.execute(request) as SuccessResult).drawable
+                            val bitmap = (result as BitmapDrawable).bitmap
+                            Icon.createWithAdaptiveBitmap(bitmap)
+                        } catch (e: ClassCastException) {
+                            e.printStackTrace()
+                            null
+                        }
                     }
                 }
                 Notification.Builder(context, channelId)

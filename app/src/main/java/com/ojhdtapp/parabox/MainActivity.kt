@@ -277,7 +277,9 @@ class MainActivity : AppCompatActivity() {
                 prepare()
                 start()
             } catch (e: IOException) {
-                Log.e("parabox", "prepare() failed")
+                e.printStackTrace()
+            } catch (e: IllegalStateException){
+                e.printStackTrace()
             }
         }
 
@@ -821,10 +823,8 @@ class MainActivity : AppCompatActivity() {
                             val fcmCloudStorage =
                                 dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_CLOUD_STORAGE]
                                     ?: FcmConstants.CloudStorage.NONE.ordinal
-                            val gDriveLogin =
-                                dataStore.data.first()[DataStoreKeys.GOOGLE_LOGIN] ?: false
                             val dtoWithoutUri = when {
-                                fcmCloudStorage == FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal && gDriveLogin -> {
+                                fcmCloudStorage == FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal -> {
                                     dto.copy(
                                         contents = dto.contents.saveLocalResourcesToCloud(baseContext)
                                     )

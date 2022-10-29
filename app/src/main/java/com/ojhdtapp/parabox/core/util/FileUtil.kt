@@ -12,12 +12,16 @@ import android.os.Environment
 import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
 import android.provider.OpenableColumns
+import android.util.Log
 import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
 import com.ojhdtapp.parabox.BuildConfig
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
@@ -169,17 +173,18 @@ object FileUtil {
 
     fun getUriByCopyingFileToPath(
         context: Context,
+        file: File,
         path: File,
-        fileName: String,
-        file: File
     ): Uri? {
         return try {
-            if (!path.exists()) path.mkdirs()
-            val outputFile = File(path, fileName)
-            file.copyTo(outputFile, true, DEFAULT_BUFFER_SIZE)
+            file.inputStream().use { ips ->
+                path.outputStream().use { ops ->
+                    ips.copyTo(ops, DEFAULT_BUFFER_SIZE)
+                }
+            }
             FileProvider.getUriForFile(
                 context,
-                BuildConfig.APPLICATION_ID + ".provider", outputFile
+                BuildConfig.APPLICATION_ID + ".provider", path
             )
         } catch (e: Exception) {
             e.printStackTrace()

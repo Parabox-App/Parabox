@@ -127,7 +127,7 @@ fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
             url,
             width,
             height,
-            fileName?:"Image_${System.currentTimeMillis().toDateAndTimeString()}.png",
+            fileName ?: "Image_${System.currentTimeMillis().toDateAndTimeString()}.png",
             uri?.toString()
         )
 
@@ -138,26 +138,22 @@ fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
 
         is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.AtAll -> com.ojhdtapp.parabox.domain.model.message_content.AtAll
         is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Audio -> {
-            val path = context.getExternalFilesDir("chat")!!
-            val copiedPath = uri?.let {
-                FileUtil.copyFileToPath(
-                    context,
-                    path,
-                    fileName ?: "Audio_${System.currentTimeMillis().toDateAndTimeString()}.mp3",
-                    it
-                )
-            }
-            val copiedUri = copiedPath?.let { FileUtil.getUriOfFile(context, it) }
+//            val path = context.getExternalFilesDir("chat")!!
+//            val copiedPath = uri?.let {
+//                FileUtil.copyFileToPath(
+//                    context,
+//                    path,
+//                    fileName ?: "Audio_${System.currentTimeMillis().toDateAndTimeString()}.mp3",
+//                    it
+//                )
+//            }
+//            val copiedUri = copiedPath?.let { FileUtil.getUriOfFile(context, it) }
             Audio(
                 url,
-                if (length == 0L && copiedPath?.exists() == true) {
-                    MediaMetadataRetriever().apply {
-                        setDataSource(copiedPath.absolutePath)
-                    }.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLong() ?: 0L
-                } else length,
+                length,
                 fileName ?: "Audio_${System.currentTimeMillis().toDateAndTimeString()}.mp3",
                 fileSize,
-                copiedUri?.toString()
+                uri?.toString()
             )
         }
 
@@ -195,15 +191,6 @@ suspend fun List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.M
     return this.map {
         when (it) {
             is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Image -> {
-//                val url = it.uri?.path?.let { path ->
-//                    FileUtil.getContentUrlWithSelectedCloudStorage(
-//                        context, FileUtil.getFileName(
-//                            context,
-//                            it.uri!!
-//                        ) ?: "${System.currentTimeMillis().toDateAndTimeString()}.jpg",
-//                        path
-//                    )
-//                }
                 val cloudResourceInfo = it.uri?.let {
                     FileUtil.getCloudResourceInfoWithSelectedCloudStorage(
                         context,
@@ -232,7 +219,7 @@ suspend fun List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.M
                         FileUtil.getFileName(
                             context,
                             it
-                        ) ?: "Image_${System.currentTimeMillis().toDateAndTimeString()}.jpg",
+                        ) ?: "Audio_${System.currentTimeMillis().toDateAndTimeString()}.mp3",
                         it
                     )
                 }
@@ -248,7 +235,11 @@ suspend fun List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.M
             }
 
             is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.QuoteReply -> {
-                it.copy(quoteMessageContent = it.quoteMessageContent?.saveLocalResourcesToCloud(context))
+                it.copy(
+                    quoteMessageContent = it.quoteMessageContent?.saveLocalResourcesToCloud(
+                        context
+                    )
+                )
             }
 
             is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.File -> {

@@ -242,13 +242,6 @@ class MainRepositoryImpl @Inject constructor(
                     messageId = messageIdDeferred.await()
                 )
             )
-//            database.contactDao.getContactPluginConnectionCrossRefsByObjectId(dto.pluginConnection.objectId)
-//                .map {
-//                    ContactHiddenStateUpdate(contactId = it.contactId, isHidden = false)
-//                }.let {
-//                    database.contactDao.updateHiddenState(it)
-//                }
-
 
             // Update Avatar or Anything Else Here
             database.contactDao.getPluginConnectionWithContacts(pluginConnection.objectId).let {

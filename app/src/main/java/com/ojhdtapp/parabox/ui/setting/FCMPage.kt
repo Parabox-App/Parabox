@@ -59,6 +59,7 @@ import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -212,6 +213,7 @@ fun FCMPage(
                         isError = editPortError,
                         label = { Text(text = "端口") },
                         keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
                             imeAction = androidx.compose.ui.text.input.ImeAction.Done
                         ),
                         keyboardActions = KeyboardActions(

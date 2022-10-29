@@ -76,6 +76,7 @@ import com.ojhdtapp.parabox.core.util.toDateAndTimeString
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.message_content.toMessageContentList
 import com.ojhdtapp.parabox.ui.util.clearFocusOnKeyboardDismiss
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
@@ -322,46 +323,46 @@ fun EditArea(
                     } else {
                         Row() {
                             IconButton(
-                                enabled = audioRecorderState.let{
+                                enabled = audioRecorderState.let {
                                     it !is AudioRecorderState.Recording && it !is AudioRecorderState.Confirmed
                                 },
                                 onClick = {
-                                keyboardController?.hide()
-                                if (!isBottomSheetExpand) {
-                                    onBottomSheetExpand()
-                                    emojiState = false
-                                } else {
-                                    if (emojiState) {
+                                    keyboardController?.hide()
+                                    if (!isBottomSheetExpand) {
+                                        onBottomSheetExpand()
                                         emojiState = false
                                     } else {
-                                        onBottomSheetCollapse()
+                                        if (emojiState) {
+                                            emojiState = false
+                                        } else {
+                                            onBottomSheetCollapse()
+                                        }
                                     }
-                                }
-                                onAudioStateChanged(false)
-                            }) {
+                                    onAudioStateChanged(false)
+                                }) {
                                 Icon(
                                     imageVector = Icons.Outlined.AddCircleOutline,
                                     contentDescription = "more"
                                 )
                             }
                             IconButton(
-                                enabled = audioRecorderState.let{
+                                enabled = audioRecorderState.let {
                                     it !is AudioRecorderState.Recording && it !is AudioRecorderState.Confirmed
                                 },
                                 onClick = {
-                                keyboardController?.hide()
-                                if (!isBottomSheetExpand) {
-                                    onBottomSheetExpand()
-                                    emojiState = true
-                                } else {
-                                    if (!emojiState) {
+                                    keyboardController?.hide()
+                                    if (!isBottomSheetExpand) {
+                                        onBottomSheetExpand()
                                         emojiState = true
                                     } else {
-                                        onBottomSheetCollapse()
+                                        if (!emojiState) {
+                                            emojiState = true
+                                        } else {
+                                            onBottomSheetCollapse()
+                                        }
                                     }
-                                }
-                                onAudioStateChanged(false)
-                            }) {
+                                    onAudioStateChanged(false)
+                                }) {
                                 Icon(
                                     imageVector = Icons.Outlined.EmojiEmotions,
                                     contentDescription = "emoji"
@@ -375,7 +376,7 @@ fun EditArea(
 //                }
                 LaunchedEffect(key1 = audioState) {
                     if (!audioState) {
-                        if(audioRecorderState is AudioRecorderState.Done){
+                        if (audioRecorderState is AudioRecorderState.Done) {
                             onClearRecording()
                         }
                         onAudioRecorderStateChanged(AudioRecorderState.Ready)
@@ -441,11 +442,13 @@ fun EditArea(
                                                     interactionSource.tryEmit(press)
                                                     onStartRecording()
                                                 }
+
                                                 MotionEvent.ACTION_MOVE -> {
                                                     onAudioRecorderStateChanged(
                                                         if (it.y < -150) AudioRecorderState.Confirmed else AudioRecorderState.Recording
                                                     )
                                                 }
+
                                                 MotionEvent.ACTION_UP -> {
                                                     interactionSource.tryEmit(
                                                         PressInteraction.Release(
@@ -467,6 +470,7 @@ fun EditArea(
                                                         )
                                                     }
                                                 }
+
                                                 else -> false
                                             }
                                             true
@@ -1434,35 +1438,37 @@ private fun sendAudio(
     packageNameList: List<String>,
     onSend: (contents: List<MessageContent>) -> Unit
 ) {
-    val originalPath = File(context.externalCacheDir!!.absoluteFile, "audio_record.mp3")
-    val audioFile = File(context.getExternalFilesDir("chat")!!, "audio_record.mp3")
-    val targetFileName = "${System.currentTimeMillis().toDateAndTimeString()}.mp3"
-    FileUtil.getUriByCopyingFileToPath(
-        context,
-        context.getExternalFilesDir("chat")!!,
-        targetFileName,
-        originalPath,
-    )?.let {
-        packageNameList.forEach { packageName ->
-            context.grantUriPermission(
-                packageName,
-                it,
-                Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION
-            )
-        }
-        val duration = MediaMetadataRetriever().apply {
-            setDataSource("${context.getExternalFilesDir("chat")!!.absoluteFile}/$targetFileName")
-        }.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L
-        val size = audioFile.length()
-        onSend(
-            listOf(
-                Audio(
-                    length = duration,
-                    fileName = targetFileName,
-                    fileSize = size,
-                    uri = it
+    context.externalCacheDir!!.listFiles()?.firstOrNull { it.name == "audio_record.mp3" }
+        ?.also { originalFile ->
+            val targetFileName = "Audio_${System.currentTimeMillis().toDateAndTimeString()}.mp3"
+            val targetFile = File(context.getExternalFilesDir("chat")!!, targetFileName)
+            FileUtil.getUriByCopyingFileToPath(
+                context,
+                originalFile,
+                targetFile
+            )?.let {
+                packageNameList.forEach { packageName ->
+                    context.grantUriPermission(
+                        packageName,
+                        it,
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                }
+                val duration = MediaMetadataRetriever().apply {
+                    setDataSource("${context.getExternalFilesDir("chat")!!.absoluteFile}/$targetFileName")
+                }.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull()
+                    ?: 0L
+                val size = targetFile.length()
+                onSend(
+                    listOf(
+                        Audio(
+                            length = duration,
+                            fileName = targetFileName,
+                            fileSize = size,
+                            uri = it
+                        )
+                    )
                 )
-            )
-        )
-    }
+            }
+        }
 }
