@@ -233,7 +233,6 @@ class PluginService : LifecycleService() {
         } else {
             Looper.prepare()
             Toast.makeText(this, "插件未安装", Toast.LENGTH_SHORT).show()
-            Looper.loop()
         }
     }
 
@@ -243,7 +242,6 @@ class PluginService : LifecycleService() {
         } else {
             Looper.prepare()
             Toast.makeText(this, "插件未安装", Toast.LENGTH_SHORT).show()
-            Looper.loop()
         }
     }
 

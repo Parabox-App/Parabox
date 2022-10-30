@@ -41,13 +41,11 @@ object DownloadManagerUtil {
             Looper.prepare()
             Toast.makeText(context, "开始下载${fileName}到/Download/Parabox", Toast.LENGTH_SHORT)
                 .show()
-            Looper.loop()
             downloadManager.enqueue(request)
         } catch (e: Exception) {
             e.printStackTrace()
             Looper.prepare()
             Toast.makeText(context, "下载失败", Toast.LENGTH_SHORT).show()
-            Looper.loop()
             null
         }
     }

@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.core.util
 
 import android.content.Context
+import android.os.Looper
 import android.util.Log
 import android.webkit.MimeTypeMap
 import android.widget.Toast
@@ -225,7 +226,8 @@ object GoogleDriveUtil {
                 try {
                     getDriveService(context)?.let { driveService ->
                         val file = driveService.files().get(fileId).execute()
-                        Toast.makeText(context, "开始下载${file.name}到/Download/Parabox", Toast.LENGTH_SHORT)
+                        Looper.prepare()
+                        Toast.makeText(context, "开始下载${file.name}", Toast.LENGTH_SHORT)
                             .show()
                         val targetFile = File(path, FileUtil.getAvailableFileName(context, file.name))
                         targetFile.outputStream().use { fos ->
@@ -235,6 +237,7 @@ object GoogleDriveUtil {
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
+                    Looper.prepare()
                     Toast.makeText(context, "下载失败", Toast.LENGTH_SHORT)
                         .show()
                     null

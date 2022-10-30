@@ -200,7 +200,7 @@ fun SupportPage(
                     onClick = {
                         BrowserUtil.launchURL(
                             context = context,
-                            url = "https://github.com/ojhdt/parabox"
+                            url = "https://github.com/Parabox-App/Parabox"
                         )
                     }
                 )
