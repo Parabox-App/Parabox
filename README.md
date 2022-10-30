@@ -1,6 +1,7 @@
 ![Header](./docs/banner.png)
 # Parabox
 
+![CI](https://github.com/Parabox-App/Parabox/actions/workflows/android.yml/badge.svg?event=push)
 [![Release](https://img.shields.io/github/v/release/Parabox-App/Parabox)](https://github.com/Parabox-App/Parabox/releases)
 ![stars](https://img.shields.io/github/stars/Parabox-App/Parabox)
 [![Telegram](https://img.shields.io/badge/Join-Telegram-red)](https://t.me/parabox_support)
