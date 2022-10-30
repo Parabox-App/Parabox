@@ -8,7 +8,7 @@
 
 An instant messaging client with friendly interface, complete functions, and extensibility.
 
-[简体中文](./README.zh_cn.md) / [Offical Website](https://parabox.ojhdt.dev/) / [User Document](https://docs.parabox.ojhdt.dev) / [Developer Document](https://docs.parabox.ojhdt.dev/developer/)
+[简体中文](./README_zh_cn.md) / [Offical Website](https://parabox.ojhdt.dev/) / [User Document](https://docs.parabox.ojhdt.dev) / [Developer Document](https://docs.parabox.ojhdt.dev/developer/)
 
 ## Feature
 
