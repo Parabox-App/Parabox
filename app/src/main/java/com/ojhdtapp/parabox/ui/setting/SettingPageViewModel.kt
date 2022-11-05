@@ -280,6 +280,26 @@ class SettingPageViewModel @Inject constructor(
         }
     }
 
+    val enableFcmCustomUrlFlow = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.SETTINGS_ENABLE_FCM_CUSTOM_URL] ?: false
+        }
+
+    fun setEnableFcmCustomUrl(value: Boolean) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.SETTINGS_ENABLE_FCM_CUSTOM_URL] = value
+            }
+        }
+    }
+
     val fcmUrlFlow = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {

@@ -17,6 +17,8 @@ object DataStoreKeys{
     val SETTINGS_AUTO_BACKUP_FILE_MAX_SIZE = floatPreferencesKey("settings_auto_backup_file_max_size")
     val SETTINGS_AUTO_DELETE_LOCAL_FILE = booleanPreferencesKey("settings_auto_delete_local_file")
     val SETTINGS_ENABLE_FCM = booleanPreferencesKey("settings_enable_fcm")
+    val SETTINGS_ENABLE_FCM_CUSTOM_URL = booleanPreferencesKey("settings_enable_fcm_custom_url")
+    val SETTINGS_FCM_OFFICIAL_URL = stringPreferencesKey("settings_fcm_official_url")
     val SETTINGS_FCM_URL = stringPreferencesKey("settings_fcm_url")
     val SETTINGS_FCM_HTTPS = booleanPreferencesKey("settings_fcm_https")
     val SETTINGS_FCM_ROLE = intPreferencesKey("settings_fcm_role")
@@ -25,7 +27,6 @@ object DataStoreKeys{
     val SETTINGS_THEME = intPreferencesKey("settings_theme")
     val SETTINGS_ALLOW_BUBBLE_HOME = booleanPreferencesKey("settings_allow_bubble_home")
     val SETTINGS_ALLOW_FOREGROUND_NOTIFICATION = booleanPreferencesKey("settings_allow_foreground_notification")
-
     val GOOGLE_MAIL = stringPreferencesKey("google_mail")
     val GOOGLE_NAME = stringPreferencesKey("google_name")
     val GOOGLE_LOGIN = booleanPreferencesKey("google_login")

@@ -66,6 +66,7 @@ import com.google.android.gms.tasks.OnCompleteListener
 import com.google.api.services.drive.DriveScopes
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.ktx.analytics
+import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.messaging.FirebaseMessaging
 import com.ojhdtapp.parabox.core.util.BrowserUtil
@@ -756,6 +757,27 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun queryConfigFromFireStore(){
+        val db = Firebase.firestore
+        db.collection("config").get().addOnSuccessListener { result ->
+            if (result != null) {
+                val config = result.documents.first().data
+
+                val fcm_url = config?.get("fcm_url").toString()
+                Log.d("parabox", "fcm_url: $fcm_url")
+                lifecycleScope.launch {
+                    dataStore.edit { settings ->
+                        settings[DataStoreKeys.SETTINGS_FCM_OFFICIAL_URL] = fcm_url
+                    }
+                }
+            } else {
+                Log.d("parabox", "No such document")
+            }
+        }.addOnFailureListener { exception ->
+            Log.d("parabox", "get failed with ", exception)
+        }
+    }
+
     fun getGoogleLoginAuth(): GoogleSignInClient {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
@@ -1149,6 +1171,9 @@ class MainActivity : AppCompatActivity() {
 
         // Query FCM Token
         queryFCMToken()
+
+        // Query FCM Official URL
+        queryConfigFromFireStore()
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {
