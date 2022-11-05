@@ -58,6 +58,9 @@ android {
             exclude("META-INF/*.kotlin_module")
         }
     }
+    lintOptions {
+        abortOnError false
+    }
     applicationVariants.all { variant ->
         kotlin.sourceSets {
             getByName(variant.name) {
