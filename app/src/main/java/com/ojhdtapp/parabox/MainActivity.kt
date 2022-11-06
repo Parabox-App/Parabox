@@ -772,13 +772,15 @@ class MainActivity : AppCompatActivity() {
         val db = Firebase.firestore
         db.collection("config").get().addOnSuccessListener { result ->
             if (result != null) {
-                val config = result.documents.first().data
+                val config = result.documents.firstOrNull()?.data
 
-                val fcm_url = config?.get("fcm_url").toString()
+                val fcm_url = config?.get("fcm_url")?.toString()
                 Log.d("parabox", "fcm_url: $fcm_url")
-                lifecycleScope.launch {
-                    dataStore.edit { settings ->
-                        settings[DataStoreKeys.SETTINGS_FCM_OFFICIAL_URL] = fcm_url
+                fcm_url?.let{
+                    lifecycleScope.launch {
+                        dataStore.edit { settings ->
+                            settings[DataStoreKeys.SETTINGS_FCM_OFFICIAL_URL] = it
+                        }
                     }
                 }
             } else {
@@ -1186,7 +1188,7 @@ class MainActivity : AppCompatActivity() {
         // Query FCM Token
         queryFCMToken()
 
-        // Query FCM Official URL
+        // Query FireStore
         queryConfigFromFireStore()
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
