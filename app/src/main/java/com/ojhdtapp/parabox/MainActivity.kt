@@ -64,8 +64,11 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.Scope
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.api.services.drive.DriveScopes
+import com.google.firebase.FirebaseApp
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.ktx.analytics
+import com.google.firebase.appcheck.FirebaseAppCheck
+import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.messaging.FirebaseMessaging
@@ -735,6 +738,14 @@ class MainActivity : AppCompatActivity() {
         workManager.cancelAllWorkByTag(tag)
     }
 
+    private fun firebaseAppCheck() {
+        FirebaseApp.initializeApp(/*context=*/this)
+        val firebaseAppCheck = FirebaseAppCheck.getInstance()
+        firebaseAppCheck.installAppCheckProviderFactory(
+            PlayIntegrityAppCheckProviderFactory.getInstance()
+        )
+    }
+
     private fun queryFCMToken() {
         lifecycleScope.launch {
             if (dataStore.data.first()[DataStoreKeys.SETTINGS_ENABLE_FCM] == true) {
@@ -1165,6 +1176,9 @@ class MainActivity : AppCompatActivity() {
 
         // Cloud Backup
         backupFileToCloudService()
+
+        // Firebase AppCheck
+        firebaseAppCheck()
 
         // Obtain the FirebaseAnalytics instance.
         analytics = Firebase.analytics
