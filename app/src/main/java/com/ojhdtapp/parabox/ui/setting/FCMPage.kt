@@ -106,6 +106,7 @@ fun FCMPage(
     val enabled = viewModel.enableFCMStateFlow.collectAsState(initial = false)
     val token = viewModel.fcmTokenFlow.collectAsState(initial = "")
     val state = viewModel.fcmStateFlow.collectAsState()
+    val customUrlEnabled = viewModel.enableFcmCustomUrlFlow.collectAsState(initial = false)
     val fcmUrl = viewModel.fcmUrlFlow.collectAsState(initial = "")
     val useHttps = viewModel.fcmHttpsFlow.collectAsState(initial = false)
     val role = viewModel.fcmRoleFlow.collectAsState(initial = FcmConstants.Role.SENDER.ordinal)
@@ -418,12 +419,19 @@ fun FCMPage(
                 PreferencesCategory(text = "连接配置")
             }
             item {
-                NormalPreference(
-                    title = "服务器地址",
-                    subtitle = fcmUrl.value.ifBlank { "未设置" },
-                    enabled = enabled.value,
-                ) {
-                    showEditUrlDialog = true
+                SwitchPreference(title = "使用自定义服务器", checked = customUrlEnabled.value, onCheckedChange = {
+                    viewModel.setEnableFcmCustomUrl(it)
+                })
+            }
+            item {
+                AnimatedVisibility(visible = customUrlEnabled.value, enter = expandVertically(), exit = shrinkVertically()) {
+                    NormalPreference(
+                        title = "服务器地址",
+                        subtitle = fcmUrl.value.ifBlank { "未设置" },
+                        enabled = enabled.value,
+                    ) {
+                        showEditUrlDialog = true
+                    }
                 }
             }
             item {

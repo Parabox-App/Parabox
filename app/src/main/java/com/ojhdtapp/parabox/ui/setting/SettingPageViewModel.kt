@@ -280,6 +280,26 @@ class SettingPageViewModel @Inject constructor(
         }
     }
 
+    val enableFcmCustomUrlFlow = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.SETTINGS_ENABLE_FCM_CUSTOM_URL] ?: false
+        }
+
+    fun setEnableFcmCustomUrl(value: Boolean) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.SETTINGS_ENABLE_FCM_CUSTOM_URL] = value
+            }
+        }
+    }
+
     val fcmUrlFlow = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {
@@ -566,7 +586,7 @@ class SettingPageViewModel @Inject constructor(
     val licenseList = listOf<License>(
         License(
             "Accompanist",
-            "https://github.com/google/accompanist",
+            "https://github.com/google/accompanist/blob/main/LICENSE",
             "Apache License 2.0",
         ),
         License(
@@ -605,7 +625,7 @@ class SettingPageViewModel @Inject constructor(
             "Apache License 2.0"
         ),
         License(
-            "Android-Room-Database-Backup",
+            "Android Room-Database Backup",
             "https://github.com/rafi0101/Android-Room-Database-Backup/blob/master/LICENSE",
             "MIT License"
         ),
@@ -615,7 +635,7 @@ class SettingPageViewModel @Inject constructor(
             "MIT License"
         ),
         License(
-            "Compose-Extended-Gestures",
+            "Compose Extended Gestures",
             "https://github.com/SmartToolFactory/Compose-Extended-Gestures/blob/master/LICENSE.md",
             "Apache License 2.0"
         ),
@@ -623,6 +643,21 @@ class SettingPageViewModel @Inject constructor(
             "Amplituda",
             "https://github.com/lincollincol/Amplituda/blob/master/LICENSE",
             "Apache License 2.0"
-        )
+        ),
+        License(
+            "Retrofit",
+            "https://github.com/square/retrofit/blob/master/LICENSE.txt",
+            "Apache License 2.0"
+        ),
+        License(
+            "Compose Destinations",
+            "https://github.com/raamcosta/compose-destinations/blob/main/LICENSE.txt",
+            "Apache License 2.0"
+        ),
+        License(
+            "Gson",
+            "https://github.com/google/gson/blob/master/LICENSE",
+            "Apache License 2.0"
+        ),
     )
 }

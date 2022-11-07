@@ -64,8 +64,12 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.Scope
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.api.services.drive.DriveScopes
+import com.google.firebase.FirebaseApp
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.ktx.analytics
+import com.google.firebase.appcheck.FirebaseAppCheck
+import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory
+import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.messaging.FirebaseMessaging
 import com.ojhdtapp.parabox.core.util.BrowserUtil
@@ -734,6 +738,14 @@ class MainActivity : AppCompatActivity() {
         workManager.cancelAllWorkByTag(tag)
     }
 
+    private fun firebaseAppCheck() {
+        FirebaseApp.initializeApp(/*context=*/this)
+        val firebaseAppCheck = FirebaseAppCheck.getInstance()
+        firebaseAppCheck.installAppCheckProviderFactory(
+            PlayIntegrityAppCheckProviderFactory.getInstance()
+        )
+    }
+
     private fun queryFCMToken() {
         lifecycleScope.launch {
             if (dataStore.data.first()[DataStoreKeys.SETTINGS_ENABLE_FCM] == true) {
@@ -753,6 +765,29 @@ class MainActivity : AppCompatActivity() {
                     }
                 })
             }
+        }
+    }
+
+    private fun queryConfigFromFireStore(){
+        val db = Firebase.firestore
+        db.collection("config").get().addOnSuccessListener { result ->
+            if (result != null) {
+                val config = result.documents.firstOrNull()?.data
+
+                val fcm_url = config?.get("fcm_url")?.toString()
+                Log.d("parabox", "fcm_url: $fcm_url")
+                fcm_url?.let{
+                    lifecycleScope.launch {
+                        dataStore.edit { settings ->
+                            settings[DataStoreKeys.SETTINGS_FCM_OFFICIAL_URL] = it
+                        }
+                    }
+                }
+            } else {
+                Log.d("parabox", "No such document")
+            }
+        }.addOnFailureListener { exception ->
+            Log.d("parabox", "get failed with ", exception)
         }
     }
 
@@ -1144,11 +1179,17 @@ class MainActivity : AppCompatActivity() {
         // Cloud Backup
         backupFileToCloudService()
 
+        // Firebase AppCheck
+        firebaseAppCheck()
+
         // Obtain the FirebaseAnalytics instance.
         analytics = Firebase.analytics
 
         // Query FCM Token
         queryFCMToken()
+
+        // Query FireStore
+        queryConfigFromFireStore()
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {

@@ -186,6 +186,16 @@ class PluginService : LifecycleService() {
             val connectionType = it.metaData?.getInt("connection_type") ?: 0
             val connectionName = it.metaData?.getString("connection_name") ?: "Unknown"
             PluginService.pluginTypeMap[connectionType] = connectionName
+
+            val author = it.metaData?.getString("author") ?: "Unknown"
+            val description = it.metaData?.getString("description")?: "Null"
+            val plainTextSupport = it.metaData?.getInt("plain_text_support") ?: AppModel.SUPPORT_NULL
+            val imageSupport = it.metaData?.getInt("image_support") ?: AppModel.SUPPORT_NULL
+            val audioSupport = it.metaData?.getInt("audio_support") ?: AppModel.SUPPORT_NULL
+            val fileSupport = it.metaData?.getInt("file_support") ?: AppModel.SUPPORT_NULL
+            val atSupport = it.metaData?.getInt("at_support") ?: AppModel.SUPPORT_NULL
+            val quoteReplySupport = it.metaData?.getInt("quote_reply_support") ?: AppModel.SUPPORT_NULL
+
             AppModel(
                 name = it.loadLabel(packageManager).toString(),
                 icon = it.loadIcon(packageManager),
@@ -198,6 +208,14 @@ class PluginService : LifecycleService() {
                 runningStatus = AppModel.RUNNING_STATUS_CHECKING,
                 connectionType = connectionType,
                 connectionName = connectionName,
+                author = author,
+                description = description,
+                plainTextSupport = plainTextSupport,
+                imageSupport = imageSupport,
+                audioSupport = audioSupport,
+                fileSupport = fileSupport,
+                atSupport = atSupport,
+                quoteReplySupport = quoteReplySupport
             )
         }
     }

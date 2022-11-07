@@ -19,7 +19,12 @@ class FcmApiHelper @Inject constructor(
     private val fcmService: FcmService
 ) {
     suspend fun getVersion(): Response<FcmConnectionResponse>? = coroutineScope {
-        val url = context.dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_URL] ?: ""
+        val url =
+            if (context.dataStore.data.first()[DataStoreKeys.SETTINGS_ENABLE_FCM_CUSTOM_URL] == true) {
+                context.dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_URL] ?: ""
+            } else {
+                context.dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_OFFICIAL_URL] ?: ""
+            }
         if (url.isNotBlank()) {
             val httpUrl = "http://${url}/"
             try {
@@ -43,13 +48,25 @@ class FcmApiHelper @Inject constructor(
     suspend fun pushReceiveDto(
         receiveMessageDto: ReceiveMessageDto,
     ) = coroutineScope {
-        val url = context.dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_URL] ?: ""
+        val url =
+            if (context.dataStore.data.first()[DataStoreKeys.SETTINGS_ENABLE_FCM_CUSTOM_URL] == true) {
+                context.dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_URL] ?: ""
+            } else {
+                context.dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_OFFICIAL_URL] ?: ""
+            }
         val tokensSet =
             context.dataStore.data.first()[DataStoreKeys.FCM_TARGET_TOKENS] ?: emptySet()
         if (url.isNotBlank() && tokensSet.isNotEmpty()) {
             val httpUrl = "http://${url}/receive/"
             try {
-                fcmService.pushReceiveDto(httpUrl, FcmReceiveModel(receiveMessageDto, receiveMessageDto.getFcmNotification(), tokensSet))
+                fcmService.pushReceiveDto(
+                    httpUrl,
+                    FcmReceiveModel(
+                        receiveMessageDto,
+                        receiveMessageDto.getFcmNotification(),
+                        tokensSet
+                    )
+                )
             } catch (e: SocketTimeoutException) {
                 e.printStackTrace()
                 null
@@ -63,7 +80,12 @@ class FcmApiHelper @Inject constructor(
     suspend fun pushSendDto(
         sendMessageDto: SendMessageDto
     ) = coroutineScope {
-        val url = context.dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_URL] ?: ""
+        val url =
+            if (context.dataStore.data.first()[DataStoreKeys.SETTINGS_ENABLE_FCM_CUSTOM_URL] == true) {
+                context.dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_URL] ?: ""
+            } else {
+                context.dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_OFFICIAL_URL] ?: ""
+            }
         val loopbackToken =
             context.dataStore.data.first()[DataStoreKeys.FCM_LOOPBACK_TOKEN] ?: ""
         if (url.isNotBlank() && loopbackToken.isNotBlank()) {
