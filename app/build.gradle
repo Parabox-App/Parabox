@@ -139,7 +139,7 @@ dependencies {
     implementation "commons-io:commons-io:2.7"
 
     // Development Kit
-    implementation 'com.ojhdt:parabox-development-kit:1.0.4'
+    implementation 'com.ojhdt:parabox-development-kit:1.0.12-SNAPSHOT'
 
     // Paging
     def paging_version = "3.2.0-alpha03"
@@ -176,7 +176,7 @@ dependencies {
     implementation "com.google.accompanist:accompanist-placeholder-material:$acc_version"
 
     // Navigation Compose
-    def nav_version = "2.5.2"
+    def nav_version = "2.5.3"
     implementation "androidx.navigation:navigation-compose:$nav_version"
 
     // m3

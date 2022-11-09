@@ -638,9 +638,10 @@ class MessagePageViewModel @Inject constructor(
             handleNewMessage(
                 ReceiveMessageDto(
                     listOf(com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText("Hello at ${System.currentTimeMillis()}")),
-                    com.ojhdtapp.paraboxdevelopmentkit.messagedto.Profile("Ojhdt", null, null),
+                    com.ojhdtapp.paraboxdevelopmentkit.messagedto.Profile("Ojhdt", null, null, null),
                     com.ojhdtapp.paraboxdevelopmentkit.messagedto.Profile(
                         "Ojhdt-Group",
+                        null,
                         null,
                         null
                     ),

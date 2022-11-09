@@ -2,6 +2,7 @@ package com.ojhdtapp.parabox.data.remote.dto
 
 import android.content.Context
 import android.media.MediaMetadataRetriever
+import android.net.Uri
 import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.toDateAndTimeString
 import com.ojhdtapp.parabox.data.local.entity.ContactEntity
@@ -15,9 +16,9 @@ import com.ojhdtapp.parabox.domain.model.message_content.*
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.ReceiveMessageDto
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.getContentString
 
-fun ReceiveMessageDto.toContactEntity(): ContactEntity {
+fun ReceiveMessageDto.toContactEntity(context: Context): ContactEntity {
     return ContactEntity(
-        profile = subjectProfile.toProfile(),
+        profile = subjectProfile.toProfile(context),
         latestMessage = LatestMessage(
             sender = profile.name,
             content = contents.getContentString(),
@@ -38,7 +39,7 @@ fun ReceiveMessageDto.toMessageEntity(context: Context): MessageEntity {
     return MessageEntity(
         contents = contents.toMessageContentList(context),
         contentString = contents.getContentString(),
-        profile = profile.toProfile(),
+        profile = profile.toProfile(context),
         timestamp = timestamp,
         messageId = messageId ?: 0,
         sentByMe = false,
@@ -49,7 +50,7 @@ fun ReceiveMessageDto.toMessageEntity(context: Context): MessageEntity {
 fun ReceiveMessageDto.toMessage(context: Context, messageIdInDatabase: Long = 0): Message {
     return Message(
         contents = contents.toMessageContentList(context),
-        profile = profile.toProfile(),
+        profile = profile.toProfile(context),
         timestamp = timestamp,
         messageId = messageId ?: messageIdInDatabase,
         sentByMe = false,
@@ -57,9 +58,9 @@ fun ReceiveMessageDto.toMessage(context: Context, messageIdInDatabase: Long = 0)
     )
 }
 
-fun ReceiveMessageDto.toContact(): Contact {
+fun ReceiveMessageDto.toContact(context: Context): Contact {
     return Contact(
-        profile = subjectProfile.toProfile(),
+        profile = subjectProfile.toProfile(context),
         latestMessage = LatestMessage(
             sender = profile.name,
             content = contents.getContentString(),
@@ -106,8 +107,15 @@ fun ReceiveMessageDto.toContact(): Contact {
 //    )
 //}
 
-fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.Profile.toProfile(): Profile {
-    return Profile(this.name, this.avatar, null, this.id)
+fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.Profile.toProfile(context: Context): Profile {
+    return Profile(this.name, this.avatar, this.avatarUri?.let {
+        FileUtil.getUriByCopyingFileToPath(
+            context,
+            context.getExternalFilesDir("chat")!!,
+            "Image_${this.name}.png",
+            it
+        )?.toString()
+    }, this.id)
 }
 
 fun List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent>.toMessageContentList(

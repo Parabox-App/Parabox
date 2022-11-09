@@ -2,7 +2,9 @@
 
 package com.ojhdtapp.parabox.ui.message
 
+import android.net.Uri
 import android.os.Build
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
@@ -835,18 +837,10 @@ fun ContactItem(
                             ) {
                                 icon()
                             }
-                        } else if (contact?.profile?.avatar == null) {
-                            Box(
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.secondary)
-                                    .clickable { onAvatarClick() }
-                            )
-                        } else {
+                        } else if (contact?.profile?.avatar != null || contact?.profile?.avatarUri != null) {
                             AsyncImage(
                                 model = ImageRequest.Builder(LocalContext.current)
-                                    .data(contact.profile.avatar)
+                                    .data(contact.profile.avatarUri?.let{ Uri.parse(it) } ?: contact.profile.avatar)
                                     .crossfade(true)
                                     .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
                                     .build(),
@@ -857,15 +851,14 @@ fun ContactItem(
                                     .clip(CircleShape)
                                     .clickable { onAvatarClick() }
                             )
-//                            Image(
-//                                modifier = Modifier
-//                                    .clip(RoundedCornerShape(24.dp))
-//                                    .size(48.dp)
-//                                    .background(MaterialTheme.colorScheme.tertiaryContainer)
-//                                    .clickable { onAvatarClick() },
-//                                bitmap = contact.profile.avatar,
-//                                contentDescription = "avatar"
-//                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.secondary)
+                                    .clickable { onAvatarClick() }
+                            )
                         }
                     }
                 }

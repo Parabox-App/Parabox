@@ -97,13 +97,15 @@ fun ExtensionPage(
         val pluginList by mainSharedViewModel.pluginListStateFlow.collectAsState()
         val fcmRole =
             viewModel.fcmRoleFlow.collectAsState(initial = FcmConstants.Role.SENDER.ordinal)
+        val fcmEnabled =
+            viewModel.enableFCMStateFlow.collectAsState()
         LazyColumn(
             contentPadding = it,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item() {
                 if (pluginList.isEmpty()) {
-                    if (fcmRole.value == FcmConstants.Role.RECEIVER.ordinal) {
+                    if (fcmEnabled.value && fcmRole.value == FcmConstants.Role.RECEIVER.ordinal) {
                         Column(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalAlignment = Alignment.CenterHorizontally,
