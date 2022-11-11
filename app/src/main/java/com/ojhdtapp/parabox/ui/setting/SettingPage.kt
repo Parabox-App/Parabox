@@ -242,7 +242,7 @@ fun SettingPage(
                             )
                         }
                     }
-                    if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
+                    if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact || sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) {
 //                        item(key = "extension_status") {
 //                            AnimatedVisibility(
 //                                visible = pluginList.isNotEmpty(),

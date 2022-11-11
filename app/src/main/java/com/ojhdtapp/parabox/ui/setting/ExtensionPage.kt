@@ -103,6 +103,21 @@ fun ExtensionPage(
             contentPadding = it,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            item {
+                Column(modifier = Modifier.padding(24.dp, 16.dp)) {
+                    Icon(
+                        imageVector = Icons.Outlined.Info,
+                        contentDescription = "info",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "扩展更新后，均需手动重置扩展连接。",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
             item() {
                 if (pluginList.isEmpty()) {
                     if (fcmEnabled.value && fcmRole.value == FcmConstants.Role.RECEIVER.ordinal) {

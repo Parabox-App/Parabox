@@ -139,7 +139,7 @@ dependencies {
     implementation "commons-io:commons-io:2.7"
 
     // Development Kit
-    implementation 'com.ojhdt:parabox-development-kit:1.0.12-SNAPSHOT'
+    implementation 'com.ojhdt:parabox-development-kit:1.0.5'
 
     // Paging
     def paging_version = "3.2.0-alpha03"
