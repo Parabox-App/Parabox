@@ -665,6 +665,7 @@ fun SwipeableContact(
     bottomRadius: Dp,
     extraSpace: Dp? = 0.dp,
     enabled: Boolean,
+    onVibrate: () -> Unit,
     content: @Composable () -> Unit
 ) = BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
     val extraSpaceInt = with(LocalDensity.current) {
@@ -681,11 +682,15 @@ fun SwipeableContact(
             .swipeable(
                 state = state,
                 anchors = anchors,
-                thresholds = { _, _ -> androidx.compose.material.FractionalThreshold(0.5f) },
+                thresholds = { _, _ -> androidx.compose.material.FractionalThreshold(0.3f) },
                 orientation = Orientation.Horizontal,
                 enabled = enabled
             )
     ) {
+        LaunchedEffect(key1 = state.targetValue) {
+            if (state.progress.fraction != 1f && state.progress.fraction != 0f)
+                onVibrate()
+        }
         Row(
             modifier = Modifier
                 .fillMaxSize()

@@ -15,8 +15,8 @@ android {
         applicationId "com.ojhdtapp.parabox"
         minSdk 26
         targetSdk 33
-        versionCode 7
-        versionName "1.0.5-beta"
+        versionCode 8
+        versionName "1.0.6-beta"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -161,8 +161,8 @@ dependencies {
 
     // Compose Destinations
 //    implementation 'io.github.raamcosta.compose-destinations:core:1.5.6-beta'
-    implementation 'io.github.raamcosta.compose-destinations:animations-core:1.7.15-beta'
-    ksp 'io.github.raamcosta.compose-destinations:ksp:1.7.15-beta'
+    implementation 'io.github.raamcosta.compose-destinations:animations-core:1.7.25-beta'
+    ksp 'io.github.raamcosta.compose-destinations:ksp:1.7.25-beta'
 
     // DataStore
     implementation "androidx.datastore:datastore-preferences:1.0.0"
@@ -176,7 +176,7 @@ dependencies {
     implementation "com.google.accompanist:accompanist-placeholder-material:$acc_version"
 
     // Navigation Compose
-    def nav_version = "2.5.3"
+    def nav_version = "2.6.0-alpha04"
     implementation "androidx.navigation:navigation-compose:$nav_version"
 
     // m3

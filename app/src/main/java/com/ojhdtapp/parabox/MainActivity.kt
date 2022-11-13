@@ -1315,6 +1315,9 @@ class MainActivity : AppCompatActivity() {
                 startService(pluginServiceBinderIntent)
                 bindService(pluginServiceBinderIntent, pluginServiceConnection, BIND_AUTO_CREATE)
 
+                pluginService?.also {
+                    it.reset()
+                }
             }
         }
         super.onStart()
