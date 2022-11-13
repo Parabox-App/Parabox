@@ -298,7 +298,7 @@ fun EditActionDialog(
                                                                         FileUtil.getUriByCopyingFileToPath(
                                                                             context,
                                                                             context.getExternalFilesDir("chat")!!,
-                                                                            "Avatar_${name}.png",
+                                                                            "Avatar_${name.replace("\\s+", "_")}.png",
                                                                             it1
                                                                         )?.toString()
                                                                     }
