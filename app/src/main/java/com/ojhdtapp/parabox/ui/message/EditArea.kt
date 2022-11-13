@@ -11,6 +11,7 @@ import android.provider.MediaStore
 import android.util.Log
 import android.view.MotionEvent
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.foundation.*
@@ -158,31 +159,45 @@ fun EditArea(
         rememberPermissionState(permission = android.Manifest.permission.RECORD_AUDIO)
 
     val imagePickerLauncher =
-        rememberLauncherForActivityResult(contract = ActivityResultContracts.StartActivityForResult()) {
-            if (it.resultCode == Activity.RESULT_OK) {
-                it.data?.let {
-                    var i = 0
-                    while (i < it.clipData!!.itemCount) {
-                        it.clipData!!.getItemAt(i).also {
-                            if (!gallerySelected.contains(it.uri)) {
-                                gallerySelected.add(it.uri)
-                            }
-                            Log.d("parabox", it.uri.toString())
-                        }
-                        i++
+        rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(10)) { uris ->
+            // Callback is invoked after the user selects media items or closes the
+            // photo picker.
+            if (uris.isNotEmpty()) {
+                uris.forEach {
+                    if (!gallerySelected.contains(it)) {
+                        gallerySelected.add(it)
                     }
                 }
+            } else {
+                Log.d("PhotoPicker", "No media selected")
             }
         }
-    val imagePickerSLauncher =
-        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetMultipleContents()) {
-            it.forEach {
-                if (!gallerySelected.contains(it)) {
-                    gallerySelected.add(it)
-                }
-                Log.d("parabox", it.toString())
-            }
-        }
+//    val imagePickerLauncher =
+//        rememberLauncherForActivityResult(contract = ActivityResultContracts.StartActivityForResult()) {
+//            if (it.resultCode == Activity.RESULT_OK) {
+//                it.data?.let {
+//                    var i = 0
+//                    while (i < it.clipData!!.itemCount) {
+//                        it.clipData!!.getItemAt(i).also {
+//                            if (!gallerySelected.contains(it.uri)) {
+//                                gallerySelected.add(it.uri)
+//                            }
+//                            Log.d("parabox", it.uri.toString())
+//                        }
+//                        i++
+//                    }
+//                }
+//            }
+//        }
+//    val imagePickerSLauncher =
+//        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetMultipleContents()) {
+//            it.forEach {
+//                if (!gallerySelected.contains(it)) {
+//                    gallerySelected.add(it)
+//                }
+//                Log.d("parabox", it.toString())
+//            }
+//        }
     val memePickerLauncher =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.StartActivityForResult()) {
             if (it.resultCode == Activity.RESULT_OK) {
@@ -1070,22 +1085,26 @@ fun EditArea(
                                             modifier = Modifier
                                                 .fillMaxSize()
                                                 .clickable {
-                                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                                        val maxNumPhotosAndVideos = 10
-                                                        Intent(MediaStore.ACTION_PICK_IMAGES)
-                                                            .apply {
-                                                                type = "image/*"
-                                                                putExtra(
-                                                                    MediaStore.EXTRA_PICK_IMAGES_MAX,
-                                                                    maxNumPhotosAndVideos
-                                                                )
-                                                            }
-                                                            .also {
-                                                                imagePickerLauncher.launch(it)
-                                                            }
-                                                    } else {
-                                                        imagePickerSLauncher.launch("image/*")
-                                                    }
+                                                    imagePickerLauncher.launch(
+                                                        PickVisualMediaRequest(
+                                                        ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                                    )
+//                                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+//                                                        val maxNumPhotosAndVideos = 10
+//                                                        Intent(MediaStore.ACTION_PICK_IMAGES)
+//                                                            .apply {
+//                                                                type = "image/*"
+//                                                                putExtra(
+//                                                                    MediaStore.EXTRA_PICK_IMAGES_MAX,
+//                                                                    maxNumPhotosAndVideos
+//                                                                )
+//                                                            }
+//                                                            .also {
+//                                                                imagePickerLauncher.launch(it)
+//                                                            }
+//                                                    } else {
+//                                                        imagePickerSLauncher.launch("image/*")
+//                                                    }
                                                 },
                                             contentAlignment = Alignment.Center
                                         ) {
@@ -1297,22 +1316,24 @@ fun EditArea(
                                             .fillMaxSize()
                                             .clickable {
                                                 if (isBottomSheetExpand) {
-                                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                                        val maxNumPhotosAndVideos = 10
-                                                        Intent(MediaStore.ACTION_PICK_IMAGES)
-                                                            .apply {
-                                                                type = "image/*"
-                                                                putExtra(
-                                                                    MediaStore.EXTRA_PICK_IMAGES_MAX,
-                                                                    maxNumPhotosAndVideos
-                                                                )
-                                                            }
-                                                            .also {
-                                                                imagePickerLauncher.launch(it)
-                                                            }
-                                                    } else {
-                                                        imagePickerSLauncher.launch("image/*")
-                                                    }
+                                                    imagePickerLauncher.launch(PickVisualMediaRequest(
+                                                        ActivityResultContracts.PickVisualMedia.ImageOnly))
+//                                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+//                                                        val maxNumPhotosAndVideos = 10
+//                                                        Intent(MediaStore.ACTION_PICK_IMAGES)
+//                                                            .apply {
+//                                                                type = "image/*"
+//                                                                putExtra(
+//                                                                    MediaStore.EXTRA_PICK_IMAGES_MAX,
+//                                                                    maxNumPhotosAndVideos
+//                                                                )
+//                                                            }
+//                                                            .also {
+//                                                                imagePickerLauncher.launch(it)
+//                                                            }
+//                                                    } else {
+//                                                        imagePickerSLauncher.launch("image/*")
+//                                                    }
                                                 }
                                             },
                                         horizontalAlignment = Alignment.CenterHorizontally,

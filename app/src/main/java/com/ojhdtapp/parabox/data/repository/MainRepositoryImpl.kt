@@ -356,6 +356,7 @@ class MainRepositoryImpl @Inject constructor(
                 id,
                 profile.name,
                 profile.avatar,
+                profile.avatarUri,
                 tags
             )
         )

@@ -1,6 +1,15 @@
 package com.ojhdtapp.parabox.ui.message
 
+import android.app.Activity
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
+import android.util.Log
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -50,6 +59,7 @@ import androidx.compose.ui.text.input.ImeAction
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.FormUtil
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.service.PluginService
@@ -67,6 +77,7 @@ fun GroupActionDialog(
     onDismiss: () -> Unit,
     onConfirm: (name: String, pluginConnections: List<PluginConnection>, senderId: Long, avatar: String?, avatarUri: String?, tags: List<String>) -> Unit
 ) {
+    val context = LocalContext.current
     if (showDialog) {
         var name by remember {
             mutableStateOf("")
@@ -94,12 +105,17 @@ fun GroupActionDialog(
         }
 
         var selectedAvatar by remember {
-            mutableStateOf(state.resource?.avatar?.firstOrNull())
+            mutableStateOf<String?>(null)
+        }
+
+        var selectedLocalAvatar by remember {
+            mutableStateOf<Uri?>(null)
         }
 
         var selectedTags = remember {
             mutableStateListOf<String>()
         }
+
         Dialog(
             onDismissRequest = {
                 name = ""
@@ -129,7 +145,8 @@ fun GroupActionDialog(
                 tonalElevation = 2.dp
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    TopAppBar(title = { Text(text = "编组会话") },
+                    TopAppBar(
+                        title = { Text(text = "编组会话") },
                         navigationIcon = {
                             IconButton(
                                 onClick = {
@@ -158,7 +175,14 @@ fun GroupActionDialog(
                                             selectedPluginConnection.toList(),
                                             selectedSenderId!!,
                                             selectedAvatar,
-                                            null,
+                                            selectedLocalAvatar?.let { it1 ->
+                                                FileUtil.getUriByCopyingFileToPath(
+                                                    context,
+                                                    context.getExternalFilesDir("chat")!!,
+                                                    "Avatar_${name}.png",
+                                                    it1
+                                                )?.toString()
+                                            },
                                             selectedTags.toList()
                                         )
                                     }
@@ -171,7 +195,9 @@ fun GroupActionDialog(
                         scrollBehavior = scrollBehavior,
                         colors = TopAppBarDefaults.smallTopAppBarColors(
                             containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),
-                            scrolledContainerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(5.dp)
+                            scrolledContainerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(
+                                5.dp
+                            )
                         )
                     )
                     when (state.state) {
@@ -202,6 +228,7 @@ fun GroupActionDialog(
                             pluginConnectionNotSelectedError = pluginConnectionNotSelectedError,
                             selectedSenderId = selectedSenderId,
                             selectedAvatar = selectedAvatar,
+                            selectedLocalAvatar = selectedLocalAvatar,
                             selectedTags = selectedTags,
                             onNameChange = {
                                 name = it
@@ -211,7 +238,14 @@ fun GroupActionDialog(
                             onSelectedPluginConnectionAdd = { selectedPluginConnection.add(it) },
                             onSelectedPluginConnectionRemove = { selectedPluginConnection.remove(it) },
                             onSelectedSenderIdChange = { selectedSenderId = it },
-                            onSelectedAvatarChange = { selectedAvatar = it },
+                            onSelectedAvatarChange = {
+                                selectedAvatar = it
+                                selectedLocalAvatar = null
+                            },
+                            onSelectedLocalAvatarChange = {
+                                selectedAvatar = null
+                                selectedLocalAvatar = it
+                            }
                         )
                     }
                 }
@@ -233,13 +267,15 @@ fun GroupEditForm(
     pluginConnectionNotSelectedError: Boolean,
     selectedSenderId: Long?,
     selectedAvatar: String?,
+    selectedLocalAvatar: Uri?,
     selectedTags: SnapshotStateList<String>,
     onNameChange: (value: String) -> Unit,
     onAvatarSelectorTrigger: (value: Boolean) -> Unit,
     onSelectedPluginConnectionAdd: (target: PluginConnection) -> Unit,
     onSelectedPluginConnectionRemove: (target: PluginConnection) -> Unit,
     onSelectedSenderIdChange: (value: Long) -> Unit,
-    onSelectedAvatarChange: (value: String?) -> Unit
+    onSelectedAvatarChange: (value: String) -> Unit,
+    onSelectedLocalAvatarChange: (value: Uri) -> Unit
 ) {
 
     val focusRequester = remember { FocusRequester() }
@@ -253,6 +289,18 @@ fun GroupEditForm(
     var expanded by remember {
         mutableStateOf(false)
     }
+    val imagePickerLauncher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.PickVisualMedia()) {
+            if (it != null) {
+                onSelectedLocalAvatarChange(it)
+            }
+        }
+//    val imagePickerSLauncher =
+//        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) {
+//            if (it != null) {
+//                onSelectedLocalAvatarChange(it)
+//            }
+//        }
     LazyColumn(
         modifier = Modifier
             .padding(paddingValues)
@@ -262,7 +310,8 @@ fun GroupEditForm(
         item {
             Row(
                 modifier = Modifier.padding(top = 16.dp),
-                verticalAlignment = Alignment.CenterVertically) {
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Box(
                     modifier = Modifier
                         .size(48.dp)
@@ -275,7 +324,7 @@ fun GroupEditForm(
                 ) {
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
-                            .data(selectedAvatar)
+                            .data(selectedLocalAvatar ?: selectedAvatar)
                             .crossfade(true)
                             .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
                             .build(),
@@ -287,7 +336,10 @@ fun GroupEditForm(
                     )
                 }
                 Spacer(modifier = Modifier.width(16.dp))
-                ExposedDropdownMenuBox(modifier = Modifier.weight(1f),expanded = expanded, onExpandedChange = {expanded = !expanded}) {
+                ExposedDropdownMenuBox(
+                    modifier = Modifier.weight(1f),
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded }) {
                     OutlinedTextField(
                         modifier = Modifier
                             .focusRequester(focusRequester),
@@ -317,49 +369,6 @@ fun GroupEditForm(
                         }
                     }
                 }
-//                OutlinedTextField(
-//                    modifier = Modifier
-//                        .focusRequester(focusRequester),
-//                    value = name, onValueChange = {
-//                        onNameChange(it)
-//                    },
-//                    label = { Text(text = "会话名称") },
-//                    isError = nameError,
-//                    keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-//                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-//                    singleLine = true,
-//                    trailingIcon = {
-//                        Box(
-//                            modifier = Modifier
-//                                .wrapContentSize(Alignment.TopEnd)
-//                        ) {
-//                            IconButton(onClick = { expanded = !expanded }) {
-//                                Crossfade(targetState = expanded) {
-//                                    if (it) {
-//                                        Icon(
-//                                            imageVector = Icons.Outlined.ExpandLess,
-//                                            contentDescription = "Shrink"
-//                                        )
-//                                    } else {
-//                                        Icon(
-//                                            imageVector = Icons.Outlined.ArrowDropDown,
-//                                            contentDescription = "Expand"
-//                                        )
-//                                    }
-//                                }
-//                            }
-//                            DropdownMenu(
-//                                expanded = expanded,
-//                                onDismissRequest = { expanded = false }) {
-//                                resource.name.forEach {
-//                                    DropdownMenuItem(text = { Text(text = it) }, onClick = {
-//                                        onNameChange(it)
-//                                        expanded = false
-//                                    })
-//                                }
-//                            }
-//                        }
-//                    })
             }
             AnimatedVisibility(
                 visible = nameError,
@@ -406,12 +415,34 @@ fun GroupEditForm(
                             )
                             Spacer(modifier = Modifier.width(16.dp))
                         }
+                        resource.avatarUri.forEach {
+                            AsyncImage(
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(it)
+                                    .crossfade(true)
+                                    .build(),
+                                contentDescription = "Avatar Selection",
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(CircleShape)
+                                    .clickable {
+                                        onAvatarSelectorTrigger(false)
+                                        onSelectedLocalAvatarChange(it)
+                                    }
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                        }
                         Box(
                             modifier = Modifier
                                 .size(48.dp)
                                 .clip(CircleShape)
                                 .background(MaterialTheme.colorScheme.primaryContainer)
                                 .clickable {
+                                    imagePickerLauncher.launch(
+                                        PickVisualMediaRequest(
+                                            ActivityResultContracts.PickVisualMedia.ImageOnly
+                                        )
+                                    )
                                 }, contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -571,7 +602,7 @@ fun GroupEditForm(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     resource.pluginConnections.forEach { conn ->
-                        val connectionName by remember{
+                        val connectionName by remember {
                             mutableStateOf(PluginService.queryPluginConnectionName(conn.connectionType))
                         }
                         Row(modifier = Modifier
@@ -629,7 +660,7 @@ fun GroupEditForm(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     resource.pluginConnections.forEach { conn ->
-                        val connectionName by remember{
+                        val connectionName by remember {
                             mutableStateOf(PluginService.queryPluginConnectionName(conn.connectionType))
                         }
                         Row(

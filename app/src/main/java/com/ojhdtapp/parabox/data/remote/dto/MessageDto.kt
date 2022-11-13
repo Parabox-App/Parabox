@@ -112,7 +112,7 @@ fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.Profile.toProfile(context: Con
         FileUtil.getUriByCopyingFileToPath(
             context,
             context.getExternalFilesDir("chat")!!,
-            "Image_${this.name}.png",
+            "Avatar_${this.name}.png",
             it
         )?.toString()
     }, this.id)

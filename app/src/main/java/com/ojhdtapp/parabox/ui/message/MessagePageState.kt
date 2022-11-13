@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.message
 
+import android.net.Uri
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.MaterialTheme
 import com.ojhdtapp.parabox.domain.model.Contact
@@ -62,7 +63,8 @@ sealed class ContactReadFilterState(val contactCheck: (contact: Contact) -> Bool
 
 data class GroupEditResource(
     val name: List<String>,
-    val avatar: List<String?>,
+    val avatar: List<String>,
+    val avatarUri: List<Uri>,
     val pluginConnections: List<PluginConnection>
 )
 
