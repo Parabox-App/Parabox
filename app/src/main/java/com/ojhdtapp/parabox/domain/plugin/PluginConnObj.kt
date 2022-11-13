@@ -234,7 +234,12 @@ class PluginConnObj(
         }
     }
 
-    private fun coreSendCommand(timestamp: Long, key: String, command: Int, extra: Bundle = Bundle()) {
+    private fun coreSendCommand(
+        timestamp: Long,
+        key: String,
+        command: Int,
+        extra: Bundle = Bundle()
+    ) {
         if (!isConnected) {
             deferredMap[key]?.complete(
                 ParaboxResult.Fail(
@@ -394,6 +399,8 @@ class PluginConnObj(
                             e.printStackTrace()
                         } catch (e: ClassNotFoundException) {
                             e.printStackTrace()
+                        } catch (e: NullPointerException) {
+                            e.printStackTrace()
                         }
                     }
                 }
@@ -424,30 +431,40 @@ class PluginConnObj(
                         }
                         Log.d("parabox", "try complete second deferred")
                         deferredMap[metadata.key]?.complete(result)
-                    } catch (e: NullPointerException) {
+                    } catch (e: RemoteException) {
                         e.printStackTrace()
                     } catch (e: ClassNotFoundException) {
+                        e.printStackTrace()
+                    } catch (e: NullPointerException) {
                         e.printStackTrace()
                     }
                 }
 
                 ParaboxKey.TYPE_NOTIFICATION -> {
-                    val timestamp = obj.getLong("timestamp")
-                    when (msg.what) {
-                        ParaboxKey.NOTIFICATION_STATE_UPDATE -> {
-                            val state = obj.getInt("state", ParaboxKey.STATE_ERROR)
-                            val message = obj.getString("message", "")
-                            Log.d("parabox", "service state changed:${state}")
-                            runningStatus = when (state) {
-                                ParaboxKey.STATE_ERROR -> AppModel.RUNNING_STATUS_ERROR
-                                ParaboxKey.STATE_LOADING -> AppModel.RUNNING_STATUS_CHECKING
-                                ParaboxKey.STATE_PAUSE -> AppModel.RUNNING_STATUS_CHECKING
-                                ParaboxKey.STATE_STOP -> AppModel.RUNNING_STATUS_DISABLED
-                                ParaboxKey.STATE_RUNNING -> AppModel.RUNNING_STATUS_RUNNING
-                                else -> AppModel.RUNNING_STATUS_DISABLED
+                    try {
+                        val timestamp = obj.getLong("timestamp")
+                        when (msg.what) {
+                            ParaboxKey.NOTIFICATION_STATE_UPDATE -> {
+                                val state = obj.getInt("state", ParaboxKey.STATE_ERROR)
+                                val message = obj.getString("message", "")
+                                Log.d("parabox", "service state changed:${state}")
+                                runningStatus = when (state) {
+                                    ParaboxKey.STATE_ERROR -> AppModel.RUNNING_STATUS_ERROR
+                                    ParaboxKey.STATE_LOADING -> AppModel.RUNNING_STATUS_CHECKING
+                                    ParaboxKey.STATE_PAUSE -> AppModel.RUNNING_STATUS_CHECKING
+                                    ParaboxKey.STATE_STOP -> AppModel.RUNNING_STATUS_DISABLED
+                                    ParaboxKey.STATE_RUNNING -> AppModel.RUNNING_STATUS_RUNNING
+                                    else -> AppModel.RUNNING_STATUS_DISABLED
+                                }
+                                onRunningStatusChange(connectionType, runningStatus)
                             }
-                            onRunningStatusChange(connectionType, runningStatus)
                         }
+                    } catch (e: RemoteException) {
+                        e.printStackTrace()
+                    } catch (e: ClassNotFoundException) {
+                        e.printStackTrace()
+                    } catch (e: NullPointerException) {
+                        e.printStackTrace()
                     }
                 }
             }

@@ -14,7 +14,7 @@ data class MessageEntity(
     val contentString: String,
     @Embedded val profile: Profile,
     val timestamp: Long,
-    @PrimaryKey val messageId: Long,
+    @PrimaryKey(autoGenerate = true) val messageId: Long,
     val sentByMe: Boolean,
     val verified : Boolean,
     val sendType: Int? = null,

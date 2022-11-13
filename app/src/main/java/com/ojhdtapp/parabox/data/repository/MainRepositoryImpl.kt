@@ -54,7 +54,7 @@ class MainRepositoryImpl @Inject constructor(
 //                    dto.toContactEntityWithUnreadMessagesNumUpdate(
 //                        database.contactDao
 //                    )
-                    dto.toContactEntity()
+                    dto.toContactEntity(context)
                 )
             }
             val pluginConnectionDeferred = async<Long> {
@@ -89,7 +89,7 @@ class MainRepositoryImpl @Inject constructor(
             database.contactDao.getPluginConnectionWithContacts(dto.pluginConnection.objectId).let {
                 database.contactDao.updateContact(it.contactList.map {
                     it.copy(
-                        profile = if (it.senderId == it.contactId) dto.subjectProfile.toProfile() else it.profile,
+                        profile = if (it.senderId == it.contactId) dto.subjectProfile.toProfile(context) else it.profile,
                         latestMessage =
                         if (it.latestMessage != null && it.latestMessage.timestamp < dto.timestamp) {
                             LatestMessage(
@@ -134,7 +134,7 @@ class MainRepositoryImpl @Inject constructor(
                     if ((allowForegroundNotification || MainActivity.inBackground) && it?.enableNotifications == true && !it.isArchived) {
                         notificationUtil.sendNewMessageNotification(
                             message = dto.toMessage(context, messageIdDeferred.await()),
-                            contact = dto.toContact(),
+                            contact = dto.toContact(context),
                             channelId = dto.pluginConnection.connectionType.toString()
                         )
                     }
@@ -152,7 +152,7 @@ class MainRepositoryImpl @Inject constructor(
                 if (allowForegroundNotification || MainActivity.inBackground) {
                     notificationUtil.sendNewMessageNotification(
                         message = dto.toMessage(context, messageIdDeferred.await()),
-                        contact = dto.toContact(),
+                        contact = dto.toContact(context),
                         channelId = dto.pluginConnection.connectionType.toString()
                     )
                 }
@@ -356,6 +356,7 @@ class MainRepositoryImpl @Inject constructor(
                 id,
                 profile.name,
                 profile.avatar,
+                profile.avatarUri,
                 tags
             )
         )

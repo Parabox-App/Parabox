@@ -36,7 +36,8 @@ class ReceiveMessageDtoJsonDeserializer : JsonDeserializer<ReceiveMessageDto> {
                 Profile(
                     profileObj.get("name").asString,
                     profileObj.get("avatar").asString,
-                    profileObj.get("id").asLong
+                    profileObj.get("id").asLong,
+                    null
                 )
             } else null
             val subjectProfile = if (it.has("subjectProfile")) {
@@ -44,7 +45,8 @@ class ReceiveMessageDtoJsonDeserializer : JsonDeserializer<ReceiveMessageDto> {
                 Profile(
                     profileObj.get("name").asString,
                     profileObj.get("avatar").asString,
-                    profileObj.get("id").asLong
+                    profileObj.get("id").asLong,
+                    null
                 )
             } else null
             val timestamp = it.get("timestamp").asLong

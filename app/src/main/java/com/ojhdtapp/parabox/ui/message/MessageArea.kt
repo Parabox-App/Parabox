@@ -458,6 +458,7 @@ fun RowScope.MessageArea(
                         bottomRadius = bgBottomRadius,
                         extraSpace = 16.dp,
                         enabled = viewModel.searchBarActivateState.value == SearchAppBar.NONE,
+                        onVibrate = { onEvent(ActivityEvent.Vibrate) }
                     ) {
                         ContactItem(
                             contact = item,
@@ -555,7 +556,8 @@ fun RowScope.MessageArea(
                             .animateContentSize(),
                         state = swipeableState,
                         topRadius = 28.dp, bottomRadius = 28.dp,
-                        enabled = viewModel.searchBarActivateState.value == SearchAppBar.NONE
+                        enabled = viewModel.searchBarActivateState.value == SearchAppBar.NONE,
+                        onVibrate = { onEvent(ActivityEvent.Vibrate) },
                     ) {
                         ContactItem(
                             contact = null,

@@ -421,7 +421,8 @@ fun FCMPage(
             item {
                 SwitchPreference(title = "使用自定义服务器", checked = customUrlEnabled.value, onCheckedChange = {
                     viewModel.setEnableFcmCustomUrl(it)
-                })
+                },
+                    enabled = enabled.value)
             }
             item {
                 AnimatedVisibility(visible = customUrlEnabled.value, enter = expandVertically(), exit = shrinkVertically()) {
@@ -519,7 +520,7 @@ fun FCMPage(
             item {
                 Crossfade(targetState = selectableService.size <= 1) {
                     if(it){
-                        NormalPreference(title = "对象存储服务", subtitle = "暂无可用，请新增云端服务") {
+                        NormalPreference(title = "对象存储服务", subtitle = "暂无可用，请新增云端服务",enabled = enabled.value) {
                             if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
                                 mainNavController.navigate(CloudPageDestination)
                             } else {

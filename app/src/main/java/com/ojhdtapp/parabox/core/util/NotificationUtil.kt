@@ -126,16 +126,33 @@ class NotificationUtil(
         var shortcuts = contacts.map {
             val icon = it.profile.avatar?.let { url ->
                 withContext(Dispatchers.IO) {
-                    val loader = ImageLoader(context)
-                    val request = ImageRequest.Builder(context)
-                        .data(url)
-                        .allowHardware(false) // Disable hardware bitmaps.
-                        .build()
-                    val result = (loader.execute(request) as SuccessResult).drawable
-                    val bitmap = (result as BitmapDrawable).bitmap
-                    Icon.createWithAdaptiveBitmap(bitmap)
+                    try {
+                        val loader = ImageLoader(context)
+                        val request = ImageRequest.Builder(context)
+                            .data(url)
+                            .allowHardware(false) // Disable hardware bitmaps.
+                            .build()
+                        val result = (loader.execute(request) as SuccessResult).drawable
+                        val bitmap = (result as BitmapDrawable).bitmap
+                        Icon.createWithAdaptiveBitmap(bitmap)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        null
+                    }
                 }
-            }
+            } ?: it.profile.avatarUri?.let { uri ->
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+                    Icon.createWithAdaptiveBitmapContentUri(uri)
+                else Icon.createWithAdaptiveBitmap(
+                    FileUtil.getBitmapFromUri(
+                        context,
+                        Uri.parse(uri)
+                    )
+                )
+            } ?: Icon.createWithResource(
+                context,
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar
+            )
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 ShortcutInfo.Builder(context, it.contactId.toString())
                     .setLocusId(LocusId(it.contactId.toString()))
@@ -166,16 +183,7 @@ class NotificationUtil(
                     .setIntent(Intent(context, MainActivity::class.java).apply {
                         action = Intent.ACTION_VIEW
                         data = Uri.parse("parabox://contact/${it.contactId}")
-                    }).apply {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                            setPerson(
-                                Person.Builder()
-                                    .setName(it.profile.name)
-                                    .setIcon(icon)
-                                    .build()
-                            )
-                        }
-                    }
+                    })
                     .build()
             }
         }

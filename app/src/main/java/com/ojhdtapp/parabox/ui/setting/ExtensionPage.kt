@@ -97,13 +97,30 @@ fun ExtensionPage(
         val pluginList by mainSharedViewModel.pluginListStateFlow.collectAsState()
         val fcmRole =
             viewModel.fcmRoleFlow.collectAsState(initial = FcmConstants.Role.SENDER.ordinal)
+        val fcmEnabled =
+            viewModel.enableFCMStateFlow.collectAsState()
         LazyColumn(
             contentPadding = it,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            item {
+                Column(modifier = Modifier.padding(24.dp, 16.dp)) {
+                    Icon(
+                        imageVector = Icons.Outlined.Info,
+                        contentDescription = "info",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "扩展更新后，均需手动重置扩展连接。",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
             item() {
                 if (pluginList.isEmpty()) {
-                    if (fcmRole.value == FcmConstants.Role.RECEIVER.ordinal) {
+                    if (fcmEnabled.value && fcmRole.value == FcmConstants.Role.RECEIVER.ordinal) {
                         Column(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -213,24 +230,34 @@ fun ExtensionCard(
                     model = appModel.icon,
                     contentDescription = "icon",
                     modifier = Modifier
-                        .size(24.dp)
+                        .size(48.dp)
                         .clip(
                             CircleShape
                         )
                 )
                 Spacer(modifier = Modifier.width(16.dp))
-                Text(
-                    text = appModel.name,
-                    modifier = Modifier.weight(1f),
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.labelLarge,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = appModel.name,
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "版本 ${appModel.version} • 作者 ${appModel.author}",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1
+                    )
+                }
+
                 when (appModel.runningStatus) {
                     AppModel.RUNNING_STATUS_DISABLED -> Icon(
-                        imageVector = Icons.Outlined.Block,
-                        contentDescription = "disabled"
+                        imageVector = Icons.Outlined.HighlightOff,
+                        contentDescription = "disabled",
+                        tint = MaterialTheme.colorScheme.primary
                     )
 
                     AppModel.RUNNING_STATUS_ERROR -> Icon(
@@ -257,14 +284,7 @@ fun ExtensionCard(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     overflow = TextOverflow.Ellipsis,
-                    maxLines = 2
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "版本 ${appModel.version} • 作者 ${appModel.author}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    maxLines = 1
+                    maxLines = 3
                 )
             }
             AnimatedVisibility(visible = expanded) {

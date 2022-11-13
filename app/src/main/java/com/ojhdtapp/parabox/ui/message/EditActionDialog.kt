@@ -1,9 +1,12 @@
 package com.ojhdtapp.parabox.ui.message
 
+import android.net.Uri
 import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
+import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -37,8 +40,10 @@ import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.FormUtil
 import com.ojhdtapp.parabox.core.util.toDescriptiveTime
+import com.ojhdtapp.parabox.data.remote.dto.toProfile
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Profile
 import com.ojhdtapp.parabox.ui.util.HashTagEditor
@@ -46,7 +51,9 @@ import com.ojhdtapp.parabox.ui.util.NormalPreference
 import com.ojhdtapp.parabox.ui.util.SwitchPreference
 import com.ojhdtapp.parabox.ui.util.clearFocusOnKeyboardDismiss
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class,
+    ExperimentalFoundationApi::class
+)
 @Composable
 fun EditActionDialog(
     modifier: Modifier = Modifier,
@@ -57,6 +64,7 @@ fun EditActionDialog(
     onConfirm: () -> Unit,
     onEvent: (event: EditActionDialogEvent) -> Unit
 ) {
+    val context = LocalContext.current
     if (showDialog) {
         val isCompact = sizeClass.widthSizeClass == WindowWidthSizeClass.Compact
         var name by remember {
@@ -73,6 +81,17 @@ fun EditActionDialog(
         var shouldShowAvatarSelector by remember {
             mutableStateOf(false)
         }
+
+        var selectedLocalAvatar by remember(contact){
+            mutableStateOf<Uri?>(contact?.profile?.avatarUri?.let { Uri.parse(it) })
+        }
+
+        val imagePickerLauncher =
+            rememberLauncherForActivityResult(contract = ActivityResultContracts.PickVisualMedia()) {
+                if (it != null) {
+                    selectedLocalAvatar = it
+                }
+            }
 
         Dialog(
             onDismissRequest = {
@@ -141,25 +160,6 @@ fun EditActionDialog(
                                 contentDescription = "background",
                                 contentScale = ContentScale.Crop
                             )
-//                            SmallTopAppBar(
-//                                title = { Text(text = "会话信息") },
-//                                navigationIcon = {
-//                                    IconButton(
-//                                        onClick = {
-//                                            name = ""
-//                                            onDismiss()
-//                                        }
-//                                    ) {
-//                                        Icon(
-//                                            imageVector = Icons.Outlined.Close,
-//                                            contentDescription = "close"
-//                                        )
-//                                    }
-//                                },
-//                                colors = smallTopAppBarColors(
-//                                    containerColor = Color.Transparent
-//                                )
-//                            )
                             Box(
                                 modifier = Modifier
                                     .align(Alignment.BottomStart)
@@ -170,12 +170,29 @@ fun EditActionDialog(
                                     modifier = Modifier
                                         .size(68.dp)
                                         .clip(CircleShape)
-                                        .background(MaterialTheme.colorScheme.surface),
+                                        .background(MaterialTheme.colorScheme.surface)
+                                        .combinedClickable(
+                                            enabled = true,
+                                            onLongClick = {
+                                                if(isEditing) selectedLocalAvatar = null
+                                            },
+                                            onClick = {
+                                                if(isEditing){
+                                                    imagePickerLauncher.launch(
+                                                        PickVisualMediaRequest(
+                                                            ActivityResultContracts.PickVisualMedia.ImageOnly
+                                                        )
+                                                    )
+                                                }
+                                            }
+                                        )
+                                    ,
                                     contentAlignment = Alignment.Center
                                 ) {
+
                                     AsyncImage(
                                         model = ImageRequest.Builder(LocalContext.current)
-                                            .data(contact?.profile?.avatar ?: if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar)
+                                            .data(selectedLocalAvatar ?: contact?.profile?.avatarUri ?: contact?.profile?.avatar ?: if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar)
                                             .crossfade(true)
                                             .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
                                             .build(),
@@ -185,13 +202,11 @@ fun EditActionDialog(
                                             .size(64.dp)
                                             .clip(CircleShape)
                                     )
-//                                    Image(
-//                                        modifier = Modifier
-//                                            .size(64.dp)
-//                                            .clip(CircleShape),
-//                                        painter = painterResource(id = R.drawable.avatar),
-//                                        contentDescription = "avatar"
-//                                    )
+                                    Crossfade(targetState = isEditing) {
+                                        if(it){
+                                            Icon(imageVector = Icons.Outlined.Edit, contentDescription = "edit", tint = MaterialTheme.colorScheme.primary)
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -277,11 +292,16 @@ fun EditActionDialog(
                                                         onEvent(
                                                             EditActionDialogEvent.ProfileAndTagUpdate(
                                                                 contactId = it.contactId,
-                                                                profile = Profile(
+                                                                profile = contact.profile.copy(
                                                                     name = name,
-                                                                    avatar = contact.profile.avatar,
-                                                                    avatarUri = null,
-                                                                    id = contact.profile.id,
+                                                                    avatarUri = selectedLocalAvatar?.let { it1 ->
+                                                                        FileUtil.getUriByCopyingFileToPath(
+                                                                            context,
+                                                                            context.getExternalFilesDir("chat")!!,
+                                                                            "Avatar_${name.replace("\\s+", "_")}.png",
+                                                                            it1
+                                                                        )?.toString()
+                                                                    }
                                                                 ),
                                                                 tags = hashTagList.toList()
                                                             )

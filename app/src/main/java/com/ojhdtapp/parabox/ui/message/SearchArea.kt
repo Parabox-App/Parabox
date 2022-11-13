@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.message
 
+import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -52,6 +53,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.splitKeeping
 import com.ojhdtapp.parabox.domain.model.message_content.getContentString
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
@@ -146,7 +148,10 @@ fun RowScope.SearchArea(
                                 ) {
                                     AsyncImage(
                                         model = ImageRequest.Builder(LocalContext.current)
-                                            .data(it.profile.avatar)
+                                            .data(
+                                                it.profile.avatarUri ?: it.profile.avatar
+                                                ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar
+                                            )
                                             .crossfade(true)
                                             .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
                                             .build(),
@@ -196,7 +201,10 @@ fun RowScope.SearchArea(
                         ) {
                             AsyncImage(
                                 model = ImageRequest.Builder(LocalContext.current)
-                                    .data(it.profile.avatar)
+                                    .data(
+                                        it.profile.avatarUri ?: it.profile.avatar
+                                        ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar
+                                    )
                                     .crossfade(true)
                                     .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
                                     .build(),
@@ -276,7 +284,10 @@ fun RowScope.SearchArea(
                             ) {
                                 AsyncImage(
                                     model = ImageRequest.Builder(LocalContext.current)
-                                        .data(cm.contact.profile.avatar)
+                                        .data(
+                                            cm.contact.profile.avatarUri ?: cm.contact.profile.avatar
+                                                ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar
+                                        )
                                         .crossfade(true)
                                         .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
                                         .build(),
@@ -327,7 +338,10 @@ fun RowScope.SearchArea(
                                         ) {
                                             AsyncImage(
                                                 model = ImageRequest.Builder(LocalContext.current)
-                                                    .data(it.profile.avatar)
+                                                    .data(
+                                                        it.profile.avatarUri ?: it.profile.avatar
+                                                        ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar
+                                                    )
                                                     .crossfade(true)
                                                     .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
                                                     .build(),
@@ -403,7 +417,10 @@ fun RowScope.SearchArea(
                         ) {
                             AsyncImage(
                                 model = ImageRequest.Builder(LocalContext.current)
-                                    .data(it.profile.avatar)
+                                    .data(
+                                        it.profile.avatarUri ?: it.profile.avatar
+                                        ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar
+                                    )
                                     .crossfade(true)
                                     .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
                                     .build(),

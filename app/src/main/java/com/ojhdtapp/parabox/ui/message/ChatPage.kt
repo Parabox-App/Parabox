@@ -1745,7 +1745,7 @@ fun MessageBlock(
                 MessageAvatar(
                     shouldDisplay = isFirst,
                     avatar = message.profile.avatar,
-                    avatarUri = null,
+                    avatarUri = message.profile.avatarUri,
                     onClick = {},
                     onLongClick = onAvatarLongClick,
                 )

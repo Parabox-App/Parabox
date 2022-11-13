@@ -2,7 +2,9 @@
 
 package com.ojhdtapp.parabox.ui.message
 
+import android.net.Uri
 import android.os.Build
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
@@ -58,6 +60,7 @@ import coil.request.ImageRequest
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.parabox.core.util.launchSetting
@@ -663,6 +666,7 @@ fun SwipeableContact(
     bottomRadius: Dp,
     extraSpace: Dp? = 0.dp,
     enabled: Boolean,
+    onVibrate: () -> Unit,
     content: @Composable () -> Unit
 ) = BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
     val extraSpaceInt = with(LocalDensity.current) {
@@ -679,11 +683,15 @@ fun SwipeableContact(
             .swipeable(
                 state = state,
                 anchors = anchors,
-                thresholds = { _, _ -> androidx.compose.material.FractionalThreshold(0.5f) },
+                thresholds = { _, _ -> androidx.compose.material.FractionalThreshold(0.3f) },
                 orientation = Orientation.Horizontal,
                 enabled = enabled
             )
     ) {
+        LaunchedEffect(key1 = state.targetValue) {
+            if (state.progress.fraction != 1f && state.progress.fraction != 0f)
+                onVibrate()
+        }
         Row(
             modifier = Modifier
                 .fillMaxSize()
@@ -835,18 +843,10 @@ fun ContactItem(
                             ) {
                                 icon()
                             }
-                        } else if (contact?.profile?.avatar == null) {
-                            Box(
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.secondary)
-                                    .clickable { onAvatarClick() }
-                            )
-                        } else {
+                        } else if (contact?.profile?.avatar != null || contact?.profile?.avatarUri != null) {
                             AsyncImage(
                                 model = ImageRequest.Builder(LocalContext.current)
-                                    .data(contact.profile.avatar)
+                                    .data(contact.profile.avatarUri ?: contact.profile.avatar ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar)
                                     .crossfade(true)
                                     .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
                                     .build(),
@@ -857,15 +857,14 @@ fun ContactItem(
                                     .clip(CircleShape)
                                     .clickable { onAvatarClick() }
                             )
-//                            Image(
-//                                modifier = Modifier
-//                                    .clip(RoundedCornerShape(24.dp))
-//                                    .size(48.dp)
-//                                    .background(MaterialTheme.colorScheme.tertiaryContainer)
-//                                    .clickable { onAvatarClick() },
-//                                bitmap = contact.profile.avatar,
-//                                contentDescription = "avatar"
-//                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.secondary)
+                                    .clickable { onAvatarClick() }
+                            )
                         }
                     }
                 }
