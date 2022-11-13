@@ -60,6 +60,7 @@ import coil.request.ImageRequest
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.parabox.core.util.launchSetting
@@ -845,7 +846,7 @@ fun ContactItem(
                         } else if (contact?.profile?.avatar != null || contact?.profile?.avatarUri != null) {
                             AsyncImage(
                                 model = ImageRequest.Builder(LocalContext.current)
-                                    .data(contact.profile.avatarUri?.let{ Uri.parse(it) } ?: contact.profile.avatar)
+                                    .data(contact.profile.avatarUri ?: contact.profile.avatar ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar)
                                     .crossfade(true)
                                     .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
                                     .build(),
