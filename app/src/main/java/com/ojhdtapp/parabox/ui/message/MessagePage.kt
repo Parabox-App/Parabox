@@ -874,9 +874,9 @@ fun ContactItem(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxHeight(), verticalArrangement = Arrangement.Top
+                    .fillMaxHeight(), verticalArrangement = Arrangement.Center
             ) {
-                Spacer(modifier = Modifier.height(2.dp))
+//                Spacer(modifier = Modifier.height(2.dp))
                 if (isLoading) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Box(

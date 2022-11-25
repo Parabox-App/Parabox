@@ -1448,9 +1448,9 @@ fun FileItem(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxHeight(), verticalArrangement = Arrangement.Top
+                    .fillMaxHeight(), verticalArrangement = Arrangement.Center
             ) {
-                Spacer(modifier = Modifier.height(2.dp))
+//                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = buildAnnotatedString {
                         file.name.splitKeeping(searchText).forEach {
