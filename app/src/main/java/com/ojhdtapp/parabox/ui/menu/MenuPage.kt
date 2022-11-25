@@ -3,9 +3,16 @@ package com.ojhdtapp.parabox.ui.menu
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.material.rememberModalBottomSheetState
@@ -74,7 +81,10 @@ fun MenuPage(
     val menuNavController = rememberAnimatedNavController()
     val menuNavHostEngine = rememberAnimatedNavHostEngine(
         navHostContentAlignment = Alignment.TopCenter,
-        rootDefaultAnimations = RootNavGraphDefaultAnimations(),
+        rootDefaultAnimations = RootNavGraphDefaultAnimations(
+            enterTransition = {fadeIn(tween(300)) + slideInVertically() { 80 }},
+            exitTransition = { fadeOut() },
+        ),
         defaultAnimationsForNestedNavGraph = mapOf(
 //                    NavGraphs.message to NestedNavGraphDefaultAnimations(
 //                        enterTransition = { scaleIn(tween(200), 0.9f) + fadeIn(tween(200)) },
@@ -87,6 +97,8 @@ fun MenuPage(
     // Menu Shared View Model (Not Used)
     val sharedViewModel =
         hiltViewModel<MenuSharedViewModel>()
+    // List
+    val listState = rememberLazyListState()
     // Drawer
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val bottomSheetState = rememberModalBottomSheetState(
@@ -134,8 +146,11 @@ fun MenuPage(
         NavigationDrawer(
             modifier = modifier.fillMaxSize(),
             navController = menuNavController,
+            mainNavController = navController,
             messageBadge = mainSharedViewModel.messageBadge.value,
-            onSelfItemClick = {},
+            onSelfItemClick = {
+
+            },
             drawerState = drawerState,
             gesturesEnabled = mainSharedViewModel.audioRecorderState.value !is AudioRecorderState.Recording,
             sizeClass = sizeClass
@@ -148,7 +163,11 @@ fun MenuPage(
                             modifier = Modifier.zIndex(1f),
                             navController = menuNavController,
                             messageBadge = mainSharedViewModel.messageBadge.value,
-                            onSelfItemClick = {},
+                            onSelfItemClick = {
+                                coroutineScope.launch {
+                                    listState.animateScrollToItem(0)
+                                }
+                            },
                             onMenuClick = {
                                 coroutineScope.launch {
                                     if (drawerState.isOpen) drawerState.close() else drawerState.open()
@@ -183,6 +202,7 @@ fun MenuPage(
                                 mainNavController = navController,
                                 mainSharedViewModel = mainSharedViewModel,
                                 sizeClass = sizeClass,
+                                listState = listState,
                                 drawerState = drawerState,
                                 bottomSheetState = bottomSheetState,
                                 onEvent = onEvent
@@ -215,7 +235,11 @@ fun MenuPage(
                     NavigationBar(
                         navController = menuNavController,
                         messageBadge = mainSharedViewModel.messageBadge.value,
-                        onSelfItemClick = {},
+                        onSelfItemClick = {
+                            coroutineScope.launch {
+                                listState.animateScrollToItem(0)
+                            }
+                        },
                     )
                 }
             }

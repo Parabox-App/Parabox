@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.ui.setting
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -122,7 +123,9 @@ fun MultiSelectItem(
     contactCheck: (Contact) -> Boolean,
     onValueChange: (target: Contact, value: Boolean) -> Unit
 ) {
-    Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+    Row(modifier = modifier.fillMaxWidth().clickable {
+        onValueChange(contact, !contactCheck(contact))
+    }, verticalAlignment = Alignment.CenterVertically) {
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
                 .data(contact.profile.avatar)

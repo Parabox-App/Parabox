@@ -14,6 +14,7 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -98,12 +99,12 @@ fun MessagePage(
     mainNavController: NavController,
     mainSharedViewModel: MainSharedViewModel,
     sizeClass: WindowSizeClass,
+    listState: LazyListState,
     drawerState: DrawerState,
     bottomSheetState: ModalBottomSheetState,
     onEvent: (ActivityEvent) -> Unit
 ) {
     val viewModel: MessagePageViewModel = hiltViewModel()
-    val listState = rememberLazyListState()
     val snackBarHostState = remember { SnackbarHostState() }
     val shimmerInstance = rememberShimmer(shimmerBounds = ShimmerBounds.View)
     val expandedFab by remember {
@@ -873,9 +874,9 @@ fun ContactItem(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxHeight(), verticalArrangement = Arrangement.Top
+                    .fillMaxHeight(), verticalArrangement = Arrangement.Center
             ) {
-                Spacer(modifier = Modifier.height(2.dp))
+//                Spacer(modifier = Modifier.height(2.dp))
                 if (isLoading) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Box(
