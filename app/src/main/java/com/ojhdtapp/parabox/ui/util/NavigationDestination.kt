@@ -202,7 +202,6 @@ fun NavigationDrawer(
                                 if (isCurrentDestOnBackStack) onSelfItemClick()
                                 else {
                                     coroutineScope.launch {
-                                        drawerState.close()
                                         navController.navigate(destination.graph) {
                                             popUpTo(NavGraphs.menu) {
                                                 saveState = true
@@ -210,6 +209,7 @@ fun NavigationDrawer(
                                             launchSingleTop = true
                                             restoreState = true
                                         }
+                                        drawerState.close()
                                     }
                                 }
                             })

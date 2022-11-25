@@ -3,6 +3,12 @@ package com.ojhdtapp.parabox.ui.menu
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -75,7 +81,10 @@ fun MenuPage(
     val menuNavController = rememberAnimatedNavController()
     val menuNavHostEngine = rememberAnimatedNavHostEngine(
         navHostContentAlignment = Alignment.TopCenter,
-        rootDefaultAnimations = RootNavGraphDefaultAnimations(),
+        rootDefaultAnimations = RootNavGraphDefaultAnimations(
+            enterTransition = {fadeIn(tween(300)) + slideInVertically() { 80 }},
+            exitTransition = { fadeOut() },
+        ),
         defaultAnimationsForNestedNavGraph = mapOf(
 //                    NavGraphs.message to NestedNavGraphDefaultAnimations(
 //                        enterTransition = { scaleIn(tween(200), 0.9f) + fadeIn(tween(200)) },
