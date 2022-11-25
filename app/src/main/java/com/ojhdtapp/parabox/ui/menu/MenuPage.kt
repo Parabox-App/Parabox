@@ -6,6 +6,7 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.material.rememberModalBottomSheetState
@@ -87,6 +88,8 @@ fun MenuPage(
     // Menu Shared View Model (Not Used)
     val sharedViewModel =
         hiltViewModel<MenuSharedViewModel>()
+    // List
+    val listState = rememberLazyListState()
     // Drawer
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val bottomSheetState = rememberModalBottomSheetState(
@@ -136,7 +139,9 @@ fun MenuPage(
             navController = menuNavController,
             mainNavController = navController,
             messageBadge = mainSharedViewModel.messageBadge.value,
-            onSelfItemClick = {},
+            onSelfItemClick = {
+
+            },
             drawerState = drawerState,
             gesturesEnabled = mainSharedViewModel.audioRecorderState.value !is AudioRecorderState.Recording,
             sizeClass = sizeClass
@@ -150,7 +155,9 @@ fun MenuPage(
                             navController = menuNavController,
                             messageBadge = mainSharedViewModel.messageBadge.value,
                             onSelfItemClick = {
-
+                                coroutineScope.launch {
+                                    listState.animateScrollToItem(0)
+                                }
                             },
                             onMenuClick = {
                                 coroutineScope.launch {
@@ -186,6 +193,7 @@ fun MenuPage(
                                 mainNavController = navController,
                                 mainSharedViewModel = mainSharedViewModel,
                                 sizeClass = sizeClass,
+                                listState = listState,
                                 drawerState = drawerState,
                                 bottomSheetState = bottomSheetState,
                                 onEvent = onEvent
@@ -218,7 +226,11 @@ fun MenuPage(
                     NavigationBar(
                         navController = menuNavController,
                         messageBadge = mainSharedViewModel.messageBadge.value,
-                        onSelfItemClick = {},
+                        onSelfItemClick = {
+                            coroutineScope.launch {
+                                listState.animateScrollToItem(0)
+                            }
+                        },
                     )
                 }
             }
