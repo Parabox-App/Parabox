@@ -2,6 +2,7 @@ package com.ojhdtapp.parabox.ui.util
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.FileDownload
@@ -13,10 +14,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavController
 import com.ojhdtapp.parabox.ui.NavGraphs
 import com.ojhdtapp.parabox.ui.appCurrentDestinationAsState
-import com.ojhdtapp.parabox.ui.destinations.Destination
-import com.ojhdtapp.parabox.ui.destinations.FilePageDestination
-import com.ojhdtapp.parabox.ui.destinations.MessagePageDestination
-import com.ojhdtapp.parabox.ui.destinations.SettingPageDestination
 import com.ojhdtapp.parabox.ui.startAppDestination
 import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
@@ -29,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.ojhdtapp.parabox.ui.NavGraph
+import com.ojhdtapp.parabox.ui.destinations.*
 import com.ramcosta.composedestinations.navigation.navigate
 import com.ramcosta.composedestinations.navigation.popUpTo
 import com.ramcosta.composedestinations.spec.DirectionDestinationSpec
@@ -132,6 +130,7 @@ fun NavigationBar(
 fun NavigationDrawer(
     modifier: Modifier = Modifier,
     navController: NavController,
+    mainNavController: NavController,
     messageBadge: Int = 0,
     settingBadge: Boolean = false,
     onSelfItemClick: () -> Unit,
@@ -145,9 +144,9 @@ fun NavigationDrawer(
         drawerState = drawerState,
         gesturesEnabled = gesturesEnabled,
         drawerContent = {
-            ModalDrawerSheet() {
+            ModalDrawerSheet {
                 Spacer(modifier = Modifier.statusBarsPadding())
-                IconButton(modifier = Modifier.padding(start = 12.dp, bottom = 12.dp), onClick = {
+                IconButton(modifier = Modifier.padding(start = 12.dp, top = 12.dp, bottom = 24.dp), onClick = {
                     coroutineScope.launch {
                         drawerState.close()
                     }
@@ -163,42 +162,145 @@ fun NavigationDrawer(
                                 .height(48.dp)
                                 .padding(horizontal = 12.dp),
                             icon = {
-                                BadgedBox(badge = {
-                                    if (destination.graph == NavGraphs.message && messageBadge != 0)
-                                        Badge { Text(text = "$messageBadge") }
-                                    else if (destination.graph == NavGraphs.setting && settingBadge)
-                                        Badge()
-                                }) {
-                                    Icon(
-                                        imageVector = if (isCurrentDestOnBackStack) destination.iconSelected else destination.icon,
-                                        contentDescription = destination.label
-                                    )
-                                }
+                                Icon(
+                                    imageVector = if (isCurrentDestOnBackStack) destination.iconSelected else destination.icon,
+                                    contentDescription = destination.label
+                                )
+//                                BadgedBox(badge = {
+//                                    if (destination.graph == NavGraphs.message && messageBadge != 0)
+//                                        Badge { Text(text = "$messageBadge") }
+//                                    else if (destination.graph == NavGraphs.setting && settingBadge)
+//                                        Badge()
+//                                }) {
+//                                    Icon(
+//                                        imageVector = if (isCurrentDestOnBackStack) destination.iconSelected else destination.icon,
+//                                        contentDescription = destination.label
+//                                    )
+//                                }
                             },
                             label = {
                                 Text(
-                                    text = destination.label,
-                                    style = MaterialTheme.typography.labelLarge
+                                    text = destination.label
                                 )
+                            },
+                            badge = {
+                                if (destination.graph == NavGraphs.message && messageBadge != 0)
+//                                    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary) {
+//                                        Box(modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp), contentAlignment = Alignment.Center) {
+//                                            Text(text = "$messageBadge 条新消息", color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.labelMedium)
+//                                        }
+//                                    }
+                                    Badge(
+                                        containerColor = MaterialTheme.colorScheme.primary,
+                                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                                    ) { Text(text = "$messageBadge", modifier = Modifier.padding(4.dp)) }
+                                else if (destination.graph == NavGraphs.setting && settingBadge)
+                                    Badge()
                             },
                             selected = isCurrentDestOnBackStack,
                             onClick = {
                                 if (isCurrentDestOnBackStack) onSelfItemClick()
                                 else {
-                                    navController.navigate(destination.graph) {
-                                        popUpTo(NavGraphs.menu) {
-                                            saveState = true
-                                        }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
                                     coroutineScope.launch {
                                         drawerState.close()
+                                        navController.navigate(destination.graph) {
+                                            popUpTo(NavGraphs.menu) {
+                                                saveState = true
+                                            }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
                                     }
                                 }
                             })
                     }
+                    Divider(modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp))
                 }
+                Box(modifier = Modifier.height(48.dp).padding(horizontal = 24.dp), contentAlignment = Alignment.CenterStart) {
+                    Text(text = "连接", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                }
+                NavigationDrawerItem(
+                    modifier = Modifier
+                        .height(48.dp)
+                        .padding(horizontal = 12.dp),
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Outlined.Extension,
+                            contentDescription = "plugin"
+                        )
+                    },
+                    label = {
+                            Text(text = "扩展",)
+                    },
+                    selected = false,
+                    onClick = {
+                        coroutineScope.launch {
+                            drawerState.close()
+                            mainNavController.navigate(ExtensionPageDestination)
+                        }
+                    })
+                NavigationDrawerItem(
+                    modifier = Modifier
+                        .height(48.dp)
+                        .padding(horizontal = 12.dp),
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Outlined.Cloud,
+                            contentDescription = "cloud"
+                        )
+                    },
+                    label = {
+                            Text(text = "云端服务",)
+                    },
+                    selected = false,
+                    onClick = {
+                        coroutineScope.launch {
+                            drawerState.close()
+                            mainNavController.navigate(CloudPageDestination)
+                        }
+                    })
+                NavigationDrawerItem(
+                    modifier = Modifier
+                        .height(48.dp)
+                        .padding(horizontal = 12.dp),
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Outlined.Sync,
+                            contentDescription = "fcm"
+                        )
+                    },
+                    label = {
+                            Text(text = "Firebase 云消息传递",)
+                    },
+                    selected = false,
+                    onClick = {
+                        coroutineScope.launch {
+                            drawerState.close()
+                            mainNavController.navigate(FCMPageDestination)
+                        }
+                    })
+                Divider(modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp))
+                NavigationDrawerItem(
+                    modifier = Modifier
+                        .height(48.dp)
+                        .padding(horizontal = 12.dp),
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Outlined.HelpOutline,
+                            contentDescription = "help and support"
+                        )
+                    },
+                    label = {
+                        Text(text = "帮助与支持",)
+                    },
+                    selected = false,
+                    onClick = {
+                        coroutineScope.launch {
+                            drawerState.close()
+                            mainNavController.navigate(SupportPageDestination)
+                        }
+                    })
+
             }
         }) {
         content()
@@ -253,9 +355,10 @@ fun NavigationRail(
                     }
                 },
                 icon = {
-                    BadgedBox(badge = {
+                    BadgedBox(
+                        badge = {
                         if (destination.graph == NavGraphs.message && messageBadge != 0)
-                            Badge { Text(text = "$messageBadge") }
+                            Badge { Text(text = "${if(messageBadge > 99) "99+" else messageBadge}") }
                         else if (destination.graph == NavGraphs.setting && settingBadge)
                             Badge()
                     }) {

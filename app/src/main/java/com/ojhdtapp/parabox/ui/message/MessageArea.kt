@@ -8,6 +8,8 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.gestures.snapping.SnapLayoutInfoProvider
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -84,6 +86,9 @@ fun RowScope.MessageArea(
     mainNavController: NavController,
     onEvent: (event: ActivityEvent) -> Unit
 ) {
+    // If you'd like to customize either the snap behavior or the layout provider
+//    val snappingLayout = remember(listState) { SnapLayoutInfoProvider(listState) }
+//    val flingBehavior = rememberSnapFlingBehavior(snappingLayout)
     SwipeRefresh(
         state = rememberSwipeRefreshState(isRefreshing = mainSharedViewModel.isRefreshing.value),
         onRefresh = {
@@ -102,7 +107,8 @@ fun RowScope.MessageArea(
         LazyColumn(
             modifier = modifier.fillMaxSize(),
             state = listState,
-            contentPadding = paddingValues
+            contentPadding = paddingValues,
+//            flingBehavior = flingBehavior
         ) {
             item(key = "tag") {
                 val hashTagList = remember {

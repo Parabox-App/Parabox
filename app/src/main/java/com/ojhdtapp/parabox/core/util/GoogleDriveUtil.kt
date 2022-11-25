@@ -22,6 +22,7 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.net.SocketException
 import java.net.SocketTimeoutException
+import javax.net.ssl.SSLHandshakeException
 
 object GoogleDriveUtil {
     const val SERVICE_CODE = 1001
@@ -190,7 +191,7 @@ object GoogleDriveUtil {
                             .execute()
                         result.files
                     }
-                } catch (e: SocketTimeoutException) {
+                } catch (e: IOException) {
                     e.printStackTrace()
                     null
                 }

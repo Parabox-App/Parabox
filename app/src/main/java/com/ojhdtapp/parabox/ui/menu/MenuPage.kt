@@ -134,6 +134,7 @@ fun MenuPage(
         NavigationDrawer(
             modifier = modifier.fillMaxSize(),
             navController = menuNavController,
+            mainNavController = navController,
             messageBadge = mainSharedViewModel.messageBadge.value,
             onSelfItemClick = {},
             drawerState = drawerState,
@@ -148,7 +149,9 @@ fun MenuPage(
                             modifier = Modifier.zIndex(1f),
                             navController = menuNavController,
                             messageBadge = mainSharedViewModel.messageBadge.value,
-                            onSelfItemClick = {},
+                            onSelfItemClick = {
+
+                            },
                             onMenuClick = {
                                 coroutineScope.launch {
                                     if (drawerState.isOpen) drawerState.close() else drawerState.open()
