@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -68,8 +69,8 @@ fun SupportPage(
         icon = {
             Icon(imageVector = Icons.Outlined.Gavel, contentDescription = "terms")
         },
-        title = "用户协议",
-        contentResId = R.string.terms,
+        title = stringResource(R.string.terms),
+        contentResId = R.string.terms_content,
         onConfirm = {
             viewModel.setShowTermsDialog(false)
         },
@@ -83,8 +84,8 @@ fun SupportPage(
         icon = {
             Icon(imageVector = Icons.Outlined.PrivacyTip, contentDescription = "privacy")
         },
-        title = "隐私政策",
-        contentResId = R.string.privacy,
+        title = stringResource(R.string.privacy),
+        contentResId = R.string.privacy_content,
         onConfirm = {
             viewModel.setShowPrivacyDialog(false)
         },
@@ -109,7 +110,7 @@ fun SupportPage(
                 modifier = Modifier
                     .background(appBarContainerColor)
                     .statusBarsPadding(),
-                title = { Text("帮助与支持") },
+                title = { Text(stringResource(R.string.support)) },
                 navigationIcon = {
                     if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
                         IconButton(onClick = {
@@ -130,12 +131,12 @@ fun SupportPage(
             contentPadding = it
         ) {
             item {
-                PreferencesCategory(text = "寻求帮助")
+                PreferencesCategory(text = stringResource(R.string.ask_for_help))
             }
             item {
                 NormalPreference(
-                    title = "文档中心",
-                    subtitle = "阅读针对用户和开发者的问题说明",
+                    title = stringResource(R.string.document_title),
+                    subtitle = stringResource(R.string.document_subtitle),
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Outlined.MenuBook,
@@ -152,8 +153,8 @@ fun SupportPage(
             }
             item {
                 NormalPreference(
-                    title = "发送反馈邮件",
-                    subtitle = "发送您的问题或建议",
+                    title = stringResource(R.string.email_title),
+                    subtitle = stringResource(R.string.email_subtitle),
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Outlined.Email,
@@ -170,12 +171,12 @@ fun SupportPage(
                 )
             }
             item {
-                PreferencesCategory(text = "社交")
+                PreferencesCategory(text = stringResource(R.string.social))
             }
             item {
                 NormalPreference(
-                    title = "网站",
-                    subtitle = "查看我们的网站",
+                    title = stringResource(R.string.web_title),
+                    subtitle = stringResource(R.string.web_subtitle),
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Outlined.Web,
@@ -189,8 +190,8 @@ fun SupportPage(
             }
             item {
                 NormalPreference(
-                    title = "Github",
-                    subtitle = "星标，创建克隆，发起提案",
+                    title = stringResource(R.string.github_title),
+                    subtitle = stringResource(R.string.github_subtitle),
                     leadingIcon = {
                         FaIcon(
                             modifier = Modifier.padding(end = 4.dp),
@@ -207,8 +208,8 @@ fun SupportPage(
             }
             item {
                 NormalPreference(
-                    title = "加入 Telegram 群组",
-                    subtitle = "获取最新动态，提出建议，讨论错误",
+                    title = stringResource(R.string.tg_title),
+                    subtitle = stringResource(R.string.tg_subtitle),
                     leadingIcon = {
                         FaIcon(
                             modifier = Modifier.padding(end = 4.dp),
@@ -225,12 +226,12 @@ fun SupportPage(
                 )
             }
             item {
-                PreferencesCategory(text = "支持开发者")
+                PreferencesCategory(text = stringResource(R.string.support_developer))
             }
             item {
                 NormalPreference(
-                    title = "贡献翻译",
-                    subtitle = "帮助我们将应用翻译成您的语言",
+                    title = stringResource(R.string.translate_title),
+                    subtitle = stringResource(R.string.translate_subtitle),
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Outlined.GTranslate,
@@ -244,8 +245,8 @@ fun SupportPage(
             }
             item {
                 NormalPreference(
-                    title = "为该应用评分",
-                    subtitle = "喜欢这个应用吗？前往 Google Play 给出您的评价",
+                    title = stringResource(R.string.rate_title),
+                    subtitle = stringResource(R.string.rate_subtitle),
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Outlined.StarRate,
@@ -259,8 +260,8 @@ fun SupportPage(
             }
             item {
                 NormalPreference(
-                    title = "捐赠",
-                    subtitle = "支持这个项目走得更远",
+                    title = stringResource(R.string.donate_title),
+                    subtitle = stringResource(R.string.donate_subtitle),
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Outlined.Cake,
@@ -272,11 +273,11 @@ fun SupportPage(
                 )
             }
             item {
-                PreferencesCategory(text = "协议与条款")
+                PreferencesCategory(text = stringResource(R.string.agreement))
             }
             item {
                 NormalPreference(
-                    title = "用户协议",
+                    title = stringResource(R.string.terms),
                     onClick = {
                         viewModel.setShowTermsDialog(true)
                     }
@@ -284,7 +285,7 @@ fun SupportPage(
             }
             item {
                 NormalPreference(
-                    title = "隐私政策",
+                    title = stringResource(id = R.string.privacy),
                     onClick = {
                         viewModel.setShowPrivacyDialog(true)
                     }
@@ -292,7 +293,7 @@ fun SupportPage(
             }
             item {
                 NormalPreference(
-                    title = "开放源代码许可",
+                    title = stringResource(id = R.string.open_source_license),
                     onClick = {
                         mainNavController.navigate(LicensePageDestination)
                     }

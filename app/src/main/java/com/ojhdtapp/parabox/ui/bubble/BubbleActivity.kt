@@ -32,6 +32,7 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.ojhdtapp.parabox.MainActivity
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.model.Contact
@@ -289,7 +290,7 @@ class BubbleActivity : AppCompatActivity() {
             is ActivityEvent.StartRecording -> {
                 if (player?.isPlaying == true) {
                     stopPlaying()
-                    Toast.makeText(this, "播放中的音频已中断", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.toast_playing_media_stop), Toast.LENGTH_SHORT).show()
                 }
                 startRecording()
             }
@@ -300,14 +301,14 @@ class BubbleActivity : AppCompatActivity() {
 
             is ActivityEvent.StartAudioPlaying -> {
                 if (recorder != null) {
-                    Toast.makeText(this, "请先结束录音", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.toast_stop_recording_first), Toast.LENGTH_SHORT).show()
                 } else {
                     if (event.uri != null) {
                         startPlayingLocal(event.uri)
                     } else if (event.url != null) {
                         startPlayingInternet(event.url)
                     } else {
-                        Toast.makeText(this, "音频资源丢失", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, getString(R.string.media_res_lost), Toast.LENGTH_SHORT).show()
                     }
                 }
             }

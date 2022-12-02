@@ -1,5 +1,7 @@
 package com.ojhdtapp.parabox.ui.file
 
+import android.app.Application
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.toFormattedDate
 import com.ojhdtapp.parabox.domain.model.File
 import kotlin.math.abs
@@ -61,26 +63,26 @@ data class FilePageState(
 }
 
 sealed class TimeFilter(
-    val label: String,
+    val labelResId: Int,
     val fileCheck: (file: File) -> Boolean
 ) {
-    object All : TimeFilter("所有时间", { true })
+    object All : TimeFilter(R.string.time_filter_all_label, { true })
     object WithinThreeDays : TimeFilter(
-        "最近三天",
+        R.string.time_filter_within_three_days_label,
         { file: File -> abs(System.currentTimeMillis() - file.timestamp) < 259200000 })
 
     object WithinThisWeek : TimeFilter(
-        "最近一周",
+        R.string.time_filter_within_this_week_label,
         { file: File -> abs(System.currentTimeMillis() - file.timestamp) < 604800000 }
     )
 
     object WithinThisMonth : TimeFilter(
-        "最近一个月",
+        R.string.time_filter_within_this_month_label,
         { file: File -> abs(System.currentTimeMillis() - file.timestamp) < 2592000000 }
     )
 
     object MoreThanAMonth : TimeFilter(
-        "一月前",
+        R.string.time_filter_more_than_a_month_label,
         { file: File -> abs(System.currentTimeMillis() - file.timestamp) >= 2592000000 }
     )
 
@@ -89,7 +91,8 @@ sealed class TimeFilter(
         val timestampEnd: Long? = null
     ) :
         TimeFilter(
-            label = "从 ${timestampStart?.toFormattedDate() ?: "不受限制"} 到 ${timestampEnd?.toFormattedDate() ?: "不受限制"}",
+//            label = "从 ${timestampStart?.toFormattedDate() ?: "不受限制"} 到 ${timestampEnd?.toFormattedDate() ?: "不受限制"}",
+            R.string.time_filter_custom_label,
             fileCheck = { file: File ->
                 file.timestamp in (timestampStart ?: System.currentTimeMillis()) until (timestampEnd
                     ?: System.currentTimeMillis())
@@ -98,7 +101,7 @@ sealed class TimeFilter(
 }
 
 sealed class ExtensionFilter(
-    val label: String,
+    val labelResId: Int,
     val fileCheck: (file: File) -> Boolean
 ) {
     companion object {
@@ -113,27 +116,27 @@ sealed class ExtensionFilter(
     }
 
     object All : ExtensionFilter(
-        "所有类型",
+        R.string.extension_filter_all_label,
         { true }
     )
 
     object Docs : ExtensionFilter(
-        "文档",
+        R.string.extension_filter_docs_label,
         { file: File -> file.extension.lowercase() in listOf<String>("doc", "docx", "wps", "wpt") }
     )
 
     object Slides : ExtensionFilter(
-        "演示文稿",
+        R.string.extension_filter_slides_label,
         { file: File -> file.extension.lowercase() in listOf<String>("ppt", "pptx", "dps", "dpt") }
     )
 
     object Sheets : ExtensionFilter(
-        "电子表格",
+        R.string.extension_filter_sheets_label,
         { file: File -> file.extension.lowercase() in listOf<String>("xls", "xlsx", "et", "ett") }
     )
 
     object Picture : ExtensionFilter(
-        "图片",
+        R.string.extension_filter_picture_label,
         { file: File ->
             file.extension.lowercase() in listOf<String>(
                 "bmp",
@@ -164,7 +167,7 @@ sealed class ExtensionFilter(
     )
 
     object Video : ExtensionFilter(
-        "视频",
+        R.string.extension_filter_video_label,
         { file: File ->
             file.extension.lowercase() in listOf<String>(
                 "avi",
@@ -182,7 +185,7 @@ sealed class ExtensionFilter(
     )
 
     object Audio : ExtensionFilter(
-        "音频",
+        R.string.extension_filter_audio_label,
         { file: File ->
             file.extension.lowercase() in listOf<String>(
                 "cd",
@@ -200,7 +203,7 @@ sealed class ExtensionFilter(
     )
 
     object Compressed : ExtensionFilter(
-        "压缩文档",
+        R.string.extension_filter_compressed_label,
         { file: File ->
             file.extension.lowercase() in listOf<String>(
                 "zip",
@@ -216,7 +219,7 @@ sealed class ExtensionFilter(
     )
 
     object Pdf : ExtensionFilter(
-        "便携式文档",
+        R.string.extension_filter_pdf_label,
         { file: File ->
             file.extension.lowercase() in listOf<String>(
                 "pdf",
@@ -230,26 +233,26 @@ sealed class ExtensionFilter(
 }
 
 sealed class SizeFilter(
-    val label: String,
+    val labelResId: Int,
     val fileCheck: (file: File) -> Boolean
 ) {
     object All : SizeFilter(
-        "不限大小",
+        R.string.size_filter_all_label,
         { true }
     )
 
     object TenMB : SizeFilter(
-        "小于10MB",
+        R.string.size_filter_ten_mb_label,
         { file: File -> file.size < 10000000 }
     )
 
     object HundredMB : SizeFilter(
-        "10MB至100MB",
+        R.string.size_filter_hundred_mb_label,
         { file: File -> file.size in 10000000 until 100000000 }
     )
 
     object OverHundredMB : SizeFilter(
-        "超过100MB",
+        R.string.size_filter_over_hundred_mb_label,
         { file: File -> file.size > 100000000 }
     )
 }

@@ -48,6 +48,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextRange
@@ -71,13 +72,13 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.*
 import com.ojhdtapp.parabox.BuildConfig
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.launchSetting
 import com.ojhdtapp.parabox.core.util.toDateAndTimeString
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.message_content.toMessageContentList
 import com.ojhdtapp.parabox.ui.util.clearFocusOnKeyboardDismiss
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
@@ -273,11 +274,11 @@ fun EditArea(
             },
             icon = { Icon(Icons.Outlined.KeyboardVoice, contentDescription = null) },
             title = {
-                Text(text = "权限申请")
+                Text(text = stringResource(R.string.request_permission))
             },
             text = {
                 Text(
-                    "要发送语音消息，您需要授权本应用使用设备麦克风。\n您亦可前往设置页面手动授权。"
+                    stringResource(id = R.string.audio_permission_text)
                 )
             },
             confirmButton = {
@@ -287,7 +288,7 @@ fun EditArea(
                         audioPermissionState.launchPermissionRequest()
                     }
                 ) {
-                    Text("尝试授权")
+                    Text(stringResource(R.string.try_request_permission))
                 }
             },
             dismissButton = {
@@ -297,7 +298,7 @@ fun EditArea(
                         context.launchSetting()
                     }
                 ) {
-                    Text("转到设置")
+                    Text(stringResource(R.string.redirect_to_setting))
                 }
             }
         )
@@ -493,7 +494,7 @@ fun EditArea(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
-                                        text = audioRecorderState.text,
+                                        text = stringResource(audioRecorderState.textResId),
                                         color = MaterialTheme.colorScheme.primary
                                     )
                                 }
@@ -578,7 +579,7 @@ fun EditArea(
                                     decorationBox = { innerTextField ->
                                         if (textFieldValueState.text.isEmpty()) {
                                             Text(
-                                                text = "输入内容",
+                                                text = stringResource(R.string.input_placeholder),
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Clip,
@@ -805,7 +806,7 @@ fun EditArea(
                                                 verticalArrangement = Arrangement.Center
                                             ) {
                                                 Text(
-                                                    text = "暂无自定义表情",
+                                                    text = stringResource(R.string.no_meme),
                                                     style = MaterialTheme.typography.labelMedium
                                                 )
                                                 TextButton(onClick = {
@@ -826,7 +827,7 @@ fun EditArea(
                                                         memePickerSLauncher.launch("image/*")
                                                     }
                                                 }) {
-                                                    Text(text = "手动添加")
+                                                    Text(text = stringResource(R.string.add_meme_by_hand))
                                                 }
                                             }
                                         }
@@ -1087,7 +1088,8 @@ fun EditArea(
                                                 .clickable {
                                                     imagePickerLauncher.launch(
                                                         PickVisualMediaRequest(
-                                                        ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                                            ActivityResultContracts.PickVisualMedia.ImageOnly
+                                                        )
                                                     )
 //                                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
 //                                                        val maxNumPhotosAndVideos = 10
@@ -1316,8 +1318,11 @@ fun EditArea(
                                             .fillMaxSize()
                                             .clickable {
                                                 if (isBottomSheetExpand) {
-                                                    imagePickerLauncher.launch(PickVisualMediaRequest(
-                                                        ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                                    imagePickerLauncher.launch(
+                                                        PickVisualMediaRequest(
+                                                            ActivityResultContracts.PickVisualMedia.ImageOnly
+                                                        )
+                                                    )
 //                                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
 //                                                        val maxNumPhotosAndVideos = 10
 //                                                        Intent(MediaStore.ACTION_PICK_IMAGES)
@@ -1346,7 +1351,7 @@ fun EditArea(
                                             tint = MaterialTheme.colorScheme.primary
                                         )
                                         Text(
-                                            text = "相册",
+                                            text = stringResource(R.string.gallery),
                                             style = MaterialTheme.typography.labelLarge
                                         )
                                     }
@@ -1379,7 +1384,7 @@ fun EditArea(
                                                 tint = MaterialTheme.colorScheme.primary
                                             )
                                             Text(
-                                                text = "拍摄",
+                                                text = stringResource(R.string.take_photos),
                                                 style = MaterialTheme.typography.labelLarge
                                             )
                                         }
@@ -1412,7 +1417,7 @@ fun EditArea(
                                             tint = MaterialTheme.colorScheme.primary
                                         )
                                         Text(
-                                            text = "文件",
+                                            text = stringResource(R.string.file),
                                             style = MaterialTheme.typography.labelLarge
                                         )
                                     }
@@ -1440,7 +1445,7 @@ fun EditArea(
                                             tint = MaterialTheme.colorScheme.primary
                                         )
                                         Text(
-                                            text = "视频",
+                                            text = stringResource(R.string.video),
                                             style = MaterialTheme.typography.labelLarge
                                         )
                                     }

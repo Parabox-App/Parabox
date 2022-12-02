@@ -28,11 +28,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.ObjectIdUtil
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendTargetType
 import com.ojhdtapp.parabox.domain.model.PluginConnection
@@ -59,6 +62,7 @@ fun NewContactBottomSheet(
     sheetBackgroundColor = Color.Transparent,
     sheetElevation = 0.dp,
     sheetContent = {
+        val context = LocalContext.current
         val coroutineScope = rememberCoroutineScope()
         val focusManager = LocalFocusManager.current
         // Plugin List State
@@ -90,10 +94,11 @@ fun NewContactBottomSheet(
                     ) {
                         Box(modifier = Modifier.size(32.dp, 4.dp))
                     }
-                    Text(text = "发起会话", style = MaterialTheme.typography.headlineSmall)
+                    Text(text = stringResource(R.string.new_contact), style = MaterialTheme.typography.headlineSmall)
                     SegmentedControl(
                         modifier = Modifier.padding(vertical = 16.dp),
-                        items = listOf("私人会话", "群聊")
+                        items = listOf(context.getString(R.string.contact_type_private_chat),
+                            context.getString(R.string.contact_type_group_chat)),
                     ) {
                         mainSharedViewModel.setIdInput("")
                         when (it) {
@@ -120,7 +125,7 @@ fun NewContactBottomSheet(
                         )
                         if (pluginList.isEmpty()) {
                             Text(
-                                text = "暂无可用发送出口",
+                                text = stringResource(R.string.no_plugin_connection),
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         } else {
@@ -180,7 +185,7 @@ fun NewContactBottomSheet(
                         value = mainSharedViewModel.idInput.value,
                         onValueChange = { mainSharedViewModel.setIdInput(it) },
                         enabled = mainSharedViewModel.selectedExtensionId.value != null,
-                        label = { Text(text = "识别ID") },
+                        label = { Text(text = stringResource(R.string.contact_id)) },
                         leadingIcon = {
                             Icon(
                                 Icons.Outlined.PersonAdd,
@@ -212,7 +217,7 @@ fun NewContactBottomSheet(
                             mainSharedViewModel.setSendTargetType(SendTargetType.USER)
                             mainSharedViewModel.setIdInput("")
                         }) {
-                            Text(text = "取消")
+                            Text(text = stringResource(id = R.string.cancel))
                         }
                         Button(
                             onClick = {
@@ -236,7 +241,7 @@ fun NewContactBottomSheet(
                             },
                             enabled = mainSharedViewModel.selectedExtensionId.value != null && mainSharedViewModel.idInput.value.isNotBlank()
                         ) {
-                            Text(text = "确定")
+                            Text(text = stringResource(id = R.string.confirm))
                         }
                     }
                 }

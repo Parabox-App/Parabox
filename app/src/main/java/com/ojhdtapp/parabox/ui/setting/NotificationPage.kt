@@ -19,9 +19,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.launchNotificationSetting
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
@@ -87,7 +89,7 @@ fun NotificationPage(
                 modifier = Modifier
                     .background(appBarContainerColor)
                     .statusBarsPadding(),
-                title = { Text("通知") },
+                title = { Text(stringResource(R.string.notification)) },
                 navigationIcon = {
                     if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
                         IconButton(onClick = {
@@ -111,8 +113,9 @@ fun NotificationPage(
         ) {
             item {
                 NormalPreference(
-                    title = "授予通知权限",
-                    subtitle = if (notificationPermissionGranted) "通知权限已授予" else "允许应用发送消息通知",
+                    title = stringResource(R.string.request_notification_permission),
+                    subtitle = if (notificationPermissionGranted) stringResource(R.string.notification_permission_granted) else stringResource(
+                                            R.string.notification_permission_not_granted),
                     enabled = !notificationPermissionGranted,
                     leadingIcon = {
                         Icon(
@@ -130,8 +133,8 @@ fun NotificationPage(
             }
             item {
                 NormalPreference(
-                    title = "系统通知设置",
-                    subtitle = "重要性级别，通知渠道，提示音，振动等",
+                    title = stringResource(R.string.system_notification_settings_title),
+                    subtitle = stringResource(R.string.system_notification_settings_subtitle),
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Outlined.NotificationsActive,
@@ -144,10 +147,12 @@ fun NotificationPage(
                 )
             }
             item {
-                PreferencesCategory(text = "会话通知设置")
+                PreferencesCategory(text = stringResource(R.string.contact_notification_settings))
             }
             item {
-                NormalPreference(title = "会话通知设置", subtitle = "对选中会话启用通知（归档设置将覆盖该项）") {
+                NormalPreference(title = stringResource(R.string.contact_notification_settings_title), subtitle = stringResource(
+                                    R.string.contact_notification_settings_subtitle)
+                                ) {
                     showDialog = true
                 }
             }

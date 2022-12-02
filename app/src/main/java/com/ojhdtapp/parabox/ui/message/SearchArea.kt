@@ -6,7 +6,6 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -15,7 +14,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -41,12 +39,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.toLowerCase
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -58,7 +55,6 @@ import com.ojhdtapp.parabox.core.util.splitKeeping
 import com.ojhdtapp.parabox.domain.model.message_content.getContentString
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.ChatPageDestination
-import com.ojhdtapp.parabox.ui.util.PreferencesCategory
 import com.ramcosta.composedestinations.navigation.navigate
 import com.valentinilk.shimmer.Shimmer
 import kotlinx.coroutines.CoroutineScope
@@ -76,6 +72,7 @@ fun RowScope.SearchArea(
     shimmerInstance: Shimmer,
     mainNavController: NavController
 ) {
+    val context = LocalContext.current
     val messageSearchResult = viewModel.messageSearchResultStateFlow.collectAsState()
     val contactSearchResult = viewModel.contactSearchResultStateFlow.collectAsState()
     val searchText by viewModel.searchText
@@ -107,7 +104,7 @@ fun RowScope.SearchArea(
                                 )
                                 Spacer(modifier = Modifier.height(16.dp))
                                 Text(
-                                    text = "无搜索结果",
+                                    text = stringResource(id = R.string.no_search_result),
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                             }
@@ -119,7 +116,7 @@ fun RowScope.SearchArea(
                                 modifier = modifier
                                     .padding(horizontal = 16.dp, vertical = 8.dp)
                                     .fillMaxWidth(),
-                                text = "最近联系人",
+                                text = stringResource(R.string.recent_contact_person),
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.primary
                             )
@@ -179,7 +176,7 @@ fun RowScope.SearchArea(
                                 modifier = modifier
                                     .padding(horizontal = 16.dp, vertical = 8.dp)
                                     .fillMaxWidth(),
-                                text = "最近会话",
+                                text = stringResource(R.string.recent_contact),
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.primary
                             )
@@ -247,7 +244,7 @@ fun RowScope.SearchArea(
                                 )
                                 Spacer(modifier = Modifier.height(16.dp))
                                 Text(
-                                    text = "无搜索结果",
+                                    text = stringResource(id = R.string.no_search_result),
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                             }
@@ -259,7 +256,7 @@ fun RowScope.SearchArea(
                                 modifier = modifier
                                     .padding(horizontal = 16.dp, vertical = 8.dp)
                                     .fillMaxWidth(),
-                                text = "消息",
+                                text = stringResource(R.string.message),
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.primary
                             )
@@ -307,7 +304,7 @@ fun RowScope.SearchArea(
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "包含${cm.messages.size}条相关聊天记录",
+                                        text = context.getString(R.string.message_history_search ,cm.messages.size),
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         style = MaterialTheme.typography.bodyMedium,
                                         maxLines = 1,
@@ -395,7 +392,7 @@ fun RowScope.SearchArea(
                                 modifier = modifier
                                     .padding(horizontal = 16.dp, vertical = 8.dp)
                                     .fillMaxWidth(),
-                                text = "会话",
+                                text = stringResource(R.string.contact),
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.primary
                             )

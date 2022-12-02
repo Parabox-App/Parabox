@@ -30,6 +30,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.SoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -157,7 +158,7 @@ fun SearchAppBar(
                         PageContentField(
                             modifier = Modifier.align(Alignment.BottomCenter),
                             isActivated = isActivated,
-                            headerText = "归档",
+                            headerText = stringResource(id = R.string.archive_title),
                             onActivateStateChanged = onActivateStateChanged,
                             onDropdownMenuItemEvent = onDropdownMenuItemEvent
                         )
@@ -357,7 +358,9 @@ fun SelectContentField(
                     ) {
                         if (selection.map { it.isPinned }.contains(false)) {
                             DropdownMenuItem(
-                                text = { Text(text = if (selection.size <= 1) "置顶" else "全部置顶") },
+                                text = { Text(text = if (selection.size <= 1) stringResource(R.string.dropdown_menu_pin) else stringResource(
+                                                                    R.string.dropdown_menu_pin_all)
+                                                                ) },
                                 onClick = {
                                     onDropdownMenuItemEvent(DropdownMenuItemEvent.Pin(true))
                                     onActivateStateChanged(SearchAppBar.NONE)
@@ -371,7 +374,9 @@ fun SelectContentField(
                                 })
                         } else {
                             DropdownMenuItem(
-                                text = { Text(text = if (selection.size <= 1) "取消置顶" else "全部取消置顶") },
+                                text = { Text(text = if (selection.size <= 1) stringResource(R.string.dropdown_menu_not_pin) else stringResource(
+                                                                    R.string.dropdown_menu_not_pin_all)
+                                                                ) },
                                 onClick = {
                                     onDropdownMenuItemEvent(DropdownMenuItemEvent.Pin(false))
                                     onActivateStateChanged(SearchAppBar.NONE)
@@ -385,7 +390,7 @@ fun SelectContentField(
                                 })
                         }
                         DropdownMenuItem(
-                            text = { Text(text = "隐藏会话") },
+                            text = { Text(text = stringResource(R.string.dropdown_menu_hide)) },
                             onClick = {
                                 onDropdownMenuItemEvent(DropdownMenuItemEvent.Hide)
                                 onActivateStateChanged(SearchAppBar.NONE)
@@ -403,7 +408,7 @@ fun SelectContentField(
                                 ) ?: 0) > 0
                             }.contains(false)) {
                             DropdownMenuItem(
-                                text = { Text(text = "标记为未读") },
+                                text = { Text(text = stringResource(R.string.dropdown_menu_mark_as_unread)) },
                                 onClick = {
                                     onDropdownMenuItemEvent(DropdownMenuItemEvent.MarkAsRead(false))
                                     onActivateStateChanged(SearchAppBar.NONE)
@@ -417,7 +422,7 @@ fun SelectContentField(
                                 })
                         } else {
                             DropdownMenuItem(
-                                text = { Text(text = "标记为已读") },
+                                text = { Text(text = stringResource(R.string.dropdown_menu_mark_as_read)) },
                                 onClick = {
                                     onDropdownMenuItemEvent(DropdownMenuItemEvent.MarkAsRead(true))
                                     onActivateStateChanged(SearchAppBar.NONE)
@@ -433,7 +438,9 @@ fun SelectContentField(
                         if (selection.map { it.isArchived }.contains(false)) {
 
                             DropdownMenuItem(
-                                text = { Text(text = if (selection.size <= 1) "归档" else "全部归档") },
+                                text = { Text(text = if (selection.size <= 1) stringResource(R.string.dropdown_menu_archive) else stringResource(
+                                                                    R.string.dropdown_menu_archive_all)
+                                                                ) },
                                 onClick = {
                                     onDropdownMenuItemEvent(DropdownMenuItemEvent.Archive(true))
                                     onActivateStateChanged(SearchAppBar.NONE)
@@ -447,7 +454,9 @@ fun SelectContentField(
                                 })
                         } else {
                             DropdownMenuItem(
-                                text = { Text(text = if (selection.size <= 1) "取消归档" else "全部取消归档") },
+                                text = { Text(text = if (selection.size <= 1) stringResource(R.string.dropdown_menu_unarchive) else stringResource(
+                                                                    R.string.dropdown_menu_unarchive_all)
+                                                                ) },
                                 onClick = {
                                     onDropdownMenuItemEvent(DropdownMenuItemEvent.Archive(false))
                                     onActivateStateChanged(SearchAppBar.NONE)
@@ -462,7 +471,7 @@ fun SelectContentField(
                         }
                         if (selection.size == 1 && selection.first().senderId != selection.first().contactId) {
                             DropdownMenuItem(
-                                text = { Text(text = "删除该编组") },
+                                text = { Text(text = stringResource(R.string.dropdown_menu_delete_grouped)) },
                                 onClick = {
                                     onDropdownMenuItemEvent(DropdownMenuItemEvent.DeleteGrouped)
                                     expanded = false
@@ -476,7 +485,7 @@ fun SelectContentField(
                         }
                         if (selection.size == 1) {
                             DropdownMenuItem(
-                                text = { Text(text = "快速添加标签") },
+                                text = { Text(text = stringResource(R.string.dropdown_menu_new_tag)) },
                                 onClick = {
                                     onDropdownMenuItemEvent(DropdownMenuItemEvent.NewTag)
                                     expanded = false
@@ -488,7 +497,7 @@ fun SelectContentField(
                                     )
                                 })
                             DropdownMenuItem(
-                                text = { Text(text = "详细信息") },
+                                text = { Text(text = stringResource(R.string.dropdown_menu_info)) },
                                 onClick = {
                                     onDropdownMenuItemEvent(DropdownMenuItemEvent.Info)
                                     expanded = false
@@ -593,7 +602,7 @@ fun FileSelectContentField(
                     ) {
                         if (it.any { it.cloudId == null }) {
                             DropdownMenuItem(
-                                text = { Text(text = "保存至云端") },
+                                text = { Text(text = stringResource(R.string.dropdown_menu_save_to_cloud)) },
                                 onClick = {
                                     onDropdownMenuItemEvent(DropdownMenuItemEvent.SaveToCloud)
                                     onActivateStateChanged(SearchAppBar.NONE)
@@ -608,7 +617,7 @@ fun FileSelectContentField(
                         }
                         if (it.size == 1 && it.firstOrNull()?.relatedMessageId != null) {
                             DropdownMenuItem(
-                                text = { Text(text = "跳转至上下文") },
+                                text = { Text(text = stringResource(R.string.dropdown_menu_redirect_to_conversation)) },
                                 onClick = {
                                     onDropdownMenuItemEvent(DropdownMenuItemEvent.RedirectToConversation)
                                     onActivateStateChanged(SearchAppBar.NONE)
@@ -623,7 +632,7 @@ fun FileSelectContentField(
                         }
                         if (it.any { it.cloudId == null }) {
                             DropdownMenuItem(
-                                text = { Text(text = "删除记录") },
+                                text = { Text(text = stringResource(R.string.dropdown_menu_delete_file)) },
                                 onClick = {
                                     onDropdownMenuItemEvent(DropdownMenuItemEvent.DeleteFile)
                                     expanded = false
@@ -689,7 +698,7 @@ fun SelectSpecContentField(
                 modifier = Modifier.width(192.dp)
             ) {
                 DropdownMenuItem(
-                    text = { Text(text = "移出所有归档") },
+                    text = { Text(text = stringResource(id = R.string.dropdown_menu_unarchive_all)) },
                     onClick = {
                         expanded = false
                         onDropdownMenuItemEvent(DropdownMenuItemEvent.UnArchiveALl)
@@ -754,7 +763,7 @@ fun PageContentField(
                 modifier = Modifier.width(192.dp)
             ) {
                 DropdownMenuItem(
-                    text = { Text(text = "移出所有归档") },
+                    text = { Text(text = stringResource(id = R.string.dropdown_menu_unarchive_all)) },
                     onClick = {
                         expanded = false
                         onDropdownMenuItemEvent(DropdownMenuItemEvent.UnArchiveALl)

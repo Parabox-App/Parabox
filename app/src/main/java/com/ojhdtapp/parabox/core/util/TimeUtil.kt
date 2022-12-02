@@ -1,5 +1,7 @@
 package com.ojhdtapp.parabox.core.util
 
+import android.content.Context
+import com.ojhdtapp.parabox.R
 import java.math.RoundingMode
 import java.text.DecimalFormat
 import java.text.SimpleDateFormat
@@ -7,19 +9,20 @@ import java.util.*
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-fun Long.toTimeUntilNow(): String {
+fun Long.toTimeUntilNow(context: Context): String {
     return when (val millsUtilNow = abs(System.currentTimeMillis() - this)) {
-        in 0 until 120000 -> "刚刚"
-        in 120000 until 1500000 -> "${millsUtilNow / 60000}分钟前"
-        in 1500000 until 3000000 -> "半小时前"
-        in 3000000 until 3600000 -> "1小时前"
-        in 3600000 until 86400000 -> "${millsUtilNow / 3600000}小时前"
-        in 86400000 until 259200000 -> "${millsUtilNow / 86400000}天前"
-        else -> this.toFormattedDate()
+        in 0 until 120000 -> context.getString(R.string.just_now)
+        in 120000 until 1500000 -> context.getString(R.string.minutes_ago, millsUtilNow / 60000)
+        in 1500000 until 3000000 -> context.getString(R.string.half_an_hour_ago)
+        in 3000000 until 3600000 -> context.getString(R.string.hour_ago)
+        in 3600000 until 86400000 -> context.getString(R.string.hours_ago, millsUtilNow / 3600000)
+        in 86400000 until 172800000 -> context.getString(R.string.day_ago)
+        in 172800000 until 259200000 -> context.getString(R.string.days_ago, millsUtilNow / 86400000)
+        else -> this.toFormattedDate(context)
     }
 }
 
-fun Long.toDescriptiveTime(): String {
+fun Long.toDescriptiveTime(context: Context): String {
     val dateString = if (abs(System.currentTimeMillis() - this) < 518400000) {
         val currentTimeMillis = System.currentTimeMillis()
         val hourInDay =
@@ -31,21 +34,21 @@ fun Long.toDescriptiveTime(): String {
         val startOfTodayInMills =
             currentTimeMillis - hourInDay * 3600000 - minuteInHour * 60000 - secondInMinute * 1000
         when {
-            startOfTodayInMills - this <= 0 -> "今天"
-            startOfTodayInMills - this in 0 until 86400000 -> "昨天"
-            startOfTodayInMills - this in 86400000 until 172800000 -> "前天"
+            startOfTodayInMills - this <= 0 -> context.getString(R.string.today)
+            startOfTodayInMills - this in 0 until 86400000 -> context.getString(R.string.yesterday)
+            startOfTodayInMills - this in 86400000 until 172800000 -> context.getString(R.string.the_day_before_yesterday)
             else -> when (SimpleDateFormat("u", Locale.getDefault()).format(Date(this))) {
-                "1" -> "星期一"
-                "2" -> "星期二"
-                "3" -> "星期三"
-                "4" -> "星期四"
-                "5" -> "星期五"
-                "6" -> "星期六"
-                "7" -> "星期日"
-                else -> SimpleDateFormat("M'月'd'日'", Locale.getDefault()).format(Date(this))
+                "1" -> context.getString(R.string.monday)
+                "2" -> context.getString(R.string.tuesday)
+                "3" -> context.getString(R.string.wednesday)
+                "4" -> context.getString(R.string.thursday)
+                "5" -> context.getString(R.string.friday)
+                "6" -> context.getString(R.string.saturday)
+                "7" -> context.getString(R.string.sunday)
+                else -> SimpleDateFormat(context.getString(R.string.date_format_pattern), Locale.getDefault()).format(Date(this))
             }
         }
-    } else SimpleDateFormat("M'月'd'日'", Locale.getDefault()).format(Date(this))
+    } else SimpleDateFormat(context.getString(R.string.date_format_pattern), Locale.getDefault()).format(Date(this))
 //    val dateString = when (abs(System.currentTimeMillis() - this)) {
 //        in 0 until 86400000 -> "今天"
 //        in 86400000 until 172800000 -> "昨天"
@@ -67,8 +70,8 @@ fun Long.toDescriptiveTime(): String {
     return "$dateString $timeString"
 }
 
-fun Long.toFormattedDate(): String {
-    return SimpleDateFormat("M'月'd'日'", Locale.getDefault()).format(Date(this))
+fun Long.toFormattedDate(context: Context): String {
+    return SimpleDateFormat(context.getString(R.string.date_format_pattern), Locale.getDefault()).format(Date(this))
 }
 
 fun Long.toDateAndTimeString(): String {

@@ -22,9 +22,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.ui.NavGraph
 import com.ojhdtapp.parabox.ui.destinations.*
 import com.ramcosta.composedestinations.navigation.navigate
@@ -38,11 +40,11 @@ enum class NavigationDestination(
     val graph: NavGraph,
     val icon: ImageVector,
     val iconSelected: ImageVector,
-    val label: String,
+    val labelResId: Int,
 ) {
-    Message(NavGraphs.message, Icons.Outlined.Chat, Icons.Default.Chat, "会话"),
-    File(NavGraphs.file, Icons.Outlined.WorkOutline, Icons.Default.Work, "工作"),
-    Setting(NavGraphs.setting, Icons.Outlined.Settings, Icons.Default.Settings, "设置")
+    Message(NavGraphs.message, Icons.Outlined.Chat, Icons.Default.Chat, R.string.conversation),
+    File(NavGraphs.file, Icons.Outlined.WorkOutline, Icons.Default.Work, R.string.work),
+    Setting(NavGraphs.setting, Icons.Outlined.Settings, Icons.Default.Settings, R.string.settings)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -95,13 +97,13 @@ fun NavigationBar(
                         }) {
                             Icon(
                                 imageVector = if (isCurrentDestOnBackStack) destination.iconSelected else destination.icon,
-                                contentDescription = destination.label
+                                contentDescription = stringResource(id = destination.labelResId)
                             )
                         }
                     },
                     label = {
                         Text(
-                            text = destination.label,
+                            text = stringResource(id = destination.labelResId),
                             style = MaterialTheme.typography.labelLarge
                         )
                     },
@@ -144,7 +146,7 @@ fun NavigationDrawer(
         drawerState = drawerState,
         gesturesEnabled = gesturesEnabled,
         drawerContent = {
-            ModalDrawerSheet {
+            ModalDrawerSheet(modifier = Modifier.width(304.dp)) {
                 Spacer(modifier = Modifier.statusBarsPadding())
                 IconButton(modifier = Modifier.padding(start = 12.dp, top = 12.dp, bottom = 24.dp), onClick = {
                     coroutineScope.launch {
@@ -164,7 +166,7 @@ fun NavigationDrawer(
                             icon = {
                                 Icon(
                                     imageVector = if (isCurrentDestOnBackStack) destination.iconSelected else destination.icon,
-                                    contentDescription = destination.label
+                                    contentDescription = stringResource(id = destination.labelResId)
                                 )
 //                                BadgedBox(badge = {
 //                                    if (destination.graph == NavGraphs.message && messageBadge != 0)
@@ -180,7 +182,7 @@ fun NavigationDrawer(
                             },
                             label = {
                                 Text(
-                                    text = destination.label
+                                    text = stringResource(id = destination.labelResId)
                                 )
                             },
                             badge = {
@@ -216,8 +218,10 @@ fun NavigationDrawer(
                     }
                     Divider(modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp))
                 }
-                Box(modifier = Modifier.height(48.dp).padding(horizontal = 24.dp), contentAlignment = Alignment.CenterStart) {
-                    Text(text = "连接", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                Box(modifier = Modifier
+                    .height(48.dp)
+                    .padding(horizontal = 24.dp), contentAlignment = Alignment.CenterStart) {
+                    Text(text = stringResource(R.string.connection), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                 }
                 NavigationDrawerItem(
                     modifier = Modifier
@@ -230,7 +234,7 @@ fun NavigationDrawer(
                         )
                     },
                     label = {
-                            Text(text = "扩展",)
+                            Text(text = stringResource(R.string.extension),)
                     },
                     selected = false,
                     onClick = {
@@ -250,7 +254,7 @@ fun NavigationDrawer(
                         )
                     },
                     label = {
-                            Text(text = "云端服务",)
+                            Text(text = stringResource(R.string.connect_cloud_service),)
                     },
                     selected = false,
                     onClick = {
@@ -270,7 +274,7 @@ fun NavigationDrawer(
                         )
                     },
                     label = {
-                            Text(text = "Firebase 云消息传递",)
+                            Text(text = stringResource(id = R.string.fcm))
                     },
                     selected = false,
                     onClick = {
@@ -291,7 +295,7 @@ fun NavigationDrawer(
                         )
                     },
                     label = {
-                        Text(text = "帮助与支持",)
+                        Text(text = stringResource(id = R.string.support))
                     },
                     selected = false,
                     onClick = {
@@ -364,7 +368,7 @@ fun NavigationRail(
                     }) {
                         Icon(
                             imageVector = if (isCurrentDestOnBackStack) destination.iconSelected else destination.icon,
-                            contentDescription = destination.label
+                            contentDescription = stringResource(id = destination.labelResId)
                         )
                     }
                 },

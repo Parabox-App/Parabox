@@ -18,9 +18,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.PreferencesCategory
@@ -59,7 +61,7 @@ fun ExperimentalPage(
                 modifier = Modifier
                     .background(appBarContainerColor)
                     .statusBarsPadding(),
-                title = { Text("高级") },
+                title = { Text(stringResource(R.string.experimental)) },
                 navigationIcon = {
                     if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
                         IconButton(onClick = {
@@ -88,20 +90,20 @@ fun ExperimentalPage(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "该页面提供实验性功能，可能导致不可预见的问题。请勿对该页面功能进行反馈。",
+                        text = stringResource(R.string.experimental_info),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
             item {
-                PreferencesCategory(text = "由 ML Kit 提供")
+                PreferencesCategory(text = stringResource(R.string.ml_kit))
             }
             item {
                 SwitchPreference(
-                    title = "实体提取",
-                    subtitleOn = "启用",
-                    subtitleOff = "在静态文本中以及输入时识别特定实体（地址，日期，邮箱等）",
+                    title = stringResource(R.string.entity_extraction_title),
+                    subtitleOn = stringResource(R.string.entity_extraction_subtitle_on),
+                    subtitleOff = stringResource(R.string.entity_extraction_subtitle_off),
                     checked = false,
                     enabled = false,
                     onCheckedChange = {}
@@ -109,9 +111,9 @@ fun ExperimentalPage(
             }
             item {
                 SwitchPreference(
-                    title = "智能回复",
-                    subtitleOn = "启用",
-                    subtitleOff = "根据对话的完整上下文生成回复建议（仅支持英语）",
+                    title = stringResource(R.string.smart_reply_title),
+                    subtitleOn = stringResource(R.string.smart_reply_subtitle_on),
+                    subtitleOff = stringResource(R.string.smart_reply_subtitle_off),
                     checked = false,
                     enabled = false,
                     onCheckedChange = {}
@@ -119,31 +121,31 @@ fun ExperimentalPage(
             }
             item {
                 SwitchPreference(
-                    title = "翻译",
-                    subtitleOn = "启用",
-                    subtitleOff = "将会话内容翻译成您的语言",
+                    title = stringResource(R.string.translation_title),
+                    subtitleOn = stringResource(R.string.translation_subtitle_on),
+                    subtitleOff = stringResource(R.string.translation_subtitle_off),
                     checked = false,
                     enabled = false,
                     onCheckedChange = {}
                 )
             }
             item {
-                PreferencesCategory(text = "通知及对话泡")
+                PreferencesCategory(text = stringResource(R.string.notification_and_bubble))
             }
             item {
                 SwitchPreference(
-                    title = "允许返回主页",
-                    subtitleOn = "返回按钮将于对话泡界面显示",
-                    subtitleOff = "将在对话泡界面显示主页按钮。开启后可于悬浮窗使用完整应用功能",
+                    title = stringResource(R.string.return_home_in_bubble_title),
+                    subtitleOn = stringResource(R.string.return_home_in_bubble_subtitle_on),
+                    subtitleOff = stringResource(R.string.return_home_in_bubble_subtitle_off),
                     checked = viewModel.allowBubbleHomeFlow.collectAsState(initial = false).value,
                     onCheckedChange = viewModel::setAllowBubbleHome
                 )
             }
             item {
                 SwitchPreference(
-                    title = "允许前台发送通知",
-                    subtitleOn = "无视应用状态发送通知",
-                    subtitleOff = "仅当应用进入后台才发送通知",
+                    title = stringResource(R.string.notification_when_foreground_title),
+                    subtitleOn = stringResource(R.string.notification_when_foreground_subtitle_on),
+                    subtitleOff = stringResource(R.string.notification_when_foreground_subtitle_off),
                     checked = viewModel.allowForegroundNotificationFlow.collectAsState(initial = false).value,
                     onCheckedChange = viewModel::setAllowForegroundNotification
                 )

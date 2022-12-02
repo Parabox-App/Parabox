@@ -49,6 +49,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.*
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -149,8 +150,7 @@ fun ChatPage(
                         val selectedPluginConnection = messageState.selectedPluginConnection
                             ?: messageState.pluginConnectionList.firstOrNull()
                         if (selectedPluginConnection == null) {
-                            Toast.makeText(context, "未选择有效的发送出口", Toast.LENGTH_SHORT)
-                                .show()
+                            Toast.makeText(context, context.getString(R.string.no_plugin_connection_selected), Toast.LENGTH_SHORT).show()
                         } else {
                             onEvent(
                                 ActivityEvent.SendMessage(
@@ -329,7 +329,11 @@ fun NormalChatPage(
                         if (index != -1) {
                             scrollState.animateScrollToItem(index)
                         } else {
-                            Toast.makeText(context, "无法定位消息", Toast.LENGTH_SHORT)
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.cannot_locate_msg),
+                                Toast.LENGTH_SHORT
+                            )
                                 .show()
                         }
                     }
@@ -362,11 +366,13 @@ fun NormalChatPage(
             },
             icon = { Icon(Icons.Outlined.Warning, contentDescription = null) },
             title = {
-                Text(text = "移除消息")
+                Text(
+                    text = stringResource(R.string.delete_message)
+                )
             },
             text = {
                 Text(
-                    "选中的 ${mainSharedViewModel.selectedMessageStateList.size} 条消息将被永久移除。"
+                    stringResource(id = R.string.delete_message_text, mainSharedViewModel.selectedMessageStateList.size)
                 )
             },
             confirmButton = {
@@ -377,7 +383,7 @@ fun NormalChatPage(
                         lazyPagingItems.refresh()
                     }
                 ) {
-                    Text("确认")
+                    Text(stringResource(R.string.confirm))
                 }
             },
             dismissButton = {
@@ -386,7 +392,7 @@ fun NormalChatPage(
                         showDeleteMessageConfirmDialog = false
                     }
                 ) {
-                    Text("取消")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -401,11 +407,11 @@ fun NormalChatPage(
             },
             icon = { Icon(Icons.Outlined.Warning, contentDescription = null) },
             title = {
-                Text(text = "移除消息")
+                Text(text = stringResource(id = R.string.delete_message))
             },
             text = {
                 Text(
-                    "消息将从聊天记录永久移除。"
+                    stringResource(R.string.delete_single_message_text)
                 )
             },
             confirmButton = {
@@ -419,7 +425,7 @@ fun NormalChatPage(
                         }
                     }
                 ) {
-                    Text("确认")
+                    Text(stringResource(R.string.confirm))
                 }
             },
             dismissButton = {
@@ -429,7 +435,7 @@ fun NormalChatPage(
                         clickingMessage = null
                     }
                 ) {
-                    Text("取消")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -559,13 +565,13 @@ fun NormalChatPage(
                             ) {
                                 DropdownMenuItem(
                                     text = {
-                                        Text("添加到表情")
+                                        Text(stringResource(R.string.add_meme))
                                     },
                                     onClick = {
                                         imagePreviewerMenuExpanded = false
                                         try {
-                                            val imageId = imageList.value.getOrNull(current)?.first
-                                            if (imageId == null) throw NoSuchElementException("id lost")
+                                            val imageId =
+                                                imageList.value.getOrNull(current)?.first ?: throw NoSuchElementException("id lost")
                                             val imageIndex = imageId.toString().last().digitToInt()
                                             val messageId = imageId.toString().let{
                                                 it.substring(0, it.length - 1).toLong()
@@ -607,13 +613,13 @@ fun NormalChatPage(
                                             memeUpdateFlag++
                                             Toast.makeText(
                                                 context,
-                                                "已添加 1 张图片到自定义表情",
+                                                context.getString(R.string.add_meme_text, 1),
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         } catch (e: NoSuchElementException){
                                             Toast.makeText(
                                                 context,
-                                                "无法定位图片",
+                                                context.getString(R.string.cannot_locate_img),
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         }
@@ -626,13 +632,13 @@ fun NormalChatPage(
                                     })
                                 DropdownMenuItem(
                                     text = {
-                                        Text("保存到本地")
+                                        Text(stringResource(R.string.save_to_local))
                                     },
                                     onClick = {
                                         imagePreviewerMenuExpanded = false
                                         try {
-                                            val imageId = imageList.value.getOrNull(current)?.first
-                                            if (imageId == null) throw NoSuchElementException("id lost")
+                                            val imageId =
+                                                imageList.value.getOrNull(current)?.first ?: throw NoSuchElementException("id lost")
                                             val imageIndex = imageId.toString().last().digitToInt()
                                             val messageId = imageId.toString().let{
                                                 it.substring(0, it.length - 1).toLong()
@@ -664,13 +670,13 @@ fun NormalChatPage(
                                             memeUpdateFlag++
                                             Toast.makeText(
                                                 context,
-                                                "已将 1 张图片保存到 /Pictures/Parabox",
+                                                context.getString(R.string.save_to_local_text, 1),
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         } catch (e: NoSuchElementException){
                                             Toast.makeText(
                                                 context,
-                                                "无法定位图片",
+                                                context.getString(R.string.cannot_locate_img),
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         }
@@ -742,7 +748,7 @@ fun NormalChatPage(
                                             .fillMaxWidth()
                                             .padding(horizontal = 8.dp),
                                         placeholder = {
-                                            Text(text = "于此会话中搜索")
+                                            Text(text = stringResource(R.string.search_in_conversation))
                                         },
                                         singleLine = true,
                                         keyboardOptions = KeyboardOptions(
@@ -879,7 +885,7 @@ fun NormalChatPage(
                                     IconButton(onClick = {
                                         Toast.makeText(
                                             context,
-                                            "内容已复制到剪贴板",
+                                            context.getString(R.string.save_to_clipboard),
                                             Toast.LENGTH_SHORT
                                         ).show()
                                         clipboardManager.setText(AnnotatedString(
@@ -917,7 +923,7 @@ fun NormalChatPage(
                                     ) {
                                         if (mainSharedViewModel.selectedMessageStateList.size == 1 && mainSharedViewModel.selectedMessageStateList.firstOrNull()?.sentByMe == true) {
                                             DropdownMenuItem(
-                                                text = { Text(text = "尝试撤回") },
+                                                text = { Text(text = stringResource(R.string.try_to_recall)) },
                                                 onClick = {
                                                     if (mainSharedViewModel.selectedMessageStateList.size == 1) {
                                                         val message =
@@ -938,7 +944,7 @@ fun NormalChatPage(
                                         }
                                         if (mainSharedViewModel.selectedMessageStateList.size == 1) {
                                             DropdownMenuItem(
-                                                text = { Text(text = "回复") },
+                                                text = { Text(text = stringResource(R.string.reply)) },
                                                 onClick = {
                                                     if (mainSharedViewModel.selectedMessageStateList.size == 1)
                                                         mainSharedViewModel.setQuoteMessage(
@@ -956,7 +962,7 @@ fun NormalChatPage(
                                                 })
                                         }
                                         DropdownMenuItem(
-                                            text = { Text(text = "从聊天记录移除") },
+                                            text = { Text(text = stringResource(R.string.remove_from_history)) },
                                             onClick = {
                                                 menuExpanded = false
                                                 showDeleteMessageConfirmDialog = true
@@ -980,7 +986,7 @@ fun NormalChatPage(
                         TopAppBar(
                             title = {
                                 Text(
-                                    text = messageState.contact?.profile?.name ?: "会话",
+                                    text = messageState.contact?.profile?.name ?: stringResource(R.string.conversation),
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis,
                                 )
@@ -1023,7 +1029,7 @@ fun NormalChatPage(
                                     ) {
                                         if (isInSplitScreen) {
                                             DropdownMenuItem(
-                                                text = { Text(text = "解除分屏") },
+                                                text = { Text(text = stringResource(R.string.stop_splitting)) },
                                                 onClick = {
                                                     menuExpanded = false
                                                     onStopSplitting()
@@ -1045,7 +1051,7 @@ fun NormalChatPage(
                                                 mutableStateOf(false)
                                             }
                                             DropdownMenuItem(
-                                                text = { Text(text = "消息发送出口") },
+                                                text = { Text(text = stringResource(R.string.select_plugin_connection)) },
                                                 onClick = {
                                                     pluginConnectionMenuExpanded =
                                                         !pluginConnectionMenuExpanded
@@ -1092,7 +1098,7 @@ fun NormalChatPage(
                                             }
                                         }
                                         DropdownMenuItem(
-                                            text = { Text(text = "刷新") },
+                                            text = { Text(text = stringResource(R.string.refresh)) },
                                             onClick = {
                                                 menuExpanded = false
                                                 lazyPagingItems.refresh()
@@ -1105,7 +1111,7 @@ fun NormalChatPage(
                                             })
                                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                                             DropdownMenuItem(
-                                                text = { Text(text = "在对话泡中显示") },
+                                                text = { Text(text = stringResource(R.string.display_in_bubble)) },
                                                 onClick = {
                                                     menuExpanded = false
                                                     onShowInBubble()
@@ -1160,7 +1166,7 @@ fun NormalChatPage(
                                         } else {
                                             Toast.makeText(
                                                 context,
-                                                "无法定位消息",
+                                                context.getString(R.string.cannot_locate_msg),
                                                 Toast.LENGTH_SHORT
                                             )
                                                 .show()
@@ -1476,7 +1482,7 @@ fun NormalChatPage(
                                         memeUpdateFlag++
                                         Toast.makeText(
                                             context,
-                                            "已添加 ${images.size} 张图片到自定义表情",
+                                            context.getString(R.string.add_meme_text, images.size),
                                             Toast.LENGTH_SHORT
                                         ).show()
                                     }
@@ -1484,10 +1490,9 @@ fun NormalChatPage(
                                     is SingleMessageEvent.Copy -> {
                                         Toast.makeText(
                                             context,
-                                            "内容已复制到剪贴板",
+                                            context.getString(R.string.save_to_clipboard),
                                             Toast.LENGTH_SHORT
-                                        )
-                                            .show()
+                                        ).show()
                                         clipboardManager.setText(AnnotatedString(value.contents.getContentString()))
                                     }
 
@@ -1527,14 +1532,14 @@ fun NormalChatPage(
                                             }
                                             Toast.makeText(
                                                 context,
-                                                "已将 ${images.size} 张图片保存到 /Pictures/Parabox",
+                                                context.getString(R.string.save_to_local_text, images.size),
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         } catch (e: Exception) {
                                             e.printStackTrace()
                                             Toast.makeText(
                                                 context,
-                                                "保存图片时发生错误",
+                                                context.getString(R.string.save_to_local_error),
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         }
@@ -1582,7 +1587,7 @@ fun NormalChatPage(
                                         } else {
                                             Toast.makeText(
                                                 context,
-                                                "无法定位消息",
+                                                context.getString(R.string.cannot_locate_msg),
                                                 Toast.LENGTH_SHORT
                                             )
                                                 .show()
@@ -1666,7 +1671,7 @@ fun NullChatPage(modifier: Modifier = Modifier) {
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "选择会话",
+                text = stringResource(R.string.select_conversation),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -1816,6 +1821,7 @@ fun MessageAvatar(
 
 @Composable
 fun TimeDivider(modifier: Modifier = Modifier, timestamp: Long) {
+    val context = LocalContext.current
     Row(
         modifier = modifier.height(48.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -1827,7 +1833,7 @@ fun TimeDivider(modifier: Modifier = Modifier, timestamp: Long) {
             color = MaterialTheme.colorScheme.surfaceVariant
         )
         Text(
-            text = timestamp.toDescriptiveTime(),
+            text = timestamp.toDescriptiveTime(context),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurface
         )
@@ -2309,7 +2315,7 @@ private fun MessageContent.toLayout(
                             quoteMessageTimestamp?.let {
                                 Text(
                                     modifier = Modifier.width(IntrinsicSize.Max),
-                                    text = it.toDescriptiveTime(),
+                                    text = it.toDescriptiveTime(context),
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.outline,
                                     maxLines = 1,
@@ -2336,7 +2342,7 @@ private fun MessageContent.toLayout(
                     }
                     if (quoteMessageContent == null) {
                         Text(
-                            text = "无法定位消息",
+                            text = stringResource(R.string.cannot_locate_msg),
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }

@@ -45,6 +45,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
@@ -185,11 +186,11 @@ fun MessagePage(
                 },
                 icon = { Icon(Icons.Outlined.Notifications, contentDescription = null) },
                 title = {
-                    Text(text = "权限申请")
+                    Text(text = stringResource(id = R.string.request_permission))
                 },
                 text = {
                     Text(
-                        "在 Android 13 (Tiramisu) 及更高版本上，通知发送需要额外运行时权限。该权限对于即时通讯应用是必要的。\n您亦可前往设置页面手动授权。"
+                        stringResource(id = R.string.notification_permission_des)
                     )
                 },
                 confirmButton = {
@@ -199,7 +200,7 @@ fun MessagePage(
                             notificationPermissionState?.launchPermissionRequest()
                         }
                     ) {
-                        Text("尝试授权")
+                        Text(context.getString(R.string.try_request_permission))
                     }
                 },
                 dismissButton = {
@@ -209,7 +210,7 @@ fun MessagePage(
                             context.launchSetting()
                         }
                     ) {
-                        Text("转到设置")
+                        Text(stringResource(id = R.string.redirect_to_setting))
                     }
                 }
             )
@@ -291,8 +292,8 @@ fun MessagePage(
             androidx.compose.material3.AlertDialog(onDismissRequest = {
                 showDeleteGroupedContactConfirm = false
             },
-                title = { Text(text = "确认删除") },
-                text = { Text(text = "该编组将从会话列表移除，但不会影响任何已关联会话及聊天记录。") },
+                title = { Text(text = stringResource(id = R.string.delete_confirm)) },
+                text = { Text(text = stringResource(R.string.delete_contact_confirm_text)) },
                 confirmButton = {
                     androidx.compose.material3.TextButton(onClick = {
                         viewModel.selectedContactStateList.firstOrNull()?.let {
@@ -300,14 +301,14 @@ fun MessagePage(
                         }
                         showDeleteGroupedContactConfirm = false
                     }) {
-                        Text(text = "确认")
+                        Text(text = stringResource(id = R.string.confirm))
                     }
                 },
                 dismissButton = {
                     androidx.compose.material3.TextButton(onClick = {
                         showDeleteGroupedContactConfirm = false
                     }) {
-                        Text(text = "取消")
+                        Text(text = stringResource(id = R.string.cancel))
                     }
                 })
         }
@@ -320,7 +321,7 @@ fun MessagePage(
                 SearchAppBar(
                     text = viewModel.searchText.value,
                     onTextChange = viewModel::setSearchText,
-                    placeholder = "搜索会话",
+                    placeholder = stringResource(R.string.contact_search_bar_placeholder),
                     activateState = viewModel.searchBarActivateState.value,
                     avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
                     shouldHover = hoverSearchBar,
@@ -357,8 +358,8 @@ fun MessagePage(
                             is DropdownMenuItemEvent.Hide -> {
                                 coroutineScope.launch {
                                     snackBarHostState.showSnackbar(
-                                        message = "会话已暂时隐藏",
-                                        actionLabel = "取消",
+                                        message = context.getString(R.string.contact_hidden),
+                                        actionLabel = context.getString(R.string.cancel),
                                         duration = SnackbarDuration.Short
                                     )
                                         .also { result ->
@@ -430,7 +431,7 @@ fun MessagePage(
             floatingActionButton = {
                 if (sizeClass.widthSizeClass != WindowWidthSizeClass.Medium) {
                     ExtendedFloatingActionButton(
-                        text = { Text(text = "发起会话") },
+                        text = { Text(text = stringResource(R.string.new_contact)) },
                         icon = {
                             Icon(
                                 imageVector = Icons.Outlined.Add,
@@ -716,7 +717,7 @@ fun SwipeableContact(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "隐藏该会话",
+                    text = stringResource(R.string.hide_contact),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onPrimary
                 )
@@ -763,6 +764,7 @@ fun ContactItem(
     onLongClick: () -> Unit = {},
     onAvatarClick: () -> Unit = {},
 ) {
+    val context = LocalContext.current
     val backgroundColor by
     animateColorAsState(
         targetValue = if (isEditing && isExpanded) {
@@ -887,7 +889,7 @@ fun ContactItem(
                     )
                 } else {
                     Text(
-                        text = title ?: contact?.profile?.name ?: "会话名称",
+                        text = title ?: contact?.profile?.name ?: context.getString(R.string.contact_name),
                         style = MaterialTheme.typography.titleMedium,
                         color = if (noBackground) MaterialTheme.colorScheme.onSurface else textColor,
                         maxLines = 1
@@ -935,7 +937,7 @@ fun ContactItem(
                 ) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = (timestamp ?: contact?.latestMessage?.timestamp)?.toTimeUntilNow()
+                        text = (timestamp ?: contact?.latestMessage?.timestamp)?.toTimeUntilNow(context)
                             ?: "",
                         style = MaterialTheme.typography.labelMedium
                     )

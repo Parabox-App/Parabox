@@ -8,6 +8,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.WorkManager
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.GoogleDriveUtil
@@ -76,7 +77,7 @@ class FilePageViewModel @Inject constructor(
                         extension = it.fullFileExtension ?: FileUtil.getExtension(it.name),
                         size = it.getSize(),
                         timestamp = it.createdTime.value,
-                        profileName = "Google Drive",
+                        profileName = context.getString(R.string.cloud_service_gd),
                         fileId = it.createdTime.value,
                         cloudType = GoogleDriveUtil.SERVICE_CODE,
                         cloudId = it.id
@@ -161,7 +162,7 @@ class FilePageViewModel @Inject constructor(
                             )
                             _uiEventFlow.emit(
                                 FilePageUiEvent.ShowSnackBar(
-                                    result.message ?: "未知错误"
+                                    result.message ?: context.getString(R.string.unknown_error)
                                 )
                             )
                         }

@@ -8,8 +8,10 @@ import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import com.ojhdtapp.parabox.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,7 +34,7 @@ fun EditUserNameDialog(
             icon = {
                 Icon(imageVector = Icons.Outlined.AccountCircle, contentDescription = "account")
             },
-            title = { Text(text = "如何称呼您") },
+            title = { Text(text = stringResource(R.string.user_name_title)) },
             text = {
                 OutlinedTextField(
 //                    modifier = Modifier.fillMaxWidth(),
@@ -43,7 +45,7 @@ fun EditUserNameDialog(
                     },
                     label = {
                         Text(
-                            text = "用户名"
+                            text = stringResource(R.string.user_name)
                         )
                     },
                     singleLine = true,
@@ -71,7 +73,7 @@ fun EditUserNameDialog(
                         editUserNameError = true
                     }
                 }) {
-                    Text(text = "确定")
+                    Text(text = stringResource(id = R.string.confirm))
                 }
             },
             dismissButton = {
@@ -80,7 +82,7 @@ fun EditUserNameDialog(
                     editUserNameError = false
                     onDismiss()
                 }) {
-                    Text(text = "取消")
+                    Text(text = stringResource(id = R.string.cancel))
                 }
             })
     }

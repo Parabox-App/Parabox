@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.ui.setting
 
 import android.os.Build
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -14,9 +15,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.os.LocaleListCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.theme.Theme
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
@@ -59,7 +63,7 @@ fun InterfacePage(
                 modifier = Modifier
                     .background(appBarContainerColor)
                     .statusBarsPadding(),
-                title = { Text("用户界面") },
+                title = { Text(stringResource(R.string.user_interface)) },
                 navigationIcon = {
                     if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
                         IconButton(onClick = {
@@ -80,13 +84,13 @@ fun InterfacePage(
             contentPadding = it
         ) {
             item {
-                PreferencesCategory(text = "主题")
+                PreferencesCategory(text = stringResource(R.string.user_interface_theme))
             }
             item {
                 SwitchPreference(
-                    title = "Monet 动态取色",
-                    subtitleOn = "应用色彩将响应壁纸变化",
-                    subtitleOff = "应用色彩响应壁纸变化（需要系统版本为 Android 12 或更高）",
+                    title = stringResource(R.string.user_interface_monet_title),
+                    subtitleOn = stringResource(R.string.user_interface_monet_subtitle_on),
+                    subtitleOff = stringResource(R.string.user_interface_monet_subtitle_off),
                     checked = enableDynamicColor,
                     onCheckedChange = viewModel::setEnableDynamicColor,
                     enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
@@ -94,27 +98,31 @@ fun InterfacePage(
             }
             item {
                 SimpleMenuPreference(
-                    title = "主题色",
+                    title = stringResource(R.string.user_interface_color),
                     selectedKey = viewModel.themeFlow.collectAsState(initial = Theme.WILLOW).value,
                     optionsMap = mapOf(
-                        Theme.WILLOW to "柳染",
-                        Theme.PURPLE to "藤紫",
-                        Theme.SAKURA to "樱花",
-                        Theme.GARDENIA to "栀子",
-                        Theme.WATER to "清水"
+                        Theme.WILLOW to stringResource(R.string.color_willow),
+                        Theme.PURPLE to stringResource(R.string.color_purple),
+                        Theme.SAKURA to stringResource(R.string.color_sakura),
+                        Theme.GARDENIA to stringResource(R.string.color_gardenia),
+                        Theme.WATER to stringResource(R.string.color_water)
                     ),
                     enabled = !enableDynamicColor,
                     onSelect = viewModel::setTheme
                 )
             }
             item {
-                PreferencesCategory(text = "语言")
+                PreferencesCategory(text = stringResource(R.string.language))
             }
             item {
                 SimpleMenuPreference(
-                    title = "语言",
+                    title = stringResource(R.string.language),
                     optionsMap = mapOf("zh-rCN" to "中文（中国）", "en" to "English", "ja" to "日本語"),
-                    onSelect = {})
+                    selectedKey = AppCompatDelegate.getApplicationLocales()[0]?.toLanguageTag(),
+                    onSelect = {
+                        val appLocale: LocaleListCompat = LocaleListCompat.forLanguageTags(it)
+                        AppCompatDelegate.setApplicationLocales(appLocale)
+                    })
             }
         }
     }

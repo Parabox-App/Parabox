@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.*
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -42,6 +43,7 @@ import coil.imageLoader
 import coil.request.ImageRequest
 import coil.request.SuccessResult
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.message_content.*
@@ -90,7 +92,7 @@ fun BubblePage(
             val selectedPluginConnection = messageState.selectedPluginConnection
                 ?: messageState.pluginConnectionList.firstOrNull()
             if (selectedPluginConnection == null) {
-                Toast.makeText(context, "未选择有效的发送出口", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.no_plugin_connection_selected), Toast.LENGTH_SHORT).show()
             } else {
                 onEvent(
                     ActivityEvent.SendMessage(
@@ -240,11 +242,11 @@ fun BubbleChatPage(
             },
             icon = { Icon(Icons.Outlined.Warning, contentDescription = null) },
             title = {
-                Text(text = "移除消息")
+                Text(text = stringResource(R.string.delete_message))
             },
             text = {
                 Text(
-                    "选中的 ${viewModel.selectedMessageStateList.size} 条消息将被永久移除。"
+                    stringResource(id = R.string.delete_message_text, viewModel.selectedMessageStateList.size)
                 )
             },
             confirmButton = {
@@ -255,7 +257,7 @@ fun BubbleChatPage(
                         lazyPagingItems.refresh()
                     }
                 ) {
-                    Text("确认")
+                    Text(stringResource(R.string.confirm))
                 }
             },
             dismissButton = {
@@ -264,7 +266,7 @@ fun BubbleChatPage(
                         showDeleteMessageConfirmDialog = false
                     }
                 ) {
-                    Text("取消")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -279,11 +281,11 @@ fun BubbleChatPage(
             },
             icon = { Icon(Icons.Outlined.Warning, contentDescription = null) },
             title = {
-                Text(text = "移除消息")
+                Text(text = stringResource(id = R.string.delete_message))
             },
             text = {
                 Text(
-                    "消息将从聊天记录永久移除。"
+                    stringResource(R.string.delete_single_message_text)
                 )
             },
             confirmButton = {
@@ -297,7 +299,7 @@ fun BubbleChatPage(
                         }
                     }
                 ) {
-                    Text("确认")
+                    Text(stringResource(R.string.confirm))
                 }
             },
             dismissButton = {
@@ -307,7 +309,7 @@ fun BubbleChatPage(
                         clickingMessage = null
                     }
                 ) {
-                    Text("取消")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -408,13 +410,13 @@ fun BubbleChatPage(
                             ) {
                                 DropdownMenuItem(
                                     text = {
-                                        Text("添加到表情")
+                                        Text(stringResource(R.string.add_meme))
                                     },
                                     onClick = {
                                         imagePreviewerMenuExpanded = false
                                         try {
-                                            val imageId = imageList.value.getOrNull(current)?.first
-                                            if (imageId == null) throw NoSuchElementException("id lost")
+                                            val imageId =
+                                                imageList.value.getOrNull(current)?.first ?: throw NoSuchElementException("id lost")
                                             val imageIndex = imageId.toString().last().digitToInt()
                                             val messageId = imageId.toString().let{
                                                 it.substring(0, it.length - 1).toLong()
@@ -456,13 +458,13 @@ fun BubbleChatPage(
                                             memeUpdateFlag++
                                             Toast.makeText(
                                                 context,
-                                                "已添加 1 张图片到自定义表情",
+                                                context.getString(R.string.add_meme_text, 1),
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         } catch (e: NoSuchElementException){
                                             Toast.makeText(
                                                 context,
-                                                "无法定位图片",
+                                                context.getString(R.string.cannot_locate_img),
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         }
@@ -475,13 +477,13 @@ fun BubbleChatPage(
                                     })
                                 DropdownMenuItem(
                                     text = {
-                                        Text("保存到本地")
+                                        Text(stringResource(R.string.save_to_local))
                                     },
                                     onClick = {
                                         imagePreviewerMenuExpanded = false
                                         try {
-                                            val imageId = imageList.value.getOrNull(current)?.first
-                                            if (imageId == null) throw NoSuchElementException("id lost")
+                                            val imageId =
+                                                imageList.value.getOrNull(current)?.first ?: throw NoSuchElementException("id lost")
                                             val imageIndex = imageId.toString().last().digitToInt()
                                             val messageId = imageId.toString().let{
                                                 it.substring(0, it.length - 1).toLong()
@@ -513,13 +515,13 @@ fun BubbleChatPage(
                                             memeUpdateFlag++
                                             Toast.makeText(
                                                 context,
-                                                "已将 1 张图片保存到 /Pictures/Parabox",
+                                                context.getString(R.string.save_to_local_text, 1),
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         } catch (e: NoSuchElementException){
                                             Toast.makeText(
                                                 context,
-                                                "无法定位图片",
+                                                context.getString(R.string.cannot_locate_img),
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         }
@@ -611,7 +613,7 @@ fun BubbleChatPage(
                                 IconButton(onClick = {
                                     Toast.makeText(
                                         context,
-                                        "内容已复制到剪贴板",
+                                        context.getString(R.string.save_to_clipboard),
                                         Toast.LENGTH_SHORT
                                     ).show()
                                     clipboardManager.setText(AnnotatedString(viewModel.selectedMessageStateList.first().contents.getContentString()))
@@ -640,7 +642,7 @@ fun BubbleChatPage(
                                 ) {
                                     if (viewModel.selectedMessageStateList.size == 1 && viewModel.selectedMessageStateList.firstOrNull()?.sentByMe == true) {
                                         DropdownMenuItem(
-                                            text = { Text(text = "尝试撤回") },
+                                            text = { Text(text = stringResource(R.string.try_to_recall)) },
                                             onClick = {
                                                 if (viewModel.selectedMessageStateList.size == 1) {
                                                     val message =
@@ -661,7 +663,7 @@ fun BubbleChatPage(
                                     }
                                     if (viewModel.selectedMessageStateList.size == 1) {
                                         DropdownMenuItem(
-                                            text = { Text(text = "回复") },
+                                            text = { Text(text = stringResource(R.string.reply)) },
                                             onClick = {
                                                 if (viewModel.selectedMessageStateList.size == 1)
                                                     viewModel.setQuoteMessage(
@@ -679,7 +681,7 @@ fun BubbleChatPage(
                                             })
                                     }
                                     DropdownMenuItem(
-                                        text = { Text(text = "从聊天记录移除") },
+                                        text = { Text(text = stringResource(R.string.remove_from_history)) },
                                         onClick = {
                                             menuExpanded = false
                                             showDeleteMessageConfirmDialog = true
@@ -701,7 +703,7 @@ fun BubbleChatPage(
                     TopAppBar(
                         title = {
                             Text(
-                                text = messageState.contact?.profile?.name ?: "会话",
+                                text = messageState.contact?.profile?.name ?: stringResource(R.string.conversation),
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,
                             )
@@ -743,7 +745,7 @@ fun BubbleChatPage(
                                             mutableStateOf(false)
                                         }
                                         DropdownMenuItem(
-                                            text = { Text(text = "消息发送出口") },
+                                            text = { Text(text = stringResource(R.string.select_plugin_connection)) },
                                             onClick = {
                                                 pluginConnectionMenuExpanded =
                                                     !pluginConnectionMenuExpanded
@@ -790,7 +792,7 @@ fun BubbleChatPage(
                                         }
                                     }
                                     DropdownMenuItem(
-                                        text = { Text(text = "刷新") },
+                                        text = { Text(text = stringResource(R.string.refresh)) },
                                         onClick = {
                                             menuExpanded = false
                                             lazyPagingItems.refresh()
@@ -843,7 +845,7 @@ fun BubbleChatPage(
                                         } else {
                                             Toast.makeText(
                                                 context,
-                                                "无法定位消息",
+                                                context.getString(R.string.cannot_locate_msg),
                                                 Toast.LENGTH_SHORT
                                             )
                                                 .show()
@@ -1155,7 +1157,7 @@ fun BubbleChatPage(
                                         memeUpdateFlag++
                                         Toast.makeText(
                                             context,
-                                            "已添加 ${images.size} 张图片到自定义表情",
+                                            context.getString(R.string.add_meme_text, images.size),
                                             Toast.LENGTH_SHORT
                                         ).show()
                                     }
@@ -1163,10 +1165,9 @@ fun BubbleChatPage(
                                     is SingleMessageEvent.Copy -> {
                                         Toast.makeText(
                                             context,
-                                            "内容已复制到剪贴板",
+                                            context.getString(R.string.save_to_clipboard),
                                             Toast.LENGTH_SHORT
-                                        )
-                                            .show()
+                                        ).show()
                                         clipboardManager.setText(AnnotatedString(value.contents.getContentString()))
                                     }
 
@@ -1206,14 +1207,14 @@ fun BubbleChatPage(
                                             }
                                             Toast.makeText(
                                                 context,
-                                                "已将 ${images.size} 张图片保存到 /Pictures/Parabox",
+                                                context.getString(R.string.save_to_local_text, images.size),
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         } catch (e: Exception) {
                                             e.printStackTrace()
                                             Toast.makeText(
                                                 context,
-                                                "保存图片时发生错误",
+                                                context.getString(R.string.save_to_local_error),
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         }
@@ -1261,7 +1262,7 @@ fun BubbleChatPage(
                                         } else {
                                             Toast.makeText(
                                                 context,
-                                                "无法定位消息",
+                                                context.getString(R.string.cannot_locate_msg),
                                                 Toast.LENGTH_SHORT
                                             )
                                                 .show()

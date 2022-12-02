@@ -32,12 +32,12 @@ fun AgreementDialog(
             onDismissRequest = onDismiss,
             confirmButton = {
                 TextButton(onClick = onConfirm) {
-                    Text(text = "同意并接受")
+                    Text(text = stringResource(R.string.accept))
                 }
             },
             dismissButton = {
                 TextButton(onClick = onDismiss) {
-                    Text(text = "拒绝")
+                    Text(text = stringResource(R.string.reject))
                 }
             },
             icon = icon,

@@ -20,6 +20,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -28,6 +30,7 @@ import coil.compose.AsyncImage
 import com.google.accompanist.flowlayout.FlowRow
 import com.guru.fontawesomecomposelib.FaIcon
 import com.guru.fontawesomecomposelib.FaIcons
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
@@ -76,7 +79,7 @@ fun ExtensionPage(
                 modifier = Modifier
                     .background(appBarContainerColor)
                     .statusBarsPadding(),
-                title = { Text("扩展") },
+                title = { Text(stringResource(R.string.extension)) },
                 navigationIcon = {
                     if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
                         IconButton(onClick = {
@@ -112,7 +115,7 @@ fun ExtensionPage(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "扩展更新后，均需手动重置扩展连接。",
+                        text = stringResource(R.string.extension_msg),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -128,7 +131,7 @@ fun ExtensionPage(
                         ) {
                             Text(
                                 modifier = Modifier.padding(vertical = 16.dp),
-                                text = "已启用 FCM 接收端模式，扩展功能已被禁用",
+                                text = stringResource(R.string.extension_banned_for_fcm),
                                 style = MaterialTheme.typography.labelLarge
                             )
                             FilledTonalButton(
@@ -139,7 +142,7 @@ fun ExtensionPage(
                                         viewModel.setSelectedSetting(SettingPageState.FCM)
                                     }
                                 }) {
-                                Text(text = "转到设置")
+                                Text(text = stringResource(R.string.redirect_to_setting))
                             }
                         }
                     } else {
@@ -150,7 +153,7 @@ fun ExtensionPage(
                         ) {
                             Text(
                                 modifier = Modifier.padding(vertical = 16.dp),
-                                text = "未发现可用扩展",
+                                text = stringResource(R.string.no_available_extension),
                                 style = MaterialTheme.typography.labelLarge
                             )
                             FilledTonalButton(
@@ -161,7 +164,7 @@ fun ExtensionPage(
                                     size = ButtonDefaults.IconSize,
                                     tint = MaterialTheme.colorScheme.onSurface
                                 )
-                                Text(text = "从应用商店获取")
+                                Text(text = stringResource(R.string.get_from_appstore))
                             }
                         }
                     }
@@ -190,8 +193,8 @@ fun ExtensionPage(
             item {
                 if (pluginList.isNotEmpty()) {
                     NormalPreference(
-                        title = "重置扩展连接",
-                        subtitle = "断开并重新连接扩展，不会影响扩展运行状态",
+                        title = stringResource(R.string.reset_extension_connection_title),
+                        subtitle = stringResource(R.string.reset_extension_connection_subtitle),
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Outlined.LinkOff,
@@ -217,6 +220,7 @@ fun ExtensionCard(
     onClick: () -> Unit,
     onLaunch: () -> Unit
 ) {
+    val context = LocalContext.current
     ElevatedCard(modifier = modifier, onClick = onClick) {
         Column(
             modifier = Modifier
@@ -246,7 +250,7 @@ fun ExtensionCard(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "版本 ${appModel.version} • 作者 ${appModel.author}",
+                        text = context.getString(R.string.extension_info, appModel.version, appModel.author),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1
@@ -290,7 +294,7 @@ fun ExtensionCard(
             AnimatedVisibility(visible = expanded) {
                 Column(modifier = Modifier.padding(top = 24.dp)) {
                     Text(
-                        text = "消息类型支持情况",
+                        text = stringResource(R.string.extension_support_msg_type),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -298,7 +302,7 @@ fun ExtensionCard(
                         FilterChip(
                             selected = true,
                             onClick = {},
-                            label = { Text(text = "纯文本") },
+                            label = { Text(text = stringResource(R.string.msg_type_plain_text)) },
                             leadingIcon = {
                                 SupportLeadingIcon(supportType = appModel.plainTextSupport)
                             },
@@ -306,7 +310,7 @@ fun ExtensionCard(
                         FilterChip(
                             selected = true,
                             onClick = {},
-                            label = { Text(text = "图片") },
+                            label = { Text(text = stringResource(R.string.msg_type_image)) },
                             leadingIcon = {
                                 SupportLeadingIcon(supportType = appModel.imageSupport)
                             },
@@ -314,7 +318,7 @@ fun ExtensionCard(
                         FilterChip(
                             selected = true,
                             onClick = {},
-                            label = { Text(text = "语音") },
+                            label = { Text(text = stringResource(R.string.msg_type_audio)) },
                             leadingIcon = {
                                 SupportLeadingIcon(supportType = appModel.audioSupport)
                             },
@@ -322,7 +326,7 @@ fun ExtensionCard(
                         FilterChip(
                             selected = true,
                             onClick = {},
-                            label = { Text(text = "文件") },
+                            label = { Text(text = stringResource(R.string.msg_type_file)) },
                             leadingIcon = {
                                 SupportLeadingIcon(supportType = appModel.fileSupport)
                             },
@@ -330,7 +334,7 @@ fun ExtensionCard(
                         FilterChip(
                             selected = true,
                             onClick = {},
-                            label = { Text(text = "艾特") },
+                            label = { Text(text = stringResource(R.string.msg_type_at)) },
                             leadingIcon = {
                                 SupportLeadingIcon(supportType = appModel.atSupport)
                             },
@@ -338,7 +342,7 @@ fun ExtensionCard(
                         FilterChip(
                             selected = true,
                             onClick = {},
-                            label = { Text(text = "引用回复") },
+                            label = { Text(text = stringResource(R.string.msg_type_quote_reply)) },
                             leadingIcon = {
                                 SupportLeadingIcon(supportType = appModel.audioSupport)
                             },
@@ -349,7 +353,7 @@ fun ExtensionCard(
                         onClick = {
                             onLaunch()
                         }) {
-                        Text(text = "设置")
+                        Text(text = stringResource(R.string.settings))
                     }
                 }
             }

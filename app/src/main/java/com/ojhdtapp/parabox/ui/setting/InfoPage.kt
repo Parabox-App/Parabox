@@ -20,11 +20,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.ojhdtapp.parabox.BuildConfig
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
@@ -67,7 +69,7 @@ fun InfoPage(
                 modifier = Modifier
                     .background(appBarContainerColor)
                     .statusBarsPadding(),
-                title = { Text("关于") },
+                title = { Text(stringResource(R.string.about)) },
                 navigationIcon = {
                     if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
                         IconButton(onClick = {

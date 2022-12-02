@@ -37,6 +37,7 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
@@ -89,6 +90,7 @@ fun RowScope.MessageArea(
     // If you'd like to customize either the snap behavior or the layout provider
 //    val snappingLayout = remember(listState) { SnapLayoutInfoProvider(listState) }
 //    val flingBehavior = rememberSnapFlingBehavior(snappingLayout)
+    val context = LocalContext.current
     SwipeRefresh(
         state = rememberSwipeRefreshState(isRefreshing = mainSharedViewModel.isRefreshing.value),
         onRefresh = {
@@ -151,13 +153,13 @@ fun RowScope.MessageArea(
                         if (values.size >= 2) {
                             onConfirmDelete = false
                             if (!FormUtil.checkTagMinimumCharacter(values[0])) {
-                                hashTagError = "标签应至少包含两个字符"
+                                hashTagError = context.getString(R.string.hash_tag_error_too_short)
                                 hashTagShouldShowError = true
                             } else if (!FormUtil.checkTagMaximumCharacter(values[0])) {
-                                hashTagError = "标签长度不应超过50"
+                                hashTagError = context.getString(R.string.hash_tag_error_too_long)
                                 hashTagShouldShowError = true
                             } else if (hashTagList.contains(values[0])) {
-                                hashTagError = "该标签已存在"
+                                hashTagError = context.getString(R.string.hash_tag_error_duplicate)
                                 hashTagShouldShowError = true
                             } else {
                                 hashTagShouldShowError = false
@@ -171,7 +173,7 @@ fun RowScope.MessageArea(
                             hashTagText = it
                         }
                     },
-                    placeHolderWhenEnabled = "自定义标签筛选",
+                    placeHolderWhenEnabled = stringResource(R.string.tag_des),
                     lazyListState = hashTagLazyListState,
                     focusRequester = hashTagFocusRequester,
                     textFieldInteraction = hashTagInteraction,
@@ -245,7 +247,7 @@ fun RowScope.MessageArea(
                                     //                                modifier = Modifier.width(192.dp)
                                 ) {
                                     DropdownMenuItem(
-                                        text = { Text("全部") },
+                                        text = { Text(stringResource(R.string.all)) },
                                         onClick = {
                                             viewModel.setTypeFilter(
                                                 ContactTypeFilterState.All()
@@ -254,7 +256,7 @@ fun RowScope.MessageArea(
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("已编组") },
+                                        text = { Text(stringResource(R.string.grouped)) },
                                         onClick = {
                                             viewModel.setTypeFilter(
                                                 ContactTypeFilterState.Grouped()
@@ -263,7 +265,7 @@ fun RowScope.MessageArea(
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("未编组") },
+                                        text = { Text(stringResource(R.string.ungrouped)) },
                                         onClick = {
                                             viewModel.setTypeFilter(
                                                 ContactTypeFilterState.Ungrouped()
@@ -274,7 +276,7 @@ fun RowScope.MessageArea(
                                 }
                             }
                         },
-                        label = { Text(text = viewModel.typeFilter.value.label) },
+                        label = { Text(text = stringResource(id = viewModel.typeFilter.value.labelResId)) },
                         border = FilterChipDefaults.filterChipBorder(
                             borderColor = MaterialTheme.colorScheme.outline.copy(
                                 alpha = 0.4f
@@ -300,7 +302,7 @@ fun RowScope.MessageArea(
                                     modifier = Modifier.size(FilterChipDefaults.IconSize)
                                 )
                         },
-                        label = { Text(text = "未读") },
+                        label = { Text(text = stringResource(R.string.unread)) },
                         border = FilterChipDefaults.filterChipBorder(
                             borderColor = MaterialTheme.colorScheme.outline.copy(
                                 alpha = 0.4f
@@ -387,7 +389,7 @@ fun RowScope.MessageArea(
                             .animateItemPlacement()
                     ) {
                         Text(
-                            text = "主要",
+                            text = stringResource(R.string.main),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -424,8 +426,8 @@ fun RowScope.MessageArea(
                             if (it) {
                                 coroutineScope.launch {
                                     snackBarHostState.showSnackbar(
-                                        message = "会话已暂时隐藏",
-                                        actionLabel = "取消",
+                                        message = context.getString(R.string.contact_hidden),
+                                        actionLabel = context.getString(R.string.cancel),
                                         duration = SnackbarDuration.Short
                                     )
                                         .also { result ->
@@ -519,7 +521,7 @@ fun RowScope.MessageArea(
                             .animateItemPlacement()
                     ) {
                         Text(
-                            text = "其他",
+                            text = stringResource(R.string.other),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -533,8 +535,8 @@ fun RowScope.MessageArea(
                             if (it) {
                                 coroutineScope.launch {
                                     snackBarHostState.showSnackbar(
-                                        message = "会话已暂时隐藏",
-                                        actionLabel = "取消",
+                                        message = context.getString(R.string.contact_hidden),
+                                        actionLabel = context.getString(R.string.cancel),
                                         duration = SnackbarDuration.Short
                                     )
                                         .also { result ->
@@ -574,7 +576,7 @@ fun RowScope.MessageArea(
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                             },
-                            title = "已归档会话",
+                            title = stringResource(R.string.archived_contact),
                             subTitle = "${archivedContact.firstOrNull()?.profile?.name}: ${archivedContact.firstOrNull()?.latestMessage?.content}",
                             timestamp = archivedContact.firstOrNull()?.latestMessage?.timestamp,
                             unreadMessagesNum = archivedContact.fold(0) { acc, contact ->
@@ -644,7 +646,7 @@ fun RowScope.MessageArea(
                                 .padding(bottom = 16.dp)
                         )
                         Text(
-                            text = "暂无可显示的会话",
+                            text = stringResource(R.string.contact_empty),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -39,6 +40,7 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.domain.model.Contact
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -79,7 +81,7 @@ fun ContactListDialog(
                 tonalElevation = 2.dp
             ) {
                 Column(modifier = Modifier.padding(24.dp).fillMaxWidth()) {
-                    Text(text = "会话列表", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 16.dp))
+                    Text(text = stringResource(R.string.contact_list), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 16.dp))
                     LazyColumn(modifier = Modifier.heightIn(0.dp, 400.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         if (loading) {
                             item {
@@ -101,7 +103,7 @@ fun ContactListDialog(
                                             .height(176.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text(text = "暂无会话")
+                                        Text(text = stringResource(R.string.no_contact))
                                     }
                                 }
                             }
