@@ -14,10 +14,16 @@ object BrowserUtil {
         .build()
 
     fun launchURL(context: Context, url: String) {
-        val customTabsIntent = CustomTabsIntent.Builder()
-            .setDefaultColorSchemeParams(defaultColor)
-            .build()
-        customTabsIntent.launchUrl(context, Uri.parse(url))
+        try {
+            var mUrl = url
+            if (!url.startsWith("http")) mUrl = "https://${url}"
+            val customTabsIntent = CustomTabsIntent.Builder()
+                .setDefaultColorSchemeParams(defaultColor)
+                .build()
+            customTabsIntent.launchUrl(context, Uri.parse(mUrl))
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     fun composeEmail(context: Context, addresses: Array<String?>?, subject: String?) {
@@ -26,5 +32,15 @@ object BrowserUtil {
         intent.putExtra(Intent.EXTRA_EMAIL, addresses)
         intent.putExtra(Intent.EXTRA_SUBJECT, subject)
         context.startActivity(intent)
+    }
+
+    fun launchMap(context: Context, address: String){
+        val gmmIntentUri =
+            Uri.parse("geo:0,0?q=${address}")
+        val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+        mapIntent.setPackage("com.google.android.apps.maps")
+        mapIntent.resolveActivity(context.packageManager)?.let {
+            context.startActivity(mapIntent)
+        }
     }
 }

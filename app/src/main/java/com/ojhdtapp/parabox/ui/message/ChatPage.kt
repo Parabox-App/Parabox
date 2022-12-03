@@ -1,22 +1,24 @@
 package com.ojhdtapp.parabox.ui.message
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Build.VERSION.SDK_INT
+import android.provider.CalendarContract
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -72,6 +74,8 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import coil.request.SuccessResult
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.google.mlkit.nl.entityextraction.*
+import com.ojhdtapp.parabox.MainActivity
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.domain.model.Message
@@ -150,7 +154,11 @@ fun ChatPage(
                         val selectedPluginConnection = messageState.selectedPluginConnection
                             ?: messageState.pluginConnectionList.firstOrNull()
                         if (selectedPluginConnection == null) {
-                            Toast.makeText(context, context.getString(R.string.no_plugin_connection_selected), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.no_plugin_connection_selected),
+                                Toast.LENGTH_SHORT
+                            ).show()
                         } else {
                             onEvent(
                                 ActivityEvent.SendMessage(
@@ -372,7 +380,10 @@ fun NormalChatPage(
             },
             text = {
                 Text(
-                    stringResource(id = R.string.delete_message_text, mainSharedViewModel.selectedMessageStateList.size)
+                    stringResource(
+                        id = R.string.delete_message_text,
+                        mainSharedViewModel.selectedMessageStateList.size
+                    )
                 )
             },
             confirmButton = {
@@ -474,7 +485,7 @@ fun NormalChatPage(
     }
     // Image Preview
     val imageViewerState = rememberPreviewerState()
-    LaunchedEffect(messageState){
+    LaunchedEffect(messageState) {
         imageViewerState.hide()
     }
     val imageList =
@@ -490,7 +501,14 @@ fun NormalChatPage(
                         imageMessageList.reversed().forEachIndexed { index, t ->
                             if (t.uriString != null) {
                                 FileUtil.getBitmapFromUri(context, Uri.parse(t.uriString))?.let {
-                                    acc.add("${message.messageId}${(lastIndex - index).coerceIn(0, lastIndex)}".toLong() to it.asImageBitmap())
+                                    acc.add(
+                                        "${message.messageId}${
+                                            (lastIndex - index).coerceIn(
+                                                0,
+                                                lastIndex
+                                            )
+                                        }".toLong() to it.asImageBitmap()
+                                    )
                                 }
                             } else if (t.url != null) {
                                 val loader = ImageLoader(context)
@@ -501,11 +519,18 @@ fun NormalChatPage(
                                 val bitmap = try {
                                     val result = (loader.execute(request) as SuccessResult).drawable
                                     (result as BitmapDrawable).bitmap.asImageBitmap()
-                                } catch(e: Exception) {
+                                } catch (e: Exception) {
                                     e.printStackTrace()
                                     ImageBitmap(1, 1)
                                 }
-                                acc.add("${message.messageId}${(lastIndex - index).coerceIn(0, lastIndex)}".toLong() to bitmap)
+                                acc.add(
+                                    "${message.messageId}${
+                                        (lastIndex - index).coerceIn(
+                                            0,
+                                            lastIndex
+                                        )
+                                    }".toLong() to bitmap
+                                )
                             }
                         }
                         acc
@@ -552,7 +577,9 @@ fun NormalChatPage(
                             modifier = Modifier
                                 .wrapContentSize(Alignment.TopStart)
                         ) {
-                            IconButton(onClick = { imagePreviewerMenuExpanded = !imagePreviewerMenuExpanded }) {
+                            IconButton(onClick = {
+                                imagePreviewerMenuExpanded = !imagePreviewerMenuExpanded
+                            }) {
                                 Icon(
                                     imageVector = Icons.Outlined.MoreVert,
                                     contentDescription = "more"
@@ -571,14 +598,17 @@ fun NormalChatPage(
                                         imagePreviewerMenuExpanded = false
                                         try {
                                             val imageId =
-                                                imageList.value.getOrNull(current)?.first ?: throw NoSuchElementException("id lost")
+                                                imageList.value.getOrNull(current)?.first
+                                                    ?: throw NoSuchElementException("id lost")
                                             val imageIndex = imageId.toString().last().digitToInt()
-                                            val messageId = imageId.toString().let{
+                                            val messageId = imageId.toString().let {
                                                 it.substring(0, it.length - 1).toLong()
                                             }
-                                            val message = lazyPagingItems.itemSnapshotList.items.findLast { it.messageId == messageId }
+                                            val message =
+                                                lazyPagingItems.itemSnapshotList.items.findLast { it.messageId == messageId }
                                             val image =
-                                                message?.contents?.filterIsInstance<Image>()?.getOrNull(imageIndex)
+                                                message?.contents?.filterIsInstance<Image>()
+                                                    ?.getOrNull(imageIndex)
                                                     ?: throw NoSuchElementException("image lost")
                                             val path = context.getExternalFilesDir("meme")!!
                                             if (message.sentByMe) {
@@ -616,7 +646,7 @@ fun NormalChatPage(
                                                 context.getString(R.string.add_meme_text, 1),
                                                 Toast.LENGTH_SHORT
                                             ).show()
-                                        } catch (e: NoSuchElementException){
+                                        } catch (e: NoSuchElementException) {
                                             Toast.makeText(
                                                 context,
                                                 context.getString(R.string.cannot_locate_img),
@@ -638,14 +668,17 @@ fun NormalChatPage(
                                         imagePreviewerMenuExpanded = false
                                         try {
                                             val imageId =
-                                                imageList.value.getOrNull(current)?.first ?: throw NoSuchElementException("id lost")
+                                                imageList.value.getOrNull(current)?.first
+                                                    ?: throw NoSuchElementException("id lost")
                                             val imageIndex = imageId.toString().last().digitToInt()
-                                            val messageId = imageId.toString().let{
+                                            val messageId = imageId.toString().let {
                                                 it.substring(0, it.length - 1).toLong()
                                             }
-                                            val message = lazyPagingItems.itemSnapshotList.items.findLast { it.messageId == messageId }
+                                            val message =
+                                                lazyPagingItems.itemSnapshotList.items.findLast { it.messageId == messageId }
                                             val image =
-                                                message?.contents?.filterIsInstance<Image>()?.getOrNull(imageIndex)
+                                                message?.contents?.filterIsInstance<Image>()
+                                                    ?.getOrNull(imageIndex)
                                                     ?: throw NoSuchElementException("image lost")
                                             if (message.sentByMe) {
                                                 image.uriString?.let { uriString ->
@@ -673,7 +706,7 @@ fun NormalChatPage(
                                                 context.getString(R.string.save_to_local_text, 1),
                                                 Toast.LENGTH_SHORT
                                             ).show()
-                                        } catch (e: NoSuchElementException){
+                                        } catch (e: NoSuchElementException) {
                                             Toast.makeText(
                                                 context,
                                                 context.getString(R.string.cannot_locate_img),
@@ -705,7 +738,7 @@ fun NormalChatPage(
     )
     val useDarkIcons = isSystemInDarkTheme()
     val systemUiController = rememberSystemUiController()
-    LaunchedEffect(imageViewerState.show){
+    LaunchedEffect(imageViewerState.show) {
         if (imageViewerState.show) {
             systemUiController.setSystemBarsColor(
                 color = Color.Transparent,
@@ -890,8 +923,8 @@ fun NormalChatPage(
                                         ).show()
                                         clipboardManager.setText(AnnotatedString(
                                             buildString {
-                                                mainSharedViewModel.selectedMessageStateList.forEachIndexed{ index, s ->
-                                                    if(index != mainSharedViewModel.selectedMessageStateList.lastIndex){
+                                                mainSharedViewModel.selectedMessageStateList.forEachIndexed { index, s ->
+                                                    if (index != mainSharedViewModel.selectedMessageStateList.lastIndex) {
                                                         append(s.contents.getContentString())
                                                         append(" ")
                                                     }
@@ -986,7 +1019,8 @@ fun NormalChatPage(
                         TopAppBar(
                             title = {
                                 Text(
-                                    text = messageState.contact?.profile?.name ?: stringResource(R.string.conversation),
+                                    text = messageState.contact?.profile?.name
+                                        ?: stringResource(R.string.conversation),
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis,
                                 )
@@ -1532,7 +1566,10 @@ fun NormalChatPage(
                                             }
                                             Toast.makeText(
                                                 context,
-                                                context.getString(R.string.save_to_local_text, images.size),
+                                                context.getString(
+                                                    R.string.save_to_local_text,
+                                                    images.size
+                                                ),
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         } catch (e: Exception) {
@@ -1801,7 +1838,8 @@ fun MessageAvatar(
         if (shouldDisplay) {
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data(avatarUri?.let { Uri.parse(it) } ?: avatar ?: if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar)
+                    .data(avatarUri?.let { Uri.parse(it) } ?: avatar
+                    ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar)
                     .crossfade(true)
                     .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
                     .build(),
@@ -1943,7 +1981,7 @@ fun TimeDivider(modifier: Modifier = Modifier, timestamp: Long) {
 //    }
 //}
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun SingleMessage(
     modifier: Modifier = Modifier,
@@ -1961,6 +1999,7 @@ fun SingleMessage(
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
+    val clipboardManager: ClipboardManager = LocalClipboardManager.current
     val topStartRadius by animateDpAsState(targetValue = if (message.sentByMe || isFirst) 24.dp else 0.dp)
     val topEndRadius by animateDpAsState(targetValue = if (!message.sentByMe || isFirst) 24.dp else 0.dp)
     val bottomStartRadius by animateDpAsState(targetValue = if (message.sentByMe || isLast) 24.dp else 0.dp)
@@ -1986,6 +2025,21 @@ fun SingleMessage(
             if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
         }
     )
+    var entities by remember {
+        mutableStateOf<List<Pair<Entity, String>>>(
+            emptyList()
+        )
+    }
+    LaunchedEffect(true) {
+        val tempList = mutableListOf<Pair<Entity, String>>()
+        (context as MainActivity).getEntityAnnotationList(message.contents.getContentString())
+            .forEach { entityAnnotation ->
+                entityAnnotation.entities.forEach {
+                    tempList.add(it to entityAnnotation.annotatedText)
+                }
+            }
+        entities = tempList
+    }
     SelectionContainer {
         Box(
             modifier = Modifier
@@ -2047,6 +2101,151 @@ fun SingleMessage(
                             onQuoteReplyClick = onQuoteReplyClick,
                             onAudioClick = onAudioClick,
                         )
+                    }
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        items(items = entities) {
+                            when (it.first.type) {
+                                Entity.TYPE_ADDRESS -> {
+                                    AssistChip(
+                                        onClick = {
+                                                  BrowserUtil.launchMap(context, it.second)
+                                        },
+                                        label = { Text(text = it.second.ellipsis(maxLength = 10),color = textColor) },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Outlined.Place,
+                                                contentDescription = "address"
+                                            )
+                                        }
+                                    )
+                                }
+                                Entity.TYPE_DATE_TIME -> {
+                                    val timestamp = it.first.asDateTimeEntity()!!.timestampMillis
+                                    AssistChip(
+                                        onClick = {
+                                            (context as MainActivity).startActivity(Intent(Intent.ACTION_INSERT).apply {
+                                                data = CalendarContract.Events.CONTENT_URI
+                                                putExtra(
+                                                    CalendarContract.EXTRA_EVENT_BEGIN_TIME,
+                                                    timestamp
+                                                )
+                                                putExtra(
+                                                    CalendarContract.EXTRA_EVENT_END_TIME,
+                                                    timestamp
+                                                )
+                                            })
+                                        },
+                                        label = { Text(text = timestamp.toDescriptiveDateAndTime(),color = textColor) },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Outlined.Event,
+                                                contentDescription = "date"
+                                            )
+                                        }
+                                    )
+                                }
+                                Entity.TYPE_EMAIL -> {
+                                    AssistChip(
+                                        onClick = {
+                                            BrowserUtil.composeEmail(
+                                                context,
+                                                arrayOf(it.second),
+                                                null
+                                            )
+                                        },
+                                        label = { Text(text = it.second,color = textColor) },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Outlined.Email,
+                                                contentDescription = "email"
+                                            )
+                                        }
+                                    )
+                                }
+                                Entity.TYPE_FLIGHT_NUMBER -> {
+                                    val flightStr = it.first.asFlightNumberEntity()!!
+                                        .let { "${it.airlineCode} ${it.flightNumber}" }
+                                    AssistChip(
+                                        onClick = { clipboardManager.setText(AnnotatedString(text = flightStr)) },
+                                        label = {
+                                            Text(text = flightStr,color = textColor)
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Outlined.FlightTakeoff,
+                                                contentDescription = "flight"
+                                            )
+                                        }
+                                    )
+                                }
+                                Entity.TYPE_IBAN -> {
+                                    AssistChip(
+                                        onClick = { clipboardManager.setText(AnnotatedString(text = it.second)) },
+                                        label = { Text(text = it.second,color = textColor) },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Outlined.AccountBalance,
+                                                contentDescription = "bank"
+                                            )
+                                        }
+                                    )
+                                }
+                                Entity.TYPE_ISBN -> {
+                                    AssistChip(
+                                        onClick = { clipboardManager.setText(AnnotatedString(text = it.second)) },
+                                        label = { Text(text = it.second,color = textColor) },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Outlined.LocalLibrary,
+                                                contentDescription = "isbn"
+                                            )
+                                        }
+                                    )
+                                }
+                                Entity.TYPE_PAYMENT_CARD -> {
+                                    AssistChip(
+                                        onClick = { clipboardManager.setText(AnnotatedString(text = it.second)) },
+                                        label = { Text(text = it.second,color = textColor) },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Outlined.CreditCard,
+                                                contentDescription = "card"
+                                            )
+                                        }
+                                    )
+                                }
+                                Entity.TYPE_PHONE -> {
+                                    AssistChip(
+                                        onClick = { (context as MainActivity).startActivity(Intent(Intent.ACTION_DIAL).apply{
+                                            data = Uri.parse("tel:${it.second}")
+                                        }) },
+                                        label = { Text(text = it.second,color = textColor) },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Outlined.Call,
+                                                contentDescription = "call"
+                                            )
+                                        }
+                                    )
+                                }
+                                Entity.TYPE_URL -> {
+                                    AssistChip(
+                                        onClick = { BrowserUtil.launchURL(context, it.second) },
+                                        label = { Text(text = it.second.ellipsis(20),color = textColor) },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Outlined.Link,
+                                                contentDescription = "url"
+                                            )
+                                        }
+                                    )
+                                }
+                                else -> {}
+                            }
+                        }
                     }
                 }
             }

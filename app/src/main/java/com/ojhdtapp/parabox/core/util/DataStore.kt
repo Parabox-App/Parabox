@@ -25,6 +25,7 @@ object DataStoreKeys{
     val SETTINGS_FCM_CLOUD_STORAGE = intPreferencesKey("settings_fcm_cloud_storage")
     val SETTINGS_ENABLE_DYNAMIC_COLOR = booleanPreferencesKey("settings_enable_dynamic_color")
     val SETTINGS_THEME = intPreferencesKey("settings_theme")
+    val SETTINGS_ML_KIT_ENTITY_EXTRACTION = booleanPreferencesKey("settings_ml_kit_entity_extraction")
     val SETTINGS_ALLOW_BUBBLE_HOME = booleanPreferencesKey("settings_allow_bubble_home")
     val SETTINGS_ALLOW_FOREGROUND_NOTIFICATION = booleanPreferencesKey("settings_allow_foreground_notification")
     val GOOGLE_MAIL = stringPreferencesKey("google_mail")

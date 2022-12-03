@@ -24,6 +24,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.CreateDocument
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -72,6 +73,7 @@ import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderF
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.messaging.FirebaseMessaging
+import com.google.mlkit.nl.entityextraction.*
 import com.ojhdtapp.parabox.core.util.BrowserUtil
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.DownloadManagerUtil
@@ -87,6 +89,7 @@ import com.ojhdtapp.parabox.domain.fcm.FcmApiHelper
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.model.File
+import com.ojhdtapp.parabox.domain.model.message_content.getContentString
 import com.ojhdtapp.parabox.domain.service.PluginListListener
 import com.ojhdtapp.parabox.domain.service.PluginService
 import com.ojhdtapp.parabox.domain.use_case.GetContacts
@@ -122,6 +125,9 @@ import linc.com.amplituda.Amplituda
 import linc.com.amplituda.Compress
 import java.io.IOException
 import javax.inject.Inject
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -181,6 +187,9 @@ class MainActivity : AppCompatActivity() {
     // Backup and Restore
     private lateinit var backupLocationSelector: ActivityResultLauncher<String>
     private lateinit var restoreLocationSelector: ActivityResultLauncher<Array<String>>
+
+    // ML
+    private var entityExtractor: EntityExtractor? = null
 
     private fun openFile(file: File) {
         file.downloadPath?.let {
@@ -282,7 +291,7 @@ class MainActivity : AppCompatActivity() {
                 start()
             } catch (e: IOException) {
                 e.printStackTrace()
-            } catch (e: IllegalStateException){
+            } catch (e: IllegalStateException) {
                 e.printStackTrace()
             }
         }
@@ -768,7 +777,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun queryConfigFromFireStore(){
+    private fun queryConfigFromFireStore() {
         val db = Firebase.firestore
         db.collection("config").get().addOnSuccessListener { result ->
             if (result != null) {
@@ -776,7 +785,7 @@ class MainActivity : AppCompatActivity() {
 
                 val fcm_url = config?.get("fcm_url")?.toString()
                 Log.d("parabox", "fcm_url: $fcm_url")
-                fcm_url?.let{
+                fcm_url?.let {
                     lifecycleScope.launch {
                         dataStore.edit { settings ->
                             settings[DataStoreKeys.SETTINGS_FCM_OFFICIAL_URL] = it
@@ -788,6 +797,28 @@ class MainActivity : AppCompatActivity() {
             }
         }.addOnFailureListener { exception ->
             Log.d("parabox", "get failed with ", exception)
+        }
+    }
+
+    private fun initializeMLKit() {
+        lifecycleScope.launch {
+            val isEntityExtractionEnabled =
+                dataStore.data.first()[DataStoreKeys.SETTINGS_ML_KIT_ENTITY_EXTRACTION] ?: false
+            if (isEntityExtractionEnabled) {
+                val tempEntityExtractor =
+                    EntityExtraction.getClient(
+                        EntityExtractorOptions.Builder(
+                            AppCompatDelegate.getApplicationLocales()[0]?.toLanguageTag()?.let {
+                                EntityExtractorOptions.fromLanguageTag(it)
+                            } ?: EntityExtractorOptions.ENGLISH
+                        ).build())
+                tempEntityExtractor
+                    .downloadModelIfNeeded()
+                    .addOnSuccessListener { _ ->
+                        entityExtractor = tempEntityExtractor
+                        lifecycle.addObserver(entityExtractor!!)
+                    }
+            }
         }
     }
 
@@ -813,6 +844,25 @@ class MainActivity : AppCompatActivity() {
                     preferences[DataStoreKeys.GOOGLE_USED_SPACE] = it.usedSpace
                     preferences[DataStoreKeys.GOOGLE_APP_USED_SPACE] = it.appUsedSpace
                 }
+            }
+        }
+    }
+
+    // ML
+    suspend fun getEntityAnnotationList(str: String): List<EntityAnnotation> {
+        return suspendCoroutine<List<EntityAnnotation>> { cot ->
+            Log.d("parabox", "getEntityAnnotationList: $str")
+            if (entityExtractor == null) cot.resume(emptyList<EntityAnnotation>())
+            else {
+                val params = EntityExtractionParams.Builder(str).build()
+                entityExtractor!!.annotate(params)
+                    .addOnSuccessListener { result ->
+                        cot.resume(result)
+                    }
+                    .addOnFailureListener {
+                        it.printStackTrace()
+                        cot.resumeWithException(it)
+                    }
             }
         }
     }
@@ -868,7 +918,9 @@ class MainActivity : AppCompatActivity() {
                             val dtoWithoutUri = when {
                                 fcmCloudStorage == FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal -> {
                                     dto.copy(
-                                        contents = dto.contents.saveLocalResourcesToCloud(baseContext)
+                                        contents = dto.contents.saveLocalResourcesToCloud(
+                                            baseContext
+                                        )
                                     )
                                 }
 
@@ -1190,6 +1242,10 @@ class MainActivity : AppCompatActivity() {
 
         // Query FireStore
         queryConfigFromFireStore()
+
+        // ML-Kit
+        initializeMLKit()
+
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {

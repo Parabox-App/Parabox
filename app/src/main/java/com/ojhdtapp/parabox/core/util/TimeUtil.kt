@@ -81,6 +81,13 @@ fun Long.toDateAndTimeString(): String {
     ).format(Date(this)) + this.toString().substring(11)
 }
 
+fun Long.toDescriptiveDateAndTime(): String {
+    return SimpleDateFormat(
+        "MMM d h:mm",
+        Locale.getDefault()
+    ).format(Date(this))
+}
+
 fun Long.toMSString(): String{
     val df = DecimalFormat("#").apply {
         roundingMode = RoundingMode.DOWN
