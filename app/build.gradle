@@ -61,6 +61,9 @@ android {
     lintOptions {
         abortOnError false
     }
+    aaptOptions {
+        noCompress "tflite"
+    }
     applicationVariants.all { variant ->
         kotlin.sourceSets {
             getByName(variant.name) {
@@ -128,6 +131,7 @@ dependencies {
 
     // ML-Kit
     implementation 'com.google.mlkit:entity-extraction:16.0.0-beta4'
+    implementation 'com.google.mlkit:smart-reply:17.0.2'
 
     // Extended Gestures
     implementation 'com.github.SmartToolFactory:Compose-Extended-Gestures:2.0.0'

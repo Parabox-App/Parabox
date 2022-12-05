@@ -74,6 +74,7 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.mlkit.nl.entityextraction.*
+import com.google.mlkit.nl.smartreply.*
 import com.ojhdtapp.parabox.core.util.BrowserUtil
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.DownloadManagerUtil
@@ -113,14 +114,10 @@ import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.navigation.dependency
 import dagger.hilt.android.AndroidEntryPoint
 import de.raphaelebner.roomdatabasebackup.core.RoomBackup
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import linc.com.amplituda.Amplituda
 import linc.com.amplituda.Compress
 import java.io.IOException
@@ -190,6 +187,7 @@ class MainActivity : AppCompatActivity() {
 
     // ML
     private var entityExtractor: EntityExtractor? = null
+    private var smartReplyGenerator: SmartReplyGenerator? = null
 
     private fun openFile(file: File) {
         file.downloadPath?.let {
@@ -803,7 +801,9 @@ class MainActivity : AppCompatActivity() {
     private fun initializeMLKit() {
         lifecycleScope.launch {
             val isEntityExtractionEnabled =
-                dataStore.data.first()[DataStoreKeys.SETTINGS_ML_KIT_ENTITY_EXTRACTION] ?: false
+                dataStore.data.first()[DataStoreKeys.SETTINGS_ML_KIT_ENTITY_EXTRACTION] ?: true
+            val isSmartReplyEnabled =
+                dataStore.data.first()[DataStoreKeys.SETTINGS_ML_KIT_SMART_REPLY] ?: true
             if (isEntityExtractionEnabled) {
                 val tempEntityExtractor =
                     EntityExtraction.getClient(
@@ -818,6 +818,9 @@ class MainActivity : AppCompatActivity() {
                         entityExtractor = tempEntityExtractor
                         lifecycle.addObserver(entityExtractor!!)
                     }
+            }
+            if (isSmartReplyEnabled) {
+                smartReplyGenerator = SmartReply.getClient()
             }
         }
     }
@@ -864,6 +867,39 @@ class MainActivity : AppCompatActivity() {
                         cot.resumeWithException(it)
                     }
             }
+        }
+    }
+
+    suspend fun getSmartReplyList(contactId: Long): List<SmartReplySuggestion> {
+        Log.d("parabox", "getSmartReplyList: $contactId")
+        if (smartReplyGenerator == null) return emptyList()
+        val conversation = withContext(Dispatchers.IO) {
+            appDatabase.messageDao.getMessagesWithLimit(listOf(contactId), 3).sortedBy { it.timestamp }.map {
+                if (it.sentByMe) {
+                    TextMessage.createForLocalUser(it.contentString, it.timestamp)
+                } else {
+                    TextMessage.createForRemoteUser(it.contentString, it.timestamp, it.profile.name)
+                }
+            }
+        }
+        return suspendCoroutine<List<SmartReplySuggestion>> { cot ->
+            Log.d("parabox", "getSmartReplyList: ${conversation.last().messageText}")
+            smartReplyGenerator!!.suggestReplies(conversation)
+                .addOnSuccessListener { result ->
+                    if (result.status == SmartReplySuggestionResult.STATUS_NOT_SUPPORTED_LANGUAGE) {
+                        cot.resume(emptyList())
+                    } else if (result.status == SmartReplySuggestionResult.STATUS_SUCCESS) {
+                        if(conversation.lastOrNull()?.isLocalUser == true) {
+                            cot.resume(emptyList())
+                        } else {
+                            cot.resume(result.suggestions)
+                        }
+                    }
+                }
+                .addOnFailureListener {
+                    it.printStackTrace()
+                    cot.resumeWithException(it)
+                }
         }
     }
 

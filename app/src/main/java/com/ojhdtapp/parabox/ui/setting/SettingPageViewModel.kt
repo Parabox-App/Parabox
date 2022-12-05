@@ -534,6 +534,26 @@ class SettingPageViewModel @Inject constructor(
         }
     }
 
+    val smartReplyFlow = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.SETTINGS_ML_KIT_SMART_REPLY] ?: true
+        }
+
+    fun setSmartReply(value: Boolean) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.SETTINGS_ML_KIT_SMART_REPLY] = value
+            }
+        }
+    }
+
     val allowBubbleHomeFlow: Flow<Boolean> = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {

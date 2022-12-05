@@ -114,9 +114,9 @@ fun ExperimentalPage(
                     title = stringResource(R.string.smart_reply_title),
                     subtitleOn = stringResource(R.string.smart_reply_subtitle_on),
                     subtitleOff = stringResource(R.string.smart_reply_subtitle_off),
-                    checked = false,
-                    enabled = false,
-                    onCheckedChange = {}
+                    checked = viewModel.smartReplyFlow.collectAsState(initial = true).value,
+                    enabled = true,
+                    onCheckedChange = viewModel::setSmartReply
                 )
             }
             item {

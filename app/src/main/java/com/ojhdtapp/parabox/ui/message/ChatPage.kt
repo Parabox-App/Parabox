@@ -365,6 +365,19 @@ fun NormalChatPage(
     val userName by mainSharedViewModel.userNameFlow.collectAsState(initial = DataStoreKeys.DEFAULT_USER_NAME)
     val avatarUri by mainSharedViewModel.userAvatarFlow.collectAsState(initial = null)
 
+    // Smart Reply
+    var smartReplyList by remember{
+        mutableStateOf<List<String>>(emptyList())
+    }
+    LaunchedEffect(lazyPagingItems.itemSnapshotList.items.lastOrNull()?.messageId) {
+        messageState.contact?.contactId?.let{
+            smartReplyList = (context as MainActivity).getSmartReplyList(it).map {
+                it.text
+            }
+        }
+
+    }
+
     // Delete Confirm Dialog
     var showDeleteMessageConfirmDialog by remember { mutableStateOf(false) }
     if (showDeleteMessageConfirmDialog) {
@@ -1433,6 +1446,34 @@ fun NormalChatPage(
             ) {
                 item {
                     Spacer(modifier = Modifier.height(16.dp))
+                }
+                item{
+                    AnimatedVisibility(
+                        visible = smartReplyList.isNotEmpty(),
+                        enter = expandVertically(),
+                        exit = shrinkVertically()
+                    ) {
+                        LazyRow(modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp),horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+                            items(items = smartReplyList){
+                                androidx.compose.material3.OutlinedButton(onClick = {
+                                    onSend(listOf(com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText(text = it)))
+                                    smartReplyList = emptyList()
+                                    // return bottom after message sent
+                                    coroutineScope.launch {
+                                        scrollState.animateScrollToItem(0)
+                                        delay(5000)
+                                        lazyPagingItems.refresh()
+                                    }
+                                    mainSharedViewModel.clearRecordAmplitudeStateList()
+                                }) {
+                                    Text(text = it)
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                            }
+                        }
+                    }
                 }
                 itemsBeforeAndAfterReverseIndexed(
                     items = lazyPagingItems,

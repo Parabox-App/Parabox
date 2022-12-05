@@ -360,9 +360,9 @@
     <string name="just_now">刚刚</string>
     <string name="minutes_ago">%1$1d分钟前</string>
     <string name="half_an_hour_ago">半小时前</string>
-    <string name="hour_ago">%1$1d小时前</string>
+    <string name="hour_ago">1小时前</string>
     <string name="hours_ago">%1$1d小时前</string>
-    <string name="day_ago">%1$1d天前</string>
+    <string name="day_ago">1天前</string>
     <string name="days_ago">%1$1d天前</string>
     <string name="today">今天</string>
     <string name="yesterday">昨天</string>
