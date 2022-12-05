@@ -73,16 +73,15 @@ import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderF
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.messaging.FirebaseMessaging
+import com.google.mlkit.common.model.DownloadConditions
 import com.google.mlkit.nl.entityextraction.*
+import com.google.mlkit.nl.languageid.LanguageIdentification
 import com.google.mlkit.nl.smartreply.*
-import com.ojhdtapp.parabox.core.util.BrowserUtil
-import com.ojhdtapp.parabox.core.util.DataStoreKeys
-import com.ojhdtapp.parabox.core.util.DownloadManagerUtil
-import com.ojhdtapp.parabox.core.util.FileUtil
-import com.ojhdtapp.parabox.core.util.GoogleDriveUtil
-import com.ojhdtapp.parabox.core.util.NotificationUtil
-import com.ojhdtapp.parabox.core.util.dataStore
-import com.ojhdtapp.parabox.core.util.toDateAndTimeString
+import com.google.mlkit.nl.translate.TranslateLanguage
+import com.google.mlkit.nl.translate.Translation
+import com.google.mlkit.nl.translate.Translator
+import com.google.mlkit.nl.translate.TranslatorOptions
+import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.DownloadingState
 import com.ojhdtapp.parabox.data.remote.dto.saveLocalResourcesToCloud
@@ -804,6 +803,8 @@ class MainActivity : AppCompatActivity() {
                 dataStore.data.first()[DataStoreKeys.SETTINGS_ML_KIT_ENTITY_EXTRACTION] ?: true
             val isSmartReplyEnabled =
                 dataStore.data.first()[DataStoreKeys.SETTINGS_ML_KIT_SMART_REPLY] ?: true
+            val isTranslationEnabled =
+                dataStore.data.first()[DataStoreKeys.SETTINGS_ML_KIT_TRANSLATION] ?: true
             if (isEntityExtractionEnabled) {
                 val tempEntityExtractor =
                     EntityExtraction.getClient(
@@ -874,13 +875,18 @@ class MainActivity : AppCompatActivity() {
         Log.d("parabox", "getSmartReplyList: $contactId")
         if (smartReplyGenerator == null) return emptyList()
         val conversation = withContext(Dispatchers.IO) {
-            appDatabase.messageDao.getMessagesWithLimit(listOf(contactId), 3).sortedBy { it.timestamp }.map {
-                if (it.sentByMe) {
-                    TextMessage.createForLocalUser(it.contentString, it.timestamp)
-                } else {
-                    TextMessage.createForRemoteUser(it.contentString, it.timestamp, it.profile.name)
+            appDatabase.messageDao.getMessagesWithLimit(listOf(contactId), 3)
+                .sortedBy { it.timestamp }.map {
+                    if (it.sentByMe) {
+                        TextMessage.createForLocalUser(it.contentString, it.timestamp)
+                    } else {
+                        TextMessage.createForRemoteUser(
+                            it.contentString,
+                            it.timestamp,
+                            it.profile.name
+                        )
+                    }
                 }
-            }
         }
         return suspendCoroutine<List<SmartReplySuggestion>> { cot ->
             Log.d("parabox", "getSmartReplyList: ${conversation.last().messageText}")
@@ -889,7 +895,7 @@ class MainActivity : AppCompatActivity() {
                     if (result.status == SmartReplySuggestionResult.STATUS_NOT_SUPPORTED_LANGUAGE) {
                         cot.resume(emptyList())
                     } else if (result.status == SmartReplySuggestionResult.STATUS_SUCCESS) {
-                        if(conversation.lastOrNull()?.isLocalUser == true) {
+                        if (conversation.lastOrNull()?.isLocalUser == true) {
                             cot.resume(emptyList())
                         } else {
                             cot.resume(result.suggestions)
@@ -899,6 +905,67 @@ class MainActivity : AppCompatActivity() {
                 .addOnFailureListener {
                     it.printStackTrace()
                     cot.resumeWithException(it)
+                }
+        }
+    }
+
+    suspend fun getTranslation(originalText: String): String? {
+        return try {
+            val languageCode = getLanguageCode(originalText)
+            val currentLanguageTag =
+                AppCompatDelegate.getApplicationLocales()[0]?.toLanguageTag() ?: "en"
+            val options = TranslatorOptions.Builder()
+                .setSourceLanguage(TranslateLanguage.fromLanguageTag(languageCode)!!)
+                .setTargetLanguage(
+                    TranslateLanguage.fromLanguageTag(
+                        LanguageUtil.languageTagMapper(currentLanguageTag)
+                    )!!
+                )
+                .build()
+            val conditions = DownloadConditions.Builder()
+                .requireWifi()
+                .build()
+            return suspendCoroutine { cot ->
+                val translator = Translation.getClient(options)
+                translator.downloadModelIfNeeded(conditions)
+                    .addOnSuccessListener {
+                        Log.d("parabox", "downloadModelIfNeeded: success")
+                        translator.translate(originalText)
+                            .addOnSuccessListener { translatedText ->
+                                Log.d("parabox", "translated: $translatedText")
+                                cot.resume(translatedText)
+                            }
+                            .addOnFailureListener {
+                                it.printStackTrace()
+                                cot.resumeWithException(it)
+                            }.addOnCompleteListener {
+                                translator.close()
+                            }
+                    }
+                    .addOnFailureListener {
+                        Log.d("parabox", "downloadModelIfNeeded: failed")
+                        cot.resumeWithException(it)
+                    }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    suspend fun getLanguageCode(str: String): String {
+        return suspendCoroutine<String> { cot ->
+            val languageIdentifier = LanguageIdentification.getClient()
+            languageIdentifier.identifyLanguage(str)
+                .addOnSuccessListener { languageCode ->
+                    if (languageCode == "und") {
+                        cot.resume("en")
+                    } else {
+                        cot.resume(languageCode)
+                    }
+                }
+                .addOnFailureListener {
+                    cot.resume("en")
                 }
         }
     }

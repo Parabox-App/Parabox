@@ -1100,6 +1100,7 @@ fun BubbleChatPage(
                             isLast = isLast,
                             userName = userName,
                             avatarUri = avatarUri,
+                            isTranslationEnabled = viewModel.translationFlow.collectAsState(initial = true).value,
                             onClickingDismiss = { clickingMessage = null },
                             onClickingEvent = {
                                 when (it) {

@@ -124,9 +124,9 @@ fun ExperimentalPage(
                     title = stringResource(R.string.translation_title),
                     subtitleOn = stringResource(R.string.translation_subtitle_on),
                     subtitleOff = stringResource(R.string.translation_subtitle_off),
-                    checked = false,
-                    enabled = false,
-                    onCheckedChange = {}
+                    checked = viewModel.translationFlow.collectAsState(initial = true).value,
+                    enabled = true,
+                    onCheckedChange = viewModel::setTranslation
                 )
             }
             item {

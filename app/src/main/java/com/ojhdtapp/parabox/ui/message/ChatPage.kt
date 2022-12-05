@@ -366,11 +366,11 @@ fun NormalChatPage(
     val avatarUri by mainSharedViewModel.userAvatarFlow.collectAsState(initial = null)
 
     // Smart Reply
-    var smartReplyList by remember{
+    var smartReplyList by remember {
         mutableStateOf<List<String>>(emptyList())
     }
     LaunchedEffect(lazyPagingItems.itemSnapshotList.items.lastOrNull()?.messageId) {
-        messageState.contact?.contactId?.let{
+        messageState.contact?.contactId?.let {
             smartReplyList = (context as MainActivity).getSmartReplyList(it).map {
                 it.text
             }
@@ -1447,18 +1447,28 @@ fun NormalChatPage(
                 item {
                     Spacer(modifier = Modifier.height(16.dp))
                 }
-                item{
+                item {
                     AnimatedVisibility(
                         visible = smartReplyList.isNotEmpty(),
                         enter = expandVertically(),
                         exit = shrinkVertically()
                     ) {
-                        LazyRow(modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 16.dp),horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
-                            items(items = smartReplyList){
+                        LazyRow(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 16.dp),
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            items(items = smartReplyList) {
                                 androidx.compose.material3.OutlinedButton(onClick = {
-                                    onSend(listOf(com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText(text = it)))
+                                    onSend(
+                                        listOf(
+                                            com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText(
+                                                text = it
+                                            )
+                                        )
+                                    )
                                     smartReplyList = emptyList()
                                     // return bottom after message sent
                                     coroutineScope.launch {
@@ -1500,6 +1510,7 @@ fun NormalChatPage(
                             isLast = isLast,
                             userName = userName,
                             avatarUri = avatarUri,
+                            isTranslationEnabled = mainSharedViewModel.translationFlow.collectAsState(initial = true).value,
                             onClickingDismiss = { clickingMessage = null },
                             onClickingEvent = {
                                 when (it) {
@@ -1768,6 +1779,7 @@ fun MessageBlock(
     isLast: Boolean,
     userName: String,
     avatarUri: String?,
+    isTranslationEnabled: Boolean,
     onClickingDismiss: () -> Unit,
     onClickingEvent: (event: SingleMessageEvent) -> Unit,
     onMessageClick: () -> Unit,
@@ -1803,6 +1815,7 @@ fun MessageBlock(
                         isLast = isLast,
                         isSelected = selectedMessageStateList.contains(message),
                         clickingMessage = clickingMessage,
+                        isTranslationEnabled = isTranslationEnabled,
                         onClickingDismiss = onClickingDismiss,
                         onClickingEvent = onClickingEvent,
                         onClick = onMessageClick,
@@ -1848,6 +1861,7 @@ fun MessageBlock(
                         isLast = isLast,
                         isSelected = selectedMessageStateList.contains(message),
                         clickingMessage = clickingMessage,
+                        isTranslationEnabled = isTranslationEnabled,
                         onClickingDismiss = onClickingDismiss,
                         onClickingEvent = onClickingEvent,
                         onClick = onMessageClick,
@@ -2031,6 +2045,7 @@ fun SingleMessage(
     isLast: Boolean,
     isSelected: Boolean,
     clickingMessage: Message?,
+    isTranslationEnabled: Boolean,
     onClickingDismiss: () -> Unit,
     onClickingEvent: (event: SingleMessageEvent) -> Unit,
     onClick: () -> Unit,
@@ -2040,6 +2055,7 @@ fun SingleMessage(
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
+    val coroutineScope = rememberCoroutineScope()
     val clipboardManager: ClipboardManager = LocalClipboardManager.current
     val topStartRadius by animateDpAsState(targetValue = if (message.sentByMe || isFirst) 24.dp else 0.dp)
     val topEndRadius by animateDpAsState(targetValue = if (!message.sentByMe || isFirst) 24.dp else 0.dp)
@@ -2071,6 +2087,12 @@ fun SingleMessage(
             emptyList()
         )
     }
+    var shouldTranslate by remember {
+        mutableStateOf(false)
+    }
+    var translatedText by remember {
+        mutableStateOf<String?>(null)
+    }
     LaunchedEffect(true) {
         val tempList = mutableListOf<Pair<Entity, String>>()
         (context as MainActivity).getEntityAnnotationList(message.contents.getContentString())
@@ -2080,6 +2102,10 @@ fun SingleMessage(
                 }
             }
         entities = tempList
+        val languageCode =
+            (context as MainActivity).getLanguageCode(message.contents.getContentString())
+        shouldTranslate = !(AppCompatDelegate.getApplicationLocales()[0]?.toLanguageTag()?.let{LanguageUtil.languageTagMapper(it)}
+            ?.contentEquals(languageCode) ?: true)
     }
     SelectionContainer {
         Box(
@@ -2143,6 +2169,16 @@ fun SingleMessage(
                             onAudioClick = onAudioClick,
                         )
                     }
+                    AnimatedVisibility(visible = translatedText != null) {
+                        Surface(
+                            modifier = Modifier.padding(8.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            tonalElevation = 1.dp
+                        ) {
+                            Text(text = translatedText!!, modifier = Modifier.padding(12.dp), color = textColor)
+                        }
+                    }
                     LazyRow(
                         contentPadding = PaddingValues(horizontal = 8.dp),
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -2152,9 +2188,14 @@ fun SingleMessage(
                                 Entity.TYPE_ADDRESS -> {
                                     AssistChip(
                                         onClick = {
-                                                  BrowserUtil.launchMap(context, it.second)
+                                            BrowserUtil.launchMap(context, it.second)
                                         },
-                                        label = { Text(text = it.second.ellipsis(maxLength = 10),color = textColor) },
+                                        label = {
+                                            Text(
+                                                text = it.second.ellipsis(maxLength = 10),
+                                                color = textColor
+                                            )
+                                        },
                                         leadingIcon = {
                                             Icon(
                                                 imageVector = Icons.Outlined.Place,
@@ -2179,7 +2220,12 @@ fun SingleMessage(
                                                 )
                                             })
                                         },
-                                        label = { Text(text = timestamp.toDescriptiveDateAndTime(),color = textColor) },
+                                        label = {
+                                            Text(
+                                                text = timestamp.toDescriptiveDateAndTime(),
+                                                color = textColor
+                                            )
+                                        },
                                         leadingIcon = {
                                             Icon(
                                                 imageVector = Icons.Outlined.Event,
@@ -2197,7 +2243,7 @@ fun SingleMessage(
                                                 null
                                             )
                                         },
-                                        label = { Text(text = it.second,color = textColor) },
+                                        label = { Text(text = it.second, color = textColor) },
                                         leadingIcon = {
                                             Icon(
                                                 imageVector = Icons.Outlined.Email,
@@ -2212,7 +2258,7 @@ fun SingleMessage(
                                     AssistChip(
                                         onClick = { clipboardManager.setText(AnnotatedString(text = flightStr)) },
                                         label = {
-                                            Text(text = flightStr,color = textColor)
+                                            Text(text = flightStr, color = textColor)
                                         },
                                         leadingIcon = {
                                             Icon(
@@ -2225,7 +2271,7 @@ fun SingleMessage(
                                 Entity.TYPE_IBAN -> {
                                     AssistChip(
                                         onClick = { clipboardManager.setText(AnnotatedString(text = it.second)) },
-                                        label = { Text(text = it.second,color = textColor) },
+                                        label = { Text(text = it.second, color = textColor) },
                                         leadingIcon = {
                                             Icon(
                                                 imageVector = Icons.Outlined.AccountBalance,
@@ -2237,7 +2283,7 @@ fun SingleMessage(
                                 Entity.TYPE_ISBN -> {
                                     AssistChip(
                                         onClick = { clipboardManager.setText(AnnotatedString(text = it.second)) },
-                                        label = { Text(text = it.second,color = textColor) },
+                                        label = { Text(text = it.second, color = textColor) },
                                         leadingIcon = {
                                             Icon(
                                                 imageVector = Icons.Outlined.LocalLibrary,
@@ -2249,7 +2295,7 @@ fun SingleMessage(
                                 Entity.TYPE_PAYMENT_CARD -> {
                                     AssistChip(
                                         onClick = { clipboardManager.setText(AnnotatedString(text = it.second)) },
-                                        label = { Text(text = it.second,color = textColor) },
+                                        label = { Text(text = it.second, color = textColor) },
                                         leadingIcon = {
                                             Icon(
                                                 imageVector = Icons.Outlined.CreditCard,
@@ -2260,10 +2306,12 @@ fun SingleMessage(
                                 }
                                 Entity.TYPE_PHONE -> {
                                     AssistChip(
-                                        onClick = { (context as MainActivity).startActivity(Intent(Intent.ACTION_DIAL).apply{
-                                            data = Uri.parse("tel:${it.second}")
-                                        }) },
-                                        label = { Text(text = it.second,color = textColor) },
+                                        onClick = {
+                                            (context as MainActivity).startActivity(Intent(Intent.ACTION_DIAL).apply {
+                                                data = Uri.parse("tel:${it.second}")
+                                            })
+                                        },
+                                        label = { Text(text = it.second, color = textColor) },
                                         leadingIcon = {
                                             Icon(
                                                 imageVector = Icons.Outlined.Call,
@@ -2275,7 +2323,12 @@ fun SingleMessage(
                                 Entity.TYPE_URL -> {
                                     AssistChip(
                                         onClick = { BrowserUtil.launchURL(context, it.second) },
-                                        label = { Text(text = it.second.ellipsis(20),color = textColor) },
+                                        label = {
+                                            Text(
+                                                text = it.second.ellipsis(20),
+                                                color = textColor
+                                            )
+                                        },
                                         leadingIcon = {
                                             Icon(
                                                 imageVector = Icons.Outlined.Link,
@@ -2287,6 +2340,25 @@ fun SingleMessage(
                                 else -> {}
                             }
                         }
+                    }
+                }
+                AnimatedVisibility(visible = isTranslationEnabled && !message.sentByMe && shouldTranslate && translatedText.isNullOrEmpty()) {
+                    IconButton(onClick = {
+                        coroutineScope.launch {
+                            val text = (context as MainActivity).getTranslation(message.contents.getContentString())
+                            if(text == null){
+                                Toast.makeText(context, context.getString(R.string.translation_error), Toast.LENGTH_SHORT).show()
+                            } else {
+                                translatedText = text
+                            }
+
+                        }
+                    }) {
+                        Icon(
+                            imageVector = Icons.Outlined.Translate,
+                            contentDescription = "translate",
+                            tint = textColor
+                        )
                     }
                 }
             }

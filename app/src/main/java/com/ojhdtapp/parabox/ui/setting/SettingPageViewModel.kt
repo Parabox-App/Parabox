@@ -554,6 +554,26 @@ class SettingPageViewModel @Inject constructor(
         }
     }
 
+    val translationFlow = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.SETTINGS_ML_KIT_TRANSLATION] ?: true
+        }
+
+    fun setTranslation(value: Boolean) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.SETTINGS_ML_KIT_TRANSLATION] = value
+            }
+        }
+    }
+
     val allowBubbleHomeFlow: Flow<Boolean> = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {

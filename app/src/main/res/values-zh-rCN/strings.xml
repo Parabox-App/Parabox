@@ -380,4 +380,5 @@
     <string name="recent_speech_at">最近一次发言于 %1$s</string>
     <string name="date_format_pattern">M\'月\'d\'日\'</string>
     <string name="ml_kit">由 ML Kit 提供</string>
+    <string name="translation_error">翻译失败</string>
 </resources>

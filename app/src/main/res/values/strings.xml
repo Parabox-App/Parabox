@@ -374,4 +374,5 @@
     <string name="privacy_content">Privacy</string>
     <string name="terms_content">Terms</string>
     <string name="ml_kit">Provided by ML Kit</string>
+    <string name="translation_error">Translation failed</string>
 </resources>

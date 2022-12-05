@@ -132,6 +132,8 @@ dependencies {
     // ML-Kit
     implementation 'com.google.mlkit:entity-extraction:16.0.0-beta4'
     implementation 'com.google.mlkit:smart-reply:17.0.2'
+    implementation 'com.google.mlkit:translate:17.0.1'
+    implementation 'com.google.mlkit:language-id:17.0.4'
 
     // Extended Gestures
     implementation 'com.github.SmartToolFactory:Compose-Extended-Gestures:2.0.0'
