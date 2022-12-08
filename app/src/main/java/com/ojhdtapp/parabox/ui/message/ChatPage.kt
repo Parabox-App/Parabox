@@ -1799,7 +1799,7 @@ fun MessageBlock(
             horizontalArrangement = if (message.sentByMe) Arrangement.End else Arrangement.Start
         ) {
             if (message.sentByMe) {
-                Spacer(modifier = Modifier.width(64.dp))
+//                Spacer(modifier = Modifier.width(64.dp))
                 Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
                     if (isFirst) {
                         Text(
@@ -1873,7 +1873,7 @@ fun MessageBlock(
                         Spacer(modifier = Modifier.height(2.dp))
                     }
                 }
-                Spacer(modifier = Modifier.width(64.dp))
+//                Spacer(modifier = Modifier.width(64.dp))
             }
         }
     }
@@ -2093,6 +2093,9 @@ fun SingleMessage(
     var translatedText by remember {
         mutableStateOf<String?>(null)
     }
+    val configuration = LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp.dp
+    val messageMaxWidth = screenWidth - 130.dp
     LaunchedEffect(true) {
         val tempList = mutableListOf<Pair<Entity, String>>()
         (context as MainActivity).getEntityAnnotationList(message.contents.getContentString())
@@ -2114,25 +2117,32 @@ fun SingleMessage(
                 .wrapContentSize(align = if (message.sentByMe) Alignment.TopEnd else Alignment.TopStart)
         ) {
             Row(verticalAlignment = Alignment.Bottom) {
-                if (message.sentByMe && !message.verified) {
-                    if (abs(System.currentTimeMillis() - message.timestamp) > 5000) {
-                        Icon(
-                            modifier = Modifier.padding(bottom = 11.dp, end = 4.dp),
-                            imageVector = Icons.Outlined.ErrorOutline,
-                            contentDescription = "error",
-                            tint = MaterialTheme.colorScheme.error
-                        )
+                if (message.sentByMe) {
+                    if(!message.verified){
+                        Box(modifier = Modifier.width(64.dp), contentAlignment = Alignment.CenterEnd){
+                            if (abs(System.currentTimeMillis() - message.timestamp) > 5000) {
+                                Icon(
+                                    modifier = Modifier.padding(bottom = 11.dp, end = 4.dp),
+                                    imageVector = Icons.Outlined.ErrorOutline,
+                                    contentDescription = "error",
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            } else {
+                                CircularProgressIndicator(
+                                    modifier = Modifier
+                                        .padding(bottom = 14.dp, end = 4.dp)
+                                        .size(18.dp),
+                                    strokeWidth = 2.dp
+                                )
+                            }
+                        }
                     } else {
-                        CircularProgressIndicator(
-                            modifier = Modifier
-                                .padding(bottom = 14.dp, end = 4.dp)
-                                .size(18.dp),
-                            strokeWidth = 2.dp
-                        )
+                        Spacer(modifier = Modifier.width(64.dp))
                     }
                 }
                 Column(
                     modifier = modifier
+                        .widthIn(0.dp, messageMaxWidth)
                         .clip(
                             RoundedCornerShape(
                                 topStart = topStartRadius,
@@ -2342,25 +2352,34 @@ fun SingleMessage(
                         }
                     }
                 }
-                AnimatedVisibility(visible = isTranslationEnabled && !message.sentByMe && shouldTranslate && translatedText.isNullOrEmpty()) {
-                    IconButton(onClick = {
-                        coroutineScope.launch {
-                            val text = (context as MainActivity).getTranslation(message.contents.getContentString())
-                            if(text == null){
-                                Toast.makeText(context, context.getString(R.string.translation_error), Toast.LENGTH_SHORT).show()
-                            } else {
-                                translatedText = text
-                            }
+                if(!message.sentByMe){
+                    if(isTranslationEnabled){
+                        Box(modifier = Modifier.width(64.dp), contentAlignment = Alignment.CenterStart){
+                            androidx.compose.animation.AnimatedVisibility(visible = shouldTranslate && translatedText.isNullOrEmpty()) {
+                                IconButton(onClick = {
+                                    coroutineScope.launch {
+                                        val text = (context as MainActivity).getTranslation(message.contents.getContentString())
+                                        if(text == null){
+                                            Toast.makeText(context, context.getString(R.string.translation_error), Toast.LENGTH_SHORT).show()
+                                        } else {
+                                            translatedText = text
+                                        }
 
+                                    }
+                                }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Translate,
+                                        contentDescription = "translate",
+                                        tint = textColor
+                                    )
+                                }
+                            }
                         }
-                    }) {
-                        Icon(
-                            imageVector = Icons.Outlined.Translate,
-                            contentDescription = "translate",
-                            tint = textColor
-                        )
+                    } else {
+                        Spacer(modifier = Modifier.width(64.dp))
                     }
                 }
+
             }
             MaterialTheme(shapes = MaterialTheme.shapes.copy(extraSmall = CircleShape)) {
                 DropdownMenu(
