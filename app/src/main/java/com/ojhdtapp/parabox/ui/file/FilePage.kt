@@ -486,11 +486,11 @@ fun MainArea(
                 ) {
                     Box(
                         modifier = Modifier
-                            .padding(vertical = 8.dp)
+                            .padding(vertical = 16.dp)
                     ) {
                         Text(
                             text = stringResource(R.string.recent),
-                            style = MaterialTheme.typography.labelMedium,
+                            style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -790,11 +790,11 @@ fun MainArea(
                 ) {
                     Box(
                         modifier = Modifier
-                            .padding(vertical = 8.dp)
+                            .padding(vertical = 16.dp)
                     ) {
                         Text(
                             text = stringResource(R.string.cloud_service),
-                            style = MaterialTheme.typography.labelMedium,
+                            style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.primary
                         )
                     }

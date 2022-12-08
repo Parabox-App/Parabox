@@ -385,12 +385,12 @@ fun RowScope.MessageArea(
                 ) {
                     Box(
                         modifier = Modifier
-                            .padding(16.dp, 8.dp)
+                            .padding(16.dp)
                             .animateItemPlacement()
                     ) {
                         Text(
                             text = stringResource(R.string.main),
-                            style = MaterialTheme.typography.labelMedium,
+                            style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -517,12 +517,12 @@ fun RowScope.MessageArea(
                 ) {
                     Box(
                         modifier = Modifier
-                            .padding(16.dp, 8.dp)
+                            .padding(16.dp)
                             .animateItemPlacement()
                     ) {
                         Text(
                             text = stringResource(R.string.other),
-                            style = MaterialTheme.typography.labelMedium,
+                            style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
