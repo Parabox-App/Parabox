@@ -2140,7 +2140,7 @@ fun SingleMessage(
                         Spacer(modifier = Modifier.width(64.dp))
                     }
                 }
-                Column(
+                MessageContentContainer(
                     modifier = modifier
                         .widthIn(0.dp, messageMaxWidth)
                         .clip(
@@ -2160,7 +2160,10 @@ fun SingleMessage(
                             onLongClick = onLongClick
                         )
 //                        .clickable(enabled = isSelected, onClick = onClick)
-                        .animateContentSize()
+                        .animateContentSize(),
+                    shouldBreak = message.contents.map{
+                        it is Image || it is QuoteReply || it is Audio || it is File
+                    }.plus(arrayOf(true, true))
                 ) {
                     message.contents.forEachIndexed { index, messageContent ->
                         messageContent.toLayout(
@@ -2190,7 +2193,7 @@ fun SingleMessage(
                         }
                     }
                     LazyRow(
-                        contentPadding = PaddingValues(horizontal = 8.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp),
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         items(items = entities) {
