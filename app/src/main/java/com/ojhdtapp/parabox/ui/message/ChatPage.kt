@@ -84,6 +84,7 @@ import com.ojhdtapp.parabox.domain.model.message_content.*
 import com.ojhdtapp.parabox.domain.service.PluginService
 import com.ojhdtapp.parabox.ui.MainSharedUiEvent
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
+import com.ojhdtapp.parabox.ui.bubble.BubbleActivity
 import com.ojhdtapp.parabox.ui.destinations.ChatPageDestination
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.RoundedCornerDropdownMenu
@@ -1779,6 +1780,7 @@ fun MessageBlock(
     isLast: Boolean,
     userName: String,
     avatarUri: String?,
+    fromBubble: Boolean = false,
     isTranslationEnabled: Boolean,
     onClickingDismiss: () -> Unit,
     onClickingEvent: (event: SingleMessageEvent) -> Unit,
@@ -1815,6 +1817,7 @@ fun MessageBlock(
                         isLast = isLast,
                         isSelected = selectedMessageStateList.contains(message),
                         clickingMessage = clickingMessage,
+                        fromBubble = fromBubble,
                         isTranslationEnabled = isTranslationEnabled,
                         onClickingDismiss = onClickingDismiss,
                         onClickingEvent = onClickingEvent,
@@ -1861,6 +1864,7 @@ fun MessageBlock(
                         isLast = isLast,
                         isSelected = selectedMessageStateList.contains(message),
                         clickingMessage = clickingMessage,
+                        fromBubble = fromBubble,
                         isTranslationEnabled = isTranslationEnabled,
                         onClickingDismiss = onClickingDismiss,
                         onClickingEvent = onClickingEvent,
@@ -2045,6 +2049,7 @@ fun SingleMessage(
     isLast: Boolean,
     isSelected: Boolean,
     clickingMessage: Message?,
+    fromBubble: Boolean = false,
     isTranslationEnabled: Boolean,
     onClickingDismiss: () -> Unit,
     onClickingEvent: (event: SingleMessageEvent) -> Unit,
@@ -2098,15 +2103,28 @@ fun SingleMessage(
     val messageMaxWidth = screenWidth - 130.dp
     LaunchedEffect(true) {
         val tempList = mutableListOf<Pair<Entity, String>>()
-        (context as MainActivity).getEntityAnnotationList(message.contents.getContentString())
-            .forEach { entityAnnotation ->
-                entityAnnotation.entities.forEach {
-                    tempList.add(it to entityAnnotation.annotatedText)
+        if(fromBubble){
+            (context as BubbleActivity).getEntityAnnotationList(message.contents.getContentString())
+                .forEach { entityAnnotation ->
+                    entityAnnotation.entities.forEach {
+                        tempList.add(it to entityAnnotation.annotatedText)
+                    }
                 }
-            }
+        }else{
+            (context as MainActivity).getEntityAnnotationList(message.contents.getContentString())
+                .forEach { entityAnnotation ->
+                    entityAnnotation.entities.forEach {
+                        tempList.add(it to entityAnnotation.annotatedText)
+                    }
+                }
+        }
         entities = tempList
         val languageCode =
-            (context as MainActivity).getLanguageCode(message.contents.getContentString())
+            if(fromBubble){
+                (context as BubbleActivity).getLanguageCode(message.contents.getContentString())
+            }else{
+                (context as MainActivity).getLanguageCode(message.contents.getContentString())
+            }
         shouldTranslate = !(AppCompatDelegate.getApplicationLocales()[0]?.toLanguageTag()?.let{LanguageUtil.languageTagMapper(it)}
             ?.contentEquals(languageCode) ?: true)
     }
@@ -2221,17 +2239,31 @@ fun SingleMessage(
                                     val timestamp = it.first.asDateTimeEntity()!!.timestampMillis
                                     AssistChip(
                                         onClick = {
-                                            (context as MainActivity).startActivity(Intent(Intent.ACTION_INSERT).apply {
-                                                data = CalendarContract.Events.CONTENT_URI
-                                                putExtra(
-                                                    CalendarContract.EXTRA_EVENT_BEGIN_TIME,
-                                                    timestamp
-                                                )
-                                                putExtra(
-                                                    CalendarContract.EXTRA_EVENT_END_TIME,
-                                                    timestamp
-                                                )
-                                            })
+                                            if(fromBubble){
+                                                (context as MainActivity).startActivity(Intent(Intent.ACTION_INSERT).apply {
+                                                    data = CalendarContract.Events.CONTENT_URI
+                                                    putExtra(
+                                                        CalendarContract.EXTRA_EVENT_BEGIN_TIME,
+                                                        timestamp
+                                                    )
+                                                    putExtra(
+                                                        CalendarContract.EXTRA_EVENT_END_TIME,
+                                                        timestamp
+                                                    )
+                                                })
+                                            }else{
+                                                (context as MainActivity).startActivity(Intent(Intent.ACTION_INSERT).apply {
+                                                    data = CalendarContract.Events.CONTENT_URI
+                                                    putExtra(
+                                                        CalendarContract.EXTRA_EVENT_BEGIN_TIME,
+                                                        timestamp
+                                                    )
+                                                    putExtra(
+                                                        CalendarContract.EXTRA_EVENT_END_TIME,
+                                                        timestamp
+                                                    )
+                                                })
+                                            }
                                         },
                                         label = {
                                             Text(
@@ -2320,9 +2352,15 @@ fun SingleMessage(
                                 Entity.TYPE_PHONE -> {
                                     AssistChip(
                                         onClick = {
-                                            (context as MainActivity).startActivity(Intent(Intent.ACTION_DIAL).apply {
-                                                data = Uri.parse("tel:${it.second}")
-                                            })
+                                            if(fromBubble){
+                                                (context as BubbleActivity).startActivity(Intent(Intent.ACTION_DIAL).apply {
+                                                    data = Uri.parse("tel:${it.second}")
+                                                })
+                                            }else{
+                                                (context as MainActivity).startActivity(Intent(Intent.ACTION_DIAL).apply {
+                                                    data = Uri.parse("tel:${it.second}")
+                                                })
+                                            }
                                         },
                                         label = { Text(text = it.second, color = textColor) },
                                         leadingIcon = {
@@ -2361,7 +2399,11 @@ fun SingleMessage(
                             androidx.compose.animation.AnimatedVisibility(visible = shouldTranslate && translatedText.isNullOrEmpty()) {
                                 IconButton(onClick = {
                                     coroutineScope.launch {
-                                        val text = (context as MainActivity).getTranslation(message.contents.getContentString())
+                                        val text = if(fromBubble){
+                                            (context as MainActivity).getTranslation(message.contents.getContentString())
+                                        }else{
+                                            (context as MainActivity).getTranslation(message.contents.getContentString())
+                                        }
                                         if(text == null){
                                             Toast.makeText(context, context.getString(R.string.translation_error), Toast.LENGTH_SHORT).show()
                                         } else {

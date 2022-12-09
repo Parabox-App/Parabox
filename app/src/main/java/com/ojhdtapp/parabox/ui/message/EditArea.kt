@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.message
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
@@ -8,6 +9,7 @@ import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
+import android.provider.OpenableColumns
 import android.util.Log
 import android.view.MotionEvent
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -83,6 +85,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 
+@SuppressLint("Range")
 @OptIn(
     ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class,
     ExperimentalAnimationApi::class, ExperimentalPermissionsApi::class,
@@ -258,8 +261,45 @@ fun EditArea(
             }
         }
     val filePickerLauncher =
-        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) {
-            Log.d("parabox", it.toString())
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.OpenDocument()) {
+            if (it != null) {
+                packageNameList.forEach { packageName ->
+                    context.grantUriPermission(
+                        packageName,
+                        it,
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                }
+                // get size, name, extension
+                val size = context.contentResolver.query(it, null, null, null, null)?.use {
+                    if (it.moveToFirst()) {
+                        it.getLong(it.getColumnIndex(OpenableColumns.SIZE))
+                    } else {
+                        null
+                    }
+                }
+                val name = context.contentResolver.query(it, null, null, null, null)?.use {
+                    if (it.moveToFirst()) {
+                        it.getString(it.getColumnIndex(OpenableColumns.DISPLAY_NAME))
+                    } else {
+                        null
+                    }
+                }
+                val extension = name?.substringAfterLast(".")
+                val messageContent =
+                    com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.File(
+                        url = null,
+                        name = name ?: "unknown",
+                        extension = extension ?: "unknown",
+                        size = size ?: 0,
+                        lastModifiedTime = System.currentTimeMillis(),
+                        expiryTime = null,
+                        uri = it,
+                        cloudType = null,
+                        cloudId = null
+                    )
+                onSend(listOf(messageContent))
+            }
         }
 
     val cameraAccessible by remember {
@@ -1404,7 +1444,7 @@ fun EditArea(
                                             .fillMaxSize()
                                             .clickable {
                                                 if (isBottomSheetExpand) {
-                                                    filePickerLauncher.launch("*/*")
+                                                    filePickerLauncher.launch(arrayOf("*/*"))
                                                 }
                                             },
                                         horizontalAlignment = Alignment.CenterHorizontally,
