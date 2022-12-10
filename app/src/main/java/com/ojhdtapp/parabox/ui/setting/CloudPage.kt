@@ -5,7 +5,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -20,6 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -27,6 +28,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.guru.fontawesomecomposelib.FaIcon
 import com.guru.fontawesomecomposelib.FaIcons
 import com.ojhdtapp.parabox.MainActivity
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.GoogleDriveUtil
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
@@ -86,8 +88,8 @@ fun CloudPage(
     val selectableService by remember {
         derivedStateOf {
             buildMap<Int, String> {
-                put(0, "无")
-                if (gDriveLogin) put(GoogleDriveUtil.SERVICE_CODE, "Google Drive")
+                put(0, context.getString(R.string.cloud_service_none))
+                if (gDriveLogin) put(GoogleDriveUtil.SERVICE_CODE, context.getString(R.string.cloud_service_gd))
             }
         }
     }
@@ -108,13 +110,13 @@ fun CloudPage(
                             if (account != null) {
                                 viewModel.saveGoogleDriveAccount(account)
                                 coroutineScope.launch {
-                                    snackBarHostState.showSnackbar("成功连接 Google Drive")
+                                    snackBarHostState.showSnackbar(context.getString(R.string.connect_gd_success))
                                 }
                             }
                         } else {
                             viewModel.saveGoogleDriveAccount(null)
                             coroutineScope.launch {
-                                snackBarHostState.showSnackbar("连接取消")
+                                snackBarHostState.showSnackbar(context.getString(R.string.connect_cloud_service_cancel))
                             }
                         }
                     }
@@ -133,7 +135,7 @@ fun CloudPage(
                     contentDescription = "select cloud storage"
                 )
             },
-            title = { Text(text = "连接云端服务") },
+            title = { Text(text = stringResource(id = R.string.connect_cloud_service)) },
             text = {
                 LazyColumn() {
                     item {
@@ -152,7 +154,7 @@ fun CloudPage(
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
-                                    text = "Google Drive",
+                                    text = stringResource(id = R.string.cloud_service_gd),
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                             }
@@ -195,7 +197,7 @@ fun CloudPage(
                 modifier = Modifier
                     .background(appBarContainerColor)
                     .statusBarsPadding(),
-                title = { Text("连接云端服务") },
+                title = { Text(stringResource(id = R.string.connect_cloud_service)) },
                 navigationIcon = {
                     if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
                         IconButton(onClick = {
@@ -224,13 +226,14 @@ fun CloudPage(
                     ) {
                         Text(
                             modifier = Modifier.padding(top = 16.dp),
-                            text = "未连接云端服务",
+                            text = stringResource(id = R.string.cloud_service_not_connected),
                             style = MaterialTheme.typography.titleMedium
                         )
                         Text(
-                            modifier = Modifier.padding(vertical = 16.dp),
-                            text = "连接云端服务可将您的会话文件备份至云端",
-                            style = MaterialTheme.typography.labelLarge
+                            modifier = Modifier.padding(horizontal = 32.dp, vertical = 16.dp),
+                            text = stringResource(R.string.cloud_service_des),
+                            style = MaterialTheme.typography.labelLarge,
+                            textAlign = TextAlign.Center
                         )
                         FilledTonalButton(
                             onClick = {
@@ -243,7 +246,7 @@ fun CloudPage(
                                     .padding(end = 8.dp)
                                     .size(ButtonDefaults.IconSize),
                             )
-                            Text(text = "连接云端服务")
+                            Text(text = stringResource(id = R.string.connect_cloud_service))
                         }
                     }
                 }
@@ -278,7 +281,7 @@ fun CloudPage(
                                 Spacer(modifier = Modifier.width(16.dp))
                                 Column() {
                                     Text(
-                                        text = "Google Drive",
+                                        text = stringResource(id = R.string.cloud_service_gd),
                                         style = MaterialTheme.typography.titleMedium
                                     )
                                     LinearProgressIndicator(
@@ -286,20 +289,27 @@ fun CloudPage(
                                         modifier = Modifier.padding(vertical = 4.dp)
                                     )
                                     Text(
-                                        text = "已使用 ${gDriveUsedSpacePercent.value}% 的存储空间（${
+                                        text = stringResource(
+                                            id = R.string.cloud_service_used_space,
+                                            gDriveUsedSpacePercent.value,
                                             FileUtil.getSizeString(
                                                 gDriveUsedSpace
+                                            ),
+                                            FileUtil.getSizeString(
+                                                gDriveTotalSpace
                                             )
-                                        } / ${FileUtil.getSizeString(gDriveTotalSpace)}）",
+                                        ),
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Text(
-                                        text = "其中应用使用 ${gDriveAppUsedSpacePercent.value}%（${
+                                        text = stringResource(
+                                            R.string.cloud_service_app_used_space,
+                                            gDriveAppUsedSpacePercent.value,
                                             FileUtil.getSizeString(
                                                 gDriveAppUsedSpace
                                             )
-                                        }）",
+                                        ),
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -309,13 +319,13 @@ fun CloudPage(
                         RoundedCornerDropdownMenu(
                             expanded = expanded,
                             onDismissRequest = { expanded = false }) {
-                            DropdownMenuItem(text = { Text(text = "退出登录") }, onClick = {
+                            DropdownMenuItem(text = { Text(text = stringResource(R.string.sign_out_cloud_service)) }, onClick = {
                                 expanded = false
                                 (context as MainActivity).getGoogleLoginAuth().signOut()
                                     .addOnCompleteListener {
                                         viewModel.saveGoogleDriveAccount(null)
                                         coroutineScope.launch {
-                                            snackBarHostState.showSnackbar("已退出登录")
+                                            snackBarHostState.showSnackbar(context.getString(R.string.signed_out_cloud_service))
                                         }
                                     }
                             })
@@ -324,11 +334,11 @@ fun CloudPage(
                 }
             }
             item {
-                PreferencesCategory(text = "服务设置")
+                PreferencesCategory(text = stringResource(R.string.cloud_service_settings))
             }
             item {
                 SimpleMenuPreference(
-                    title = "默认云端服务",
+                    title = stringResource(R.string.default_cloud_service),
                     optionsMap = selectableService,
                     selectedKey = defaultBackupService,
                     onSelect = viewModel::setDefaultBackupService
@@ -336,9 +346,9 @@ fun CloudPage(
             }
             item {
                 SwitchPreference(
-                    title = "自动备份",
-                    subtitleOff = "于合适网络环境下自动下载文件，使用默认云端服务备份",
-                    subtitleOn = "启用",
+                    title = stringResource(R.string.auto_backup_title),
+                    subtitleOff = stringResource(R.string.auto_backup_subtitle_off),
+                    subtitleOn = stringResource(R.string.auto_backup_subtitle_on),
                     checked = autoBackup && defaultBackupService != 0,
                     onCheckedChange = viewModel::setAutoBackup,
                     enabled = defaultBackupService != 0
@@ -346,8 +356,8 @@ fun CloudPage(
             }
             item {
                 NormalPreference(
-                    title = "目标会话",
-                    subtitle = "对选中会话应用自动备份",
+                    title = stringResource(R.string.auto_backup_target_contacts_title),
+                    subtitle = stringResource(R.string.auto_backup_target_contacts_subtitle),
                     enabled = defaultBackupService != 0
                 ) {
                     showContactDialog = true
@@ -355,10 +365,10 @@ fun CloudPage(
             }
             item {
                 SliderPreference(
-                    title = "自动备份文件大小上限",
+                    title = stringResource(R.string.auto_backup_file_max_size_title),
                     subTitle =
                     when (autoBackupFileMaxSize) {
-                        100f -> "无限制"
+                        100f -> stringResource(R.string.no_limit)
                         else -> "${autoBackupFileMaxSize.toInt()}MB"
                     },
                     value = autoBackupFileMaxSize,
@@ -370,9 +380,9 @@ fun CloudPage(
             }
             item {
                 SwitchPreference(
-                    title = "同时删除本地文件",
-                    subtitleOff = "备份完成后自动删除本地文件",
-                    subtitleOn = "启用",
+                    title = stringResource(R.string.auto_backup_then_delete_title),
+                    subtitleOff = stringResource(R.string.auto_backup_then_delete_subtitle_off),
+                    subtitleOn = stringResource(R.string.auto_backup_then_delete_subtitle_on),
 //                    checked = autoDeleteLocalFile && autoBackup && defaultBackupService != 0,
                     checked = true,
                     onCheckedChange = viewModel::setAutoDeleteLocalFile,
@@ -389,11 +399,7 @@ fun CloudPage(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "启用自动备份后，将在满足以下条件时自动备份您的目标会话文件：\n" +
-                                "处于 Wi-Fi 网络连接时\n" +
-                                "未处于“电量不足模式”\n" +
-                                "设备处于空闲状态\n" +
-                                "未处于“存储空间不足”状态。",
+                        text = stringResource(id = R.string.auto_backup_info),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

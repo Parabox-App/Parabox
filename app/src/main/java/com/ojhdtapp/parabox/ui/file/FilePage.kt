@@ -30,12 +30,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
@@ -136,13 +137,13 @@ fun FilePage(
                             if (account != null) {
                                 mainSharedViewModel.saveGoogleDriveAccount(account)
                                 coroutineScope.launch {
-                                    snackBarHostState.showSnackbar("成功连接 Google Drive")
+                                    snackBarHostState.showSnackbar(context.getString(R.string.connect_gd_success))
                                 }
                             }
                         } else {
                             mainSharedViewModel.saveGoogleDriveAccount(null)
                             coroutineScope.launch {
-                                snackBarHostState.showSnackbar("连接取消")
+                                snackBarHostState.showSnackbar(context.getString(R.string.connect_cloud_service_cancel))
                             }
                         }
                     }
@@ -157,21 +158,21 @@ fun FilePage(
         androidx.compose.material3.AlertDialog(onDismissRequest = {
             deleteFileConfirm = false
         },
-            title = { Text(text = "确认删除") },
-            text = { Text(text = "选择项将从文件列表移除，但不会影响所有已下载的本地文件。") },
+            title = { Text(text = stringResource(R.string.delete_confirm)) },
+            text = { Text(text = stringResource(R.string.delete_file_confirm_text)) },
             confirmButton = {
                 androidx.compose.material3.TextButton(onClick = {
                     viewModel.deleteSelectedFile()
                     deleteFileConfirm = false
                 }) {
-                    Text(text = "确认")
+                    Text(text = stringResource(id = R.string.confirm))
                 }
             },
             dismissButton = {
                 androidx.compose.material3.TextButton(onClick = {
                     deleteFileConfirm = false
                 }) {
-                    Text(text = "取消")
+                    Text(text = stringResource(id = R.string.cancel))
                 }
             })
     }
@@ -186,7 +187,7 @@ fun FilePage(
                     contentDescription = "select cloud storage"
                 )
             },
-            title = { Text(text = "连接云端服务") },
+            title = { Text(text = stringResource(R.string.connect_cloud_service)) },
             text = {
                 LazyColumn() {
                     item {
@@ -205,7 +206,7 @@ fun FilePage(
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
-                                    text = "Google Drive",
+                                    text = stringResource(R.string.cloud_service_gd),
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                             }
@@ -255,7 +256,7 @@ fun FilePage(
             SearchAppBar(
                 text = viewModel.searchText.value,
                 onTextChange = viewModel::onSearch,
-                placeholder = "搜索文件",
+                placeholder = stringResource(R.string.search_file),
                 fileSelection = mainState.data.filter { it.fileId in viewModel.selectedFilesId },
                 activateState = viewModel.searchBarActivateState.value,
                 avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
@@ -368,7 +369,7 @@ fun FilePage(
                     onLogoutGoogleDrive = {
                         mainSharedViewModel.saveGoogleDriveAccount(null)
                         coroutineScope.launch {
-                            snackBarHostState.showSnackbar("已退出登录")
+                            snackBarHostState.showSnackbar(context.getString(R.string.logged_out))
                         }
                     },
                     onChangeSearchAppBarState = {
@@ -383,14 +384,14 @@ fun FilePage(
                         showCloudDialog = true
                     },
                     onRefresh = {
-                        when{
+                        when {
                             gDriveLogin -> {
                                 viewModel.setIsRefreshing(true)
                                 viewModel.updateGoogleDriveFilesStateFlow()
                             }
                             else -> {
                                 coroutineScope.launch {
-                                    snackBarHostState.showSnackbar("未连接云服务")
+                                    snackBarHostState.showSnackbar(context.getString(R.string.cloud_service_not_connected))
                                 }
                                 coroutineScope.launch {
                                     viewModel.setIsRefreshing(true)
@@ -485,11 +486,11 @@ fun MainArea(
                 ) {
                     Box(
                         modifier = Modifier
-                            .padding(vertical = 8.dp)
+                            .padding(vertical = 16.dp)
                     ) {
                         Text(
-                            text = "最近的",
-                            style = MaterialTheme.typography.labelMedium,
+                            text = stringResource(R.string.recent),
+                            style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -516,7 +517,7 @@ fun MainArea(
                                         modifier = Modifier.size(FilterChipDefaults.IconSize)
                                     )
                             },
-                            label = { Text(text = "文档") },
+                            label = { Text(text = stringResource(R.string.file_type_docs)) },
                             border = FilterChipDefaults.filterChipBorder(
                                 borderColor = MaterialTheme.colorScheme.outline.copy(
                                     alpha = 0.4f
@@ -542,7 +543,7 @@ fun MainArea(
                                         modifier = Modifier.size(FilterChipDefaults.IconSize)
                                     )
                             },
-                            label = { Text(text = "演示文稿") },
+                            label = { Text(text = stringResource(R.string.file_type_slides)) },
                             border = FilterChipDefaults.filterChipBorder(
                                 borderColor = MaterialTheme.colorScheme.outline.copy(
                                     alpha = 0.4f
@@ -568,7 +569,7 @@ fun MainArea(
                                         modifier = Modifier.size(FilterChipDefaults.IconSize)
                                     )
                             },
-                            label = { Text(text = "电子表格") },
+                            label = { Text(text = stringResource(R.string.file_type_sheets)) },
                             border = FilterChipDefaults.filterChipBorder(
                                 borderColor = MaterialTheme.colorScheme.outline.copy(
                                     alpha = 0.4f
@@ -594,7 +595,7 @@ fun MainArea(
                                         modifier = Modifier.size(FilterChipDefaults.IconSize)
                                     )
                             },
-                            label = { Text(text = "视频") },
+                            label = { Text(text = stringResource(R.string.file_type_video)) },
                             border = FilterChipDefaults.filterChipBorder(
                                 borderColor = MaterialTheme.colorScheme.outline.copy(
                                     alpha = 0.4f
@@ -620,7 +621,7 @@ fun MainArea(
                                         modifier = Modifier.size(FilterChipDefaults.IconSize)
                                     )
                             },
-                            label = { Text(text = "音频") },
+                            label = { Text(text = stringResource(R.string.file_type_audio)) },
                             border = FilterChipDefaults.filterChipBorder(
                                 borderColor = MaterialTheme.colorScheme.outline.copy(
                                     alpha = 0.4f
@@ -646,7 +647,7 @@ fun MainArea(
                                         modifier = Modifier.size(FilterChipDefaults.IconSize)
                                     )
                             },
-                            label = { Text(text = "图片") },
+                            label = { Text(text = stringResource(R.string.file_type_picture)) },
                             border = FilterChipDefaults.filterChipBorder(
                                 borderColor = MaterialTheme.colorScheme.outline.copy(
                                     alpha = 0.4f
@@ -672,7 +673,7 @@ fun MainArea(
                                         modifier = Modifier.size(FilterChipDefaults.IconSize)
                                     )
                             },
-                            label = { Text(text = "便携式文档") },
+                            label = { Text(text = stringResource(R.string.file_type_pdf)) },
                             border = FilterChipDefaults.filterChipBorder(
                                 borderColor = MaterialTheme.colorScheme.outline.copy(
                                     alpha = 0.4f
@@ -698,7 +699,7 @@ fun MainArea(
                                         modifier = Modifier.size(FilterChipDefaults.IconSize)
                                     )
                             },
-                            label = { Text(text = "压缩文件") },
+                            label = { Text(text = stringResource(R.string.file_type_compressed)) },
                             border = FilterChipDefaults.filterChipBorder(
                                 borderColor = MaterialTheme.colorScheme.outline.copy(
                                     alpha = 0.4f
@@ -714,7 +715,6 @@ fun MainArea(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ) {
-                            val context = LocalContext.current
                             val imageLoader = ImageLoader.Builder(context)
                                 .components {
                                     add(SvgDecoder.Factory())
@@ -736,7 +736,7 @@ fun MainArea(
                             Text(
                                 modifier = Modifier
                                     .align(Alignment.CenterHorizontally),
-                                text = "暂无可显示的文件",
+                                text = stringResource(R.string.no_file_text),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -777,7 +777,7 @@ fun MainArea(
                             modifier = Modifier.align(Alignment.CenterHorizontally),
                             onClick = { onChangeArea(FilePageState.SEARCH_AREA) }
                         ) {
-                            Text(text = "查看完整列表")
+                            Text(text = stringResource(R.string.show_full_list))
                         }
                     }
                 }
@@ -790,11 +790,11 @@ fun MainArea(
                 ) {
                     Box(
                         modifier = Modifier
-                            .padding(vertical = 8.dp)
+                            .padding(vertical = 16.dp)
                     ) {
                         Text(
-                            text = "云服务",
-                            style = MaterialTheme.typography.labelMedium,
+                            text = stringResource(R.string.cloud_service),
+                            style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -831,7 +831,11 @@ fun MainArea(
                                 )
                                 Text(
                                     modifier = Modifier.weight(1f),
-                                    text = if (runningWork != 0) "$runningWork 项备份任务正在进行" else "暂无运行中的备份任务",
+                                    text = if (runningWork != 0) stringResource(
+                                        R.string.backuping_file,
+                                        runningWork
+                                    )
+                                    else stringResource(R.string.no_backuping_file),
                                     color = MaterialTheme.colorScheme.onSurface,
                                     style = MaterialTheme.typography.bodyMedium
                                 )
@@ -875,7 +879,7 @@ fun MainArea(
                                             Spacer(modifier = Modifier.width(16.dp))
                                             Column() {
                                                 Text(
-                                                    text = "Google Drive",
+                                                    text = stringResource(id = R.string.cloud_service_gd),
                                                     style = MaterialTheme.typography.titleMedium
                                                 )
                                                 LinearProgressIndicator(
@@ -885,20 +889,27 @@ fun MainArea(
                                                         .clip(CircleShape),
                                                 )
                                                 Text(
-                                                    text = "已使用 ${gDriveUsedSpacePercent}% 的存储空间（${
+                                                    text = stringResource(
+                                                        id = R.string.cloud_service_used_space,
+                                                        gDriveUsedSpacePercent,
                                                         FileUtil.getSizeString(
                                                             gDriveUsedSpace
+                                                        ),
+                                                        FileUtil.getSizeString(
+                                                            gDriveTotalSpace
                                                         )
-                                                    } / ${FileUtil.getSizeString(gDriveTotalSpace)}）",
+                                                    ),
                                                     style = MaterialTheme.typography.labelMedium,
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                                 )
                                                 Text(
-                                                    text = "其中应用使用 ${gDriveAppUsedSpacePercent}%（${
+                                                    text = stringResource(
+                                                        R.string.cloud_service_app_used_space,
+                                                        gDriveAppUsedSpacePercent,
                                                         FileUtil.getSizeString(
                                                             gDriveAppUsedSpace
                                                         )
-                                                    }）",
+                                                    ),
                                                     style = MaterialTheme.typography.labelMedium,
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                                 )
@@ -908,13 +919,16 @@ fun MainArea(
                                     RoundedCornerDropdownMenu(
                                         expanded = expanded,
                                         onDismissRequest = { expanded = false }) {
-                                        DropdownMenuItem(text = { Text(text = "退出登录") }, onClick = {
-                                            expanded = false
-                                            (context as MainActivity).getGoogleLoginAuth().signOut()
-                                                .addOnCompleteListener {
-                                                    onLogoutGoogleDrive()
-                                                }
-                                        })
+                                        DropdownMenuItem(
+                                            text = { Text(text = stringResource(R.string.sign_out_cloud_service)) },
+                                            onClick = {
+                                                expanded = false
+                                                (context as MainActivity).getGoogleLoginAuth()
+                                                    .signOut()
+                                                    .addOnCompleteListener {
+                                                        onLogoutGoogleDrive()
+                                                    }
+                                            })
                                     }
                                 }
                             }
@@ -945,13 +959,14 @@ fun MainArea(
                                     }
                                     Text(
                                         modifier = Modifier.padding(top = 16.dp),
-                                        text = "未连接云端服务",
+                                        text = stringResource(R.string.cloud_service_not_connected),
                                         style = MaterialTheme.typography.titleMedium
                                     )
                                     Text(
                                         modifier = Modifier.padding(vertical = 16.dp),
-                                        text = "连接云端服务可将您的会话文件备份至云端",
-                                        style = MaterialTheme.typography.labelLarge
+                                        text = stringResource(R.string.cloud_service_not_connected_text),
+                                        style = MaterialTheme.typography.labelLarge,
+                                        textAlign = TextAlign.Center
                                     )
                                     FilledTonalButton(
                                         onClick = {
@@ -967,7 +982,7 @@ fun MainArea(
                                                 .padding(end = 8.dp)
                                                 .size(ButtonDefaults.IconSize),
                                         )
-                                        Text(text = "连接云端服务")
+                                        Text(text = stringResource(R.string.connect_cloud_service))
                                     }
                                 }
                             }
@@ -1046,28 +1061,44 @@ fun SearchArea(
                                     onDismissRequest = { showSizeFilterDropDownMenu = false },
                                 ) {
                                     DropdownMenuItem(
-                                        text = { Text(SizeFilter.All.label) },
+                                        text = {
+                                            Text(
+                                                stringResource(id = SizeFilter.All.labelResId)
+                                            )
+                                        },
                                         onClick = {
                                             onUpdateSizeFilter(SizeFilter.All)
                                             showSizeFilterDropDownMenu = false
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text(SizeFilter.TenMB.label) },
+                                        text = {
+                                            Text(
+                                                stringResource(id = SizeFilter.TenMB.labelResId)
+                                            )
+                                        },
                                         onClick = {
                                             onUpdateSizeFilter(SizeFilter.TenMB)
                                             showSizeFilterDropDownMenu = false
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text(SizeFilter.HundredMB.label) },
+                                        text = {
+                                            Text(
+                                                stringResource(id = SizeFilter.HundredMB.labelResId)
+                                            )
+                                        },
                                         onClick = {
                                             onUpdateSizeFilter(SizeFilter.HundredMB)
                                             showSizeFilterDropDownMenu = false
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text(SizeFilter.OverHundredMB.label) },
+                                        text = {
+                                            Text(
+                                                stringResource(id = SizeFilter.OverHundredMB.labelResId)
+                                            )
+                                        },
                                         onClick = {
                                             onUpdateSizeFilter(SizeFilter.OverHundredMB)
                                             showSizeFilterDropDownMenu = false
@@ -1076,7 +1107,7 @@ fun SearchArea(
                                 }
                             }
                         },
-                        label = { Text(text = mainState.sizeFilter.label) },
+                        label = { Text(text = stringResource(id = mainState.sizeFilter.labelResId)) },
                         border = FilterChipDefaults.filterChipBorder(
                             borderColor = MaterialTheme.colorScheme.outline.copy(
                                 alpha = 0.4f
@@ -1106,63 +1137,99 @@ fun SearchArea(
                                     onDismissRequest = { showExtensionFilterDropDownMenu = false },
                                 ) {
                                     DropdownMenuItem(
-                                        text = { Text(ExtensionFilter.All.label) },
+                                        text = {
+                                            Text(
+                                                stringResource(id = ExtensionFilter.All.labelResId)
+                                            )
+                                        },
                                         onClick = {
                                             onUpdateExtensionFilter(ExtensionFilter.All)
                                             showExtensionFilterDropDownMenu = false
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text(ExtensionFilter.Docs.label) },
+                                        text = {
+                                            Text(
+                                                stringResource(id = ExtensionFilter.Docs.labelResId)
+                                            )
+                                        },
                                         onClick = {
                                             onUpdateExtensionFilter(ExtensionFilter.Docs)
                                             showExtensionFilterDropDownMenu = false
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text(ExtensionFilter.Slides.label) },
+                                        text = {
+                                            Text(
+                                                stringResource(id = ExtensionFilter.Slides.labelResId)
+                                            )
+                                        },
                                         onClick = {
                                             onUpdateExtensionFilter(ExtensionFilter.Slides)
                                             showExtensionFilterDropDownMenu = false
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text(ExtensionFilter.Sheets.label) },
+                                        text = {
+                                            Text(
+                                                stringResource(id = ExtensionFilter.Sheets.labelResId)
+                                            )
+                                        },
                                         onClick = {
                                             onUpdateExtensionFilter(ExtensionFilter.Sheets)
                                             showExtensionFilterDropDownMenu = false
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text(ExtensionFilter.Video.label) },
+                                        text = {
+                                            Text(
+                                                stringResource(id = ExtensionFilter.Video.labelResId)
+                                            )
+                                        },
                                         onClick = {
                                             onUpdateExtensionFilter(ExtensionFilter.Video)
                                             showExtensionFilterDropDownMenu = false
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text(ExtensionFilter.Audio.label) },
+                                        text = {
+                                            Text(
+                                                stringResource(id = ExtensionFilter.Audio.labelResId)
+                                            )
+                                        },
                                         onClick = {
                                             onUpdateExtensionFilter(ExtensionFilter.Audio)
                                             showExtensionFilterDropDownMenu = false
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text(ExtensionFilter.Picture.label) },
+                                        text = {
+                                            Text(
+                                                stringResource(id = ExtensionFilter.Picture.labelResId)
+                                            )
+                                        },
                                         onClick = {
                                             onUpdateExtensionFilter(ExtensionFilter.Picture)
                                             showExtensionFilterDropDownMenu = false
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text(ExtensionFilter.Compressed.label) },
+                                        text = {
+                                            Text(
+                                                stringResource(id = ExtensionFilter.Compressed.labelResId)
+                                            )
+                                        },
                                         onClick = {
                                             onUpdateExtensionFilter(ExtensionFilter.Compressed)
                                             showExtensionFilterDropDownMenu = false
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text(ExtensionFilter.Pdf.label) },
+                                        text = {
+                                            Text(
+                                                stringResource(id = ExtensionFilter.Pdf.labelResId)
+                                            )
+                                        },
                                         onClick = {
                                             onUpdateExtensionFilter(ExtensionFilter.Pdf)
                                             showExtensionFilterDropDownMenu = false
@@ -1171,7 +1238,11 @@ fun SearchArea(
                                 }
                             }
                         },
-                        label = { Text(text = mainState.extensionFilter.label) },
+                        label = {
+                            Text(
+                                text = stringResource(id = mainState.extensionFilter.labelResId)
+                            )
+                        },
                         border = FilterChipDefaults.filterChipBorder(
                             borderColor = MaterialTheme.colorScheme.outline.copy(
                                 alpha = 0.4f
@@ -1201,35 +1272,55 @@ fun SearchArea(
                                     onDismissRequest = { showTimeFilterDropDownMenu = false },
                                 ) {
                                     DropdownMenuItem(
-                                        text = { Text(TimeFilter.All.label) },
+                                        text = {
+                                            Text(
+                                                stringResource(id = TimeFilter.All.labelResId)
+                                            )
+                                        },
                                         onClick = {
                                             onUpdateTimeFilter(TimeFilter.All)
                                             showTimeFilterDropDownMenu = false
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text(TimeFilter.WithinThreeDays.label) },
+                                        text = {
+                                            Text(
+                                                stringResource(id = TimeFilter.WithinThreeDays.labelResId)
+                                            )
+                                        },
                                         onClick = {
                                             onUpdateTimeFilter(TimeFilter.WithinThreeDays)
                                             showTimeFilterDropDownMenu = false
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text(TimeFilter.WithinThisWeek.label) },
+                                        text = {
+                                            Text(
+                                                stringResource(id = TimeFilter.WithinThisWeek.labelResId)
+                                            )
+                                        },
                                         onClick = {
                                             onUpdateTimeFilter(TimeFilter.WithinThisWeek)
                                             showTimeFilterDropDownMenu = false
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text(TimeFilter.WithinThisMonth.label) },
+                                        text = {
+                                            Text(
+                                                stringResource(id = TimeFilter.WithinThisMonth.labelResId)
+                                            )
+                                        },
                                         onClick = {
                                             onUpdateTimeFilter(TimeFilter.WithinThisMonth)
                                             showTimeFilterDropDownMenu = false
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text(TimeFilter.MoreThanAMonth.label) },
+                                        text = {
+                                            Text(
+                                                stringResource(id = TimeFilter.MoreThanAMonth.labelResId)
+                                            )
+                                        },
                                         onClick = {
                                             onUpdateTimeFilter(TimeFilter.MoreThanAMonth)
                                             showTimeFilterDropDownMenu = false
@@ -1244,7 +1335,7 @@ fun SearchArea(
                                         )
                                     }
                                     DropdownMenuItem(
-                                        text = { Text("自定义范围") },
+                                        text = { Text(stringResource(R.string.time_range_picker)) },
                                         onClick = {
                                             showTimeFilterDropDownMenu = false
                                             if (!timeRangePicker.isAdded) {
@@ -1258,7 +1349,19 @@ fun SearchArea(
                                 }
                             }
                         },
-                        label = { Text(text = mainState.timeFilter.label) },
+                        label = {
+                            Text(
+                                text = if (mainState.timeFilter is TimeFilter.Custom) {
+                                    stringResource(
+                                        id = mainState.timeFilter.labelResId,
+                                        mainState.timeFilter.timestampStart?.toFormattedDate(context) ?: context.getString(R.string.time_filter_custom_not_set_label),
+                                        mainState.timeFilter.timestampEnd?.toFormattedDate(context) ?: context.getString(R.string.time_filter_custom_not_set_label),
+                                    )
+                                } else {
+                                    stringResource(id = mainState.timeFilter.labelResId)
+                                }
+                            )
+                        },
                         border = FilterChipDefaults.filterChipBorder(
                             borderColor = MaterialTheme.colorScheme.outline.copy(
                                 alpha = 0.4f
@@ -1283,7 +1386,7 @@ fun SearchArea(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "无搜索结果",
+                            text = stringResource(R.string.no_search_result),
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }
@@ -1339,6 +1442,7 @@ fun FileItem(
     onLongClick: () -> Unit,
     onAvatarClick: () -> Unit
 ) {
+    val context = LocalContext.current
     val topRadius by animateDpAsState(targetValue = if (isFirst) 24.dp else 0.dp)
     val bottomRadius by animateDpAsState(targetValue = if (isLast) 24.dp else 0.dp)
     Surface(
@@ -1515,7 +1619,7 @@ fun FileItem(
                 verticalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
-                    text = file.timestamp.toTimeUntilNow(),
+                    text = file.timestamp.toTimeUntilNow(context),
                     style = MaterialTheme.typography.labelMedium
                 )
                 if (file.cloudId != null) {

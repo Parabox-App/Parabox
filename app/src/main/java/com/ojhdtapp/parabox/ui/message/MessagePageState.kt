@@ -3,6 +3,7 @@ package com.ojhdtapp.parabox.ui.message
 import android.net.Uri
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.MaterialTheme
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.ContactWithMessages
 import com.ojhdtapp.parabox.domain.model.PluginConnection
@@ -43,15 +44,15 @@ data class GroupInfoState(
 }
 
 sealed class ContactTypeFilterState(
-    val label: String,
+    val labelResId: Int,
     val contactCheck: (contact: Contact) -> Boolean
 ) {
-    class All : ContactTypeFilterState("类型", { _: Contact -> true })
+    class All : ContactTypeFilterState(R.string.contact_type_filter_all_label, { _: Contact -> true })
     class Grouped :
-        ContactTypeFilterState("已编组", { contact: Contact -> contact.contactId != contact.senderId })
+        ContactTypeFilterState(R.string.contact_type_filter_grouped_label, { contact: Contact -> contact.contactId != contact.senderId })
 
     class Ungrouped :
-        ContactTypeFilterState("未编组", { contact: Contact -> contact.contactId == contact.senderId })
+        ContactTypeFilterState(R.string.contact_type_filter_ungrouped_label, { contact: Contact -> contact.contactId == contact.senderId })
 }
 
 sealed class ContactReadFilterState(val contactCheck: (contact: Contact) -> Boolean) {
@@ -77,10 +78,10 @@ class AreaState{
 }
 
 sealed class AudioRecorderState(
-    val text: String
+    val textResId: Int
 ){
-    object Ready : AudioRecorderState("长按录制")
-    object Recording: AudioRecorderState("上滑发送")
-    object Confirmed: AudioRecorderState("松手发送")
-    object Done : AudioRecorderState("重新录制")
+    object Ready : AudioRecorderState(R.string.audio_recorder_state_text_ready)
+    object Recording: AudioRecorderState(R.string.audio_recorder_state_text_recording)
+    object Confirmed: AudioRecorderState(R.string.audio_recorder_state_text_confirmed)
+    object Done : AudioRecorderState(R.string.audio_recorder_state_text_done)
 }

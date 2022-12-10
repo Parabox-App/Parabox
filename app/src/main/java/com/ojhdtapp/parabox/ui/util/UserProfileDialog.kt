@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -76,7 +77,7 @@ fun UserProfileDialog(
                 icon = {
                     Icon(imageVector = Icons.Outlined.PrivacyTip, contentDescription = "privacy")
                 },
-                title = "隐私政策",
+                title = stringResource(id = R.string.privacy),
                 contentResId = R.string.privacy,
                 onConfirm = {
                     showPrivacyDialog = false
@@ -90,7 +91,7 @@ fun UserProfileDialog(
                 icon = {
                     Icon(imageVector = Icons.Outlined.Gavel, contentDescription = "terms")
                 },
-                title = "用户协议",
+                title = stringResource(id = R.string.terms),
                 contentResId = R.string.terms,
                 onConfirm = {
                     showTermsDialog = false
@@ -196,7 +197,7 @@ fun UserProfileDialog(
                     }
                     if(gDriveLogin){
                         NormalPreference(
-                            title = "Google Drive",
+                            title = stringResource(id = R.string.cloud_service_gd),
                             subtitle = "已使用 ${gDriveUsedSpacePercent.value}% 的存储空间（${FileUtil.getSizeString(gDriveUsedSpace)} / ${FileUtil.getSizeString(gDriveTotalSpace)}）",
                             leadingIcon = {
                                 FaIcon(modifier = Modifier.padding(end = 4.dp),faIcon = FaIcons.GoogleDrive, tint = MaterialTheme.colorScheme.onSurface)
@@ -230,7 +231,7 @@ fun UserProfileDialog(
                         Divider(
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
                         )
-                        PreferencesCategory(text = "扩展")
+                        PreferencesCategory(text = stringResource(id = R.string.extension))
                         pluginList.forEach {
                             NormalPreference(
                                 title = it.name,
@@ -283,7 +284,7 @@ fun UserProfileDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         TextButton(onClick = { showTermsDialog = true }) {
-                            Text(text = "用户协议", style = MaterialTheme.typography.labelMedium)
+                            Text(text = stringResource(id = R.string.terms), style = MaterialTheme.typography.labelMedium)
                         }
                         Text(
                             text = "•",
@@ -291,7 +292,7 @@ fun UserProfileDialog(
                             color = MaterialTheme.colorScheme.primary
                         )
                         TextButton(onClick = { showPrivacyDialog = true }) {
-                            Text(text = "隐私政策", style = MaterialTheme.typography.labelMedium)
+                            Text(text = stringResource(id = R.string.privacy), style = MaterialTheme.typography.labelMedium)
                         }
                     }
                 }

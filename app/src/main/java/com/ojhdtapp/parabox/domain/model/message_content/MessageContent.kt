@@ -12,6 +12,7 @@ interface MessageContent : Parcelable {
         const val QUOTE_REPLY = 4
         const val AT_ALL = 5
         const val FILE = 6
+        const val LOCATION = 7
     }
     fun getContentString() : String
 }

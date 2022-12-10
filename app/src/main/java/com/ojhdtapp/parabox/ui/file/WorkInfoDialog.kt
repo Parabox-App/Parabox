@@ -26,12 +26,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.work.WorkInfo
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.domain.model.File
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -81,12 +84,12 @@ fun WorkInfoDialog(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "备份中的任务",
+                        text = stringResource(R.string.backuping_file_title),
                         style = MaterialTheme.typography.headlineSmall,
                         modifier = Modifier.padding(bottom = 24.dp)
                     )
                     Text(
-                        text = "以下任务已被加入处理队列。处理过程接受系统调度，将尽可能减少资源占用与性能消耗。",
+                        text = stringResource(R.string.backuping_file_text),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
@@ -100,7 +103,7 @@ fun WorkInfoDialog(
                                         .height(176.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text(text = "暂无任务")
+                                    Text(text = stringResource(R.string.no_backuping_file_sim))
                                 }
                             }
                         }
@@ -132,6 +135,7 @@ fun WorkInfoItem(
     workInfoList: List<WorkInfo>,
     onClick: () -> Unit
 ) {
+    val context = LocalContext.current
     val cancelable by remember(workInfoList) {
         derivedStateOf {
             !workInfoList.any { it.state == WorkInfo.State.CANCELLED }
@@ -143,23 +147,23 @@ fun WorkInfoItem(
             when {
                 workInfoList.any {
                     it.state == WorkInfo.State.CANCELLED
-                } -> "已取消"
+                } -> context.getString(R.string.canceled)
 
                 workInfoList.any {
                     it.state == WorkInfo.State.FAILED
                 } -> {
                     var count = 0
                     workInfoList.forEach { count += it.runAttemptCount }
-                    "操作失败(第${count}次尝试)"
+                    context.getString(R.string.action_failed_with_attempt_count, count)
                 }
 
                 workInfoList.all {
                     it.state == WorkInfo.State.SUCCEEDED
-                } -> "已完成"
+                } -> context.getString(R.string.finished)
 
                 workInfoList.all {
                     it.state == WorkInfo.State.ENQUEUED || it.state == WorkInfo.State.BLOCKED
-                } -> "已暂停"
+                } -> context.getString(R.string.suspended)
 
                 workInfoList.any {
                     it.state == WorkInfo.State.RUNNING
@@ -167,14 +171,14 @@ fun WorkInfoItem(
                     val currentStep =
                         workInfoList.count { it.state == WorkInfo.State.SUCCEEDED } + 1
                     when (currentStep) {
-                        1 -> "正在下载($currentStep/3)"
-                        2 -> "正在上传($currentStep/3)"
-                        3 -> "正在清理($currentStep/3)"
-                        else -> "正在执行"
+                        1 -> context.getString(R.string.backup_step_download, currentStep)
+                        2 -> context.getString(R.string.backup_step_upload, currentStep)
+                        3 -> context.getString(R.string.backup_step_clear, currentStep)
+                        else -> context.getString(R.string.backup_step_running)
                     }
                 }
 
-                else -> "未知进度"
+                else -> context.getString(R.string.backup_step_unknown)
             }
 
         }
@@ -195,7 +199,7 @@ fun WorkInfoItem(
             )
         }
         OutlinedButton(onClick = onClick, enabled = cancelable) {
-            Text(text = "取消")
+            Text(text = context.getString(R.string.cancel))
         }
     }
 }

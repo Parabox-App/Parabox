@@ -32,6 +32,7 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -43,7 +44,6 @@ import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.FormUtil
 import com.ojhdtapp.parabox.core.util.toDescriptiveTime
-import com.ojhdtapp.parabox.data.remote.dto.toProfile
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Profile
 import com.ojhdtapp.parabox.ui.util.HashTagEditor
@@ -174,10 +174,10 @@ fun EditActionDialog(
                                         .combinedClickable(
                                             enabled = true,
                                             onLongClick = {
-                                                if(isEditing) selectedLocalAvatar = null
+                                                if (isEditing) selectedLocalAvatar = null
                                             },
                                             onClick = {
-                                                if(isEditing){
+                                                if (isEditing) {
                                                     imagePickerLauncher.launch(
                                                         PickVisualMediaRequest(
                                                             ActivityResultContracts.PickVisualMedia.ImageOnly
@@ -242,7 +242,7 @@ fun EditActionDialog(
                                         decorationBox = { innerTextField ->
                                             if (name.isEmpty()) {
                                                 Text(
-                                                    text = "会话名",
+                                                    text = stringResource(id = R.string.contact_name),
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                     style = MaterialTheme.typography.titleLarge
                                                 )
@@ -260,13 +260,13 @@ fun EditActionDialog(
                                 ) {
                                     if (nameError) {
                                         Text(
-                                            text = "会话名不可为空",
+                                            text = stringResource(R.string.contact_name_error_empty),
                                             style = MaterialTheme.typography.labelMedium,
                                             color = MaterialTheme.colorScheme.error
                                         )
                                     } else {
                                         Text(
-                                            text = "点击编辑会话名",
+                                            text = stringResource(R.string.edit_contact_name),
                                             style = MaterialTheme.typography.labelMedium,
                                             color = MaterialTheme.colorScheme.primary
                                         )
@@ -274,8 +274,8 @@ fun EditActionDialog(
                                 }
                                 Text(
                                     modifier = Modifier.padding(top = 4.dp),
-                                    text = contact?.latestMessage?.timestamp?.toDescriptiveTime()
-                                        ?.let { "最近一次发言于$it" } ?: "无最近发言记录",
+                                    text = contact?.latestMessage?.timestamp?.toDescriptiveTime(context)
+                                        ?.let { stringResource(id = R.string.recent_speech_at, it) } ?: stringResource(R.string.no_chat_history),
                                     style = MaterialTheme.typography.labelLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -370,7 +370,7 @@ fun EditActionDialog(
                                                 modifier = Modifier.size(ButtonDefaults.IconSize)
                                             )
                                             Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                                            Text("保存更改")
+                                            Text(stringResource(R.string.save_change))
                                         }
                                     } else {
                                         Button(onClick = { isEditing = !isEditing }) {
@@ -380,7 +380,7 @@ fun EditActionDialog(
                                                 modifier = Modifier.size(ButtonDefaults.IconSize)
                                             )
                                             Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                                            Text("编辑信息")
+                                            Text(stringResource(R.string.edit_msg))
                                         }
 
                                     }
@@ -404,13 +404,13 @@ fun EditActionDialog(
                                 if (values.size >= 2) {
                                     onConfirmDelete = false
                                     if (!FormUtil.checkTagMinimumCharacter(values[0])) {
-                                        hashTagError = "标签应至少包含两个字符"
+                                        hashTagError = context.getString(R.string.hash_tag_error_too_short)
                                         hashTagShouldShowError = true
                                     } else if (!FormUtil.checkTagMaximumCharacter(values[0])) {
-                                        hashTagError = "标签长度不应超过50"
+                                        hashTagError = context.getString(R.string.hash_tag_error_too_long)
                                         hashTagShouldShowError = true
                                     } else if (hashTagList.contains(values[0])) {
-                                        hashTagError = "该标签已存在"
+                                        hashTagError = context.getString(R.string.hash_tag_error_duplicate)
                                         hashTagShouldShowError = true
                                     } else {
                                         hashTagShouldShowError = false
@@ -424,8 +424,8 @@ fun EditActionDialog(
                                     hashTagText = it
                                 }
                             },
-                            placeHolder = "暂无标签",
-                            placeHolderWhenEnabled = "要添加标签，请于此处输入后敲击空格或换行符",
+                            placeHolder = stringResource(R.string.hash_tag_empty),
+                            placeHolderWhenEnabled = stringResource(R.string.hash_tag_placeholder),
                             lazyListState = hashTagLazyListState,
                             focusRequester = hashTagFocusRequester,
                             textFieldInteraction = hashTagInteraction,
@@ -463,9 +463,9 @@ fun EditActionDialog(
                     }
                     item {
                         SwitchPreference(
-                            title = "新消息通知",
-                            subtitleOn = "开启",
-                            subtitleOff = "你将不会收到新消息通知",
+                            title = stringResource(R.string.new_msg_notification_title),
+                            subtitleOn = stringResource(R.string.new_msg_notification_on_subtitle),
+                            subtitleOff = stringResource(R.string.new_msg_notification_off_subtitle),
                             checked = contact?.enableNotifications ?: false && contact?.isArchived == false,
                             onCheckedChange = {
                                 contact?.contactId?.let { id ->
@@ -482,9 +482,9 @@ fun EditActionDialog(
                     }
                     item {
                         SwitchPreference(
-                            title = "置顶聊天",
-                            subtitleOn = "该聊天将始终固定于列表顶部",
-                            subtitleOff = "不置顶该聊天",
+                            title = stringResource(R.string.pin_title),
+                            subtitleOn = stringResource(R.string.pin_on_subtitle),
+                            subtitleOff = stringResource(R.string.pin_off_subtitle),
                             checked = contact?.isPinned ?: false,
                             onCheckedChange = {
                                 contact?.contactId?.let { id ->
@@ -501,9 +501,9 @@ fun EditActionDialog(
                     }
                     item {
                         SwitchPreference(
-                            title = "归档",
-                            subtitleOn = "归档后，你将不会收到新消息通知",
-                            subtitleOff = "禁用",
+                            title = stringResource(R.string.archive_title),
+                            subtitleOn = stringResource(R.string.archive_on_subtitle),
+                            subtitleOff = stringResource(R.string.archive_off_subtitle),
                             checked = contact?.isArchived ?: false,
                             onCheckedChange = {
                                 contact?.contactId?.let { id ->
@@ -524,7 +524,8 @@ fun EditActionDialog(
                             enter = expandVertically(),
                             exit = shrinkVertically(),
                         ) {
-                            NormalPreference(title = "移除该群聊", subtitle = "高危操作！请谨慎处理",
+                            NormalPreference(title = stringResource(R.string.delete_contact_title), subtitle = stringResource(
+                                                            R.string.delete_contact_subtitle),
                             warning = true,
                                 horizontalPadding = if (isCompact) 24.dp else 32.dp) {
                                 onEvent(EditActionDialogEvent.DeleteGrouped)

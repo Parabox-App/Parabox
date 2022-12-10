@@ -26,6 +26,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -125,7 +126,7 @@ fun SettingPage(
                             modifier = Modifier
                                 .background(appBarContainerColor)
                                 .statusBarsPadding(),
-                            title = { Text("设置") },
+                            title = { Text(stringResource(R.string.settings)) },
                             actions = {
 //                                var expanded by remember {
 //                                    mutableStateOf(false)
@@ -165,7 +166,7 @@ fun SettingPage(
                     } else {
                         TopAppBar(
                             title = {
-                                Text(text = "设置")
+                                Text(text = stringResource(R.string.settings))
                             },
                             navigationIcon = {
                                 if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) {
@@ -312,8 +313,8 @@ fun SettingPage(
                                         )
                                     }
                                 } else null,
-                                title = "关于",
-                                subtitle = "应用及账户基本信息",
+                                title = stringResource(R.string.about),
+                                subtitle = stringResource(R.string.about_subtitle),
                                 selected = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact
                                         && viewModel.selectedSetting.value == SettingPageState.INFO,
                                 roundedCorner = true,
@@ -327,7 +328,7 @@ fun SettingPage(
                         }
                     }
                     item(key = "function") {
-                        PreferencesCategory(text = "行为")
+                        PreferencesCategory(text = stringResource(R.string.function))
                     }
                     item(key = "extension") {
                         NormalPreference(
@@ -341,8 +342,8 @@ fun SettingPage(
                                     )
                                 }
                             } else null,
-                            title = "扩展",
-                            subtitle = "管理已安装的扩展",
+                            title = stringResource(R.string.extension),
+                            subtitle = stringResource(R.string.extension_subtitle),
                             selected = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact
                                     && viewModel.selectedSetting.value == SettingPageState.EXTENSION,
                             roundedCorner = true,
@@ -366,8 +367,8 @@ fun SettingPage(
                                     )
                                 }
                             } else null,
-                            title = "连接云端服务",
-                            subtitle = "添加或修改云端服务连接",
+                            title = stringResource(R.string.connect_cloud_service),
+                            subtitle = stringResource(R.string.connect_cloud_service_subtitle),
                             selected = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact
                                     && viewModel.selectedSetting.value == SettingPageState.CLOUD,
                             roundedCorner = true,
@@ -391,8 +392,8 @@ fun SettingPage(
                                     )
                                 }
                             } else null,
-                            title = "Firebase 云消息传递",
-                            subtitle = "在不同设备间同步消息",
+                            title = stringResource(R.string.fcm),
+                            subtitle = stringResource(R.string.fcm_subtitle),
                             selected = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact
                                     && viewModel.selectedSetting.value == SettingPageState.FCM,
                             roundedCorner = true,
@@ -416,8 +417,8 @@ fun SettingPage(
                                     )
                                 }
                             } else null,
-                            title = "备份与还原",
-                            subtitle = "数据导出及恢复，存储空间管理",
+                            title = stringResource(R.string.backup_and_restore),
+                            subtitle = stringResource(R.string.backup_and_restore_subtitle),
                             selected = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact
                                     && viewModel.selectedSetting.value == SettingPageState.BACKUP,
                             roundedCorner = true,
@@ -430,7 +431,7 @@ fun SettingPage(
                         }
                     }
                     item(key = "personalise") {
-                        PreferencesCategory(text = "个性化")
+                        PreferencesCategory(text = stringResource(R.string.personalise))
                     }
                     item(key = "notification") {
                         NormalPreference(
@@ -444,8 +445,8 @@ fun SettingPage(
                                     )
                                 }
                             } else null,
-                            title = "通知",
-                            subtitle = "消息提醒，对话泡，快速回复",
+                            title = stringResource(R.string.notification),
+                            subtitle = stringResource(R.string.notification_subtitle),
                             selected = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact
                                     && viewModel.selectedSetting.value == SettingPageState.NOTIFICATION,
                             roundedCorner = true,
@@ -469,8 +470,8 @@ fun SettingPage(
                                     )
                                 }
                             } else null,
-                            title = "用户界面",
-                            subtitle = "主题和语言",
+                            title = stringResource(R.string.user_interface),
+                            subtitle = stringResource(R.string.user_interface_subtitle),
                             selected = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact
                                     && viewModel.selectedSetting.value == SettingPageState.INTERFACE,
                             roundedCorner = true,
@@ -483,7 +484,7 @@ fun SettingPage(
                         }
                     }
                     item(key = "additional") {
-                        PreferencesCategory(text = "其他")
+                        PreferencesCategory(text = stringResource(R.string.other))
                     }
                     item(key = "experimental") {
                         NormalPreference(
@@ -497,8 +498,8 @@ fun SettingPage(
                                     )
                                 }
                             } else null,
-                            title = "高级",
-                            subtitle = "实验性特性与功能",
+                            title = stringResource(R.string.experimental),
+                            subtitle = stringResource(R.string.experimental_subtitle),
                             selected = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact
                                     && viewModel.selectedSetting.value == SettingPageState.EXPERIMENTAL,
                             roundedCorner = true,
@@ -522,8 +523,8 @@ fun SettingPage(
                                     )
                                 }
                             } else null,
-                            title = "帮助与支持",
-                            subtitle = "联系方式，文档和疑难解答",
+                            title = stringResource(R.string.support),
+                            subtitle = stringResource(R.string.support_subtitle),
                             selected = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact
                                     && viewModel.selectedSetting.value == SettingPageState.SUPPORT,
                             roundedCorner = true,
@@ -700,7 +701,7 @@ fun ThemeBlock(
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "如何称呼您",
+                        text = stringResource(R.string.user_name_title),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -727,7 +728,7 @@ fun ThemeBlock(
                     .padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.Center) {
                     Text(
-                        text = "版本",
+                        text = stringResource(R.string.version),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary
                     )

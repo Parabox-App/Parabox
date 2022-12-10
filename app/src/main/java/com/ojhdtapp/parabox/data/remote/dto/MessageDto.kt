@@ -184,7 +184,12 @@ fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
             expiryTime,
             uri?.toString()
         )
-
+        is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Location -> com.ojhdtapp.parabox.domain.model.message_content.Location(
+            latitude,
+            longitude,
+            name,
+            description
+        )
         else -> PlainText(this.getContentString())
     }
 }

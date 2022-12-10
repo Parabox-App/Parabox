@@ -102,19 +102,6 @@ class PluginConnObj(
                 }
             }
         )
-//        if (isConnected) {
-//            val timestamp = System.currentTimeMillis()
-//            sMessenger?.send(Message.obtain(null, ConnKey.MSG_MESSAGE).apply {
-//                obj = Bundle().apply {
-//                    putInt("command", ConnKey.MSG_MESSAGE_SEND)
-//                    putLong("timestamp", timestamp)
-//                }
-//                data = Bundle().apply {
-//                    putParcelable("value", dto)
-//                }
-//                replyTo = cMessenger
-//            })
-//        }
     }
 
     fun getRunningStatus(): Int {
@@ -122,7 +109,6 @@ class PluginConnObj(
     }
 
     fun getState() {
-        Log.d("parabox", "state get begin!")
         sendCommand(
             command = ParaboxKey.COMMAND_GET_STATE,
             onResult = {
@@ -379,7 +365,34 @@ class PluginConnObj(
                                         }
                                     }
                                 }
-
+                                ParaboxKey.REQUEST_SYNC_MESSAGE -> {
+                                    obj.classLoader = SendMessageDto::class.java.classLoader
+                                    obj.getParcelable<SendMessageDto>("dto").also {
+                                        if (it == null) {
+                                            Log.d("parabox", "message is null")
+                                            sendRequestResponse(
+                                                isSuccess = false,
+                                                metadata = metadata,
+                                                errorCode = ParaboxKey.ERROR_RESOURCE_NOT_FOUND
+                                            )
+                                        } else {
+                                            Log.d("parabox", "transfer success! value: $it")
+                                            launch(Dispatchers.IO) {
+                                                handleNewMessage(
+                                                    contents = it.contents,
+                                                    pluginConnection = it.pluginConnection,
+                                                    timestamp = it.timestamp,
+                                                    sendType = it.pluginConnection.sendTargetType,
+                                                    withoutVerify = true,
+                                                )
+                                            }
+                                            sendRequestResponse(
+                                                isSuccess = true,
+                                                metadata = metadata
+                                            )
+                                        }
+                                    }
+                                }
                                 else -> {}
                             }
 

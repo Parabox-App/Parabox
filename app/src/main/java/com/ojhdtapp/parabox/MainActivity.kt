@@ -24,6 +24,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.CreateDocument
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -72,14 +73,15 @@ import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderF
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.messaging.FirebaseMessaging
-import com.ojhdtapp.parabox.core.util.BrowserUtil
-import com.ojhdtapp.parabox.core.util.DataStoreKeys
-import com.ojhdtapp.parabox.core.util.DownloadManagerUtil
-import com.ojhdtapp.parabox.core.util.FileUtil
-import com.ojhdtapp.parabox.core.util.GoogleDriveUtil
-import com.ojhdtapp.parabox.core.util.NotificationUtil
-import com.ojhdtapp.parabox.core.util.dataStore
-import com.ojhdtapp.parabox.core.util.toDateAndTimeString
+import com.google.mlkit.common.model.DownloadConditions
+import com.google.mlkit.nl.entityextraction.*
+import com.google.mlkit.nl.languageid.LanguageIdentification
+import com.google.mlkit.nl.smartreply.*
+import com.google.mlkit.nl.translate.TranslateLanguage
+import com.google.mlkit.nl.translate.Translation
+import com.google.mlkit.nl.translate.Translator
+import com.google.mlkit.nl.translate.TranslatorOptions
+import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.DownloadingState
 import com.ojhdtapp.parabox.data.remote.dto.saveLocalResourcesToCloud
@@ -87,6 +89,7 @@ import com.ojhdtapp.parabox.domain.fcm.FcmApiHelper
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.model.File
+import com.ojhdtapp.parabox.domain.model.message_content.getContentString
 import com.ojhdtapp.parabox.domain.service.PluginListListener
 import com.ojhdtapp.parabox.domain.service.PluginService
 import com.ojhdtapp.parabox.domain.use_case.GetContacts
@@ -110,18 +113,17 @@ import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.navigation.dependency
 import dagger.hilt.android.AndroidEntryPoint
 import de.raphaelebner.roomdatabasebackup.core.RoomBackup
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import linc.com.amplituda.Amplituda
 import linc.com.amplituda.Compress
 import java.io.IOException
 import javax.inject.Inject
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -181,6 +183,10 @@ class MainActivity : AppCompatActivity() {
     // Backup and Restore
     private lateinit var backupLocationSelector: ActivityResultLauncher<String>
     private lateinit var restoreLocationSelector: ActivityResultLauncher<Array<String>>
+
+    // ML
+    private var entityExtractor: EntityExtractor? = null
+    private var smartReplyGenerator: SmartReplyGenerator? = null
 
     private fun openFile(file: File) {
         file.downloadPath?.let {
@@ -282,7 +288,7 @@ class MainActivity : AppCompatActivity() {
                 start()
             } catch (e: IOException) {
                 e.printStackTrace()
-            } catch (e: IllegalStateException){
+            } catch (e: IllegalStateException) {
                 e.printStackTrace()
             }
         }
@@ -768,7 +774,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun queryConfigFromFireStore(){
+    private fun queryConfigFromFireStore() {
         val db = Firebase.firestore
         db.collection("config").get().addOnSuccessListener { result ->
             if (result != null) {
@@ -776,7 +782,7 @@ class MainActivity : AppCompatActivity() {
 
                 val fcm_url = config?.get("fcm_url")?.toString()
                 Log.d("parabox", "fcm_url: $fcm_url")
-                fcm_url?.let{
+                fcm_url?.let {
                     lifecycleScope.launch {
                         dataStore.edit { settings ->
                             settings[DataStoreKeys.SETTINGS_FCM_OFFICIAL_URL] = it
@@ -788,6 +794,35 @@ class MainActivity : AppCompatActivity() {
             }
         }.addOnFailureListener { exception ->
             Log.d("parabox", "get failed with ", exception)
+        }
+    }
+
+    private fun initializeMLKit() {
+        lifecycleScope.launch {
+            val isEntityExtractionEnabled =
+                dataStore.data.first()[DataStoreKeys.SETTINGS_ML_KIT_ENTITY_EXTRACTION] ?: true
+            val isSmartReplyEnabled =
+                dataStore.data.first()[DataStoreKeys.SETTINGS_ML_KIT_SMART_REPLY] ?: true
+            val isTranslationEnabled =
+                dataStore.data.first()[DataStoreKeys.SETTINGS_ML_KIT_TRANSLATION] ?: true
+            if (isEntityExtractionEnabled) {
+                val tempEntityExtractor =
+                    EntityExtraction.getClient(
+                        EntityExtractorOptions.Builder(
+                            AppCompatDelegate.getApplicationLocales()[0]?.toLanguageTag()?.let {
+                                EntityExtractorOptions.fromLanguageTag(it)
+                            } ?: EntityExtractorOptions.ENGLISH
+                        ).build())
+                tempEntityExtractor
+                    .downloadModelIfNeeded()
+                    .addOnSuccessListener { _ ->
+                        entityExtractor = tempEntityExtractor
+                        lifecycle.addObserver(entityExtractor!!)
+                    }
+            }
+            if (isSmartReplyEnabled) {
+                smartReplyGenerator = SmartReply.getClient()
+            }
         }
     }
 
@@ -814,6 +849,124 @@ class MainActivity : AppCompatActivity() {
                     preferences[DataStoreKeys.GOOGLE_APP_USED_SPACE] = it.appUsedSpace
                 }
             }
+        }
+    }
+
+    // ML
+    suspend fun getEntityAnnotationList(str: String): List<EntityAnnotation> {
+        return suspendCoroutine<List<EntityAnnotation>> { cot ->
+            Log.d("parabox", "getEntityAnnotationList: $str")
+            if (entityExtractor == null) cot.resume(emptyList<EntityAnnotation>())
+            else {
+                val params = EntityExtractionParams.Builder(str).build()
+                entityExtractor!!.annotate(params)
+                    .addOnSuccessListener { result ->
+                        cot.resume(result)
+                    }
+                    .addOnFailureListener {
+                        it.printStackTrace()
+                        cot.resumeWithException(it)
+                    }
+            }
+        }
+    }
+
+    suspend fun getSmartReplyList(contactId: Long): List<SmartReplySuggestion> {
+        Log.d("parabox", "getSmartReplyList: $contactId")
+        if (smartReplyGenerator == null) return emptyList()
+        val conversation = withContext(Dispatchers.IO) {
+            appDatabase.messageDao.getMessagesWithLimit(listOf(contactId), 3)
+                .sortedBy { it.timestamp }.map {
+                    if (it.sentByMe) {
+                        TextMessage.createForLocalUser(it.contentString, it.timestamp)
+                    } else {
+                        TextMessage.createForRemoteUser(
+                            it.contentString,
+                            it.timestamp,
+                            it.profile.name
+                        )
+                    }
+                }
+        }
+        return suspendCoroutine<List<SmartReplySuggestion>> { cot ->
+            Log.d("parabox", "getSmartReplyList: ${conversation.last().messageText}")
+            smartReplyGenerator!!.suggestReplies(conversation)
+                .addOnSuccessListener { result ->
+                    if (result.status == SmartReplySuggestionResult.STATUS_NOT_SUPPORTED_LANGUAGE) {
+                        cot.resume(emptyList())
+                    } else if (result.status == SmartReplySuggestionResult.STATUS_SUCCESS) {
+                        if (conversation.lastOrNull()?.isLocalUser == true) {
+                            cot.resume(emptyList())
+                        } else {
+                            cot.resume(result.suggestions)
+                        }
+                    }
+                }
+                .addOnFailureListener {
+                    it.printStackTrace()
+                    cot.resumeWithException(it)
+                }
+        }
+    }
+
+    suspend fun getTranslation(originalText: String): String? {
+        return try {
+            val languageCode = getLanguageCode(originalText)
+            val currentLanguageTag =
+                AppCompatDelegate.getApplicationLocales()[0]?.toLanguageTag() ?: "en"
+            val options = TranslatorOptions.Builder()
+                .setSourceLanguage(TranslateLanguage.fromLanguageTag(languageCode)!!)
+                .setTargetLanguage(
+                    TranslateLanguage.fromLanguageTag(
+                        LanguageUtil.languageTagMapper(currentLanguageTag)
+                    )!!
+                )
+                .build()
+            val conditions = DownloadConditions.Builder()
+                .requireWifi()
+                .build()
+            return suspendCoroutine { cot ->
+                val translator = Translation.getClient(options)
+                translator.downloadModelIfNeeded(conditions)
+                    .addOnSuccessListener {
+                        Log.d("parabox", "downloadModelIfNeeded: success")
+                        translator.translate(originalText)
+                            .addOnSuccessListener { translatedText ->
+                                Log.d("parabox", "translated: $translatedText")
+                                cot.resume(translatedText)
+                            }
+                            .addOnFailureListener {
+                                it.printStackTrace()
+                                cot.resumeWithException(it)
+                            }.addOnCompleteListener {
+                                translator.close()
+                            }
+                    }
+                    .addOnFailureListener {
+                        Log.d("parabox", "downloadModelIfNeeded: failed")
+                        cot.resumeWithException(it)
+                    }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    suspend fun getLanguageCode(str: String): String {
+        return suspendCoroutine<String> { cot ->
+            val languageIdentifier = LanguageIdentification.getClient()
+            languageIdentifier.identifyLanguage(str)
+                .addOnSuccessListener { languageCode ->
+                    if (languageCode == "und") {
+                        cot.resume("en")
+                    } else {
+                        cot.resume(languageCode)
+                    }
+                }
+                .addOnFailureListener {
+                    cot.resume("en")
+                }
         }
     }
 
@@ -848,13 +1001,13 @@ class MainActivity : AppCompatActivity() {
                         timestamp,
                         event.sendType
                     ).also {
+
                         val dto = SendMessageDto(
                             contents = event.contents,
                             timestamp = timestamp,
                             pluginConnection = event.pluginConnection,
                             messageId = it
                         )
-
                         val enableFcm =
                             dataStore.data.first()[DataStoreKeys.SETTINGS_ENABLE_FCM] ?: false
                         val fcmRole = dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_ROLE]
@@ -868,7 +1021,9 @@ class MainActivity : AppCompatActivity() {
                             val dtoWithoutUri = when {
                                 fcmCloudStorage == FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal -> {
                                     dto.copy(
-                                        contents = dto.contents.saveLocalResourcesToCloud(baseContext)
+                                        contents = dto.contents.saveLocalResourcesToCloud(
+                                            baseContext
+                                        )
                                     )
                                 }
 
@@ -1190,6 +1345,10 @@ class MainActivity : AppCompatActivity() {
 
         // Query FireStore
         queryConfigFromFireStore()
+
+        // ML-Kit
+        initializeMLKit()
+
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {

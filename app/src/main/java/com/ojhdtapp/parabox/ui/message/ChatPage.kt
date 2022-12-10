@@ -1,22 +1,24 @@
 package com.ojhdtapp.parabox.ui.message
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Build.VERSION.SDK_INT
+import android.provider.CalendarContract
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -49,6 +51,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.*
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -71,6 +74,8 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import coil.request.SuccessResult
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.google.mlkit.nl.entityextraction.*
+import com.ojhdtapp.parabox.MainActivity
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.domain.model.Message
@@ -79,6 +84,7 @@ import com.ojhdtapp.parabox.domain.model.message_content.*
 import com.ojhdtapp.parabox.domain.service.PluginService
 import com.ojhdtapp.parabox.ui.MainSharedUiEvent
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
+import com.ojhdtapp.parabox.ui.bubble.BubbleActivity
 import com.ojhdtapp.parabox.ui.destinations.ChatPageDestination
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.RoundedCornerDropdownMenu
@@ -149,8 +155,11 @@ fun ChatPage(
                         val selectedPluginConnection = messageState.selectedPluginConnection
                             ?: messageState.pluginConnectionList.firstOrNull()
                         if (selectedPluginConnection == null) {
-                            Toast.makeText(context, "未选择有效的发送出口", Toast.LENGTH_SHORT)
-                                .show()
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.no_plugin_connection_selected),
+                                Toast.LENGTH_SHORT
+                            ).show()
                         } else {
                             onEvent(
                                 ActivityEvent.SendMessage(
@@ -329,7 +338,11 @@ fun NormalChatPage(
                         if (index != -1) {
                             scrollState.animateScrollToItem(index)
                         } else {
-                            Toast.makeText(context, "无法定位消息", Toast.LENGTH_SHORT)
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.cannot_locate_msg),
+                                Toast.LENGTH_SHORT
+                            )
                                 .show()
                         }
                     }
@@ -353,6 +366,19 @@ fun NormalChatPage(
     val userName by mainSharedViewModel.userNameFlow.collectAsState(initial = DataStoreKeys.DEFAULT_USER_NAME)
     val avatarUri by mainSharedViewModel.userAvatarFlow.collectAsState(initial = null)
 
+    // Smart Reply
+    var smartReplyList by remember {
+        mutableStateOf<List<String>>(emptyList())
+    }
+    LaunchedEffect(lazyPagingItems.itemSnapshotList.items.lastOrNull()?.messageId) {
+        messageState.contact?.contactId?.let {
+            smartReplyList = (context as MainActivity).getSmartReplyList(it).map {
+                it.text
+            }
+        }
+
+    }
+
     // Delete Confirm Dialog
     var showDeleteMessageConfirmDialog by remember { mutableStateOf(false) }
     if (showDeleteMessageConfirmDialog) {
@@ -362,11 +388,16 @@ fun NormalChatPage(
             },
             icon = { Icon(Icons.Outlined.Warning, contentDescription = null) },
             title = {
-                Text(text = "移除消息")
+                Text(
+                    text = stringResource(R.string.delete_message)
+                )
             },
             text = {
                 Text(
-                    "选中的 ${mainSharedViewModel.selectedMessageStateList.size} 条消息将被永久移除。"
+                    stringResource(
+                        id = R.string.delete_message_text,
+                        mainSharedViewModel.selectedMessageStateList.size
+                    )
                 )
             },
             confirmButton = {
@@ -377,7 +408,7 @@ fun NormalChatPage(
                         lazyPagingItems.refresh()
                     }
                 ) {
-                    Text("确认")
+                    Text(stringResource(R.string.confirm))
                 }
             },
             dismissButton = {
@@ -386,7 +417,7 @@ fun NormalChatPage(
                         showDeleteMessageConfirmDialog = false
                     }
                 ) {
-                    Text("取消")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -401,11 +432,11 @@ fun NormalChatPage(
             },
             icon = { Icon(Icons.Outlined.Warning, contentDescription = null) },
             title = {
-                Text(text = "移除消息")
+                Text(text = stringResource(id = R.string.delete_message))
             },
             text = {
                 Text(
-                    "消息将从聊天记录永久移除。"
+                    stringResource(R.string.delete_single_message_text)
                 )
             },
             confirmButton = {
@@ -419,7 +450,7 @@ fun NormalChatPage(
                         }
                     }
                 ) {
-                    Text("确认")
+                    Text(stringResource(R.string.confirm))
                 }
             },
             dismissButton = {
@@ -429,7 +460,7 @@ fun NormalChatPage(
                         clickingMessage = null
                     }
                 ) {
-                    Text("取消")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -468,7 +499,7 @@ fun NormalChatPage(
     }
     // Image Preview
     val imageViewerState = rememberPreviewerState()
-    LaunchedEffect(messageState){
+    LaunchedEffect(messageState) {
         imageViewerState.hide()
     }
     val imageList =
@@ -484,7 +515,14 @@ fun NormalChatPage(
                         imageMessageList.reversed().forEachIndexed { index, t ->
                             if (t.uriString != null) {
                                 FileUtil.getBitmapFromUri(context, Uri.parse(t.uriString))?.let {
-                                    acc.add("${message.messageId}${(lastIndex - index).coerceIn(0, lastIndex)}".toLong() to it.asImageBitmap())
+                                    acc.add(
+                                        "${message.messageId}${
+                                            (lastIndex - index).coerceIn(
+                                                0,
+                                                lastIndex
+                                            )
+                                        }".toLong() to it.asImageBitmap()
+                                    )
                                 }
                             } else if (t.url != null) {
                                 val loader = ImageLoader(context)
@@ -495,11 +533,18 @@ fun NormalChatPage(
                                 val bitmap = try {
                                     val result = (loader.execute(request) as SuccessResult).drawable
                                     (result as BitmapDrawable).bitmap.asImageBitmap()
-                                } catch(e: Exception) {
+                                } catch (e: Exception) {
                                     e.printStackTrace()
                                     ImageBitmap(1, 1)
                                 }
-                                acc.add("${message.messageId}${(lastIndex - index).coerceIn(0, lastIndex)}".toLong() to bitmap)
+                                acc.add(
+                                    "${message.messageId}${
+                                        (lastIndex - index).coerceIn(
+                                            0,
+                                            lastIndex
+                                        )
+                                    }".toLong() to bitmap
+                                )
                             }
                         }
                         acc
@@ -546,7 +591,9 @@ fun NormalChatPage(
                             modifier = Modifier
                                 .wrapContentSize(Alignment.TopStart)
                         ) {
-                            IconButton(onClick = { imagePreviewerMenuExpanded = !imagePreviewerMenuExpanded }) {
+                            IconButton(onClick = {
+                                imagePreviewerMenuExpanded = !imagePreviewerMenuExpanded
+                            }) {
                                 Icon(
                                     imageVector = Icons.Outlined.MoreVert,
                                     contentDescription = "more"
@@ -559,20 +606,23 @@ fun NormalChatPage(
                             ) {
                                 DropdownMenuItem(
                                     text = {
-                                        Text("添加到表情")
+                                        Text(stringResource(R.string.add_meme))
                                     },
                                     onClick = {
                                         imagePreviewerMenuExpanded = false
                                         try {
-                                            val imageId = imageList.value.getOrNull(current)?.first
-                                            if (imageId == null) throw NoSuchElementException("id lost")
+                                            val imageId =
+                                                imageList.value.getOrNull(current)?.first
+                                                    ?: throw NoSuchElementException("id lost")
                                             val imageIndex = imageId.toString().last().digitToInt()
-                                            val messageId = imageId.toString().let{
+                                            val messageId = imageId.toString().let {
                                                 it.substring(0, it.length - 1).toLong()
                                             }
-                                            val message = lazyPagingItems.itemSnapshotList.items.findLast { it.messageId == messageId }
+                                            val message =
+                                                lazyPagingItems.itemSnapshotList.items.findLast { it.messageId == messageId }
                                             val image =
-                                                message?.contents?.filterIsInstance<Image>()?.getOrNull(imageIndex)
+                                                message?.contents?.filterIsInstance<Image>()
+                                                    ?.getOrNull(imageIndex)
                                                     ?: throw NoSuchElementException("image lost")
                                             val path = context.getExternalFilesDir("meme")!!
                                             if (message.sentByMe) {
@@ -607,13 +657,13 @@ fun NormalChatPage(
                                             memeUpdateFlag++
                                             Toast.makeText(
                                                 context,
-                                                "已添加 1 张图片到自定义表情",
+                                                context.getString(R.string.add_meme_text, 1),
                                                 Toast.LENGTH_SHORT
                                             ).show()
-                                        } catch (e: NoSuchElementException){
+                                        } catch (e: NoSuchElementException) {
                                             Toast.makeText(
                                                 context,
-                                                "无法定位图片",
+                                                context.getString(R.string.cannot_locate_img),
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         }
@@ -626,20 +676,23 @@ fun NormalChatPage(
                                     })
                                 DropdownMenuItem(
                                     text = {
-                                        Text("保存到本地")
+                                        Text(stringResource(R.string.save_to_local))
                                     },
                                     onClick = {
                                         imagePreviewerMenuExpanded = false
                                         try {
-                                            val imageId = imageList.value.getOrNull(current)?.first
-                                            if (imageId == null) throw NoSuchElementException("id lost")
+                                            val imageId =
+                                                imageList.value.getOrNull(current)?.first
+                                                    ?: throw NoSuchElementException("id lost")
                                             val imageIndex = imageId.toString().last().digitToInt()
-                                            val messageId = imageId.toString().let{
+                                            val messageId = imageId.toString().let {
                                                 it.substring(0, it.length - 1).toLong()
                                             }
-                                            val message = lazyPagingItems.itemSnapshotList.items.findLast { it.messageId == messageId }
+                                            val message =
+                                                lazyPagingItems.itemSnapshotList.items.findLast { it.messageId == messageId }
                                             val image =
-                                                message?.contents?.filterIsInstance<Image>()?.getOrNull(imageIndex)
+                                                message?.contents?.filterIsInstance<Image>()
+                                                    ?.getOrNull(imageIndex)
                                                     ?: throw NoSuchElementException("image lost")
                                             if (message.sentByMe) {
                                                 image.uriString?.let { uriString ->
@@ -664,13 +717,13 @@ fun NormalChatPage(
                                             memeUpdateFlag++
                                             Toast.makeText(
                                                 context,
-                                                "已将 1 张图片保存到 /Pictures/Parabox",
+                                                context.getString(R.string.save_to_local_text, 1),
                                                 Toast.LENGTH_SHORT
                                             ).show()
-                                        } catch (e: NoSuchElementException){
+                                        } catch (e: NoSuchElementException) {
                                             Toast.makeText(
                                                 context,
-                                                "无法定位图片",
+                                                context.getString(R.string.cannot_locate_img),
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         }
@@ -699,7 +752,7 @@ fun NormalChatPage(
     )
     val useDarkIcons = isSystemInDarkTheme()
     val systemUiController = rememberSystemUiController()
-    LaunchedEffect(imageViewerState.show){
+    LaunchedEffect(imageViewerState.show) {
         if (imageViewerState.show) {
             systemUiController.setSystemBarsColor(
                 color = Color.Transparent,
@@ -742,7 +795,7 @@ fun NormalChatPage(
                                             .fillMaxWidth()
                                             .padding(horizontal = 8.dp),
                                         placeholder = {
-                                            Text(text = "于此会话中搜索")
+                                            Text(text = stringResource(R.string.search_in_conversation))
                                         },
                                         singleLine = true,
                                         keyboardOptions = KeyboardOptions(
@@ -879,13 +932,13 @@ fun NormalChatPage(
                                     IconButton(onClick = {
                                         Toast.makeText(
                                             context,
-                                            "内容已复制到剪贴板",
+                                            context.getString(R.string.save_to_clipboard),
                                             Toast.LENGTH_SHORT
                                         ).show()
                                         clipboardManager.setText(AnnotatedString(
                                             buildString {
-                                                mainSharedViewModel.selectedMessageStateList.forEachIndexed{ index, s ->
-                                                    if(index != mainSharedViewModel.selectedMessageStateList.lastIndex){
+                                                mainSharedViewModel.selectedMessageStateList.forEachIndexed { index, s ->
+                                                    if (index != mainSharedViewModel.selectedMessageStateList.lastIndex) {
                                                         append(s.contents.getContentString())
                                                         append(" ")
                                                     }
@@ -917,7 +970,7 @@ fun NormalChatPage(
                                     ) {
                                         if (mainSharedViewModel.selectedMessageStateList.size == 1 && mainSharedViewModel.selectedMessageStateList.firstOrNull()?.sentByMe == true) {
                                             DropdownMenuItem(
-                                                text = { Text(text = "尝试撤回") },
+                                                text = { Text(text = stringResource(R.string.try_to_recall)) },
                                                 onClick = {
                                                     if (mainSharedViewModel.selectedMessageStateList.size == 1) {
                                                         val message =
@@ -938,7 +991,7 @@ fun NormalChatPage(
                                         }
                                         if (mainSharedViewModel.selectedMessageStateList.size == 1) {
                                             DropdownMenuItem(
-                                                text = { Text(text = "回复") },
+                                                text = { Text(text = stringResource(R.string.reply)) },
                                                 onClick = {
                                                     if (mainSharedViewModel.selectedMessageStateList.size == 1)
                                                         mainSharedViewModel.setQuoteMessage(
@@ -956,7 +1009,7 @@ fun NormalChatPage(
                                                 })
                                         }
                                         DropdownMenuItem(
-                                            text = { Text(text = "从聊天记录移除") },
+                                            text = { Text(text = stringResource(R.string.remove_from_history)) },
                                             onClick = {
                                                 menuExpanded = false
                                                 showDeleteMessageConfirmDialog = true
@@ -980,7 +1033,8 @@ fun NormalChatPage(
                         TopAppBar(
                             title = {
                                 Text(
-                                    text = messageState.contact?.profile?.name ?: "会话",
+                                    text = messageState.contact?.profile?.name
+                                        ?: stringResource(R.string.conversation),
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis,
                                 )
@@ -1023,7 +1077,7 @@ fun NormalChatPage(
                                     ) {
                                         if (isInSplitScreen) {
                                             DropdownMenuItem(
-                                                text = { Text(text = "解除分屏") },
+                                                text = { Text(text = stringResource(R.string.stop_splitting)) },
                                                 onClick = {
                                                     menuExpanded = false
                                                     onStopSplitting()
@@ -1045,7 +1099,7 @@ fun NormalChatPage(
                                                 mutableStateOf(false)
                                             }
                                             DropdownMenuItem(
-                                                text = { Text(text = "消息发送出口") },
+                                                text = { Text(text = stringResource(R.string.select_plugin_connection)) },
                                                 onClick = {
                                                     pluginConnectionMenuExpanded =
                                                         !pluginConnectionMenuExpanded
@@ -1092,7 +1146,7 @@ fun NormalChatPage(
                                             }
                                         }
                                         DropdownMenuItem(
-                                            text = { Text(text = "刷新") },
+                                            text = { Text(text = stringResource(R.string.refresh)) },
                                             onClick = {
                                                 menuExpanded = false
                                                 lazyPagingItems.refresh()
@@ -1105,7 +1159,7 @@ fun NormalChatPage(
                                             })
                                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                                             DropdownMenuItem(
-                                                text = { Text(text = "在对话泡中显示") },
+                                                text = { Text(text = stringResource(R.string.display_in_bubble)) },
                                                 onClick = {
                                                     menuExpanded = false
                                                     onShowInBubble()
@@ -1160,7 +1214,7 @@ fun NormalChatPage(
                                         } else {
                                             Toast.makeText(
                                                 context,
-                                                "无法定位消息",
+                                                context.getString(R.string.cannot_locate_msg),
                                                 Toast.LENGTH_SHORT
                                             )
                                                 .show()
@@ -1394,6 +1448,44 @@ fun NormalChatPage(
                 item {
                     Spacer(modifier = Modifier.height(16.dp))
                 }
+                item {
+                    AnimatedVisibility(
+                        visible = smartReplyList.isNotEmpty(),
+                        enter = expandVertically(),
+                        exit = shrinkVertically()
+                    ) {
+                        LazyRow(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 16.dp),
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            items(items = smartReplyList) {
+                                androidx.compose.material3.OutlinedButton(onClick = {
+                                    onSend(
+                                        listOf(
+                                            com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText(
+                                                text = it
+                                            )
+                                        )
+                                    )
+                                    smartReplyList = emptyList()
+                                    // return bottom after message sent
+                                    coroutineScope.launch {
+                                        scrollState.animateScrollToItem(0)
+                                        delay(5000)
+                                        lazyPagingItems.refresh()
+                                    }
+                                    mainSharedViewModel.clearRecordAmplitudeStateList()
+                                }) {
+                                    Text(text = it)
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                            }
+                        }
+                    }
+                }
                 itemsBeforeAndAfterReverseIndexed(
                     items = lazyPagingItems,
                     key = { it.messageId }) { value, beforeValue, afterValue, index ->
@@ -1419,6 +1511,9 @@ fun NormalChatPage(
                             isLast = isLast,
                             userName = userName,
                             avatarUri = avatarUri,
+                            isTranslationEnabled = mainSharedViewModel.translationFlow.collectAsState(
+                                initial = true
+                            ).value,
                             onClickingDismiss = { clickingMessage = null },
                             onClickingEvent = {
                                 when (it) {
@@ -1476,7 +1571,7 @@ fun NormalChatPage(
                                         memeUpdateFlag++
                                         Toast.makeText(
                                             context,
-                                            "已添加 ${images.size} 张图片到自定义表情",
+                                            context.getString(R.string.add_meme_text, images.size),
                                             Toast.LENGTH_SHORT
                                         ).show()
                                     }
@@ -1484,10 +1579,9 @@ fun NormalChatPage(
                                     is SingleMessageEvent.Copy -> {
                                         Toast.makeText(
                                             context,
-                                            "内容已复制到剪贴板",
+                                            context.getString(R.string.save_to_clipboard),
                                             Toast.LENGTH_SHORT
-                                        )
-                                            .show()
+                                        ).show()
                                         clipboardManager.setText(AnnotatedString(value.contents.getContentString()))
                                     }
 
@@ -1527,14 +1621,17 @@ fun NormalChatPage(
                                             }
                                             Toast.makeText(
                                                 context,
-                                                "已将 ${images.size} 张图片保存到 /Pictures/Parabox",
+                                                context.getString(
+                                                    R.string.save_to_local_text,
+                                                    images.size
+                                                ),
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         } catch (e: Exception) {
                                             e.printStackTrace()
                                             Toast.makeText(
                                                 context,
-                                                "保存图片时发生错误",
+                                                context.getString(R.string.save_to_local_error),
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         }
@@ -1582,7 +1679,7 @@ fun NormalChatPage(
                                         } else {
                                             Toast.makeText(
                                                 context,
-                                                "无法定位消息",
+                                                context.getString(R.string.cannot_locate_msg),
                                                 Toast.LENGTH_SHORT
                                             )
                                                 .show()
@@ -1666,7 +1763,7 @@ fun NullChatPage(modifier: Modifier = Modifier) {
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "选择会话",
+                text = stringResource(R.string.select_conversation),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -1685,6 +1782,8 @@ fun MessageBlock(
     isLast: Boolean,
     userName: String,
     avatarUri: String?,
+    fromBubble: Boolean = false,
+    isTranslationEnabled: Boolean,
     onClickingDismiss: () -> Unit,
     onClickingEvent: (event: SingleMessageEvent) -> Unit,
     onMessageClick: () -> Unit,
@@ -1704,7 +1803,7 @@ fun MessageBlock(
             horizontalArrangement = if (message.sentByMe) Arrangement.End else Arrangement.Start
         ) {
             if (message.sentByMe) {
-                Spacer(modifier = Modifier.width(64.dp))
+//                Spacer(modifier = Modifier.width(64.dp))
                 Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
                     if (isFirst) {
                         Text(
@@ -1720,6 +1819,8 @@ fun MessageBlock(
                         isLast = isLast,
                         isSelected = selectedMessageStateList.contains(message),
                         clickingMessage = clickingMessage,
+                        fromBubble = fromBubble,
+                        isTranslationEnabled = isTranslationEnabled,
                         onClickingDismiss = onClickingDismiss,
                         onClickingEvent = onClickingEvent,
                         onClick = onMessageClick,
@@ -1765,6 +1866,8 @@ fun MessageBlock(
                         isLast = isLast,
                         isSelected = selectedMessageStateList.contains(message),
                         clickingMessage = clickingMessage,
+                        fromBubble = fromBubble,
+                        isTranslationEnabled = isTranslationEnabled,
                         onClickingDismiss = onClickingDismiss,
                         onClickingEvent = onClickingEvent,
                         onClick = onMessageClick,
@@ -1776,7 +1879,7 @@ fun MessageBlock(
                         Spacer(modifier = Modifier.height(2.dp))
                     }
                 }
-                Spacer(modifier = Modifier.width(64.dp))
+//                Spacer(modifier = Modifier.width(64.dp))
             }
         }
     }
@@ -1796,7 +1899,8 @@ fun MessageAvatar(
         if (shouldDisplay) {
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data(avatarUri?.let { Uri.parse(it) } ?: avatar ?: if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar)
+                    .data(avatarUri?.let { Uri.parse(it) } ?: avatar
+                    ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar)
                     .crossfade(true)
                     .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
                     .build(),
@@ -1816,6 +1920,7 @@ fun MessageAvatar(
 
 @Composable
 fun TimeDivider(modifier: Modifier = Modifier, timestamp: Long) {
+    val context = LocalContext.current
     Row(
         modifier = modifier.height(48.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -1827,7 +1932,7 @@ fun TimeDivider(modifier: Modifier = Modifier, timestamp: Long) {
             color = MaterialTheme.colorScheme.surfaceVariant
         )
         Text(
-            text = timestamp.toDescriptiveTime(),
+            text = timestamp.toDescriptiveTime(context),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurface
         )
@@ -1937,7 +2042,7 @@ fun TimeDivider(modifier: Modifier = Modifier, timestamp: Long) {
 //    }
 //}
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun SingleMessage(
     modifier: Modifier = Modifier,
@@ -1946,6 +2051,8 @@ fun SingleMessage(
     isLast: Boolean,
     isSelected: Boolean,
     clickingMessage: Message?,
+    fromBubble: Boolean = false,
+    isTranslationEnabled: Boolean,
     onClickingDismiss: () -> Unit,
     onClickingEvent: (event: SingleMessageEvent) -> Unit,
     onClick: () -> Unit,
@@ -1955,6 +2062,8 @@ fun SingleMessage(
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
+    val coroutineScope = rememberCoroutineScope()
+    val clipboardManager: ClipboardManager = LocalClipboardManager.current
     val topStartRadius by animateDpAsState(targetValue = if (message.sentByMe || isFirst) 24.dp else 0.dp)
     val topEndRadius by animateDpAsState(targetValue = if (!message.sentByMe || isFirst) 24.dp else 0.dp)
     val bottomStartRadius by animateDpAsState(targetValue = if (message.sentByMe || isLast) 24.dp else 0.dp)
@@ -1980,6 +2089,50 @@ fun SingleMessage(
             if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
         }
     )
+    val primaryTextColor =
+        if (message.sentByMe) MaterialTheme.colorScheme.inversePrimary else MaterialTheme.colorScheme.primary
+    var entities by remember {
+        mutableStateOf<List<Pair<Entity, String>>>(
+            emptyList()
+        )
+    }
+    var shouldTranslate by remember {
+        mutableStateOf(false)
+    }
+    var translatedText by remember {
+        mutableStateOf<String?>(null)
+    }
+    val configuration = LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp.dp
+    val messageMaxWidth = screenWidth - 130.dp
+    LaunchedEffect(true) {
+        val tempList = mutableListOf<Pair<Entity, String>>()
+        if (fromBubble) {
+            (context as BubbleActivity).getEntityAnnotationList(message.contents.getContentString())
+                .forEach { entityAnnotation ->
+                    entityAnnotation.entities.forEach {
+                        tempList.add(it to entityAnnotation.annotatedText)
+                    }
+                }
+        } else {
+            (context as MainActivity).getEntityAnnotationList(message.contents.getContentString())
+                .forEach { entityAnnotation ->
+                    entityAnnotation.entities.forEach {
+                        tempList.add(it to entityAnnotation.annotatedText)
+                    }
+                }
+        }
+        entities = tempList
+        val languageCode =
+            if (fromBubble) {
+                (context as BubbleActivity).getLanguageCode(message.contents.getContentString())
+            } else {
+                (context as MainActivity).getLanguageCode(message.contents.getContentString())
+            }
+        shouldTranslate = !(AppCompatDelegate.getApplicationLocales()[0]?.toLanguageTag()
+            ?.let { LanguageUtil.languageTagMapper(it) }
+            ?.contentEquals(languageCode) ?: true)
+    }
     SelectionContainer {
         Box(
             modifier = Modifier
@@ -1987,25 +2140,35 @@ fun SingleMessage(
                 .wrapContentSize(align = if (message.sentByMe) Alignment.TopEnd else Alignment.TopStart)
         ) {
             Row(verticalAlignment = Alignment.Bottom) {
-                if (message.sentByMe && !message.verified) {
-                    if (abs(System.currentTimeMillis() - message.timestamp) > 5000) {
-                        Icon(
-                            modifier = Modifier.padding(bottom = 11.dp, end = 4.dp),
-                            imageVector = Icons.Outlined.ErrorOutline,
-                            contentDescription = "error",
-                            tint = MaterialTheme.colorScheme.error
-                        )
+                if (message.sentByMe) {
+                    if (!message.verified) {
+                        Box(
+                            modifier = Modifier.width(64.dp),
+                            contentAlignment = Alignment.CenterEnd
+                        ) {
+                            if (abs(System.currentTimeMillis() - message.timestamp) > 5000) {
+                                Icon(
+                                    modifier = Modifier.padding(bottom = 11.dp, end = 4.dp),
+                                    imageVector = Icons.Outlined.ErrorOutline,
+                                    contentDescription = "error",
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            } else {
+                                CircularProgressIndicator(
+                                    modifier = Modifier
+                                        .padding(bottom = 14.dp, end = 4.dp)
+                                        .size(18.dp),
+                                    strokeWidth = 2.dp
+                                )
+                            }
+                        }
                     } else {
-                        CircularProgressIndicator(
-                            modifier = Modifier
-                                .padding(bottom = 14.dp, end = 4.dp)
-                                .size(18.dp),
-                            strokeWidth = 2.dp
-                        )
+                        Spacer(modifier = Modifier.width(64.dp))
                     }
                 }
-                Column(
+                MessageContentContainer(
                     modifier = modifier
+                        .widthIn(0.dp, messageMaxWidth)
                         .clip(
                             RoundedCornerShape(
                                 topStart = topStartRadius,
@@ -2023,12 +2186,16 @@ fun SingleMessage(
                             onLongClick = onLongClick
                         )
 //                        .clickable(enabled = isSelected, onClick = onClick)
-                        .animateContentSize()
+                        .animateContentSize(),
+                    shouldBreak = message.contents.map {
+                        it is Image || it is QuoteReply || it is Audio || it is File
+                    }.plus(arrayOf(true, true))
                 ) {
                     message.contents.forEachIndexed { index, messageContent ->
                         messageContent.toLayout(
                             textColor,
                             reverseTextColor,
+                            primaryTextColor,
                             context,
                             density,
                             index,
@@ -2042,7 +2209,263 @@ fun SingleMessage(
                             onAudioClick = onAudioClick,
                         )
                     }
+                    AnimatedVisibility(visible = translatedText != null) {
+                        Surface(
+                            modifier = Modifier.padding(8.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            tonalElevation = 1.dp
+                        ) {
+                            Text(
+                                text = translatedText!!,
+                                modifier = Modifier.padding(12.dp),
+                                color = textColor
+                            )
+                        }
+                    }
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        items(items = entities) {
+                            when (it.first.type) {
+                                Entity.TYPE_ADDRESS -> {
+                                    AssistChip(
+                                        onClick = {
+                                            BrowserUtil.launchMap(context, it.second)
+                                        },
+                                        label = {
+                                            Text(
+                                                text = it.second.ellipsis(maxLength = 10),
+                                                color = textColor
+                                            )
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Outlined.Place,
+                                                contentDescription = "address",
+                                                tint = primaryTextColor,
+                                            )
+                                        }
+                                    )
+                                }
+                                Entity.TYPE_DATE_TIME -> {
+                                    val timestamp = it.first.asDateTimeEntity()!!.timestampMillis
+                                    AssistChip(
+                                        onClick = {
+                                            if (fromBubble) {
+                                                (context as MainActivity).startActivity(
+                                                    Intent(
+                                                        Intent.ACTION_INSERT
+                                                    ).apply {
+                                                        data = CalendarContract.Events.CONTENT_URI
+                                                        putExtra(
+                                                            CalendarContract.EXTRA_EVENT_BEGIN_TIME,
+                                                            timestamp
+                                                        )
+                                                        putExtra(
+                                                            CalendarContract.EXTRA_EVENT_END_TIME,
+                                                            timestamp
+                                                        )
+                                                    })
+                                            } else {
+                                                (context as MainActivity).startActivity(
+                                                    Intent(
+                                                        Intent.ACTION_INSERT
+                                                    ).apply {
+                                                        data = CalendarContract.Events.CONTENT_URI
+                                                        putExtra(
+                                                            CalendarContract.EXTRA_EVENT_BEGIN_TIME,
+                                                            timestamp
+                                                        )
+                                                        putExtra(
+                                                            CalendarContract.EXTRA_EVENT_END_TIME,
+                                                            timestamp
+                                                        )
+                                                    })
+                                            }
+                                        },
+                                        label = {
+                                            Text(
+                                                text = timestamp.toDescriptiveDateAndTime(),
+                                                color = textColor
+                                            )
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Outlined.Event,
+                                                contentDescription = "date",
+                                                tint = primaryTextColor,
+                                            )
+                                        }
+                                    )
+                                }
+                                Entity.TYPE_EMAIL -> {
+                                    AssistChip(
+                                        onClick = {
+                                            BrowserUtil.composeEmail(
+                                                context,
+                                                arrayOf(it.second),
+                                                null
+                                            )
+                                        },
+                                        label = { Text(text = it.second, color = textColor) },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Outlined.Email,
+                                                contentDescription = "email",
+                                                tint = primaryTextColor,
+                                            )
+                                        }
+                                    )
+                                }
+                                Entity.TYPE_FLIGHT_NUMBER -> {
+                                    val flightStr = it.first.asFlightNumberEntity()!!
+                                        .let { "${it.airlineCode} ${it.flightNumber}" }
+                                    AssistChip(
+                                        onClick = { clipboardManager.setText(AnnotatedString(text = flightStr)) },
+                                        label = {
+                                            Text(text = flightStr, color = textColor)
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Outlined.FlightTakeoff,
+                                                contentDescription = "flight",
+                                                tint = primaryTextColor,
+                                            )
+                                        }
+                                    )
+                                }
+                                Entity.TYPE_IBAN -> {
+                                    AssistChip(
+                                        onClick = { clipboardManager.setText(AnnotatedString(text = it.second)) },
+                                        label = { Text(text = it.second, color = textColor) },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Outlined.AccountBalance,
+                                                contentDescription = "bank",
+                                                tint = primaryTextColor,
+                                            )
+                                        }
+                                    )
+                                }
+                                Entity.TYPE_ISBN -> {
+                                    AssistChip(
+                                        onClick = { clipboardManager.setText(AnnotatedString(text = it.second)) },
+                                        label = { Text(text = it.second, color = textColor) },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Outlined.LocalLibrary,
+                                                contentDescription = "isbn",
+                                                tint = primaryTextColor,
+                                            )
+                                        }
+                                    )
+                                }
+                                Entity.TYPE_PAYMENT_CARD -> {
+                                    AssistChip(
+                                        onClick = { clipboardManager.setText(AnnotatedString(text = it.second)) },
+                                        label = { Text(text = it.second, color = textColor) },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Outlined.CreditCard,
+                                                contentDescription = "card",
+                                                tint = primaryTextColor,
+                                            )
+                                        }
+                                    )
+                                }
+                                Entity.TYPE_PHONE -> {
+                                    AssistChip(
+                                        onClick = {
+                                            if (fromBubble) {
+                                                (context as BubbleActivity).startActivity(
+                                                    Intent(
+                                                        Intent.ACTION_DIAL
+                                                    ).apply {
+                                                        data = Uri.parse("tel:${it.second}")
+                                                    })
+                                            } else {
+                                                (context as MainActivity).startActivity(
+                                                    Intent(
+                                                        Intent.ACTION_DIAL
+                                                    ).apply {
+                                                        data = Uri.parse("tel:${it.second}")
+                                                    })
+                                            }
+                                        },
+                                        label = { Text(text = it.second, color = textColor) },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Outlined.Call,
+                                                contentDescription = "call",
+                                                tint = primaryTextColor,
+                                            )
+                                        }
+                                    )
+                                }
+                                Entity.TYPE_URL -> {
+                                    AssistChip(
+                                        onClick = { BrowserUtil.launchURL(context, it.second) },
+                                        label = {
+                                            Text(
+                                                text = it.second.ellipsis(20),
+                                                color = textColor
+                                            )
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Outlined.Link,
+                                                contentDescription = "url",
+                                                tint = primaryTextColor,
+                                            )
+                                        }
+                                    )
+                                }
+                                else -> {}
+                            }
+                        }
+                    }
                 }
+                if (!message.sentByMe) {
+                    if (isTranslationEnabled) {
+                        Box(
+                            modifier = Modifier.width(64.dp),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            androidx.compose.animation.AnimatedVisibility(visible = shouldTranslate && translatedText.isNullOrEmpty()) {
+                                IconButton(onClick = {
+                                    coroutineScope.launch {
+                                        val text = if (fromBubble) {
+                                            (context as BubbleActivity).getTranslation(message.contents.getContentString())
+                                        } else {
+                                            (context as MainActivity).getTranslation(message.contents.getContentString())
+                                        }
+                                        if (text == null) {
+                                            Toast.makeText(
+                                                context,
+                                                context.getString(R.string.translation_error),
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        } else {
+                                            translatedText = text
+                                        }
+
+                                    }
+                                }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Translate,
+                                        contentDescription = "translate",
+                                        tint = textColor
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        Spacer(modifier = Modifier.width(64.dp))
+                    }
+                }
+
             }
             MaterialTheme(shapes = MaterialTheme.shapes.copy(extraSmall = CircleShape)) {
                 DropdownMenu(
@@ -2149,6 +2572,7 @@ fun SingleMessage(
 private fun MessageContent.toLayout(
     textColor: Color,
     reverseTextColor: Color,
+    primaryTextColor: Color,
     context: Context,
     density: Density,
     index: Int,
@@ -2164,8 +2588,8 @@ private fun MessageContent.toLayout(
     when (this) {
         is At, AtAll -> Text(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
-            text = "${getContentString()}",
-            color = textColor,
+            text = getContentString(),
+            color = primaryTextColor,
         )
 
         is PlainText ->
@@ -2309,7 +2733,7 @@ private fun MessageContent.toLayout(
                             quoteMessageTimestamp?.let {
                                 Text(
                                     modifier = Modifier.width(IntrinsicSize.Max),
-                                    text = it.toDescriptiveTime(),
+                                    text = it.toDescriptiveTime(context),
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.outline,
                                     maxLines = 1,
@@ -2322,6 +2746,7 @@ private fun MessageContent.toLayout(
                         messageContent.toLayout(
                             if (message.sentByMe) reverseTextColor else textColor,
                             if (message.sentByMe) textColor else reverseTextColor,
+                            primaryTextColor,
                             context,
                             density,
                             index,
@@ -2336,7 +2761,7 @@ private fun MessageContent.toLayout(
                     }
                     if (quoteMessageContent == null) {
                         Text(
-                            text = "无法定位消息",
+                            text = stringResource(R.string.cannot_locate_msg),
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
@@ -2410,7 +2835,7 @@ private fun MessageContent.toLayout(
                     Text(
                         text = name,
                         style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary
+                        color = primaryTextColor
                     )
                     Spacer(modifier = Modifier.height(3.dp))
                     Text(

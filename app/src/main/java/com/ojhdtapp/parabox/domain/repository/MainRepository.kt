@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface MainRepository {
     suspend fun handleNewMessage(dto: ReceiveMessageDto)
-    suspend fun handleNewMessage(contents: List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent>, pluginConnection: com.ojhdtapp.paraboxdevelopmentkit.messagedto.PluginConnection, timestamp: Long, sendType: Int) : Long
+    suspend fun handleNewMessage(contents: List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent>, pluginConnection: com.ojhdtapp.paraboxdevelopmentkit.messagedto.PluginConnection, timestamp: Long, sendType: Int, withoutVerify: Boolean = false) : Long
     suspend fun deleteGroupedContact(contactId: Long): Pair<ContactEntity?, List<ContactPluginConnectionCrossRef>>
     suspend fun restoreGroupedContact(pair: Pair<ContactEntity, List<ContactPluginConnectionCrossRef>>)
     fun updateMessageVerifiedState(id: Long, value: Boolean)

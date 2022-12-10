@@ -1,8 +1,5 @@
 package com.ojhdtapp.parabox.ui.setting
 
-import android.app.Activity
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
@@ -58,18 +55,16 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.ojhdtapp.parabox.MainActivity
-import com.ojhdtapp.parabox.core.util.GoogleDriveUtil
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.CloudPageDestination
-import com.ojhdtapp.parabox.ui.destinations.FCMPageDestination
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.MainSwitch
 import com.ojhdtapp.parabox.ui.util.NormalPreference
@@ -166,16 +161,16 @@ fun FCMPage(
                             editPortError = true
                     }
                 }) {
-                    Text(text = "确定")
+                    Text(text = stringResource(id = R.string.confirm))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showEditUrlDialog = false }) {
-                    Text(text = "取消")
+                    Text(text = stringResource(id = R.string.cancel))
                 }
             },
             title = {
-                Text(text = "服务器地址")
+                Text(text = stringResource(R.string.fcm_server))
             },
             text = {
                 Row(
@@ -190,7 +185,7 @@ fun FCMPage(
                             tempUrl = it
                         },
                         isError = editUrlError,
-                        label = { Text(text = "地址") },
+                        label = { Text(text = stringResource(R.string.fcm_server_host)) },
                         keyboardOptions = KeyboardOptions(
                             imeAction = androidx.compose.ui.text.input.ImeAction.Next
                         ),
@@ -212,7 +207,7 @@ fun FCMPage(
                             tempPort = it
                         },
                         isError = editPortError,
-                        label = { Text(text = "端口") },
+                        label = { Text(text = stringResource(R.string.fcm_server_port)) },
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Number,
                             imeAction = androidx.compose.ui.text.input.ImeAction.Done
@@ -250,22 +245,22 @@ fun FCMPage(
                         else tempTokens.split(",").map { it.trim() }.toSet()
                     )
                 }) {
-                    Text(text = "保存")
+                    Text(text = stringResource(id = R.string.save))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { tempTokens = "" }) {
-                    Text(text = "清空输入")
+                    Text(text = stringResource(R.string.clear_input))
                 }
             },
             title = {
-                Text(text = "转发目标设备 Token")
+                Text(text = stringResource(R.string.fcm_send_target_token))
             },
             text = {
                 OutlinedTextField(
                     value = tempTokens, onValueChange = { tempTokens = it },
-                    label = { Text(text = "Token") },
-                    supportingText = { Text(text = "多个 Token 请用英式逗号分隔") },
+                    label = { Text(text = stringResource(R.string.fcm_token)) },
+                    supportingText = { Text(text = stringResource(R.string.fcm_send_target_token_supporting_text)) },
                 )
             },
         )
@@ -285,21 +280,21 @@ fun FCMPage(
                     showEditLoopbackTokenDialog = false
                     viewModel.setFcmLoopbackToken(tempToken)
                 }) {
-                    Text(text = "保存")
+                    Text(text = stringResource(id = R.string.save))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { tempToken = "" }) {
-                    Text(text = "清空输入")
+                    Text(text = stringResource(id = R.string.clear_input))
                 }
             },
             title = {
-                Text(text = "回送目标设备 Token")
+                Text(text = stringResource(R.string.fcm_callback_target_token))
             },
             text = {
                 OutlinedTextField(
                     value = tempToken, onValueChange = { tempToken = it },
-                    label = { Text(text = "Token") },
+                    label = { Text(text = stringResource(id = R.string.fcm_token)) },
                 )
             },
         )
@@ -339,7 +334,7 @@ fun FCMPage(
                 modifier = Modifier
                     .background(appBarContainerColor)
                     .statusBarsPadding(),
-                title = { Text("Firebase 云消息传递") },
+                title = { Text(stringResource(R.string.fcm)) },
                 navigationIcon = {
                     if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
                         IconButton(onClick = {
@@ -363,7 +358,7 @@ fun FCMPage(
             item {
                 MainSwitch(
                     modifier = Modifier.padding(vertical = 24.dp),
-                    title = "启用 FCM",
+                    title = stringResource(R.string.enable_fcm),
                     checked = enabled.value,
                     onCheckedChange = viewModel::setEnableFCM,
                     enabled = true
@@ -378,37 +373,37 @@ fun FCMPage(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "使用该功能前，请确保设备具有稳定的 Google 服务连接。",
+                        text = stringResource(R.string.fcm_info),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
             item {
-                PreferencesCategory(text = "连接状态")
+                PreferencesCategory(text = stringResource(R.string.fcm_status))
             }
             item {
                 NormalPreference(
                     modifier = Modifier.animateContentSize(),
-                    title = "Token",
-                    subtitle = token.value.ifBlank { "未获取" },
+                    title = stringResource(id = R.string.fcm_token),
+                    subtitle = token.value.ifBlank { stringResource(R.string.fcm_token_unavailable) },
                     enabled = enabled.value,
                 ) {
                     if (token.value.isNotBlank()) {
                         clipboardManager.setText(AnnotatedString(token.value))
                         coroutineScope.launch {
-                            snackbarHostState.showSnackbar("已复制到剪贴板")
+                            snackbarHostState.showSnackbar(context.getString(R.string.save_to_clipboard))
                         }
                     }
                 }
             }
             item {
                 NormalPreference(
-                    title = "服务器状态",
+                    title = stringResource(R.string.fcm_server_status),
                     subtitle = when (state.value) {
-                        is FcmConstants.Status.Success -> "已连接（${(state.value as FcmConstants.Status.Success).version}）"
-                        is FcmConstants.Status.Loading -> "正在连接"
-                        is FcmConstants.Status.Failure -> "连接失败"
+                        is FcmConstants.Status.Success -> stringResource(R.string.fcm_server_status_connected , (state.value as FcmConstants.Status.Success).version)
+                        is FcmConstants.Status.Loading -> stringResource(R.string.fcm_server_status_connecting)
+                        is FcmConstants.Status.Failure -> stringResource(R.string.fcm_server_status_failed)
                     },
                     enabled = enabled.value,
                 ) {
@@ -416,10 +411,10 @@ fun FCMPage(
                 }
             }
             item {
-                PreferencesCategory(text = "连接配置")
+                PreferencesCategory(text = stringResource(R.string.fcm_connection_settings))
             }
             item {
-                SwitchPreference(title = "使用自定义服务器", checked = customUrlEnabled.value, onCheckedChange = {
+                SwitchPreference(title = stringResource(R.string.fcm_custom_host), checked = customUrlEnabled.value, onCheckedChange = {
                     viewModel.setEnableFcmCustomUrl(it)
                 },
                     enabled = enabled.value)
@@ -427,8 +422,8 @@ fun FCMPage(
             item {
                 AnimatedVisibility(visible = customUrlEnabled.value, enter = expandVertically(), exit = shrinkVertically()) {
                     NormalPreference(
-                        title = "服务器地址",
-                        subtitle = fcmUrl.value.ifBlank { "未设置" },
+                        title = stringResource(R.string.fcm_server),
+                        subtitle = fcmUrl.value.ifBlank { stringResource(R.string.not_set) },
                         enabled = enabled.value,
                     ) {
                         showEditUrlDialog = true
@@ -437,7 +432,7 @@ fun FCMPage(
             }
             item {
                 SwitchPreference(
-                    title = "使用 HTTPS",
+                    title = stringResource(R.string.fcm_enable_https),
                     checked = useHttps.value,
                     onCheckedChange = viewModel::setFCMHttps,
                     enabled = false && enabled.value
@@ -451,29 +446,29 @@ fun FCMPage(
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         NormalPreference(
-                            title = "证书 PEM 文件",
-                            subtitle = "未选择",
+                            title = stringResource(R.string.fcm_pem),
+                            subtitle = stringResource(R.string.not_set),
                         ) {}
                         NormalPreference(
-                            title = "证书 CERT 文件",
-                            subtitle = "未选择",
+                            title = stringResource(R.string.fcm_cert),
+                            subtitle = stringResource(R.string.not_set),
                         ) {}
                     }
                 }
             }
             item {
                 SimpleMenuPreference(
-                    title = "角色",
+                    title = stringResource(R.string.fcm_role),
                     optionsMap = mapOf(
-                        FcmConstants.Role.SENDER.ordinal to "转发端",
-                        FcmConstants.Role.RECEIVER.ordinal to "接收端"
+                        FcmConstants.Role.SENDER.ordinal to stringResource(R.string.fcm_role_sender),
+                        FcmConstants.Role.RECEIVER.ordinal to stringResource(R.string.fcm_role_receiver)
                     ),
                     selectedKey = role.value,
                     onSelect = {
                         coroutineScope.launch {
                             snackbarHostState.showSnackbar(
-                                message = "重启应用后生效",
-                                actionLabel = "立即重启",
+                                message = context.getString(R.string.restart_app_to_active),
+                                actionLabel = context.getString(R.string.restart_app_now),
                                 withDismissAction = true
                             ).also {
                                 if (it == SnackbarResult.ActionPerformed) {
@@ -491,10 +486,10 @@ fun FCMPage(
                     when (it) {
                         FcmConstants.Role.SENDER.ordinal -> {
                             NormalPreference(
-                                title = "转发目标设备 Token",
+                                title = stringResource(R.string.fcm_send_target_token),
                                 subtitle = when {
-                                    targetTokens.value.isEmpty() -> "未设置"
-                                    else -> "已设置 ${targetTokens.value.size} 个 token"
+                                    targetTokens.value.isEmpty() -> stringResource(R.string.not_set)
+                                    else -> stringResource(R.string.fcm_send_target_token_set, targetTokens.value.size)
                                 },
                                 enabled = enabled.value,
                             ) {
@@ -504,8 +499,8 @@ fun FCMPage(
 
                         FcmConstants.Role.RECEIVER.ordinal -> {
                             NormalPreference(
-                                title = "回送目标设备 Token",
-                                subtitle = loopbackToken.value.ifBlank { "未设置" },
+                                title = stringResource(id = R.string.fcm_callback_target_token),
+                                subtitle = loopbackToken.value.ifBlank { stringResource(R.string.not_set) },
                                 enabled = enabled.value,
                             ) {
                                 showEditLoopbackTokenDialog = true
@@ -515,12 +510,13 @@ fun FCMPage(
                 }
             }
             item {
-                PreferencesCategory(text = "功能配置")
+                PreferencesCategory(text = stringResource(R.string.fcm_feat_settings))
             }
             item {
                 Crossfade(targetState = selectableService.size <= 1) {
                     if(it){
-                        NormalPreference(title = "对象存储服务", subtitle = "暂无可用，请新增云端服务",enabled = enabled.value) {
+                        NormalPreference(title = stringResource(R.string.object_storage), subtitle = stringResource(
+                                                    R.string.object_storage_none),enabled = enabled.value) {
                             if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
                                 mainNavController.navigate(CloudPageDestination)
                             } else {
@@ -529,7 +525,7 @@ fun FCMPage(
                         }
                     }else{
                         SimpleMenuPreference(
-                            title = "对象存储服务",
+                            title = stringResource(R.string.object_storage),
                             enabled = enabled.value,
                             optionsMap = selectableService,
                             selectedKey = cloudStorage.value,
@@ -539,31 +535,30 @@ fun FCMPage(
             }
             item {
                 NormalPreference(
-                    title = "受限会话",
-                    subtitle = "对选定会话限制推送\n" +
-                            "因 FCM 存在消息限额（4000条/小时/设备），可手动对消息量大而重要性低的会话应用推送限制。",
+                    title = stringResource(R.string.fcm_limited_contact),
+                    subtitle = stringResource(id = R.string.fcm_limited_contact_subtitle),
                     enabled = enabled.value,
                 ) {
                     showContactDialog = true
                 }
             }
+//            item {
+//                PreferencesCategory(text = stringResource(R.string.fcm_server_settings))
+//            }
+//            item {
+//                NormalPreference(
+//                    title = "强制执行未完成的发送",
+//                    subtitle = stringResource(R.string.not_set),
+//                    enabled = enabled.value
+//                ) {}
+//            }
             item {
-                PreferencesCategory(text = "服务器操作")
+                PreferencesCategory(text = stringResource(R.string.fcm_other_settings))
             }
             item {
                 NormalPreference(
-                    title = "强制执行未完成的发送",
-                    subtitle = "未选择",
-                    enabled = enabled.value
-                ) {}
-            }
-            item {
-                PreferencesCategory(text = "其他")
-            }
-            item {
-                NormalPreference(
-                    title = "寻求帮助",
-                    subtitle = "查看文档，获取使用指引",
+                    title = stringResource(R.string.fcm_support_title),
+                    subtitle = stringResource(R.string.fcm_support_subtitle),
                 ) {}
             }
         }

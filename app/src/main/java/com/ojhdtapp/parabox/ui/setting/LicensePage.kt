@@ -25,10 +25,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ojhdtapp.parabox.MainActivity
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.BrowserUtil
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.NormalPreference
@@ -53,7 +55,7 @@ fun LicensePage(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
-                title = { Text(text = "开放源代码许可") },
+                title = { Text(text = stringResource(R.string.open_source_license)) },
                 navigationIcon = {
                     IconButton(onClick = { mainNavController.navigateUp() }) {
                         Icon(

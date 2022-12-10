@@ -428,4 +428,17 @@ class MainSharedViewModel @Inject constructor(
     fun setWorkInfoStateFlow(value: Map<File, List<WorkInfo>>) {
         _workInfoStateFlow.value = value
     }
+
+    // translation
+    val translationFlow = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.SETTINGS_ML_KIT_TRANSLATION] ?: true
+        }
 }

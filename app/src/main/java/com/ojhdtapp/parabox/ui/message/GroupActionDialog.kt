@@ -54,11 +54,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalTextInputService
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.FormUtil
 import com.ojhdtapp.parabox.domain.model.PluginConnection
@@ -146,7 +148,7 @@ fun GroupActionDialog(
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     TopAppBar(
-                        title = { Text(text = "编组会话") },
+                        title = { Text(text = stringResource(R.string.group_contact_title)) },
                         navigationIcon = {
                             IconButton(
                                 onClick = {
@@ -189,7 +191,7 @@ fun GroupActionDialog(
                                 },
                                 enabled = state.state == GroupInfoState.SUCCESS
                             ) {
-                                Text(text = "保存")
+                                Text(text = stringResource(R.string.save))
                             }
                         },
                         scrollBehavior = scrollBehavior,
@@ -277,7 +279,7 @@ fun GroupEditForm(
     onSelectedAvatarChange: (value: String) -> Unit,
     onSelectedLocalAvatarChange: (value: Uri) -> Unit
 ) {
-
+    val context = LocalContext.current
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     val inputService = LocalTextInputService.current
@@ -344,7 +346,7 @@ fun GroupEditForm(
                         modifier = Modifier
                             .focusRequester(focusRequester),
                         value = name, onValueChange = onNameChange,
-                        label = { Text(text = "会话名称") },
+                        label = { Text(text = stringResource(R.string.contact_name)) },
                         isError = nameError,
                         keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
                         keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
@@ -377,7 +379,7 @@ fun GroupEditForm(
             ) {
                 Text(
                     modifier = Modifier.padding(start = 64.dp),
-                    text = "请输入会话名称",
+                    text = stringResource(R.string.contact_name_empty_error),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.error
                 )
@@ -477,19 +479,19 @@ fun GroupEditForm(
                 Column() {
                     Text(
                         modifier = Modifier.padding(16.dp),
-                        text = "快速标签",
+                        text = stringResource(R.string.quick_add_tag),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
                         modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-                        text = "标签可帮助快速筛选，定位会话。\n可稍后再作更改。允许留空。",
+                        text = stringResource(id = R.string.quick_add_tag_des),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         modifier = Modifier.padding(start = 16.dp),
-                        text = "当前标签",
+                        text = stringResource(R.string.current_tags),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -502,13 +504,13 @@ fun GroupEditForm(
                             if (values.size >= 2) {
                                 onConfirmDelete = false
                                 if (!FormUtil.checkTagMinimumCharacter(values[0])) {
-                                    hashTagError = "标签应至少包含两个字符"
+                                    hashTagError = context.getString(R.string.hash_tag_error_too_short)
                                     hashTagShouldShowError = true
                                 } else if (!FormUtil.checkTagMaximumCharacter(values[0])) {
-                                    hashTagError = "标签长度不应超过50"
+                                    hashTagError = context.getString(R.string.hash_tag_error_too_long)
                                     hashTagShouldShowError = true
                                 } else if (selectedTags.contains(values[0])) {
-                                    hashTagError = "该标签已存在"
+                                    hashTagError = context.getString(R.string.hash_tag_error_duplicate)
                                     hashTagShouldShowError = true
                                 } else {
                                     hashTagShouldShowError = false
@@ -522,8 +524,8 @@ fun GroupEditForm(
                                 hashTagText = it
                             }
                         },
-                        placeHolder = "暂无标签",
-                        placeHolderWhenEnabled = "请输入标签后敲击空格或换行符",
+                        placeHolder = stringResource(id = R.string.hash_tag_empty),
+                        placeHolderWhenEnabled = stringResource(R.string.hash_tag_placeholder_short),
                         lazyListState = hashTagLazyListState,
                         focusRequester = hashTagFocusRequester,
                         textFieldInteraction = hashTagInteraction,
@@ -554,7 +556,7 @@ fun GroupEditForm(
                     )
                     Text(
                         modifier = Modifier.padding(start = 16.dp),
-                        text = "常用标签",
+                        text = stringResource(R.string.common_tags),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -562,7 +564,12 @@ fun GroupEditForm(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         contentPadding = PaddingValues(horizontal = 16.dp)
                     ) {
-                        items(listOf("工作", "课程", "家庭", "通知", "同学")) {
+                        items(listOf(
+                            context.getString(R.string.tag_example_work),
+                            context.getString(R.string.tag_example_class),
+                            context.getString(R.string.tag_example_family),
+                            context.getString(R.string.tag_example_notification),
+                            context.getString(R.string.tag_example_classmate))) {
                             FilterChip(
                                 selected = false,
                                 onClick = {
@@ -576,7 +583,7 @@ fun GroupEditForm(
                                                 )
                                         }
                                     } else {
-                                        hashTagError = "该标签已存在"
+                                        hashTagError = context.getString(R.string.hash_tag_error_duplicate)
                                         hashTagShouldShowError = true
                                     }
                                 },
@@ -591,13 +598,13 @@ fun GroupEditForm(
                 Column() {
                     Text(
                         modifier = Modifier.padding(16.dp),
-                        text = "消息源",
+                        text = stringResource(R.string.message_source),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
                         modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
-                        text = "以下列出可用消息来源。\n勾选以将该来源应用于新建会话。",
+                        text = context.getString(R.string.message_source_des),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -635,7 +642,7 @@ fun GroupEditForm(
                     ) {
                         Text(
                             modifier = Modifier.padding(16.dp),
-                            text = "请至少保留一个消息源",
+                            text = stringResource(R.string.message_source_error_not_selected),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.error
                         )
@@ -649,13 +656,13 @@ fun GroupEditForm(
                 Column() {
                     Text(
                         modifier = Modifier.padding(16.dp),
-                        text = "默认发送出口",
+                        text = stringResource(R.string.default_plugin_connection),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
                         modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
-                        text = "以下列出可用消息发送出口，消息将默认尝试从该出口发送。\n该选项可稍后再作更改。",
+                        text = context.getString(R.string.plugin_connection_des),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )

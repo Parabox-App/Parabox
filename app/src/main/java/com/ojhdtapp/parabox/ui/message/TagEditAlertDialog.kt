@@ -19,8 +19,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.FormUtil
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.ui.util.HashTagEditor
@@ -36,6 +39,7 @@ fun TagEditAlertDialog(
     onConfirm: (id: Long, tags: List<String>) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val context = LocalContext.current
     if (showDialog) {
         val coroutineScope = rememberCoroutineScope()
         var hashTagText by remember {
@@ -70,7 +74,7 @@ fun TagEditAlertDialog(
                     contentDescription = "new_label"
                 )
             },
-            title = { Text(text = "添加标签") },
+            title = { Text(text = stringResource(R.string.add_tag)) },
             text = {
                 Column() {
                     val hashTagLazyListState = rememberLazyListState()
@@ -79,7 +83,7 @@ fun TagEditAlertDialog(
                     val rowInteraction = remember { MutableInteractionSource() }
                     Text(
                         modifier = Modifier,
-                        text = "当前标签",
+                        text = stringResource(id = R.string.current_tags),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -98,13 +102,13 @@ fun TagEditAlertDialog(
                                 if (values.size >= 2) {
                                     onConfirmDelete = false
                                     if (!FormUtil.checkTagMinimumCharacter(values[0])) {
-                                        hashTagError = "标签应至少包含两个字符"
+                                        hashTagError = context.getString(R.string.hash_tag_error_too_short)
                                         hashTagShouldShowError = true
                                     } else if (!FormUtil.checkTagMaximumCharacter(values[0])) {
-                                        hashTagError = "标签长度不应超过50"
+                                        hashTagError = context.getString(R.string.hash_tag_error_too_long)
                                         hashTagShouldShowError = true
                                     } else if (hashTagList.contains(values[0])) {
-                                        hashTagError = "该标签已存在"
+                                        hashTagError = context.getString(R.string.hash_tag_error_duplicate)
                                         hashTagShouldShowError = true
                                     } else {
                                         hashTagShouldShowError = false
@@ -118,8 +122,8 @@ fun TagEditAlertDialog(
                                     hashTagText = it
                                 }
                             },
-                            placeHolder = "暂无标签",
-                            placeHolderWhenEnabled = "请输入标签后敲击空格或换行符",
+                            placeHolder = stringResource(R.string.hash_tag_empty),
+                            placeHolderWhenEnabled = stringResource(R.string.hash_tag_placeholder_short),
                             lazyListState = hashTagLazyListState,
                             focusRequester = hashTagFocusRequester,
                             textFieldInteraction = hashTagInteraction,
@@ -151,14 +155,19 @@ fun TagEditAlertDialog(
                     }
                     Text(
                         modifier = Modifier,
-                        text = "常用标签",
+                        text = stringResource(R.string.common_tags),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(listOf("工作", "课程", "家庭", "通知", "同学")) {
+                        items(listOf(
+                            context.getString(R.string.tag_example_work),
+                            context.getString(R.string.tag_example_class),
+                            context.getString(R.string.tag_example_family),
+                            context.getString(R.string.tag_example_notification),
+                            context.getString(R.string.tag_example_classmate))) {
                             FilterChip(
                                 selected = false,
                                 onClick = {
@@ -170,7 +179,7 @@ fun TagEditAlertDialog(
                                                 hashTagLazyListState.animateScrollToItem(hashTagList.lastIndex)
                                         }
                                     } else {
-                                        hashTagError = "该标签已存在"
+                                        hashTagError = context.getString(R.string.hash_tag_error_duplicate)
                                         hashTagShouldShowError = true
                                     }
                                 },
@@ -185,12 +194,12 @@ fun TagEditAlertDialog(
                         onConfirm(it.contactId, hashTagList.toList())
                     }
                 }) {
-                    Text(text = "保存并退出")
+                    Text(text = stringResource(R.string.save_and_exit))
                 }
             },
             dismissButton = {
                 TextButton(onClick = onDismiss) {
-                    Text(text = "取消")
+                    Text(text = stringResource(id = R.string.cancel))
                 }
             }
         )

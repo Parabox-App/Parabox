@@ -6,12 +6,9 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.CleaningServices
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.FileOpen
-import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Restore
-import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
@@ -19,9 +16,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.NormalPreference
@@ -61,7 +60,7 @@ fun BackupPage(
                 modifier = Modifier
                     .background(appBarContainerColor)
                     .statusBarsPadding(),
-                title = { Text("备份与还原") },
+                title = { Text(stringResource(R.string.backup_and_restore)) },
                 navigationIcon = {
                     if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
                         IconButton(onClick = {
@@ -83,8 +82,8 @@ fun BackupPage(
         ) {
             item {
                 NormalPreference(
-                    title = "备份",
-                    subtitle = "将会话，聊天记录导出到文件中（不包含图片）",
+                    title = stringResource(R.string.backup_title),
+                    subtitle = stringResource(R.string.backup_subtitle),
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Outlined.FileOpen,
@@ -98,8 +97,8 @@ fun BackupPage(
             }
             item {
                 NormalPreference(
-                    title = "还原",
-                    subtitle = "从备份文件还原记录",
+                    title = stringResource(R.string.restore_title),
+                    subtitle = stringResource(R.string.restore_subtitle),
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Outlined.Restore,
@@ -112,12 +111,12 @@ fun BackupPage(
                 )
             }
             item {
-                PreferencesCategory(text = "空间管理")
+                PreferencesCategory(text = stringResource(R.string.space_management))
             }
             item {
                 NormalPreference(
-                    title = "清理缓存",
-                    subtitle = "应用缓存已占用 ${cacheSize.value}\n缓存清理不影响聊天记录",
+                    title = stringResource(R.string.clean_cache_title),
+                    subtitle = stringResource(id = R.string.clean_cache_subtitle, cacheSize.value),
                     enabled = !viewModel.cleaningCache.value,
                     leadingIcon = {
                         Icon(

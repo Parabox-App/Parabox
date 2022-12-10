@@ -225,4 +225,17 @@ class BubblePageViewModel @Inject constructor(
         .map { settings ->
             settings[DataStoreKeys.SETTINGS_ALLOW_BUBBLE_HOME] ?: false
         }
+
+    // translation
+    val translationFlow = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.SETTINGS_ML_KIT_TRANSLATION] ?: true
+        }
 }
