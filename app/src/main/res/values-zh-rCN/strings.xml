@@ -50,8 +50,8 @@
     <string name="cloud_service">云服务</string>
     <string name="no_backuping_file">暂无运行中的备份任务</string>
     <string name="backuping_file">%1$1d 项备份任务正在进行</string>
-    <string name="cloud_service_used_space">已使用 %1$1d %的存储空间（%2$s/%3$s）</string>
-    <string name="cloud_service_app_used_space">其中应用使用 %1$1d %（%2$s）</string>
+    <string name="cloud_service_used_space">已使用 %1$1d%% 的存储空间（%2$s/%3$s）</string>
+    <string name="cloud_service_app_used_space">其中应用使用 %1$1d%%（%2$s）</string>
     <string name="sign_out_cloud_service">退出登录</string>
     <string name="cloud_service_not_connected_text">连接云端服务可将您的会话文件备份至云端</string>
     <string name="time_range_picker">自定义范围</string>

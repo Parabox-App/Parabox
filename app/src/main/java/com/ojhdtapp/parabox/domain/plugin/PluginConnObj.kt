@@ -83,8 +83,6 @@ class PluginConnObj(
 //    fun getServiceConnection(): ServiceConnection = serviceConnection
 
     fun send(dto: SendMessageDto) {
-        Log.d("parabox", "$dto")
-        Log.d("parabox", "sending message: ${dto.contents}")
         sendCommand(
             command = ParaboxKey.COMMAND_SEND_MESSAGE,
             extra = Bundle().apply {
@@ -104,19 +102,6 @@ class PluginConnObj(
                 }
             }
         )
-//        if (isConnected) {
-//            val timestamp = System.currentTimeMillis()
-//            sMessenger?.send(Message.obtain(null, ConnKey.MSG_MESSAGE).apply {
-//                obj = Bundle().apply {
-//                    putInt("command", ConnKey.MSG_MESSAGE_SEND)
-//                    putLong("timestamp", timestamp)
-//                }
-//                data = Bundle().apply {
-//                    putParcelable("value", dto)
-//                }
-//                replyTo = cMessenger
-//            })
-//        }
     }
 
     fun getRunningStatus(): Int {
@@ -124,7 +109,6 @@ class PluginConnObj(
     }
 
     fun getState() {
-        Log.d("parabox", "state get begin!")
         sendCommand(
             command = ParaboxKey.COMMAND_GET_STATE,
             onResult = {

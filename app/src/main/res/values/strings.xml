@@ -50,8 +50,8 @@
     <string name="cloud_service">Cloud service</string>
     <string name="no_backuping_file">There are currently no running backup tasks</string>
     <string name="backuping_file">%1$1d backup jobs in progress</string>
-    <string name="cloud_service_used_space">%1$1d % of storage used (%2$s/%3$s)</string>
-    <string name="cloud_service_app_used_space">The application uses %1$1d % (%2$s)</string>
+    <string name="cloud_service_used_space">%1$1d%% of storage used (%2$s/%3$s)</string>
+    <string name="cloud_service_app_used_space">The application uses %1$1d%% (%2$s)</string>
     <string name="sign_out_cloud_service">Sign out</string>
     <string name="cloud_service_not_connected_text">Connect to cloud services to back up your session files to the cloud</string>
     <string name="time_range_picker">Custom range</string>
