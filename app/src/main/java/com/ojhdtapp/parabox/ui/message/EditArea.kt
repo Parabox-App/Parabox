@@ -1480,12 +1480,12 @@ fun EditArea(
                                     ) {
                                         Icon(
                                             modifier = Modifier.padding(bottom = 8.dp),
-                                            imageVector = Icons.Outlined.Videocam,
-                                            contentDescription = "video",
+                                            imageVector = Icons.Outlined.Place,
+                                            contentDescription = "location",
                                             tint = MaterialTheme.colorScheme.primary
                                         )
                                         Text(
-                                            text = stringResource(R.string.video),
+                                            text = stringResource(R.string.location),
                                             style = MaterialTheme.typography.labelLarge
                                         )
                                     }

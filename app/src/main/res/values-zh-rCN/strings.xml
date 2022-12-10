@@ -123,6 +123,7 @@
     <string name="take_photos">拍摄</string>
     <string name="file">文件</string>
     <string name="video">视频</string>
+    <string name="location">位置</string>
     <string name="group_contact_title">编组会话</string>
     <string name="save">保存</string>
     <string name="contact_name">会话名称</string>

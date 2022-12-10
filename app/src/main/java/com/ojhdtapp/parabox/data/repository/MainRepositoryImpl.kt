@@ -179,6 +179,7 @@ class MainRepositoryImpl @Inject constructor(
         pluginConnection: com.ojhdtapp.paraboxdevelopmentkit.messagedto.PluginConnection,
         timestamp: Long,
         sendType: Int,
+        withoutVerify: Boolean,
     ): Long {
         return coroutineScope {
             val userName = context.dataStore.data
@@ -194,7 +195,7 @@ class MainRepositoryImpl @Inject constructor(
                 }.firstOrNull() ?: DataStoreKeys.DEFAULT_USER_NAME
 
             val messageIdDeferred = async<Long> {
-                storeSendMessage(contents, timestamp, sendType)
+                storeSendMessage(contents, timestamp, sendType, withoutVerify)
             }
             // Used to create new Conversation only
             val contactIdDeferred = async<Long> {
@@ -266,6 +267,7 @@ class MainRepositoryImpl @Inject constructor(
         contents: List<MessageContent>,
         timestamp: Long,
         sendType: Int,
+        withoutVerify: Boolean = false,
     ): Long {
         val sendId = context.dataStore.data
             .catch { exception ->
@@ -289,13 +291,13 @@ class MainRepositoryImpl @Inject constructor(
                 timestamp = timestamp,
                 messageId = sendId,
                 sentByMe = true,
-                verified = false,
+                verified = withoutVerify,
                 sendType = sendType
             )
         ).let {
             if (it != -1L) it
             else {
-                storeSendMessage(contents, timestamp, sendType)
+                storeSendMessage(contents, timestamp, sendType, withoutVerify)
             }
         }
     }

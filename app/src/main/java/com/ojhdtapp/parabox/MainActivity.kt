@@ -1001,13 +1001,13 @@ class MainActivity : AppCompatActivity() {
                         timestamp,
                         event.sendType
                     ).also {
+
                         val dto = SendMessageDto(
                             contents = event.contents,
                             timestamp = timestamp,
                             pluginConnection = event.pluginConnection,
                             messageId = it
                         )
-
                         val enableFcm =
                             dataStore.data.first()[DataStoreKeys.SETTINGS_ENABLE_FCM] ?: false
                         val fcmRole = dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_ROLE]

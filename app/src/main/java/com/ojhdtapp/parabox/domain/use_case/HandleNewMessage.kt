@@ -13,7 +13,7 @@ class HandleNewMessage @Inject constructor(
         repository.handleNewMessage(dto)
     }
 
-    suspend operator fun invoke(contents: List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent>, pluginConnection: com.ojhdtapp.paraboxdevelopmentkit.messagedto.PluginConnection, timestamp: Long, sendType: Int) : Long{
-        return repository.handleNewMessage(contents, pluginConnection, timestamp, sendType)
+    suspend operator fun invoke(contents: List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent>, pluginConnection: com.ojhdtapp.paraboxdevelopmentkit.messagedto.PluginConnection, timestamp: Long, sendType: Int, withoutVerify: Boolean = false) : Long{
+        return repository.handleNewMessage(contents, pluginConnection, timestamp, sendType, withoutVerify)
     }
 }

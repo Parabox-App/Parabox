@@ -83,6 +83,8 @@ class PluginConnObj(
 //    fun getServiceConnection(): ServiceConnection = serviceConnection
 
     fun send(dto: SendMessageDto) {
+        Log.d("parabox", "$dto")
+        Log.d("parabox", "sending message: ${dto.contents}")
         sendCommand(
             command = ParaboxKey.COMMAND_SEND_MESSAGE,
             extra = Bundle().apply {
@@ -379,7 +381,34 @@ class PluginConnObj(
                                         }
                                     }
                                 }
-
+                                ParaboxKey.REQUEST_SYNC_MESSAGE -> {
+                                    obj.classLoader = SendMessageDto::class.java.classLoader
+                                    obj.getParcelable<SendMessageDto>("dto").also {
+                                        if (it == null) {
+                                            Log.d("parabox", "message is null")
+                                            sendRequestResponse(
+                                                isSuccess = false,
+                                                metadata = metadata,
+                                                errorCode = ParaboxKey.ERROR_RESOURCE_NOT_FOUND
+                                            )
+                                        } else {
+                                            Log.d("parabox", "transfer success! value: $it")
+                                            launch(Dispatchers.IO) {
+                                                handleNewMessage(
+                                                    contents = it.contents,
+                                                    pluginConnection = it.pluginConnection,
+                                                    timestamp = it.timestamp,
+                                                    sendType = it.pluginConnection.sendTargetType,
+                                                    withoutVerify = true,
+                                                )
+                                            }
+                                            sendRequestResponse(
+                                                isSuccess = true,
+                                                metadata = metadata
+                                            )
+                                        }
+                                    }
+                                }
                                 else -> {}
                             }
 

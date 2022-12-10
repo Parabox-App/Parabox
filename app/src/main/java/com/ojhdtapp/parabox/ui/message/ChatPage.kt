@@ -1511,7 +1511,9 @@ fun NormalChatPage(
                             isLast = isLast,
                             userName = userName,
                             avatarUri = avatarUri,
-                            isTranslationEnabled = mainSharedViewModel.translationFlow.collectAsState(initial = true).value,
+                            isTranslationEnabled = mainSharedViewModel.translationFlow.collectAsState(
+                                initial = true
+                            ).value,
                             onClickingDismiss = { clickingMessage = null },
                             onClickingEvent = {
                                 when (it) {
@@ -2087,6 +2089,8 @@ fun SingleMessage(
             if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
         }
     )
+    val primaryTextColor =
+        if (message.sentByMe) MaterialTheme.colorScheme.inversePrimary else MaterialTheme.colorScheme.primary
     var entities by remember {
         mutableStateOf<List<Pair<Entity, String>>>(
             emptyList()
@@ -2103,14 +2107,14 @@ fun SingleMessage(
     val messageMaxWidth = screenWidth - 130.dp
     LaunchedEffect(true) {
         val tempList = mutableListOf<Pair<Entity, String>>()
-        if(fromBubble){
+        if (fromBubble) {
             (context as BubbleActivity).getEntityAnnotationList(message.contents.getContentString())
                 .forEach { entityAnnotation ->
                     entityAnnotation.entities.forEach {
                         tempList.add(it to entityAnnotation.annotatedText)
                     }
                 }
-        }else{
+        } else {
             (context as MainActivity).getEntityAnnotationList(message.contents.getContentString())
                 .forEach { entityAnnotation ->
                     entityAnnotation.entities.forEach {
@@ -2120,12 +2124,13 @@ fun SingleMessage(
         }
         entities = tempList
         val languageCode =
-            if(fromBubble){
+            if (fromBubble) {
                 (context as BubbleActivity).getLanguageCode(message.contents.getContentString())
-            }else{
+            } else {
                 (context as MainActivity).getLanguageCode(message.contents.getContentString())
             }
-        shouldTranslate = !(AppCompatDelegate.getApplicationLocales()[0]?.toLanguageTag()?.let{LanguageUtil.languageTagMapper(it)}
+        shouldTranslate = !(AppCompatDelegate.getApplicationLocales()[0]?.toLanguageTag()
+            ?.let { LanguageUtil.languageTagMapper(it) }
             ?.contentEquals(languageCode) ?: true)
     }
     SelectionContainer {
@@ -2136,8 +2141,11 @@ fun SingleMessage(
         ) {
             Row(verticalAlignment = Alignment.Bottom) {
                 if (message.sentByMe) {
-                    if(!message.verified){
-                        Box(modifier = Modifier.width(64.dp), contentAlignment = Alignment.CenterEnd){
+                    if (!message.verified) {
+                        Box(
+                            modifier = Modifier.width(64.dp),
+                            contentAlignment = Alignment.CenterEnd
+                        ) {
                             if (abs(System.currentTimeMillis() - message.timestamp) > 5000) {
                                 Icon(
                                     modifier = Modifier.padding(bottom = 11.dp, end = 4.dp),
@@ -2179,7 +2187,7 @@ fun SingleMessage(
                         )
 //                        .clickable(enabled = isSelected, onClick = onClick)
                         .animateContentSize(),
-                    shouldBreak = message.contents.map{
+                    shouldBreak = message.contents.map {
                         it is Image || it is QuoteReply || it is Audio || it is File
                     }.plus(arrayOf(true, true))
                 ) {
@@ -2187,6 +2195,7 @@ fun SingleMessage(
                         messageContent.toLayout(
                             textColor,
                             reverseTextColor,
+                            primaryTextColor,
                             context,
                             density,
                             index,
@@ -2207,7 +2216,11 @@ fun SingleMessage(
                             color = MaterialTheme.colorScheme.surface,
                             tonalElevation = 1.dp
                         ) {
-                            Text(text = translatedText!!, modifier = Modifier.padding(12.dp), color = textColor)
+                            Text(
+                                text = translatedText!!,
+                                modifier = Modifier.padding(12.dp),
+                                color = textColor
+                            )
                         }
                     }
                     LazyRow(
@@ -2230,7 +2243,8 @@ fun SingleMessage(
                                         leadingIcon = {
                                             Icon(
                                                 imageVector = Icons.Outlined.Place,
-                                                contentDescription = "address"
+                                                contentDescription = "address",
+                                                tint = primaryTextColor,
                                             )
                                         }
                                     )
@@ -2239,30 +2253,36 @@ fun SingleMessage(
                                     val timestamp = it.first.asDateTimeEntity()!!.timestampMillis
                                     AssistChip(
                                         onClick = {
-                                            if(fromBubble){
-                                                (context as MainActivity).startActivity(Intent(Intent.ACTION_INSERT).apply {
-                                                    data = CalendarContract.Events.CONTENT_URI
-                                                    putExtra(
-                                                        CalendarContract.EXTRA_EVENT_BEGIN_TIME,
-                                                        timestamp
-                                                    )
-                                                    putExtra(
-                                                        CalendarContract.EXTRA_EVENT_END_TIME,
-                                                        timestamp
-                                                    )
-                                                })
-                                            }else{
-                                                (context as MainActivity).startActivity(Intent(Intent.ACTION_INSERT).apply {
-                                                    data = CalendarContract.Events.CONTENT_URI
-                                                    putExtra(
-                                                        CalendarContract.EXTRA_EVENT_BEGIN_TIME,
-                                                        timestamp
-                                                    )
-                                                    putExtra(
-                                                        CalendarContract.EXTRA_EVENT_END_TIME,
-                                                        timestamp
-                                                    )
-                                                })
+                                            if (fromBubble) {
+                                                (context as MainActivity).startActivity(
+                                                    Intent(
+                                                        Intent.ACTION_INSERT
+                                                    ).apply {
+                                                        data = CalendarContract.Events.CONTENT_URI
+                                                        putExtra(
+                                                            CalendarContract.EXTRA_EVENT_BEGIN_TIME,
+                                                            timestamp
+                                                        )
+                                                        putExtra(
+                                                            CalendarContract.EXTRA_EVENT_END_TIME,
+                                                            timestamp
+                                                        )
+                                                    })
+                                            } else {
+                                                (context as MainActivity).startActivity(
+                                                    Intent(
+                                                        Intent.ACTION_INSERT
+                                                    ).apply {
+                                                        data = CalendarContract.Events.CONTENT_URI
+                                                        putExtra(
+                                                            CalendarContract.EXTRA_EVENT_BEGIN_TIME,
+                                                            timestamp
+                                                        )
+                                                        putExtra(
+                                                            CalendarContract.EXTRA_EVENT_END_TIME,
+                                                            timestamp
+                                                        )
+                                                    })
                                             }
                                         },
                                         label = {
@@ -2274,7 +2294,8 @@ fun SingleMessage(
                                         leadingIcon = {
                                             Icon(
                                                 imageVector = Icons.Outlined.Event,
-                                                contentDescription = "date"
+                                                contentDescription = "date",
+                                                tint = primaryTextColor,
                                             )
                                         }
                                     )
@@ -2292,7 +2313,8 @@ fun SingleMessage(
                                         leadingIcon = {
                                             Icon(
                                                 imageVector = Icons.Outlined.Email,
-                                                contentDescription = "email"
+                                                contentDescription = "email",
+                                                tint = primaryTextColor,
                                             )
                                         }
                                     )
@@ -2308,7 +2330,8 @@ fun SingleMessage(
                                         leadingIcon = {
                                             Icon(
                                                 imageVector = Icons.Outlined.FlightTakeoff,
-                                                contentDescription = "flight"
+                                                contentDescription = "flight",
+                                                tint = primaryTextColor,
                                             )
                                         }
                                     )
@@ -2320,7 +2343,8 @@ fun SingleMessage(
                                         leadingIcon = {
                                             Icon(
                                                 imageVector = Icons.Outlined.AccountBalance,
-                                                contentDescription = "bank"
+                                                contentDescription = "bank",
+                                                tint = primaryTextColor,
                                             )
                                         }
                                     )
@@ -2332,7 +2356,8 @@ fun SingleMessage(
                                         leadingIcon = {
                                             Icon(
                                                 imageVector = Icons.Outlined.LocalLibrary,
-                                                contentDescription = "isbn"
+                                                contentDescription = "isbn",
+                                                tint = primaryTextColor,
                                             )
                                         }
                                     )
@@ -2344,7 +2369,8 @@ fun SingleMessage(
                                         leadingIcon = {
                                             Icon(
                                                 imageVector = Icons.Outlined.CreditCard,
-                                                contentDescription = "card"
+                                                contentDescription = "card",
+                                                tint = primaryTextColor,
                                             )
                                         }
                                     )
@@ -2352,21 +2378,28 @@ fun SingleMessage(
                                 Entity.TYPE_PHONE -> {
                                     AssistChip(
                                         onClick = {
-                                            if(fromBubble){
-                                                (context as BubbleActivity).startActivity(Intent(Intent.ACTION_DIAL).apply {
-                                                    data = Uri.parse("tel:${it.second}")
-                                                })
-                                            }else{
-                                                (context as MainActivity).startActivity(Intent(Intent.ACTION_DIAL).apply {
-                                                    data = Uri.parse("tel:${it.second}")
-                                                })
+                                            if (fromBubble) {
+                                                (context as BubbleActivity).startActivity(
+                                                    Intent(
+                                                        Intent.ACTION_DIAL
+                                                    ).apply {
+                                                        data = Uri.parse("tel:${it.second}")
+                                                    })
+                                            } else {
+                                                (context as MainActivity).startActivity(
+                                                    Intent(
+                                                        Intent.ACTION_DIAL
+                                                    ).apply {
+                                                        data = Uri.parse("tel:${it.second}")
+                                                    })
                                             }
                                         },
                                         label = { Text(text = it.second, color = textColor) },
                                         leadingIcon = {
                                             Icon(
                                                 imageVector = Icons.Outlined.Call,
-                                                contentDescription = "call"
+                                                contentDescription = "call",
+                                                tint = primaryTextColor,
                                             )
                                         }
                                     )
@@ -2383,7 +2416,8 @@ fun SingleMessage(
                                         leadingIcon = {
                                             Icon(
                                                 imageVector = Icons.Outlined.Link,
-                                                contentDescription = "url"
+                                                contentDescription = "url",
+                                                tint = primaryTextColor,
                                             )
                                         }
                                     )
@@ -2393,19 +2427,26 @@ fun SingleMessage(
                         }
                     }
                 }
-                if(!message.sentByMe){
-                    if(isTranslationEnabled){
-                        Box(modifier = Modifier.width(64.dp), contentAlignment = Alignment.CenterStart){
+                if (!message.sentByMe) {
+                    if (isTranslationEnabled) {
+                        Box(
+                            modifier = Modifier.width(64.dp),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
                             androidx.compose.animation.AnimatedVisibility(visible = shouldTranslate && translatedText.isNullOrEmpty()) {
                                 IconButton(onClick = {
                                     coroutineScope.launch {
-                                        val text = if(fromBubble){
-                                            (context as MainActivity).getTranslation(message.contents.getContentString())
-                                        }else{
+                                        val text = if (fromBubble) {
+                                            (context as BubbleActivity).getTranslation(message.contents.getContentString())
+                                        } else {
                                             (context as MainActivity).getTranslation(message.contents.getContentString())
                                         }
-                                        if(text == null){
-                                            Toast.makeText(context, context.getString(R.string.translation_error), Toast.LENGTH_SHORT).show()
+                                        if (text == null) {
+                                            Toast.makeText(
+                                                context,
+                                                context.getString(R.string.translation_error),
+                                                Toast.LENGTH_SHORT
+                                            ).show()
                                         } else {
                                             translatedText = text
                                         }
@@ -2531,6 +2572,7 @@ fun SingleMessage(
 private fun MessageContent.toLayout(
     textColor: Color,
     reverseTextColor: Color,
+    primaryTextColor: Color,
     context: Context,
     density: Density,
     index: Int,
@@ -2546,8 +2588,8 @@ private fun MessageContent.toLayout(
     when (this) {
         is At, AtAll -> Text(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
-            text = "${getContentString()}",
-            color = textColor,
+            text = getContentString(),
+            color = primaryTextColor,
         )
 
         is PlainText ->
@@ -2704,6 +2746,7 @@ private fun MessageContent.toLayout(
                         messageContent.toLayout(
                             if (message.sentByMe) reverseTextColor else textColor,
                             if (message.sentByMe) textColor else reverseTextColor,
+                            primaryTextColor,
                             context,
                             density,
                             index,
@@ -2792,7 +2835,7 @@ private fun MessageContent.toLayout(
                     Text(
                         text = name,
                         style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary
+                        color = primaryTextColor
                     )
                     Spacer(modifier = Modifier.height(3.dp))
                     Text(
