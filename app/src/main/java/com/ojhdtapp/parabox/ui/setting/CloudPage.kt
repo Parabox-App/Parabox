@@ -291,7 +291,7 @@ fun CloudPage(
                                     Text(
                                         text = stringResource(
                                             id = R.string.cloud_service_used_space,
-                                            gDriveUsedSpacePercent,
+                                            gDriveUsedSpacePercent.value,
                                             FileUtil.getSizeString(
                                                 gDriveUsedSpace
                                             ),
@@ -305,7 +305,7 @@ fun CloudPage(
                                     Text(
                                         text = stringResource(
                                             R.string.cloud_service_app_used_space,
-                                            gDriveAppUsedSpacePercent,
+                                            gDriveAppUsedSpacePercent.value,
                                             FileUtil.getSizeString(
                                                 gDriveAppUsedSpace
                                             )
