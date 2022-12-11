@@ -510,6 +510,7 @@ class MessagePageViewModel @Inject constructor(
     fun clearContactUnreadNum(contactId: Long) {
         viewModelScope.launch(Dispatchers.IO) {
             updateContact.unreadMessagesNum(contactId, 0)
+            updateContact.hiddenState(contactId, false)
         }
     }
 
@@ -517,6 +518,8 @@ class MessagePageViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             contactIds.forEach {
                 updateContact.unreadMessagesNum(it, 0)
+                updateContact.hiddenState(it, false)
+
             }
         }
     }

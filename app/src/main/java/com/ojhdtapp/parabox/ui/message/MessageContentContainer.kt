@@ -28,7 +28,7 @@ fun MessageContentContainer(
         var layoutWidth = 0
         var layoutHeight = 0
         placeables.forEachIndexed { index, placeable ->
-            if (xSpace >= placeable.width && !shouldBreak.getOrElse(index) { false }) {
+            if (xSpace >= placeable.width && !shouldBreak.getOrElse(index) { false } && !shouldBreak.getOrElse(index - 1) { false }) {
                 positionList.add(IntOffset(xPosition, yPosition))
                 xPosition += placeable.width
                 xSpace -= placeable.width

@@ -51,6 +51,7 @@ class MainSharedViewModel @Inject constructor(
 
     // Activity Navigate
     fun navigateToChatPage(targetContact: Contact) {
+        clearContactUnreadNum(targetContact.contactId)
         loadMessageFromContact(targetContact)
         viewModelScope.launch {
             delay(500)
@@ -59,6 +60,7 @@ class MainSharedViewModel @Inject constructor(
     }
 
     fun navigateToChatPage(targetContact: Contact, message: Message) {
+        clearContactUnreadNum(targetContact.contactId)
         loadMessageFromContact(targetContact)
         viewModelScope.launch {
             delay(500)
@@ -79,6 +81,13 @@ class MainSharedViewModel @Inject constructor(
     // Tips: Do Not use contacts from response.
     private val _messageStateFlow = MutableStateFlow(MessageState())
     val messageStateFlow: StateFlow<MessageState> = _messageStateFlow.asStateFlow()
+
+    fun clearContactUnreadNum(contactId: Long) {
+        viewModelScope.launch(Dispatchers.IO) {
+            updateContact.unreadMessagesNum(contactId, 0)
+            updateContact.hiddenState(contactId, false)
+        }
+    }
 
     fun loadMessageFromContact(contact: Contact) {
         clearQuoteMessage()
