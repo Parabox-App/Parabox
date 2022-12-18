@@ -111,7 +111,7 @@ fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.Profile.toProfile(context: Con
     return Profile(this.name, this.avatar, this.avatarUri?.let {
         FileUtil.getUriByCopyingFileToPath(
             context,
-            context.getExternalFilesDir("chat")!!,
+            context.getExternalFilesDir("avatar")!!,
             "Avatar_${this.name.replace("\\s+", "_")}.png",
             it
         )?.toString()
@@ -136,7 +136,14 @@ fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
             width,
             height,
             fileName ?: "Image_${System.currentTimeMillis().toDateAndTimeString()}.png",
-            uri?.toString()
+            uri?.let {
+                FileUtil.getUriByCopyingFileToPath(
+                    context,
+                    context.getExternalFilesDir("chat")!!,
+                    "Image_${System.currentTimeMillis().toDateAndTimeString()}.png",
+                    it
+                )?.toString()
+            }
         )
 
         is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.At -> com.ojhdtapp.parabox.domain.model.message_content.At(
