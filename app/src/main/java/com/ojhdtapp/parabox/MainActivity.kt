@@ -466,14 +466,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setUserAvatar(uri: Uri) {
-        getExternalFilesDir("avatar")?.listFiles()?.filter { it.isFile }?.map {
-            it.delete()
-        }
+//        getExternalFilesDir("avatar")?.listFiles()?.filter { it.name == "Avatar_parabox-user.jpg" }?.map {
+//            it.delete()
+//        }
         val path = getExternalFilesDir("avatar")!!
         val copiedUri = FileUtil.getUriByCopyingFileToPath(
             this,
             path,
-            "${System.currentTimeMillis().toDateAndTimeString()}.jpg",
+            "Avatar_${System.currentTimeMillis().toDateAndTimeString()}.png",
             uri
         )
 //        val outputFile =

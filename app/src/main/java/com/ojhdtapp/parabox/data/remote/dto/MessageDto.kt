@@ -135,12 +135,12 @@ fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
             url,
             width,
             height,
-            fileName ?: "Image_${System.currentTimeMillis().toDateAndTimeString()}.png",
+            fileName?.replace("/", "") ?: "Image_${System.currentTimeMillis().toDateAndTimeString()}.png",
             uri?.let {
                 FileUtil.getUriByCopyingFileToPath(
                     context,
                     context.getExternalFilesDir("chat")!!,
-                    "Image_${System.currentTimeMillis().toDateAndTimeString()}.png",
+                    fileName?.replace("/", "") ?: "Image_${System.currentTimeMillis().toDateAndTimeString()}.png",
                     it
                 )?.toString()
             }
@@ -166,9 +166,16 @@ fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
             Audio(
                 url,
                 length,
-                fileName ?: "Audio_${System.currentTimeMillis().toDateAndTimeString()}.mp3",
+                fileName?.replace("/", "") ?: "Audio_${System.currentTimeMillis().toDateAndTimeString()}.mp3",
                 fileSize,
-                uri?.toString()
+                uri?.let {
+                    FileUtil.getUriByCopyingFileToPath(
+                        context,
+                        context.getExternalFilesDir("chat")!!,
+                        fileName?.replace("/", "") ?: "Audio_${System.currentTimeMillis().toDateAndTimeString()}.mp3",
+                        it
+                    )?.toString()
+                }
             )
         }
 
@@ -189,7 +196,14 @@ fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
             size,
             lastModifiedTime,
             expiryTime,
-            uri?.toString()
+            uri?.let {
+                FileUtil.getUriByCopyingFileToPath(
+                    context,
+                    context.getExternalFilesDir("file")!!,
+                    name.replace("/", ""),
+                    it
+                )?.toString()
+            }
         )
         is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Location -> com.ojhdtapp.parabox.domain.model.message_content.Location(
             latitude,
