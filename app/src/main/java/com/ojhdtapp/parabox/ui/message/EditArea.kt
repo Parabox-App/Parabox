@@ -247,7 +247,7 @@ fun EditArea(
             if (!it.exists()) {
                 it.mkdirs()
             }
-        }, "${System.currentTimeMillis().toDateAndTimeString()}.jpg")
+        }, "Camera_${System.currentTimeMillis().toDateAndTimeString()}.jpg")
         FileProvider.getUriForFile(
             context,
             BuildConfig.APPLICATION_ID + ".provider", outPutFile
@@ -688,9 +688,8 @@ fun EditArea(
                                 gallerySelected.forEach {
                                     FileUtil.getUriByCopyingFileToPath(
                                         context,
-                                        //                                    File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "Parabox/Chat"),
                                         context.getExternalFilesDir("chat")!!,
-                                        "${System.currentTimeMillis().toDateAndTimeString()}.jpg",
+                                        FileUtil.getFilenameFromUri(context, it) ?: "${System.currentTimeMillis().toDateAndTimeString()}.png",
                                         it
                                     )?.also {
                                         packageNameList.forEach { packageName ->
@@ -700,11 +699,10 @@ fun EditArea(
                                                 Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION
                                             )
                                         }
-                                        val intent = Intent().apply {
-                                            addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                            setDataAndType(it, "image/*")
-                                        }
-                                        content.add(Image(uri = it))
+                                        content.add(Image(
+                                            fileName = FileUtil.getFilenameFromUri(context, it),
+                                            uri = it
+                                        ))
                                     }
                                 }
                                 cameraSelected.forEach {
@@ -719,7 +717,10 @@ fun EditArea(
                                         addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                         setDataAndType(it, context.contentResolver.getType(it))
                                     }
-                                    content.add(Image(uri = it))
+                                    content.add(Image(
+                                        fileName = FileUtil.getFilenameFromUri(context, it),
+                                        uri = it
+                                    ))
                                 }
                                 Log.d("parabox", content.toString())
                                 if (content.size > 0) {
@@ -930,6 +931,7 @@ fun EditArea(
                                                                             onSend(
                                                                                 listOf(
                                                                                     Image(
+                                                                                        fileName = FileUtil.getFilenameFromUri(context, it),
                                                                                         uri = it
                                                                                     )
                                                                                 )

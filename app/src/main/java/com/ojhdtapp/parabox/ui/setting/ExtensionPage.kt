@@ -344,7 +344,7 @@ fun ExtensionCard(
                             onClick = {},
                             label = { Text(text = stringResource(R.string.msg_type_quote_reply)) },
                             leadingIcon = {
-                                SupportLeadingIcon(supportType = appModel.audioSupport)
+                                SupportLeadingIcon(supportType = appModel.quoteReplySupport)
                             },
                         )
                     }
