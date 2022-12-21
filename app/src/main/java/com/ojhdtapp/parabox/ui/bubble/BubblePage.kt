@@ -443,34 +443,24 @@ fun BubbleChatPage(
                                                 message?.contents?.filterIsInstance<Image>()?.getOrNull(imageIndex)
                                                     ?: throw NoSuchElementException("image lost")
                                             val path = context.getExternalFilesDir("meme")!!
-                                            if (message.sentByMe) {
-                                                image.uriString?.let { uriString ->
-                                                    FileUtil.copyFileToPath(
-                                                        context, path,
-                                                        "Image_${
-                                                            System.currentTimeMillis()
-                                                                .toDateAndTimeString()
-                                                        }.jpg",
-                                                        Uri.parse(uriString)
-                                                    )
-                                                }
-                                            } else {
-                                                image.url?.let { url ->
-                                                    context.imageLoader.diskCache?.get(url)
-                                                        ?.use { snapshot ->
-                                                            val imageFile = snapshot.data.toFile()
-                                                            FileUtil.copyFileToPath(
-                                                                context,
-                                                                path,
-                                                                "Image_${
-                                                                    System.currentTimeMillis()
-                                                                        .toDateAndTimeString()
-                                                                }.jpg",
-                                                                imageFile
-                                                            )
-                                                        }
-                                                }
-
+                                            image.uriString?.let { uriString ->
+                                                val uri = Uri.parse(uriString)
+                                                FileUtil.copyFileToPath(
+                                                    context, path,
+                                                    image.fileName,
+                                                    uri
+                                                )
+                                            } ?: image.url?.let { url ->
+                                                context.imageLoader.diskCache?.get(url)
+                                                    ?.use { snapshot ->
+                                                        val imageFile = snapshot.data.toFile()
+                                                        FileUtil.copyFileToPath(
+                                                            context,
+                                                            path,
+                                                            image.fileName,
+                                                            imageFile
+                                                        )
+                                                    }
                                             }
                                             memeUpdateFlag++
                                             Toast.makeText(
@@ -1179,36 +1169,25 @@ fun BubbleChatPage(
                                     is SingleMessageEvent.Favorite -> {
                                         val path = context.getExternalFilesDir("meme")!!
                                         val images = value.contents.filter { it is Image }
-                                        if (value.sentByMe) {
-                                            images.forEach {
-                                                (it as Image).uriString?.let { uriString ->
-                                                    FileUtil.copyFileToPath(
-                                                        context, path,
-                                                        "Image_${
-                                                            System.currentTimeMillis()
-                                                                .toDateAndTimeString()
-                                                        }.jpg",
-                                                        Uri.parse(uriString)
-                                                    )
-                                                }
-                                            }
-                                        } else {
-                                            images.forEach {
-                                                (it as Image).url?.let { url ->
-                                                    context.imageLoader.diskCache?.get(url)
-                                                        ?.use { snapshot ->
-                                                            val imageFile = snapshot.data.toFile()
-                                                            FileUtil.copyFileToPath(
-                                                                context,
-                                                                path,
-                                                                "Image_${
-                                                                    System.currentTimeMillis()
-                                                                        .toDateAndTimeString()
-                                                                }.jpg",
-                                                                imageFile
-                                                            )
-                                                        }
-                                                }
+                                        images.forEach {
+                                            (it as Image).uriString?.let { uriString ->
+                                                val uri = Uri.parse(uriString)
+                                                FileUtil.copyFileToPath(
+                                                    context, path,
+                                                    it.fileName,
+                                                    uri
+                                                )
+                                            } ?: it.url?.let { url ->
+                                                context.imageLoader.diskCache?.get(url)
+                                                    ?.use { snapshot ->
+                                                        val imageFile = snapshot.data.toFile()
+                                                        FileUtil.copyFileToPath(
+                                                            context,
+                                                            path,
+                                                            it.fileName,
+                                                            imageFile
+                                                        )
+                                                    }
                                             }
                                         }
                                         memeUpdateFlag++

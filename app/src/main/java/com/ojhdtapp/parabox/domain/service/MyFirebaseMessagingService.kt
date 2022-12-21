@@ -101,7 +101,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                                             val downloadedUri = getUriFromCloudResourceInfo(
                                                 fileName = it.fileName ?: "Image_${
                                                     System.currentTimeMillis().toDateAndTimeString()
-                                                }.jpg",
+                                                }.png",
                                                 cloudType = it.cloudType
                                                     ?: FcmConstants.CloudStorage.NONE.ordinal,
                                                url = it.url, cloudId = it.cloudId

@@ -212,10 +212,8 @@ fun EditArea(
                         it.clipData!!.getItemAt(i).also {
                             FileUtil.copyFileToPath(
                                 context, path,
-                                "Image_${
-                                    System.currentTimeMillis()
-                                        .toDateAndTimeString()
-                                }.jpg",
+                                FileUtil.getFilenameFromUri(context, it.uri) ?:
+                                "Image_${System.currentTimeMillis().toDateAndTimeString()}.png",
                                 it.uri
                             )
                         }
@@ -231,10 +229,8 @@ fun EditArea(
             it.forEach {
                 FileUtil.copyFileToPath(
                     context, path,
-                    "Image_${
-                        System.currentTimeMillis()
-                            .toDateAndTimeString()
-                    }.jpg",
+                    FileUtil.getFilenameFromUri(context, it) ?:
+                    "Image_${System.currentTimeMillis().toDateAndTimeString()}.png",
                     it
                 )
             }
@@ -689,7 +685,8 @@ fun EditArea(
                                     FileUtil.getUriByCopyingFileToPath(
                                         context,
                                         context.getExternalFilesDir("chat")!!,
-                                        FileUtil.getFilenameFromUri(context, it) ?: "${System.currentTimeMillis().toDateAndTimeString()}.png",
+                                        FileUtil.getFilenameFromUri(context, it) ?:
+                                        "${System.currentTimeMillis().toDateAndTimeString()}.png",
                                         it
                                     )?.also {
                                         packageNameList.forEach { packageName ->

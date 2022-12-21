@@ -302,10 +302,11 @@ object FileUtil {
     fun saveImageToExternalStorage(context: Context, uri: Uri) {
         try {
             val fileName = getFilenameFromUri(context, uri)
+            val extension = fileName?.substringAfterLast(".")
             val resolver = context.contentResolver
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 val contentValues = ContentValues().apply {
-                    put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+                    put(MediaStore.Images.Media.MIME_TYPE, extension?.let{ MimeTypeMap.getSingleton().getMimeTypeFromExtension(it) } ?: "image/png")
                     put(
                         MediaStore.Images.Media.DISPLAY_NAME,
                         System.currentTimeMillis().toDateAndTimeString()
@@ -342,9 +343,11 @@ object FileUtil {
     }
 
     fun saveImageToExternalStorage(context: Context, file: File) {
+        val fileName = file.name
+        val extension = fileName.substringAfterLast(".")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val contentValues = ContentValues().apply {
-                put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                put(MediaStore.Images.Media.MIME_TYPE, MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension) ?: "image/png")
                 put(
                     MediaStore.Images.Media.DISPLAY_NAME,
                     System.currentTimeMillis().toDateAndTimeString()

@@ -231,14 +231,13 @@ suspend fun List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.M
     return this.map {
         when (it) {
             is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Image -> {
-                val cloudResourceInfo = it.uri?.let {
+                val cloudResourceInfo = it.uri?.let { uri ->
                     FileUtil.getCloudResourceInfoWithSelectedCloudStorage(
                         context,
-                        FileUtil.getFilenameFromUri(
-                            context,
-                            it
-                        ) ?: "Image_${System.currentTimeMillis().toDateAndTimeString()}.png",
-                        it
+                        it.fileName ?:
+                        FileUtil.getFilenameFromUri(context, uri) ?:
+                        "Image_${System.currentTimeMillis().toDateAndTimeString()}.png",
+                        uri
                     )
                 }
                 if (cloudResourceInfo != null) {
@@ -253,14 +252,13 @@ suspend fun List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.M
             }
 
             is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Audio -> {
-                val cloudResourceInfo = it.uri?.let {
+                val cloudResourceInfo = it.uri?.let { uri ->
                     FileUtil.getCloudResourceInfoWithSelectedCloudStorage(
                         context,
-                        FileUtil.getFilenameFromUri(
-                            context,
-                            it
-                        ) ?: "Audio_${System.currentTimeMillis().toDateAndTimeString()}.mp3",
-                        it
+                        it.fileName ?:
+                        FileUtil.getFilenameFromUri(context, uri) ?:
+                        "Audio_${System.currentTimeMillis().toDateAndTimeString()}.mp3",
+                        uri
                     )
                 }
                 if (cloudResourceInfo != null) {
