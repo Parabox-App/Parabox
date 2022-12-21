@@ -376,4 +376,14 @@
     <string name="ml_kit">Provided by ML Kit</string>
     <string name="translation_error">Translation failed</string>
     <string name="location">Location</string>
+    <string name="download_file_success">File saved to /Download/Parabox</string>
+    <string name="download_file_failed">File download failed</string>
+    <string name="avatar_updated">Avatar has been updated</string>
+    <string name="extension_disconnected">Lost connection to extension</string>
+    <string name="fcm_disconnected">Lost connection to FCM server</string>
+    <string name="backup_text">Please select a storage path</string>
+    <string name="backup_failed">Backup failed. Error Code: $1%1d</string>
+    <string name="restore_success">Restoration complete, restarting soon</string>
+    <string name="restore_failed">Restoration failed. Error Code: $1%1d</string>
+    <string name="reset_extension_connection_success">Extension connection reset</string>
 </resources>

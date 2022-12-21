@@ -382,4 +382,14 @@
     <string name="date_format_pattern">M\'月\'d\'日\'</string>
     <string name="ml_kit">由 ML Kit 提供</string>
     <string name="translation_error">翻译失败</string>
+    <string name="download_file_success">文件已保存到 /Download/Parabox</string>
+    <string name="download_file_failed">文件下载失败</string>
+    <string name="avatar_updated">头像已更新</string>
+    <string name="extension_disconnected">与扩展的连接断开</string>
+    <string name="fcm_disconnected">与 FCM 服务器连接断开</string>
+    <string name="backup_text">请选择存储路径</string>
+    <string name="backup_failed">备份失败 错误代码: $1%1d</string>
+    <string name="restore_success">恢复完成 即将重启</string>
+    <string name="restore_failed">恢复失败 错误代码: $1%1d</string>
+    <string name="reset_extension_connection_success">已重置扩展连接</string>
 </resources>

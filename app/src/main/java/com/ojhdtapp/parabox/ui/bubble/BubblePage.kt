@@ -499,33 +499,29 @@ fun BubbleChatPage(
                                             val image =
                                                 message?.contents?.filterIsInstance<Image>()?.getOrNull(imageIndex)
                                                     ?: throw NoSuchElementException("image lost")
-                                            if (message.sentByMe) {
-                                                image.uriString?.let { uriString ->
-                                                    FileUtil.saveImageToExternalStorage(
-                                                        context,
-                                                        Uri.parse(uriString)
-                                                    )
-                                                }
-                                            } else {
-                                                image.url?.let { url ->
-                                                    context.imageLoader.diskCache?.get(url)
-                                                        ?.use { snapshot ->
-                                                            val imageFile =
-                                                                snapshot.data.toFile()
-                                                            FileUtil.saveImageToExternalStorage(
-                                                                context,
-                                                                imageFile
-                                                            )
-                                                        }
-                                                }
-                                            }
+                                            image.uriString?.let { uriString ->
+                                                FileUtil.saveImageToExternalStorage(
+                                                    context,
+                                                    Uri.parse(uriString)
+                                                )
+                                            } ?: image.url?.let { url ->
+                                                context.imageLoader.diskCache?.get(url)
+                                                    ?.use { snapshot ->
+                                                        val imageFile =
+                                                            snapshot.data.toFile()
+                                                        FileUtil.saveImageToExternalStorage(
+                                                            context,
+                                                            imageFile
+                                                        )
+                                                    }
+                                            } ?: throw NoSuchElementException("image lost")
                                             memeUpdateFlag++
                                             Toast.makeText(
                                                 context,
                                                 context.getString(R.string.save_to_local_text, 1),
                                                 Toast.LENGTH_SHORT
                                             ).show()
-                                        } catch (e: NoSuchElementException){
+                                        } catch (e: Exception){
                                             Toast.makeText(
                                                 context,
                                                 context.getString(R.string.cannot_locate_img),

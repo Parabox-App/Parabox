@@ -73,6 +73,7 @@ class FilePageViewModel @Inject constructor(
                 GoogleDriveUtil.getFileList(context = context, it)?.map {
                     File(
                         url = it.webContentLink,
+                        uri = null,
                         name = it.name,
                         extension = it.fullFileExtension ?: FileUtil.getExtension(it.name),
                         size = it.getSize(),

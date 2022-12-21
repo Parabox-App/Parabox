@@ -370,7 +370,7 @@ fun NormalChatPage(
     var smartReplyList by remember {
         mutableStateOf<List<String>>(emptyList())
     }
-    LaunchedEffect(lazyPagingItems.itemSnapshotList.items.lastOrNull()?.messageId) {
+    LaunchedEffect(pagingDataFlow.collectAsLazyPagingItems().itemCount) {
         messageState.contact?.contactId?.let {
             smartReplyList = (context as MainActivity).getSmartReplyList(it).map {
                 it.text
@@ -514,6 +514,7 @@ fun NormalChatPage(
                         val lastIndex = imageMessageList.lastIndex
                         imageMessageList.reversed().forEachIndexed { index, t ->
                             if (t.uriString != null) {
+                                Log.d("parabox", "${t.uriString}")
                                 FileUtil.getBitmapFromUri(context, Uri.parse(t.uriString))?.let {
                                     acc.add(
                                         "${message.messageId}${
@@ -706,7 +707,7 @@ fun NormalChatPage(
                                                 context.getString(R.string.save_to_local_text, 1),
                                                 Toast.LENGTH_SHORT
                                             ).show()
-                                        } catch (e: NoSuchElementException) {
+                                        } catch (e: Exception) {
                                             Toast.makeText(
                                                 context,
                                                 context.getString(R.string.cannot_locate_img),

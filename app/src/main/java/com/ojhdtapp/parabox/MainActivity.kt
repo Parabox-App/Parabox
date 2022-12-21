@@ -199,35 +199,53 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun downloadFile(file: File, cloudFirst: Boolean = false) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            when (file.cloudType) {
-                GoogleDriveUtil.SERVICE_CODE -> file.cloudId?.let {
-                    GoogleDriveUtil.downloadFile(
-                        baseContext,
-                        it,
-                        java.io.File(
-                            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                            "Parabox"
-                        ),
-                    )
+        if (file.uri != null) {
+            try{
+                val path = FileUtil.getAvailableFileName(baseContext, file.name)
+                FileUtil.saveFileToExternalStorage(baseContext, file.uri, path)
+                lifecycleScope.launch(Dispatchers.IO){
+                    updateFile.downloadInfo(path, null, file)
+                    updateFile.downloadState(DownloadingState.Done, file)
                 }
+                Toast.makeText(baseContext, getString(R.string.download_file_success), Toast.LENGTH_SHORT).show()
+            } catch (e: Exception){
+                e.printStackTrace()
+                updateFile.downloadInfo(null, null, file)
+                updateFile.downloadState(DownloadingState.Failure, file)
+                Toast.makeText(baseContext, getString(R.string.download_file_failed), Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            lifecycleScope.launch(Dispatchers.IO) {
+                when (file.cloudType) {
+                    GoogleDriveUtil.SERVICE_CODE -> file.cloudId?.let {
+                        GoogleDriveUtil.downloadFile(
+                            baseContext,
+                            it,
+                            java.io.File(
+                                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                                "Parabox"
+                            ),
+                        )
+                    }
 
-                else -> {
-                    val url = file.url
-                    if (url != null) {
-                        val path = FileUtil.getAvailableFileName(this@MainActivity, file.name)
-                        DownloadManagerUtil.downloadWithManager(
-                            this@MainActivity,
-                            url,
-                            path
-                        )?.also {
-                            updateFile.downloadInfo(path, it, file)
-                            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                                DownloadManagerUtil.retrieve(this@MainActivity, it).collectLatest {
-                                    if (it is DownloadingState.Done) {
-                                        updateFile.downloadInfo(path, null, file)
-                                    }
-                                    updateFile.downloadState(it, file)
+                    else -> {
+                        val url = file.url
+                        if (url != null) {
+                            val path = FileUtil.getAvailableFileName(baseContext, file.name)
+                            DownloadManagerUtil.downloadWithManager(
+                                this@MainActivity,
+                                url,
+                                path
+                            )?.also {
+                                updateFile.downloadInfo(path, it, file)
+                                repeatOnLifecycle(Lifecycle.State.STARTED) {
+                                    DownloadManagerUtil.retrieve(this@MainActivity, it)
+                                        .collectLatest {
+                                            if (it is DownloadingState.Done) {
+                                                updateFile.downloadInfo(path, null, file)
+                                            }
+                                            updateFile.downloadState(it, file)
+                                        }
                                 }
                             }
                         }
@@ -235,6 +253,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+
     }
 
     private suspend fun retrieveDownloadProcess(file: File) {
@@ -492,7 +511,7 @@ class MainActivity : AppCompatActivity() {
                 this@MainActivity.dataStore.edit { settings ->
                     settings[DataStoreKeys.USER_AVATAR] = it.toString()
                 }
-                Toast.makeText(this@MainActivity, "头像已更新", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MainActivity, getString(R.string.avatar_updated), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -519,7 +538,7 @@ class MainActivity : AppCompatActivity() {
                     } else {
                         delay(500)
                         mainSharedViewModel.setIsRefreshing(false)
-                        Toast.makeText(this@MainActivity, "通信时发生错误", Toast.LENGTH_SHORT)
+                        Toast.makeText(this@MainActivity, getString(R.string.extension_disconnected), Toast.LENGTH_SHORT)
                             .show()
                     }
                 }
@@ -528,7 +547,7 @@ class MainActivity : AppCompatActivity() {
                     // only check fcm connection... for lazy
                     fcmApiHelper.getVersion().also {
                         if (it?.isSuccessful != true) {
-                            Toast.makeText(this@MainActivity, "与 FCM 服务器连接断开", Toast.LENGTH_SHORT)
+                            Toast.makeText(this@MainActivity, getString(R.string.fcm_disconnected), Toast.LENGTH_SHORT)
                                 .show()
                         }
                         mainSharedViewModel.setIsRefreshing(false)
@@ -546,7 +565,7 @@ class MainActivity : AppCompatActivity() {
             .apply {
                 onCompleteListener { success, message, exitCode ->
                     if (success) {
-                        Toast.makeText(this@MainActivity, "请选择存储路径", Toast.LENGTH_SHORT)
+                        Toast.makeText(baseContext, getString(R.string.backup_text), Toast.LENGTH_SHORT)
                             .show()
                         backupLocationSelector.launch(
                             "Backup_${
@@ -555,8 +574,8 @@ class MainActivity : AppCompatActivity() {
                         )
                     } else {
                         Toast.makeText(
-                            this@MainActivity,
-                            "备份失败 错误代码:${exitCode}",
+                            baseContext,
+                            getString(R.string.backup_failed, exitCode),
                             Toast.LENGTH_SHORT
                         ).show()
                     }
@@ -574,18 +593,17 @@ class MainActivity : AppCompatActivity() {
             .apply {
                 onCompleteListener { success, message, exitCode ->
                     if (success) {
-                        Toast.makeText(this@MainActivity, "恢复完成 即将重启", Toast.LENGTH_SHORT)
+                        Toast.makeText(baseContext, getString(R.string.restore_success), Toast.LENGTH_SHORT)
                             .show()
                         file.delete()
                         lifecycleScope.launch {
                             delay(1000)
-//                            restartApp(Intent(this@MainActivity, MainActivity::class.java))
                             onEvent(ActivityEvent.RestartApp)
                         }
                     } else {
                         Toast.makeText(
-                            this@MainActivity,
-                            "恢复失败 错误代码:${exitCode}",
+                            baseContext,
+                            getString(R.string.restore_failed, exitCode),
                             Toast.LENGTH_SHORT
                         ).show()
                     }
@@ -597,7 +615,7 @@ class MainActivity : AppCompatActivity() {
     private fun resetPluginConnection() {
         pluginService?.also {
             it.reset()
-            Toast.makeText(this, "已重置扩展连接", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.reset_extension_connection_success), Toast.LENGTH_SHORT).show()
         }
 
     }
@@ -1001,7 +1019,6 @@ class MainActivity : AppCompatActivity() {
                         timestamp,
                         event.sendType
                     ).also {
-
                         val dto = SendMessageDto(
                             contents = event.contents,
                             timestamp = timestamp,
