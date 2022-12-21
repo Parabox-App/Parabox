@@ -46,8 +46,27 @@ class MainRepositoryImpl @Inject constructor(
                 preferences[DataStoreKeys.SETTINGS_FCM_ROLE] ?: FcmConstants.Role.SENDER.ordinal
             }.first()
 
+            val messageEntity = dto.toMessageEntity(context)
             val messageIdDeferred = async<Long> {
-                database.messageDao.insertMessage(dto.toMessageEntity(context))
+                database.messageDao.insertMessage(messageEntity)
+            }
+            // If MessageContent Type is File ...
+            if (messageIdDeferred.await() != -1L) {
+                messageEntity.contents.filterIsInstance<com.ojhdtapp.parabox.domain.model.message_content.File>().forEach {
+                    database.fileDao.insertFile(
+                        FileEntity(
+                            url = it.url,
+                            uriString = it.uriString,
+                            name = it.name,
+                            extension = it.extension,
+                            size = it.size,
+                            timestamp = it.lastModifiedTime,
+                            profileName = dto.subjectProfile.name,
+                            relatedContactId = dto.pluginConnection.objectId,
+                            relatedMessageId = messageIdDeferred.await()
+                        )
+                    )
+                }
             }
             val contactIdDeferred = async<Long> {
                 database.contactDao.insertContact(
@@ -108,24 +127,6 @@ class MainRepositoryImpl @Inject constructor(
                         isHidden = false
                     )
                 })
-            }
-            // If MessageContent Type is File ...
-            if (messageIdDeferred.await() != -1L) {
-                dto.contents.filterIsInstance<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.File>()
-                    .forEach {
-                        database.fileDao.insertFile(
-                            FileEntity(
-                                url = it.url!!,
-                                name = it.name,
-                                extension = it.extension,
-                                size = it.size,
-                                timestamp = it.lastModifiedTime,
-                                profileName = dto.subjectProfile.name,
-                                relatedContactId = dto.pluginConnection.objectId,
-                                relatedMessageId = messageIdDeferred.await()
-                            )
-                        )
-                    }
             }
             // Send Notification if Enabled ...
             // if FCM Enabled...

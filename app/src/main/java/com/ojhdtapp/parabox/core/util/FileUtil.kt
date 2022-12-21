@@ -15,6 +15,7 @@ import android.provider.OpenableColumns
 import android.util.Log
 import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
+import androidx.core.net.toFile
 import com.ojhdtapp.parabox.BuildConfig
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import kotlinx.coroutines.Dispatchers
@@ -30,6 +31,65 @@ import java.text.DecimalFormat
 import java.util.*
 
 object FileUtil {
+
+    fun getFilenameFromUri(context: Context, uri: Uri): String? {
+        try {
+            when (uri.scheme) {
+                ContentResolver.SCHEME_FILE -> {
+                    return uri.toFile().name
+                }
+                ContentResolver.SCHEME_CONTENT -> {
+                    val cursor = context.contentResolver.query(
+                        uri,
+                        arrayOf(OpenableColumns.DISPLAY_NAME),
+                        null,
+                        null,
+                        null
+                    ) ?: throw Exception("Failed to obtain cursor from the content resolver")
+                    cursor.moveToFirst()
+                    if (cursor.count == 0) {
+                        throw Exception("The given Uri doesn't represent any file")
+                    }
+                    val displayNameColumnIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    val displayName = cursor.getString(displayNameColumnIndex)
+                    cursor.close()
+                    return displayName
+                }
+                ContentResolver.SCHEME_ANDROID_RESOURCE -> {
+                    // for uris like [android.resource://com.example.app/1234567890]
+                    var resourceId = uri.lastPathSegment?.toIntOrNull()
+                    if (resourceId != null) {
+                        return context.resources.getResourceName(resourceId)
+                    }
+                    // for uris like [android.resource://com.example.app/raw/sample]
+                    val packageName = uri.authority
+                    val resourceType = if (uri.pathSegments.size >= 1) {
+                        uri.pathSegments[0]
+                    } else {
+                        throw Exception("Resource type could not be found")
+                    }
+                    val resourceEntryName = if (uri.pathSegments.size >= 2) {
+                        uri.pathSegments[1]
+                    } else {
+                        throw Exception("Resource entry name could not be found")
+                    }
+                    resourceId = context.resources.getIdentifier(
+                        resourceEntryName,
+                        resourceType,
+                        packageName
+                    )
+                    return context.resources.getResourceName(resourceId)
+                }
+                else -> {
+                    // probably a http uri
+                    return toString().substringAfterLast("/")
+                }
+            }
+        } catch (e: Exception) {
+            return null
+        }
+
+    }
 
     data class CloudResourceInfo(
         val cloudType: Int,
@@ -156,9 +216,11 @@ object FileUtil {
         return try {
             if (!path.exists()) path.mkdirs()
             val outputFile = File(path, fileName)
+            Log.d("parabox", "path: ${outputFile.absolutePath} - ${uri.path}")
             context.contentResolver.openInputStream(uri)?.use { inputStream ->
                 FileOutputStream(outputFile).use { outputStream ->
                     inputStream.copyTo(outputStream, DEFAULT_BUFFER_SIZE)
+
                 }
             }
             FileProvider.getUriForFile(
@@ -239,51 +301,101 @@ object FileUtil {
         }
     }
 
-    fun saveImageToExternalStorage(context: Context, uri: Uri) {
-        try {
-            val resolver = context.contentResolver
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                val contentValues = ContentValues().apply {
-                    put(MediaStore.Images.Media.MIME_TYPE, "image/png")
-                    put(
-                        MediaStore.Images.Media.DISPLAY_NAME,
-                        System.currentTimeMillis().toDateAndTimeString()
-                    )
-                    put(
-                        MediaStore.Images.Media.RELATIVE_PATH,
-                        "${Environment.DIRECTORY_PICTURES}/Parabox"
-                    )
-                }
-                resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)?.also {
-                    resolver.openOutputStream(it).use { output ->
-                        resolver.openInputStream(uri).use { input ->
-                            input?.copyTo(output!!, DEFAULT_BUFFER_SIZE)
-                        }
-                    }
-                }
-
-            } else {
-                val path = File(
-                    Environment.getExternalStoragePublicDirectory("${Environment.DIRECTORY_PICTURES}/Parabox"),
-                    "${System.currentTimeMillis().toDateAndTimeString()}.jpg"
+    fun saveFileToExternalStorage(context: Context, uri: Uri, fileName: String? = null) {
+        val fileName = fileName ?: getFilenameFromUri(context, uri)
+        val extension = fileName?.substringAfterLast(".")
+        val resolver = context.contentResolver
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val contentValues = ContentValues().apply {
+                put(
+                    MediaStore.Files.FileColumns.MIME_TYPE,
+                    extension?.let { MimeTypeMap.getSingleton().getMimeTypeFromExtension(it) }
+                        ?: "application/octet-stream")
+                put(
+                    MediaStore.Files.FileColumns.DISPLAY_NAME,
+                    fileName?.substringBeforeLast(".") ?: System.currentTimeMillis()
+                        .toDateAndTimeString()
                 )
-                path.outputStream().use { output ->
-                    resolver.openInputStream(uri).use { input ->
-                        input?.copyTo(output, DEFAULT_BUFFER_SIZE)
+                put(
+                    MediaStore.Files.FileColumns.RELATIVE_PATH,
+                    "${Environment.DIRECTORY_DOWNLOADS}/Parabox"
+                )
+            }
+            resolver.insert(
+                MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY),
+                contentValues
+            )?.also {
+                resolver.openOutputStream(it)?.use { outputStream ->
+                    resolver.openInputStream(uri)?.use { inputStream ->
+                        inputStream.copyTo(outputStream, DEFAULT_BUFFER_SIZE)
                     }
                 }
-
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
 
+        } else {
+            val path = File(
+                Environment.getExternalStoragePublicDirectory("${Environment.DIRECTORY_DOWNLOADS}/Parabox"),
+                fileName
+            )
+            path.outputStream().use { output ->
+                resolver.openInputStream(uri).use { input ->
+                    input?.copyTo(output, DEFAULT_BUFFER_SIZE)
+                }
+            }
+
+        }
+    }
+
+    fun saveImageToExternalStorage(context: Context, uri: Uri) {
+        val fileName = getFilenameFromUri(context, uri)
+        val extension = fileName?.substringAfterLast(".")
+        val resolver = context.contentResolver
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val contentValues = ContentValues().apply {
+                put(
+                    MediaStore.Images.Media.MIME_TYPE,
+                    extension?.let { MimeTypeMap.getSingleton().getMimeTypeFromExtension(it) }
+                        ?: "image/png")
+                put(
+                    MediaStore.Images.Media.DISPLAY_NAME,
+                    System.currentTimeMillis().toDateAndTimeString()
+                )
+                put(
+                    MediaStore.Images.Media.RELATIVE_PATH,
+                    "${Environment.DIRECTORY_PICTURES}/Parabox"
+                )
+            }
+            resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)?.also {
+                resolver.openOutputStream(it).use { output ->
+                    resolver.openInputStream(uri).use { input ->
+                        input?.copyTo(output!!, DEFAULT_BUFFER_SIZE)
+                    }
+                }
+            }
+
+        } else {
+            val path = File(
+                Environment.getExternalStoragePublicDirectory("${Environment.DIRECTORY_PICTURES}/Parabox"),
+                fileName
+            )
+            path.outputStream().use { output ->
+                resolver.openInputStream(uri).use { input ->
+                    input?.copyTo(output, DEFAULT_BUFFER_SIZE)
+                }
+            }
+
+        }
     }
 
     fun saveImageToExternalStorage(context: Context, file: File) {
+        val fileName = file.name
+        val extension = fileName.substringAfterLast(".")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val contentValues = ContentValues().apply {
-                put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                put(
+                    MediaStore.Images.Media.MIME_TYPE,
+                    MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension) ?: "image/png"
+                )
                 put(
                     MediaStore.Images.Media.DISPLAY_NAME,
                     System.currentTimeMillis().toDateAndTimeString()
@@ -305,7 +417,7 @@ object FileUtil {
         } else {
             val path = File(
                 Environment.getExternalStoragePublicDirectory("${Environment.DIRECTORY_PICTURES}/Parabox"),
-                "${System.currentTimeMillis().toDateAndTimeString()}.jpg"
+                file.name ?: "${System.currentTimeMillis().toDateAndTimeString()}.png"
             )
             path.outputStream().use { output ->
                 file.inputStream().use { input ->

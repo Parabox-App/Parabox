@@ -278,21 +278,23 @@ class NotificationUtil(
                 val user =
                     Person.Builder().setName(userNameFlow.firstOrNull()).setIcon(userIcon).build()
 
-                val personIcon = message.profile.avatar?.let { url ->
+                val personIcon = message.profile.let { profile ->
                     withContext(Dispatchers.IO) {
-                        try {
-                            val loader = ImageLoader(context)
-                            val request = ImageRequest.Builder(context)
-                                .data(url)
-                                .allowHardware(false) // Disable hardware bitmaps.
-                                .build()
-                            val result = (loader.execute(request) as SuccessResult).drawable
-                            val bitmap = (result as BitmapDrawable).bitmap
-                            Icon.createWithAdaptiveBitmap(bitmap)
-                        } catch (e: ClassCastException) {
-                            e.printStackTrace()
-                            null
-                        }
+                        if(profile.avatar != null || profile.avatarUri != null){
+                            try {
+                                val loader = ImageLoader(context)
+                                val request = ImageRequest.Builder(context)
+                                    .data(profile.avatarUri ?: profile.avatar)
+                                    .allowHardware(false) // Disable hardware bitmaps.
+                                    .build()
+                                val result = (loader.execute(request) as SuccessResult).drawable
+                                val bitmap = (result as BitmapDrawable).bitmap
+                                Icon.createWithAdaptiveBitmap(bitmap)
+                            } catch (e: ClassCastException) {
+                                e.printStackTrace()
+                                null
+                            }
+                        }else null
                     }
                 } ?: Icon.createWithResource(
                     context,

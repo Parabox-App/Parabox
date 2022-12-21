@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.data.local.entity
 
+import android.net.Uri
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -8,6 +9,7 @@ import com.ojhdtapp.parabox.domain.model.File
 @Entity(tableName = "file_entity")
 data class FileEntity(
     val url: String?,
+    val uriString: String?,
     val name: String,
     val extension: String,
     val size: Long,
@@ -24,6 +26,7 @@ data class FileEntity(
 ) {
     fun toFile() = File(
         url,
+        uriString?.let { Uri.parse(it) },
         name,
         extension,
         size,

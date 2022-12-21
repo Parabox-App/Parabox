@@ -1,10 +1,12 @@
 package com.ojhdtapp.parabox.domain.model
 
+import android.net.Uri
 import com.ojhdtapp.parabox.data.local.entity.DownloadingState
 import com.ojhdtapp.parabox.data.local.entity.FileEntity
 
 data class File(
     val url: String?,
+    val uri: Uri?,
     val name: String,
     val extension: String,
     val size: Long,
@@ -21,6 +23,7 @@ data class File(
 ) {
     fun toFileEntity() = FileEntity(
         url,
+        uri?.toString(),
         name,
         extension,
         size,

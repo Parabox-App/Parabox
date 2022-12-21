@@ -111,7 +111,7 @@ fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.Profile.toProfile(context: Con
     return Profile(this.name, this.avatar, this.avatarUri?.let {
         FileUtil.getUriByCopyingFileToPath(
             context,
-            context.getExternalFilesDir("chat")!!,
+            context.getExternalFilesDir("avatar")!!,
             "Avatar_${this.name.replace("\\s+", "_")}.png",
             it
         )?.toString()
@@ -135,8 +135,17 @@ fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
             url,
             width,
             height,
-            fileName ?: "Image_${System.currentTimeMillis().toDateAndTimeString()}.png",
-            uri?.toString()
+            fileName?.replace("/", "") ?: uri?.let { FileUtil.getFilenameFromUri(context, it) }
+            ?: "Image_${System.currentTimeMillis().toDateAndTimeString()}.png",
+            uri?.let {
+                FileUtil.getUriByCopyingFileToPath(
+                    context,
+                    context.getExternalFilesDir("chat")!!,
+                    fileName?.replace("/", "") ?: FileUtil.getFilenameFromUri(context, it)
+                    ?: "Image_${System.currentTimeMillis().toDateAndTimeString()}.png",
+                    it
+                )?.toString()
+            }
         )
 
         is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.At -> com.ojhdtapp.parabox.domain.model.message_content.At(
@@ -159,9 +168,20 @@ fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
             Audio(
                 url,
                 length,
-                fileName ?: "Audio_${System.currentTimeMillis().toDateAndTimeString()}.mp3",
+                fileName?.replace("/", "") ?: "Audio_${
+                    System.currentTimeMillis().toDateAndTimeString()
+                }.mp3",
                 fileSize,
-                uri?.toString()
+                uri?.let {
+                    FileUtil.getUriByCopyingFileToPath(
+                        context,
+                        context.getExternalFilesDir("chat")!!,
+                        fileName?.replace("/", "") ?: "Audio_${
+                            System.currentTimeMillis().toDateAndTimeString()
+                        }.mp3",
+                        it
+                    )?.toString()
+                }
             )
         }
 
@@ -182,7 +202,14 @@ fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
             size,
             lastModifiedTime,
             expiryTime,
-            uri?.toString()
+            uri?.let {
+                FileUtil.getUriByCopyingFileToPath(
+                    context,
+                    context.getExternalFilesDir("file")!!,
+                    name.replace("/", ""),
+                    it
+                )?.toString()
+            }
         )
         is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Location -> com.ojhdtapp.parabox.domain.model.message_content.Location(
             latitude,
@@ -204,14 +231,13 @@ suspend fun List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.M
     return this.map {
         when (it) {
             is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Image -> {
-                val cloudResourceInfo = it.uri?.let {
+                val cloudResourceInfo = it.uri?.let { uri ->
                     FileUtil.getCloudResourceInfoWithSelectedCloudStorage(
                         context,
-                        FileUtil.getFileName(
-                            context,
-                            it
-                        ) ?: "Image_${System.currentTimeMillis().toDateAndTimeString()}.jpg",
-                        it
+                        it.fileName ?:
+                        FileUtil.getFilenameFromUri(context, uri) ?:
+                        "Image_${System.currentTimeMillis().toDateAndTimeString()}.png",
+                        uri
                     )
                 }
                 if (cloudResourceInfo != null) {
@@ -226,14 +252,13 @@ suspend fun List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.M
             }
 
             is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Audio -> {
-                val cloudResourceInfo = it.uri?.let {
+                val cloudResourceInfo = it.uri?.let { uri ->
                     FileUtil.getCloudResourceInfoWithSelectedCloudStorage(
                         context,
-                        FileUtil.getFileName(
-                            context,
-                            it
-                        ) ?: "Audio_${System.currentTimeMillis().toDateAndTimeString()}.mp3",
-                        it
+                        it.fileName ?:
+                        FileUtil.getFilenameFromUri(context, uri) ?:
+                        "Audio_${System.currentTimeMillis().toDateAndTimeString()}.mp3",
+                        uri
                     )
                 }
                 if (cloudResourceInfo != null) {
