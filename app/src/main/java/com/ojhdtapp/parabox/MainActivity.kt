@@ -901,7 +901,7 @@ class MainActivity : AppCompatActivity() {
                         TextMessage.createForRemoteUser(
                             it.contentString,
                             it.timestamp,
-                            it.profile.name
+                            it.profile.name ?: ""
                         )
                     }
                 }

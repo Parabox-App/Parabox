@@ -47,15 +47,13 @@ fun UserProfileDialog(
     openDialog: Boolean,
     userName: String = "",
     avatarUri: String? = null,
-    gDriveLogin: Boolean,
-    gDriveTotalSpace: Long,
-    gDriveUsedSpace: Long,
     pluginList: List<AppModel>,
     sizeClass: WindowSizeClass,
     onUpdateName: () -> Unit,
     onUpdateAvatar: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    val context = LocalContext.current
     if (openDialog) {
         Dialog(
             onDismissRequest = {
@@ -66,10 +64,10 @@ fun UserProfileDialog(
                 usePlatformDefaultWidth = false,
             )
         ) {
-            var showPrivacyDialog by remember{
+            var showPrivacyDialog by remember {
                 mutableStateOf(false)
             }
-            var showTermsDialog by remember{
+            var showTermsDialog by remember {
                 mutableStateOf(false)
             }
             AgreementDialog(
@@ -78,7 +76,7 @@ fun UserProfileDialog(
                     Icon(imageVector = Icons.Outlined.PrivacyTip, contentDescription = "privacy")
                 },
                 title = stringResource(id = R.string.privacy),
-                contentResId = R.string.privacy,
+                contentResId = R.string.privacy_content,
                 onConfirm = {
                     showPrivacyDialog = false
                 },
@@ -92,7 +90,7 @@ fun UserProfileDialog(
                     Icon(imageVector = Icons.Outlined.Gavel, contentDescription = "terms")
                 },
                 title = stringResource(id = R.string.terms),
-                contentResId = R.string.terms,
+                contentResId = R.string.terms_content,
                 onConfirm = {
                     showTermsDialog = false
                 },
@@ -106,11 +104,6 @@ fun UserProfileDialog(
                 WindowWidthSizeClass.Expanded -> 0.dp
                 else -> 16.dp
             }
-            val gDriveUsedSpacePercent = remember{
-                derivedStateOf {
-                    if (gDriveTotalSpace == 0L) 0 else (gDriveUsedSpace * 100 / gDriveTotalSpace).toInt()
-                }
-            }
             Surface(
                 modifier = modifier
                     .widthIn(0.dp, 580.dp)
@@ -120,10 +113,13 @@ fun UserProfileDialog(
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 2.dp
             ) {
-                Column(modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())) {
-                    TopAppBar(title = {},
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    TopAppBar(
+                        title = {},
                         navigationIcon = {
                             IconButton(
                                 onClick = {
@@ -140,14 +136,15 @@ fun UserProfileDialog(
                             containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)
                         )
                     )
-                    NormalPreference(title = userName, leadingIcon = {
+                    NormalPreference(modifier = Modifier.padding(16.dp),title = userName, leadingIcon = {
                         Box(
                             modifier = Modifier.size(42.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             AsyncImage(
                                 model = ImageRequest.Builder(LocalContext.current)
-                                    .data(avatarUri?.let { Uri.parse(it) } ?: if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar)
+                                    .data(avatarUri?.let { Uri.parse(it) }
+                                        ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar)
                                     .crossfade(true)
                                     .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
                                     .build(),
@@ -180,6 +177,8 @@ fun UserProfileDialog(
                                 contentDescription = "next"
                             )
                         },
+                        roundedCorner = true,
+                        selected = true,
                         onClick = {
                             onUpdateName()
                         },
@@ -187,55 +186,11 @@ fun UserProfileDialog(
                             onUpdateAvatar()
                         }
                     )
-                    if(gDriveLogin) {
-                        Divider(
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
-                        )
-                    }
-                    if(gDriveLogin) {
-                        PreferencesCategory(text = "已连接服务")
-                    }
-                    if(gDriveLogin){
-                        NormalPreference(
-                            title = stringResource(id = R.string.cloud_service_gd),
-                            subtitle = "已使用 ${gDriveUsedSpacePercent.value}% 的存储空间（${FileUtil.getSizeString(gDriveUsedSpace)} / ${FileUtil.getSizeString(gDriveTotalSpace)}）",
-                            leadingIcon = {
-                                FaIcon(modifier = Modifier.padding(end = 4.dp),faIcon = FaIcons.GoogleDrive, tint = MaterialTheme.colorScheme.onSurface)
-                            },
-                            trailingIcon = {
-                                val progress by remember {
-                                    derivedStateOf {
-                                        if (gDriveTotalSpace == 0L) 0f else gDriveUsedSpace.toFloat()  / gDriveTotalSpace.toFloat()
-                                    }
-                                }
-                                val animatedProgress = remember {
-                                    Animatable(0f, Float.Companion.VectorConverter)
-                                }
-                                LaunchedEffect(progress, openDialog) {
-                                    animatedProgress.animateTo(
-                                        progress,
-                                        ProgressIndicatorDefaults.ProgressAnimationSpec
-                                    )
-                                }
-                                CircularProgressIndicator(
-                                    progress = animatedProgress.value,
-                                    modifier = Modifier.size(24.dp),
-                                    strokeWidth = 2.dp
-                                )
-                            }
-                        ) {
-
-                        }
-                    }
                     if (pluginList.isNotEmpty()) {
-                        Divider(
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
-                        )
-                        PreferencesCategory(text = stringResource(id = R.string.extension))
                         pluginList.forEach {
                             NormalPreference(
                                 title = it.name,
-                                subtitle = "版本 ${it.version}",
+                                subtitle = context.getString(R.string.extension_info, it.version, it.author),
                                 leadingIcon = {
                                     AsyncImage(
                                         model = it.icon,
@@ -284,7 +239,10 @@ fun UserProfileDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         TextButton(onClick = { showTermsDialog = true }) {
-                            Text(text = stringResource(id = R.string.terms), style = MaterialTheme.typography.labelMedium)
+                            Text(
+                                text = stringResource(id = R.string.terms),
+                                style = MaterialTheme.typography.labelMedium
+                            )
                         }
                         Text(
                             text = "•",
@@ -292,7 +250,10 @@ fun UserProfileDialog(
                             color = MaterialTheme.colorScheme.primary
                         )
                         TextButton(onClick = { showPrivacyDialog = true }) {
-                            Text(text = stringResource(id = R.string.privacy), style = MaterialTheme.typography.labelMedium)
+                            Text(
+                                text = stringResource(id = R.string.privacy),
+                                style = MaterialTheme.typography.labelMedium
+                            )
                         }
                     }
                 }

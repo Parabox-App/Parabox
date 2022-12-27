@@ -1855,7 +1855,7 @@ fun MessageBlock(
                         Spacer(modifier = Modifier.height(2.dp))
                     }
                 }
-//                Spacer(modifier = Modifier.width(64.dp))
+                Spacer(modifier = Modifier.width(64.dp))
             }
         }
     }
@@ -2207,6 +2207,7 @@ fun SingleMessage(
                             when (it.first.type) {
                                 Entity.TYPE_ADDRESS -> {
                                     AssistChip(
+                                        shape = CircleShape,
                                         onClick = {
                                             BrowserUtil.launchMap(context, it.second)
                                         },
@@ -2228,6 +2229,7 @@ fun SingleMessage(
                                 Entity.TYPE_DATE_TIME -> {
                                     val timestamp = it.first.asDateTimeEntity()!!.timestampMillis
                                     AssistChip(
+                                        shape = CircleShape,
                                         onClick = {
                                             if (fromBubble) {
                                                 (context as MainActivity).startActivity(
@@ -2278,6 +2280,7 @@ fun SingleMessage(
                                 }
                                 Entity.TYPE_EMAIL -> {
                                     AssistChip(
+                                        shape = CircleShape,
                                         onClick = {
                                             BrowserUtil.composeEmail(
                                                 context,
@@ -2299,6 +2302,7 @@ fun SingleMessage(
                                     val flightStr = it.first.asFlightNumberEntity()!!
                                         .let { "${it.airlineCode} ${it.flightNumber}" }
                                     AssistChip(
+                                        shape = CircleShape,
                                         onClick = { clipboardManager.setText(AnnotatedString(text = flightStr)) },
                                         label = {
                                             Text(text = flightStr, color = textColor)
@@ -2314,6 +2318,7 @@ fun SingleMessage(
                                 }
                                 Entity.TYPE_IBAN -> {
                                     AssistChip(
+                                        shape = CircleShape,
                                         onClick = { clipboardManager.setText(AnnotatedString(text = it.second)) },
                                         label = { Text(text = it.second, color = textColor) },
                                         leadingIcon = {
@@ -2327,6 +2332,7 @@ fun SingleMessage(
                                 }
                                 Entity.TYPE_ISBN -> {
                                     AssistChip(
+                                        shape = CircleShape,
                                         onClick = { clipboardManager.setText(AnnotatedString(text = it.second)) },
                                         label = { Text(text = it.second, color = textColor) },
                                         leadingIcon = {
@@ -2340,6 +2346,7 @@ fun SingleMessage(
                                 }
                                 Entity.TYPE_PAYMENT_CARD -> {
                                     AssistChip(
+                                        shape = CircleShape,
                                         onClick = { clipboardManager.setText(AnnotatedString(text = it.second)) },
                                         label = { Text(text = it.second, color = textColor) },
                                         leadingIcon = {
@@ -2353,6 +2360,7 @@ fun SingleMessage(
                                 }
                                 Entity.TYPE_PHONE -> {
                                     AssistChip(
+                                        shape = CircleShape,
                                         onClick = {
                                             if (fromBubble) {
                                                 (context as BubbleActivity).startActivity(
@@ -2382,6 +2390,7 @@ fun SingleMessage(
                                 }
                                 Entity.TYPE_URL -> {
                                     AssistChip(
+                                        shape = CircleShape,
                                         onClick = { BrowserUtil.launchURL(context, it.second) },
                                         label = {
                                             Text(
@@ -2602,9 +2611,6 @@ private fun MessageContent.toLayout(
 //                    }
 //                }
         is Image -> {
-//            var imageWidth by remember {
-//                mutableStateOf(80.dp)
-//            }
             val imageLoader = ImageLoader.Builder(context)
                 .components {
                     if (SDK_INT >= 28) {
@@ -2614,37 +2620,6 @@ private fun MessageContent.toLayout(
                     }
                 }
                 .build()
-//            LaunchedEffect(key1 = this@toLayout) {
-//                imageWidth = if (uriString != null) {
-//                    try {
-//                        val options = BitmapFactory.Options().apply {
-//                            inJustDecodeBounds = true
-//                        }
-//                        context.contentResolver.openInputStream(Uri.parse(uriString))
-//                            .use {
-//                                BitmapFactory.decodeStream(
-//                                    it,
-//                                    null,
-//                                    options
-//                                )
-//                            }
-//                        with(density) {
-//                            options.outWidth.toDp().coerceIn(80.dp, 320.dp)
-//                        }
-//                    } catch (e: FileNotFoundException) {
-//                        with(density) {
-//                            width
-//                                .toDp()
-//                                .coerceIn(80.dp, 320.dp)
-//                        }
-//                    }
-//                } else {
-//                    with(density) {
-//                        width.toDp()
-//                            .coerceIn(80.dp, 320.dp)
-//                    }
-//                }
-//            }
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(uriString?.also { Uri.parse(it) }
@@ -2656,11 +2631,7 @@ private fun MessageContent.toLayout(
                 contentDescription = "image",
                 contentScale = ContentScale.FillWidth,
                 modifier = Modifier
-//                    .width(imageWidth)
-//                    .defaultMinSize(minHeight = 80.dp)
-//                        .height(with(LocalDensity.current) {
-//                            min(height.toDp(), 600.dp)
-//                        })
+                    .widthIn(128.dp, 320.dp)
                     .padding(horizontal = 3.dp, vertical = 3.dp)
                     .clip(
                         RoundedCornerShape(
@@ -2764,7 +2735,7 @@ private fun MessageContent.toLayout(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.RecordVoiceOver,
+                            imageVector = Icons.Outlined.PlayCircleOutline,
                             contentDescription = "record",
                             tint = MaterialTheme.colorScheme.primary
                         )
@@ -2810,6 +2781,8 @@ private fun MessageContent.toLayout(
                 Column() {
                     Text(
                         text = name,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
                         style = MaterialTheme.typography.labelLarge,
                         color = primaryTextColor
                     )

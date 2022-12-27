@@ -220,9 +220,6 @@ fun FilePage(
         openDialog = mainSharedViewModel.showUserProfileDialogState.value,
         userName = mainSharedViewModel.userNameFlow.collectAsState(initial = DataStoreKeys.DEFAULT_USER_NAME).value,
         avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
-        gDriveLogin = mainSharedViewModel.googleLoginFlow.collectAsState(initial = false).value,
-        gDriveTotalSpace = mainSharedViewModel.googleTotalSpaceFlow.collectAsState(initial = 0L).value,
-        gDriveUsedSpace = mainSharedViewModel.googleUsedSpaceFlow.collectAsState(initial = 0L).value,
         pluginList = mainSharedViewModel.pluginListStateFlow.collectAsState().value,
         sizeClass = sizeClass,
         onUpdateName = {
