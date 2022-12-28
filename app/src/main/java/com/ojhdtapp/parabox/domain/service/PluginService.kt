@@ -89,6 +89,7 @@ class PluginService : LifecycleService() {
     }
 
     override fun onCreate() {
+        Log.d("parabox", "PluginService onCreate")
         super.onCreate()
         // Foreground Service
         try {
@@ -131,7 +132,7 @@ class PluginService : LifecycleService() {
     private fun bindPlugins() {
         appModelList.forEach { appModel ->
             val pluginConnObj = PluginConnObj(
-                ctx = this@PluginService,
+                ctx = this,
                 coroutineScope = lifecycleScope,
                 pkg = appModel.packageName,
                 cls = appModel.packageName + ".domain.service.ConnService",
@@ -171,6 +172,9 @@ class PluginService : LifecycleService() {
         pluginConnectionMap.forEach {
             it.value.disconnect()
         }
+        pluginConnectionMap.clear()
+        installedPluginList = emptyList<ApplicationInfo>()
+        appModelList = emptyList<AppModel>()
     }
 
     private fun updateInstalledPluginList(){

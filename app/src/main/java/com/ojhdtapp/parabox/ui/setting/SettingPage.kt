@@ -43,14 +43,7 @@ import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
-import com.ojhdtapp.parabox.ui.destinations.BackupPageDestination
-import com.ojhdtapp.parabox.ui.destinations.CloudPageDestination
-import com.ojhdtapp.parabox.ui.destinations.ExperimentalPageDestination
-import com.ojhdtapp.parabox.ui.destinations.ExtensionPageDestination
-import com.ojhdtapp.parabox.ui.destinations.FCMPageDestination
-import com.ojhdtapp.parabox.ui.destinations.InterfacePageDestination
-import com.ojhdtapp.parabox.ui.destinations.NotificationPageDestination
-import com.ojhdtapp.parabox.ui.destinations.SupportPageDestination
+import com.ojhdtapp.parabox.ui.destinations.*
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.NormalPreference
 import com.ojhdtapp.parabox.ui.util.PreferencesCategory
@@ -330,6 +323,31 @@ fun SettingPage(
                     item(key = "function") {
                         PreferencesCategory(text = stringResource(R.string.function))
                     }
+                    item(key = "mode") {
+                        NormalPreference(
+                            modifier = Modifier.padding(horizontal = if (sizeClass.widthSizeClass != WindowWidthSizeClass.Compact) 16.dp else 0.dp),
+                            leadingIcon =
+                            if (sizeClass.widthSizeClass != WindowWidthSizeClass.Medium) {
+                                {
+                                    Icon(
+                                        imageVector = Icons.Outlined.BusinessCenter,
+                                        contentDescription = "mode"
+                                    )
+                                }
+                            } else null,
+                            title = "工作模式",
+                            subtitle = "配置应用工作模式",
+                            selected = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact
+                                    && viewModel.selectedSetting.value == SettingPageState.MODE,
+                            roundedCorner = true,
+                        ) {
+                            if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
+                                mainNavController.navigate(ModePageDestination)
+                            } else {
+                                viewModel.setSelectedSetting(SettingPageState.MODE)
+                            }
+                        }
+                    }
                     item(key = "extension") {
                         NormalPreference(
                             modifier = Modifier.padding(horizontal = if (sizeClass.widthSizeClass != WindowWidthSizeClass.Compact) 16.dp else 0.dp),
@@ -605,6 +623,13 @@ fun SettingPage(
                             onEvent = onEvent
                         )
                         SettingPageState.SUPPORT -> SupportPage(
+                            navigator = navigator,
+                            mainNavController = mainNavController,
+                            mainSharedViewModel = mainSharedViewModel,
+                            sizeClass = sizeClass,
+                            onEvent = onEvent
+                        )
+                        SettingPageState.MODE -> ModePage(
                             navigator = navigator,
                             mainNavController = mainNavController,
                             mainSharedViewModel = mainSharedViewModel,

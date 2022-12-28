@@ -8,6 +8,7 @@ import android.os.*
 import android.util.Log
 import android.widget.Toast
 import com.ojhdtapp.parabox.domain.model.AppModel
+import com.ojhdtapp.parabox.domain.service.PluginService
 import com.ojhdtapp.parabox.domain.use_case.DeleteMessage
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
 import com.ojhdtapp.parabox.domain.use_case.UpdateMessage

@@ -37,10 +37,8 @@ import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.ExtensionPageDestination
 import com.ojhdtapp.parabox.ui.destinations.FCMPageDestination
-import com.ojhdtapp.parabox.ui.util.ActivityEvent
-import com.ojhdtapp.parabox.ui.util.NormalPreference
-import com.ojhdtapp.parabox.ui.util.PreferencesCategory
-import com.ojhdtapp.parabox.ui.util.SettingNavGraph
+import com.ojhdtapp.parabox.ui.destinations.ModePageDestination
+import com.ojhdtapp.parabox.ui.util.*
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -65,6 +63,7 @@ fun ExtensionPage(
     var expandedExtension by remember {
         mutableStateOf<String?>(null)
     }
+    val workingMode = viewModel.workingModeFlow.collectAsState(initial = WorkingMode.NORMAL.ordinal)
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -99,54 +98,52 @@ fun ExtensionPage(
     ) {
         // Plugin List State
         val pluginList by mainSharedViewModel.pluginListStateFlow.collectAsState()
-        val fcmRole =
-            viewModel.fcmRoleFlow.collectAsState(initial = FcmConstants.Role.SENDER.ordinal)
-        val fcmEnabled =
-            viewModel.enableFCMStateFlow.collectAsState()
         LazyColumn(
             contentPadding = it,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            item {
-                Column(modifier = Modifier.padding(24.dp, 16.dp)) {
-                    Icon(
-                        imageVector = Icons.Outlined.Info,
-                        contentDescription = "info",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = stringResource(R.string.extension_msg),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-            item() {
-                if (pluginList.isEmpty()) {
-                    if (fcmEnabled.value && fcmRole.value == FcmConstants.Role.RECEIVER.ordinal) {
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                modifier = Modifier.padding(vertical = 16.dp),
-                                text = stringResource(R.string.extension_banned_for_fcm),
-                                style = MaterialTheme.typography.labelLarge
-                            )
-                            FilledTonalButton(
-                                onClick = {
-                                    if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
-                                        mainNavController.navigate(FCMPageDestination)
-                                    } else {
-                                        viewModel.setSelectedSetting(SettingPageState.FCM)
-                                    }
-                                }) {
-                                Text(text = stringResource(R.string.redirect_to_setting))
-                            }
+            if (workingMode.value != WorkingMode.NORMAL.ordinal) {
+                item {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            modifier = Modifier.padding(vertical = 16.dp),
+                            text = stringResource(R.string.extension_banned),
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                        FilledTonalButton(
+                            onClick = {
+                                if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
+                                    mainNavController.navigate(ModePageDestination)
+                                } else {
+                                    viewModel.setSelectedSetting(SettingPageState.MODE)
+                                }
+                            }) {
+                            Text(text = stringResource(R.string.redirect_to_setting))
                         }
-                    } else {
+                    }
+                }
+            } else {
+                item {
+                    Column(modifier = Modifier.padding(24.dp, 16.dp)) {
+                        Icon(
+                            imageVector = Icons.Outlined.Info,
+                            contentDescription = "info",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = stringResource(R.string.extension_msg),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                item() {
+                    if (pluginList.isEmpty()) {
                         Column(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -170,41 +167,41 @@ fun ExtensionPage(
                         }
                     }
                 }
-            }
-            items(
-                items = pluginList,
-                key = { it.packageName }) {
-                ExtensionCard(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    appModel = it,
-                    expanded = expandedExtension == it.packageName,
-                    onClick = {
-                        if (expandedExtension == it.packageName) {
-                            expandedExtension = null
-                        } else {
-                            expandedExtension = it.packageName
-                        }
-                    },
-                    onLaunch = {
-                        it.launchIntent?.let {
-                            onEvent(ActivityEvent.LaunchIntent(it))
-                        }
-                    })
-            }
-            item {
-                if (pluginList.isNotEmpty()) {
-                    NormalPreference(
-                        title = stringResource(R.string.reset_extension_connection_title),
-                        subtitle = stringResource(R.string.reset_extension_connection_subtitle),
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Outlined.LinkOff,
-                                contentDescription = "reset link"
-                            )
+                items(
+                    items = pluginList,
+                    key = { it.packageName }) {
+                    ExtensionCard(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        appModel = it,
+                        expanded = expandedExtension == it.packageName,
+                        onClick = {
+                            if (expandedExtension == it.packageName) {
+                                expandedExtension = null
+                            } else {
+                                expandedExtension = it.packageName
+                            }
                         },
-                        enabled = true
-                    ) {
-                        onEvent(ActivityEvent.ResetExtension)
+                        onLaunch = {
+                            it.launchIntent?.let {
+                                onEvent(ActivityEvent.LaunchIntent(it))
+                            }
+                        })
+                }
+                item {
+                    if (pluginList.isNotEmpty()) {
+                        NormalPreference(
+                            title = stringResource(R.string.reset_extension_connection_title),
+                            subtitle = stringResource(R.string.reset_extension_connection_subtitle),
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.LinkOff,
+                                    contentDescription = "reset link"
+                                )
+                            },
+                            enabled = true
+                        ) {
+                            onEvent(ActivityEvent.ResetExtension)
+                        }
                     }
                 }
             }
@@ -225,7 +222,11 @@ fun ExtensionCard(
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(
+                3.dp
+            )
+        ),
         onClick = onClick
     ) {
         Column(

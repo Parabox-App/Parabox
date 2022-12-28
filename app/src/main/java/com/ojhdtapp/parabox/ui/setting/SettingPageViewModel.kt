@@ -25,6 +25,7 @@ import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.use_case.GetContacts
 import com.ojhdtapp.parabox.domain.use_case.UpdateContact
 import com.ojhdtapp.parabox.ui.theme.Theme
+import com.ojhdtapp.parabox.ui.util.WorkingMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -134,6 +135,27 @@ class SettingPageViewModel @Inject constructor(
                     preferences[DataStoreKeys.GOOGLE_USED_SPACE] = it.usedSpace
                     preferences[DataStoreKeys.GOOGLE_APP_USED_SPACE] = it.appUsedSpace
                 }
+            }
+        }
+    }
+
+    // Working Mode
+    val workingModeFlow: Flow<Int> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.SETTINGS_WORKING_MODE] ?: WorkingMode.NORMAL.ordinal
+        }
+
+    fun setWorkingMode(mode: WorkingMode) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.SETTINGS_WORKING_MODE] = mode.ordinal
             }
         }
     }

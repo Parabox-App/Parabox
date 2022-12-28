@@ -12,6 +12,7 @@ object DataStoreKeys{
     val USER_NAME = stringPreferencesKey("user_name")
     val USER_AVATAR = stringPreferencesKey("user_avatar")
 
+    val SETTINGS_WORKING_MODE = intPreferencesKey("settings_working_mode")
     val SETTINGS_DEFAULT_BACKUP_SERVICE = intPreferencesKey("settings_default_backup_service")
     val SETTINGS_AUTO_BACKUP = booleanPreferencesKey("settings_auto_backup")
     val SETTINGS_AUTO_BACKUP_FILE_MAX_SIZE = floatPreferencesKey("settings_auto_backup_file_max_size")

@@ -106,6 +106,7 @@ import com.ojhdtapp.parabox.ui.theme.AppTheme
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.FixedInsets
 import com.ojhdtapp.parabox.ui.util.LocalFixedInsets
+import com.ojhdtapp.parabox.ui.util.WorkingMode
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendMessageDto
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
@@ -612,12 +613,24 @@ class MainActivity : AppCompatActivity() {
             .restore()
     }
 
+    private fun startPluginConnection() {
+        startPluginConnectionService()
+    }
+
     private fun resetPluginConnection() {
         pluginService?.also {
             it.reset()
             Toast.makeText(this, getString(R.string.reset_extension_connection_success), Toast.LENGTH_SHORT).show()
         }
 
+    }
+
+    private fun stopPluginConnection(){
+        pluginService?.also {
+            unbindService(pluginServiceConnection)
+            stopService(Intent(this, PluginService::class.java))
+            mainSharedViewModel.setPluginListStateFlow(emptyList())
+        }
     }
 
     fun backupFileToCloudService() {
@@ -1072,7 +1085,7 @@ class MainActivity : AppCompatActivity() {
             is ActivityEvent.StartRecording -> {
                 if (player?.isPlaying == true) {
                     stopPlaying()
-                    Toast.makeText(this, "播放中的音频已中断", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(baseContext, getString(R.string.audio_interrupted), Toast.LENGTH_SHORT).show()
                 }
                 startRecording()
             }
@@ -1083,14 +1096,14 @@ class MainActivity : AppCompatActivity() {
 
             is ActivityEvent.StartAudioPlaying -> {
                 if (recorder != null) {
-                    Toast.makeText(this, "请先结束录音", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(baseContext, "请先结束录音", Toast.LENGTH_SHORT).show()
                 } else {
                     if (event.uri != null) {
                         startPlayingLocal(event.uri)
                     } else if (event.url != null) {
                         startPlayingInternet(event.url)
                     } else {
-                        Toast.makeText(this, "音频资源丢失", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(baseContext, "音频资源丢失", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -1170,8 +1183,16 @@ class MainActivity : AppCompatActivity() {
                 )
             }
 
+            is ActivityEvent.StartExtension -> {
+                startPluginConnection()
+            }
+
             is ActivityEvent.ResetExtension -> {
                 resetPluginConnection()
+            }
+
+            is ActivityEvent.StopExtension -> {
+                stopPluginConnection()
             }
 
             is ActivityEvent.SaveToCloud -> {
@@ -1462,15 +1483,31 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         inBackground = false
+        startPluginConnectionService()
+        super.onStart()
+    }
+
+    override fun onStop() {
+        inBackground = true
         lifecycleScope.launch(Dispatchers.Main) {
-            val enableFcm = dataStore.data.first()[DataStoreKeys.SETTINGS_ENABLE_FCM] ?: false
-            val fcmRole = dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_ROLE]
-                ?: FcmConstants.Role.SENDER.ordinal
-            if (!enableFcm || fcmRole == FcmConstants.Role.SENDER.ordinal) {
+            val workingMode = dataStore.data.first()[DataStoreKeys.SETTINGS_WORKING_MODE] ?: WorkingMode.NORMAL.ordinal
+            if (workingMode == WorkingMode.NORMAL.ordinal) {
+                unbindService(pluginServiceConnection)
+                pluginService = null
+            }
+        }
+        super.onStop()
+    }
+
+    private fun startPluginConnectionService() {
+        lifecycleScope.launch(Dispatchers.Main) {
+            val workingMode = dataStore.data.first()[DataStoreKeys.SETTINGS_WORKING_MODE] ?: WorkingMode.NORMAL.ordinal
+            if (workingMode == WorkingMode.NORMAL.ordinal) {
                 val pluginServiceBinderIntent = Intent(this@MainActivity, PluginService::class.java)
                 pluginServiceConnection = object : ServiceConnection {
                     override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
                         Log.d("parabox", "mainActivity - service connected")
+                        Toast.makeText(baseContext, getString(R.string.start_extension_connection_success), Toast.LENGTH_SHORT).show()
                         pluginService =
                             (p1 as PluginService.PluginServiceBinder).getService().also {
                                 mainSharedViewModel.setPluginListStateFlow(it.getAppModelList())
@@ -1484,6 +1521,7 @@ class MainActivity : AppCompatActivity() {
 
                     override fun onServiceDisconnected(p0: ComponentName?) {
                         Log.d("parabox", "mainActivity - service disconnected")
+                        Toast.makeText(baseContext, getString(R.string.stop_extension_connection_success), Toast.LENGTH_SHORT).show()
                         pluginService = null
                     }
 
@@ -1496,20 +1534,5 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-        super.onStart()
-    }
-
-    override fun onStop() {
-        inBackground = true
-        lifecycleScope.launch(Dispatchers.Main) {
-            val enableFcm = dataStore.data.first()[DataStoreKeys.SETTINGS_ENABLE_FCM] ?: false
-            val fcmRole = dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_ROLE]
-                ?: FcmConstants.Role.SENDER.ordinal
-            if (!enableFcm || fcmRole == FcmConstants.Role.SENDER.ordinal) {
-                unbindService(pluginServiceConnection)
-                pluginService = null
-            }
-        }
-        super.onStop()
     }
 }
