@@ -152,10 +152,10 @@ class SettingPageViewModel @Inject constructor(
             settings[DataStoreKeys.SETTINGS_WORKING_MODE] ?: WorkingMode.NORMAL.ordinal
         }
 
-    fun setWorkingMode(mode: WorkingMode) {
+    fun setWorkingMode(mode: Int) {
         viewModelScope.launch {
             context.dataStore.edit { preferences ->
-                preferences[DataStoreKeys.SETTINGS_WORKING_MODE] = mode.ordinal
+                preferences[DataStoreKeys.SETTINGS_WORKING_MODE] = mode
             }
         }
     }

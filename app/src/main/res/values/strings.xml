@@ -389,7 +389,7 @@
     <string name="extension_banned">扩展功能已被禁用，请正确选择工作模式。</string>
     <string name="audio_interrupted">播放中的音频已中断</string>
     <string name="stop_extension_connection_success">扩展连接服务已停止</string>
-    <string name="stop_extension_service">停止扩展连接服务</string>
-    <string name="start_extension_service">启动扩展连接服务</string>
+    <string name="stop_extension_service">即将停止扩展连接服务</string>
+    <string name="start_extension_service">即将启动扩展连接服务</string>
     <string name="start_extension_connection_success">扩展连接服务已启动</string>
 </resources>

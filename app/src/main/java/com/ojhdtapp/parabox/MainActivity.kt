@@ -201,19 +201,27 @@ class MainActivity : AppCompatActivity() {
 
     private fun downloadFile(file: File, cloudFirst: Boolean = false) {
         if (file.uri != null) {
-            try{
+            try {
                 val path = FileUtil.getAvailableFileName(baseContext, file.name)
                 FileUtil.saveFileToExternalStorage(baseContext, file.uri, path)
-                lifecycleScope.launch(Dispatchers.IO){
+                lifecycleScope.launch(Dispatchers.IO) {
                     updateFile.downloadInfo(path, null, file)
                     updateFile.downloadState(DownloadingState.Done, file)
                 }
-                Toast.makeText(baseContext, getString(R.string.download_file_success), Toast.LENGTH_SHORT).show()
-            } catch (e: Exception){
+                Toast.makeText(
+                    baseContext,
+                    getString(R.string.download_file_success),
+                    Toast.LENGTH_SHORT
+                ).show()
+            } catch (e: Exception) {
                 e.printStackTrace()
                 updateFile.downloadInfo(null, null, file)
                 updateFile.downloadState(DownloadingState.Failure, file)
-                Toast.makeText(baseContext, getString(R.string.download_file_failed), Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    baseContext,
+                    getString(R.string.download_file_failed),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         } else {
             lifecycleScope.launch(Dispatchers.IO) {
@@ -512,7 +520,11 @@ class MainActivity : AppCompatActivity() {
                 this@MainActivity.dataStore.edit { settings ->
                     settings[DataStoreKeys.USER_AVATAR] = it.toString()
                 }
-                Toast.makeText(this@MainActivity, getString(R.string.avatar_updated), Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this@MainActivity,
+                    getString(R.string.avatar_updated),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -539,7 +551,11 @@ class MainActivity : AppCompatActivity() {
                     } else {
                         delay(500)
                         mainSharedViewModel.setIsRefreshing(false)
-                        Toast.makeText(this@MainActivity, getString(R.string.extension_disconnected), Toast.LENGTH_SHORT)
+                        Toast.makeText(
+                            this@MainActivity,
+                            getString(R.string.extension_disconnected),
+                            Toast.LENGTH_SHORT
+                        )
                             .show()
                     }
                 }
@@ -548,7 +564,11 @@ class MainActivity : AppCompatActivity() {
                     // only check fcm connection... for lazy
                     fcmApiHelper.getVersion().also {
                         if (it?.isSuccessful != true) {
-                            Toast.makeText(this@MainActivity, getString(R.string.fcm_disconnected), Toast.LENGTH_SHORT)
+                            Toast.makeText(
+                                this@MainActivity,
+                                getString(R.string.fcm_disconnected),
+                                Toast.LENGTH_SHORT
+                            )
                                 .show()
                         }
                         mainSharedViewModel.setIsRefreshing(false)
@@ -566,7 +586,11 @@ class MainActivity : AppCompatActivity() {
             .apply {
                 onCompleteListener { success, message, exitCode ->
                     if (success) {
-                        Toast.makeText(baseContext, getString(R.string.backup_text), Toast.LENGTH_SHORT)
+                        Toast.makeText(
+                            baseContext,
+                            getString(R.string.backup_text),
+                            Toast.LENGTH_SHORT
+                        )
                             .show()
                         backupLocationSelector.launch(
                             "Backup_${
@@ -594,7 +618,11 @@ class MainActivity : AppCompatActivity() {
             .apply {
                 onCompleteListener { success, message, exitCode ->
                     if (success) {
-                        Toast.makeText(baseContext, getString(R.string.restore_success), Toast.LENGTH_SHORT)
+                        Toast.makeText(
+                            baseContext,
+                            getString(R.string.restore_success),
+                            Toast.LENGTH_SHORT
+                        )
                             .show()
                         file.delete()
                         lifecycleScope.launch {
@@ -620,17 +648,20 @@ class MainActivity : AppCompatActivity() {
     private fun resetPluginConnection() {
         pluginService?.also {
             it.reset()
-            Toast.makeText(this, getString(R.string.reset_extension_connection_success), Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                this,
+                getString(R.string.reset_extension_connection_success),
+                Toast.LENGTH_SHORT
+            ).show()
         }
 
     }
 
-    private fun stopPluginConnection(){
-        pluginService?.also {
-            unbindService(pluginServiceConnection)
-            stopService(Intent(this, PluginService::class.java))
-            mainSharedViewModel.setPluginListStateFlow(emptyList())
-        }
+    private fun stopPluginConnection() {
+        pluginService?.stop()
+        unbindService(pluginServiceConnection)
+        stopService(Intent(this, PluginService::class.java))
+        mainSharedViewModel.setPluginListStateFlow(emptyList())
     }
 
     fun backupFileToCloudService() {
@@ -1085,7 +1116,11 @@ class MainActivity : AppCompatActivity() {
             is ActivityEvent.StartRecording -> {
                 if (player?.isPlaying == true) {
                     stopPlaying()
-                    Toast.makeText(baseContext, getString(R.string.audio_interrupted), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        baseContext,
+                        getString(R.string.audio_interrupted),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
                 startRecording()
             }
@@ -1490,7 +1525,8 @@ class MainActivity : AppCompatActivity() {
     override fun onStop() {
         inBackground = true
         lifecycleScope.launch(Dispatchers.Main) {
-            val workingMode = dataStore.data.first()[DataStoreKeys.SETTINGS_WORKING_MODE] ?: WorkingMode.NORMAL.ordinal
+            val workingMode = dataStore.data.first()[DataStoreKeys.SETTINGS_WORKING_MODE]
+                ?: WorkingMode.NORMAL.ordinal
             if (workingMode == WorkingMode.NORMAL.ordinal) {
                 unbindService(pluginServiceConnection)
                 pluginService = null
@@ -1501,13 +1537,18 @@ class MainActivity : AppCompatActivity() {
 
     private fun startPluginConnectionService() {
         lifecycleScope.launch(Dispatchers.Main) {
-            val workingMode = dataStore.data.first()[DataStoreKeys.SETTINGS_WORKING_MODE] ?: WorkingMode.NORMAL.ordinal
+            val workingMode = dataStore.data.first()[DataStoreKeys.SETTINGS_WORKING_MODE]
+                ?: WorkingMode.NORMAL.ordinal
             if (workingMode == WorkingMode.NORMAL.ordinal) {
                 val pluginServiceBinderIntent = Intent(this@MainActivity, PluginService::class.java)
                 pluginServiceConnection = object : ServiceConnection {
                     override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
                         Log.d("parabox", "mainActivity - service connected")
-                        Toast.makeText(baseContext, getString(R.string.start_extension_connection_success), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            baseContext,
+                            getString(R.string.start_extension_connection_success),
+                            Toast.LENGTH_SHORT
+                        ).show()
                         pluginService =
                             (p1 as PluginService.PluginServiceBinder).getService().also {
                                 mainSharedViewModel.setPluginListStateFlow(it.getAppModelList())
@@ -1521,7 +1562,11 @@ class MainActivity : AppCompatActivity() {
 
                     override fun onServiceDisconnected(p0: ComponentName?) {
                         Log.d("parabox", "mainActivity - service disconnected")
-                        Toast.makeText(baseContext, getString(R.string.stop_extension_connection_success), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            baseContext,
+                            getString(R.string.stop_extension_connection_success),
+                            Toast.LENGTH_SHORT
+                        ).show()
                         pluginService = null
                     }
 

@@ -283,10 +283,13 @@ class PluginService : LifecycleService() {
 
     fun reset(){
         unbindPlugins()
-        pluginConnectionMap.clear()
         updateInstalledPluginList()
         updateAppModelList()
         bindPlugins()
+    }
+
+    fun stop() {
+        unbindPlugins()
     }
 }
 
