@@ -188,7 +188,6 @@ fun ExtensionPage(
                         })
                 }
                 item {
-                    if (pluginList.isNotEmpty()) {
                         NormalPreference(
                             title = stringResource(R.string.reset_extension_connection_title),
                             subtitle = stringResource(R.string.reset_extension_connection_subtitle),
@@ -202,7 +201,6 @@ fun ExtensionPage(
                         ) {
                             onEvent(ActivityEvent.ResetExtension)
                         }
-                    }
                 }
             }
         }

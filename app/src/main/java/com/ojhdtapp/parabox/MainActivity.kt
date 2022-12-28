@@ -658,8 +658,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun stopPluginConnection() {
-        pluginService?.stop()
-        unbindService(pluginServiceConnection)
+        pluginService?.also{
+            it.stop()
+            unbindService(pluginServiceConnection)
+        }
         stopService(Intent(this, PluginService::class.java))
         mainSharedViewModel.setPluginListStateFlow(emptyList())
     }
@@ -1536,10 +1538,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startPluginConnectionService() {
+        Log.d("parabox", "aaaaaaaaaaaaaaa")
         lifecycleScope.launch(Dispatchers.Main) {
             val workingMode = dataStore.data.first()[DataStoreKeys.SETTINGS_WORKING_MODE]
                 ?: WorkingMode.NORMAL.ordinal
             if (workingMode == WorkingMode.NORMAL.ordinal) {
+                Log.d("parabox", "sssssssssssss")
                 val pluginServiceBinderIntent = Intent(this@MainActivity, PluginService::class.java)
                 pluginServiceConnection = object : ServiceConnection {
                     override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {

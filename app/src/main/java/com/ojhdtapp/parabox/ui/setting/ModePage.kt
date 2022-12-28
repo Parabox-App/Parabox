@@ -40,6 +40,7 @@ import com.ojhdtapp.parabox.ui.util.*
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -105,53 +106,33 @@ fun ModePage(
                             selected = selectedWorkingMode == WorkingMode.NORMAL.ordinal,
                             onClick = {
                                 if (selectedWorkingMode != WorkingMode.NORMAL.ordinal) {
-                                    val tempSelection = selectedWorkingMode
-                                    snackBarHostState.currentSnackbarData?.dismiss()
+                                    viewModel.setWorkingMode(WorkingMode.NORMAL.ordinal)
                                     coroutineScope.launch {
+                                        delay(200)
+                                        onEvent(ActivityEvent.StartExtension)
+                                        snackBarHostState.currentSnackbarData?.dismiss()
                                         snackBarHostState.showSnackbar(
                                             message = context.getString(R.string.start_extension_connection_success),
-                                            actionLabel = context.getString(R.string.cancel),
                                             duration = SnackbarDuration.Short
                                         )
-                                            .also { result ->
-                                                when (result) {
-                                                    SnackbarResult.ActionPerformed -> {
-                                                        viewModel.setWorkingMode(tempSelection)
-                                                    }
-                                                    SnackbarResult.Dismissed -> {
-                                                        onEvent(ActivityEvent.StartExtension)
-                                                    }
-                                                    else -> {}
-                                                }
-                                            }
+
                                     }
-                                    viewModel.setWorkingMode(WorkingMode.NORMAL.ordinal)
                                 }
                             })
                     }
                 ) {
                     if (selectedWorkingMode != WorkingMode.NORMAL.ordinal) {
-                        val tempSelection = selectedWorkingMode
-                        snackBarHostState.currentSnackbarData?.dismiss()
+                        viewModel.setWorkingMode(WorkingMode.NORMAL.ordinal)
                         coroutineScope.launch {
+                            delay(200)
+                            onEvent(ActivityEvent.StartExtension)
+                            snackBarHostState.currentSnackbarData?.dismiss()
                             snackBarHostState.showSnackbar(
                                 message = context.getString(R.string.start_extension_connection_success),
-                                actionLabel = context.getString(R.string.cancel),
                                 duration = SnackbarDuration.Short
                             )
-                                .also { result ->
-                                    when (result) {
-                                        SnackbarResult.ActionPerformed -> {
-                                            viewModel.setWorkingMode(tempSelection)
-                                        }
-                                        SnackbarResult.Dismissed -> {
-                                            onEvent(ActivityEvent.StartExtension)
-                                        }
-                                        else -> {}
-                                    }
-                                }
+
                         }
-                        viewModel.setWorkingMode(WorkingMode.NORMAL.ordinal)
                     }
                 }
             }
@@ -168,21 +149,10 @@ fun ModePage(
                                     coroutineScope.launch {
                                         snackBarHostState.showSnackbar(
                                             message = context.getString(R.string.stop_extension_connection_success),
-                                            actionLabel = context.getString(R.string.cancel),
                                             duration = SnackbarDuration.Short
                                         )
-                                            .also { result ->
-                                                when (result) {
-                                                    SnackbarResult.ActionPerformed -> {
-                                                        viewModel.setWorkingMode(WorkingMode.NORMAL.ordinal)
-                                                    }
-                                                    SnackbarResult.Dismissed -> {
-                                                        onEvent(ActivityEvent.StopExtension)
-                                                    }
-                                                    else -> {}
-                                                }
-                                            }
                                     }
+                                    onEvent(ActivityEvent.StopExtension)
                                 }
                                 viewModel.setWorkingMode(WorkingMode.RECEIVER.ordinal)
                             })
@@ -193,22 +163,10 @@ fun ModePage(
                         coroutineScope.launch {
                             snackBarHostState.showSnackbar(
                                 message = context.getString(R.string.stop_extension_connection_success),
-                                actionLabel = context.getString(R.string.cancel),
                                 duration = SnackbarDuration.Short
                             )
-                                .also { result ->
-                                    Log.d("parabox", "snackbar: $result")
-                                    when (result) {
-                                        SnackbarResult.ActionPerformed -> {
-                                            viewModel.setWorkingMode(WorkingMode.NORMAL.ordinal)
-                                        }
-                                        SnackbarResult.Dismissed -> {
-                                            onEvent(ActivityEvent.StopExtension)
-                                        }
-                                        else -> {}
-                                    }
-                                }
                         }
+                        onEvent(ActivityEvent.StopExtension)
                     }
                     viewModel.setWorkingMode(WorkingMode.RECEIVER.ordinal)
                 }
@@ -226,21 +184,10 @@ fun ModePage(
                                     coroutineScope.launch {
                                         snackBarHostState.showSnackbar(
                                             message = context.getString(R.string.stop_extension_connection_success),
-                                            actionLabel = context.getString(R.string.cancel),
                                             duration = SnackbarDuration.Short
                                         )
-                                            .also { result ->
-                                                when (result) {
-                                                    SnackbarResult.ActionPerformed -> {
-                                                        viewModel.setWorkingMode(WorkingMode.NORMAL.ordinal)
-                                                    }
-                                                    SnackbarResult.Dismissed -> {
-                                                        onEvent(ActivityEvent.StopExtension)
-                                                    }
-                                                    else -> {}
-                                                }
-                                            }
                                     }
+                                    onEvent(ActivityEvent.StopExtension)
                                 }
                                 viewModel.setWorkingMode(WorkingMode.FCM.ordinal)
                             })
@@ -251,21 +198,10 @@ fun ModePage(
                         coroutineScope.launch {
                             snackBarHostState.showSnackbar(
                                 message = context.getString(R.string.stop_extension_connection_success),
-                                actionLabel = context.getString(R.string.cancel),
                                 duration = SnackbarDuration.Short
                             )
-                                .also { result ->
-                                    when (result) {
-                                        SnackbarResult.ActionPerformed -> {
-                                            viewModel.setWorkingMode(WorkingMode.NORMAL.ordinal)
-                                        }
-                                        SnackbarResult.Dismissed -> {
-                                            onEvent(ActivityEvent.StopExtension)
-                                        }
-                                        else -> {}
-                                    }
-                                }
                         }
+                        onEvent(ActivityEvent.StopExtension)
                     }
                     viewModel.setWorkingMode(WorkingMode.FCM.ordinal)
                 }
