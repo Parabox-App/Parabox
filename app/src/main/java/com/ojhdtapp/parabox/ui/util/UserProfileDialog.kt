@@ -227,10 +227,10 @@ fun UserProfileDialog(
                                 onClick = {}
                             )
                         }
+                        Divider(
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+                        )
                     }
-                    Divider(
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
-                    )
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()

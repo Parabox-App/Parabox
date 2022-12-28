@@ -1538,21 +1538,19 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startPluginConnectionService() {
-        Log.d("parabox", "aaaaaaaaaaaaaaa")
         lifecycleScope.launch(Dispatchers.Main) {
             val workingMode = dataStore.data.first()[DataStoreKeys.SETTINGS_WORKING_MODE]
                 ?: WorkingMode.NORMAL.ordinal
             if (workingMode == WorkingMode.NORMAL.ordinal) {
-                Log.d("parabox", "sssssssssssss")
                 val pluginServiceBinderIntent = Intent(this@MainActivity, PluginService::class.java)
                 pluginServiceConnection = object : ServiceConnection {
                     override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
                         Log.d("parabox", "mainActivity - service connected")
-                        Toast.makeText(
-                            baseContext,
-                            getString(R.string.start_extension_connection_success),
-                            Toast.LENGTH_SHORT
-                        ).show()
+//                        Toast.makeText(
+//                            baseContext,
+//                            getString(R.string.start_extension_connection_success),
+//                            Toast.LENGTH_SHORT
+//                        ).show()
                         pluginService =
                             (p1 as PluginService.PluginServiceBinder).getService().also {
                                 mainSharedViewModel.setPluginListStateFlow(it.getAppModelList())
@@ -1566,11 +1564,11 @@ class MainActivity : AppCompatActivity() {
 
                     override fun onServiceDisconnected(p0: ComponentName?) {
                         Log.d("parabox", "mainActivity - service disconnected")
-                        Toast.makeText(
-                            baseContext,
-                            getString(R.string.stop_extension_connection_success),
-                            Toast.LENGTH_SHORT
-                        ).show()
+//                        Toast.makeText(
+//                            baseContext,
+//                            getString(R.string.stop_extension_connection_success),
+//                            Toast.LENGTH_SHORT
+//                        ).show()
                         pluginService = null
                     }
 

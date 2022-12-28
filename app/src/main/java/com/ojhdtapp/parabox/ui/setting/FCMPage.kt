@@ -65,12 +65,8 @@ import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.CloudPageDestination
-import com.ojhdtapp.parabox.ui.util.ActivityEvent
-import com.ojhdtapp.parabox.ui.util.MainSwitch
-import com.ojhdtapp.parabox.ui.util.NormalPreference
-import com.ojhdtapp.parabox.ui.util.PreferencesCategory
-import com.ojhdtapp.parabox.ui.util.SimpleMenuPreference
-import com.ojhdtapp.parabox.ui.util.SwitchPreference
+import com.ojhdtapp.parabox.ui.destinations.ModePageDestination
+import com.ojhdtapp.parabox.ui.util.*
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -98,13 +94,14 @@ fun FCMPage(
         SnackbarHostState()
     }
 
+    val workingMode by viewModel.workingModeFlow.collectAsState(initial = WorkingMode.NORMAL.ordinal)
     val enabled = viewModel.enableFCMStateFlow.collectAsState(initial = false)
     val token = viewModel.fcmTokenFlow.collectAsState(initial = "")
     val state = viewModel.fcmStateFlow.collectAsState()
     val customUrlEnabled = viewModel.enableFcmCustomUrlFlow.collectAsState(initial = false)
     val fcmUrl = viewModel.fcmUrlFlow.collectAsState(initial = "")
     val useHttps = viewModel.fcmHttpsFlow.collectAsState(initial = false)
-    val role = viewModel.fcmRoleFlow.collectAsState(initial = FcmConstants.Role.SENDER.ordinal)
+//    val role = viewModel.fcmRoleFlow.collectAsState(initial = FcmConstants.Role.SENDER.ordinal)
     val targetTokens = viewModel.fcmTargetTokensFlow.collectAsState(initial = emptySet())
     val loopbackToken = viewModel.fcmLoopbackTokenFlow.collectAsState(initial = "")
 
@@ -118,11 +115,49 @@ fun FCMPage(
             }
         }
     }
-    val cloudStorage = viewModel.fcmCloudStorageFlow.collectAsState(initial = FcmConstants.CloudStorage.NONE.ordinal)
+    val cloudStorage =
+        viewModel.fcmCloudStorageFlow.collectAsState(initial = FcmConstants.CloudStorage.NONE.ordinal)
 
     LaunchedEffect(key1 = Unit) {
         if (enabled.value)
             viewModel.checkFcmState()
+    }
+
+    var showRoleDescription by remember {
+        mutableStateOf(false)
+    }
+
+    if (showRoleDescription) {
+        AlertDialog(
+            onDismissRequest = {
+                showRoleDescription = false
+            },
+            title = {
+                Text(text = "模式说明")
+            },
+            text = {
+                Text(text = "作为转发端工作时，该功能将从已安装扩展获取消息，转发至目标接收设备。\n作为接收端工作时，该功能将待发送消息回送至目标转发端，由其处理后发送。\n默认以转发模式工作。如需切换至接收模式，请前往工作模式设置更改。")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showRoleDescription = false
+                    if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
+                        mainNavController.navigate(ModePageDestination)
+                    } else {
+                        viewModel.setSelectedSetting(SettingPageState.MODE)
+                    }
+                }) {
+                    Text(text = stringResource(id = R.string.redirect_to_setting))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showRoleDescription = false
+                }) {
+                    Text(text = stringResource(id = R.string.confirm))
+                }
+            },
+        )
     }
 
     var showEditUrlDialog by remember {
@@ -384,10 +419,19 @@ fun FCMPage(
             }
             item {
                 NormalPreference(
+                    title = "运行模式",
+                    subtitle = if (workingMode == WorkingMode.NORMAL.ordinal)
+                        stringResource(id = R.string.fcm_role_sender) else
+                        stringResource(id = R.string.fcm_role_receiver),
+                ) {
+                    showRoleDescription = true
+                }
+            }
+            item {
+                NormalPreference(
                     modifier = Modifier.animateContentSize(),
                     title = stringResource(id = R.string.fcm_token),
                     subtitle = token.value.ifBlank { stringResource(R.string.fcm_token_unavailable) },
-                    enabled = enabled.value,
                 ) {
                     if (token.value.isNotBlank()) {
                         clipboardManager.setText(AnnotatedString(token.value))
@@ -401,11 +445,13 @@ fun FCMPage(
                 NormalPreference(
                     title = stringResource(R.string.fcm_server_status),
                     subtitle = when (state.value) {
-                        is FcmConstants.Status.Success -> stringResource(R.string.fcm_server_status_connected , (state.value as FcmConstants.Status.Success).version)
+                        is FcmConstants.Status.Success -> stringResource(
+                            R.string.fcm_server_status_connected,
+                            (state.value as FcmConstants.Status.Success).version
+                        )
                         is FcmConstants.Status.Loading -> stringResource(R.string.fcm_server_status_connecting)
                         is FcmConstants.Status.Failure -> stringResource(R.string.fcm_server_status_failed)
                     },
-                    enabled = enabled.value,
                 ) {
                     viewModel.checkFcmState()
                 }
@@ -414,17 +460,23 @@ fun FCMPage(
                 PreferencesCategory(text = stringResource(R.string.fcm_connection_settings))
             }
             item {
-                SwitchPreference(title = stringResource(R.string.fcm_custom_host), checked = customUrlEnabled.value, onCheckedChange = {
-                    viewModel.setEnableFcmCustomUrl(it)
-                },
-                    enabled = enabled.value)
+                SwitchPreference(
+                    title = stringResource(R.string.fcm_custom_host),
+                    checked = customUrlEnabled.value,
+                    onCheckedChange = {
+                        viewModel.setEnableFcmCustomUrl(it)
+                    },
+                )
             }
             item {
-                AnimatedVisibility(visible = customUrlEnabled.value, enter = expandVertically(), exit = shrinkVertically()) {
+                AnimatedVisibility(
+                    visible = customUrlEnabled.value,
+                    enter = expandVertically(),
+                    exit = shrinkVertically()
+                ) {
                     NormalPreference(
                         title = stringResource(R.string.fcm_server),
                         subtitle = fcmUrl.value.ifBlank { stringResource(R.string.not_set) },
-                        enabled = enabled.value,
                     ) {
                         showEditUrlDialog = true
                     }
@@ -435,7 +487,7 @@ fun FCMPage(
                     title = stringResource(R.string.fcm_enable_https),
                     checked = useHttps.value,
                     onCheckedChange = viewModel::setFCMHttps,
-                    enabled = false && enabled.value
+                    enabled = false
                 )
             }
             item {
@@ -456,52 +508,53 @@ fun FCMPage(
                     }
                 }
             }
+//            item {
+//                SimpleMenuPreference(
+//                    title = stringResource(R.string.fcm_role),
+//                    optionsMap = mapOf(
+//                        FcmConstants.Role.SENDER.ordinal to stringResource(R.string.fcm_role_sender),
+//                        FcmConstants.Role.RECEIVER.ordinal to stringResource(R.string.fcm_role_receiver)
+//                    ),
+//                    selectedKey = role.value,
+//                    onSelect = {
+//                        coroutineScope.launch {
+//                            snackbarHostState.showSnackbar(
+//                                message = context.getString(R.string.restart_app_to_active),
+//                                actionLabel = context.getString(R.string.restart_app_now),
+//                                withDismissAction = true
+//                            ).also {
+//                                if (it == SnackbarResult.ActionPerformed) {
+//                                    onEvent(ActivityEvent.RestartApp)
+//                                }
+//                            }
+//                        }
+//                        viewModel.setFCMRole(it)
+//                    },
+//                    enabled = enabled.value
+//                )
+//            }
             item {
-                SimpleMenuPreference(
-                    title = stringResource(R.string.fcm_role),
-                    optionsMap = mapOf(
-                        FcmConstants.Role.SENDER.ordinal to stringResource(R.string.fcm_role_sender),
-                        FcmConstants.Role.RECEIVER.ordinal to stringResource(R.string.fcm_role_receiver)
-                    ),
-                    selectedKey = role.value,
-                    onSelect = {
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar(
-                                message = context.getString(R.string.restart_app_to_active),
-                                actionLabel = context.getString(R.string.restart_app_now),
-                                withDismissAction = true
-                            ).also {
-                                if (it == SnackbarResult.ActionPerformed) {
-                                    onEvent(ActivityEvent.RestartApp)
-                                }
-                            }
-                        }
-                        viewModel.setFCMRole(it)
-                    },
-                    enabled = enabled.value
-                )
-            }
-            item {
-                Crossfade(targetState = role.value) {
+                Crossfade(targetState = workingMode) {
                     when (it) {
-                        FcmConstants.Role.SENDER.ordinal -> {
+                        WorkingMode.NORMAL.ordinal, WorkingMode.FCM.ordinal -> {
                             NormalPreference(
                                 title = stringResource(R.string.fcm_send_target_token),
                                 subtitle = when {
                                     targetTokens.value.isEmpty() -> stringResource(R.string.not_set)
-                                    else -> stringResource(R.string.fcm_send_target_token_set, targetTokens.value.size)
+                                    else -> stringResource(
+                                        R.string.fcm_send_target_token_set,
+                                        targetTokens.value.size
+                                    )
                                 },
-                                enabled = enabled.value,
                             ) {
                                 showEditTokensDialog = true
                             }
                         }
 
-                        FcmConstants.Role.RECEIVER.ordinal -> {
+                        WorkingMode.RECEIVER.ordinal -> {
                             NormalPreference(
                                 title = stringResource(id = R.string.fcm_callback_target_token),
                                 subtitle = loopbackToken.value.ifBlank { stringResource(R.string.not_set) },
-                                enabled = enabled.value,
                             ) {
                                 showEditLoopbackTokenDialog = true
                             }
@@ -514,22 +567,26 @@ fun FCMPage(
             }
             item {
                 Crossfade(targetState = selectableService.size <= 1) {
-                    if(it){
-                        NormalPreference(title = stringResource(R.string.object_storage), subtitle = stringResource(
-                                                    R.string.object_storage_none),enabled = enabled.value) {
+                    if (it) {
+                        NormalPreference(
+                            title = stringResource(R.string.object_storage),
+                            subtitle = stringResource(
+                                R.string.object_storage_none
+                            ),
+                        ) {
                             if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
                                 mainNavController.navigate(CloudPageDestination)
                             } else {
                                 viewModel.setSelectedSetting(SettingPageState.CLOUD)
                             }
                         }
-                    }else{
+                    } else {
                         SimpleMenuPreference(
                             title = stringResource(R.string.object_storage),
-                            enabled = enabled.value,
                             optionsMap = selectableService,
                             selectedKey = cloudStorage.value,
-                            onSelect = viewModel::setFCMCloudStorage)
+                            onSelect = viewModel::setFCMCloudStorage
+                        )
                     }
                 }
             }
@@ -537,21 +594,10 @@ fun FCMPage(
                 NormalPreference(
                     title = stringResource(R.string.fcm_limited_contact),
                     subtitle = stringResource(id = R.string.fcm_limited_contact_subtitle),
-                    enabled = enabled.value,
                 ) {
                     showContactDialog = true
                 }
             }
-//            item {
-//                PreferencesCategory(text = stringResource(R.string.fcm_server_settings))
-//            }
-//            item {
-//                NormalPreference(
-//                    title = "强制执行未完成的发送",
-//                    subtitle = stringResource(R.string.not_set),
-//                    enabled = enabled.value
-//                ) {}
-//            }
             item {
                 PreferencesCategory(text = stringResource(R.string.fcm_other_settings))
             }

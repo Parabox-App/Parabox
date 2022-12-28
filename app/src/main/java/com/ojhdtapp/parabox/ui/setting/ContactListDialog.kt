@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.setting
 
+import android.os.Build
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -80,9 +81,18 @@ fun ContactListDialog(
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 2.dp
             ) {
-                Column(modifier = Modifier.padding(24.dp).fillMaxWidth()) {
-                    Text(text = stringResource(R.string.contact_list), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 16.dp))
-                    LazyColumn(modifier = Modifier.heightIn(0.dp, 400.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(modifier = Modifier
+                    .padding(24.dp)
+                    .fillMaxWidth()) {
+                    Text(
+                        text = stringResource(R.string.contact_list),
+                        style = MaterialTheme.typography.headlineSmall,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                    LazyColumn(
+                        modifier = Modifier.heightIn(0.dp, 400.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         if (loading) {
                             item {
                                 Box(
@@ -95,8 +105,8 @@ fun ContactListDialog(
                                 }
                             }
                         } else {
-                            item{
-                                if(contactList.isEmpty()){
+                            item {
+                                if (contactList.isEmpty()) {
                                     Box(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -107,8 +117,12 @@ fun ContactListDialog(
                                     }
                                 }
                             }
-                            items(items = contactList, key = { it.contactId },) {
-                                MultiSelectItem(contact = it, onValueChange = onValueChange, contactCheck = contactCheck)
+                            items(items = contactList, key = { it.contactId }) {
+                                MultiSelectItem(
+                                    contact = it,
+                                    onValueChange = onValueChange,
+                                    contactCheck = contactCheck
+                                )
                             }
                         }
                     }
@@ -125,12 +139,17 @@ fun MultiSelectItem(
     contactCheck: (Contact) -> Boolean,
     onValueChange: (target: Contact, value: Boolean) -> Unit
 ) {
-    Row(modifier = modifier.fillMaxWidth().clickable {
-        onValueChange(contact, !contactCheck(contact))
-    }, verticalAlignment = Alignment.CenterVertically) {
+    Row(modifier = modifier
+        .fillMaxWidth()
+        .clickable {
+            onValueChange(contact, !contactCheck(contact))
+        }, verticalAlignment = Alignment.CenterVertically) {
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
-                .data(contact.profile.avatar)
+                .data(
+                    contact.profile.avatar ?: contact.profile.avatarUri
+                    ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar
+                )
                 .crossfade(true)
                 .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
                 .build(),
