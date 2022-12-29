@@ -540,11 +540,14 @@ class MainActivity : AppCompatActivity() {
     private fun refreshMessage() {
         mainSharedViewModel.setIsRefreshing(true)
         lifecycleScope.launch {
-            val fcmRole = dataStore.data.map { preferences ->
-                preferences[DataStoreKeys.SETTINGS_FCM_ROLE] ?: FcmConstants.Role.SENDER.ordinal
+            val workingMode = dataStore.data.map { preferences ->
+                preferences[DataStoreKeys.SETTINGS_WORKING_MODE] ?: WorkingMode.NORMAL.ordinal
             }.first()
-            when (fcmRole) {
-                FcmConstants.Role.SENDER.ordinal -> {
+//            val fcmRole = dataStore.data.map { preferences ->
+//                preferences[DataStoreKeys.SETTINGS_FCM_ROLE] ?: FcmConstants.Role.SENDER.ordinal
+//            }.first()
+            when (workingMode) {
+                WorkingMode.NORMAL.ordinal -> {
                     if (pluginService?.refreshMessage() == true) {
                         delay(500)
                         mainSharedViewModel.setIsRefreshing(false)
@@ -560,7 +563,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
-                FcmConstants.Role.RECEIVER.ordinal -> {
+                WorkingMode.RECEIVER.ordinal -> {
                     // only check fcm connection... for lazy
                     fcmApiHelper.getVersion().also {
                         if (it?.isSuccessful != true) {
@@ -573,6 +576,10 @@ class MainActivity : AppCompatActivity() {
                         }
                         mainSharedViewModel.setIsRefreshing(false)
                     }
+                }
+
+                WorkingMode.FCM.ordinal -> {
+                    // check google server connection
                 }
             }
         }
@@ -1071,36 +1078,45 @@ class MainActivity : AppCompatActivity() {
                             pluginConnection = event.pluginConnection,
                             messageId = it
                         )
+                        val workingMode = dataStore.data.first()[DataStoreKeys.SETTINGS_WORKING_MODE] ?: WorkingMode.NORMAL.ordinal
                         val enableFcm =
                             dataStore.data.first()[DataStoreKeys.SETTINGS_ENABLE_FCM] ?: false
-                        val fcmRole = dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_ROLE]
-                            ?: FcmConstants.Role.SENDER.ordinal
-                        if (!enableFcm || fcmRole == FcmConstants.Role.SENDER.ordinal) {
-                            pluginService?.sendMessage(dto)
-                        } else {
-                            val fcmCloudStorage =
-                                dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_CLOUD_STORAGE]
-                                    ?: FcmConstants.CloudStorage.NONE.ordinal
-                            val dtoWithoutUri = when {
-                                fcmCloudStorage == FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal -> {
-                                    dto.copy(
-                                        contents = dto.contents.saveLocalResourcesToCloud(
-                                            baseContext
-                                        )
-                                    )
-                                }
-
-                                else -> dto
+//                        val fcmRole = dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_ROLE]
+//                            ?: FcmConstants.Role.SENDER.ordinal
+                        when(workingMode){
+                            WorkingMode.NORMAL.ordinal -> {
+                                pluginService?.sendMessage(dto)
                             }
-                            if (fcmApiHelper.pushSendDto(
-                                    dtoWithoutUri
-                                )?.isSuccessful == true
-                            ) {
-                                updateMessage.verifiedState(it, true)
-                                Log.d("parabox", "FCM push success")
-                            } else {
-                                updateMessage.verifiedState(it, false)
-                                Log.d("parabox", "FCM push failed")
+                            WorkingMode.RECEIVER.ordinal -> {
+                                if(enableFcm){
+                                    val fcmCloudStorage =
+                                        dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_CLOUD_STORAGE]
+                                            ?: FcmConstants.CloudStorage.NONE.ordinal
+                                    val dtoWithoutUri = when {
+                                        fcmCloudStorage == FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal -> {
+                                            dto.copy(
+                                                contents = dto.contents.saveLocalResourcesToCloud(
+                                                    baseContext
+                                                )
+                                            )
+                                        }
+
+                                        else -> dto
+                                    }
+                                    if (fcmApiHelper.pushSendDto(
+                                            dtoWithoutUri
+                                        )?.isSuccessful == true
+                                    ) {
+                                        updateMessage.verifiedState(it, true)
+                                    } else {
+                                        updateMessage.verifiedState(it, false)
+                                    }
+                                } else {
+                                    // do nothing
+                                }
+                            }
+                            WorkingMode.FCM.ordinal -> {
+                                // to Google server
                             }
                         }
                     }

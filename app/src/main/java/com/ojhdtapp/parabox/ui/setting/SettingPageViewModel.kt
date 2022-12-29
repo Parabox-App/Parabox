@@ -362,25 +362,25 @@ class SettingPageViewModel @Inject constructor(
         }
     }
 
-    val fcmRoleFlow = context.dataStore.data
-        .catch { exception ->
-            if (exception is IOException) {
-                emit(emptyPreferences())
-            } else {
-                throw exception
-            }
-        }
-        .map { settings ->
-            settings[DataStoreKeys.SETTINGS_FCM_ROLE] ?: FcmConstants.Role.SENDER.ordinal
-        }
-
-    fun setFCMRole(value: Int) {
-        viewModelScope.launch {
-            context.dataStore.edit { preferences ->
-                preferences[DataStoreKeys.SETTINGS_FCM_ROLE] = value
-            }
-        }
-    }
+//    val fcmRoleFlow = context.dataStore.data
+//        .catch { exception ->
+//            if (exception is IOException) {
+//                emit(emptyPreferences())
+//            } else {
+//                throw exception
+//            }
+//        }
+//        .map { settings ->
+//            settings[DataStoreKeys.SETTINGS_FCM_ROLE] ?: FcmConstants.Role.SENDER.ordinal
+//        }
+//
+//    fun setFCMRole(value: Int) {
+//        viewModelScope.launch {
+//            context.dataStore.edit { preferences ->
+//                preferences[DataStoreKeys.SETTINGS_FCM_ROLE] = value
+//            }
+//        }
+//    }
 
     val fcmTargetTokensFlow = context.dataStore.data
         .catch { exception ->
