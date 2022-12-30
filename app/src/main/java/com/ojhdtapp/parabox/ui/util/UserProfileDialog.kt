@@ -33,6 +33,7 @@ import coil.request.ImageRequest
 import com.guru.fontawesomecomposelib.FaIcon
 import com.guru.fontawesomecomposelib.FaIcons
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.core.util.AvatarUtil
 import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.ui.setting.AgreementDialog
@@ -143,8 +144,15 @@ fun UserProfileDialog(
                         ) {
                             AsyncImage(
                                 model = ImageRequest.Builder(LocalContext.current)
-                                    .data(avatarUri?.let { Uri.parse(it) }
-                                        ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar)
+                                    .data(
+                                        AvatarUtil.getAvatar(
+                                            uri = avatarUri?.let { Uri.parse(it) },
+                                            url = null,
+                                            name = null,
+                                            backgroundColor = MaterialTheme.colorScheme.primary,
+                                            textColor = MaterialTheme.colorScheme.onPrimary,
+                                        )
+                                    )
                                     .crossfade(true)
                                     .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
                                     .build(),

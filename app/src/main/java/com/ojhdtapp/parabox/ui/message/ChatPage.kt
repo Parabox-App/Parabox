@@ -1813,6 +1813,7 @@ fun MessageBlock(
                     shouldDisplay = isFirst,
                     avatar = null,
                     avatarUri = avatarUri,
+                    name = userName,
                     onClick = {},
                     onLongClick = onAvatarLongClick,
                 )
@@ -1823,6 +1824,7 @@ fun MessageBlock(
                     shouldDisplay = isFirst,
                     avatar = message.profile.avatar,
                     avatarUri = message.profile.avatarUri,
+                    name = message.profile.name,
                     onClick = {},
                     onLongClick = onAvatarLongClick,
                 )
@@ -1868,6 +1870,7 @@ fun MessageAvatar(
     shouldDisplay: Boolean,
     avatar: String?,
     avatarUri: String?,
+    name: String?,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
 ) =
@@ -1875,8 +1878,15 @@ fun MessageAvatar(
         if (shouldDisplay) {
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data(avatarUri?.let { Uri.parse(it) } ?: avatar
-                    ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar)
+                    .data(
+                        AvatarUtil.getAvatar(
+                            uri = avatarUri?.let { Uri.parse(it) },
+                            url = avatar,
+                            name = name,
+                            backgroundColor = MaterialTheme.colorScheme.primary,
+                            textColor = MaterialTheme.colorScheme.onPrimary,
+                        )
+                    )
                     .crossfade(true)
                     .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
                     .build(),

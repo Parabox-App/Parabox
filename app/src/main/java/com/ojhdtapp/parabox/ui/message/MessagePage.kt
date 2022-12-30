@@ -63,10 +63,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.ojhdtapp.parabox.R
-import com.ojhdtapp.parabox.core.util.DataStoreKeys
-import com.ojhdtapp.parabox.core.util.dataStore
-import com.ojhdtapp.parabox.core.util.launchSetting
-import com.ojhdtapp.parabox.core.util.toTimeUntilNow
+import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.ChatPageDestination
@@ -846,7 +843,15 @@ fun ContactItem(
                         } else if (contact?.profile?.avatar != null || contact?.profile?.avatarUri != null) {
                             AsyncImage(
                                 model = ImageRequest.Builder(LocalContext.current)
-                                    .data(contact.profile.avatarUri ?: contact.profile.avatar ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar)
+                                    .data(
+                                        AvatarUtil.getAvatar(
+                                            uri = contact.profile.avatarUri?.let { Uri.parse(it) },
+                                            url = contact.profile.avatar,
+                                            name = contact.profile.name,
+                                            backgroundColor = MaterialTheme.colorScheme.primary,
+                                            textColor = MaterialTheme.colorScheme.onPrimary,
+                                        )
+                                    )
                                     .crossfade(true)
                                     .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
                                     .build(),

@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.message
 
+import android.net.Uri
 import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
@@ -51,6 +52,7 @@ import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.core.util.AvatarUtil
 import com.ojhdtapp.parabox.core.util.splitKeeping
 import com.ojhdtapp.parabox.domain.model.message_content.getContentString
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
@@ -146,8 +148,13 @@ fun RowScope.SearchArea(
                                     AsyncImage(
                                         model = ImageRequest.Builder(LocalContext.current)
                                             .data(
-                                                it.profile.avatarUri ?: it.profile.avatar
-                                                ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar
+                                                AvatarUtil.getAvatar(
+                                                    uri = it.profile.avatarUri?.let{ Uri.parse(it)},
+                                                    url = it.profile.avatar,
+                                                    name = it.profile.name,
+                                                    backgroundColor = MaterialTheme.colorScheme.primary,
+                                                    textColor = MaterialTheme.colorScheme.onPrimary,
+                                                )
                                             )
                                             .crossfade(true)
                                             .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
@@ -199,8 +206,13 @@ fun RowScope.SearchArea(
                             AsyncImage(
                                 model = ImageRequest.Builder(LocalContext.current)
                                     .data(
-                                        it.profile.avatarUri ?: it.profile.avatar
-                                        ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar
+                                        AvatarUtil.getAvatar(
+                                            uri = it.profile.avatarUri?.let{ Uri.parse(it)},
+                                            url = it.profile.avatar,
+                                            name = it.profile.name,
+                                            backgroundColor = MaterialTheme.colorScheme.primary,
+                                            textColor = MaterialTheme.colorScheme.onPrimary,
+                                        )
                                     )
                                     .crossfade(true)
                                     .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
@@ -282,8 +294,13 @@ fun RowScope.SearchArea(
                                 AsyncImage(
                                     model = ImageRequest.Builder(LocalContext.current)
                                         .data(
-                                            cm.contact.profile.avatarUri ?: cm.contact.profile.avatar
-                                                ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar
+                                            AvatarUtil.getAvatar(
+                                                uri = cm.contact.profile.avatarUri?.let{ Uri.parse(it)},
+                                                url = cm.contact.profile.avatar,
+                                                name = cm.contact.profile.name,
+                                                backgroundColor = MaterialTheme.colorScheme.primary,
+                                                textColor = MaterialTheme.colorScheme.onPrimary,
+                                            )
                                         )
                                         .crossfade(true)
                                         .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
@@ -336,8 +353,13 @@ fun RowScope.SearchArea(
                                             AsyncImage(
                                                 model = ImageRequest.Builder(LocalContext.current)
                                                     .data(
-                                                        it.profile.avatarUri ?: it.profile.avatar
-                                                        ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar
+                                                        AvatarUtil.getAvatar(
+                                                            uri = it.profile.avatarUri?.let{ Uri.parse(it)},
+                                                            url = it.profile.avatar,
+                                                            name = it.profile.name,
+                                                            backgroundColor = MaterialTheme.colorScheme.primary,
+                                                            textColor = MaterialTheme.colorScheme.onPrimary,
+                                                        )
                                                     )
                                                     .crossfade(true)
                                                     .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
@@ -416,8 +438,13 @@ fun RowScope.SearchArea(
                             AsyncImage(
                                 model = ImageRequest.Builder(LocalContext.current)
                                     .data(
-                                        it.profile.avatarUri ?: it.profile.avatar
-                                        ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar
+                                        AvatarUtil.getAvatar(
+                                            uri = it.profile.avatarUri?.let{ Uri.parse(it)},
+                                            url = it.profile.avatar,
+                                            name = it.profile.name,
+                                            backgroundColor = MaterialTheme.colorScheme.primary,
+                                            textColor = MaterialTheme.colorScheme.onPrimary,
+                                        )
                                     )
                                     .crossfade(true)
                                     .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments

@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.setting
 
+import android.net.Uri
 import android.os.Build
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
@@ -42,6 +43,7 @@ import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.core.util.AvatarUtil
 import com.ojhdtapp.parabox.domain.model.Contact
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -147,8 +149,13 @@ fun MultiSelectItem(
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
                 .data(
-                    contact.profile.avatar ?: contact.profile.avatarUri
-                    ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar
+                    AvatarUtil.getAvatar(
+                        uri = contact.profile.avatarUri?.let{ Uri.parse(it)},
+                        url = contact.profile.avatar,
+                        name = contact.profile.name,
+                        backgroundColor = MaterialTheme.colorScheme.primary,
+                        textColor = MaterialTheme.colorScheme.onPrimary,
+                    )
                 )
                 .crossfade(true)
                 .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
