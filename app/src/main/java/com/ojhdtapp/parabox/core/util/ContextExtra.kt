@@ -5,6 +5,14 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import android.util.Log
+import android.util.TypedValue
+import androidx.annotation.AttrRes
+import androidx.annotation.ColorInt
+import androidx.core.content.ContextCompat
+import com.google.android.material.color.DynamicColors
+import com.google.android.material.color.MaterialColors
+import com.ojhdtapp.parabox.R
 
 
 fun Context.launchPlayStore(pkg: String) {
@@ -31,10 +39,18 @@ fun Context.launchNotificationSetting() {
     startActivity(intent)
 }
 
-fun Context.launchSetting(){
+fun Context.launchSetting() {
     val intent = Intent().apply {
         action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
         data = Uri.fromParts("package", packageName, null)
     }
     startActivity(intent)
+}
+
+fun Context.getThemeColor(attrRes: Int): Int {
+    val dynamicColorContext = DynamicColors.wrapContextIfAvailable(this, com.google.android.material.R.style.ThemeOverlay_Material3_DynamicColors_DayNight)
+    val typedValue = dynamicColorContext.obtainStyledAttributes(intArrayOf(attrRes))
+    val color = typedValue.getColor(0, 0)
+    typedValue.recycle()
+    return color
 }

@@ -31,6 +31,7 @@ import coil.request.ImageRequest
 import coil.request.SuccessResult
 import com.ojhdtapp.parabox.MainActivity
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.core.util.AvatarUtil.getCircledBitmap
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Message
@@ -47,7 +48,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.io.IOException
-import java.util.Date
+import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 
 
@@ -152,11 +153,13 @@ class NotificationUtil(
                     )
                 )
             } ?: Icon.createWithAdaptiveBitmap(
-                    AvatarUtil.createNamedAvatarBm(
-                        backgroundColor = R.color.willow_light_primary,
-                        textColor = R.color.willow_light_onPrimary,
-                        name = it.profile.name
-                    )
+                AvatarUtil.createNamedAvatarBm(
+                    width = 224,
+                    height = 224,
+                    backgroundColor = context.getThemeColor(com.google.android.material.R.attr.colorPrimary),
+                    textColor = context.getThemeColor(com.google.android.material.R.attr.colorOnPrimary),
+                    name = it.profile.name.substring(0, 1).uppercase(Locale.getDefault())
+                )
             )
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 ShortcutInfo.Builder(context, it.contactId.toString())
@@ -275,9 +278,12 @@ class NotificationUtil(
                     }
                 } ?: Icon.createWithAdaptiveBitmap(
                     AvatarUtil.createNamedAvatarBm(
-                        backgroundColor = R.color.willow_light_primary,
-                        textColor = R.color.willow_light_onPrimary,
-                        name = userNameFlow.firstOrNull()
+                        width = 224,
+                        height = 224,
+                        backgroundColor = context.getThemeColor(com.google.android.material.R.attr.colorPrimary),
+                        textColor = context.getThemeColor(com.google.android.material.R.attr.colorOnPrimary),
+                        name = userNameFlow.firstOrNull()?.substring(0, 1)
+                            ?.uppercase(Locale.getDefault())
                     )
                 )
                 val user =
@@ -302,9 +308,11 @@ class NotificationUtil(
                         } else null
                     } ?: Icon.createWithAdaptiveBitmap(
                         AvatarUtil.createNamedAvatarBm(
-                            backgroundColor = R.color.willow_light_primary,
-                            textColor = R.color.willow_light_onPrimary,
-                            name = profile.name
+                            width = 224,
+                            height = 224,
+                            backgroundColor = context.getThemeColor(com.google.android.material.R.attr.colorPrimary),
+                            textColor = context.getThemeColor(com.google.android.material.R.attr.colorOnPrimary),
+                            name = profile.name.substring(0, 1).uppercase(Locale.getDefault())
                         )
                     )
                 }
