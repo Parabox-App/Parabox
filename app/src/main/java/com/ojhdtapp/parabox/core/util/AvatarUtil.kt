@@ -24,7 +24,7 @@ object AvatarUtil {
         return uri ?: url ?: createNamedAvatarBm(
             backgroundColor = backgroundColor.toArgb(),
             textColor = textColor.toArgb(),
-            name = name?.substring(0, 1)?.uppercase(Locale.getDefault())
+            name = name?.ifBlank { null }?.substring(0, 1)?.uppercase(Locale.getDefault())
         ).getCircledBitmap()
     }
 

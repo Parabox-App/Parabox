@@ -31,6 +31,9 @@ import java.text.DecimalFormat
 import java.util.*
 
 object FileUtil {
+    fun String.toSafeFilename(): String{
+        return this.replace("[\\\\/:*?\"<>|]".toRegex(), "_")
+    }
 
     fun getFilenameFromUri(context: Context, uri: Uri): String? {
         try {

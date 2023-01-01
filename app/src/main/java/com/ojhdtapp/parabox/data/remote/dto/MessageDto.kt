@@ -4,6 +4,7 @@ import android.content.Context
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import com.ojhdtapp.parabox.core.util.FileUtil
+import com.ojhdtapp.parabox.core.util.FileUtil.toSafeFilename
 import com.ojhdtapp.parabox.core.util.toDateAndTimeString
 import com.ojhdtapp.parabox.data.local.entity.ContactEntity
 import com.ojhdtapp.parabox.data.local.entity.MessageEntity
@@ -112,7 +113,7 @@ fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.Profile.toProfile(context: Con
         FileUtil.getUriByCopyingFileToPath(
             context,
             context.getExternalFilesDir("avatar")!!,
-            "Avatar_${this.name.replace("\\s+", "_")}.png",
+            "Avatar_${this.name.toSafeFilename()}.png",
             it
         )?.toString()
     }, this.id)
@@ -135,13 +136,13 @@ fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
             url,
             width,
             height,
-            fileName?.replace("/", "") ?: uri?.let { FileUtil.getFilenameFromUri(context, it) }
+            fileName?.toSafeFilename() ?: uri?.let { FileUtil.getFilenameFromUri(context, it) }
             ?: "Image_${System.currentTimeMillis().toDateAndTimeString()}.png",
             uri?.let {
                 FileUtil.getUriByCopyingFileToPath(
                     context,
                     context.getExternalFilesDir("chat")!!,
-                    fileName?.replace("/", "") ?: FileUtil.getFilenameFromUri(context, it)
+                    fileName?.toSafeFilename() ?: FileUtil.getFilenameFromUri(context, it)
                     ?: "Image_${System.currentTimeMillis().toDateAndTimeString()}.png",
                     it
                 )?.toString()
@@ -168,7 +169,7 @@ fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
             Audio(
                 url,
                 length,
-                fileName?.replace("/", "") ?: "Audio_${
+                fileName?.toSafeFilename() ?: "Audio_${
                     System.currentTimeMillis().toDateAndTimeString()
                 }.mp3",
                 fileSize,
@@ -176,7 +177,7 @@ fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
                     FileUtil.getUriByCopyingFileToPath(
                         context,
                         context.getExternalFilesDir("chat")!!,
-                        fileName?.replace("/", "") ?: "Audio_${
+                        fileName?.toSafeFilename() ?: "Audio_${
                             System.currentTimeMillis().toDateAndTimeString()
                         }.mp3",
                         it
@@ -206,7 +207,7 @@ fun com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
                 FileUtil.getUriByCopyingFileToPath(
                     context,
                     context.getExternalFilesDir("file")!!,
-                    name.replace("/", ""),
+                    name.toSafeFilename(),
                     it
                 )?.toString()
             }

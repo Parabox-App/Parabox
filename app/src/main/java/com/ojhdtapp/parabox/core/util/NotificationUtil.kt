@@ -158,7 +158,7 @@ class NotificationUtil(
                     height = 224,
                     backgroundColor = context.getThemeColor(com.google.android.material.R.attr.colorPrimary),
                     textColor = context.getThemeColor(com.google.android.material.R.attr.colorOnPrimary),
-                    name = it.profile.name.substring(0, 1).uppercase(Locale.getDefault())
+                    name = it.profile.name.ifBlank { null }?.substring(0, 1)?.uppercase(Locale.getDefault())
                 )
             )
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -282,7 +282,7 @@ class NotificationUtil(
                         height = 224,
                         backgroundColor = context.getThemeColor(com.google.android.material.R.attr.colorPrimary),
                         textColor = context.getThemeColor(com.google.android.material.R.attr.colorOnPrimary),
-                        name = userNameFlow.firstOrNull()?.substring(0, 1)
+                        name = userNameFlow.firstOrNull()?.ifBlank { null }?.substring(0, 1)
                             ?.uppercase(Locale.getDefault())
                     )
                 )
@@ -312,7 +312,7 @@ class NotificationUtil(
                             height = 224,
                             backgroundColor = context.getThemeColor(com.google.android.material.R.attr.colorPrimary),
                             textColor = context.getThemeColor(com.google.android.material.R.attr.colorOnPrimary),
-                            name = profile.name.substring(0, 1).uppercase(Locale.getDefault())
+                            name = profile.name.ifBlank { null }?.substring(0, 1)?.uppercase(Locale.getDefault())
                         )
                     )
                 }

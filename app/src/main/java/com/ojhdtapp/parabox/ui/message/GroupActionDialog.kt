@@ -62,6 +62,7 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.FileUtil
+import com.ojhdtapp.parabox.core.util.FileUtil.toSafeFilename
 import com.ojhdtapp.parabox.core.util.FormUtil
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.service.PluginService
@@ -181,7 +182,7 @@ fun GroupActionDialog(
                                                 FileUtil.getUriByCopyingFileToPath(
                                                     context,
                                                     context.getExternalFilesDir("chat")!!,
-                                                    "Avatar_${name.replace("\\s+", "_")}.png",
+                                                    "Avatar_${name.toSafeFilename()}.png",
                                                     it1
                                                 )?.toString()
                                             },

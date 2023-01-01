@@ -41,7 +41,9 @@ import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.core.util.AvatarUtil
 import com.ojhdtapp.parabox.core.util.FileUtil
+import com.ojhdtapp.parabox.core.util.FileUtil.toSafeFilename
 import com.ojhdtapp.parabox.core.util.FormUtil
 import com.ojhdtapp.parabox.core.util.toDescriptiveTime
 import com.ojhdtapp.parabox.domain.model.Contact
@@ -192,7 +194,15 @@ fun EditActionDialog(
 
                                     AsyncImage(
                                         model = ImageRequest.Builder(LocalContext.current)
-                                            .data(selectedLocalAvatar ?: contact?.profile?.avatarUri ?: contact?.profile?.avatar ?: if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar)
+                                            .data(
+                                                AvatarUtil.getAvatar(
+                                                    uri = selectedLocalAvatar ?:contact?.profile?.avatarUri?.let { Uri.parse(it) },
+                                                    url = contact?.profile?.avatar,
+                                                    name = contact?.profile?.name,
+                                                    backgroundColor = MaterialTheme.colorScheme.primary,
+                                                    textColor = MaterialTheme.colorScheme.onPrimary,
+                                                )
+                                            )
                                             .crossfade(true)
                                             .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
                                             .build(),
@@ -298,7 +308,7 @@ fun EditActionDialog(
                                                                         FileUtil.getUriByCopyingFileToPath(
                                                                             context,
                                                                             context.getExternalFilesDir("chat")!!,
-                                                                            "Avatar_${name.replace("\\s+", "_")}.png",
+                                                                            "Avatar_${name.toSafeFilename()}.png",
                                                                             it1
                                                                         )?.toString()
                                                                     }
