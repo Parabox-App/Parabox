@@ -1400,20 +1400,16 @@ fun NormalChatPage(
                 scaffoldState.bottomSheetState.collapse()
             }
         }
-        if (messageState.state == MessageState.LOADING) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surface),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        } else {
-//            val timedList =
-//                remember(lazyPagingItems.itemSnapshotList) {
-//                    lazyPagingItems.itemSnapshotList.items.toTimedMessages()
-//                }
+//        if (messageState.state == MessageState.LOADING) {
+//            Box(
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .background(MaterialTheme.colorScheme.surface),
+//                contentAlignment = Alignment.Center
+//            ) {
+//                CircularProgressIndicator()
+//            }
+//        } else {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -1475,7 +1471,8 @@ fun NormalChatPage(
                 }
                 itemsBeforeAndAfterReverseIndexed(
                     items = lazyPagingItems,
-                    key = { it.messageId }) { value, beforeValue, afterValue, index ->
+                    key = { it.messageId }
+                ) { value, beforeValue, afterValue, index ->
                     if (value != null) {
                         val shouldShowTimeDivider = remember(value, beforeValue, afterValue) {
                             beforeValue == null || abs(value.timestamp - beforeValue.timestamp) > 120000 || (index + 1) % 40 == 0
@@ -1714,7 +1711,7 @@ fun NormalChatPage(
 
             }
         }
-    }
+//    }
 }
 //@Composable
 //fun ErrorChatPage(modifier: Modifier = Modifier, errMessage: String, onRetry: () -> Unit) {
@@ -2172,7 +2169,8 @@ fun SingleMessage(
                             onLongClick = onLongClick
                         )
 //                        .clickable(enabled = isSelected, onClick = onClick)
-                        .animateContentSize(),
+//                        .animateContentSize()
+                    ,
                     shouldBreak = message.contents.map {
                         it is Image || it is QuoteReply || it is Audio || it is File
                     }.plus(arrayOf(true, true))
