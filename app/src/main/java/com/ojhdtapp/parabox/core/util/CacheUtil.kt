@@ -2,10 +2,37 @@ package com.ojhdtapp.parabox.core.util
 
 import android.content.Context
 import android.os.Environment
+import android.util.Log
 import java.io.File
 
 
 object CacheUtil {
+    fun getChatFilesSizeBeforeTimestamp(context: Context, timestamp: Long) : Long{
+        val chatFilesDir = context.getExternalFilesDir("chat")
+        return if (chatFilesDir?.exists() == true){
+            var size: Long = 0
+            chatFilesDir.listFiles()?.forEach {
+                if (it.lastModified() < timestamp){
+                    size += it.length()
+                }
+            }
+            size
+        } else {
+            0
+        }
+    }
+
+    fun deleteChatFilesBeforeTimestamp(context: Context, timestamp: Long){
+        val chatFilesDir = context.getExternalFilesDir("chat")
+        if (chatFilesDir?.exists() == true){
+            chatFilesDir.listFiles()?.forEach {
+                if (it.lastModified() < timestamp){
+                    it.delete()
+                }
+            }
+        }
+    }
+
     fun getCacheSize(context: Context): Long {
         var size: Long = 0
         val cacheDir = context.cacheDir

@@ -16,9 +16,13 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -91,6 +95,16 @@ fun FilePage(
 
     var showCloudDialog by remember {
         mutableStateOf(false)
+    }
+
+    val lazyGridState = rememberLazyGridState()
+    val searchLazyListState = rememberLazyListState()
+
+    val hoverSearchBar by remember {
+        derivedStateOf {
+            (mainState.area == FilePageState.MAIN_AREA && lazyGridState.firstVisibleItemIndex > 1) ||
+                    (mainState.area == FilePageState.SEARCH_AREA && searchLazyListState.firstVisibleItemIndex > 1)
+        }
     }
 
     BackHandler(enabled = mainState.area != FilePageState.MAIN_AREA) {
@@ -257,6 +271,7 @@ fun FilePage(
                 fileSelection = mainState.data.filter { it.fileId in viewModel.selectedFilesId },
                 activateState = viewModel.searchBarActivateState.value,
                 avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
+                shouldHover = hoverSearchBar,
                 onActivateStateChanged = {
                     viewModel.setSearchBarActivateState(it)
                     when (it) {
@@ -347,6 +362,7 @@ fun FilePage(
             when (it) {
                 FilePageState.MAIN_AREA -> MainArea(
                     mainState = mainState,
+                    lazyGridState = lazyGridState,
                     onSetRecentFilter = { type, value -> viewModel.setRecentFilter(type, value) },
                     searchText = viewModel.searchText.value,
                     selectedFileIdList = viewModel.selectedFilesId,
@@ -402,6 +418,7 @@ fun FilePage(
 
                 FilePageState.SEARCH_AREA -> SearchArea(
                     mainState = mainState,
+                    lazyListState = searchLazyListState,
                     searchText = viewModel.searchText.value,
                     selectedFileIdList = viewModel.selectedFilesId,
                     paddingValues = paddingValues,
@@ -429,6 +446,7 @@ fun FilePage(
 @Composable
 fun MainArea(
     modifier: Modifier = Modifier,
+    lazyGridState: LazyGridState,
     mainState: FilePageState,
     searchText: String,
     selectedFileIdList: List<Long>,
@@ -469,6 +487,7 @@ fun MainArea(
         }
     ) {
         LazyVerticalGrid(
+            state = lazyGridState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) 64.dp else 0.dp),
@@ -996,6 +1015,7 @@ fun MainArea(
 fun SearchArea(
     modifier: Modifier = Modifier,
     mainState: FilePageState,
+    lazyListState: LazyListState,
     searchText: String,
     selectedFileIdList: List<Long>,
     paddingValues: PaddingValues,
@@ -1010,6 +1030,7 @@ fun SearchArea(
     val context = LocalContext.current
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         LazyColumn(
+            state = lazyListState,
             modifier = modifier
                 .fillMaxHeight()
                 .widthIn(0.dp, 600.dp),
@@ -1351,8 +1372,10 @@ fun SearchArea(
                                 text = if (mainState.timeFilter is TimeFilter.Custom) {
                                     stringResource(
                                         id = mainState.timeFilter.labelResId,
-                                        mainState.timeFilter.timestampStart?.toFormattedDate(context) ?: context.getString(R.string.time_filter_custom_not_set_label),
-                                        mainState.timeFilter.timestampEnd?.toFormattedDate(context) ?: context.getString(R.string.time_filter_custom_not_set_label),
+                                        mainState.timeFilter.timestampStart?.toFormattedDate(context)
+                                            ?: context.getString(R.string.time_filter_custom_not_set_label),
+                                        mainState.timeFilter.timestampEnd?.toFormattedDate(context)
+                                            ?: context.getString(R.string.time_filter_custom_not_set_label),
                                     )
                                 } else {
                                     stringResource(id = mainState.timeFilter.labelResId)

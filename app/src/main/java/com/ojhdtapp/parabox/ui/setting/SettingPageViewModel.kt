@@ -472,6 +472,23 @@ class SettingPageViewModel @Inject constructor(
         }
     }
 
+    private val _cleaningFile = mutableStateOf<Boolean>(false)
+    val cleaningFile: State<Boolean> = _cleaningFile
+    fun setCleaningFile(value: Boolean) {
+        _cleaningFile.value = value
+    }
+
+    fun clearFile(timestamp: Long) {
+        if (!cleaningFile.value) {
+            setCleaningFile(true)
+            viewModelScope.launch {
+                CacheUtil.deleteChatFilesBeforeTimestamp(context, timestamp)
+                delay(3000)
+                setCleaningFile(false)
+            }
+        }
+    }
+
     // Notification
     private val _notificationPermissionGrantedStateFlow = MutableStateFlow(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

@@ -217,14 +217,14 @@ fun ExtensionCard(
     onLaunch: () -> Unit
 ) {
     val context = LocalContext.current
-    Card(
+    OutlinedCard(
         modifier = modifier,
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(
-                3.dp
-            )
-        ),
+//        colors = CardDefaults.cardColors(
+//            containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(
+//                3.dp
+//            )
+//        ),
         onClick = onClick
     ) {
         Column(
