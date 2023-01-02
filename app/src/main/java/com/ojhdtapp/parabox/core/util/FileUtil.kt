@@ -15,8 +15,10 @@ import android.provider.OpenableColumns
 import android.util.Log
 import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
+import androidx.core.graphics.drawable.toBitmap
 import androidx.core.net.toFile
 import com.ojhdtapp.parabox.BuildConfig
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
@@ -33,6 +35,22 @@ import java.util.*
 object FileUtil {
     fun String.toSafeFilename(): String{
         return this.replace("[\\\\/:*?\"<>|]".toRegex(), "_")
+    }
+
+    fun Uri.checkUriAvailable(context: Context): Boolean{
+        return try {
+            val parcelFileDescriptor: ParcelFileDescriptor? = context.contentResolver.openFileDescriptor(this, "r")
+            parcelFileDescriptor?.close()
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    fun Uri.replacedIfUnavailable(context: Context) : Any{
+        return if (!this.checkUriAvailable(context)){
+            R.drawable.image_lost
+        } else this
     }
 
     fun getFilenameFromUri(context: Context, uri: Uri): String? {

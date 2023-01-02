@@ -51,6 +51,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.*
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.ImeAction
@@ -78,6 +79,7 @@ import com.google.mlkit.nl.entityextraction.*
 import com.ojhdtapp.parabox.MainActivity
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.*
+import com.ojhdtapp.parabox.core.util.FileUtil.replacedIfUnavailable
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.Profile
 import com.ojhdtapp.parabox.domain.model.message_content.*
@@ -2630,7 +2632,7 @@ private fun MessageContent.toLayout(
                 .build()
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data(uriString?.also { Uri.parse(it) }
+                    .data(uriString?.let { Uri.parse(it).replacedIfUnavailable(context)}
                         ?: url)
                     .crossfade(true)
                     .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
