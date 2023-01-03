@@ -15,7 +15,7 @@ fun Long.toTimeUntilNow(context: Context): String {
         in 120000 until 1500000 -> context.getString(R.string.minutes_ago, millsUtilNow / 60000)
         in 1500000 until 3000000 -> context.getString(R.string.half_an_hour_ago)
         in 3000000 until 3600000 -> context.getString(R.string.hour_ago)
-        in 3600000 until 86400000 -> context.getString(R.string.hours_ago, millsUtilNow / 3600000)
+        in 3600000 until 86400000 -> context.getString(R.string.hours_ago, (millsUtilNow / 3600000).coerceAtLeast(2))
         in 86400000 until 172800000 -> context.getString(R.string.day_ago)
         in 172800000 until 259200000 -> context.getString(R.string.days_ago, millsUtilNow / 86400000)
         else -> this.toFormattedDate(context)

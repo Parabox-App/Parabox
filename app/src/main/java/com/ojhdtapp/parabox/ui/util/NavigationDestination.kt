@@ -2,7 +2,9 @@ package com.ojhdtapp.parabox.ui.util
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.FileDownload
@@ -146,7 +148,7 @@ fun NavigationDrawer(
         drawerState = drawerState,
         gesturesEnabled = gesturesEnabled,
         drawerContent = {
-            ModalDrawerSheet(modifier = Modifier.width(304.dp)) {
+            ModalDrawerSheet(modifier = Modifier.width(304.dp).fillMaxHeight().verticalScroll(rememberScrollState())) {
                 Spacer(modifier = Modifier.statusBarsPadding())
                 IconButton(modifier = Modifier.padding(start = 12.dp, top = 12.dp, bottom = 24.dp), onClick = {
                     coroutineScope.launch {

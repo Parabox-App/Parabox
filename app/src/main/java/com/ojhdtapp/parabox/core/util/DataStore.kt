@@ -11,6 +11,7 @@ object DataStoreKeys{
     val SEND_MESSAGE_ID = longPreferencesKey("send_message_id")
     val USER_NAME = stringPreferencesKey("user_name")
     val USER_AVATAR = stringPreferencesKey("user_avatar")
+    val IS_FIRST_LAUNCH = booleanPreferencesKey("is_first_launch")
 
     val SETTINGS_WORKING_MODE = intPreferencesKey("settings_working_mode")
     val SETTINGS_DEFAULT_BACKUP_SERVICE = intPreferencesKey("settings_default_backup_service")

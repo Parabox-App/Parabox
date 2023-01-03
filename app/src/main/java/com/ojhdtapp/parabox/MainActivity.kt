@@ -40,6 +40,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -102,6 +103,7 @@ import com.ojhdtapp.parabox.domain.worker.DownloadFileWorker
 import com.ojhdtapp.parabox.domain.worker.UploadFileWorker
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.NavGraphs
+import com.ojhdtapp.parabox.ui.destinations.GuideWelcomePageDestination
 import com.ojhdtapp.parabox.ui.theme.AppTheme
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.FixedInsets
@@ -112,6 +114,8 @@ import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
 import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.navigation.dependency
+import com.ramcosta.composedestinations.navigation.navigate
+import com.ramcosta.composedestinations.navigation.popUpTo
 import dagger.hilt.android.AndroidEntryPoint
 import de.raphaelebner.roomdatabasebackup.core.RoomBackup
 import kotlinx.coroutines.*
@@ -1487,6 +1491,18 @@ class MainActivity : AppCompatActivity() {
 //                FilePageDestination,
 //                SettingPageDestination
 //            )
+
+            // Navigate to guide
+            LaunchedEffect(Unit){
+                // read from datastore
+                val isFirstLaunch = dataStore.data.first()[DataStoreKeys.IS_FIRST_LAUNCH] ?: true
+                if (isFirstLaunch) {
+                    mainNavController.navigate(GuideWelcomePageDestination){
+                        popUpTo(NavGraphs.root)
+                        launchSingleTop = true
+                    }
+                }
+            }
             AppTheme {
                 CompositionLocalProvider(values = arrayOf(LocalFixedInsets provides fixedInsets)) {
                     DestinationsNavHost(

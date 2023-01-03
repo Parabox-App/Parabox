@@ -15,16 +15,12 @@ import android.provider.OpenableColumns
 import android.util.Log
 import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
-import androidx.core.graphics.drawable.toBitmap
 import androidx.core.net.toFile
 import com.ojhdtapp.parabox.BuildConfig
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
