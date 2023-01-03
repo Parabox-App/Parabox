@@ -25,12 +25,8 @@ import androidx.activity.result.contract.ActivityResultContracts.CreateDocument
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.WindowInsets
@@ -111,6 +107,7 @@ import com.ojhdtapp.parabox.ui.util.LocalFixedInsets
 import com.ojhdtapp.parabox.ui.util.WorkingMode
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendMessageDto
 import com.ramcosta.composedestinations.DestinationsNavHost
+import com.ramcosta.composedestinations.animations.defaults.NestedNavGraphDefaultAnimations
 import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
 import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.navigation.dependency
@@ -1479,7 +1476,14 @@ class MainActivity : AppCompatActivity() {
                     popEnterTransition = { fadeIn(tween(300)) + scaleIn(tween(300), 1.1f) },
                     popExitTransition = { fadeOut(tween(300)) + scaleOut(tween(300), 0.9f) }
                 ),
-                defaultAnimationsForNestedNavGraph = mapOf()
+                defaultAnimationsForNestedNavGraph = mapOf(
+                    NavGraphs.guide to NestedNavGraphDefaultAnimations(
+                        enterTransition = { slideInHorizontally { it } },
+                        exitTransition = { slideOutHorizontally { -it } },
+                        popEnterTransition = { slideInHorizontally { -it } },
+                        popExitTransition = { slideOutHorizontally { it } },
+                    )
+                )
             )
             // Shared ViewModel
 //            val mainSharedViewModel = hiltViewModel<MainSharedViewModel>(this)

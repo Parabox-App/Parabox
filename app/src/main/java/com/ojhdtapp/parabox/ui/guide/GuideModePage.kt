@@ -33,6 +33,7 @@ import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.setting.SettingPageViewModel
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
+import com.ojhdtapp.parabox.ui.util.GuideNavGraph
 import com.ojhdtapp.parabox.ui.util.NormalPreference
 import com.ojhdtapp.parabox.ui.util.WorkingMode
 import com.ramcosta.composedestinations.annotation.Destination
@@ -42,7 +43,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Destination
-@RootNavGraph(start = false)
+@GuideNavGraph(start = false)
 @Composable
 fun GuideModePage(
     modifier: Modifier = Modifier,

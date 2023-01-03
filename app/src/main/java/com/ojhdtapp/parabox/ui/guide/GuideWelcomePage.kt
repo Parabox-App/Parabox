@@ -39,6 +39,7 @@ import com.ojhdtapp.parabox.ui.destinations.GuideModePageDestination
 import com.ojhdtapp.parabox.ui.destinations.MenuPageDestination
 import com.ojhdtapp.parabox.ui.destinations.MessagePageDestination
 import com.ojhdtapp.parabox.ui.setting.SettingPageViewModel
+import com.ojhdtapp.parabox.ui.util.GuideNavGraph
 import com.ojhdtapp.parabox.ui.util.NormalPreference
 import com.ojhdtapp.parabox.ui.util.onColor
 import com.ramcosta.composedestinations.annotation.Destination
@@ -50,7 +51,7 @@ import kotlin.math.pow
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Destination
-@RootNavGraph(start = false)
+@GuideNavGraph(start = true)
 @Composable
 fun GuideWelcomePage(
     modifier: Modifier = Modifier,
@@ -213,13 +214,38 @@ fun GuideWelcomePage(
                 )
             }
         })
-        BottomSheetScaffold(
-            modifier = Modifier.systemBarsPadding(),
-            sheetContent = {
+            Column(
+                modifier = modifier
+                    .fillMaxSize()
+                    .systemBarsPadding()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.Bottom,
+            ) {
+                Text(
+                    modifier = Modifier.padding(horizontal = 32.dp),
+                    text = "欢迎使用 \nParabox",
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.displayLarge
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                NormalPreference(
+                    modifier = Modifier.padding(horizontal = 32.dp),
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Outlined.Language,
+                            contentDescription = "set language"
+                        )
+                    },
+                    title = selectedLanguage,
+                    roundedCorner = true,
+                ) {
+                    showLanguageDialog = true
+                }
+                Spacer(modifier = Modifier.height(16.dp))
                 Row(
                     modifier = Modifier
-                        .height(56.dp)
-                        .padding(horizontal = 24.dp),
+                        .padding(horizontal = 16.dp)
+                        .height(56.dp),
                     horizontalArrangement = Arrangement.Start,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -236,39 +262,6 @@ fun GuideWelcomePage(
                         Text(text = "继续")
                     }
                 }
-            },
-            sheetElevation = 0.dp,
-            sheetPeekHeight = 56.dp,
-            sheetBackgroundColor = Color.Transparent,
-            backgroundColor = Color.Transparent
-        ) { paddingValues ->
-            Column(
-                modifier = modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(paddingValues)
-                    .padding(32.dp),
-                verticalArrangement = Arrangement.Bottom,
-            ) {
-                Text(
-                    text = "欢迎使用 \nParabox",
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.displayLarge
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                NormalPreference(
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Outlined.Language,
-                            contentDescription = "set language"
-                        )
-                    },
-                    title = selectedLanguage,
-                    roundedCorner = true,
-                ) {
-                    showLanguageDialog = true
-                }
             }
-        }
     }
 }
