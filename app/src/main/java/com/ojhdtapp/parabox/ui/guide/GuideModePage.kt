@@ -31,6 +31,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
+import com.ojhdtapp.parabox.ui.destinations.GuideExtensionPageDestination
 import com.ojhdtapp.parabox.ui.setting.SettingPageViewModel
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.GuideNavGraph
@@ -38,6 +39,7 @@ import com.ojhdtapp.parabox.ui.util.NormalPreference
 import com.ojhdtapp.parabox.ui.util.WorkingMode
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
+import com.ramcosta.composedestinations.navigation.navigate
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -63,7 +65,9 @@ fun GuideModePage(
         snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
         sheetContent = {
             Row(
-                modifier = Modifier.height(56.dp).padding(horizontal = 24.dp),
+                modifier = Modifier
+                    .height(56.dp)
+                    .padding(horizontal = 24.dp),
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -74,17 +78,28 @@ fun GuideModePage(
                     Text(text = "返回")
                 }
                 Spacer(modifier = Modifier.weight(1f))
-                Button(onClick = { /*TODO*/ }) {
+                Button(onClick = {
+                    when (selectedWorkingMode) {
+                        WorkingMode.NORMAL.ordinal -> {
+                            mainNavController.navigate(GuideExtensionPageDestination)
+                        }
+                        WorkingMode.RECEIVER.ordinal -> {}
+                        WorkingMode.FCM.ordinal -> {}
+                    }
+                }) {
                     Text(text = "继续")
                 }
             }
         },
         sheetElevation = 0.dp,
         sheetBackgroundColor = Color.Transparent,
-        sheetPeekHeight = 56.dp,
+//        sheetPeekHeight = 56.dp,
         backgroundColor = Color.Transparent
     ) { paddingValues ->
-        LazyColumn(modifier = Modifier.padding(paddingValues)) {
+        LazyColumn(
+            modifier = Modifier.padding(paddingValues),
+            contentPadding = PaddingValues(bottom = 16.dp)
+        ) {
             item {
                 Column(modifier = Modifier.padding(32.dp)) {
                     Icon(
@@ -94,7 +109,11 @@ fun GuideModePage(
                         tint = MaterialTheme.colorScheme.primary
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text(text = "工作模式", style = MaterialTheme.typography.displaySmall)
+                    Text(
+                        text = "工作模式",
+                        style = MaterialTheme.typography.displaySmall,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                 }
             }
             item {

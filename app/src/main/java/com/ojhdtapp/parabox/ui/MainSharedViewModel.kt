@@ -402,6 +402,7 @@ class MainSharedViewModel @Inject constructor(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000)
         )
+
     fun saveGoogleDriveAccount(account: GoogleSignInAccount?) {
         viewModelScope.launch {
             context.dataStore.edit { preferences ->
@@ -421,17 +422,20 @@ class MainSharedViewModel @Inject constructor(
             }
         }
     }
+
     private val _workInfoMap = mutableStateMapOf<String, Pair<File, List<WorkInfo>>>()
     val workInfoMap get() = _workInfoMap
     fun putWorkInfo(tag: String, file: File, workInfoList: List<WorkInfo>) {
         _workInfoMap[tag] = file to workInfoList
     }
+
     // WorkInfo
     private val _workInfoDialogState = mutableStateOf<Boolean>(false)
     val workInfoDialogState: State<Boolean> = _workInfoDialogState
     fun setWorkInfoDialogState(value: Boolean) {
         _workInfoDialogState.value = value
     }
+
     private val _workInfoStateFlow = MutableStateFlow<Map<File, List<WorkInfo>>>(emptyMap())
     val workInfoStateFlow get() = _workInfoStateFlow.asStateFlow()
     fun setWorkInfoStateFlow(value: Map<File, List<WorkInfo>>) {
@@ -450,4 +454,12 @@ class MainSharedViewModel @Inject constructor(
         .map { settings ->
             settings[DataStoreKeys.SETTINGS_ML_KIT_TRANSLATION] ?: true
         }
+
+    // First Launch
+    private val _guideLaunchedStateFlow = MutableStateFlow(false)
+    val guideLaunchedStateFlow = _guideLaunchedStateFlow.asStateFlow()
+
+    fun launchedGuide() {
+        _guideLaunchedStateFlow.value = true
+    }
 }

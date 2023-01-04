@@ -157,12 +157,14 @@ fun ExtensionPage(
                             FilledTonalButton(
                                 onClick = { }) {
                                 FaIcon(
-                                    modifier = Modifier.padding(end = 8.dp),
                                     faIcon = FaIcons.GooglePlay,
                                     size = ButtonDefaults.IconSize,
                                     tint = MaterialTheme.colorScheme.onSurface
                                 )
-                                Text(text = stringResource(R.string.get_from_appstore))
+                                Text(
+                                    modifier = Modifier.padding(start = 8.dp),
+                                    text = stringResource(R.string.get_from_appstore)
+                                )
                             }
                         }
                     }
@@ -270,7 +272,7 @@ fun ExtensionCard(
                     AppModel.RUNNING_STATUS_DISABLED -> Icon(
                         imageVector = Icons.Outlined.HighlightOff,
                         contentDescription = "disabled",
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     AppModel.RUNNING_STATUS_ERROR -> Icon(

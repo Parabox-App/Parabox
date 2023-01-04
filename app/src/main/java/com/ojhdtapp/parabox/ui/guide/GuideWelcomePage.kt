@@ -2,6 +2,7 @@ package com.ojhdtapp.parabox.ui.guide
 
 import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
@@ -10,29 +11,35 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.BottomSheetScaffold
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Language
-import androidx.compose.material.icons.outlined.Warning
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.os.LocaleListCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import com.google.accompanist.flowlayout.FlowRow
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.NavGraphs
 import com.ojhdtapp.parabox.ui.destinations.GuideModePageDestination
@@ -85,7 +92,7 @@ fun GuideWelcomePage(
             confirmButton = {
                 TextButton(onClick = {
                     showSkipGuideDialog = false
-                    mainNavController.navigate(MenuPageDestination){
+                    mainNavController.navigate(MenuPageDestination) {
                         popUpTo(NavGraphs.root)
                         launchSingleTop = true
                     }
@@ -214,54 +221,54 @@ fun GuideWelcomePage(
                 )
             }
         })
-            Column(
-                modifier = modifier
-                    .fillMaxSize()
-                    .systemBarsPadding()
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.Bottom,
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .systemBarsPadding()
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.Bottom,
+        ) {
+            Text(
+                modifier = Modifier.padding(horizontal = 32.dp),
+                text = "欢迎使用 \nParabox",
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.displayLarge
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            NormalPreference(
+                modifier = Modifier.padding(horizontal = 32.dp),
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Outlined.Language,
+                        contentDescription = "set language"
+                    )
+                },
+                title = selectedLanguage,
+                roundedCorner = true,
             ) {
-                Text(
-                    modifier = Modifier.padding(horizontal = 32.dp),
-                    text = "欢迎使用 \nParabox",
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.displayLarge
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                NormalPreference(
-                    modifier = Modifier.padding(horizontal = 32.dp),
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Outlined.Language,
-                            contentDescription = "set language"
-                        )
-                    },
-                    title = selectedLanguage,
-                    roundedCorner = true,
-                ) {
-                    showLanguageDialog = true
+                showLanguageDialog = true
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .height(56.dp),
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Spacer(modifier = Modifier.weight(1f))
+                TextButton(onClick = {
+                    showSkipGuideDialog = true
+                }) {
+                    Text(text = "略过引导")
                 }
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp)
-                        .height(56.dp),
-                    horizontalArrangement = Arrangement.Start,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Spacer(modifier = Modifier.weight(1f))
-                    TextButton(onClick = {
-                        showSkipGuideDialog = true
-                    }) {
-                        Text(text = "略过引导")
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(onClick = {
-                        mainNavController.navigate(GuideModePageDestination)
-                    }) {
-                        Text(text = "继续")
-                    }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(onClick = {
+                    mainNavController.navigate(GuideModePageDestination)
+                }) {
+                    Text(text = "继续")
                 }
             }
+        }
     }
 }

@@ -167,8 +167,8 @@ dependencies {
 
     // Compose Destinations
 //    implementation 'io.github.raamcosta.compose-destinations:core:1.5.6-beta'
-    implementation 'io.github.raamcosta.compose-destinations:animations-core:1.7.25-beta'
-    ksp 'io.github.raamcosta.compose-destinations:ksp:1.7.25-beta'
+    implementation 'io.github.raamcosta.compose-destinations:animations-core:1.7.30-beta'
+    ksp 'io.github.raamcosta.compose-destinations:ksp:1.7.30-beta'
 
     // DataStore
     implementation "androidx.datastore:datastore-preferences:1.0.0"

@@ -76,7 +76,6 @@ import com.google.mlkit.nl.languageid.LanguageIdentification
 import com.google.mlkit.nl.smartreply.*
 import com.google.mlkit.nl.translate.TranslateLanguage
 import com.google.mlkit.nl.translate.Translation
-import com.google.mlkit.nl.translate.Translator
 import com.google.mlkit.nl.translate.TranslatorOptions
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.data.local.AppDatabase
@@ -86,7 +85,6 @@ import com.ojhdtapp.parabox.domain.fcm.FcmApiHelper
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.model.File
-import com.ojhdtapp.parabox.domain.model.message_content.getContentString
 import com.ojhdtapp.parabox.domain.service.PluginListListener
 import com.ojhdtapp.parabox.domain.service.PluginService
 import com.ojhdtapp.parabox.domain.use_case.GetContacts
@@ -116,9 +114,7 @@ import com.ramcosta.composedestinations.navigation.popUpTo
 import dagger.hilt.android.AndroidEntryPoint
 import de.raphaelebner.roomdatabasebackup.core.RoomBackup
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.*
 import linc.com.amplituda.Amplituda
 import linc.com.amplituda.Compress
 import java.io.IOException
@@ -1260,6 +1256,9 @@ class MainActivity : AppCompatActivity() {
                     updateFile.cloudInfo(0, null, event.fileId)
                 }
             }
+            is ActivityEvent.QueryFCMToken -> {
+                queryFCMToken()
+            }
         }
     }
 
@@ -1499,11 +1498,16 @@ class MainActivity : AppCompatActivity() {
             // Navigate to guide
             LaunchedEffect(Unit){
                 // read from datastore
-                val isFirstLaunch = dataStore.data.first()[DataStoreKeys.IS_FIRST_LAUNCH] ?: true
+                val isFirstLaunch = !mainSharedViewModel.guideLaunchedStateFlow.value
+                        && dataStore.data.first()[DataStoreKeys.IS_FIRST_LAUNCH] ?: true
                 if (isFirstLaunch) {
+                    mainSharedViewModel.launchedGuide()
                     mainNavController.navigate(GuideWelcomePageDestination){
-                        popUpTo(NavGraphs.root)
+                        popUpTo(NavGraphs.root){
+                            saveState = true
+                        }
                         launchSingleTop = true
+                        restoreState = true
                     }
                 }
             }
