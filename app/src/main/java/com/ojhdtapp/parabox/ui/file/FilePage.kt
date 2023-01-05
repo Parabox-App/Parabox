@@ -921,14 +921,8 @@ fun SearchArea(
                     var showTimeFilterDropDownMenu by remember {
                         mutableStateOf(false)
                     }
-                    FilterChip(
-                        modifier = Modifier
-                            .animateContentSize(),
+                    MyFilterChip(
                         selected = mainState.sizeFilter !is SizeFilter.All,
-                        onClick = {
-                            showSizeFilterDropDownMenu = true
-                        },
-                        enabled = true,
                         trailingIcon = {
                             Box(
                                 modifier = Modifier
@@ -991,20 +985,12 @@ fun SearchArea(
                             }
                         },
                         label = { Text(text = stringResource(id = mainState.sizeFilter.labelResId)) },
-                        border = FilterChipDefaults.filterChipBorder(
-                            borderColor = MaterialTheme.colorScheme.outline.copy(
-                                alpha = 0.4f
-                            )
-                        )
-                    )
-                    FilterChip(
-                        modifier = Modifier
-                            .animateContentSize(),
+                        withoutLeadingIcon = true,
+                    ) {
+                        showSizeFilterDropDownMenu = true
+                    }
+                    MyFilterChip(
                         selected = mainState.extensionFilter !is ExtensionFilter.All,
-                        onClick = {
-                            showExtensionFilterDropDownMenu = true
-                        },
-                        enabled = true,
                         trailingIcon = {
                             Box(
                                 modifier = Modifier
@@ -1126,20 +1112,12 @@ fun SearchArea(
                                 text = stringResource(id = mainState.extensionFilter.labelResId)
                             )
                         },
-                        border = FilterChipDefaults.filterChipBorder(
-                            borderColor = MaterialTheme.colorScheme.outline.copy(
-                                alpha = 0.4f
-                            )
-                        )
-                    )
-                    FilterChip(
-                        modifier = Modifier
-                            .animateContentSize(),
+                        withoutLeadingIcon = true,
+                    ) {
+                        showExtensionFilterDropDownMenu = true
+                    }
+                    MyFilterChip(
                         selected = mainState.timeFilter !is TimeFilter.All,
-                        onClick = {
-                            showTimeFilterDropDownMenu = true
-                        },
-                        enabled = true,
                         trailingIcon = {
                             Box(
                                 modifier = Modifier
@@ -1247,12 +1225,10 @@ fun SearchArea(
                                 }
                             )
                         },
-                        border = FilterChipDefaults.filterChipBorder(
-                            borderColor = MaterialTheme.colorScheme.outline.copy(
-                                alpha = 0.4f
-                            )
-                        )
-                    )
+                        withoutLeadingIcon = true,
+                    ) {
+                        showTimeFilterDropDownMenu = true
+                    }
                     Spacer(modifier = Modifier.width(16.dp))
                 }
             }

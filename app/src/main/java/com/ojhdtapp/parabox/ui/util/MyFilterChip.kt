@@ -27,16 +27,19 @@ fun MyFilterChip(
     selected: Boolean,
     label: @Composable () -> Unit,
     enabled: Boolean = true,
-    trailingIcon: @Composable () -> Unit,
+    trailingIcon: @Composable () -> Unit = {},
+    containerColor: Color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+    withoutLeadingIcon: Boolean = false,
     onClick: () -> Unit
 ){
     val shapeCorner by animateDpAsState(targetValue = if(selected) 24.dp else 8.dp)
     FilterChip(
+        modifier = modifier,
         selected = selected,
         onClick = onClick,
         enabled = enabled,
         leadingIcon = {
-            AnimatedVisibility(visible = selected,
+            AnimatedVisibility(visible = !withoutLeadingIcon && selected,
                 enter = expandHorizontally(),
                 exit = shrinkHorizontally()
             ) {
@@ -51,8 +54,8 @@ fun MyFilterChip(
         label = label,
         shape = RoundedCornerShape(shapeCorner),
         colors = FilterChipDefaults.filterChipColors(
-            containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
-            labelColor = MaterialTheme.colorScheme.onSurface,
+            containerColor = containerColor,
+            labelColor = containerColor.onColor(),
             selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
             selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
         ),

@@ -100,7 +100,7 @@
     <string name="hash_tag_error_too_long">标签长度不应超过50</string>
     <string name="hash_tag_error_duplicate">该标签已存在</string>
     <string name="hash_tag_empty">暂无标签</string>
-    <string name="hash_tag_placeholder">要添加标签，请于此处输入后敲击空格或换行符</string>
+    <string name="hash_tag_placeholder">要添加标签，请于此处输入后敲击两个空格或换行符</string>
     <string name="new_msg_notification_title">新消息通知</string>
     <string name="new_msg_notification_on_subtitle">开启</string>
     <string name="new_msg_notification_off_subtitle">你将不会收到新消息通知</string>
@@ -132,7 +132,7 @@
     <string name="quick_add_tag_des">标签可帮助快速筛选，定位会话。
 可稍后再作更改。允许留空。</string>
     <string name="current_tags">当前标签</string>
-    <string name="hash_tag_placeholder_short">请输入标签后敲击空格或换行符</string>
+    <string name="hash_tag_placeholder_short">请输入标签后敲击两个空格或换行符</string>
     <string name="common_tags">常用标签</string>
     <string name="tag_example_work">工作</string>
     <string name="tag_example_class">课程</string>

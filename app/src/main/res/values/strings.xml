@@ -100,7 +100,7 @@
     <string name="hash_tag_error_too_long">Tag length should not exceed 50</string>
     <string name="hash_tag_error_duplicate">The tag already exists</string>
     <string name="hash_tag_empty">No tags yet</string>
-    <string name="hash_tag_placeholder">To add tags, hit space or newline after typing here</string>
+    <string name="hash_tag_placeholder">To add tags, hit two spaces or a newline after typing here</string>
     <string name="new_msg_notification_title">New messages notification</string>
     <string name="new_msg_notification_on_subtitle">Enabled</string>
     <string name="new_msg_notification_off_subtitle">You will not be notified of new messages</string>
@@ -129,7 +129,7 @@
     <string name="quick_add_tag">Add tags</string>
     <string name="quick_add_tag_des">Tags help quickly filter and locate chats.\nChanges can be made later. Blank is allowed.</string>
     <string name="current_tags">Current tags</string>
-    <string name="hash_tag_placeholder_short">Please enter a tag followed by a space or a newline</string>
+    <string name="hash_tag_placeholder_short">Please enter a tag followed by two spaces or a newline</string>
     <string name="common_tags">Common tags</string>
     <string name="tag_example_work">Work</string>
     <string name="tag_example_class">Classes</string>

@@ -409,7 +409,7 @@ fun EditActionDialog(
                             textFieldValue = hashTagText,
                             enabled = isEditing,
                             onValueChanged = {
-                                val values = FormUtil.splitPerSpaceOrNewLine(it)
+                                val values = FormUtil.splitTwoSpacesOrNewLine(it)
 
                                 if (values.size >= 2) {
                                     onConfirmDelete = false
@@ -462,7 +462,8 @@ fun EditActionDialog(
                                 }
                             },
                             padding = if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) HashTagEditor.PADDING_SMALL else HashTagEditor.PADDING_MEDIUM,
-                            onConfirmDelete = onConfirmDelete
+                            onConfirmDelete = onConfirmDelete,
+                            chipContainerColor = MaterialTheme.colorScheme.secondaryContainer
                         )
                     }
                     item {

@@ -14,6 +14,8 @@ import androidx.compose.ui.unit.TextUnit
 
 object FormUtil {
     fun splitPerSpaceOrNewLine(str: String): List<String> = str.split("\\s|([\\r\\n]+)".toRegex())
+    fun splitTwoSpacesOrNewLine(str: String): List<String> = str.split("\\s{2}|([\\r\\n]+)".toRegex())
+    fun splitNewLine(str: String): List<String> = str.split("[\\r\\n]+".toRegex())
     fun checkTagMinimumCharacter(str: String): Boolean = str.length >= 2
     fun checkTagMaximumCharacter(str: String): Boolean = str.length < 50
 }

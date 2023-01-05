@@ -67,6 +67,7 @@ import com.ojhdtapp.parabox.core.util.FormUtil
 import com.ojhdtapp.parabox.domain.model.PluginConnection
 import com.ojhdtapp.parabox.domain.service.PluginService
 import com.ojhdtapp.parabox.ui.util.HashTagEditor
+import com.ojhdtapp.parabox.ui.util.MyFilterChip
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -500,7 +501,7 @@ fun GroupEditForm(
                         textFieldValue = hashTagText,
                         enabled = true,
                         onValueChanged = {
-                            val values = FormUtil.splitPerSpaceOrNewLine(it)
+                            val values = FormUtil.splitTwoSpacesOrNewLine(it)
 
                             if (values.size >= 2) {
                                 onConfirmDelete = false
@@ -553,7 +554,8 @@ fun GroupEditForm(
                             }
                         },
                         padding = HashTagEditor.PADDING_SMALL,
-                        onConfirmDelete = onConfirmDelete
+                        onConfirmDelete = onConfirmDelete,
+                        chipContainerColor = MaterialTheme.colorScheme.secondaryContainer
                     )
                     Text(
                         modifier = Modifier.padding(start = 16.dp),
@@ -571,7 +573,7 @@ fun GroupEditForm(
                             context.getString(R.string.tag_example_family),
                             context.getString(R.string.tag_example_notification),
                             context.getString(R.string.tag_example_classmate))) {
-                            FilterChip(
+                            MyFilterChip(
                                 selected = false,
                                 onClick = {
                                     if (!selectedTags.contains(it)) {
@@ -588,7 +590,9 @@ fun GroupEditForm(
                                         hashTagShouldShowError = true
                                     }
                                 },
-                                label = { Text(text = it) })
+                                label = { Text(text = it) },
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer
+                            )
                         }
                     }
                 }
