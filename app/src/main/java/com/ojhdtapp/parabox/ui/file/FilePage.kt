@@ -34,6 +34,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -514,214 +515,78 @@ fun MainArea(
                         modifier = Modifier.padding(bottom = 8.dp),
                         mainAxisSpacing = 8.dp
                     ) {
-                        FilterChip(
-                            modifier = Modifier
-                                .animateContentSize(),
+                        MyFilterChip(
                             selected = mainState.enableRecentDocsFilter,
-                            onClick = {
-                                onSetRecentFilter(
-                                    ExtensionFilter.DOCS,
-                                    !mainState.enableRecentDocsFilter
-                                )
-                            },
-                            enabled = true,
-                            leadingIcon = {
-                                if (mainState.enableRecentDocsFilter)
-                                    Icon(
-                                        imageVector = Icons.Outlined.Done,
-                                        contentDescription = "",
-                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                    )
-                            },
-                            label = { Text(text = stringResource(R.string.file_type_docs)) },
-                            border = FilterChipDefaults.filterChipBorder(
-                                borderColor = MaterialTheme.colorScheme.outline.copy(
-                                    alpha = 0.4f
-                                )
+                            label = { Text(text = stringResource(R.string.file_type_docs)) }
+                        ) {
+                            onSetRecentFilter(
+                                ExtensionFilter.DOCS,
+                                !mainState.enableRecentDocsFilter
                             )
-                        )
-                        FilterChip(
-                            modifier = Modifier
-                                .animateContentSize(),
+                        }
+                        MyFilterChip(
                             selected = mainState.enableRecentSlidesFilter,
-                            onClick = {
-                                onSetRecentFilter(
-                                    ExtensionFilter.SLIDES,
-                                    !mainState.enableRecentSlidesFilter
-                                )
-                            },
-                            enabled = true,
-                            leadingIcon = {
-                                if (mainState.enableRecentSlidesFilter)
-                                    Icon(
-                                        imageVector = Icons.Outlined.Done,
-                                        contentDescription = "",
-                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                    )
-                            },
-                            label = { Text(text = stringResource(R.string.file_type_slides)) },
-                            border = FilterChipDefaults.filterChipBorder(
-                                borderColor = MaterialTheme.colorScheme.outline.copy(
-                                    alpha = 0.4f
-                                )
+                            label = { Text(text = stringResource(R.string.file_type_slides)) }
+                        ) {
+                            onSetRecentFilter(
+                                ExtensionFilter.SLIDES,
+                                !mainState.enableRecentSlidesFilter
                             )
-                        )
-                        FilterChip(
-                            modifier = Modifier
-                                .animateContentSize(),
+                        }
+                        MyFilterChip(
                             selected = mainState.enableRecentSheetsFilter,
-                            onClick = {
-                                onSetRecentFilter(
-                                    ExtensionFilter.SHEETS,
-                                    !mainState.enableRecentSheetsFilter
-                                )
-                            },
-                            enabled = true,
-                            leadingIcon = {
-                                if (mainState.enableRecentSheetsFilter)
-                                    Icon(
-                                        imageVector = Icons.Outlined.Done,
-                                        contentDescription = "",
-                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                    )
-                            },
-                            label = { Text(text = stringResource(R.string.file_type_sheets)) },
-                            border = FilterChipDefaults.filterChipBorder(
-                                borderColor = MaterialTheme.colorScheme.outline.copy(
-                                    alpha = 0.4f
-                                )
+                            label = { Text(text = stringResource(R.string.file_type_sheets)) }
+                        ) {
+                            onSetRecentFilter(
+                                ExtensionFilter.SHEETS,
+                                !mainState.enableRecentSheetsFilter
                             )
-                        )
-                        FilterChip(
-                            modifier = Modifier
-                                .animateContentSize(),
+                        }
+                        MyFilterChip(
                             selected = mainState.enableRecentVideoFilter,
-                            onClick = {
-                                onSetRecentFilter(
-                                    ExtensionFilter.VIDEO,
-                                    !mainState.enableRecentVideoFilter
-                                )
-                            },
-                            enabled = true,
-                            leadingIcon = {
-                                if (mainState.enableRecentVideoFilter)
-                                    Icon(
-                                        imageVector = Icons.Outlined.Done,
-                                        contentDescription = "",
-                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                    )
-                            },
-                            label = { Text(text = stringResource(R.string.file_type_video)) },
-                            border = FilterChipDefaults.filterChipBorder(
-                                borderColor = MaterialTheme.colorScheme.outline.copy(
-                                    alpha = 0.4f
-                                )
+                            label = { Text(text = stringResource(R.string.file_type_video)) }
+                        ) {
+                            onSetRecentFilter(
+                                ExtensionFilter.VIDEO,
+                                !mainState.enableRecentVideoFilter
                             )
-                        )
-                        FilterChip(
-                            modifier = Modifier
-                                .animateContentSize(),
+                        }
+                        MyFilterChip(
                             selected = mainState.enableRecentAudioFilter,
-                            onClick = {
-                                onSetRecentFilter(
-                                    ExtensionFilter.AUDIO,
-                                    !mainState.enableRecentAudioFilter
-                                )
-                            },
-                            enabled = true,
-                            leadingIcon = {
-                                if (mainState.enableRecentAudioFilter)
-                                    Icon(
-                                        imageVector = Icons.Outlined.Done,
-                                        contentDescription = "",
-                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                    )
-                            },
-                            label = { Text(text = stringResource(R.string.file_type_audio)) },
-                            border = FilterChipDefaults.filterChipBorder(
-                                borderColor = MaterialTheme.colorScheme.outline.copy(
-                                    alpha = 0.4f
-                                )
+                            label = { Text(text = stringResource(R.string.file_type_audio)) }
+                        ) {
+                            onSetRecentFilter(
+                                ExtensionFilter.AUDIO,
+                                !mainState.enableRecentAudioFilter
                             )
-                        )
-                        FilterChip(
-                            modifier = Modifier
-                                .animateContentSize(),
+                        }
+                        MyFilterChip(
                             selected = mainState.enableRecentPictureFilter,
-                            onClick = {
-                                onSetRecentFilter(
-                                    ExtensionFilter.PICTURE,
-                                    !mainState.enableRecentPictureFilter
-                                )
-                            },
-                            enabled = true,
-                            leadingIcon = {
-                                if (mainState.enableRecentPictureFilter)
-                                    Icon(
-                                        imageVector = Icons.Outlined.Done,
-                                        contentDescription = "",
-                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                    )
-                            },
-                            label = { Text(text = stringResource(R.string.file_type_picture)) },
-                            border = FilterChipDefaults.filterChipBorder(
-                                borderColor = MaterialTheme.colorScheme.outline.copy(
-                                    alpha = 0.4f
-                                )
+                            label = { Text(text = stringResource(R.string.file_type_picture)) }
+                        ) {
+                            onSetRecentFilter(
+                                ExtensionFilter.PICTURE,
+                                !mainState.enableRecentPictureFilter
                             )
-                        )
-                        FilterChip(
-                            modifier = Modifier
-                                .animateContentSize(),
+                        }
+                        MyFilterChip(
                             selected = mainState.enableRecentPDFFilter,
-                            onClick = {
-                                onSetRecentFilter(
-                                    ExtensionFilter.PDF,
-                                    !mainState.enableRecentPDFFilter
-                                )
-                            },
-                            enabled = true,
-                            leadingIcon = {
-                                if (mainState.enableRecentPDFFilter)
-                                    Icon(
-                                        imageVector = Icons.Outlined.Done,
-                                        contentDescription = "",
-                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                    )
-                            },
-                            label = { Text(text = stringResource(R.string.file_type_pdf)) },
-                            border = FilterChipDefaults.filterChipBorder(
-                                borderColor = MaterialTheme.colorScheme.outline.copy(
-                                    alpha = 0.4f
-                                )
+                            label = { Text(text = stringResource(R.string.file_type_pdf)) }
+                        ) {
+                            onSetRecentFilter(
+                                ExtensionFilter.PDF,
+                                !mainState.enableRecentPDFFilter
                             )
-                        )
-                        FilterChip(
-                            modifier = Modifier
-                                .animateContentSize(),
+                        }
+                        MyFilterChip(
                             selected = mainState.enableRecentCompressedFilter,
-                            onClick = {
-                                onSetRecentFilter(
-                                    ExtensionFilter.COMPRESSED,
-                                    !mainState.enableRecentCompressedFilter
-                                )
-                            },
-                            enabled = true,
-                            leadingIcon = {
-                                if (mainState.enableRecentCompressedFilter)
-                                    Icon(
-                                        imageVector = Icons.Outlined.Done,
-                                        contentDescription = "",
-                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                    )
-                            },
-                            label = { Text(text = stringResource(R.string.file_type_compressed)) },
-                            border = FilterChipDefaults.filterChipBorder(
-                                borderColor = MaterialTheme.colorScheme.outline.copy(
-                                    alpha = 0.4f
-                                )
+                            label = { Text(text = stringResource(R.string.file_type_compressed)) }
+                        ) {
+                            onSetRecentFilter(
+                                ExtensionFilter.COMPRESSED,
+                                !mainState.enableRecentCompressedFilter
                             )
-                        )
+                        }
                     }
                     if (mainState.recentFilterData.isEmpty()) {
                         Column(
