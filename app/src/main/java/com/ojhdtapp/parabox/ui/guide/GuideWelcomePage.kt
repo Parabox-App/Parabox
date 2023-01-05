@@ -43,6 +43,7 @@ import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.NavGraphs
 import com.ojhdtapp.parabox.ui.destinations.GuideModePageDestination
+import com.ojhdtapp.parabox.ui.destinations.GuideTermsPageDestination
 import com.ojhdtapp.parabox.ui.destinations.MenuPageDestination
 import com.ojhdtapp.parabox.ui.destinations.MessagePageDestination
 import com.ojhdtapp.parabox.ui.setting.SettingPageViewModel
@@ -92,10 +93,7 @@ fun GuideWelcomePage(
             confirmButton = {
                 TextButton(onClick = {
                     showSkipGuideDialog = false
-                    mainNavController.navigate(MenuPageDestination) {
-                        popUpTo(NavGraphs.root)
-                        launchSingleTop = true
-                    }
+                    mainNavController.navigate(GuideTermsPageDestination)
                 }) {
                     Text(text = stringResource(id = R.string.confirm))
                 }

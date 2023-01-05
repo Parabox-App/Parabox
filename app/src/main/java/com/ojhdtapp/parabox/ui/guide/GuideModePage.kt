@@ -32,6 +32,7 @@ import androidx.navigation.NavController
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.GuideExtensionPageDestination
+import com.ojhdtapp.parabox.ui.destinations.GuideFCMReceiverPageDestination
 import com.ojhdtapp.parabox.ui.setting.SettingPageViewModel
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.GuideNavGraph
@@ -83,7 +84,9 @@ fun GuideModePage(
                         WorkingMode.NORMAL.ordinal -> {
                             mainNavController.navigate(GuideExtensionPageDestination)
                         }
-                        WorkingMode.RECEIVER.ordinal -> {}
+                        WorkingMode.RECEIVER.ordinal -> {
+                            mainNavController.navigate(GuideFCMReceiverPageDestination)
+                        }
                         WorkingMode.FCM.ordinal -> {}
                     }
                 }) {

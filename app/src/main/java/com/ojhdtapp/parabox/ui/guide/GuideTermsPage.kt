@@ -4,9 +4,11 @@ import android.net.Uri
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.BottomSheetScaffold
@@ -39,7 +41,7 @@ import com.ojhdtapp.parabox.core.util.AvatarUtil
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.GuideExtensionPageDestination
-import com.ojhdtapp.parabox.ui.destinations.GuideTermsPageDestination
+import com.ojhdtapp.parabox.ui.destinations.GuideFinishPageDestination
 import com.ojhdtapp.parabox.ui.setting.EditUserNameDialog
 import com.ojhdtapp.parabox.ui.setting.SettingPageViewModel
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
@@ -56,7 +58,7 @@ import kotlinx.coroutines.launch
 @Destination
 @GuideNavGraph(start = false)
 @Composable
-fun GuidePersonalisePage(
+fun GuideTermsPage(
     modifier: Modifier = Modifier,
     mainNavController: NavController,
     mainSharedViewModel: MainSharedViewModel,
@@ -68,21 +70,15 @@ fun GuidePersonalisePage(
     val coroutineScope = rememberCoroutineScope()
     val snackBarHostState = remember { SnackbarHostState() }
 
-    val userName = mainSharedViewModel.userNameFlow.collectAsState(initial = DataStoreKeys.DEFAULT_USER_NAME).value
-    val avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value
-    var showDialog by remember{
+    val listState = rememberLazyListState()
+    var reachedBottom by remember {
         mutableStateOf(false)
     }
-
-    EditUserNameDialog(
-        openDialog = showDialog,
-        userName = userName,
-        onConfirm = {
-            showDialog = false
-            mainSharedViewModel.setUserName(it)
-        },
-        onDismiss = { showDialog = false }
-    )
+    LaunchedEffect(listState.canScrollForward) {
+        if(!listState.canScrollForward){
+            reachedBottom = true
+        }
+    }
 
     BottomSheetScaffold(
         modifier = Modifier
@@ -104,9 +100,19 @@ fun GuidePersonalisePage(
                 }
                 Spacer(modifier = Modifier.weight(1f))
                 Button(onClick = {
-                    mainNavController.navigate(GuideTermsPageDestination)
+                    if (reachedBottom) {
+                        mainNavController.navigate(GuideFinishPageDestination)
+                    } else {
+                        coroutineScope.launch {
+                            listState.animateScrollBy(1000f)
+                        }
+                    }
                 }) {
-                    Text(text = "继续")
+                    if(reachedBottom){
+                        Text(text = "同意并继续")
+                    }else{
+                        Text(text = "更多")
+                    }
                 }
             }
         },
@@ -117,19 +123,20 @@ fun GuidePersonalisePage(
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier.padding(paddingValues),
+            state = listState,
             contentPadding = PaddingValues(bottom = 16.dp)
         ) {
             item {
                 Column(modifier = Modifier.padding(32.dp)) {
                     Icon(
                         modifier = Modifier.size(48.dp),
-                        imageVector = Icons.Outlined.Palette,
-                        contentDescription = "personalise",
+                        imageVector = Icons.Outlined.Gavel,
+                        contentDescription = "terms",
                         tint = MaterialTheme.colorScheme.primary
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "个性化",
+                        text = "用户协议",
                         style = MaterialTheme.typography.displaySmall,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -138,45 +145,10 @@ fun GuidePersonalisePage(
             item {
                 Text(
                     modifier = Modifier.padding(horizontal = 32.dp),
-                    text = "设置头像及昵称以提供更好的应用内显示效果。",
+                    text = stringResource(id = R.string.terms_content),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-            }
-            item{
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally){
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(
-                                AvatarUtil.getAvatar(
-                                    uri = avatarUri?.let { Uri.parse(it) },
-                                    url = null,
-                                    name = null,
-                                    backgroundColor = MaterialTheme.colorScheme.primary,
-                                    textColor = MaterialTheme.colorScheme.onPrimary,
-                                )
-                            )
-                            .crossfade(true)
-                            .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
-                            .build(),
-                        contentDescription = "avatar",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(80.dp)
-                            .clip(CircleShape)
-                            .clickable {
-                                onEvent(ActivityEvent.SetUserAvatar)
-                            }
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Row(modifier = Modifier.clickable { showDialog = true }, verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = userName, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineMedium)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Icon(imageVector = Icons.Outlined.Edit, contentDescription = "edit", modifier = Modifier.size(24.dp))
-                    }
-                }
             }
         }
     }
