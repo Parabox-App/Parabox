@@ -105,13 +105,12 @@ fun FCMPage(
     val targetTokens = viewModel.fcmTargetTokensFlow.collectAsState(initial = emptySet())
     val loopbackToken = viewModel.fcmLoopbackTokenFlow.collectAsState(initial = "")
 
-    val gDriveLogin by viewModel.googleLoginFlow.collectAsState(initial = false)
 
     val selectableService by remember {
         derivedStateOf {
             buildMap<Int, String> {
                 put(FcmConstants.CloudStorage.NONE.ordinal, "无")
-                if (gDriveLogin) put(FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal, "Google Drive")
+//                if (gDriveLogin) put(FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal, "Google Drive")
             }
         }
     }

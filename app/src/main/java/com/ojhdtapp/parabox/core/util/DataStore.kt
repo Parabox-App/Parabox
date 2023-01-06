@@ -14,7 +14,7 @@ object DataStoreKeys{
     val IS_FIRST_LAUNCH = booleanPreferencesKey("is_first_launch")
 
     val SETTINGS_WORKING_MODE = intPreferencesKey("settings_working_mode")
-    val SETTINGS_DEFAULT_BACKUP_SERVICE = intPreferencesKey("settings_default_backup_service")
+    val SETTINGS_CLOUD_SERVICE = intPreferencesKey("settings_cloud_service")
     val SETTINGS_AUTO_BACKUP = booleanPreferencesKey("settings_auto_backup")
     val SETTINGS_AUTO_BACKUP_FILE_MAX_SIZE = floatPreferencesKey("settings_auto_backup_file_max_size")
     val SETTINGS_AUTO_DELETE_LOCAL_FILE = booleanPreferencesKey("settings_auto_delete_local_file")
@@ -32,14 +32,16 @@ object DataStoreKeys{
     val SETTINGS_ML_KIT_TRANSLATION = booleanPreferencesKey("settings_ml_kit_translation")
     val SETTINGS_ALLOW_BUBBLE_HOME = booleanPreferencesKey("settings_allow_bubble_home")
     val SETTINGS_ALLOW_FOREGROUND_NOTIFICATION = booleanPreferencesKey("settings_allow_foreground_notification")
+
     val GOOGLE_MAIL = stringPreferencesKey("google_mail")
     val GOOGLE_NAME = stringPreferencesKey("google_name")
-    val GOOGLE_LOGIN = booleanPreferencesKey("google_login")
+//    val GOOGLE_LOGIN = booleanPreferencesKey("google_login")
     val GOOGLE_AVATAR = stringPreferencesKey("google_avatar")
     val GOOGLE_WORK_FOLDER_ID = stringPreferencesKey("google_work_folder_id")
-    val GOOGLE_TOTAL_SPACE = longPreferencesKey("google_total_space")
-    val GOOGLE_USED_SPACE = longPreferencesKey("google_used_space")
-    val GOOGLE_APP_USED_SPACE = longPreferencesKey("google_app_used_space")
+
+    val CLOUD_TOTAL_SPACE = longPreferencesKey("cloud_total_space")
+    val CLOUD_USED_SPACE = longPreferencesKey("cloud_used_space")
+    val CLOUD_APP_USED_SPACE = longPreferencesKey("cloud_app_used_space")
 
     val REQUEST_NOTIFICATION_PERMISSION_FIRST_TIME = booleanPreferencesKey("show_notification_first_time")
 

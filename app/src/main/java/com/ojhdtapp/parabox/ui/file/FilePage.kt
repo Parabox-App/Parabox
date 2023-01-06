@@ -125,19 +125,18 @@ fun FilePage(
             }
         }
     }
-    // Google Drive
-    val gDriveLogin by mainSharedViewModel.googleLoginFlow.collectAsState()
-    val gDriveTotalSpace by mainSharedViewModel.googleTotalSpaceFlow.collectAsState()
-    val gDriveUsedSpace by mainSharedViewModel.googleUsedSpaceFlow.collectAsState()
-    val gDriveUsedSpacePercent = remember {
+    val cloudService by mainSharedViewModel.cloudServiceFlow.collectAsState(initial = 0)
+    val cloudTotalSpace by mainSharedViewModel.cloudTotalSpaceFlow.collectAsState(initial = 0L)
+    val cloudUsedSpace by mainSharedViewModel.cloudUsedSpaceFlow.collectAsState(initial = 0L)
+    val cloudUsedSpacePercent = remember {
         derivedStateOf {
-            if (gDriveTotalSpace == 0L) 0 else (gDriveUsedSpace * 100 / gDriveTotalSpace).toInt()
+            if (cloudTotalSpace == 0L) 0 else (cloudUsedSpace * 100 / cloudTotalSpace).toInt()
         }
     }
-    val gDriveAppUsedSpace by mainSharedViewModel.googleAppUsedSpaceFlow.collectAsState()
-    val gDriveAppUsedSpacePercent = remember {
+    val cloudAppUsedSpace by mainSharedViewModel.cloudAppUsedSpaceFlow.collectAsState(initial = 0L)
+    val cloudAppUsedSpacePercent = remember {
         derivedStateOf {
-            if (gDriveTotalSpace == 0L) 0 else (gDriveAppUsedSpace * 100 / gDriveTotalSpace).toInt()
+            if (cloudTotalSpace == 0L) 0 else (cloudAppUsedSpace * 100 / cloudTotalSpace).toInt()
         }
     }
     val gDriveLauncher =
@@ -371,12 +370,12 @@ fun FilePage(
                     onEvent = onEvent,
                     searchAppBarState = viewModel.searchBarActivateState.value,
                     sizeClass = sizeClass,
-                    gDriveLogin = gDriveLogin,
-                    gDriveTotalSpace = gDriveTotalSpace,
-                    gDriveUsedSpace = gDriveUsedSpace,
-                    gDriveUsedSpacePercent = gDriveUsedSpacePercent.value,
-                    gDriveAppUsedSpace = gDriveAppUsedSpace,
-                    gDriveAppUsedSpacePercent = gDriveAppUsedSpacePercent.value,
+                    cloudService = cloudService,
+                    cloudTotalSpace = cloudTotalSpace,
+                    cloudUsedSpace = cloudUsedSpace,
+                    cloudUsedSpacePercent = cloudUsedSpacePercent.value,
+                    cloudAppUsedSpace = cloudAppUsedSpace,
+                    cloudAppUsedSpacePercent = cloudAppUsedSpacePercent.value,
                     gDriveLauncher = gDriveLauncher,
                     workInfoPairList = mainSharedViewModel.workInfoMap.values.toList(),
                     isRefreshing = viewModel.isRefreshing.value,
@@ -398,8 +397,8 @@ fun FilePage(
                         showCloudDialog = true
                     },
                     onRefresh = {
-                        when {
-                            gDriveLogin -> {
+                        when(cloudService) {
+                            GoogleDriveUtil.SERVICE_CODE -> {
                                 viewModel.setIsRefreshing(true)
                                 viewModel.updateGoogleDriveFilesStateFlow()
                             }
@@ -454,12 +453,12 @@ fun MainArea(
     paddingValues: PaddingValues,
     searchAppBarState: Int,
     sizeClass: WindowSizeClass,
-    gDriveLogin: Boolean,
-    gDriveTotalSpace: Long,
-    gDriveUsedSpace: Long,
-    gDriveUsedSpacePercent: Int,
-    gDriveAppUsedSpace: Long,
-    gDriveAppUsedSpacePercent: Int,
+    cloudService: Int,
+    cloudTotalSpace: Long,
+    cloudUsedSpace: Long,
+    cloudUsedSpacePercent: Int,
+    cloudAppUsedSpace: Long,
+    cloudAppUsedSpacePercent: Int,
     gDriveLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>,
     workInfoPairList: List<Pair<File, List<WorkInfo>>>,
     isRefreshing: Boolean,
@@ -729,141 +728,144 @@ fun MainArea(
                         }
                     }
                     Crossfade(
-                        targetState = gDriveLogin,
+                        targetState = cloudService,
                     ) {
-                        if (it) {
-                            Column() {
-                                var expanded by remember {
-                                    mutableStateOf(false)
-                                }
-                                Box(modifier = Modifier.wrapContentSize()) {
-                                    OutlinedCard(modifier = Modifier
-                                        .fillMaxWidth(), onClick = {
-                                        expanded = true
-                                    }) {
-                                        Row(modifier = Modifier.padding(16.dp)) {
-                                            Surface(
-                                                modifier = Modifier.size(48.dp),
-                                                shape = CircleShape,
-                                                color = MaterialTheme.colorScheme.secondaryContainer
-                                            ) {
-                                                Box(
-                                                    modifier = Modifier.fillMaxSize(),
-                                                    contentAlignment = Alignment.Center
+                        when (it) {
+                            GoogleDriveUtil.SERVICE_CODE -> {
+                                Column() {
+                                    var expanded by remember {
+                                        mutableStateOf(false)
+                                    }
+                                    Box(modifier = Modifier.wrapContentSize()) {
+                                        OutlinedCard(modifier = Modifier
+                                            .fillMaxWidth(), onClick = {
+                                            expanded = true
+                                        }) {
+                                            Row(modifier = Modifier.padding(16.dp)) {
+                                                Surface(
+                                                    modifier = Modifier.size(48.dp),
+                                                    shape = CircleShape,
+                                                    color = MaterialTheme.colorScheme.secondaryContainer
                                                 ) {
-                                                    FaIcon(
-                                                        faIcon = FaIcons.GoogleDrive,
-                                                        tint = MaterialTheme.colorScheme.primary
+                                                    Box(
+                                                        modifier = Modifier.fillMaxSize(),
+                                                        contentAlignment = Alignment.Center
+                                                    ) {
+                                                        FaIcon(
+                                                            faIcon = FaIcons.GoogleDrive,
+                                                            tint = MaterialTheme.colorScheme.primary
+                                                        )
+                                                    }
+                                                }
+                                                Spacer(modifier = Modifier.width(16.dp))
+                                                Column() {
+                                                    Text(
+                                                        text = stringResource(id = R.string.cloud_service_gd),
+                                                        style = MaterialTheme.typography.titleMedium
+                                                    )
+                                                    LinearProgressIndicator(
+                                                        progress = 0.6f,
+                                                        modifier = Modifier
+                                                            .padding(vertical = 4.dp)
+                                                            .clip(CircleShape),
+                                                    )
+                                                    Text(
+                                                        text = stringResource(
+                                                            id = R.string.cloud_service_used_space,
+                                                            cloudUsedSpacePercent,
+                                                            FileUtil.getSizeString(
+                                                                cloudUsedSpace
+                                                            ),
+                                                            FileUtil.getSizeString(
+                                                                cloudTotalSpace
+                                                            )
+                                                        ),
+                                                        style = MaterialTheme.typography.labelMedium,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                    Text(
+                                                        text = stringResource(
+                                                            R.string.cloud_service_app_used_space,
+                                                            cloudAppUsedSpacePercent,
+                                                            FileUtil.getSizeString(
+                                                                cloudAppUsedSpace
+                                                            )
+                                                        ),
+                                                        style = MaterialTheme.typography.labelMedium,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                                     )
                                                 }
                                             }
-                                            Spacer(modifier = Modifier.width(16.dp))
-                                            Column() {
-                                                Text(
-                                                    text = stringResource(id = R.string.cloud_service_gd),
-                                                    style = MaterialTheme.typography.titleMedium
-                                                )
-                                                LinearProgressIndicator(
-                                                    progress = 0.6f,
-                                                    modifier = Modifier
-                                                        .padding(vertical = 4.dp)
-                                                        .clip(CircleShape),
-                                                )
-                                                Text(
-                                                    text = stringResource(
-                                                        id = R.string.cloud_service_used_space,
-                                                        gDriveUsedSpacePercent,
-                                                        FileUtil.getSizeString(
-                                                            gDriveUsedSpace
-                                                        ),
-                                                        FileUtil.getSizeString(
-                                                            gDriveTotalSpace
-                                                        )
-                                                    ),
-                                                    style = MaterialTheme.typography.labelMedium,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                                Text(
-                                                    text = stringResource(
-                                                        R.string.cloud_service_app_used_space,
-                                                        gDriveAppUsedSpacePercent,
-                                                        FileUtil.getSizeString(
-                                                            gDriveAppUsedSpace
-                                                        )
-                                                    ),
-                                                    style = MaterialTheme.typography.labelMedium,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                            }
                                         }
-                                    }
-                                    RoundedCornerDropdownMenu(
-                                        expanded = expanded,
-                                        onDismissRequest = { expanded = false }) {
-                                        DropdownMenuItem(
-                                            text = { Text(text = stringResource(R.string.sign_out_cloud_service)) },
-                                            onClick = {
-                                                expanded = false
-                                                (context as MainActivity).getGoogleLoginAuth()
-                                                    .signOut()
-                                                    .addOnCompleteListener {
-                                                        onLogoutGoogleDrive()
-                                                    }
-                                            })
+                                        RoundedCornerDropdownMenu(
+                                            expanded = expanded,
+                                            onDismissRequest = { expanded = false }) {
+                                            DropdownMenuItem(
+                                                text = { Text(text = stringResource(R.string.sign_out_cloud_service)) },
+                                                onClick = {
+                                                    expanded = false
+                                                    (context as MainActivity).getGoogleLoginAuth()
+                                                        .signOut()
+                                                        .addOnCompleteListener {
+                                                            onLogoutGoogleDrive()
+                                                        }
+                                                })
+                                        }
                                     }
                                 }
                             }
-                        } else {
-                            OutlinedCard() {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(24.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    Surface(
-                                        shape = CircleShape,
-                                        color = MaterialTheme.colorScheme.secondaryContainer
+                            else -> {
+                                OutlinedCard() {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(24.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
                                     ) {
-                                        Box(
-                                            modifier = Modifier.size(72.dp),
-                                            contentAlignment = Alignment.Center
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = MaterialTheme.colorScheme.secondaryContainer
                                         ) {
-                                            Icon(
-                                                imageVector = Icons.Outlined.CloudOff,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(24.dp),
-                                                tint = MaterialTheme.colorScheme.onSecondaryContainer
-                                            )
+                                            Box(
+                                                modifier = Modifier.size(72.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.CloudOff,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(24.dp),
+                                                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                                )
+                                            }
                                         }
-                                    }
-                                    Text(
-                                        modifier = Modifier.padding(top = 16.dp),
-                                        text = stringResource(R.string.cloud_service_not_connected),
-                                        style = MaterialTheme.typography.titleMedium
-                                    )
-                                    Text(
-                                        modifier = Modifier.padding(vertical = 16.dp),
-                                        text = stringResource(R.string.cloud_service_not_connected_text),
-                                        style = MaterialTheme.typography.labelLarge,
-                                        textAlign = TextAlign.Center
-                                    )
-                                    FilledTonalButton(
-                                        onClick = {
-                                            onShowCloudDialog()
+                                        Text(
+                                            modifier = Modifier.padding(top = 16.dp),
+                                            text = stringResource(R.string.cloud_service_not_connected),
+                                            style = MaterialTheme.typography.titleMedium
+                                        )
+                                        Text(
+                                            modifier = Modifier.padding(vertical = 16.dp),
+                                            text = stringResource(R.string.cloud_service_not_connected_text),
+                                            style = MaterialTheme.typography.labelLarge,
+                                            textAlign = TextAlign.Center
+                                        )
+                                        FilledTonalButton(
+                                            onClick = {
+                                                onShowCloudDialog()
 //                                            val signInIntent =
 //                                                (context as MainActivity).getGoogleLoginAuth().signInIntent
 //                                            gDriveLauncher.launch(signInIntent)
-                                        }) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.Cloud,
-                                            contentDescription = "cloud",
-                                            modifier = Modifier
-                                                .padding(end = 8.dp)
-                                                .size(ButtonDefaults.IconSize),
-                                        )
-                                        Text(text = stringResource(R.string.connect_cloud_service))
+                                            }) {
+                                            Icon(
+                                                imageVector = Icons.Outlined.Cloud,
+                                                contentDescription = "cloud",
+                                                modifier = Modifier
+                                                    .padding(end = 8.dp)
+                                                    .size(ButtonDefaults.IconSize),
+                                            )
+                                            Text(text = stringResource(R.string.connect_cloud_service))
+                                        }
                                     }
                                 }
                             }

@@ -677,7 +677,7 @@ class MainActivity : AppCompatActivity() {
             val enableAutoBackup =
                 dataStore.data.first()[DataStoreKeys.SETTINGS_AUTO_BACKUP] ?: false
             val defaultBackupService =
-                dataStore.data.first()[DataStoreKeys.SETTINGS_DEFAULT_BACKUP_SERVICE] ?: 0
+                dataStore.data.first()[DataStoreKeys.SETTINGS_CLOUD_SERVICE] ?: 0
             val autoBackupFileMaxSize =
                 (dataStore.data.first()[DataStoreKeys.SETTINGS_AUTO_BACKUP_FILE_MAX_SIZE]
                     ?: 10f).let {
@@ -754,7 +754,7 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch(Dispatchers.IO) {
             updateFile.cloudInfo(null, null, file.fileId)
             val defaultBackupService =
-                dataStore.data.first()[DataStoreKeys.SETTINGS_DEFAULT_BACKUP_SERVICE] ?: 0
+                dataStore.data.first()[DataStoreKeys.SETTINGS_CLOUD_SERVICE] ?: 0
             if (defaultBackupService != 0) {
                 val tag = file.fileId.toString()
                 val constraints = Constraints.Builder()
@@ -912,9 +912,9 @@ class MainActivity : AppCompatActivity() {
             GoogleDriveUtil.getDriveInformation(this@MainActivity)?.also {
                 this@MainActivity.dataStore.edit { preferences ->
                     preferences[DataStoreKeys.GOOGLE_WORK_FOLDER_ID] = it.workFolderId
-                    preferences[DataStoreKeys.GOOGLE_TOTAL_SPACE] = it.totalSpace
-                    preferences[DataStoreKeys.GOOGLE_USED_SPACE] = it.usedSpace
-                    preferences[DataStoreKeys.GOOGLE_APP_USED_SPACE] = it.appUsedSpace
+                    preferences[DataStoreKeys.CLOUD_TOTAL_SPACE] = it.totalSpace
+                    preferences[DataStoreKeys.CLOUD_USED_SPACE] = it.usedSpace
+                    preferences[DataStoreKeys.CLOUD_APP_USED_SPACE] = it.appUsedSpace
                 }
             }
         }

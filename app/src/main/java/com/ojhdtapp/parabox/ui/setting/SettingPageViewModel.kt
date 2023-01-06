@@ -72,7 +72,8 @@ class SettingPageViewModel @Inject constructor(
             }
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
-    val googleLoginFlow: Flow<Boolean> = context.dataStore.data
+
+    val cloudTotalSpaceFlow: Flow<Long> = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {
                 emit(emptyPreferences())
@@ -81,10 +82,10 @@ class SettingPageViewModel @Inject constructor(
             }
         }
         .map { settings ->
-            settings[DataStoreKeys.GOOGLE_LOGIN] ?: false
+            settings[DataStoreKeys.CLOUD_TOTAL_SPACE] ?: 0L
         }
 
-    val googleTotalSpaceFlow: Flow<Long> = context.dataStore.data
+    val cloudUsedSpaceFlow: Flow<Long> = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {
                 emit(emptyPreferences())
@@ -93,10 +94,9 @@ class SettingPageViewModel @Inject constructor(
             }
         }
         .map { settings ->
-            settings[DataStoreKeys.GOOGLE_TOTAL_SPACE] ?: 0L
+            settings[DataStoreKeys.CLOUD_USED_SPACE] ?: 0L
         }
-
-    val googleUsedSpaceFlow: Flow<Long> = context.dataStore.data
+    val cloudAppUsedSpaceFlow: Flow<Long> = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {
                 emit(emptyPreferences())
@@ -105,18 +105,7 @@ class SettingPageViewModel @Inject constructor(
             }
         }
         .map { settings ->
-            settings[DataStoreKeys.GOOGLE_USED_SPACE] ?: 0L
-        }
-    val googleAppUsedSpaceFlow: Flow<Long> = context.dataStore.data
-        .catch { exception ->
-            if (exception is IOException) {
-                emit(emptyPreferences())
-            } else {
-                throw exception
-            }
-        }
-        .map { settings ->
-            settings[DataStoreKeys.GOOGLE_APP_USED_SPACE] ?: 0L
+            settings[DataStoreKeys.CLOUD_APP_USED_SPACE] ?: 0L
         }
 
     fun saveGoogleDriveAccount(account: GoogleSignInAccount?) {
@@ -124,16 +113,15 @@ class SettingPageViewModel @Inject constructor(
             context.dataStore.edit { preferences ->
                 preferences[DataStoreKeys.GOOGLE_NAME] = account?.displayName ?: ""
                 preferences[DataStoreKeys.GOOGLE_MAIL] = account?.email ?: ""
-                preferences[DataStoreKeys.GOOGLE_LOGIN] = account != null
+                preferences[DataStoreKeys.SETTINGS_CLOUD_SERVICE] = if(account == null) 0 else GoogleDriveUtil.SERVICE_CODE
                 preferences[DataStoreKeys.GOOGLE_AVATAR] = account?.photoUrl.toString()
-                preferences[DataStoreKeys.SETTINGS_DEFAULT_BACKUP_SERVICE] = 0
             }
             GoogleDriveUtil.getDriveInformation(context)?.also {
                 context.dataStore.edit { preferences ->
                     preferences[DataStoreKeys.GOOGLE_WORK_FOLDER_ID] = it.workFolderId
-                    preferences[DataStoreKeys.GOOGLE_TOTAL_SPACE] = it.totalSpace
-                    preferences[DataStoreKeys.GOOGLE_USED_SPACE] = it.usedSpace
-                    preferences[DataStoreKeys.GOOGLE_APP_USED_SPACE] = it.appUsedSpace
+                    preferences[DataStoreKeys.CLOUD_TOTAL_SPACE] = it.totalSpace
+                    preferences[DataStoreKeys.CLOUD_USED_SPACE] = it.usedSpace
+                    preferences[DataStoreKeys.CLOUD_APP_USED_SPACE] = it.appUsedSpace
                 }
             }
         }
@@ -162,7 +150,7 @@ class SettingPageViewModel @Inject constructor(
 
     // Cloud Service
 
-    val defaultBackupServiceFlow: Flow<Int> = context.dataStore.data
+    val cloudServiceFlow: Flow<Int> = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {
                 emit(emptyPreferences())
@@ -171,13 +159,13 @@ class SettingPageViewModel @Inject constructor(
             }
         }
         .map { settings ->
-            settings[DataStoreKeys.SETTINGS_DEFAULT_BACKUP_SERVICE] ?: 0
+            settings[DataStoreKeys.SETTINGS_CLOUD_SERVICE] ?: 0
         }
 
-    fun setDefaultBackupService(value: Int) {
+    fun setCloudService(value: Int) {
         viewModelScope.launch {
             context.dataStore.edit { preferences ->
-                preferences[DataStoreKeys.SETTINGS_DEFAULT_BACKUP_SERVICE] = value
+                preferences[DataStoreKeys.SETTINGS_CLOUD_SERVICE] = value
             }
         }
     }
