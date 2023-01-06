@@ -143,9 +143,11 @@ fun MultiSelectItem(
 ) {
     Row(modifier = modifier
         .fillMaxWidth()
+        .clip(RoundedCornerShape(8.dp))
         .clickable {
             onValueChange(contact, !contactCheck(contact))
         }, verticalAlignment = Alignment.CenterVertically) {
+        Spacer(modifier = Modifier.width(12.dp))
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
                 .data(
