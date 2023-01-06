@@ -146,6 +146,7 @@ fun RowScope.SearchArea(
                                         model = ImageRequest.Builder(LocalContext.current)
                                             .data(
                                                 AvatarUtil.getAvatar(
+                                                    context = context,
                                                     uri = it.profile.avatarUri?.let { Uri.parse(it) },
                                                     url = it.profile.avatar,
                                                     name = it.profile.name,
@@ -223,6 +224,7 @@ fun RowScope.SearchArea(
                                     model = ImageRequest.Builder(LocalContext.current)
                                         .data(
                                             AvatarUtil.getAvatar(
+                                                context = context,
                                                 uri = item.profile.avatarUri?.let { Uri.parse(it) },
                                                 url = item.profile.avatar,
                                                 name = item.profile.name,
@@ -317,6 +319,7 @@ fun RowScope.SearchArea(
                                         model = ImageRequest.Builder(LocalContext.current)
                                             .data(
                                                 AvatarUtil.getAvatar(
+                                                    context = context,
                                                     uri = cm.contact.profile.avatarUri?.let {
                                                         Uri.parse(
                                                             it
@@ -406,6 +409,7 @@ fun RowScope.SearchArea(
                                                     model = ImageRequest.Builder(LocalContext.current)
                                                         .data(
                                                             AvatarUtil.getAvatar(
+                                                                context = context,
                                                                 uri = it.profile.avatarUri?.let {
                                                                     Uri.parse(
                                                                         it
@@ -515,6 +519,7 @@ fun RowScope.SearchArea(
                                     model = ImageRequest.Builder(LocalContext.current)
                                         .data(
                                             AvatarUtil.getAvatar(
+                                                context = context,
                                                 uri = item.profile.avatarUri?.let { Uri.parse(it) },
                                                 url = item.profile.avatar,
                                                 name = item.profile.name,

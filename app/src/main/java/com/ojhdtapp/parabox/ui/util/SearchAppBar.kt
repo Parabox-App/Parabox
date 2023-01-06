@@ -199,6 +199,7 @@ fun SearchContentField(
     onMenuClick: () -> Unit,
     onAvatarClick: () -> Unit
 ) {
+    val context = LocalContext.current
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -260,6 +261,7 @@ fun SearchContentField(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(
                             AvatarUtil.getAvatar(
+                                context = context,
                                 uri = avatarUri?.let { Uri.parse(it) },
                                 url = null,
                                 name = null,

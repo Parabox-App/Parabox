@@ -1874,10 +1874,12 @@ fun MessageAvatar(
 ) =
     Box(modifier = Modifier.size(42.dp)) {
         if (shouldDisplay) {
+            val context = LocalContext.current
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(
                         AvatarUtil.getAvatar(
+                            context = context,
                             uri = avatarUri?.let { Uri.parse(it) },
                             url = avatar,
                             name = name,

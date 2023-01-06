@@ -146,6 +146,7 @@ fun UserProfileDialog(
                                 model = ImageRequest.Builder(LocalContext.current)
                                     .data(
                                         AvatarUtil.getAvatar(
+                                            context = context,
                                             uri = avatarUri?.let { Uri.parse(it) },
                                             url = null,
                                             name = null,

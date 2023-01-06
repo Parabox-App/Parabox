@@ -845,6 +845,7 @@ fun ContactItem(
                                 model = ImageRequest.Builder(LocalContext.current)
                                     .data(
                                         AvatarUtil.getAvatar(
+                                            context = context,
                                             uri = contact.profile.avatarUri?.let { Uri.parse(it) },
                                             url = contact.profile.avatar,
                                             name = contact.profile.name,

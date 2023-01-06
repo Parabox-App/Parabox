@@ -141,6 +141,7 @@ fun MultiSelectItem(
     contactCheck: (Contact) -> Boolean,
     onValueChange: (target: Contact, value: Boolean) -> Unit
 ) {
+    val context = LocalContext.current
     Row(modifier = modifier
         .fillMaxWidth()
         .clip(RoundedCornerShape(8.dp))
@@ -152,6 +153,7 @@ fun MultiSelectItem(
             model = ImageRequest.Builder(LocalContext.current)
                 .data(
                     AvatarUtil.getAvatar(
+                        context = context,
                         uri = contact.profile.avatarUri?.let{ Uri.parse(it)},
                         url = contact.profile.avatar,
                         name = contact.profile.name,

@@ -1,11 +1,13 @@
 package com.ojhdtapp.parabox.core.util
 
+import android.content.Context
 import android.graphics.*
 import android.net.Uri
 import android.util.Log
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
+import com.ojhdtapp.parabox.core.util.FileUtil.checkUriAvailable
 import java.util.*
 
 
@@ -15,13 +17,14 @@ fun ByteArray.toAvatarBitmap(): ImageBitmap {
 
 object AvatarUtil {
     fun getAvatar(
+        context: Context,
         uri: Uri? = null,
         url: String? = null,
         name: String? = null,
         backgroundColor: androidx.compose.ui.graphics.Color,
         textColor: androidx.compose.ui.graphics.Color,
     ): Any {
-        return uri ?: url ?: createNamedAvatarBm(
+        return (if(uri?.checkUriAvailable(context) == true) uri else null) ?: url ?: createNamedAvatarBm(
             backgroundColor = backgroundColor.toArgb(),
             textColor = textColor.toArgb(),
             name = name?.ifBlank { null }?.substring(0, 1)?.uppercase(Locale.getDefault())
