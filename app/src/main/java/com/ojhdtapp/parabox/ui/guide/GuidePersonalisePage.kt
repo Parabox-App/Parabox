@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.BottomSheetScaffold
 import androidx.compose.material.ExperimentalMaterialApi
@@ -172,10 +173,12 @@ fun GuidePersonalisePage(
                             }
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    Row(modifier = Modifier.clickable { showDialog = true }, verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = userName, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineMedium)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Icon(imageVector = Icons.Outlined.Edit, contentDescription = "edit", modifier = Modifier.size(24.dp))
+                    Surface(shape = RoundedCornerShape(8.dp),onClick = { showDialog = true }){
+                        Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = userName, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.headlineMedium)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(imageVector = Icons.Outlined.Edit, contentDescription = "edit", modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.onSurface)
+                        }
                     }
                 }
             }

@@ -22,6 +22,7 @@ interface MessageDao {
     "WHERE contact_message_cross_ref.contactId IN (:contactIds) " + "ORDER BY message_entity.timestamp DESC")
     fun getMessagesPagingSource(contactIds: List<Long>): PagingSource<Int, MessageEntity>
 
+    @SuppressWarnings(RoomWarnings.CURSOR_MISMATCH)
     @Query("SELECT * FROM message_entity " +
             "INNER JOIN contact_message_cross_ref ON contact_message_cross_ref.messageId = message_entity.messageId " +
             "WHERE contact_message_cross_ref.contactId IN (:contactIds) " + "ORDER BY message_entity.timestamp DESC LIMIT :limit")
