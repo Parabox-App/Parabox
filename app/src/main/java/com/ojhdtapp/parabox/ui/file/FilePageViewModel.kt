@@ -122,6 +122,7 @@ class FilePageViewModel @Inject constructor(
                             addAll(gd.data?.toMutableList()?.apply {
                                 removeAll {
                                     it.cloudId in (local.data?.map { it.cloudId } ?: emptyList())
+                                            || (value.isNotBlank() && value !in it.name)
                                 }
                             } ?: emptyList())
                         }
