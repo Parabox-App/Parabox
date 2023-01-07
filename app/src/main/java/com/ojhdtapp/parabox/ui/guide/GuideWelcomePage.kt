@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -234,7 +235,11 @@ fun GuideWelcomePage(
             )
             Spacer(modifier = Modifier.height(16.dp))
             NormalPreference(
-                modifier = Modifier.padding(horizontal = 32.dp),
+                modifier = Modifier.padding(horizontal = 32.dp)
+                    .widthIn(
+                        0.dp,
+                        if(sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) 480.dp else 3000.dp
+                ),
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Outlined.Language,

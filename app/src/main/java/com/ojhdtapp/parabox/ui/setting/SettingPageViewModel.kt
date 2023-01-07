@@ -748,6 +748,86 @@ class SettingPageViewModel @Inject constructor(
             }
         }
     }
+
+    val qiniuKODOAccessKeyFlow = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.QINIU_KODO_ACCESS_KEY] ?: ""
+        }
+
+    fun setQiniuKODOAccessKey(value: String) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.QINIU_KODO_ACCESS_KEY] = value
+            }
+        }
+    }
+
+    val qiniuKODOSecretKeyFlow = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.QINIU_KODO_SECRET_KEY] ?: ""
+        }
+
+    fun setQiniuKODOSecretKey(value: String) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.QINIU_KODO_SECRET_KEY] = value
+            }
+        }
+    }
+
+    val qiniuKODOBucketFlow = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.QINIU_KODO_BUCKET] ?: ""
+        }
+
+    fun setQiniuKODOBucket(value: String) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.QINIU_KODO_BUCKET] = value
+            }
+        }
+    }
+
+    val qiniuKODODomainFlow = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.QINIU_KODO_DOMAIN] ?: ""
+        }
+
+    fun setQiniuKODODomain(value: String) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.QINIU_KODO_DOMAIN] = value
+            }
+        }
+    }
     // Licenses
     val licenseList = listOf<License>(
         License(

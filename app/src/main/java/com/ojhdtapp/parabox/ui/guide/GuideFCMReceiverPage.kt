@@ -56,9 +56,6 @@ fun GuideFCMReceiverPage(
     val fcmEnabled by viewModel.enableFCMStateFlow.collectAsState(initial = false)
     val token by viewModel.fcmTokenFlow.collectAsState(initial = "")
     val loopbackToken by viewModel.fcmLoopbackTokenFlow.collectAsState(initial = "")
-    var tempToken by remember {
-        mutableStateOf(loopbackToken)
-    }
     BottomSheetScaffold(
         modifier = Modifier
             .systemBarsPadding(),
@@ -334,6 +331,9 @@ fun GuideFCMReceiverPage(
                                     Column(
                                         verticalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
+                                        var tempToken by remember {
+                                            mutableStateOf(loopbackToken)
+                                        }
                                         Text(
                                             modifier = Modifier.padding(vertical = 8.dp),
                                             text = "从您的备用设备复制 Token，粘贴到下面的输入框中。",

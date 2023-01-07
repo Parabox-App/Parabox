@@ -148,7 +148,6 @@ object FileUtil {
                             context.dataStore.data.first()[DataStoreKeys.TENCENT_COS_REGION]
                         if (secretId != null && secretKey != null && bucket != null && region != null) {
                             val cosPath = "ParaboxTemp/$fileName"
-                            Log.d("parabox", "cos: $secretId, $secretKey, $bucket, $region, $cosPath")
                             val res = TencentCOSUtil.uploadFile(
                                 context,
                                 secretId,
@@ -176,6 +175,33 @@ object FileUtil {
                                     cloudId = cosPath
                                 )
                             } else null
+                        } else null
+                    }
+                    FcmConstants.CloudStorage.QINIU_KODO.ordinal -> {
+                        val accessKey =
+                            context.dataStore.data.first()[DataStoreKeys.QINIU_KODO_ACCESS_KEY]
+                        val secretKey =
+                            context.dataStore.data.first()[DataStoreKeys.QINIU_KODO_SECRET_KEY]
+                        val bucket =
+                            context.dataStore.data.first()[DataStoreKeys.QINIU_KODO_BUCKET]
+                        val domain =
+                            context.dataStore.data.first()[DataStoreKeys.QINIU_KODO_DOMAIN]
+                        if (accessKey != null && secretKey != null && bucket != null && domain != null) {
+                            val kodoPath = "ParaboxTemp/$fileName"
+                            val key = QiniuKODOUtil.uploadFile(
+                                accessKey = accessKey,
+                                secretKey = secretKey,
+                                bucket = bucket,
+                                fileName = kodoPath,
+                                localPath = filePath,
+                            )
+                            key?.let{
+                                CloudResourceInfo(
+                                    cloudType = FcmConstants.CloudStorage.QINIU_KODO.ordinal,
+                                    url = QiniuKODOUtil.downloadFile(domain, accessKey, secretKey, key),
+                                    cloudId = it
+                                )
+                            }
                         } else null
                     }
                     else -> null

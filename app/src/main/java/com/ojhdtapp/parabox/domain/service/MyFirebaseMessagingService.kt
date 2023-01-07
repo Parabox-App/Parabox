@@ -265,7 +265,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                     GoogleDriveUtil.downloadFile(
                         baseContext,
                         it,
-                        baseContext.getExternalFilesDir("chat")!!
+                        baseContext.externalCacheDir!!
                     )
                 }?.let {
                     FileUtil.getUriOfFile(baseContext, it)
@@ -309,6 +309,46 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 //                            } else null
                         } else null
                     } else null
+                } ?: url?.let { url ->
+                    downloadUtil.downloadUrl(
+                        url,
+                        fileName,
+                        baseContext.externalCacheDir!!
+                    )?.let {
+                        FileUtil.getUriOfFile(baseContext, it)
+                    }
+                }
+            }
+
+            FcmConstants.CloudStorage.QINIU_KODO.ordinal -> {
+                cloudId?.let { key ->
+                    val accessKey =
+                        dataStore.data.first()[DataStoreKeys.QINIU_KODO_ACCESS_KEY]
+                    val secretKey =
+                        dataStore.data.first()[DataStoreKeys.QINIU_KODO_SECRET_KEY]
+                    val bucket =
+                        dataStore.data.first()[DataStoreKeys.QINIU_KODO_BUCKET]
+                    val domain =
+                        dataStore.data.first()[DataStoreKeys.QINIU_KODO_DOMAIN]
+                    if (accessKey != null && secretKey != null && bucket != null && domain != null) {
+                        QiniuKODOUtil.downloadFile(domain, accessKey, secretKey, key)?.let{ newUrl ->
+                            downloadUtil.downloadUrl(
+                                newUrl,
+                                fileName,
+                                baseContext.externalCacheDir!!
+                            )?.let {
+                                FileUtil.getUriOfFile(baseContext, it)
+                            }
+                        }
+                    } else null
+                } ?: url?.let { url ->
+                    downloadUtil.downloadUrl(
+                        url,
+                        fileName,
+                        baseContext.externalCacheDir!!
+                    )?.let {
+                        FileUtil.getUriOfFile(baseContext, it)
+                    }
                 }
             }
 
@@ -317,7 +357,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                     downloadUtil.downloadUrl(
                         url,
                         fileName,
-                        baseContext.getExternalFilesDir("chat")!!
+                        baseContext.externalCacheDir!!
                     )?.let {
                         FileUtil.getUriOfFile(baseContext, it)
                     }

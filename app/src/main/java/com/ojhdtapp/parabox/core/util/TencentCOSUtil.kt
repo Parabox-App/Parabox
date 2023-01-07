@@ -21,7 +21,6 @@ import com.tencent.qcloud.core.auth.ShortTimeCredentialProvider
 import kotlin.coroutines.suspendCoroutine
 
 object TencentCOSUtil {
-    const val SERVICE_CODE = 1002
     fun getCosXmlService(
         context: Context,
         secretId: String,

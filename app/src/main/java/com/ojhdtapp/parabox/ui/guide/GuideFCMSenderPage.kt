@@ -68,15 +68,7 @@ fun GuideFCMSenderPage(
     val fcmEnabled by viewModel.enableFCMStateFlow.collectAsState(initial = false)
     val token by viewModel.fcmTokenFlow.collectAsState(initial = "")
     val targetTokens = viewModel.fcmTargetTokensFlow.collectAsState(initial = emptySet())
-    var tempTokens by remember {
-        mutableStateOf(buildString {
-            targetTokens.value.forEachIndexed { index, s ->
-                append(s)
-                if (index != targetTokens.value.size - 1)
-                    append(",\n")
-            }
-        })
-    }
+
     BottomSheetScaffold(
         modifier = Modifier
             .systemBarsPadding(),
@@ -100,11 +92,11 @@ fun GuideFCMSenderPage(
                     onClick = {
                         mainNavController.navigate(GuideCloudPageDestination)
                     },
-                    enabled = !fcmEnabled || tempTokens.isNotEmpty()
+                    enabled = !fcmEnabled || targetTokens.value.isNotEmpty()
                 ) {
                     if (!fcmEnabled) {
                         Text(text = "稍后再说")
-                    } else if (tempTokens.isNotEmpty()) {
+                    } else if (targetTokens.value.isNotEmpty()) {
                         Text(text = "继续")
                     } else {
                         Text(text = "未完成")
@@ -278,6 +270,15 @@ fun GuideFCMSenderPage(
                                     Column(
                                         verticalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
+                                        var tempTokens by remember {
+                                            mutableStateOf(buildString {
+                                                targetTokens.value.forEachIndexed { index, s ->
+                                                    append(s)
+                                                    if (index != targetTokens.value.size - 1)
+                                                        append(",\n")
+                                                }
+                                            })
+                                        }
                                         Text(
                                             modifier = Modifier.padding(vertical = 8.dp),
                                             text = "从您的其他设备复制 Token，粘贴到下面的输入框中。",

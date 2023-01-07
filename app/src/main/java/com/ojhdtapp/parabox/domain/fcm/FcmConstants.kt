@@ -10,6 +10,7 @@ object FcmConstants {
     enum class CloudStorage{
         NONE,
         GOOGLE_DRIVE,
-        TENCENT_COS
+        TENCENT_COS,
+        QINIU_KODO
     }
 }

@@ -16,9 +16,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Cloud
@@ -104,6 +106,11 @@ fun FCMPage(
     val tencentCOSSecretKey = viewModel.tencentCOSSecretKeyFlow.collectAsState(initial = "")
     val tencentCOSBucket = viewModel.tencentCOSBucketFlow.collectAsState(initial = "")
     val tencentCOSRegion = viewModel.tencentCOSRegionFlow.collectAsState(initial = "")
+
+    val qiniuKODOAccessKey = viewModel.qiniuKODOAccessKeyFlow.collectAsState(initial = "")
+    val qiniuKODOSecretKey = viewModel.qiniuKODOSecretKeyFlow.collectAsState(initial = "")
+    val qiniuKODOBucket = viewModel.qiniuKODOBucketFlow.collectAsState(initial = "")
+    val qiniuKODODomain = viewModel.qiniuKODODomainFlow.collectAsState(initial = "")
 
     LaunchedEffect(key1 = Unit) {
         if (enabled.value)
@@ -343,10 +350,10 @@ fun FCMPage(
     var showFcmObjectStorageDialog by remember {
         mutableStateOf(false)
     }
-    var showTencentCosDialog by remember{
+    var showTencentCosDialog by remember {
         mutableStateOf(false)
     }
-    var showQiniuDialog by remember{
+    var showQiniuDialog by remember {
         mutableStateOf(false)
     }
     // FCM Object Storage Dialog
@@ -362,37 +369,59 @@ fun FCMPage(
             },
             title = { Text(text = "对象存储服务") },
             text = {
-                LazyColumn() {
-                    item {
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            onClick = {
-                                showTencentCosDialog = true
-                            }) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "腾讯云 COS",
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
-                            }
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        onClick = {
+                            showTencentCosDialog = true
+                        }) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp)
+                                .padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "腾讯云 COS",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
                         }
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            onClick = {
+                    }
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        onClick = {
+                            showQiniuDialog = true
+                        }) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp)
+                                .padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "七牛云 KODO",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                    }
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        onClick = {
 
-                            }) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "Google Drive（实验性）",
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
-                            }
+                        }) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp)
+                                .padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Google Drive（实验性）",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
                         }
                     }
                 }
@@ -400,7 +429,7 @@ fun FCMPage(
         )
     }
 
-    if(showTencentCosDialog){
+    if (showTencentCosDialog) {
         var tempSecretId by remember {
             mutableStateOf(tencentCOSSecretId.value)
         }
@@ -440,6 +469,8 @@ fun FCMPage(
             },
             text = {
                 Column {
+                    Text(text = "将在存储桶根目录下新建“ParaboxTemp”目录，存放待发送的媒体文件（图片，语音等）。文件传输完毕后不会自动删除，请自行按需清理。")
+                    Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = tempSecretId,
                         onValueChange = { tempSecretId = it },
@@ -467,6 +498,81 @@ fun FCMPage(
                         label = { Text(text = "Bucket") },
                         singleLine = true,
                         supportingText = { Text(text = "存储桶名称，由 bucketname-appid 组成，如 examplebucket-1250000000") },
+                    )
+                }
+            },
+        )
+    }
+
+    if (showQiniuDialog) {
+        var tempAccessKey by remember {
+            mutableStateOf(qiniuKODOAccessKey.value)
+        }
+        var tempSecretKey by remember {
+            mutableStateOf(qiniuKODOSecretKey.value)
+        }
+        var tempBucket by remember {
+            mutableStateOf(qiniuKODOBucket.value)
+        }
+        var tempDomain by remember {
+            mutableStateOf(qiniuKODODomain.value)
+        }
+        AlertDialog(
+            onDismissRequest = { showQiniuDialog = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    showQiniuDialog = false
+                    showFcmObjectStorageDialog = false
+                    viewModel.setQiniuKODOAccessKey(tempAccessKey)
+                    viewModel.setQiniuKODOSecretKey(tempSecretKey)
+                    viewModel.setQiniuKODOBucket(tempBucket)
+                    viewModel.setQiniuKODODomain(tempDomain)
+                    viewModel.setFCMCloudStorage(FcmConstants.CloudStorage.QINIU_KODO.ordinal)
+                }) {
+                    Text(text = stringResource(id = R.string.save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showQiniuDialog = false
+                }) {
+                    Text(text = stringResource(id = R.string.cancel))
+                }
+            },
+            title = {
+                Text(text = "七牛云 KODO")
+            },
+            text = {
+                Column {
+                    Text(text = "将在存储桶根目录下新建“ParaboxTemp”目录，存放待发送的媒体文件（图片，语音等）。文件传输完毕后不会自动删除，请自行按需清理。")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = tempAccessKey,
+                        onValueChange = { tempAccessKey = it },
+                        label = { Text(text = "AccessKey") },
+                        singleLine = true,
+                        supportingText = { Text(text = "永久密钥 accessKey") },
+                    )
+                    OutlinedTextField(
+                        value = tempSecretKey,
+                        onValueChange = { tempSecretKey = it },
+                        label = { Text(text = "SecretKey") },
+                        singleLine = true,
+                        supportingText = { Text(text = "永久密钥 secretKey") },
+                    )
+                    OutlinedTextField(
+                        value = tempBucket,
+                        onValueChange = { tempBucket = it },
+                        label = { Text(text = "Bucket") },
+                        singleLine = true,
+                        supportingText = { Text(text = "空间名称") },
+                    )
+                    OutlinedTextField(
+                        value = tempDomain,
+                        onValueChange = { tempDomain = it },
+                        label = { Text(text = "Domain") },
+                        singleLine = true,
+                        supportingText = { Text(text = "域名，不含http/https") },
                     )
                 }
             },
@@ -688,9 +794,10 @@ fun FCMPage(
             item {
                 NormalPreference(
                     title = stringResource(R.string.object_storage),
-                    subtitle = when(cloudStorage.value) {
+                    subtitle = when (cloudStorage.value) {
                         FcmConstants.CloudStorage.NONE.ordinal -> stringResource(R.string.not_set)
                         FcmConstants.CloudStorage.TENCENT_COS.ordinal -> "腾讯云 COS"
+                        FcmConstants.CloudStorage.QINIU_KODO.ordinal -> "七牛云 KODO"
                         FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal -> "Google Drive（实验性）"
                         else -> stringResource(R.string.not_set)
                     },

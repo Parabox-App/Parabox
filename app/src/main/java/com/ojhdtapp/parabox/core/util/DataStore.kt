@@ -54,5 +54,10 @@ object DataStoreKeys{
     val TENCENT_COS_BUCKET = stringPreferencesKey("tencent_cos_bucket")
     val TENCENT_COS_REGION = stringPreferencesKey("tencent_cos_region")
 
+    val QINIU_KODO_ACCESS_KEY = stringPreferencesKey("qiniu_kodo_access_key")
+    val QINIU_KODO_SECRET_KEY = stringPreferencesKey("qiniu_kodo_secret_key")
+    val QINIU_KODO_BUCKET = stringPreferencesKey("qiniu_kodo_bucket")
+    val QINIU_KODO_DOMAIN = stringPreferencesKey("qiniu_kodo_domain")
+
     const val DEFAULT_USER_NAME = "Me"
 }

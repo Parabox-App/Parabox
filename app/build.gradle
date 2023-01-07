@@ -116,6 +116,9 @@ dependencies {
     implementation "androidx.compose.material:material-icons-extended:$compose_version"
     implementation "com.google.android.material:material:1.8.0-beta01"
 
+    // Qiniu
+    implementation 'com.qiniu:qiniu-java-sdk:7.12.1'
+
     // Tencent COS
     implementation 'com.qcloud.cos:cos-android-lite-nobeacon:5.9.8'
 
