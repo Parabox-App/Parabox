@@ -16,26 +16,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeTopAppBar
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.surfaceColorAtElevation
+import androidx.compose.material.icons.outlined.Storage
+import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
@@ -61,6 +50,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.guru.fontawesomecomposelib.FaIcon
+import com.guru.fontawesomecomposelib.FaIcons
+import com.ojhdtapp.parabox.MainActivity
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
@@ -105,17 +97,13 @@ fun FCMPage(
     val targetTokens = viewModel.fcmTargetTokensFlow.collectAsState(initial = emptySet())
     val loopbackToken = viewModel.fcmLoopbackTokenFlow.collectAsState(initial = "")
 
-
-    val selectableService by remember {
-        derivedStateOf {
-            buildMap<Int, String> {
-                put(FcmConstants.CloudStorage.NONE.ordinal, "无")
-//                if (gDriveLogin) put(FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal, "Google Drive")
-            }
-        }
-    }
     val cloudStorage =
         viewModel.fcmCloudStorageFlow.collectAsState(initial = FcmConstants.CloudStorage.NONE.ordinal)
+
+    val tencentCOSSecretId = viewModel.tencentCOSSecretIdFlow.collectAsState(initial = "")
+    val tencentCOSSecretKey = viewModel.tencentCOSSecretKeyFlow.collectAsState(initial = "")
+    val tencentCOSBucket = viewModel.tencentCOSBucketFlow.collectAsState(initial = "")
+    val tencentCOSRegion = viewModel.tencentCOSRegionFlow.collectAsState(initial = "")
 
     LaunchedEffect(key1 = Unit) {
         if (enabled.value)
@@ -352,6 +340,139 @@ fun FCMPage(
         }
     )
 
+    var showFcmObjectStorageDialog by remember {
+        mutableStateOf(false)
+    }
+    var showTencentCosDialog by remember{
+        mutableStateOf(false)
+    }
+    var showQiniuDialog by remember{
+        mutableStateOf(false)
+    }
+    // FCM Object Storage Dialog
+    if (showFcmObjectStorageDialog) {
+        AlertDialog(
+            onDismissRequest = { showFcmObjectStorageDialog = false },
+            confirmButton = {},
+            icon = {
+                Icon(
+                    imageVector = Icons.Outlined.Storage,
+                    contentDescription = "select object storage"
+                )
+            },
+            title = { Text(text = "对象存储服务") },
+            text = {
+                LazyColumn() {
+                    item {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            onClick = {
+                                showTencentCosDialog = true
+                            }) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "腾讯云 COS",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            }
+                        }
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            onClick = {
+
+                            }) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Google Drive（实验性）",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        )
+    }
+
+    if(showTencentCosDialog){
+        var tempSecretId by remember {
+            mutableStateOf(tencentCOSSecretId.value)
+        }
+        var tempSecretKey by remember {
+            mutableStateOf(tencentCOSSecretKey.value)
+        }
+        var tempRegion by remember {
+            mutableStateOf(tencentCOSRegion.value)
+        }
+        var tempBucket by remember {
+            mutableStateOf(tencentCOSBucket.value)
+        }
+        AlertDialog(
+            onDismissRequest = { showTencentCosDialog = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    showTencentCosDialog = false
+                    showFcmObjectStorageDialog = false
+                    viewModel.setTencentCOSSecretId(tempSecretId)
+                    viewModel.setTencentCOSSecretKey(tempSecretKey)
+                    viewModel.setTencentCOSRegion(tempRegion)
+                    viewModel.setTencentCOSBucket(tempBucket)
+                    viewModel.setFCMCloudStorage(FcmConstants.CloudStorage.TENCENT_COS.ordinal)
+                }) {
+                    Text(text = stringResource(id = R.string.save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showTencentCosDialog = false
+                }) {
+                    Text(text = stringResource(id = R.string.cancel))
+                }
+            },
+            title = {
+                Text(text = "腾讯云 COS")
+            },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = tempSecretId,
+                        onValueChange = { tempSecretId = it },
+                        label = { Text(text = "SecretId") },
+                        singleLine = true,
+                        supportingText = { Text(text = "永久密钥 secretId") },
+                    )
+                    OutlinedTextField(
+                        value = tempSecretKey,
+                        onValueChange = { tempSecretKey = it },
+                        label = { Text(text = "SecretKey") },
+                        singleLine = true,
+                        supportingText = { Text(text = "永久密钥 secretKey") },
+                    )
+                    OutlinedTextField(
+                        value = tempRegion,
+                        onValueChange = { tempRegion = it },
+                        label = { Text(text = "Region") },
+                        singleLine = true,
+                        supportingText = { Text(text = "存储桶所在地域简称，如 ap-guangzhou") }
+                    )
+                    OutlinedTextField(
+                        value = tempBucket,
+                        onValueChange = { tempBucket = it },
+                        label = { Text(text = "Bucket") },
+                        singleLine = true,
+                        supportingText = { Text(text = "存储桶名称，由 bucketname-appid 组成，如 examplebucket-1250000000") },
+                    )
+                }
+            },
+        )
+    }
+
 
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -565,28 +686,16 @@ fun FCMPage(
                 PreferencesCategory(text = stringResource(R.string.fcm_feat_settings))
             }
             item {
-                Crossfade(targetState = selectableService.size <= 1) {
-                    if (it) {
-                        NormalPreference(
-                            title = stringResource(R.string.object_storage),
-                            subtitle = stringResource(
-                                R.string.object_storage_none
-                            ),
-                        ) {
-                            if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
-                                mainNavController.navigate(CloudPageDestination)
-                            } else {
-                                viewModel.setSelectedSetting(SettingPageState.CLOUD)
-                            }
-                        }
-                    } else {
-                        SimpleMenuPreference(
-                            title = stringResource(R.string.object_storage),
-                            optionsMap = selectableService,
-                            selectedKey = cloudStorage.value,
-                            onSelect = viewModel::setFCMCloudStorage
-                        )
-                    }
+                NormalPreference(
+                    title = stringResource(R.string.object_storage),
+                    subtitle = when(cloudStorage.value) {
+                        FcmConstants.CloudStorage.NONE.ordinal -> stringResource(R.string.not_set)
+                        FcmConstants.CloudStorage.TENCENT_COS.ordinal -> "腾讯云 COS"
+                        FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal -> "Google Drive（实验性）"
+                        else -> stringResource(R.string.not_set)
+                    },
+                ) {
+                    showFcmObjectStorageDialog = true
                 }
             }
             item {

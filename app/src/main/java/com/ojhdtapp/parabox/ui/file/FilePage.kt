@@ -146,6 +146,7 @@ fun FilePage(
                 if (result.data != null) {
                     val googleSignInAccount = GoogleSignIn.getSignedInAccountFromIntent(intent)
                     googleSignInAccount.addOnCompleteListener { task ->
+                        showCloudDialog = false
                         if (task.isSuccessful) {
                             val account = task.result
                             if (account != null) {
@@ -161,6 +162,14 @@ fun FilePage(
                             }
                         }
                     }
+                } else {
+                    coroutineScope.launch {
+                        snackBarHostState.showSnackbar("设备不支持")
+                    }
+                }
+            } else {
+                coroutineScope.launch {
+                    snackBarHostState.showSnackbar("设备不支持")
                 }
             }
         }
@@ -397,7 +406,7 @@ fun FilePage(
                         showCloudDialog = true
                     },
                     onRefresh = {
-                        when(cloudService) {
+                        when (cloudService) {
                             GoogleDriveUtil.SERVICE_CODE -> {
                                 viewModel.setIsRefreshing(true)
                                 viewModel.updateGoogleDriveFilesStateFlow()

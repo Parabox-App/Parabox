@@ -49,5 +49,10 @@ object DataStoreKeys{
     val FCM_TARGET_TOKENS = stringSetPreferencesKey("fcm_target_tokens")
     val FCM_LOOPBACK_TOKEN = stringPreferencesKey("fcm_loopback_token")
 
+    val TENCENT_COS_SECRET_ID = stringPreferencesKey("tencent_cos_secret_id")
+    val TENCENT_COS_SECRET_KEY = stringPreferencesKey("tencent_cos_secret_key")
+    val TENCENT_COS_BUCKET = stringPreferencesKey("tencent_cos_bucket")
+    val TENCENT_COS_REGION = stringPreferencesKey("tencent_cos_region")
+
     const val DEFAULT_USER_NAME = "Me"
 }

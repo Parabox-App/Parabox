@@ -668,6 +668,86 @@ class SettingPageViewModel @Inject constructor(
         _showTermsDialog.value = value
     }
 
+    // Tencent COS
+    val tencentCOSSecretIdFlow: Flow<String> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.TENCENT_COS_SECRET_ID] ?: ""
+        }
+
+    fun setTencentCOSSecretId(value: String) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.TENCENT_COS_SECRET_ID] = value
+            }
+        }
+    }
+
+    val tencentCOSSecretKeyFlow: Flow<String> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.TENCENT_COS_SECRET_KEY] ?: ""
+        }
+
+    fun setTencentCOSSecretKey(value: String) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.TENCENT_COS_SECRET_KEY] = value
+            }
+        }
+    }
+
+    val tencentCOSBucketFlow: Flow<String> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.TENCENT_COS_BUCKET] ?: ""
+        }
+
+    fun setTencentCOSBucket(value: String) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.TENCENT_COS_BUCKET] = value
+            }
+        }
+    }
+
+    val tencentCOSRegionFlow: Flow<String> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.TENCENT_COS_REGION] ?: ""
+        }
+
+    fun setTencentCOSRegion(value: String) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.TENCENT_COS_REGION] = value
+            }
+        }
+    }
     // Licenses
     val licenseList = listOf<License>(
         License(

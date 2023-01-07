@@ -3,11 +3,14 @@ package com.ojhdtapp.parabox.data.remote.dto
 import android.content.Context
 import android.media.MediaMetadataRetriever
 import android.net.Uri
+import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.FileUtil.toSafeFilename
+import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.parabox.core.util.toDateAndTimeString
 import com.ojhdtapp.parabox.data.local.entity.ContactEntity
 import com.ojhdtapp.parabox.data.local.entity.MessageEntity
+import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.LatestMessage
 import com.ojhdtapp.parabox.domain.model.Message
@@ -16,6 +19,7 @@ import com.ojhdtapp.parabox.domain.model.Profile
 import com.ojhdtapp.parabox.domain.model.message_content.*
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.ReceiveMessageDto
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.getContentString
+import kotlinx.coroutines.flow.first
 
 fun ReceiveMessageDto.toContactEntity(context: Context): ContactEntity {
     return ContactEntity(
@@ -235,20 +239,25 @@ suspend fun List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.M
                 val cloudResourceInfo = it.uri?.let { uri ->
                     FileUtil.getCloudResourceInfoWithSelectedCloudStorage(
                         context,
-                        it.fileName ?:
-                        FileUtil.getFilenameFromUri(context, uri) ?:
-                        "Image_${System.currentTimeMillis().toDateAndTimeString()}.png",
+                        it.fileName ?: FileUtil.getFilenameFromUri(context, uri)
+                        ?: "Image_${System.currentTimeMillis().toDateAndTimeString()}.png",
                         uri
                     )
                 }
                 if (cloudResourceInfo != null) {
                     it.copy(
+                        uri = null,
                         cloudType = cloudResourceInfo.cloudType,
                         url = cloudResourceInfo.url,
                         cloudId = cloudResourceInfo.cloudId
                     )
                 } else {
-                    com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText(text = "[图片]")
+                    // com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText(text = "[图片]")
+                    it.copy(
+                        uri = null,
+                        cloudType = null,
+                        cloudId = null
+                    )
                 }
             }
 
@@ -256,9 +265,8 @@ suspend fun List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.M
                 val cloudResourceInfo = it.uri?.let { uri ->
                     FileUtil.getCloudResourceInfoWithSelectedCloudStorage(
                         context,
-                        it.fileName ?:
-                        FileUtil.getFilenameFromUri(context, uri) ?:
-                        "Audio_${System.currentTimeMillis().toDateAndTimeString()}.mp3",
+                        it.fileName ?: FileUtil.getFilenameFromUri(context, uri)
+                        ?: "Audio_${System.currentTimeMillis().toDateAndTimeString()}.mp3",
                         uri
                     )
                 }
@@ -269,7 +277,12 @@ suspend fun List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.M
                         cloudId = cloudResourceInfo.cloudId
                     )
                 } else {
-                    com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText(text = "[语音]")
+//                    com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText(text = "[语音]")
+                    it.copy(
+                        uri = null,
+                        cloudType = null,
+                        cloudId = null
+                    )
                 }
             }
 
@@ -296,10 +309,45 @@ suspend fun List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.M
                         cloudId = cloudResourceInfo.cloudId
                     )
                 } else {
-                    com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText(text = "[文件]")
+//                    com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText(text = "[文件]")
+                    it.copy(
+                        uri = null,
+                        cloudType = null,
+                        cloudId = null
+                    )
                 }
             }
 
+            else -> it
+        }
+    }
+}
+
+fun List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent>.filterMissing()
+        : List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent>{
+    return this.map {
+        when (it) {
+            is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Image -> {
+                if (it.url == null && it.cloudId == null) {
+                    com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText(text = "[图片]")
+                } else {
+                    it
+                }
+            }
+            is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Audio -> {
+                if (it.url == null && it.cloudId == null) {
+                    com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText(text = "[语音]")
+                } else {
+                    it
+                }
+            }
+            is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.File -> {
+                if (it.url == null && it.cloudId == null) {
+                    com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText(text = "[文件]")
+                } else {
+                    it
+                }
+            }
             else -> it
         }
     }

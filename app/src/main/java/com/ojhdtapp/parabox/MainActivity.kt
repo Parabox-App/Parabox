@@ -80,6 +80,7 @@ import com.google.mlkit.nl.translate.TranslatorOptions
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.DownloadingState
+import com.ojhdtapp.parabox.data.remote.dto.filterMissing
 import com.ojhdtapp.parabox.data.remote.dto.saveLocalResourcesToCloud
 import com.ojhdtapp.parabox.domain.fcm.FcmApiHelper
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
@@ -662,7 +663,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun stopPluginConnection() {
-        pluginService?.also{
+        pluginService?.also {
             it.stop()
             unbindService(pluginServiceConnection)
         }
@@ -1075,31 +1076,27 @@ class MainActivity : AppCompatActivity() {
                             pluginConnection = event.pluginConnection,
                             messageId = it
                         )
-                        val workingMode = dataStore.data.first()[DataStoreKeys.SETTINGS_WORKING_MODE] ?: WorkingMode.NORMAL.ordinal
+                        val workingMode =
+                            dataStore.data.first()[DataStoreKeys.SETTINGS_WORKING_MODE]
+                                ?: WorkingMode.NORMAL.ordinal
                         val enableFcm =
                             dataStore.data.first()[DataStoreKeys.SETTINGS_ENABLE_FCM] ?: false
 //                        val fcmRole = dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_ROLE]
 //                            ?: FcmConstants.Role.SENDER.ordinal
-                        when(workingMode){
+                        when (workingMode) {
                             WorkingMode.NORMAL.ordinal -> {
                                 pluginService?.sendMessage(dto)
                             }
                             WorkingMode.RECEIVER.ordinal -> {
-                                if(enableFcm){
-                                    val fcmCloudStorage =
-                                        dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_CLOUD_STORAGE]
-                                            ?: FcmConstants.CloudStorage.NONE.ordinal
-                                    val dtoWithoutUri = when {
-                                        fcmCloudStorage == FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal -> {
-                                            dto.copy(
-                                                contents = dto.contents.saveLocalResourcesToCloud(
-                                                    baseContext
-                                                )
-                                            )
-                                        }
-
-                                        else -> dto
-                                    }
+                                if (enableFcm) {
+//                                    val fcmCloudStorage =
+//                                        dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_CLOUD_STORAGE]
+//                                            ?: FcmConstants.CloudStorage.NONE.ordinal
+                                    val dtoWithoutUri = dto.copy(
+                                        contents = dto.contents.saveLocalResourcesToCloud(
+                                            baseContext
+                                        ).filterMissing()
+                                    )
                                     if (fcmApiHelper.pushSendDto(
                                             dtoWithoutUri
                                         )?.isSuccessful == true
@@ -1496,14 +1493,14 @@ class MainActivity : AppCompatActivity() {
 //            )
 
             // Navigate to guide
-            LaunchedEffect(Unit){
+            LaunchedEffect(Unit) {
                 // read from datastore
                 val isFirstLaunch = !mainSharedViewModel.guideLaunchedStateFlow.value
                         && dataStore.data.first()[DataStoreKeys.IS_FIRST_LAUNCH] ?: true
                 if (isFirstLaunch) {
                     mainSharedViewModel.launchedGuide()
-                    mainNavController.navigate(GuideWelcomePageDestination){
-                        popUpTo(NavGraphs.root){
+                    mainNavController.navigate(GuideWelcomePageDestination) {
+                        popUpTo(NavGraphs.root) {
                             saveState = true
                         }
                         launchSingleTop = true

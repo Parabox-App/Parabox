@@ -7,12 +7,9 @@ object FcmConstants {
         object Loading : Status
     }
 
-    enum class Role {
-        SENDER, RECEIVER
-    }
-
     enum class CloudStorage{
         NONE,
         GOOGLE_DRIVE,
+        TENCENT_COS
     }
 }

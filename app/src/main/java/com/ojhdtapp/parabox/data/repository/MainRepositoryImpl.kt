@@ -43,6 +43,9 @@ class MainRepositoryImpl @Inject constructor(
             val enableFcm = context.dataStore.data.map { preferences ->
                 preferences[DataStoreKeys.SETTINGS_ENABLE_FCM] ?: false
             }.first()
+            val fcmCloudStorage = context.dataStore.data.map { preferences ->
+                preferences[DataStoreKeys.SETTINGS_FCM_CLOUD_STORAGE] ?: false
+            }.first()
 //            val fcmRole = context.dataStore.data.map { preferences ->
 //                preferences[DataStoreKeys.SETTINGS_FCM_ROLE] ?: FcmConstants.Role.SENDER.ordinal
 //            }.first()
@@ -144,7 +147,12 @@ class MainRepositoryImpl @Inject constructor(
                         )
                     }
                     if (enableFcm && workingMode == WorkingMode.NORMAL.ordinal && it?.disableFCM != true) {
-                        fcmApiHelper.pushReceiveDto(dto).also {
+                        val dtoWithoutUri = dto.copy(
+                            contents = dto.contents.saveLocalResourcesToCloud(
+                                context
+                            )
+                        )
+                        fcmApiHelper.pushReceiveDto(dtoWithoutUri).also {
                             if (it?.isSuccessful == true) {
                                 Log.d("parabox", "fcm success")
                             } else {

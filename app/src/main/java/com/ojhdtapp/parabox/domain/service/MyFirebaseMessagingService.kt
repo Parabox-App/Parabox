@@ -16,15 +16,11 @@ import coil.request.SuccessResult
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.google.gson.Gson
-import com.ojhdtapp.parabox.core.util.DataStoreKeys
-import com.ojhdtapp.parabox.core.util.DownloadUtil
-import com.ojhdtapp.parabox.core.util.FileUtil
-import com.ojhdtapp.parabox.core.util.GoogleDriveUtil
-import com.ojhdtapp.parabox.core.util.dataStore
-import com.ojhdtapp.parabox.core.util.toDateAndTimeString
+import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
+import com.ojhdtapp.parabox.ui.util.WorkingMode
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.ReceiveMessageDto
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendMessageDto
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Audio
@@ -74,12 +70,20 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                     Log.d("parabox", "Message data payload: $dto")
                     dto?.also {
                         GlobalScope.launch(Dispatchers.IO) {
-                            val fcmRole = dataStore.data.map { preferences ->
-                                preferences[DataStoreKeys.SETTINGS_FCM_ROLE]
-                                    ?: FcmConstants.Role.SENDER.ordinal
+                            val workingMode = dataStore.data.map { preferences ->
+                                preferences[DataStoreKeys.SETTINGS_WORKING_MODE]
+                                    ?: WorkingMode.NORMAL.ordinal
                             }.first()
-                            if (fcmRole == FcmConstants.Role.RECEIVER.ordinal) {
-                                handleNewMessage(it)
+                            when (workingMode) {
+                                WorkingMode.NORMAL.ordinal -> {
+
+                                }
+                                WorkingMode.RECEIVER.ordinal -> {
+                                    handleNewMessage(it)
+                                }
+                                WorkingMode.FCM.ordinal -> {
+
+                                }
                             }
                         }
                     }
@@ -90,44 +94,47 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                     Log.d("parabox", "Message data payload: $dto")
                     dto?.also {
                         GlobalScope.launch(Dispatchers.IO) {
-                            val fcmRole = dataStore.data.map { preferences ->
-                                preferences[DataStoreKeys.SETTINGS_FCM_ROLE]
-                                    ?: FcmConstants.Role.SENDER.ordinal
+                            val workingMode = dataStore.data.map { preferences ->
+                                preferences[DataStoreKeys.SETTINGS_WORKING_MODE]
+                                    ?: WorkingMode.NORMAL.ordinal
                             }.first()
-                            if (fcmRole == FcmConstants.Role.SENDER.ordinal) {
-                                val downloadedContent = dto.contents.map {
-                                    when (it) {
-                                        is Image -> {
-                                            val downloadedUri = getUriFromCloudResourceInfo(
-                                                fileName = it.fileName ?: "Image_${
-                                                    System.currentTimeMillis().toDateAndTimeString()
-                                                }.png",
-                                                cloudType = it.cloudType
-                                                    ?: FcmConstants.CloudStorage.NONE.ordinal,
-                                               url = it.url, cloudId = it.cloudId
-                                            )
-                                            it.copy(uri = downloadedUri)
-                                        }
-                                        is Audio -> {
-                                            val downloadedUri = getUriFromCloudResourceInfo(
-                                                fileName = it.fileName ?: "Audio_${
-                                                    System.currentTimeMillis().toDateAndTimeString()
-                                                }.mp3",
-                                                cloudType = it.cloudType
-                                                    ?: FcmConstants.CloudStorage.NONE.ordinal,
-                                                url = it.url, cloudId = it.cloudId
-                                            )
-                                            it.copy(uri = downloadedUri)
-                                        }
-                                        is File -> {
-                                            val downloadedUri = getUriFromCloudResourceInfo(
-                                                fileName = it.name,
-                                                cloudType = it.cloudType
-                                                    ?: FcmConstants.CloudStorage.NONE.ordinal,
-                                                url = it.url, cloudId = it.cloudId
-                                            )
-                                            it.copy(uri = downloadedUri)
-                                        }
+                            when (workingMode) {
+                                WorkingMode.NORMAL.ordinal -> {
+                                    val downloadedContent = dto.contents.map {
+                                        when (it) {
+                                            is Image -> {
+                                                val downloadedUri = getUriFromCloudResourceInfo(
+                                                    fileName = it.fileName ?: "Image_${
+                                                        System.currentTimeMillis()
+                                                            .toDateAndTimeString()
+                                                    }.png",
+                                                    cloudType = it.cloudType
+                                                        ?: FcmConstants.CloudStorage.NONE.ordinal,
+                                                    url = it.url, cloudId = it.cloudId
+                                                )
+                                                it.copy(uri = downloadedUri)
+                                            }
+                                            is Audio -> {
+                                                val downloadedUri = getUriFromCloudResourceInfo(
+                                                    fileName = it.fileName ?: "Audio_${
+                                                        System.currentTimeMillis()
+                                                            .toDateAndTimeString()
+                                                    }.mp3",
+                                                    cloudType = it.cloudType
+                                                        ?: FcmConstants.CloudStorage.NONE.ordinal,
+                                                    url = it.url, cloudId = it.cloudId
+                                                )
+                                                it.copy(uri = downloadedUri)
+                                            }
+                                            is File -> {
+                                                val downloadedUri = getUriFromCloudResourceInfo(
+                                                    fileName = it.name,
+                                                    cloudType = it.cloudType
+                                                        ?: FcmConstants.CloudStorage.NONE.ordinal,
+                                                    url = it.url, cloudId = it.cloudId
+                                                )
+                                                it.copy(uri = downloadedUri)
+                                            }
 //                                        is Image -> {
 //                                            val downloadedUri =
 //                                                it.url?.let { url ->
@@ -162,23 +169,30 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 //                                            it.copy(uri = downloadedUri)
 //                                        }
 
-                                        else -> it
+                                            else -> it
+                                        }
+                                    }
+                                    Log.d("parabox", "downloadedContent: $downloadedContent")
+                                    handleNewMessage(
+                                        downloadedContent,
+                                        dto.pluginConnection,
+                                        dto.timestamp,
+                                        dto.pluginConnection.connectionType
+                                    ).also {
+                                        // Update messageId to latest
+                                        bindOnceAndSend(
+                                            dto.copy(
+                                                contents = downloadedContent,
+                                                messageId = it
+                                            )
+                                        )
                                     }
                                 }
-                                Log.d("parabox", "downloadedContent: $downloadedContent")
-                                handleNewMessage(
-                                    downloadedContent,
-                                    dto.pluginConnection,
-                                    dto.timestamp,
-                                    dto.pluginConnection.connectionType
-                                ).also {
-                                    // Update messageId to latest
-                                    bindOnceAndSend(
-                                        dto.copy(
-                                            contents = downloadedContent,
-                                            messageId = it
-                                        )
-                                    )
+                                WorkingMode.RECEIVER.ordinal -> {
+
+                                }
+                                WorkingMode.FCM.ordinal -> {
+
                                 }
                             }
                         }
@@ -259,6 +273,37 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                     )
                 }?.let {
                     FileUtil.getUriOfFile(baseContext, it)
+                }
+            }
+
+            FcmConstants.CloudStorage.TENCENT_COS.ordinal -> {
+                cloudId?.let { cosPath ->
+                    val secretId =
+                        dataStore.data.first()[DataStoreKeys.TENCENT_COS_SECRET_ID]
+                    val secretKey =
+                        dataStore.data.first()[DataStoreKeys.TENCENT_COS_SECRET_KEY]
+                    val bucket =
+                        dataStore.data.first()[DataStoreKeys.TENCENT_COS_BUCKET]
+                    val region =
+                        dataStore.data.first()[DataStoreKeys.TENCENT_COS_REGION]
+                    if (secretId != null && secretKey != null && bucket != null && region != null) {
+                        val res = TencentCOSUtil.downloadFile(
+                            baseContext,
+                            secretId,
+                            secretKey,
+                            region,
+                            bucket,
+                            cosPath,
+                            baseContext.getExternalFilesDir("chat")!!.absolutePath,
+                            fileName
+                        )
+                        if (res) {
+                            FileUtil.getUriOfFile(
+                                baseContext,
+                                java.io.File(baseContext.getExternalFilesDir("chat")!!, fileName)
+                            )
+                        } else null
+                    } else null
                 }
             }
 
