@@ -27,12 +27,9 @@ import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Audio
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.File
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Image
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -172,7 +169,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                                             else -> it
                                         }
                                     }
-                                    Log.d("parabox", "downloadedContent: $downloadedContent")
                                     handleNewMessage(
                                         downloadedContent,
                                         dto.pluginConnection,
@@ -294,14 +290,23 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                             region,
                             bucket,
                             cosPath,
-                            baseContext.getExternalFilesDir("chat")!!.absolutePath,
+                            baseContext.externalCacheDir!!.absolutePath,
                             fileName
                         )
                         if (res) {
                             FileUtil.getUriOfFile(
                                 baseContext,
-                                java.io.File(baseContext.getExternalFilesDir("chat")!!, fileName)
+                                java.io.File(baseContext.externalCacheDir!!, fileName)
                             )
+//                            val file = baseContext.getExternalFilesDir("chat")!!.listFiles { file ->
+//                                file.name == fileName
+//                            }?.firstOrNull()
+//                            if (file != null) {
+//                                FileUtil.getUriOfFile(
+//                                    baseContext,
+//                                    file
+//                                )
+//                            } else null
                         } else null
                     } else null
                 }
