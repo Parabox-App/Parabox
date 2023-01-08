@@ -56,6 +56,7 @@ import com.guru.fontawesomecomposelib.FaIcon
 import com.guru.fontawesomecomposelib.FaIcons
 import com.ojhdtapp.parabox.MainActivity
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.core.util.GoogleDriveUtil
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.CloudPageDestination
@@ -98,6 +99,8 @@ fun FCMPage(
 //    val role = viewModel.fcmRoleFlow.collectAsState(initial = FcmConstants.Role.SENDER.ordinal)
     val targetTokens = viewModel.fcmTargetTokensFlow.collectAsState(initial = emptySet())
     val loopbackToken = viewModel.fcmLoopbackTokenFlow.collectAsState(initial = "")
+
+    val cloudService by viewModel.cloudServiceFlow.collectAsState(initial = 0)
 
     val cloudStorage =
         viewModel.fcmCloudStorageFlow.collectAsState(initial = FcmConstants.CloudStorage.NONE.ordinal)
@@ -356,6 +359,9 @@ fun FCMPage(
     var showQiniuDialog by remember {
         mutableStateOf(false)
     }
+    var showGoogleDriveDialog by remember{
+        mutableStateOf(false)
+    }
     // FCM Object Storage Dialog
     if (showFcmObjectStorageDialog) {
         AlertDialog(
@@ -453,7 +459,8 @@ fun FCMPage(
                     viewModel.setTencentCOSRegion(tempRegion)
                     viewModel.setTencentCOSBucket(tempBucket)
                     viewModel.setFCMCloudStorage(FcmConstants.CloudStorage.TENCENT_COS.ordinal)
-                }) {
+                },
+                enabled = tempSecretId.isNotBlank() && tempSecretKey.isNotBlank() && tempRegion.isNotBlank() && tempBucket.isNotBlank()) {
                     Text(text = stringResource(id = R.string.save))
                 }
             },
@@ -528,7 +535,8 @@ fun FCMPage(
                     viewModel.setQiniuKODOBucket(tempBucket)
                     viewModel.setQiniuKODODomain(tempDomain)
                     viewModel.setFCMCloudStorage(FcmConstants.CloudStorage.QINIU_KODO.ordinal)
-                }) {
+                },
+                enabled = tempAccessKey.isNotBlank() && tempSecretKey.isNotBlank() && tempBucket.isNotBlank() && tempDomain.isNotBlank()) {
                     Text(text = stringResource(id = R.string.save))
                 }
             },
@@ -574,6 +582,39 @@ fun FCMPage(
                         singleLine = true,
                         supportingText = { Text(text = "域名，不含http/https") },
                     )
+                }
+            },
+        )
+    }
+
+    if (showGoogleDriveDialog) {
+        AlertDialog(
+            onDismissRequest = { showGoogleDriveDialog = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    showGoogleDriveDialog = false
+                    showFcmObjectStorageDialog = false
+                    viewModel.setFCMCloudStorage(FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal)
+                },
+                    enabled = cloudService == GoogleDriveUtil.SERVICE_CODE) {
+                    Text(text = stringResource(id = R.string.save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showGoogleDriveDialog = false
+                }) {
+                    Text(text = stringResource(id = R.string.cancel))
+                }
+            },
+            title = {
+                Text(text = "Google Drive")
+            },
+            text = {
+                Column {
+                    Text(text = "将在个人存储空间根目录下新建“ParaboxTemp”目录，存放待发送的媒体文件（图片，语音等）。文件传输完毕后不会自动删除，请自行按需清理。")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(text = "需连接 Google Drive。请前往“连接云端服务”设置。")
                 }
             },
         )

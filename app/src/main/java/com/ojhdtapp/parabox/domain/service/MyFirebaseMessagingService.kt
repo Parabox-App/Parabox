@@ -169,6 +169,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                                             else -> it
                                         }
                                     }
+                                    Log.d("parabox", "downloadedContent: $downloadedContent")
                                     handleNewMessage(
                                         downloadedContent,
                                         dto.pluginConnection,

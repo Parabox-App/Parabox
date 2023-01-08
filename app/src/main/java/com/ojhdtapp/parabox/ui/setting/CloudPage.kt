@@ -73,7 +73,7 @@ fun CloudPage(
     }
 
 
-    val cloudService by viewModel.cloudServiceFlow.collectAsState(initial = false)
+    val cloudService by viewModel.cloudServiceFlow.collectAsState(initial = 0)
     val cloudTotalSpace by viewModel.cloudTotalSpaceFlow.collectAsState(initial = 0L)
     val cloudUsedSpace by viewModel.cloudUsedSpaceFlow.collectAsState(initial = 0L)
     val cloudUsedSpacePercent = remember {
@@ -327,10 +327,9 @@ fun CloudPage(
                                     imageVector = Icons.Outlined.Cloud,
                                     contentDescription = "cloud",
                                     modifier = Modifier
-                                        .padding(end = 8.dp)
                                         .size(ButtonDefaults.IconSize),
                                 )
-                                Text(text = stringResource(id = R.string.connect_cloud_service))
+                                Text(modifier = Modifier.padding(start = 8.dp), text = stringResource(id = R.string.connect_cloud_service))
                             }
                         }
                     }
