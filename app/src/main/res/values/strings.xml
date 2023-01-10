@@ -473,9 +473,9 @@
     <string name="working_mode_normal_title">Extension mode</string>
     <string name="working_mode_normal_text">The mode used by default. Will attempt to host an extension connection service to establish communication with extensions installed on this machine.</string>
     <string name="working_mode_receiver_title">Receiver mode</string>
-    <string name="working_mode_receiver_text">Will try to form an FCM network between multiple devices to communicate. Extended functions will be disabled in this mode.\\nThis usually requires having two or more machines running Parabox, one of which is already running in extended mode with FCM forwarder mode turned on.</string>
+    <string name="working_mode_receiver_text">Will try to form an FCM network between multiple devices to communicate. Extended functions will be disabled in this mode.\nThis usually requires having two or more machines running Parabox, one of which is already running in extended mode with FCM forwarder mode turned on.</string>
     <string name="working_mode_fcm_title">FCM mode</string>
-    <string name="working_mode_fcm_text">In this mode, messaging will be completely taken over by FCM and handled by a private server. Extended functions will be disabled in this mode. \\nThis usually requires a private server and is configured according to the tutorial instructions.</string>
+    <string name="working_mode_fcm_text">In this mode, messaging will be completely taken over by FCM and handled by a private server. Extended functions will be disabled in this mode. \nThis usually requires a private server and is configured according to the tutorial instructions.</string>
     <string name="working_mode_info_a">Please select the appropriate working mode according to the specific usage scenario.</string>
     <string name="working_mode_info_b">Learn more about working modes</string>
     <string name="setup_personalise_title">Personalise</string>
@@ -489,7 +489,7 @@
     <string name="launch_guide_title">Launch guide</string>
     <string name="launch_guide_text">Launch the first boot guide</string>
     <string name="working_mode_dialog_title">Mode Description</string>
-    <string name="working_mode_dialog_text">When working as a forwarder, this function will take messages from installed extensions and forward them to the intended receiving device. \\nWhen working as a receiving end, this function will return the message to be sent to the target forwarding end, which will be processed and sent. \\nWorks in forwarding mode by default. To switch to receive mode, go to work mode settings to change.</string>
+    <string name="working_mode_dialog_text">When working as a forwarder, this function will take messages from installed extensions and forward them to the intended receiving device. \nWhen working as a receiving end, this function will return the message to be sent to the target forwarding end, which will be processed and sent. \nWorks in forwarding mode by default. To switch to receive mode, go to work mode settings to change.</string>
     <string name="fcm_cloud_storage_google_drive_need_connecting">Requires Google Drive connection. Go to the \"Connect to Cloud Services\" settings.</string>
     <string name="fcm_working_mode">Working mode</string>
     <string name="working_mode_subtitle">Configure application working mode</string>
@@ -497,7 +497,7 @@
     <string name="delete_chat_files_confirm_text">The selected chat resources (pictures, voice) will be permanently deleted and cannot be restored. Are you sure?</string>
     <string name="chat_files_management">Chat resource management</string>
     <string name="delete_chat_files_time_range">Chat Resource delete time scope</string>
-    <string name="delete_chat_files_all_subtitle">All pictures, voices will be deleted\\nEstimated to free up %1$s space</string>
-    <string name="delete_chat_files_days_ago_subtitle">Pictures received in $1$s days or earlier, audio will be deleted\\nEstimated to free up %2$s space</string>
+    <string name="delete_chat_files_all_subtitle">All pictures, voices will be deleted\nEstimated to free up %1$s space</string>
+    <string name="delete_chat_files_days_ago_subtitle">Pictures received in %1$s days or earlier, audio will be deleted\nEstimated to free up %2$s space</string>
     <string name="documentation">documentation</string>
 </resources>

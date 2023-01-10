@@ -68,7 +68,7 @@ android {
         abi {
             enable true
             reset()
-            include 'armeabi-v7a', 'arm64-v8a' //select ABIs to build APKs for
+            include 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64' //select ABIs to build APKs for
             universalApk true //generate an additional APK that contains all the ABIs
         }
     }
@@ -82,10 +82,6 @@ android {
                     "-${version}" +
                     "-${abi}" +
                     ".apk"
-            if (variant.buildType.name == "release") {
-                variant.getPackageApplicationProvider().get().outputDirectory = new File(project.rootDir.absolutePath
-                        + "/app/release")
-            }
         }
         kotlin.sourceSets {
             getByName(variant.name) {
