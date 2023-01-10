@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.core.util.AvatarUtil
 import com.ojhdtapp.parabox.data.local.entity.DownloadingState
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.File
@@ -198,6 +199,7 @@ fun SearchContentField(
     onMenuClick: () -> Unit,
     onAvatarClick: () -> Unit
 ) {
+    val context = LocalContext.current
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -257,8 +259,16 @@ fun SearchContentField(
             IconButton(onClick = { onAvatarClick() }) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
-                        .data(avatarUri?.let { Uri.parse(it) }
-                            ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar)
+                        .data(
+                            AvatarUtil.getAvatar(
+                                context = context,
+                                uri = avatarUri?.let { Uri.parse(it) },
+                                url = null,
+                                name = null,
+                                backgroundColor = MaterialTheme.colorScheme.primary,
+                                textColor = MaterialTheme.colorScheme.onPrimary,
+                            )
+                        )
                         .crossfade(true)
                         .build(),
                     contentDescription = "avatar",

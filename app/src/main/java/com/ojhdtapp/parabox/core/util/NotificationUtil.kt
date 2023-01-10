@@ -14,6 +14,7 @@ import android.content.LocusId
 import android.content.pm.PackageManager
 import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
+import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Icon
 import android.net.Uri
@@ -21,6 +22,7 @@ import android.os.Build
 import android.provider.Settings
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.compose.material3.MaterialTheme
 import androidx.core.content.getSystemService
 import androidx.core.net.toUri
 import androidx.datastore.preferences.core.emptyPreferences
@@ -29,6 +31,7 @@ import coil.request.ImageRequest
 import coil.request.SuccessResult
 import com.ojhdtapp.parabox.MainActivity
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.core.util.AvatarUtil.getCircledBitmap
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Message
@@ -45,7 +48,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.io.IOException
-import java.util.Date
+import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 
 
@@ -149,9 +152,14 @@ class NotificationUtil(
                         Uri.parse(uri)
                     )
                 )
-            } ?: Icon.createWithResource(
-                context,
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar
+            } ?: Icon.createWithAdaptiveBitmap(
+                AvatarUtil.createNamedAvatarBm(
+                    width = 224,
+                    height = 224,
+                    backgroundColor = context.getThemeColor(com.google.android.material.R.attr.colorPrimary),
+                    textColor = context.getThemeColor(com.google.android.material.R.attr.colorOnPrimary),
+                    name = it.profile.name.ifBlank { null }?.substring(0, 1)?.uppercase(Locale.getDefault())
+                )
             )
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 ShortcutInfo.Builder(context, it.contactId.toString())
@@ -263,24 +271,27 @@ class NotificationUtil(
                 val userIcon = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     userAvatarFlow.firstOrNull()?.let {
                         Icon.createWithAdaptiveBitmapContentUri(it)
-                    } ?: Icon.createWithResource(
-                        context,
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar
-                    )
+                    }
                 } else {
                     userAvatarFlow.firstOrNull()?.let {
                         Icon.createWithContentUri(it)
-                    } ?: Icon.createWithResource(
-                        context,
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar
+                    }
+                } ?: Icon.createWithAdaptiveBitmap(
+                    AvatarUtil.createNamedAvatarBm(
+                        width = 224,
+                        height = 224,
+                        backgroundColor = context.getThemeColor(com.google.android.material.R.attr.colorPrimary),
+                        textColor = context.getThemeColor(com.google.android.material.R.attr.colorOnPrimary),
+                        name = userNameFlow.firstOrNull()?.ifBlank { null }?.substring(0, 1)
+                            ?.uppercase(Locale.getDefault())
                     )
-                }
+                )
                 val user =
                     Person.Builder().setName(userNameFlow.firstOrNull()).setIcon(userIcon).build()
 
                 val personIcon = message.profile.let { profile ->
                     withContext(Dispatchers.IO) {
-                        if(profile.avatar != null || profile.avatarUri != null){
+                        if (profile.avatar != null || profile.avatarUri != null) {
                             try {
                                 val loader = ImageLoader(context)
                                 val request = ImageRequest.Builder(context)
@@ -294,12 +305,17 @@ class NotificationUtil(
                                 e.printStackTrace()
                                 null
                             }
-                        }else null
-                    }
-                } ?: Icon.createWithResource(
-                    context,
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar
-                )
+                        } else null
+                    } ?: Icon.createWithAdaptiveBitmap(
+                        AvatarUtil.createNamedAvatarBm(
+                            width = 224,
+                            height = 224,
+                            backgroundColor = context.getThemeColor(com.google.android.material.R.attr.colorPrimary),
+                            textColor = context.getThemeColor(com.google.android.material.R.attr.colorOnPrimary),
+                            name = profile.name.ifBlank { null }?.substring(0, 1)?.uppercase(Locale.getDefault())
+                        )
+                    )
+                }
                 val person =
                     Person.Builder().setName(message.profile.name).setIcon(personIcon).build()
                 val groupIcon = contact.profile.avatar?.let { url ->

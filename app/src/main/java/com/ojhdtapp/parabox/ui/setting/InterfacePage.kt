@@ -91,7 +91,7 @@ fun InterfacePage(
                     title = stringResource(R.string.user_interface_monet_title),
                     subtitleOn = stringResource(R.string.user_interface_monet_subtitle_on),
                     subtitleOff = stringResource(R.string.user_interface_monet_subtitle_off),
-                    checked = enableDynamicColor,
+                    checked = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && enableDynamicColor,
                     onCheckedChange = viewModel::setEnableDynamicColor,
                     enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
                 )
@@ -117,7 +117,7 @@ fun InterfacePage(
             item {
                 SimpleMenuPreference(
                     title = stringResource(R.string.language),
-                    optionsMap = mapOf("zh-rCN" to "中文（中国）", "en" to "English", "ja" to "日本語"),
+                    optionsMap = mapOf("zh-CN" to "中文（中国）", "en" to "English", "ja" to "日本語"),
                     selectedKey = AppCompatDelegate.getApplicationLocales()[0]?.toLanguageTag(),
                     onSelect = {
                         val appLocale: LocaleListCompat = LocaleListCompat.forLanguageTags(it)

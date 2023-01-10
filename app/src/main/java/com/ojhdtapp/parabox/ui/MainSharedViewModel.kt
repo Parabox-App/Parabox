@@ -1,7 +1,6 @@
 package com.ojhdtapp.parabox.ui
 
 import android.content.Context
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateListOf
@@ -27,7 +26,6 @@ import com.ojhdtapp.parabox.domain.use_case.GetMessages
 import com.ojhdtapp.parabox.domain.use_case.GroupNewContact
 import com.ojhdtapp.parabox.domain.use_case.UpdateContact
 import com.ojhdtapp.parabox.ui.message.AudioRecorderState
-import com.ojhdtapp.parabox.ui.message.ContactState
 import com.ojhdtapp.parabox.ui.message.MessageState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -339,8 +337,7 @@ class MainSharedViewModel @Inject constructor(
         _isRefreshing.value = value
     }
 
-    // Google Drive
-    val googleLoginFlow = context.dataStore.data
+    val cloudServiceFlow: Flow<Int> = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {
                 emit(emptyPreferences())
@@ -349,30 +346,18 @@ class MainSharedViewModel @Inject constructor(
             }
         }
         .map { settings ->
-            settings[DataStoreKeys.GOOGLE_LOGIN] ?: false
-        }.stateIn(
-            initialValue = false,
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000)
-        )
+            settings[DataStoreKeys.SETTINGS_CLOUD_SERVICE] ?: 0
+        }
 
-    val googleTotalSpaceFlow = context.dataStore.data
-        .catch { exception ->
-            if (exception is IOException) {
-                emit(emptyPreferences())
-            } else {
-                throw exception
+    fun setCloudService(value: Int) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.SETTINGS_CLOUD_SERVICE] = value
             }
         }
-        .map { settings ->
-            settings[DataStoreKeys.GOOGLE_TOTAL_SPACE] ?: 0L
-        }.stateIn(
-            initialValue = 0L,
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000)
-        )
+    }
 
-    val googleUsedSpaceFlow = context.dataStore.data
+    val cloudTotalSpaceFlow: Flow<Long> = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {
                 emit(emptyPreferences())
@@ -381,13 +366,10 @@ class MainSharedViewModel @Inject constructor(
             }
         }
         .map { settings ->
-            settings[DataStoreKeys.GOOGLE_USED_SPACE] ?: 0L
-        }.stateIn(
-            initialValue = 0L,
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000)
-        )
-    val googleAppUsedSpaceFlow = context.dataStore.data
+            settings[DataStoreKeys.CLOUD_TOTAL_SPACE] ?: 0L
+        }
+
+    val cloudUsedSpaceFlow: Flow<Long> = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {
                 emit(emptyPreferences())
@@ -396,42 +378,52 @@ class MainSharedViewModel @Inject constructor(
             }
         }
         .map { settings ->
-            settings[DataStoreKeys.GOOGLE_APP_USED_SPACE] ?: 0L
-        }.stateIn(
-            initialValue = 0L,
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000)
-        )
+            settings[DataStoreKeys.CLOUD_USED_SPACE] ?: 0L
+        }
+    val cloudAppUsedSpaceFlow: Flow<Long> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.CLOUD_APP_USED_SPACE] ?: 0L
+        }
+
     fun saveGoogleDriveAccount(account: GoogleSignInAccount?) {
         viewModelScope.launch {
             context.dataStore.edit { preferences ->
                 preferences[DataStoreKeys.GOOGLE_NAME] = account?.displayName ?: ""
                 preferences[DataStoreKeys.GOOGLE_MAIL] = account?.email ?: ""
-                preferences[DataStoreKeys.GOOGLE_LOGIN] = account != null
+                preferences[DataStoreKeys.SETTINGS_CLOUD_SERVICE] = if(account == null) 0 else GoogleDriveUtil.SERVICE_CODE
                 preferences[DataStoreKeys.GOOGLE_AVATAR] = account?.photoUrl.toString()
-                preferences[DataStoreKeys.SETTINGS_DEFAULT_BACKUP_SERVICE] = 0
             }
             GoogleDriveUtil.getDriveInformation(context)?.also {
                 context.dataStore.edit { preferences ->
                     preferences[DataStoreKeys.GOOGLE_WORK_FOLDER_ID] = it.workFolderId
-                    preferences[DataStoreKeys.GOOGLE_TOTAL_SPACE] = it.totalSpace
-                    preferences[DataStoreKeys.GOOGLE_USED_SPACE] = it.usedSpace
-                    preferences[DataStoreKeys.GOOGLE_APP_USED_SPACE] = it.appUsedSpace
+                    preferences[DataStoreKeys.CLOUD_TOTAL_SPACE] = it.totalSpace
+                    preferences[DataStoreKeys.CLOUD_USED_SPACE] = it.usedSpace
+                    preferences[DataStoreKeys.CLOUD_APP_USED_SPACE] = it.appUsedSpace
                 }
             }
         }
     }
+
     private val _workInfoMap = mutableStateMapOf<String, Pair<File, List<WorkInfo>>>()
     val workInfoMap get() = _workInfoMap
     fun putWorkInfo(tag: String, file: File, workInfoList: List<WorkInfo>) {
         _workInfoMap[tag] = file to workInfoList
     }
+
     // WorkInfo
     private val _workInfoDialogState = mutableStateOf<Boolean>(false)
     val workInfoDialogState: State<Boolean> = _workInfoDialogState
     fun setWorkInfoDialogState(value: Boolean) {
         _workInfoDialogState.value = value
     }
+
     private val _workInfoStateFlow = MutableStateFlow<Map<File, List<WorkInfo>>>(emptyMap())
     val workInfoStateFlow get() = _workInfoStateFlow.asStateFlow()
     fun setWorkInfoStateFlow(value: Map<File, List<WorkInfo>>) {
@@ -450,4 +442,12 @@ class MainSharedViewModel @Inject constructor(
         .map { settings ->
             settings[DataStoreKeys.SETTINGS_ML_KIT_TRANSLATION] ?: true
         }
+
+    // First Launch
+    private val _guideLaunchedStateFlow = MutableStateFlow(false)
+    val guideLaunchedStateFlow = _guideLaunchedStateFlow.asStateFlow()
+
+    fun launchedGuide() {
+        _guideLaunchedStateFlow.value = true
+    }
 }

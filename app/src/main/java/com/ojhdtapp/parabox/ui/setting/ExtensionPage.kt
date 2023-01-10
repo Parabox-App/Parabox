@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -36,10 +37,8 @@ import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.ExtensionPageDestination
 import com.ojhdtapp.parabox.ui.destinations.FCMPageDestination
-import com.ojhdtapp.parabox.ui.util.ActivityEvent
-import com.ojhdtapp.parabox.ui.util.NormalPreference
-import com.ojhdtapp.parabox.ui.util.PreferencesCategory
-import com.ojhdtapp.parabox.ui.util.SettingNavGraph
+import com.ojhdtapp.parabox.ui.destinations.ModePageDestination
+import com.ojhdtapp.parabox.ui.util.*
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -64,6 +63,7 @@ fun ExtensionPage(
     var expandedExtension by remember {
         mutableStateOf<String?>(null)
     }
+    val workingMode = viewModel.workingModeFlow.collectAsState(initial = WorkingMode.NORMAL.ordinal)
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -98,54 +98,52 @@ fun ExtensionPage(
     ) {
         // Plugin List State
         val pluginList by mainSharedViewModel.pluginListStateFlow.collectAsState()
-        val fcmRole =
-            viewModel.fcmRoleFlow.collectAsState(initial = FcmConstants.Role.SENDER.ordinal)
-        val fcmEnabled =
-            viewModel.enableFCMStateFlow.collectAsState()
         LazyColumn(
             contentPadding = it,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            item {
-                Column(modifier = Modifier.padding(24.dp, 16.dp)) {
-                    Icon(
-                        imageVector = Icons.Outlined.Info,
-                        contentDescription = "info",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = stringResource(R.string.extension_msg),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-            item() {
-                if (pluginList.isEmpty()) {
-                    if (fcmEnabled.value && fcmRole.value == FcmConstants.Role.RECEIVER.ordinal) {
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                modifier = Modifier.padding(vertical = 16.dp),
-                                text = stringResource(R.string.extension_banned_for_fcm),
-                                style = MaterialTheme.typography.labelLarge
-                            )
-                            FilledTonalButton(
-                                onClick = {
-                                    if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
-                                        mainNavController.navigate(FCMPageDestination)
-                                    } else {
-                                        viewModel.setSelectedSetting(SettingPageState.FCM)
-                                    }
-                                }) {
-                                Text(text = stringResource(R.string.redirect_to_setting))
-                            }
+            if (workingMode.value != WorkingMode.NORMAL.ordinal) {
+                item {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            modifier = Modifier.padding(vertical = 16.dp),
+                            text = stringResource(R.string.extension_banned),
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                        FilledTonalButton(
+                            onClick = {
+                                if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
+                                    mainNavController.navigate(ModePageDestination)
+                                } else {
+                                    viewModel.setSelectedSetting(SettingPageState.MODE)
+                                }
+                            }) {
+                            Text(text = stringResource(R.string.redirect_to_setting))
                         }
-                    } else {
+                    }
+                }
+            } else {
+                item {
+                    Column(modifier = Modifier.padding(24.dp, 16.dp)) {
+                        Icon(
+                            imageVector = Icons.Outlined.Info,
+                            contentDescription = "info",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = stringResource(R.string.extension_msg),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                item() {
+                    if (pluginList.isEmpty()) {
                         Column(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -159,52 +157,52 @@ fun ExtensionPage(
                             FilledTonalButton(
                                 onClick = { }) {
                                 FaIcon(
-                                    modifier = Modifier.padding(end = 8.dp),
                                     faIcon = FaIcons.GooglePlay,
                                     size = ButtonDefaults.IconSize,
                                     tint = MaterialTheme.colorScheme.onSurface
                                 )
-                                Text(text = stringResource(R.string.get_from_appstore))
+                                Text(
+                                    modifier = Modifier.padding(start = 8.dp),
+                                    text = stringResource(R.string.get_from_appstore)
+                                )
                             }
                         }
                     }
                 }
-            }
-            items(
-                items = pluginList,
-                key = { it.packageName }) {
-                ExtensionCard(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    appModel = it,
-                    expanded = expandedExtension == it.packageName,
-                    onClick = {
-                        if (expandedExtension == it.packageName) {
-                            expandedExtension = null
-                        } else {
-                            expandedExtension = it.packageName
-                        }
-                    },
-                    onLaunch = {
-                        it.launchIntent?.let {
-                            onEvent(ActivityEvent.LaunchIntent(it))
-                        }
-                    })
-            }
-            item {
-                if (pluginList.isNotEmpty()) {
-                    NormalPreference(
-                        title = stringResource(R.string.reset_extension_connection_title),
-                        subtitle = stringResource(R.string.reset_extension_connection_subtitle),
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Outlined.LinkOff,
-                                contentDescription = "reset link"
-                            )
+                items(
+                    items = pluginList,
+                    key = { it.packageName }) {
+                    ExtensionCard(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        appModel = it,
+                        expanded = expandedExtension == it.packageName,
+                        onClick = {
+                            if (expandedExtension == it.packageName) {
+                                expandedExtension = null
+                            } else {
+                                expandedExtension = it.packageName
+                            }
                         },
-                        enabled = true
-                    ) {
-                        onEvent(ActivityEvent.ResetExtension)
-                    }
+                        onLaunch = {
+                            it.launchIntent?.let {
+                                onEvent(ActivityEvent.LaunchIntent(it))
+                            }
+                        })
+                }
+                item {
+                        NormalPreference(
+                            title = stringResource(R.string.reset_extension_connection_title),
+                            subtitle = stringResource(R.string.reset_extension_connection_subtitle),
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.LinkOff,
+                                    contentDescription = "reset link"
+                                )
+                            },
+                            enabled = true
+                        ) {
+                            onEvent(ActivityEvent.ResetExtension)
+                        }
                 }
             }
         }
@@ -221,7 +219,16 @@ fun ExtensionCard(
     onLaunch: () -> Unit
 ) {
     val context = LocalContext.current
-    ElevatedCard(modifier = modifier, onClick = onClick) {
+    OutlinedCard(
+        modifier = modifier,
+        shape = RoundedCornerShape(24.dp),
+//        colors = CardDefaults.cardColors(
+//            containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(
+//                3.dp
+//            )
+//        ),
+        onClick = onClick
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -250,7 +257,11 @@ fun ExtensionCard(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = context.getString(R.string.extension_info, appModel.version, appModel.author),
+                        text = context.getString(
+                            R.string.extension_info,
+                            appModel.version,
+                            appModel.author
+                        ),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1
@@ -261,7 +272,7 @@ fun ExtensionCard(
                     AppModel.RUNNING_STATUS_DISABLED -> Icon(
                         imageVector = Icons.Outlined.HighlightOff,
                         contentDescription = "disabled",
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     AppModel.RUNNING_STATUS_ERROR -> Icon(

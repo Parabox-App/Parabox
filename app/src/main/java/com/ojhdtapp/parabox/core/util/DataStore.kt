@@ -11,8 +11,10 @@ object DataStoreKeys{
     val SEND_MESSAGE_ID = longPreferencesKey("send_message_id")
     val USER_NAME = stringPreferencesKey("user_name")
     val USER_AVATAR = stringPreferencesKey("user_avatar")
+    val IS_FIRST_LAUNCH = booleanPreferencesKey("is_first_launch")
 
-    val SETTINGS_DEFAULT_BACKUP_SERVICE = intPreferencesKey("settings_default_backup_service")
+    val SETTINGS_WORKING_MODE = intPreferencesKey("settings_working_mode")
+    val SETTINGS_CLOUD_SERVICE = intPreferencesKey("settings_cloud_service")
     val SETTINGS_AUTO_BACKUP = booleanPreferencesKey("settings_auto_backup")
     val SETTINGS_AUTO_BACKUP_FILE_MAX_SIZE = floatPreferencesKey("settings_auto_backup_file_max_size")
     val SETTINGS_AUTO_DELETE_LOCAL_FILE = booleanPreferencesKey("settings_auto_delete_local_file")
@@ -30,20 +32,32 @@ object DataStoreKeys{
     val SETTINGS_ML_KIT_TRANSLATION = booleanPreferencesKey("settings_ml_kit_translation")
     val SETTINGS_ALLOW_BUBBLE_HOME = booleanPreferencesKey("settings_allow_bubble_home")
     val SETTINGS_ALLOW_FOREGROUND_NOTIFICATION = booleanPreferencesKey("settings_allow_foreground_notification")
+
     val GOOGLE_MAIL = stringPreferencesKey("google_mail")
     val GOOGLE_NAME = stringPreferencesKey("google_name")
-    val GOOGLE_LOGIN = booleanPreferencesKey("google_login")
+//    val GOOGLE_LOGIN = booleanPreferencesKey("google_login")
     val GOOGLE_AVATAR = stringPreferencesKey("google_avatar")
     val GOOGLE_WORK_FOLDER_ID = stringPreferencesKey("google_work_folder_id")
-    val GOOGLE_TOTAL_SPACE = longPreferencesKey("google_total_space")
-    val GOOGLE_USED_SPACE = longPreferencesKey("google_used_space")
-    val GOOGLE_APP_USED_SPACE = longPreferencesKey("google_app_used_space")
+
+    val CLOUD_TOTAL_SPACE = longPreferencesKey("cloud_total_space")
+    val CLOUD_USED_SPACE = longPreferencesKey("cloud_used_space")
+    val CLOUD_APP_USED_SPACE = longPreferencesKey("cloud_app_used_space")
 
     val REQUEST_NOTIFICATION_PERMISSION_FIRST_TIME = booleanPreferencesKey("show_notification_first_time")
 
     val FCM_TOKEN = stringPreferencesKey("fcm_token")
     val FCM_TARGET_TOKENS = stringSetPreferencesKey("fcm_target_tokens")
     val FCM_LOOPBACK_TOKEN = stringPreferencesKey("fcm_loopback_token")
+
+    val TENCENT_COS_SECRET_ID = stringPreferencesKey("tencent_cos_secret_id")
+    val TENCENT_COS_SECRET_KEY = stringPreferencesKey("tencent_cos_secret_key")
+    val TENCENT_COS_BUCKET = stringPreferencesKey("tencent_cos_bucket")
+    val TENCENT_COS_REGION = stringPreferencesKey("tencent_cos_region")
+
+    val QINIU_KODO_ACCESS_KEY = stringPreferencesKey("qiniu_kodo_access_key")
+    val QINIU_KODO_SECRET_KEY = stringPreferencesKey("qiniu_kodo_secret_key")
+    val QINIU_KODO_BUCKET = stringPreferencesKey("qiniu_kodo_bucket")
+    val QINIU_KODO_DOMAIN = stringPreferencesKey("qiniu_kodo_domain")
 
     const val DEFAULT_USER_NAME = "Me"
 }

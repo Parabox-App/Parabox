@@ -16,18 +16,23 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.core.util.CacheUtil
+import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.NormalPreference
 import com.ojhdtapp.parabox.ui.util.PreferencesCategory
+import com.ojhdtapp.parabox.ui.util.SliderPreference
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Destination
@@ -42,9 +47,59 @@ fun BackupPage(
     onEvent: (ActivityEvent) -> Unit
 ) {
     val viewModel = hiltViewModel<SettingPageViewModel>()
+    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val cacheSize = viewModel.cacheSizeStateFlow.collectAsState()
+
+    var deleteFilesBeforeDays by remember {
+        mutableStateOf(7f)
+    }
+    val canSaveSpace by remember(viewModel.cleaningFile.value) {
+        derivedStateOf {
+            FileUtil.getSizeString(
+                CacheUtil.getChatFilesSizeBeforeTimestamp(
+                    context,
+                    System.currentTimeMillis() - deleteFilesBeforeDays.roundToInt() * 24 * 60 * 60 * 1000
+                )
+            )
+        }
+    }
+    var showDeleteFileConfirmDialog by remember{
+        mutableStateOf(false)
+    }
+    if(showDeleteFileConfirmDialog){
+        AlertDialog(
+            onDismissRequest = {
+                showDeleteFileConfirmDialog = false
+            },
+            title = {
+                Text(text = stringResource(R.string.delete_chat_files_title))
+            },
+            text = {
+                Text(text = stringResource(R.string.delete_chat_files_confirm_text))
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteFileConfirmDialog = false
+                        viewModel.clearFile(System.currentTimeMillis() - deleteFilesBeforeDays.roundToInt() * 24 * 60 * 60 * 1000)
+                    }
+                ) {
+                    Text(text = stringResource(id = R.string.confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteFileConfirmDialog = false
+                    }
+                ) {
+                    Text(text = stringResource(id = R.string.cancel))
+                }
+            }
+        )
+    }
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -133,6 +188,34 @@ fun BackupPage(
                         viewModel.clearCache()
                     }
                 )
+            }
+            item {
+                PreferencesCategory(text = stringResource(R.string.chat_files_management))
+            }
+            item {
+                SliderPreference(
+                    title = stringResource(R.string.delete_chat_files_time_range),
+                    subTitle =
+                    when (deleteFilesBeforeDays) {
+                        0f -> stringResource(id = R.string.all)
+                        else -> stringResource(R.string.days_ago, deleteFilesBeforeDays.roundToInt())
+                    },
+                    value = deleteFilesBeforeDays,
+                    valueRange = 0f..15f,
+                    steps = 14,
+                    enabled = !viewModel.cleaningFile.value,
+                    onValueChange = { deleteFilesBeforeDays = it },
+                )
+            }
+            item {
+                NormalPreference(
+                    title = stringResource(id = R.string.delete_chat_files_title),
+                    subtitle = if (deleteFilesBeforeDays.roundToInt() == 0) stringResource(id = R.string.delete_chat_files_all_subtitle, canSaveSpace)
+                    else stringResource(id = R.string.delete_chat_files_days_ago_subtitle, deleteFilesBeforeDays.roundToInt(), canSaveSpace),
+                    enabled = !viewModel.cleaningFile.value,
+                ) {
+                    showDeleteFileConfirmDialog = true
+                }
             }
         }
     }

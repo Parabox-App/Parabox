@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -67,9 +68,10 @@ fun HashTagEditor(
     selectedListOfChips: SnapshotStateList<String>?,
     onChipClick: (Int) -> Unit,
     onChipClickWhenEnabled: (Int) -> Unit,
+    chipContainerColor: Color,
     padding: Int = HashTagEditor.PADDING_SMALL,
     onConfirmDelete: Boolean = false,
-    stickyChips: @Composable() (RowScope.() -> Unit)? = null
+    stickyChips: @Composable() (RowScope.() -> Unit)? = null,
 ) {
     val focusManager = LocalFocusManager.current
     val keyboardManager = LocalSoftwareKeyboardController.current
@@ -119,7 +121,8 @@ fun HashTagEditor(
                     onChipClickWhenEnabled = onChipClickWhenEnabled,
                     padding = padding,
                     onConfirmDelete = onConfirmDelete,
-                    stickyChips = stickyChips
+                    stickyChips = stickyChips,
+                    chipContainerColor = chipContainerColor,
                 )
             }
 
@@ -165,6 +168,7 @@ fun TextFieldContent(
     padding: Int,
     onConfirmDelete: Boolean,
     stickyChips: @Composable() (RowScope.() -> Unit)?,
+    chipContainerColor: Color,
 ) {
     Box {
         val isFocused = textFieldInteraction.collectIsFocusedAsState()
@@ -202,44 +206,34 @@ fun TextFieldContent(
                 }
             }
             itemsIndexed(items = listOfChips, key = { index, item -> item }) { index, item ->
-                FilterChip(modifier = Modifier
-                    .animateItemPlacement()
-                    .animateContentSize(),
-                    onClick = { if (enabled) onChipClickWhenEnabled(index) else onChipClick(index) },
-                    selected = if (enabled) (index == listOfChips.lastIndex && onConfirmDelete) else selectedListOfChips?.contains(
-                        item
-                    ) ?: false,
-                    trailingIcon = {
-//                        AnimatedVisibility(
-//                            visible = enabled,
-//                            enter = expandHorizontally(),
-//                            exit = shrinkHorizontally()
-//                        ) {
-//                            Icon(
-//                                imageVector = Icons.Outlined.Close,
-//                                contentDescription = "close",
-//                                modifier = Modifier.size(ChipDefaults.LeadingIconSize)
-//                            )
-//                        }
-                        if (enabled) {
+                if (enabled) {
+                    FilterChip(
+                        onClick = { onChipClickWhenEnabled(index) },
+                        selected = (index == listOfChips.lastIndex && onConfirmDelete),
+                        trailingIcon = {
                             Icon(
                                 imageVector = Icons.Outlined.Close,
                                 contentDescription = "close",
                                 modifier = Modifier.size(ChipDefaults.LeadingIconSize)
                             )
-                        }
-                    },
-                    leadingIcon = {
-                        if (!enabled && selectedListOfChips?.contains(item) == true) {
-                            Icon(
-                                imageVector = Icons.Outlined.Done,
-                                contentDescription = "",
-                                modifier = Modifier.size(FilterChipDefaults.IconSize)
+                        },
+                        label = { Text(text = item) },
+                        border = FilterChipDefaults.filterChipBorder(
+                            borderColor = MaterialTheme.colorScheme.outline.copy(
+                                alpha = 0.4f
                             )
-                        }
-                    },
-                    label = { Text(text = item) },
-                    border = FilterChipDefaults.filterChipBorder(borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)))
+                        )
+                    )
+                } else {
+                    MyFilterChip(
+                        selected = selectedListOfChips?.contains(item) ?: false,
+                        label = { Text(text = item) },
+                        containerColor = chipContainerColor
+                    ) {
+                        onChipClick(index)
+                    }
+                }
+
             }
             item {
                 BasicTextField(

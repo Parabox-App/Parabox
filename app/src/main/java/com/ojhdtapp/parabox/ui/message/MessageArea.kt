@@ -54,10 +54,7 @@ import com.ojhdtapp.parabox.core.util.FormUtil
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.ChatPageDestination
-import com.ojhdtapp.parabox.ui.util.ActivityEvent
-import com.ojhdtapp.parabox.ui.util.HashTagEditor
-import com.ojhdtapp.parabox.ui.util.RoundedCornerDropdownMenu
-import com.ojhdtapp.parabox.ui.util.SearchAppBar
+import com.ojhdtapp.parabox.ui.util.*
 import com.ramcosta.composedestinations.navigation.navigate
 import com.valentinilk.shimmer.Shimmer
 import kotlinx.coroutines.CoroutineScope
@@ -148,7 +145,7 @@ fun RowScope.MessageArea(
                     textFieldValue = hashTagText,
                     enabled = isEditing,
                     onValueChanged = {
-                        val values = FormUtil.splitPerSpaceOrNewLine(it)
+                        val values = FormUtil.splitTwoSpacesOrNewLine(it)
 
                         if (values.size >= 2) {
                             onConfirmDelete = false
@@ -210,26 +207,18 @@ fun RowScope.MessageArea(
                         }
                     },
                     padding = HashTagEditor.PADDING_SMALL,
-                    onConfirmDelete = onConfirmDelete
+                    onConfirmDelete = onConfirmDelete,
+                    chipContainerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
                 ) {
                     var showDropDownMenu by remember {
                         mutableStateOf(false)
                     }
-                    FilterChip(
-                        modifier = Modifier
-                            .animateContentSize()
-                            .padding(end = 8.dp),
+                    MyFilterChip(
+                        modifier = Modifier.padding(end = 8.dp),
                         selected = viewModel.typeFilter.value !is ContactTypeFilterState.All,
-                        onClick = { showDropDownMenu = !showDropDownMenu },
-                        enabled = !isEditing,
-                        //                    leadingIcon = {
-                        //                        Icon(
-                        //                            imageVector = Icons.Outlined.Done,
-                        //                            contentDescription = "",
-                        //                            modifier = Modifier.size(FilterChipDefaults.IconSize)
-                        //                        )
-                        //
-                        //                    },
+                        label = {
+                            Text(text = stringResource(id = viewModel.typeFilter.value.labelResId))
+                        },
                         trailingIcon = {
                             Box(
                                 modifier = Modifier
@@ -276,49 +265,24 @@ fun RowScope.MessageArea(
                                 }
                             }
                         },
-                        label = { Text(text = stringResource(id = viewModel.typeFilter.value.labelResId)) },
-                        border = FilterChipDefaults.filterChipBorder(
-                            borderColor = MaterialTheme.colorScheme.outline.copy(
-                                alpha = 0.4f
-                            )
-                        )
-                    )
-                    FilterChip(
+                        enabled = !isEditing,
+                        withoutLeadingIcon = true,
+                    ) {
+                        showDropDownMenu = !showDropDownMenu
+                    }
+                    MyFilterChip(
                         modifier = Modifier
-                            .animateContentSize()
                             .padding(end = 8.dp),
                         selected = viewModel.readFilter.value is ContactReadFilterState.Unread,
-                        onClick = {
-                            viewModel.setReadFilter(
-                                if (viewModel.readFilter.value is ContactReadFilterState.Unread) ContactReadFilterState.All() else ContactReadFilterState.Unread()
-                            )
-                        },
-                        enabled = !isEditing,
-                        leadingIcon = {
-                            if (viewModel.readFilter.value is ContactReadFilterState.Unread)
-                                Icon(
-                                    imageVector = Icons.Outlined.Done,
-                                    contentDescription = "",
-                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                )
-                        },
                         label = { Text(text = stringResource(R.string.unread)) },
-                        border = FilterChipDefaults.filterChipBorder(
-                            borderColor = MaterialTheme.colorScheme.outline.copy(
-                                alpha = 0.4f
-                            )
+                        enabled = !isEditing,
+                    ) {
+                        viewModel.setReadFilter(
+                            if (viewModel.readFilter.value is ContactReadFilterState.Unread) ContactReadFilterState.All() else ContactReadFilterState.Unread()
                         )
-                    )
-                    FilterChip(
-                        modifier = Modifier
-                            .animateContentSize(), selected = false, onClick = {
-                            viewModel.setTagEditing(!isEditing)
-                            hashTagText = ""
-                            hashTagError = ""
-                            hashTagShouldShowError = false
-                            onConfirmDelete = false
-                            viewModel.clearSelectedContactTagStateList()
-                        },
+                    }
+                    MyFilterChip(
+                        selected = isEditing,
                         label = {
                             Icon(
                                 imageVector = Icons.Outlined.Tune,
@@ -326,55 +290,16 @@ fun RowScope.MessageArea(
                                 modifier = Modifier.size(FilterChipDefaults.IconSize)
                             )
                         },
-                        border = FilterChipDefaults.filterChipBorder(
-                            borderColor = MaterialTheme.colorScheme.outline.copy(
-                                alpha = 0.4f
-                            )
-                        )
-                    )
+                        withoutLeadingIcon = true,
+                    ) {
+                        viewModel.setTagEditing(!isEditing)
+                        hashTagText = ""
+                        hashTagError = ""
+                        hashTagShouldShowError = false
+                        onConfirmDelete = false
+                        viewModel.clearSelectedContactTagStateList()
+                    }
                 }
-                //                    Row(
-                //                        modifier = Modifier
-                //                            .padding(vertical = 8.dp)
-                //                            .horizontalScroll((rememberScrollState()))
-                //                    ) {
-                //                        Spacer(modifier = Modifier.width(16.dp))
-                //                        if (viewModel.contactTagStateFlow.collectAsState().value.isNotEmpty()) {
-                //                            FilterChip(modifier = Modifier
-                //                                .padding(end = 8.dp)
-                //                                .animateContentSize(), selected = false, onClick = { /*TODO*/ },
-                //                                label = {
-                //                                    Icon(
-                //                                        imageVector = Icons.Outlined.Tune,
-                //                                        contentDescription = "",
-                //                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
-                //                                    )
-                //                                })
-                //                        }
-                //                        viewModel.contactTagStateFlow.collectAsState().value.forEach {
-                //                            FilterChip(
-                //                                modifier = Modifier
-                //                                    .padding(end = 8.dp)
-                //                                    .animateContentSize(),
-                //                                selected = viewModel.selectedContactTagStateList.contains(it),
-                //                                onClick = {
-                //                                    viewModel.addOrRemoveItemOfSelectedContactTagStateList(
-                //                                        it
-                //                                    )
-                //                                },
-                //                                label = { Text(it.value) },
-                //                                leadingIcon = {
-                //                                },
-                //                                selectedIcon = {
-                //                                    Icon(
-                //                                        imageVector = Icons.Outlined.Done,
-                //                                        contentDescription = "",
-                //                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
-                //                                    )
-                //                                }
-                //                            )
-                //                        }
-                //                    }
             }
 
             item(key = "main") {
@@ -635,7 +560,7 @@ fun RowScope.MessageArea(
                             .build()
                         AsyncImage(
                             model = ImageRequest.Builder(context)
-                                .data(if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.empty_dynamic else R.drawable.empty)
+                                .data(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.empty_dynamic else R.drawable.empty)
                                 .crossfade(true)
                                 .build(),
                             imageLoader = imageLoader,

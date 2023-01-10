@@ -10,4 +10,5 @@ object SettingPageState {
     const val INTERFACE = 6
     const val EXPERIMENTAL = 7
     const val SUPPORT = 8
+    const val MODE = 9
 }

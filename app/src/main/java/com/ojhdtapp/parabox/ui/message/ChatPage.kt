@@ -78,6 +78,7 @@ import com.google.mlkit.nl.entityextraction.*
 import com.ojhdtapp.parabox.MainActivity
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.*
+import com.ojhdtapp.parabox.core.util.FileUtil.replacedIfUnavailable
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.Profile
 import com.ojhdtapp.parabox.domain.model.message_content.*
@@ -1400,20 +1401,16 @@ fun NormalChatPage(
                 scaffoldState.bottomSheetState.collapse()
             }
         }
-        if (messageState.state == MessageState.LOADING) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surface),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        } else {
-//            val timedList =
-//                remember(lazyPagingItems.itemSnapshotList) {
-//                    lazyPagingItems.itemSnapshotList.items.toTimedMessages()
-//                }
+//        if (messageState.state == MessageState.LOADING) {
+//            Box(
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .background(MaterialTheme.colorScheme.surface),
+//                contentAlignment = Alignment.Center
+//            ) {
+//                CircularProgressIndicator()
+//            }
+//        } else {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -1475,7 +1472,8 @@ fun NormalChatPage(
                 }
                 itemsBeforeAndAfterReverseIndexed(
                     items = lazyPagingItems,
-                    key = { it.messageId }) { value, beforeValue, afterValue, index ->
+                    key = { it.messageId }
+                ) { value, beforeValue, afterValue, index ->
                     if (value != null) {
                         val shouldShowTimeDivider = remember(value, beforeValue, afterValue) {
                             beforeValue == null || abs(value.timestamp - beforeValue.timestamp) > 120000 || (index + 1) % 40 == 0
@@ -1714,7 +1712,7 @@ fun NormalChatPage(
 
             }
         }
-    }
+//    }
 }
 //@Composable
 //fun ErrorChatPage(modifier: Modifier = Modifier, errMessage: String, onRetry: () -> Unit) {
@@ -1813,6 +1811,7 @@ fun MessageBlock(
                     shouldDisplay = isFirst,
                     avatar = null,
                     avatarUri = avatarUri,
+                    name = userName,
                     onClick = {},
                     onLongClick = onAvatarLongClick,
                 )
@@ -1823,6 +1822,7 @@ fun MessageBlock(
                     shouldDisplay = isFirst,
                     avatar = message.profile.avatar,
                     avatarUri = message.profile.avatarUri,
+                    name = message.profile.name,
                     onClick = {},
                     onLongClick = onAvatarLongClick,
                 )
@@ -1855,7 +1855,7 @@ fun MessageBlock(
                         Spacer(modifier = Modifier.height(2.dp))
                     }
                 }
-//                Spacer(modifier = Modifier.width(64.dp))
+                Spacer(modifier = Modifier.width(64.dp))
             }
         }
     }
@@ -1868,15 +1868,25 @@ fun MessageAvatar(
     shouldDisplay: Boolean,
     avatar: String?,
     avatarUri: String?,
+    name: String?,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
 ) =
     Box(modifier = Modifier.size(42.dp)) {
         if (shouldDisplay) {
+            val context = LocalContext.current
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data(avatarUri?.let { Uri.parse(it) } ?: avatar
-                    ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar)
+                    .data(
+                        AvatarUtil.getAvatar(
+                            context = context,
+                            uri = avatarUri?.let { Uri.parse(it) },
+                            url = avatar,
+                            name = name,
+                            backgroundColor = MaterialTheme.colorScheme.primary,
+                            textColor = MaterialTheme.colorScheme.onPrimary,
+                        )
+                    )
                     .crossfade(true)
                     .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
                     .build(),
@@ -2105,8 +2115,9 @@ fun SingleMessage(
             } else {
                 (context as MainActivity).getLanguageCode(message.contents.getContentString())
             }
-        shouldTranslate = !(AppCompatDelegate.getApplicationLocales()[0]?.toLanguageTag()
-            ?.let { LanguageUtil.languageTagMapper(it) }
+        shouldTranslate = !(AppCompatDelegate.getApplicationLocales()[0]?.language
+            ?.let {
+                LanguageUtil.languageTagMapper(it) }
             ?.contentEquals(languageCode) ?: true)
     }
     SelectionContainer {
@@ -2162,7 +2173,8 @@ fun SingleMessage(
                             onLongClick = onLongClick
                         )
 //                        .clickable(enabled = isSelected, onClick = onClick)
-                        .animateContentSize(),
+//                        .animateContentSize()
+                    ,
                     shouldBreak = message.contents.map {
                         it is Image || it is QuoteReply || it is Audio || it is File
                     }.plus(arrayOf(true, true))
@@ -2207,6 +2219,7 @@ fun SingleMessage(
                             when (it.first.type) {
                                 Entity.TYPE_ADDRESS -> {
                                     AssistChip(
+                                        shape = CircleShape,
                                         onClick = {
                                             BrowserUtil.launchMap(context, it.second)
                                         },
@@ -2228,6 +2241,7 @@ fun SingleMessage(
                                 Entity.TYPE_DATE_TIME -> {
                                     val timestamp = it.first.asDateTimeEntity()!!.timestampMillis
                                     AssistChip(
+                                        shape = CircleShape,
                                         onClick = {
                                             if (fromBubble) {
                                                 (context as MainActivity).startActivity(
@@ -2278,6 +2292,7 @@ fun SingleMessage(
                                 }
                                 Entity.TYPE_EMAIL -> {
                                     AssistChip(
+                                        shape = CircleShape,
                                         onClick = {
                                             BrowserUtil.composeEmail(
                                                 context,
@@ -2299,6 +2314,7 @@ fun SingleMessage(
                                     val flightStr = it.first.asFlightNumberEntity()!!
                                         .let { "${it.airlineCode} ${it.flightNumber}" }
                                     AssistChip(
+                                        shape = CircleShape,
                                         onClick = { clipboardManager.setText(AnnotatedString(text = flightStr)) },
                                         label = {
                                             Text(text = flightStr, color = textColor)
@@ -2314,6 +2330,7 @@ fun SingleMessage(
                                 }
                                 Entity.TYPE_IBAN -> {
                                     AssistChip(
+                                        shape = CircleShape,
                                         onClick = { clipboardManager.setText(AnnotatedString(text = it.second)) },
                                         label = { Text(text = it.second, color = textColor) },
                                         leadingIcon = {
@@ -2327,6 +2344,7 @@ fun SingleMessage(
                                 }
                                 Entity.TYPE_ISBN -> {
                                     AssistChip(
+                                        shape = CircleShape,
                                         onClick = { clipboardManager.setText(AnnotatedString(text = it.second)) },
                                         label = { Text(text = it.second, color = textColor) },
                                         leadingIcon = {
@@ -2340,6 +2358,7 @@ fun SingleMessage(
                                 }
                                 Entity.TYPE_PAYMENT_CARD -> {
                                     AssistChip(
+                                        shape = CircleShape,
                                         onClick = { clipboardManager.setText(AnnotatedString(text = it.second)) },
                                         label = { Text(text = it.second, color = textColor) },
                                         leadingIcon = {
@@ -2353,6 +2372,7 @@ fun SingleMessage(
                                 }
                                 Entity.TYPE_PHONE -> {
                                     AssistChip(
+                                        shape = CircleShape,
                                         onClick = {
                                             if (fromBubble) {
                                                 (context as BubbleActivity).startActivity(
@@ -2382,6 +2402,7 @@ fun SingleMessage(
                                 }
                                 Entity.TYPE_URL -> {
                                     AssistChip(
+                                        shape = CircleShape,
                                         onClick = { BrowserUtil.launchURL(context, it.second) },
                                         label = {
                                             Text(
@@ -2602,9 +2623,6 @@ private fun MessageContent.toLayout(
 //                    }
 //                }
         is Image -> {
-//            var imageWidth by remember {
-//                mutableStateOf(80.dp)
-//            }
             val imageLoader = ImageLoader.Builder(context)
                 .components {
                     if (SDK_INT >= 28) {
@@ -2614,40 +2632,9 @@ private fun MessageContent.toLayout(
                     }
                 }
                 .build()
-//            LaunchedEffect(key1 = this@toLayout) {
-//                imageWidth = if (uriString != null) {
-//                    try {
-//                        val options = BitmapFactory.Options().apply {
-//                            inJustDecodeBounds = true
-//                        }
-//                        context.contentResolver.openInputStream(Uri.parse(uriString))
-//                            .use {
-//                                BitmapFactory.decodeStream(
-//                                    it,
-//                                    null,
-//                                    options
-//                                )
-//                            }
-//                        with(density) {
-//                            options.outWidth.toDp().coerceIn(80.dp, 320.dp)
-//                        }
-//                    } catch (e: FileNotFoundException) {
-//                        with(density) {
-//                            width
-//                                .toDp()
-//                                .coerceIn(80.dp, 320.dp)
-//                        }
-//                    }
-//                } else {
-//                    with(density) {
-//                        width.toDp()
-//                            .coerceIn(80.dp, 320.dp)
-//                    }
-//                }
-//            }
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data(uriString?.also { Uri.parse(it) }
+                    .data(uriString?.let { Uri.parse(it).replacedIfUnavailable(context)}
                         ?: url)
                     .crossfade(true)
                     .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
@@ -2656,11 +2643,7 @@ private fun MessageContent.toLayout(
                 contentDescription = "image",
                 contentScale = ContentScale.FillWidth,
                 modifier = Modifier
-//                    .width(imageWidth)
-//                    .defaultMinSize(minHeight = 80.dp)
-//                        .height(with(LocalDensity.current) {
-//                            min(height.toDp(), 600.dp)
-//                        })
+                    .widthIn(128.dp, 320.dp)
                     .padding(horizontal = 3.dp, vertical = 3.dp)
                     .clip(
                         RoundedCornerShape(
@@ -2764,7 +2747,7 @@ private fun MessageContent.toLayout(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.RecordVoiceOver,
+                            imageVector = Icons.Outlined.PlayCircleOutline,
                             contentDescription = "record",
                             tint = MaterialTheme.colorScheme.primary
                         )
@@ -2810,6 +2793,8 @@ private fun MessageContent.toLayout(
                 Column() {
                     Text(
                         text = name,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
                         style = MaterialTheme.typography.labelLarge,
                         color = primaryTextColor
                     )

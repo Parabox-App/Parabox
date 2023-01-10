@@ -16,9 +16,13 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -30,6 +34,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -93,6 +98,16 @@ fun FilePage(
         mutableStateOf(false)
     }
 
+    val lazyGridState = rememberLazyGridState()
+    val searchLazyListState = rememberLazyListState()
+
+    val hoverSearchBar by remember {
+        derivedStateOf {
+            (mainState.area == FilePageState.MAIN_AREA && lazyGridState.firstVisibleItemIndex > 1) ||
+                    (mainState.area == FilePageState.SEARCH_AREA && searchLazyListState.firstVisibleItemIndex > 1)
+        }
+    }
+
     BackHandler(enabled = mainState.area != FilePageState.MAIN_AREA) {
         viewModel.setArea(FilePageState.MAIN_AREA)
     }
@@ -110,19 +125,18 @@ fun FilePage(
             }
         }
     }
-    // Google Drive
-    val gDriveLogin by mainSharedViewModel.googleLoginFlow.collectAsState()
-    val gDriveTotalSpace by mainSharedViewModel.googleTotalSpaceFlow.collectAsState()
-    val gDriveUsedSpace by mainSharedViewModel.googleUsedSpaceFlow.collectAsState()
-    val gDriveUsedSpacePercent = remember {
+    val cloudService by mainSharedViewModel.cloudServiceFlow.collectAsState(initial = 0)
+    val cloudTotalSpace by mainSharedViewModel.cloudTotalSpaceFlow.collectAsState(initial = 0L)
+    val cloudUsedSpace by mainSharedViewModel.cloudUsedSpaceFlow.collectAsState(initial = 0L)
+    val cloudUsedSpacePercent = remember {
         derivedStateOf {
-            if (gDriveTotalSpace == 0L) 0 else (gDriveUsedSpace * 100 / gDriveTotalSpace).toInt()
+            if (cloudTotalSpace == 0L) 0 else (cloudUsedSpace * 100 / cloudTotalSpace).toInt()
         }
     }
-    val gDriveAppUsedSpace by mainSharedViewModel.googleAppUsedSpaceFlow.collectAsState()
-    val gDriveAppUsedSpacePercent = remember {
+    val cloudAppUsedSpace by mainSharedViewModel.cloudAppUsedSpaceFlow.collectAsState(initial = 0L)
+    val cloudAppUsedSpacePercent = remember {
         derivedStateOf {
-            if (gDriveTotalSpace == 0L) 0 else (gDriveAppUsedSpace * 100 / gDriveTotalSpace).toInt()
+            if (cloudTotalSpace == 0L) 0 else (cloudAppUsedSpace * 100 / cloudTotalSpace).toInt()
         }
     }
     val gDriveLauncher =
@@ -132,6 +146,7 @@ fun FilePage(
                 if (result.data != null) {
                     val googleSignInAccount = GoogleSignIn.getSignedInAccountFromIntent(intent)
                     googleSignInAccount.addOnCompleteListener { task ->
+                        showCloudDialog = false
                         if (task.isSuccessful) {
                             val account = task.result
                             if (account != null) {
@@ -147,6 +162,14 @@ fun FilePage(
                             }
                         }
                     }
+                } else {
+                    coroutineScope.launch {
+                        snackBarHostState.showSnackbar("设备不支持")
+                    }
+                }
+            } else {
+                coroutineScope.launch {
+                    snackBarHostState.showSnackbar("设备不支持")
                 }
             }
         }
@@ -220,9 +243,6 @@ fun FilePage(
         openDialog = mainSharedViewModel.showUserProfileDialogState.value,
         userName = mainSharedViewModel.userNameFlow.collectAsState(initial = DataStoreKeys.DEFAULT_USER_NAME).value,
         avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
-        gDriveLogin = mainSharedViewModel.googleLoginFlow.collectAsState(initial = false).value,
-        gDriveTotalSpace = mainSharedViewModel.googleTotalSpaceFlow.collectAsState(initial = 0L).value,
-        gDriveUsedSpace = mainSharedViewModel.googleUsedSpaceFlow.collectAsState(initial = 0L).value,
         pluginList = mainSharedViewModel.pluginListStateFlow.collectAsState().value,
         sizeClass = sizeClass,
         onUpdateName = {
@@ -260,6 +280,7 @@ fun FilePage(
                 fileSelection = mainState.data.filter { it.fileId in viewModel.selectedFilesId },
                 activateState = viewModel.searchBarActivateState.value,
                 avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
+                shouldHover = hoverSearchBar,
                 onActivateStateChanged = {
                     viewModel.setSearchBarActivateState(it)
                     when (it) {
@@ -350,6 +371,7 @@ fun FilePage(
             when (it) {
                 FilePageState.MAIN_AREA -> MainArea(
                     mainState = mainState,
+                    lazyGridState = lazyGridState,
                     onSetRecentFilter = { type, value -> viewModel.setRecentFilter(type, value) },
                     searchText = viewModel.searchText.value,
                     selectedFileIdList = viewModel.selectedFilesId,
@@ -357,12 +379,12 @@ fun FilePage(
                     onEvent = onEvent,
                     searchAppBarState = viewModel.searchBarActivateState.value,
                     sizeClass = sizeClass,
-                    gDriveLogin = gDriveLogin,
-                    gDriveTotalSpace = gDriveTotalSpace,
-                    gDriveUsedSpace = gDriveUsedSpace,
-                    gDriveUsedSpacePercent = gDriveUsedSpacePercent.value,
-                    gDriveAppUsedSpace = gDriveAppUsedSpace,
-                    gDriveAppUsedSpacePercent = gDriveAppUsedSpacePercent.value,
+                    cloudService = cloudService,
+                    cloudTotalSpace = cloudTotalSpace,
+                    cloudUsedSpace = cloudUsedSpace,
+                    cloudUsedSpacePercent = cloudUsedSpacePercent.value,
+                    cloudAppUsedSpace = cloudAppUsedSpace,
+                    cloudAppUsedSpacePercent = cloudAppUsedSpacePercent.value,
                     gDriveLauncher = gDriveLauncher,
                     workInfoPairList = mainSharedViewModel.workInfoMap.values.toList(),
                     isRefreshing = viewModel.isRefreshing.value,
@@ -384,8 +406,8 @@ fun FilePage(
                         showCloudDialog = true
                     },
                     onRefresh = {
-                        when {
-                            gDriveLogin -> {
+                        when (cloudService) {
+                            GoogleDriveUtil.SERVICE_CODE -> {
                                 viewModel.setIsRefreshing(true)
                                 viewModel.updateGoogleDriveFilesStateFlow()
                             }
@@ -405,6 +427,7 @@ fun FilePage(
 
                 FilePageState.SEARCH_AREA -> SearchArea(
                     mainState = mainState,
+                    lazyListState = searchLazyListState,
                     searchText = viewModel.searchText.value,
                     selectedFileIdList = viewModel.selectedFilesId,
                     paddingValues = paddingValues,
@@ -432,18 +455,19 @@ fun FilePage(
 @Composable
 fun MainArea(
     modifier: Modifier = Modifier,
+    lazyGridState: LazyGridState,
     mainState: FilePageState,
     searchText: String,
     selectedFileIdList: List<Long>,
     paddingValues: PaddingValues,
     searchAppBarState: Int,
     sizeClass: WindowSizeClass,
-    gDriveLogin: Boolean,
-    gDriveTotalSpace: Long,
-    gDriveUsedSpace: Long,
-    gDriveUsedSpacePercent: Int,
-    gDriveAppUsedSpace: Long,
-    gDriveAppUsedSpacePercent: Int,
+    cloudService: Int,
+    cloudTotalSpace: Long,
+    cloudUsedSpace: Long,
+    cloudUsedSpacePercent: Int,
+    cloudAppUsedSpace: Long,
+    cloudAppUsedSpacePercent: Int,
     gDriveLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>,
     workInfoPairList: List<Pair<File, List<WorkInfo>>>,
     isRefreshing: Boolean,
@@ -472,6 +496,7 @@ fun MainArea(
         }
     ) {
         LazyVerticalGrid(
+            state = lazyGridState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) 64.dp else 0.dp),
@@ -498,214 +523,78 @@ fun MainArea(
                         modifier = Modifier.padding(bottom = 8.dp),
                         mainAxisSpacing = 8.dp
                     ) {
-                        FilterChip(
-                            modifier = Modifier
-                                .animateContentSize(),
+                        MyFilterChip(
                             selected = mainState.enableRecentDocsFilter,
-                            onClick = {
-                                onSetRecentFilter(
-                                    ExtensionFilter.DOCS,
-                                    !mainState.enableRecentDocsFilter
-                                )
-                            },
-                            enabled = true,
-                            leadingIcon = {
-                                if (mainState.enableRecentDocsFilter)
-                                    Icon(
-                                        imageVector = Icons.Outlined.Done,
-                                        contentDescription = "",
-                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                    )
-                            },
-                            label = { Text(text = stringResource(R.string.file_type_docs)) },
-                            border = FilterChipDefaults.filterChipBorder(
-                                borderColor = MaterialTheme.colorScheme.outline.copy(
-                                    alpha = 0.4f
-                                )
+                            label = { Text(text = stringResource(R.string.file_type_docs)) }
+                        ) {
+                            onSetRecentFilter(
+                                ExtensionFilter.DOCS,
+                                !mainState.enableRecentDocsFilter
                             )
-                        )
-                        FilterChip(
-                            modifier = Modifier
-                                .animateContentSize(),
+                        }
+                        MyFilterChip(
                             selected = mainState.enableRecentSlidesFilter,
-                            onClick = {
-                                onSetRecentFilter(
-                                    ExtensionFilter.SLIDES,
-                                    !mainState.enableRecentSlidesFilter
-                                )
-                            },
-                            enabled = true,
-                            leadingIcon = {
-                                if (mainState.enableRecentSlidesFilter)
-                                    Icon(
-                                        imageVector = Icons.Outlined.Done,
-                                        contentDescription = "",
-                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                    )
-                            },
-                            label = { Text(text = stringResource(R.string.file_type_slides)) },
-                            border = FilterChipDefaults.filterChipBorder(
-                                borderColor = MaterialTheme.colorScheme.outline.copy(
-                                    alpha = 0.4f
-                                )
+                            label = { Text(text = stringResource(R.string.file_type_slides)) }
+                        ) {
+                            onSetRecentFilter(
+                                ExtensionFilter.SLIDES,
+                                !mainState.enableRecentSlidesFilter
                             )
-                        )
-                        FilterChip(
-                            modifier = Modifier
-                                .animateContentSize(),
+                        }
+                        MyFilterChip(
                             selected = mainState.enableRecentSheetsFilter,
-                            onClick = {
-                                onSetRecentFilter(
-                                    ExtensionFilter.SHEETS,
-                                    !mainState.enableRecentSheetsFilter
-                                )
-                            },
-                            enabled = true,
-                            leadingIcon = {
-                                if (mainState.enableRecentSheetsFilter)
-                                    Icon(
-                                        imageVector = Icons.Outlined.Done,
-                                        contentDescription = "",
-                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                    )
-                            },
-                            label = { Text(text = stringResource(R.string.file_type_sheets)) },
-                            border = FilterChipDefaults.filterChipBorder(
-                                borderColor = MaterialTheme.colorScheme.outline.copy(
-                                    alpha = 0.4f
-                                )
+                            label = { Text(text = stringResource(R.string.file_type_sheets)) }
+                        ) {
+                            onSetRecentFilter(
+                                ExtensionFilter.SHEETS,
+                                !mainState.enableRecentSheetsFilter
                             )
-                        )
-                        FilterChip(
-                            modifier = Modifier
-                                .animateContentSize(),
+                        }
+                        MyFilterChip(
                             selected = mainState.enableRecentVideoFilter,
-                            onClick = {
-                                onSetRecentFilter(
-                                    ExtensionFilter.VIDEO,
-                                    !mainState.enableRecentVideoFilter
-                                )
-                            },
-                            enabled = true,
-                            leadingIcon = {
-                                if (mainState.enableRecentVideoFilter)
-                                    Icon(
-                                        imageVector = Icons.Outlined.Done,
-                                        contentDescription = "",
-                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                    )
-                            },
-                            label = { Text(text = stringResource(R.string.file_type_video)) },
-                            border = FilterChipDefaults.filterChipBorder(
-                                borderColor = MaterialTheme.colorScheme.outline.copy(
-                                    alpha = 0.4f
-                                )
+                            label = { Text(text = stringResource(R.string.file_type_video)) }
+                        ) {
+                            onSetRecentFilter(
+                                ExtensionFilter.VIDEO,
+                                !mainState.enableRecentVideoFilter
                             )
-                        )
-                        FilterChip(
-                            modifier = Modifier
-                                .animateContentSize(),
+                        }
+                        MyFilterChip(
                             selected = mainState.enableRecentAudioFilter,
-                            onClick = {
-                                onSetRecentFilter(
-                                    ExtensionFilter.AUDIO,
-                                    !mainState.enableRecentAudioFilter
-                                )
-                            },
-                            enabled = true,
-                            leadingIcon = {
-                                if (mainState.enableRecentAudioFilter)
-                                    Icon(
-                                        imageVector = Icons.Outlined.Done,
-                                        contentDescription = "",
-                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                    )
-                            },
-                            label = { Text(text = stringResource(R.string.file_type_audio)) },
-                            border = FilterChipDefaults.filterChipBorder(
-                                borderColor = MaterialTheme.colorScheme.outline.copy(
-                                    alpha = 0.4f
-                                )
+                            label = { Text(text = stringResource(R.string.file_type_audio)) }
+                        ) {
+                            onSetRecentFilter(
+                                ExtensionFilter.AUDIO,
+                                !mainState.enableRecentAudioFilter
                             )
-                        )
-                        FilterChip(
-                            modifier = Modifier
-                                .animateContentSize(),
+                        }
+                        MyFilterChip(
                             selected = mainState.enableRecentPictureFilter,
-                            onClick = {
-                                onSetRecentFilter(
-                                    ExtensionFilter.PICTURE,
-                                    !mainState.enableRecentPictureFilter
-                                )
-                            },
-                            enabled = true,
-                            leadingIcon = {
-                                if (mainState.enableRecentPictureFilter)
-                                    Icon(
-                                        imageVector = Icons.Outlined.Done,
-                                        contentDescription = "",
-                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                    )
-                            },
-                            label = { Text(text = stringResource(R.string.file_type_picture)) },
-                            border = FilterChipDefaults.filterChipBorder(
-                                borderColor = MaterialTheme.colorScheme.outline.copy(
-                                    alpha = 0.4f
-                                )
+                            label = { Text(text = stringResource(R.string.file_type_picture)) }
+                        ) {
+                            onSetRecentFilter(
+                                ExtensionFilter.PICTURE,
+                                !mainState.enableRecentPictureFilter
                             )
-                        )
-                        FilterChip(
-                            modifier = Modifier
-                                .animateContentSize(),
+                        }
+                        MyFilterChip(
                             selected = mainState.enableRecentPDFFilter,
-                            onClick = {
-                                onSetRecentFilter(
-                                    ExtensionFilter.PDF,
-                                    !mainState.enableRecentPDFFilter
-                                )
-                            },
-                            enabled = true,
-                            leadingIcon = {
-                                if (mainState.enableRecentPDFFilter)
-                                    Icon(
-                                        imageVector = Icons.Outlined.Done,
-                                        contentDescription = "",
-                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                    )
-                            },
-                            label = { Text(text = stringResource(R.string.file_type_pdf)) },
-                            border = FilterChipDefaults.filterChipBorder(
-                                borderColor = MaterialTheme.colorScheme.outline.copy(
-                                    alpha = 0.4f
-                                )
+                            label = { Text(text = stringResource(R.string.file_type_pdf)) }
+                        ) {
+                            onSetRecentFilter(
+                                ExtensionFilter.PDF,
+                                !mainState.enableRecentPDFFilter
                             )
-                        )
-                        FilterChip(
-                            modifier = Modifier
-                                .animateContentSize(),
+                        }
+                        MyFilterChip(
                             selected = mainState.enableRecentCompressedFilter,
-                            onClick = {
-                                onSetRecentFilter(
-                                    ExtensionFilter.COMPRESSED,
-                                    !mainState.enableRecentCompressedFilter
-                                )
-                            },
-                            enabled = true,
-                            leadingIcon = {
-                                if (mainState.enableRecentCompressedFilter)
-                                    Icon(
-                                        imageVector = Icons.Outlined.Done,
-                                        contentDescription = "",
-                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                    )
-                            },
-                            label = { Text(text = stringResource(R.string.file_type_compressed)) },
-                            border = FilterChipDefaults.filterChipBorder(
-                                borderColor = MaterialTheme.colorScheme.outline.copy(
-                                    alpha = 0.4f
-                                )
+                            label = { Text(text = stringResource(R.string.file_type_compressed)) }
+                        ) {
+                            onSetRecentFilter(
+                                ExtensionFilter.COMPRESSED,
+                                !mainState.enableRecentCompressedFilter
                             )
-                        )
+                        }
                     }
                     if (mainState.recentFilterData.isEmpty()) {
                         Column(
@@ -848,141 +737,144 @@ fun MainArea(
                         }
                     }
                     Crossfade(
-                        targetState = gDriveLogin,
+                        targetState = cloudService,
                     ) {
-                        if (it) {
-                            Column() {
-                                var expanded by remember {
-                                    mutableStateOf(false)
-                                }
-                                Box(modifier = Modifier.wrapContentSize()) {
-                                    OutlinedCard(modifier = Modifier
-                                        .fillMaxWidth(), onClick = {
-                                        expanded = true
-                                    }) {
-                                        Row(modifier = Modifier.padding(16.dp)) {
-                                            Surface(
-                                                modifier = Modifier.size(48.dp),
-                                                shape = CircleShape,
-                                                color = MaterialTheme.colorScheme.secondaryContainer
-                                            ) {
-                                                Box(
-                                                    modifier = Modifier.fillMaxSize(),
-                                                    contentAlignment = Alignment.Center
+                        when (it) {
+                            GoogleDriveUtil.SERVICE_CODE -> {
+                                Column() {
+                                    var expanded by remember {
+                                        mutableStateOf(false)
+                                    }
+                                    Box(modifier = Modifier.wrapContentSize()) {
+                                        OutlinedCard(modifier = Modifier
+                                            .fillMaxWidth(), onClick = {
+                                            expanded = true
+                                        }) {
+                                            Row(modifier = Modifier.padding(16.dp)) {
+                                                Surface(
+                                                    modifier = Modifier.size(48.dp),
+                                                    shape = CircleShape,
+                                                    color = MaterialTheme.colorScheme.secondaryContainer
                                                 ) {
-                                                    FaIcon(
-                                                        faIcon = FaIcons.GoogleDrive,
-                                                        tint = MaterialTheme.colorScheme.primary
+                                                    Box(
+                                                        modifier = Modifier.fillMaxSize(),
+                                                        contentAlignment = Alignment.Center
+                                                    ) {
+                                                        FaIcon(
+                                                            faIcon = FaIcons.GoogleDrive,
+                                                            tint = MaterialTheme.colorScheme.primary
+                                                        )
+                                                    }
+                                                }
+                                                Spacer(modifier = Modifier.width(16.dp))
+                                                Column() {
+                                                    Text(
+                                                        text = stringResource(id = R.string.cloud_service_gd),
+                                                        style = MaterialTheme.typography.titleMedium
+                                                    )
+                                                    LinearProgressIndicator(
+                                                        progress = 0.6f,
+                                                        modifier = Modifier
+                                                            .padding(vertical = 4.dp)
+                                                            .clip(CircleShape),
+                                                    )
+                                                    Text(
+                                                        text = stringResource(
+                                                            id = R.string.cloud_service_used_space,
+                                                            cloudUsedSpacePercent,
+                                                            FileUtil.getSizeString(
+                                                                cloudUsedSpace
+                                                            ),
+                                                            FileUtil.getSizeString(
+                                                                cloudTotalSpace
+                                                            )
+                                                        ),
+                                                        style = MaterialTheme.typography.labelMedium,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                    Text(
+                                                        text = stringResource(
+                                                            R.string.cloud_service_app_used_space,
+                                                            cloudAppUsedSpacePercent,
+                                                            FileUtil.getSizeString(
+                                                                cloudAppUsedSpace
+                                                            )
+                                                        ),
+                                                        style = MaterialTheme.typography.labelMedium,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                                     )
                                                 }
                                             }
-                                            Spacer(modifier = Modifier.width(16.dp))
-                                            Column() {
-                                                Text(
-                                                    text = stringResource(id = R.string.cloud_service_gd),
-                                                    style = MaterialTheme.typography.titleMedium
-                                                )
-                                                LinearProgressIndicator(
-                                                    progress = 0.6f,
-                                                    modifier = Modifier
-                                                        .padding(vertical = 4.dp)
-                                                        .clip(CircleShape),
-                                                )
-                                                Text(
-                                                    text = stringResource(
-                                                        id = R.string.cloud_service_used_space,
-                                                        gDriveUsedSpacePercent,
-                                                        FileUtil.getSizeString(
-                                                            gDriveUsedSpace
-                                                        ),
-                                                        FileUtil.getSizeString(
-                                                            gDriveTotalSpace
-                                                        )
-                                                    ),
-                                                    style = MaterialTheme.typography.labelMedium,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                                Text(
-                                                    text = stringResource(
-                                                        R.string.cloud_service_app_used_space,
-                                                        gDriveAppUsedSpacePercent,
-                                                        FileUtil.getSizeString(
-                                                            gDriveAppUsedSpace
-                                                        )
-                                                    ),
-                                                    style = MaterialTheme.typography.labelMedium,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                            }
                                         }
-                                    }
-                                    RoundedCornerDropdownMenu(
-                                        expanded = expanded,
-                                        onDismissRequest = { expanded = false }) {
-                                        DropdownMenuItem(
-                                            text = { Text(text = stringResource(R.string.sign_out_cloud_service)) },
-                                            onClick = {
-                                                expanded = false
-                                                (context as MainActivity).getGoogleLoginAuth()
-                                                    .signOut()
-                                                    .addOnCompleteListener {
-                                                        onLogoutGoogleDrive()
-                                                    }
-                                            })
+                                        RoundedCornerDropdownMenu(
+                                            expanded = expanded,
+                                            onDismissRequest = { expanded = false }) {
+                                            DropdownMenuItem(
+                                                text = { Text(text = stringResource(R.string.sign_out_cloud_service)) },
+                                                onClick = {
+                                                    expanded = false
+                                                    (context as MainActivity).getGoogleLoginAuth()
+                                                        .signOut()
+                                                        .addOnCompleteListener {
+                                                            onLogoutGoogleDrive()
+                                                        }
+                                                })
+                                        }
                                     }
                                 }
                             }
-                        } else {
-                            OutlinedCard() {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(24.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    Surface(
-                                        shape = CircleShape,
-                                        color = MaterialTheme.colorScheme.secondaryContainer
+                            else -> {
+                                OutlinedCard() {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(24.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
                                     ) {
-                                        Box(
-                                            modifier = Modifier.size(72.dp),
-                                            contentAlignment = Alignment.Center
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = MaterialTheme.colorScheme.secondaryContainer
                                         ) {
-                                            Icon(
-                                                imageVector = Icons.Outlined.CloudOff,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(24.dp),
-                                                tint = MaterialTheme.colorScheme.onSecondaryContainer
-                                            )
+                                            Box(
+                                                modifier = Modifier.size(72.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.CloudOff,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(24.dp),
+                                                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                                )
+                                            }
                                         }
-                                    }
-                                    Text(
-                                        modifier = Modifier.padding(top = 16.dp),
-                                        text = stringResource(R.string.cloud_service_not_connected),
-                                        style = MaterialTheme.typography.titleMedium
-                                    )
-                                    Text(
-                                        modifier = Modifier.padding(vertical = 16.dp),
-                                        text = stringResource(R.string.cloud_service_not_connected_text),
-                                        style = MaterialTheme.typography.labelLarge,
-                                        textAlign = TextAlign.Center
-                                    )
-                                    FilledTonalButton(
-                                        onClick = {
-                                            onShowCloudDialog()
+                                        Text(
+                                            modifier = Modifier.padding(top = 16.dp),
+                                            text = stringResource(R.string.cloud_service_not_connected),
+                                            style = MaterialTheme.typography.titleMedium
+                                        )
+                                        Text(
+                                            modifier = Modifier.padding(vertical = 16.dp),
+                                            text = stringResource(R.string.cloud_service_not_connected_text),
+                                            style = MaterialTheme.typography.labelLarge,
+                                            textAlign = TextAlign.Center
+                                        )
+                                        FilledTonalButton(
+                                            onClick = {
+                                                onShowCloudDialog()
 //                                            val signInIntent =
 //                                                (context as MainActivity).getGoogleLoginAuth().signInIntent
 //                                            gDriveLauncher.launch(signInIntent)
-                                        }) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.Cloud,
-                                            contentDescription = "cloud",
-                                            modifier = Modifier
-                                                .padding(end = 8.dp)
-                                                .size(ButtonDefaults.IconSize),
-                                        )
-                                        Text(text = stringResource(R.string.connect_cloud_service))
+                                            }) {
+                                            Icon(
+                                                imageVector = Icons.Outlined.Cloud,
+                                                contentDescription = "cloud",
+                                                modifier = Modifier
+                                                    .padding(end = 8.dp)
+                                                    .size(ButtonDefaults.IconSize),
+                                            )
+                                            Text(text = stringResource(R.string.connect_cloud_service))
+                                        }
                                     }
                                 }
                             }
@@ -999,6 +891,7 @@ fun MainArea(
 fun SearchArea(
     modifier: Modifier = Modifier,
     mainState: FilePageState,
+    lazyListState: LazyListState,
     searchText: String,
     selectedFileIdList: List<Long>,
     paddingValues: PaddingValues,
@@ -1013,6 +906,7 @@ fun SearchArea(
     val context = LocalContext.current
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         LazyColumn(
+            state = lazyListState,
             modifier = modifier
                 .fillMaxHeight()
                 .widthIn(0.dp, 600.dp),
@@ -1038,14 +932,8 @@ fun SearchArea(
                     var showTimeFilterDropDownMenu by remember {
                         mutableStateOf(false)
                     }
-                    FilterChip(
-                        modifier = Modifier
-                            .animateContentSize(),
+                    MyFilterChip(
                         selected = mainState.sizeFilter !is SizeFilter.All,
-                        onClick = {
-                            showSizeFilterDropDownMenu = true
-                        },
-                        enabled = true,
                         trailingIcon = {
                             Box(
                                 modifier = Modifier
@@ -1108,20 +996,12 @@ fun SearchArea(
                             }
                         },
                         label = { Text(text = stringResource(id = mainState.sizeFilter.labelResId)) },
-                        border = FilterChipDefaults.filterChipBorder(
-                            borderColor = MaterialTheme.colorScheme.outline.copy(
-                                alpha = 0.4f
-                            )
-                        )
-                    )
-                    FilterChip(
-                        modifier = Modifier
-                            .animateContentSize(),
+                        withoutLeadingIcon = true,
+                    ) {
+                        showSizeFilterDropDownMenu = true
+                    }
+                    MyFilterChip(
                         selected = mainState.extensionFilter !is ExtensionFilter.All,
-                        onClick = {
-                            showExtensionFilterDropDownMenu = true
-                        },
-                        enabled = true,
                         trailingIcon = {
                             Box(
                                 modifier = Modifier
@@ -1243,20 +1123,12 @@ fun SearchArea(
                                 text = stringResource(id = mainState.extensionFilter.labelResId)
                             )
                         },
-                        border = FilterChipDefaults.filterChipBorder(
-                            borderColor = MaterialTheme.colorScheme.outline.copy(
-                                alpha = 0.4f
-                            )
-                        )
-                    )
-                    FilterChip(
-                        modifier = Modifier
-                            .animateContentSize(),
+                        withoutLeadingIcon = true,
+                    ) {
+                        showExtensionFilterDropDownMenu = true
+                    }
+                    MyFilterChip(
                         selected = mainState.timeFilter !is TimeFilter.All,
-                        onClick = {
-                            showTimeFilterDropDownMenu = true
-                        },
-                        enabled = true,
                         trailingIcon = {
                             Box(
                                 modifier = Modifier
@@ -1354,20 +1226,20 @@ fun SearchArea(
                                 text = if (mainState.timeFilter is TimeFilter.Custom) {
                                     stringResource(
                                         id = mainState.timeFilter.labelResId,
-                                        mainState.timeFilter.timestampStart?.toFormattedDate(context) ?: context.getString(R.string.time_filter_custom_not_set_label),
-                                        mainState.timeFilter.timestampEnd?.toFormattedDate(context) ?: context.getString(R.string.time_filter_custom_not_set_label),
+                                        mainState.timeFilter.timestampStart?.toFormattedDate(context)
+                                            ?: context.getString(R.string.time_filter_custom_not_set_label),
+                                        mainState.timeFilter.timestampEnd?.toFormattedDate(context)
+                                            ?: context.getString(R.string.time_filter_custom_not_set_label),
                                     )
                                 } else {
                                     stringResource(id = mainState.timeFilter.labelResId)
                                 }
                             )
                         },
-                        border = FilterChipDefaults.filterChipBorder(
-                            borderColor = MaterialTheme.colorScheme.outline.copy(
-                                alpha = 0.4f
-                            )
-                        )
-                    )
+                        withoutLeadingIcon = true,
+                    ) {
+                        showTimeFilterDropDownMenu = true
+                    }
                     Spacer(modifier = Modifier.width(16.dp))
                 }
             }

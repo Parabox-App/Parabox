@@ -25,14 +25,15 @@ class DownloadUtil @Inject constructor(
             withContext(Dispatchers.IO) {
                 try {
                     val responseBody = downloadUtilService.downloadUrl(url).body()
+                    val finalPath = File(savePath, fileName)
                     FileOutputStream(
-                        File(savePath, fileName)
+                        finalPath
                     ).use { output ->
                         responseBody?.byteStream().use { input ->
                             input?.copyTo(output, DEFAULT_BUFFER_SIZE)
                         }
                     } ?: throw RuntimeException("failed to download: $url")
-                    savePath
+                    finalPath
                 } catch (e: Exception) {
                     e.printStackTrace()
                     null

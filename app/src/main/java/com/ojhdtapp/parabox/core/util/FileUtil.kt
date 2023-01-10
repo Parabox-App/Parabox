@@ -17,12 +17,10 @@ import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
 import androidx.core.net.toFile
 import com.ojhdtapp.parabox.BuildConfig
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
@@ -31,6 +29,26 @@ import java.text.DecimalFormat
 import java.util.*
 
 object FileUtil {
+    fun String.toSafeFilename(): String {
+        return this.replace("[\\\\/:*?\"<>|]".toRegex(), "_")
+    }
+
+    fun Uri.checkUriAvailable(context: Context): Boolean {
+        return try {
+            val parcelFileDescriptor: ParcelFileDescriptor? =
+                context.contentResolver.openFileDescriptor(this, "r")
+            parcelFileDescriptor?.close()
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    fun Uri.replacedIfUnavailable(context: Context): Any {
+        return if (!this.checkUriAvailable(context)) {
+            R.drawable.image_lost
+        } else this
+    }
 
     fun getFilenameFromUri(context: Context, uri: Uri): String? {
         try {
@@ -119,7 +137,73 @@ object FileUtil {
                             )
                         }
                     }
-
+                    FcmConstants.CloudStorage.TENCENT_COS.ordinal -> {
+                        val secretId =
+                            context.dataStore.data.first()[DataStoreKeys.TENCENT_COS_SECRET_ID]
+                        val secretKey =
+                            context.dataStore.data.first()[DataStoreKeys.TENCENT_COS_SECRET_KEY]
+                        val bucket =
+                            context.dataStore.data.first()[DataStoreKeys.TENCENT_COS_BUCKET]
+                        val region =
+                            context.dataStore.data.first()[DataStoreKeys.TENCENT_COS_REGION]
+                        if (secretId != null && secretKey != null && bucket != null && region != null) {
+                            val cosPath = "ParaboxTemp/$fileName"
+                            val res = TencentCOSUtil.uploadFile(
+                                context,
+                                secretId,
+                                secretKey,
+                                region,
+                                bucket,
+                                cosPath,
+                                filePath
+                            )
+                            val preSignedUrl = TencentCOSUtil.getPreSignedDownloadUrl(
+                                context,
+                                secretId,
+                                secretKey,
+                                region,
+                                bucket,
+                                cosPath
+                            )
+                            if (preSignedUrl != null) {
+                                Log.d("parabox", preSignedUrl)
+                            }
+                            if (res) {
+                                CloudResourceInfo(
+                                    cloudType = FcmConstants.CloudStorage.TENCENT_COS.ordinal,
+                                    url = preSignedUrl,
+                                    cloudId = cosPath
+                                )
+                            } else null
+                        } else null
+                    }
+                    FcmConstants.CloudStorage.QINIU_KODO.ordinal -> {
+                        val accessKey =
+                            context.dataStore.data.first()[DataStoreKeys.QINIU_KODO_ACCESS_KEY]
+                        val secretKey =
+                            context.dataStore.data.first()[DataStoreKeys.QINIU_KODO_SECRET_KEY]
+                        val bucket =
+                            context.dataStore.data.first()[DataStoreKeys.QINIU_KODO_BUCKET]
+                        val domain =
+                            context.dataStore.data.first()[DataStoreKeys.QINIU_KODO_DOMAIN]
+                        if (accessKey != null && secretKey != null && bucket != null && domain != null) {
+                            val kodoPath = "ParaboxTemp/$fileName"
+                            val key = QiniuKODOUtil.uploadFile(
+                                accessKey = accessKey,
+                                secretKey = secretKey,
+                                bucket = bucket,
+                                fileName = kodoPath,
+                                localPath = filePath,
+                            )
+                            key?.let{
+                                CloudResourceInfo(
+                                    cloudType = FcmConstants.CloudStorage.QINIU_KODO.ordinal,
+                                    url = QiniuKODOUtil.downloadFile(domain, accessKey, secretKey, key),
+                                    cloudId = it
+                                )
+                            }
+                        } else null
+                    }
                     else -> null
                 }
             }

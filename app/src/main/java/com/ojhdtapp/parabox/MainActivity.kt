@@ -25,12 +25,8 @@ import androidx.activity.result.contract.ActivityResultContracts.CreateDocument
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.WindowInsets
@@ -40,6 +36,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -79,17 +76,16 @@ import com.google.mlkit.nl.languageid.LanguageIdentification
 import com.google.mlkit.nl.smartreply.*
 import com.google.mlkit.nl.translate.TranslateLanguage
 import com.google.mlkit.nl.translate.Translation
-import com.google.mlkit.nl.translate.Translator
 import com.google.mlkit.nl.translate.TranslatorOptions
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.DownloadingState
+import com.ojhdtapp.parabox.data.remote.dto.filterMissing
 import com.ojhdtapp.parabox.data.remote.dto.saveLocalResourcesToCloud
 import com.ojhdtapp.parabox.domain.fcm.FcmApiHelper
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.model.File
-import com.ojhdtapp.parabox.domain.model.message_content.getContentString
 import com.ojhdtapp.parabox.domain.service.PluginListListener
 import com.ojhdtapp.parabox.domain.service.PluginService
 import com.ojhdtapp.parabox.domain.use_case.GetContacts
@@ -102,21 +98,24 @@ import com.ojhdtapp.parabox.domain.worker.DownloadFileWorker
 import com.ojhdtapp.parabox.domain.worker.UploadFileWorker
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.NavGraphs
+import com.ojhdtapp.parabox.ui.destinations.GuideWelcomePageDestination
 import com.ojhdtapp.parabox.ui.theme.AppTheme
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.FixedInsets
 import com.ojhdtapp.parabox.ui.util.LocalFixedInsets
+import com.ojhdtapp.parabox.ui.util.WorkingMode
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendMessageDto
 import com.ramcosta.composedestinations.DestinationsNavHost
+import com.ramcosta.composedestinations.animations.defaults.NestedNavGraphDefaultAnimations
 import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
 import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.navigation.dependency
+import com.ramcosta.composedestinations.navigation.navigate
+import com.ramcosta.composedestinations.navigation.popUpTo
 import dagger.hilt.android.AndroidEntryPoint
 import de.raphaelebner.roomdatabasebackup.core.RoomBackup
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.*
 import linc.com.amplituda.Amplituda
 import linc.com.amplituda.Compress
 import java.io.IOException
@@ -200,19 +199,27 @@ class MainActivity : AppCompatActivity() {
 
     private fun downloadFile(file: File, cloudFirst: Boolean = false) {
         if (file.uri != null) {
-            try{
+            try {
                 val path = FileUtil.getAvailableFileName(baseContext, file.name)
                 FileUtil.saveFileToExternalStorage(baseContext, file.uri, path)
-                lifecycleScope.launch(Dispatchers.IO){
+                lifecycleScope.launch(Dispatchers.IO) {
                     updateFile.downloadInfo(path, null, file)
                     updateFile.downloadState(DownloadingState.Done, file)
                 }
-                Toast.makeText(baseContext, getString(R.string.download_file_success), Toast.LENGTH_SHORT).show()
-            } catch (e: Exception){
+                Toast.makeText(
+                    baseContext,
+                    getString(R.string.download_file_success),
+                    Toast.LENGTH_SHORT
+                ).show()
+            } catch (e: Exception) {
                 e.printStackTrace()
                 updateFile.downloadInfo(null, null, file)
                 updateFile.downloadState(DownloadingState.Failure, file)
-                Toast.makeText(baseContext, getString(R.string.download_file_failed), Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    baseContext,
+                    getString(R.string.download_file_failed),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         } else {
             lifecycleScope.launch(Dispatchers.IO) {
@@ -511,7 +518,11 @@ class MainActivity : AppCompatActivity() {
                 this@MainActivity.dataStore.edit { settings ->
                     settings[DataStoreKeys.USER_AVATAR] = it.toString()
                 }
-                Toast.makeText(this@MainActivity, getString(R.string.avatar_updated), Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this@MainActivity,
+                    getString(R.string.avatar_updated),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -527,31 +538,46 @@ class MainActivity : AppCompatActivity() {
     private fun refreshMessage() {
         mainSharedViewModel.setIsRefreshing(true)
         lifecycleScope.launch {
-            val fcmRole = dataStore.data.map { preferences ->
-                preferences[DataStoreKeys.SETTINGS_FCM_ROLE] ?: FcmConstants.Role.SENDER.ordinal
+            val workingMode = dataStore.data.map { preferences ->
+                preferences[DataStoreKeys.SETTINGS_WORKING_MODE] ?: WorkingMode.NORMAL.ordinal
             }.first()
-            when (fcmRole) {
-                FcmConstants.Role.SENDER.ordinal -> {
+//            val fcmRole = dataStore.data.map { preferences ->
+//                preferences[DataStoreKeys.SETTINGS_FCM_ROLE] ?: FcmConstants.Role.SENDER.ordinal
+//            }.first()
+            when (workingMode) {
+                WorkingMode.NORMAL.ordinal -> {
                     if (pluginService?.refreshMessage() == true) {
                         delay(500)
                         mainSharedViewModel.setIsRefreshing(false)
                     } else {
                         delay(500)
                         mainSharedViewModel.setIsRefreshing(false)
-                        Toast.makeText(this@MainActivity, getString(R.string.extension_disconnected), Toast.LENGTH_SHORT)
+                        Toast.makeText(
+                            this@MainActivity,
+                            getString(R.string.extension_disconnected),
+                            Toast.LENGTH_SHORT
+                        )
                             .show()
                     }
                 }
 
-                FcmConstants.Role.RECEIVER.ordinal -> {
+                WorkingMode.RECEIVER.ordinal -> {
                     // only check fcm connection... for lazy
                     fcmApiHelper.getVersion().also {
                         if (it?.isSuccessful != true) {
-                            Toast.makeText(this@MainActivity, getString(R.string.fcm_disconnected), Toast.LENGTH_SHORT)
+                            Toast.makeText(
+                                this@MainActivity,
+                                getString(R.string.fcm_disconnected),
+                                Toast.LENGTH_SHORT
+                            )
                                 .show()
                         }
                         mainSharedViewModel.setIsRefreshing(false)
                     }
+                }
+
+                WorkingMode.FCM.ordinal -> {
+                    // check google server connection
                 }
             }
         }
@@ -565,7 +591,11 @@ class MainActivity : AppCompatActivity() {
             .apply {
                 onCompleteListener { success, message, exitCode ->
                     if (success) {
-                        Toast.makeText(baseContext, getString(R.string.backup_text), Toast.LENGTH_SHORT)
+                        Toast.makeText(
+                            baseContext,
+                            getString(R.string.backup_text),
+                            Toast.LENGTH_SHORT
+                        )
                             .show()
                         backupLocationSelector.launch(
                             "Backup_${
@@ -593,7 +623,11 @@ class MainActivity : AppCompatActivity() {
             .apply {
                 onCompleteListener { success, message, exitCode ->
                     if (success) {
-                        Toast.makeText(baseContext, getString(R.string.restore_success), Toast.LENGTH_SHORT)
+                        Toast.makeText(
+                            baseContext,
+                            getString(R.string.restore_success),
+                            Toast.LENGTH_SHORT
+                        )
                             .show()
                         file.delete()
                         lifecycleScope.launch {
@@ -612,12 +646,29 @@ class MainActivity : AppCompatActivity() {
             .restore()
     }
 
+    private fun startPluginConnection() {
+        startPluginConnectionService()
+    }
+
     private fun resetPluginConnection() {
         pluginService?.also {
             it.reset()
-            Toast.makeText(this, getString(R.string.reset_extension_connection_success), Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                this,
+                getString(R.string.reset_extension_connection_success),
+                Toast.LENGTH_SHORT
+            ).show()
         }
 
+    }
+
+    private fun stopPluginConnection() {
+        pluginService?.also {
+            it.stop()
+            unbindService(pluginServiceConnection)
+        }
+        stopService(Intent(this, PluginService::class.java))
+        mainSharedViewModel.setPluginListStateFlow(emptyList())
     }
 
     fun backupFileToCloudService() {
@@ -627,7 +678,7 @@ class MainActivity : AppCompatActivity() {
             val enableAutoBackup =
                 dataStore.data.first()[DataStoreKeys.SETTINGS_AUTO_BACKUP] ?: false
             val defaultBackupService =
-                dataStore.data.first()[DataStoreKeys.SETTINGS_DEFAULT_BACKUP_SERVICE] ?: 0
+                dataStore.data.first()[DataStoreKeys.SETTINGS_CLOUD_SERVICE] ?: 0
             val autoBackupFileMaxSize =
                 (dataStore.data.first()[DataStoreKeys.SETTINGS_AUTO_BACKUP_FILE_MAX_SIZE]
                     ?: 10f).let {
@@ -704,7 +755,7 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch(Dispatchers.IO) {
             updateFile.cloudInfo(null, null, file.fileId)
             val defaultBackupService =
-                dataStore.data.first()[DataStoreKeys.SETTINGS_DEFAULT_BACKUP_SERVICE] ?: 0
+                dataStore.data.first()[DataStoreKeys.SETTINGS_CLOUD_SERVICE] ?: 0
             if (defaultBackupService != 0) {
                 val tag = file.fileId.toString()
                 val constraints = Constraints.Builder()
@@ -862,9 +913,9 @@ class MainActivity : AppCompatActivity() {
             GoogleDriveUtil.getDriveInformation(this@MainActivity)?.also {
                 this@MainActivity.dataStore.edit { preferences ->
                     preferences[DataStoreKeys.GOOGLE_WORK_FOLDER_ID] = it.workFolderId
-                    preferences[DataStoreKeys.GOOGLE_TOTAL_SPACE] = it.totalSpace
-                    preferences[DataStoreKeys.GOOGLE_USED_SPACE] = it.usedSpace
-                    preferences[DataStoreKeys.GOOGLE_APP_USED_SPACE] = it.appUsedSpace
+                    preferences[DataStoreKeys.CLOUD_TOTAL_SPACE] = it.totalSpace
+                    preferences[DataStoreKeys.CLOUD_USED_SPACE] = it.usedSpace
+                    preferences[DataStoreKeys.CLOUD_APP_USED_SPACE] = it.appUsedSpace
                 }
             }
         }
@@ -901,7 +952,7 @@ class MainActivity : AppCompatActivity() {
                         TextMessage.createForRemoteUser(
                             it.contentString,
                             it.timestamp,
-                            it.profile.name
+                            it.profile.name.ifBlank { "name" }
                         )
                     }
                 }
@@ -1025,36 +1076,41 @@ class MainActivity : AppCompatActivity() {
                             pluginConnection = event.pluginConnection,
                             messageId = it
                         )
+                        val workingMode =
+                            dataStore.data.first()[DataStoreKeys.SETTINGS_WORKING_MODE]
+                                ?: WorkingMode.NORMAL.ordinal
                         val enableFcm =
                             dataStore.data.first()[DataStoreKeys.SETTINGS_ENABLE_FCM] ?: false
-                        val fcmRole = dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_ROLE]
-                            ?: FcmConstants.Role.SENDER.ordinal
-                        if (!enableFcm || fcmRole == FcmConstants.Role.SENDER.ordinal) {
-                            pluginService?.sendMessage(dto)
-                        } else {
-                            val fcmCloudStorage =
-                                dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_CLOUD_STORAGE]
-                                    ?: FcmConstants.CloudStorage.NONE.ordinal
-                            val dtoWithoutUri = when {
-                                fcmCloudStorage == FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal -> {
-                                    dto.copy(
+//                        val fcmRole = dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_ROLE]
+//                            ?: FcmConstants.Role.SENDER.ordinal
+                        when (workingMode) {
+                            WorkingMode.NORMAL.ordinal -> {
+                                pluginService?.sendMessage(dto)
+                            }
+                            WorkingMode.RECEIVER.ordinal -> {
+                                if (enableFcm) {
+//                                    val fcmCloudStorage =
+//                                        dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_CLOUD_STORAGE]
+//                                            ?: FcmConstants.CloudStorage.NONE.ordinal
+                                    val dtoWithoutUri = dto.copy(
                                         contents = dto.contents.saveLocalResourcesToCloud(
                                             baseContext
-                                        )
+                                        ).filterMissing()
                                     )
+                                    if (fcmApiHelper.pushSendDto(
+                                            dtoWithoutUri
+                                        )?.isSuccessful == true
+                                    ) {
+                                        updateMessage.verifiedState(it, true)
+                                    } else {
+                                        updateMessage.verifiedState(it, false)
+                                    }
+                                } else {
+                                    // do nothing
                                 }
-
-                                else -> dto
                             }
-                            if (fcmApiHelper.pushSendDto(
-                                    dtoWithoutUri
-                                )?.isSuccessful == true
-                            ) {
-                                updateMessage.verifiedState(it, true)
-                                Log.d("parabox", "FCM push success")
-                            } else {
-                                updateMessage.verifiedState(it, false)
-                                Log.d("parabox", "FCM push failed")
+                            WorkingMode.FCM.ordinal -> {
+                                // to Google server
                             }
                         }
                     }
@@ -1072,7 +1128,11 @@ class MainActivity : AppCompatActivity() {
             is ActivityEvent.StartRecording -> {
                 if (player?.isPlaying == true) {
                     stopPlaying()
-                    Toast.makeText(this, "播放中的音频已中断", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        baseContext,
+                        getString(R.string.audio_interrupted),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
                 startRecording()
             }
@@ -1083,14 +1143,14 @@ class MainActivity : AppCompatActivity() {
 
             is ActivityEvent.StartAudioPlaying -> {
                 if (recorder != null) {
-                    Toast.makeText(this, "请先结束录音", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(baseContext, "请先结束录音", Toast.LENGTH_SHORT).show()
                 } else {
                     if (event.uri != null) {
                         startPlayingLocal(event.uri)
                     } else if (event.url != null) {
                         startPlayingInternet(event.url)
                     } else {
-                        Toast.makeText(this, "音频资源丢失", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(baseContext, "音频资源丢失", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -1170,8 +1230,16 @@ class MainActivity : AppCompatActivity() {
                 )
             }
 
+            is ActivityEvent.StartExtension -> {
+                startPluginConnection()
+            }
+
             is ActivityEvent.ResetExtension -> {
                 resetPluginConnection()
+            }
+
+            is ActivityEvent.StopExtension -> {
+                stopPluginConnection()
             }
 
             is ActivityEvent.SaveToCloud -> {
@@ -1184,6 +1252,9 @@ class MainActivity : AppCompatActivity() {
                 lifecycleScope.launch(Dispatchers.IO) {
                     updateFile.cloudInfo(0, null, event.fileId)
                 }
+            }
+            is ActivityEvent.QueryFCMToken -> {
+                queryFCMToken()
             }
         }
     }
@@ -1401,7 +1472,14 @@ class MainActivity : AppCompatActivity() {
                     popEnterTransition = { fadeIn(tween(300)) + scaleIn(tween(300), 1.1f) },
                     popExitTransition = { fadeOut(tween(300)) + scaleOut(tween(300), 0.9f) }
                 ),
-                defaultAnimationsForNestedNavGraph = mapOf()
+                defaultAnimationsForNestedNavGraph = mapOf(
+                    NavGraphs.guide to NestedNavGraphDefaultAnimations(
+                        enterTransition = { slideInHorizontally { it } },
+                        exitTransition = { slideOutHorizontally { -it } },
+                        popEnterTransition = { slideInHorizontally { -it } },
+                        popExitTransition = { slideOutHorizontally { it } },
+                    )
+                )
             )
             // Shared ViewModel
 //            val mainSharedViewModel = hiltViewModel<MainSharedViewModel>(this)
@@ -1413,6 +1491,23 @@ class MainActivity : AppCompatActivity() {
 //                FilePageDestination,
 //                SettingPageDestination
 //            )
+
+            // Navigate to guide
+            LaunchedEffect(Unit) {
+                // read from datastore
+                val isFirstLaunch = !mainSharedViewModel.guideLaunchedStateFlow.value
+                        && dataStore.data.first()[DataStoreKeys.IS_FIRST_LAUNCH] ?: true
+                if (isFirstLaunch) {
+                    mainSharedViewModel.launchedGuide()
+                    mainNavController.navigate(GuideWelcomePageDestination) {
+                        popUpTo(NavGraphs.root) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            }
             AppTheme {
                 CompositionLocalProvider(values = arrayOf(LocalFixedInsets provides fixedInsets)) {
                     DestinationsNavHost(
@@ -1462,15 +1557,37 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         inBackground = false
+        startPluginConnectionService()
+        super.onStart()
+    }
+
+    override fun onStop() {
+        inBackground = true
         lifecycleScope.launch(Dispatchers.Main) {
-            val enableFcm = dataStore.data.first()[DataStoreKeys.SETTINGS_ENABLE_FCM] ?: false
-            val fcmRole = dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_ROLE]
-                ?: FcmConstants.Role.SENDER.ordinal
-            if (!enableFcm || fcmRole == FcmConstants.Role.SENDER.ordinal) {
+            val workingMode = dataStore.data.first()[DataStoreKeys.SETTINGS_WORKING_MODE]
+                ?: WorkingMode.NORMAL.ordinal
+            if (workingMode == WorkingMode.NORMAL.ordinal) {
+                unbindService(pluginServiceConnection)
+                pluginService = null
+            }
+        }
+        super.onStop()
+    }
+
+    private fun startPluginConnectionService() {
+        lifecycleScope.launch(Dispatchers.Main) {
+            val workingMode = dataStore.data.first()[DataStoreKeys.SETTINGS_WORKING_MODE]
+                ?: WorkingMode.NORMAL.ordinal
+            if (workingMode == WorkingMode.NORMAL.ordinal) {
                 val pluginServiceBinderIntent = Intent(this@MainActivity, PluginService::class.java)
                 pluginServiceConnection = object : ServiceConnection {
                     override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
                         Log.d("parabox", "mainActivity - service connected")
+//                        Toast.makeText(
+//                            baseContext,
+//                            getString(R.string.start_extension_connection_success),
+//                            Toast.LENGTH_SHORT
+//                        ).show()
                         pluginService =
                             (p1 as PluginService.PluginServiceBinder).getService().also {
                                 mainSharedViewModel.setPluginListStateFlow(it.getAppModelList())
@@ -1484,6 +1601,11 @@ class MainActivity : AppCompatActivity() {
 
                     override fun onServiceDisconnected(p0: ComponentName?) {
                         Log.d("parabox", "mainActivity - service disconnected")
+//                        Toast.makeText(
+//                            baseContext,
+//                            getString(R.string.stop_extension_connection_success),
+//                            Toast.LENGTH_SHORT
+//                        ).show()
                         pluginService = null
                     }
 
@@ -1496,20 +1618,5 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-        super.onStart()
-    }
-
-    override fun onStop() {
-        inBackground = true
-        lifecycleScope.launch(Dispatchers.Main) {
-            val enableFcm = dataStore.data.first()[DataStoreKeys.SETTINGS_ENABLE_FCM] ?: false
-            val fcmRole = dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_ROLE]
-                ?: FcmConstants.Role.SENDER.ordinal
-            if (!enableFcm || fcmRole == FcmConstants.Role.SENDER.ordinal) {
-                unbindService(pluginServiceConnection)
-                pluginService = null
-            }
-        }
-        super.onStop()
     }
 }

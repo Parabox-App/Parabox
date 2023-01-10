@@ -1,29 +1,22 @@
 package com.ojhdtapp.parabox.ui.message
 
+import android.net.Uri
 import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
@@ -51,6 +44,7 @@ import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.core.util.AvatarUtil
 import com.ojhdtapp.parabox.core.util.splitKeeping
 import com.ojhdtapp.parabox.domain.model.message_content.getContentString
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
@@ -114,7 +108,7 @@ fun RowScope.SearchArea(
                         if (viewModel.personalContactState.value.data.isNotEmpty()) {
                             Text(
                                 modifier = modifier
-                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                                    .padding(horizontal = 16.dp, vertical = 16.dp)
                                     .fillMaxWidth(),
                                 text = stringResource(R.string.recent_contact_person),
                                 style = MaterialTheme.typography.labelLarge,
@@ -124,9 +118,9 @@ fun RowScope.SearchArea(
                     }
                     item {
                         LazyRow(
-                            horizontalArrangement = Arrangement.Start,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            contentPadding = PaddingValues(horizontal = 8.dp)
+                            contentPadding = PaddingValues(horizontal = 16.dp)
                         ) {
                             items(
                                 items = viewModel.personalContactState.value.data,
@@ -135,6 +129,11 @@ fun RowScope.SearchArea(
                                     verticalArrangement = Arrangement.Center,
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(16.dp))
+                                        .background(
+                                            MaterialTheme.colorScheme.surfaceColorAtElevation(
+                                                3.dp
+                                            )
+                                        )
                                         .clickable {
                                             mainSharedViewModel.loadMessageFromContact(it)
                                             if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
@@ -146,8 +145,14 @@ fun RowScope.SearchArea(
                                     AsyncImage(
                                         model = ImageRequest.Builder(LocalContext.current)
                                             .data(
-                                                it.profile.avatarUri ?: it.profile.avatar
-                                                ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar
+                                                AvatarUtil.getAvatar(
+                                                    context = context,
+                                                    uri = it.profile.avatarUri?.let { Uri.parse(it) },
+                                                    url = it.profile.avatar,
+                                                    name = it.profile.name,
+                                                    backgroundColor = MaterialTheme.colorScheme.primary,
+                                                    textColor = MaterialTheme.colorScheme.onPrimary,
+                                                )
                                             )
                                             .crossfade(true)
                                             .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
@@ -174,7 +179,7 @@ fun RowScope.SearchArea(
                         if (viewModel.groupContactState.value.data.isNotEmpty()) {
                             Text(
                                 modifier = modifier
-                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                                    .padding(horizontal = 16.dp, vertical = 16.dp)
                                     .fillMaxWidth(),
                                 text = stringResource(R.string.recent_contact),
                                 style = MaterialTheme.typography.labelLarge,
@@ -182,42 +187,68 @@ fun RowScope.SearchArea(
                             )
                         }
                     }
-                    items(items = viewModel.groupContactState.value.data, key = { it.contactId }) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    mainSharedViewModel.loadMessageFromContact(it)
-                                    if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
-                                        mainNavController.navigate(ChatPageDestination())
-                                    }
-                                }
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            horizontalArrangement = Arrangement.Start,
-                            verticalAlignment = Alignment.CenterVertically
+                    itemsIndexed(
+                        items = viewModel.groupContactState.value.data,
+                        key = { index, item -> item.contactId }) { index, item ->
+                        val topRadius = remember {
+                            if (index == 0) 24.dp else 0.dp
+                        }
+                        val bottomRadius = remember {
+                            if (index == viewModel.groupContactState.value.data.lastIndex) 24.dp else 0.dp
+                        }
+                        Surface(
+                            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 3.dp),
+                            shape = RoundedCornerShape(
+                                topStart = topRadius,
+                                topEnd = topRadius,
+                                bottomStart = bottomRadius,
+                                bottomEnd = bottomRadius
+                            ),
+                            tonalElevation = 3.dp
                         ) {
-                            AsyncImage(
-                                model = ImageRequest.Builder(LocalContext.current)
-                                    .data(
-                                        it.profile.avatarUri ?: it.profile.avatar
-                                        ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar
-                                    )
-                                    .crossfade(true)
-                                    .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
-                                    .build(),
-                                contentDescription = "avatar",
-                                contentScale = ContentScale.Crop,
+
+                            Row(
                                 modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                            )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Text(
-                                text = it.profile.name,
-                                style = MaterialTheme.typography.bodyMedium,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        mainSharedViewModel.loadMessageFromContact(item)
+                                        if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
+                                            mainNavController.navigate(ChatPageDestination())
+                                        }
+                                    }
+                                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                                horizontalArrangement = Arrangement.Start,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                AsyncImage(
+                                    model = ImageRequest.Builder(LocalContext.current)
+                                        .data(
+                                            AvatarUtil.getAvatar(
+                                                context = context,
+                                                uri = item.profile.avatarUri?.let { Uri.parse(it) },
+                                                url = item.profile.avatar,
+                                                name = item.profile.name,
+                                                backgroundColor = MaterialTheme.colorScheme.primary,
+                                                textColor = MaterialTheme.colorScheme.onPrimary,
+                                            )
+                                        )
+                                        .crossfade(true)
+                                        .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
+                                        .build(),
+                                    contentDescription = "avatar",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                )
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Text(
+                                    text = item.profile.name,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
                         }
                     }
                 }
@@ -225,7 +256,7 @@ fun RowScope.SearchArea(
                 LazyColumn(
                     modifier = modifier.fillMaxSize(),
                     contentPadding = paddingValues,
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+//                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     item {
                         if (messageSearchResult.value.data.isEmpty() && contactSearchResult.value.data.isEmpty()
@@ -254,7 +285,7 @@ fun RowScope.SearchArea(
                         if (messageSearchResult.value.data.isNotEmpty()) {
                             Text(
                                 modifier = modifier
-                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                                    .padding(horizontal = 16.dp, vertical = 16.dp)
                                     .fillMaxWidth(),
                                 text = stringResource(R.string.message),
                                 style = MaterialTheme.typography.labelLarge,
@@ -268,118 +299,170 @@ fun RowScope.SearchArea(
                         var expanded by remember {
                             mutableStateOf(false)
                         }
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        expanded = !expanded
-                                    }
-                                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                                horizontalArrangement = Arrangement.Start,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                AsyncImage(
-                                    model = ImageRequest.Builder(LocalContext.current)
-                                        .data(
-                                            cm.contact.profile.avatarUri ?: cm.contact.profile.avatar
-                                                ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar
-                                        )
-                                        .crossfade(true)
-                                        .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
-                                        .build(),
-                                    contentDescription = "avatar",
-                                    contentScale = ContentScale.Crop,
+                        Surface(
+                            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),
+                            shape = RoundedCornerShape(24.dp),
+                            tonalElevation = 3.dp
+                        ) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Row(
                                     modifier = Modifier
-                                        .size(48.dp)
-                                        .clip(CircleShape)
-                                )
-                                Spacer(modifier = Modifier.width(16.dp))
-                                Column() {
-                                    Text(
-                                        text = cm.contact.profile.name,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = context.getString(R.string.message_history_search ,cm.messages.size),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                    )
-                                }
-                            }
-                            AnimatedVisibility(visible = expanded) {
-                                Column(modifier = Modifier.fillMaxWidth()) {
-                                    cm.messages.forEach {
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .clickable {
-                                                    mainSharedViewModel.navigateToChatPage(
-                                                        cm.contact,
-                                                        it
-                                                    )
-                                                    if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
-                                                        mainNavController.navigate(
-                                                            ChatPageDestination()
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            expanded = !expanded
+                                        }
+                                        .padding(horizontal = 16.dp, vertical = 16.dp),
+                                    horizontalArrangement = Arrangement.Start,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    AsyncImage(
+                                        model = ImageRequest.Builder(LocalContext.current)
+                                            .data(
+                                                AvatarUtil.getAvatar(
+                                                    context = context,
+                                                    uri = cm.contact.profile.avatarUri?.let {
+                                                        Uri.parse(
+                                                            it
                                                         )
-                                                    }
-                                                }
-                                                .padding(horizontal = 28.dp, vertical = 8.dp),
-                                            horizontalArrangement = Arrangement.Start,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            AsyncImage(
-                                                model = ImageRequest.Builder(LocalContext.current)
-                                                    .data(
-                                                        it.profile.avatarUri ?: it.profile.avatar
-                                                        ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar
-                                                    )
-                                                    .crossfade(true)
-                                                    .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
-                                                    .build(),
-                                                contentDescription = "avatar",
-                                                contentScale = ContentScale.Crop,
-                                                modifier = Modifier
-                                                    .size(24.dp)
-                                                    .clip(CircleShape)
+                                                    },
+                                                    url = cm.contact.profile.avatar,
+                                                    name = cm.contact.profile.name,
+                                                    backgroundColor = MaterialTheme.colorScheme.primary,
+                                                    textColor = MaterialTheme.colorScheme.onPrimary,
+                                                )
                                             )
-                                            Spacer(modifier = Modifier.width(28.dp))
-                                            Text(
-                                                text = buildAnnotatedString {
-                                                    withStyle(
-                                                        style = SpanStyle(
-                                                            color = MaterialTheme.colorScheme.primary
+                                            .crossfade(true)
+                                            .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
+                                            .build(),
+                                        contentDescription = "avatar",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .size(36.dp)
+                                            .clip(CircleShape)
+                                    )
+                                    Spacer(modifier = Modifier.width(16.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = cm.contact.profile.name,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = context.getString(
+                                                R.string.message_history_search,
+                                                cm.messages.size
+                                            ),
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                    }
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = MaterialTheme.colorScheme.secondaryContainer
+                                    ) {
+                                        Box(
+                                            modifier = Modifier.size(24.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            if (expanded) {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.ExpandLess,
+                                                    contentDescription = "less",
+                                                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                                )
+                                            } else {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.ExpandMore,
+                                                    contentDescription = "more",
+                                                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                                AnimatedVisibility(visible = expanded) {
+                                    Column(modifier = Modifier.fillMaxWidth()) {
+                                        cm.messages.forEach {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .clickable {
+                                                        mainSharedViewModel.navigateToChatPage(
+                                                            cm.contact,
+                                                            it
                                                         )
-                                                    ) {
-                                                        append(it.profile.name)
-                                                        append(": ")
+                                                        if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
+                                                            mainNavController.navigate(
+                                                                ChatPageDestination()
+                                                            )
+                                                        }
                                                     }
-                                                    it.contents.getContentString()
-                                                        .splitKeeping(searchText).forEach {
-                                                            if (it == searchText) {
-                                                                withStyle(
-                                                                    style = SpanStyle(
-                                                                        fontWeight = FontWeight.Bold,
-                                                                        color = MaterialTheme.colorScheme.primary
+                                                    .padding(horizontal = 22.dp, vertical = 8.dp),
+                                                horizontalArrangement = Arrangement.Start,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                AsyncImage(
+                                                    model = ImageRequest.Builder(LocalContext.current)
+                                                        .data(
+                                                            AvatarUtil.getAvatar(
+                                                                context = context,
+                                                                uri = it.profile.avatarUri?.let {
+                                                                    Uri.parse(
+                                                                        it
                                                                     )
-                                                                ) {
+                                                                },
+                                                                url = it.profile.avatar,
+                                                                name = it.profile.name,
+                                                                backgroundColor = MaterialTheme.colorScheme.primary,
+                                                                textColor = MaterialTheme.colorScheme.onPrimary,
+                                                            )
+                                                        )
+                                                        .crossfade(true)
+                                                        .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
+                                                        .build(),
+                                                    contentDescription = "avatar",
+                                                    contentScale = ContentScale.Crop,
+                                                    modifier = Modifier
+                                                        .size(24.dp)
+                                                        .clip(CircleShape)
+                                                )
+                                                Spacer(modifier = Modifier.width(22.dp))
+                                                Text(
+                                                    text = buildAnnotatedString {
+                                                        withStyle(
+                                                            style = SpanStyle(
+                                                                color = MaterialTheme.colorScheme.primary
+                                                            )
+                                                        ) {
+                                                            append(it.profile.name)
+                                                            append(": ")
+                                                        }
+                                                        it.contents.getContentString()
+                                                            .splitKeeping(searchText).forEach {
+                                                                if (it == searchText) {
+                                                                    withStyle(
+                                                                        style = SpanStyle(
+                                                                            fontWeight = FontWeight.Bold,
+                                                                            color = MaterialTheme.colorScheme.primary
+                                                                        )
+                                                                    ) {
+                                                                        append(it)
+                                                                    }
+                                                                } else {
                                                                     append(it)
                                                                 }
-                                                            } else {
-                                                                append(it)
                                                             }
-                                                        }
-                                                },
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis,
-                                            )
+                                                    },
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis,
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -390,7 +473,7 @@ fun RowScope.SearchArea(
                         if (contactSearchResult.value.data.isNotEmpty()) {
                             Text(
                                 modifier = modifier
-                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                                    .padding(horizontal = 16.dp, vertical = 16.dp)
                                     .fillMaxWidth(),
                                 text = stringResource(R.string.contact),
                                 style = MaterialTheme.typography.labelLarge,
@@ -398,60 +481,145 @@ fun RowScope.SearchArea(
                             )
                         }
                     }
-                    items(items = contactSearchResult.value.data, key = { it.contactId }) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    mainSharedViewModel.clearContactUnreadNum(it.contactId)
-                                    mainSharedViewModel.loadMessageFromContact(it)
-                                    if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
-                                        mainNavController.navigate(ChatPageDestination())
-                                    }
-                                }
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            horizontalArrangement = Arrangement.Start,
-                            verticalAlignment = Alignment.CenterVertically
+                    itemsIndexed(
+                        items = contactSearchResult.value.data,
+                        key = { index, item -> item.contactId }) { index, item ->
+                        val topRadius = remember {
+                            if (index == 0) 24.dp else 0.dp
+                        }
+                        val bottomRadius = remember {
+                            if (index == contactSearchResult.value.data.lastIndex) 24.dp else 0.dp
+                        }
+                        Surface(
+                            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 3.dp),
+                            shape = RoundedCornerShape(
+                                topStart = topRadius,
+                                topEnd = topRadius,
+                                bottomStart = bottomRadius,
+                                bottomEnd = bottomRadius
+                            ),
+                            tonalElevation = 3.dp
                         ) {
-                            AsyncImage(
-                                model = ImageRequest.Builder(LocalContext.current)
-                                    .data(
-                                        it.profile.avatarUri ?: it.profile.avatar
-                                        ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.avatar_dynamic else R.drawable.avatar
-                                    )
-                                    .crossfade(true)
-                                    .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
-                                    .build(),
-                                contentDescription = "avatar",
-                                contentScale = ContentScale.Crop,
+
+                            Row(
                                 modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                            )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Text(
-                                text = buildAnnotatedString {
-                                    it.profile.name.splitKeeping(searchText).forEach {
-                                        if (it == searchText) {
-                                            withStyle(
-                                                style = SpanStyle(
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = MaterialTheme.colorScheme.primary
-                                                )
-                                            ) {
-                                                append(it)
-                                            }
-                                        } else {
-                                            append(it)
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        mainSharedViewModel.clearContactUnreadNum(item.contactId)
+                                        mainSharedViewModel.loadMessageFromContact(item)
+                                        if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
+                                            mainNavController.navigate(ChatPageDestination())
                                         }
                                     }
-                                },
-                                style = MaterialTheme.typography.bodyMedium,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
+                                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                                horizontalArrangement = Arrangement.Start,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                AsyncImage(
+                                    model = ImageRequest.Builder(LocalContext.current)
+                                        .data(
+                                            AvatarUtil.getAvatar(
+                                                context = context,
+                                                uri = item.profile.avatarUri?.let { Uri.parse(it) },
+                                                url = item.profile.avatar,
+                                                name = item.profile.name,
+                                                backgroundColor = MaterialTheme.colorScheme.primary,
+                                                textColor = MaterialTheme.colorScheme.onPrimary,
+                                            )
+                                        )
+                                        .crossfade(true)
+                                        .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
+                                        .build(),
+                                    contentDescription = "avatar",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                )
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Text(
+                                    text = buildAnnotatedString {
+                                        item.profile.name.splitKeeping(searchText).forEach {
+                                            if (it == searchText) {
+                                                withStyle(
+                                                    style = SpanStyle(
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = MaterialTheme.colorScheme.primary
+                                                    )
+                                                ) {
+                                                    append(it)
+                                                }
+                                            } else {
+                                                append(it)
+                                            }
+                                        }
+                                    },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
                         }
                     }
+//                    items(items = contactSearchResult.value.data, key = { it.contactId }) {
+//                        Row(
+//                            modifier = Modifier
+//                                .fillMaxWidth()
+//                                .clickable {
+//                                    mainSharedViewModel.clearContactUnreadNum(it.contactId)
+//                                    mainSharedViewModel.loadMessageFromContact(it)
+//                                    if (sizeClass.widthSizeClass != WindowWidthSizeClass.Expanded) {
+//                                        mainNavController.navigate(ChatPageDestination())
+//                                    }
+//                                }
+//                                .padding(horizontal = 16.dp, vertical = 8.dp),
+//                            horizontalArrangement = Arrangement.Start,
+//                            verticalAlignment = Alignment.CenterVertically
+//                        ) {
+//                            AsyncImage(
+//                                model = ImageRequest.Builder(LocalContext.current)
+//                                    .data(
+//                                        AvatarUtil.getAvatar(
+//                                            uri = it.profile.avatarUri?.let { Uri.parse(it) },
+//                                            url = it.profile.avatar,
+//                                            name = it.profile.name,
+//                                            backgroundColor = MaterialTheme.colorScheme.primary,
+//                                            textColor = MaterialTheme.colorScheme.onPrimary,
+//                                        )
+//                                    )
+//                                    .crossfade(true)
+//                                    .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
+//                                    .build(),
+//                                contentDescription = "avatar",
+//                                contentScale = ContentScale.Crop,
+//                                modifier = Modifier
+//                                    .size(36.dp)
+//                                    .clip(CircleShape)
+//                            )
+//                            Spacer(modifier = Modifier.width(16.dp))
+//                            Text(
+//                                text = buildAnnotatedString {
+//                                    it.profile.name.splitKeeping(searchText).forEach {
+//                                        if (it == searchText) {
+//                                            withStyle(
+//                                                style = SpanStyle(
+//                                                    fontWeight = FontWeight.Bold,
+//                                                    color = MaterialTheme.colorScheme.primary
+//                                                )
+//                                            ) {
+//                                                append(it)
+//                                            }
+//                                        } else {
+//                                            append(it)
+//                                        }
+//                                    }
+//                                },
+//                                style = MaterialTheme.typography.bodyMedium,
+//                                maxLines = 1,
+//                                overflow = TextOverflow.Ellipsis,
+//                            )
+//                        }
+//                    }
                 }
             }
         }

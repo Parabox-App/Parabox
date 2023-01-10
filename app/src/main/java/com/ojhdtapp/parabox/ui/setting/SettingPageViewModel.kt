@@ -25,6 +25,7 @@ import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.use_case.GetContacts
 import com.ojhdtapp.parabox.domain.use_case.UpdateContact
 import com.ojhdtapp.parabox.ui.theme.Theme
+import com.ojhdtapp.parabox.ui.util.WorkingMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -71,7 +72,8 @@ class SettingPageViewModel @Inject constructor(
             }
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
-    val googleLoginFlow: Flow<Boolean> = context.dataStore.data
+
+    val cloudTotalSpaceFlow: Flow<Long> = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {
                 emit(emptyPreferences())
@@ -80,10 +82,10 @@ class SettingPageViewModel @Inject constructor(
             }
         }
         .map { settings ->
-            settings[DataStoreKeys.GOOGLE_LOGIN] ?: false
+            settings[DataStoreKeys.CLOUD_TOTAL_SPACE] ?: 0L
         }
 
-    val googleTotalSpaceFlow: Flow<Long> = context.dataStore.data
+    val cloudUsedSpaceFlow: Flow<Long> = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {
                 emit(emptyPreferences())
@@ -92,10 +94,9 @@ class SettingPageViewModel @Inject constructor(
             }
         }
         .map { settings ->
-            settings[DataStoreKeys.GOOGLE_TOTAL_SPACE] ?: 0L
+            settings[DataStoreKeys.CLOUD_USED_SPACE] ?: 0L
         }
-
-    val googleUsedSpaceFlow: Flow<Long> = context.dataStore.data
+    val cloudAppUsedSpaceFlow: Flow<Long> = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {
                 emit(emptyPreferences())
@@ -104,18 +105,7 @@ class SettingPageViewModel @Inject constructor(
             }
         }
         .map { settings ->
-            settings[DataStoreKeys.GOOGLE_USED_SPACE] ?: 0L
-        }
-    val googleAppUsedSpaceFlow: Flow<Long> = context.dataStore.data
-        .catch { exception ->
-            if (exception is IOException) {
-                emit(emptyPreferences())
-            } else {
-                throw exception
-            }
-        }
-        .map { settings ->
-            settings[DataStoreKeys.GOOGLE_APP_USED_SPACE] ?: 0L
+            settings[DataStoreKeys.CLOUD_APP_USED_SPACE] ?: 0L
         }
 
     fun saveGoogleDriveAccount(account: GoogleSignInAccount?) {
@@ -123,24 +113,22 @@ class SettingPageViewModel @Inject constructor(
             context.dataStore.edit { preferences ->
                 preferences[DataStoreKeys.GOOGLE_NAME] = account?.displayName ?: ""
                 preferences[DataStoreKeys.GOOGLE_MAIL] = account?.email ?: ""
-                preferences[DataStoreKeys.GOOGLE_LOGIN] = account != null
+                preferences[DataStoreKeys.SETTINGS_CLOUD_SERVICE] = if(account == null) 0 else GoogleDriveUtil.SERVICE_CODE
                 preferences[DataStoreKeys.GOOGLE_AVATAR] = account?.photoUrl.toString()
-                preferences[DataStoreKeys.SETTINGS_DEFAULT_BACKUP_SERVICE] = 0
             }
             GoogleDriveUtil.getDriveInformation(context)?.also {
                 context.dataStore.edit { preferences ->
                     preferences[DataStoreKeys.GOOGLE_WORK_FOLDER_ID] = it.workFolderId
-                    preferences[DataStoreKeys.GOOGLE_TOTAL_SPACE] = it.totalSpace
-                    preferences[DataStoreKeys.GOOGLE_USED_SPACE] = it.usedSpace
-                    preferences[DataStoreKeys.GOOGLE_APP_USED_SPACE] = it.appUsedSpace
+                    preferences[DataStoreKeys.CLOUD_TOTAL_SPACE] = it.totalSpace
+                    preferences[DataStoreKeys.CLOUD_USED_SPACE] = it.usedSpace
+                    preferences[DataStoreKeys.CLOUD_APP_USED_SPACE] = it.appUsedSpace
                 }
             }
         }
     }
 
-    // Cloud Service
-
-    val defaultBackupServiceFlow: Flow<Int> = context.dataStore.data
+    // Working Mode
+    val workingModeFlow: Flow<Int> = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {
                 emit(emptyPreferences())
@@ -149,13 +137,35 @@ class SettingPageViewModel @Inject constructor(
             }
         }
         .map { settings ->
-            settings[DataStoreKeys.SETTINGS_DEFAULT_BACKUP_SERVICE] ?: 0
+            settings[DataStoreKeys.SETTINGS_WORKING_MODE] ?: WorkingMode.NORMAL.ordinal
         }
 
-    fun setDefaultBackupService(value: Int) {
+    fun setWorkingMode(mode: Int) {
         viewModelScope.launch {
             context.dataStore.edit { preferences ->
-                preferences[DataStoreKeys.SETTINGS_DEFAULT_BACKUP_SERVICE] = value
+                preferences[DataStoreKeys.SETTINGS_WORKING_MODE] = mode
+            }
+        }
+    }
+
+    // Cloud Service
+
+    val cloudServiceFlow: Flow<Int> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.SETTINGS_CLOUD_SERVICE] ?: 0
+        }
+
+    fun setCloudService(value: Int) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.SETTINGS_CLOUD_SERVICE] = value
             }
         }
     }
@@ -340,25 +350,25 @@ class SettingPageViewModel @Inject constructor(
         }
     }
 
-    val fcmRoleFlow = context.dataStore.data
-        .catch { exception ->
-            if (exception is IOException) {
-                emit(emptyPreferences())
-            } else {
-                throw exception
-            }
-        }
-        .map { settings ->
-            settings[DataStoreKeys.SETTINGS_FCM_ROLE] ?: FcmConstants.Role.SENDER.ordinal
-        }
-
-    fun setFCMRole(value: Int) {
-        viewModelScope.launch {
-            context.dataStore.edit { preferences ->
-                preferences[DataStoreKeys.SETTINGS_FCM_ROLE] = value
-            }
-        }
-    }
+//    val fcmRoleFlow = context.dataStore.data
+//        .catch { exception ->
+//            if (exception is IOException) {
+//                emit(emptyPreferences())
+//            } else {
+//                throw exception
+//            }
+//        }
+//        .map { settings ->
+//            settings[DataStoreKeys.SETTINGS_FCM_ROLE] ?: FcmConstants.Role.SENDER.ordinal
+//        }
+//
+//    fun setFCMRole(value: Int) {
+//        viewModelScope.launch {
+//            context.dataStore.edit { preferences ->
+//                preferences[DataStoreKeys.SETTINGS_FCM_ROLE] = value
+//            }
+//        }
+//    }
 
     val fcmTargetTokensFlow = context.dataStore.data
         .catch { exception ->
@@ -446,6 +456,23 @@ class SettingPageViewModel @Inject constructor(
                 delay(1000)
                 _cacheSizeStateFlow.value = FileUtil.getSizeString(CacheUtil.getCacheSize(context))
                 setCleaningCache(false)
+            }
+        }
+    }
+
+    private val _cleaningFile = mutableStateOf<Boolean>(false)
+    val cleaningFile: State<Boolean> = _cleaningFile
+    fun setCleaningFile(value: Boolean) {
+        _cleaningFile.value = value
+    }
+
+    fun clearFile(timestamp: Long) {
+        if (!cleaningFile.value) {
+            setCleaningFile(true)
+            viewModelScope.launch {
+                CacheUtil.deleteChatFilesBeforeTimestamp(context, timestamp)
+                delay(3000)
+                setCleaningFile(false)
             }
         }
     }
@@ -641,6 +668,166 @@ class SettingPageViewModel @Inject constructor(
         _showTermsDialog.value = value
     }
 
+    // Tencent COS
+    val tencentCOSSecretIdFlow: Flow<String> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.TENCENT_COS_SECRET_ID] ?: ""
+        }
+
+    fun setTencentCOSSecretId(value: String) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.TENCENT_COS_SECRET_ID] = value
+            }
+        }
+    }
+
+    val tencentCOSSecretKeyFlow: Flow<String> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.TENCENT_COS_SECRET_KEY] ?: ""
+        }
+
+    fun setTencentCOSSecretKey(value: String) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.TENCENT_COS_SECRET_KEY] = value
+            }
+        }
+    }
+
+    val tencentCOSBucketFlow: Flow<String> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.TENCENT_COS_BUCKET] ?: ""
+        }
+
+    fun setTencentCOSBucket(value: String) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.TENCENT_COS_BUCKET] = value
+            }
+        }
+    }
+
+    val tencentCOSRegionFlow: Flow<String> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.TENCENT_COS_REGION] ?: ""
+        }
+
+    fun setTencentCOSRegion(value: String) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.TENCENT_COS_REGION] = value
+            }
+        }
+    }
+
+    val qiniuKODOAccessKeyFlow = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.QINIU_KODO_ACCESS_KEY] ?: ""
+        }
+
+    fun setQiniuKODOAccessKey(value: String) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.QINIU_KODO_ACCESS_KEY] = value
+            }
+        }
+    }
+
+    val qiniuKODOSecretKeyFlow = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.QINIU_KODO_SECRET_KEY] ?: ""
+        }
+
+    fun setQiniuKODOSecretKey(value: String) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.QINIU_KODO_SECRET_KEY] = value
+            }
+        }
+    }
+
+    val qiniuKODOBucketFlow = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.QINIU_KODO_BUCKET] ?: ""
+        }
+
+    fun setQiniuKODOBucket(value: String) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.QINIU_KODO_BUCKET] = value
+            }
+        }
+    }
+
+    val qiniuKODODomainFlow = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.QINIU_KODO_DOMAIN] ?: ""
+        }
+
+    fun setQiniuKODODomain(value: String) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.QINIU_KODO_DOMAIN] = value
+            }
+        }
+    }
     // Licenses
     val licenseList = listOf<License>(
         License(

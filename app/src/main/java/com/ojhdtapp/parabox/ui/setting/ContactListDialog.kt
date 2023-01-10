@@ -1,5 +1,7 @@
 package com.ojhdtapp.parabox.ui.setting
 
+import android.net.Uri
+import android.os.Build
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -41,6 +43,7 @@ import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.core.util.AvatarUtil
 import com.ojhdtapp.parabox.domain.model.Contact
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -80,9 +83,18 @@ fun ContactListDialog(
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 2.dp
             ) {
-                Column(modifier = Modifier.padding(24.dp).fillMaxWidth()) {
-                    Text(text = stringResource(R.string.contact_list), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 16.dp))
-                    LazyColumn(modifier = Modifier.heightIn(0.dp, 400.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(modifier = Modifier
+                    .padding(24.dp)
+                    .fillMaxWidth()) {
+                    Text(
+                        text = stringResource(R.string.contact_list),
+                        style = MaterialTheme.typography.headlineSmall,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                    LazyColumn(
+                        modifier = Modifier.heightIn(0.dp, 400.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         if (loading) {
                             item {
                                 Box(
@@ -95,8 +107,8 @@ fun ContactListDialog(
                                 }
                             }
                         } else {
-                            item{
-                                if(contactList.isEmpty()){
+                            item {
+                                if (contactList.isEmpty()) {
                                     Box(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -107,8 +119,12 @@ fun ContactListDialog(
                                     }
                                 }
                             }
-                            items(items = contactList, key = { it.contactId },) {
-                                MultiSelectItem(contact = it, onValueChange = onValueChange, contactCheck = contactCheck)
+                            items(items = contactList, key = { it.contactId }) {
+                                MultiSelectItem(
+                                    contact = it,
+                                    onValueChange = onValueChange,
+                                    contactCheck = contactCheck
+                                )
                             }
                         }
                     }
@@ -125,12 +141,26 @@ fun MultiSelectItem(
     contactCheck: (Contact) -> Boolean,
     onValueChange: (target: Contact, value: Boolean) -> Unit
 ) {
-    Row(modifier = modifier.fillMaxWidth().clickable {
-        onValueChange(contact, !contactCheck(contact))
-    }, verticalAlignment = Alignment.CenterVertically) {
+    val context = LocalContext.current
+    Row(modifier = modifier
+        .fillMaxWidth()
+        .clip(RoundedCornerShape(8.dp))
+        .clickable {
+            onValueChange(contact, !contactCheck(contact))
+        }, verticalAlignment = Alignment.CenterVertically) {
+        Spacer(modifier = Modifier.width(12.dp))
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
-                .data(contact.profile.avatar)
+                .data(
+                    AvatarUtil.getAvatar(
+                        context = context,
+                        uri = contact.profile.avatarUri?.let{ Uri.parse(it)},
+                        url = contact.profile.avatar,
+                        name = contact.profile.name,
+                        backgroundColor = MaterialTheme.colorScheme.primary,
+                        textColor = MaterialTheme.colorScheme.onPrimary,
+                    )
+                )
                 .crossfade(true)
                 .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
                 .build(),

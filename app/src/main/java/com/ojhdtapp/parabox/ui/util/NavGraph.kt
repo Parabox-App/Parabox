@@ -8,6 +8,12 @@ annotation class MenuNavGraph(
     val start: Boolean = false
 )
 
+@RootNavGraph(start = false)
+@NavGraph
+annotation class GuideNavGraph(
+    val start: Boolean = false
+)
+
 @MenuNavGraph(start = true)
 @NavGraph
 annotation class MessageNavGraph(

@@ -4,7 +4,6 @@ import android.content.Intent
 import android.net.Uri
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.PluginConnection
-import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendMessageDto
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
 import com.ojhdtapp.parabox.domain.model.File
 import com.ojhdtapp.parabox.domain.model.Message
@@ -37,7 +36,10 @@ sealed interface ActivityEvent {
     object LaunchApp : ActivityEvent
     object Backup: ActivityEvent
     object Restore: ActivityEvent
+    object StartExtension: ActivityEvent
     object ResetExtension: ActivityEvent
+    object StopExtension: ActivityEvent
     data class SaveToCloud(val file: File) : ActivityEvent
     data class CancelBackupWork(val fileId: Long, val tag: String): ActivityEvent
+    object QueryFCMToken: ActivityEvent
 }

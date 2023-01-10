@@ -16,26 +16,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeTopAppBar
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.surfaceColorAtElevation
+import androidx.compose.material.icons.outlined.Storage
+import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
@@ -61,16 +52,16 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.guru.fontawesomecomposelib.FaIcon
+import com.guru.fontawesomecomposelib.FaIcons
+import com.ojhdtapp.parabox.MainActivity
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.core.util.GoogleDriveUtil
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.CloudPageDestination
-import com.ojhdtapp.parabox.ui.util.ActivityEvent
-import com.ojhdtapp.parabox.ui.util.MainSwitch
-import com.ojhdtapp.parabox.ui.util.NormalPreference
-import com.ojhdtapp.parabox.ui.util.PreferencesCategory
-import com.ojhdtapp.parabox.ui.util.SimpleMenuPreference
-import com.ojhdtapp.parabox.ui.util.SwitchPreference
+import com.ojhdtapp.parabox.ui.destinations.ModePageDestination
+import com.ojhdtapp.parabox.ui.util.*
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -98,31 +89,72 @@ fun FCMPage(
         SnackbarHostState()
     }
 
+    val workingMode by viewModel.workingModeFlow.collectAsState(initial = WorkingMode.NORMAL.ordinal)
     val enabled = viewModel.enableFCMStateFlow.collectAsState(initial = false)
     val token = viewModel.fcmTokenFlow.collectAsState(initial = "")
     val state = viewModel.fcmStateFlow.collectAsState()
     val customUrlEnabled = viewModel.enableFcmCustomUrlFlow.collectAsState(initial = false)
     val fcmUrl = viewModel.fcmUrlFlow.collectAsState(initial = "")
     val useHttps = viewModel.fcmHttpsFlow.collectAsState(initial = false)
-    val role = viewModel.fcmRoleFlow.collectAsState(initial = FcmConstants.Role.SENDER.ordinal)
+//    val role = viewModel.fcmRoleFlow.collectAsState(initial = FcmConstants.Role.SENDER.ordinal)
     val targetTokens = viewModel.fcmTargetTokensFlow.collectAsState(initial = emptySet())
     val loopbackToken = viewModel.fcmLoopbackTokenFlow.collectAsState(initial = "")
 
-    val gDriveLogin by viewModel.googleLoginFlow.collectAsState(initial = false)
+    val cloudService by viewModel.cloudServiceFlow.collectAsState(initial = 0)
 
-    val selectableService by remember {
-        derivedStateOf {
-            buildMap<Int, String> {
-                put(FcmConstants.CloudStorage.NONE.ordinal, "无")
-                if (gDriveLogin) put(FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal, "Google Drive")
-            }
-        }
-    }
-    val cloudStorage = viewModel.fcmCloudStorageFlow.collectAsState(initial = FcmConstants.CloudStorage.NONE.ordinal)
+    val cloudStorage =
+        viewModel.fcmCloudStorageFlow.collectAsState(initial = FcmConstants.CloudStorage.NONE.ordinal)
+
+    val tencentCOSSecretId = viewModel.tencentCOSSecretIdFlow.collectAsState(initial = "")
+    val tencentCOSSecretKey = viewModel.tencentCOSSecretKeyFlow.collectAsState(initial = "")
+    val tencentCOSBucket = viewModel.tencentCOSBucketFlow.collectAsState(initial = "")
+    val tencentCOSRegion = viewModel.tencentCOSRegionFlow.collectAsState(initial = "")
+
+    val qiniuKODOAccessKey = viewModel.qiniuKODOAccessKeyFlow.collectAsState(initial = "")
+    val qiniuKODOSecretKey = viewModel.qiniuKODOSecretKeyFlow.collectAsState(initial = "")
+    val qiniuKODOBucket = viewModel.qiniuKODOBucketFlow.collectAsState(initial = "")
+    val qiniuKODODomain = viewModel.qiniuKODODomainFlow.collectAsState(initial = "")
 
     LaunchedEffect(key1 = Unit) {
         if (enabled.value)
             viewModel.checkFcmState()
+    }
+
+    var showRoleDescription by remember {
+        mutableStateOf(false)
+    }
+
+    if (showRoleDescription) {
+        AlertDialog(
+            onDismissRequest = {
+                showRoleDescription = false
+            },
+            title = {
+                Text(text = stringResource(R.string.working_mode_dialog_title))
+            },
+            text = {
+                Text(text = stringResource(id = R.string.working_mode_dialog_text))
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showRoleDescription = false
+                    if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
+                        mainNavController.navigate(ModePageDestination)
+                    } else {
+                        viewModel.setSelectedSetting(SettingPageState.MODE)
+                    }
+                }) {
+                    Text(text = stringResource(id = R.string.redirect_to_setting))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showRoleDescription = false
+                }) {
+                    Text(text = stringResource(id = R.string.confirm))
+                }
+            },
+        )
     }
 
     var showEditUrlDialog by remember {
@@ -318,6 +350,316 @@ fun FCMPage(
         }
     )
 
+    var showFcmObjectStorageDialog by remember {
+        mutableStateOf(false)
+    }
+    var showTencentCosDialog by remember {
+        mutableStateOf(false)
+    }
+    var showQiniuDialog by remember {
+        mutableStateOf(false)
+    }
+    var showGoogleDriveDialog by remember{
+        mutableStateOf(false)
+    }
+    // FCM Object Storage Dialog
+    if (showFcmObjectStorageDialog) {
+        AlertDialog(
+            onDismissRequest = { showFcmObjectStorageDialog = false },
+            confirmButton = {},
+            icon = {
+                Icon(
+                    imageVector = Icons.Outlined.Storage,
+                    contentDescription = "select object storage"
+                )
+            },
+            title = { Text(text = stringResource(R.string.object_storage)) },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        onClick = {
+                            showTencentCosDialog = true
+                        }) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp)
+                                .padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(R.string.fcm_cloud_storage_tencent_cos),
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                    }
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        onClick = {
+                            showQiniuDialog = true
+                        }) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp)
+                                .padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(R.string.fcm_cloud_storage_qiniu_kodo),
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                    }
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        onClick = {
+
+                        }) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp)
+                                .padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(R.string.fcm_cloud_storage_google_drive),
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                    }
+                }
+            }
+        )
+    }
+
+    if (showTencentCosDialog) {
+        var tempSecretId by remember {
+            mutableStateOf(tencentCOSSecretId.value)
+        }
+        var tempSecretKey by remember {
+            mutableStateOf(tencentCOSSecretKey.value)
+        }
+        var tempRegion by remember {
+            mutableStateOf(tencentCOSRegion.value)
+        }
+        var tempBucket by remember {
+            mutableStateOf(tencentCOSBucket.value)
+        }
+        AlertDialog(
+            onDismissRequest = { showTencentCosDialog = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    showTencentCosDialog = false
+                    showFcmObjectStorageDialog = false
+                    viewModel.setTencentCOSSecretId(tempSecretId)
+                    viewModel.setTencentCOSSecretKey(tempSecretKey)
+                    viewModel.setTencentCOSRegion(tempRegion)
+                    viewModel.setTencentCOSBucket(tempBucket)
+                    viewModel.setFCMCloudStorage(FcmConstants.CloudStorage.TENCENT_COS.ordinal)
+                },
+                enabled = tempSecretId.isNotBlank() && tempSecretKey.isNotBlank() && tempRegion.isNotBlank() && tempBucket.isNotBlank()) {
+                    Text(text = stringResource(id = R.string.save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showTencentCosDialog = false
+                }) {
+                    Text(text = stringResource(id = R.string.cancel))
+                }
+            },
+            title = {
+                Text(text = stringResource(R.string.fcm_cloud_storage_tencent_cos),)
+            },
+            text = {
+                Column {
+                    Text(
+                        text = stringResource(R.string.fcm_cloud_storage_temp_folder_notice),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = tempSecretId,
+                        onValueChange = {
+                            tempSecretId = it
+                        },
+                        label = { Text(text = "SecretId") },
+                        singleLine = true,
+                        supportingText = { Text(text = stringResource(
+                            R.string.fcm_cloud_storage_tencent_cos_secretid_supporting_text)
+                        ) },
+                    )
+                    OutlinedTextField(
+                        value = tempSecretKey,
+                        onValueChange = {
+                            tempSecretKey = it
+                        },
+                        label = { Text(text = "SecretKey") },
+                        singleLine = true,
+                        supportingText = { Text(text = stringResource(
+                            R.string.fcm_cloud_storage_tencent_cos_secretkey_supporting_text)
+                        ) },
+                    )
+                    OutlinedTextField(
+                        value = tempRegion,
+                        onValueChange = {
+                            tempRegion = it
+                        },
+                        label = { Text(text = "Region") },
+                        singleLine = true,
+                        supportingText = { Text(text = stringResource(
+                            R.string.fcm_cloud_storage_tencent_cos_region_supporting_text)
+                        ) }
+                    )
+                    OutlinedTextField(
+                        value = tempBucket,
+                        onValueChange = {
+                            tempBucket = it
+                        },
+                        label = { Text(text = "Bucket") },
+                        singleLine = true,
+                        supportingText = { Text(text = stringResource(
+                            R.string.fcm_cloud_storage_tencent_cos_bucket_supporting_text)
+                        ) },
+                    )
+                }
+            },
+        )
+    }
+
+    if (showQiniuDialog) {
+        var tempAccessKey by remember {
+            mutableStateOf(qiniuKODOAccessKey.value)
+        }
+        var tempSecretKey by remember {
+            mutableStateOf(qiniuKODOSecretKey.value)
+        }
+        var tempBucket by remember {
+            mutableStateOf(qiniuKODOBucket.value)
+        }
+        var tempDomain by remember {
+            mutableStateOf(qiniuKODODomain.value)
+        }
+        AlertDialog(
+            onDismissRequest = { showQiniuDialog = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    showQiniuDialog = false
+                    showFcmObjectStorageDialog = false
+                    viewModel.setQiniuKODOAccessKey(tempAccessKey)
+                    viewModel.setQiniuKODOSecretKey(tempSecretKey)
+                    viewModel.setQiniuKODOBucket(tempBucket)
+                    viewModel.setQiniuKODODomain(tempDomain)
+                    viewModel.setFCMCloudStorage(FcmConstants.CloudStorage.QINIU_KODO.ordinal)
+                },
+                enabled = tempAccessKey.isNotBlank() && tempSecretKey.isNotBlank() && tempBucket.isNotBlank() && tempDomain.isNotBlank()) {
+                    Text(text = stringResource(id = R.string.save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showQiniuDialog = false
+                }) {
+                    Text(text = stringResource(id = R.string.cancel))
+                }
+            },
+            title = {
+                Text(text = stringResource(id = R.string.fcm_cloud_storage_qiniu_kodo))
+            },
+            text = {
+                Column {
+                    Text(
+                        text = stringResource(R.string.fcm_cloud_storage_temp_folder_notice),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = tempAccessKey,
+                        onValueChange = {
+                            tempAccessKey = it
+                        },
+                        label = { Text(text = "AccessKey") },
+                        singleLine = true,
+                        supportingText = { Text(text = stringResource(
+                            R.string.fcm_cloud_storage_qiniu_kodo_accesskey_supporting_text)
+                        ) },
+                    )
+                    OutlinedTextField(
+                        value = tempSecretKey,
+                        onValueChange = {
+                            tempSecretKey = it
+                        },
+                        label = { Text(text = "SecretKey") },
+                        singleLine = true,
+                        supportingText = { Text(text = stringResource(
+                            R.string.fcm_cloud_storage_qiniu_kodo_secretkey_supporting_text)
+                        ) },
+                    )
+                    OutlinedTextField(
+                        value = tempBucket,
+                        onValueChange = {
+                            tempBucket = it
+                        },
+                        label = { Text(text = "Bucket") },
+                        singleLine = true,
+                        supportingText = { Text(text = stringResource(
+                            R.string.fcm_cloud_storage_qiniu_kodo_bucket_supporting_text)
+                        ) },
+                    )
+                    OutlinedTextField(
+                        value = tempDomain,
+                        onValueChange = {
+                            tempDomain = it
+                        },
+                        label = { Text(text = "Domain") },
+                        singleLine = true,
+                        supportingText = { Text(text = stringResource(
+                            R.string.fcm_cloud_storage_qiniu_kodo_domain_supporting_text)
+                        ) },
+                    )
+                }
+            },
+        )
+    }
+
+    if (showGoogleDriveDialog) {
+        AlertDialog(
+            onDismissRequest = { showGoogleDriveDialog = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    showGoogleDriveDialog = false
+                    showFcmObjectStorageDialog = false
+                    viewModel.setFCMCloudStorage(FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal)
+                },
+                    enabled = cloudService == GoogleDriveUtil.SERVICE_CODE) {
+                    Text(text = stringResource(id = R.string.save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showGoogleDriveDialog = false
+                }) {
+                    Text(text = stringResource(id = R.string.cancel))
+                }
+            },
+            title = {
+                Text(text = "Google Drive")
+            },
+            text = {
+                Column {
+                    Text(text = stringResource(R.string.fcm_cloud_storage_temp_folder_notice))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(text = stringResource(R.string.fcm_cloud_storage_google_drive_need_connecting))
+                }
+            },
+        )
+    }
+
 
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -384,10 +726,19 @@ fun FCMPage(
             }
             item {
                 NormalPreference(
+                    title = stringResource(R.string.fcm_working_mode),
+                    subtitle = if (workingMode == WorkingMode.NORMAL.ordinal)
+                        stringResource(id = R.string.fcm_role_sender) else
+                        stringResource(id = R.string.fcm_role_receiver),
+                ) {
+                    showRoleDescription = true
+                }
+            }
+            item {
+                NormalPreference(
                     modifier = Modifier.animateContentSize(),
                     title = stringResource(id = R.string.fcm_token),
                     subtitle = token.value.ifBlank { stringResource(R.string.fcm_token_unavailable) },
-                    enabled = enabled.value,
                 ) {
                     if (token.value.isNotBlank()) {
                         clipboardManager.setText(AnnotatedString(token.value))
@@ -401,11 +752,13 @@ fun FCMPage(
                 NormalPreference(
                     title = stringResource(R.string.fcm_server_status),
                     subtitle = when (state.value) {
-                        is FcmConstants.Status.Success -> stringResource(R.string.fcm_server_status_connected , (state.value as FcmConstants.Status.Success).version)
+                        is FcmConstants.Status.Success -> stringResource(
+                            R.string.fcm_server_status_connected,
+                            (state.value as FcmConstants.Status.Success).version
+                        )
                         is FcmConstants.Status.Loading -> stringResource(R.string.fcm_server_status_connecting)
                         is FcmConstants.Status.Failure -> stringResource(R.string.fcm_server_status_failed)
                     },
-                    enabled = enabled.value,
                 ) {
                     viewModel.checkFcmState()
                 }
@@ -414,17 +767,23 @@ fun FCMPage(
                 PreferencesCategory(text = stringResource(R.string.fcm_connection_settings))
             }
             item {
-                SwitchPreference(title = stringResource(R.string.fcm_custom_host), checked = customUrlEnabled.value, onCheckedChange = {
-                    viewModel.setEnableFcmCustomUrl(it)
-                },
-                    enabled = enabled.value)
+                SwitchPreference(
+                    title = stringResource(R.string.fcm_custom_host),
+                    checked = customUrlEnabled.value,
+                    onCheckedChange = {
+                        viewModel.setEnableFcmCustomUrl(it)
+                    },
+                )
             }
             item {
-                AnimatedVisibility(visible = customUrlEnabled.value, enter = expandVertically(), exit = shrinkVertically()) {
+                AnimatedVisibility(
+                    visible = customUrlEnabled.value,
+                    enter = expandVertically(),
+                    exit = shrinkVertically()
+                ) {
                     NormalPreference(
                         title = stringResource(R.string.fcm_server),
                         subtitle = fcmUrl.value.ifBlank { stringResource(R.string.not_set) },
-                        enabled = enabled.value,
                     ) {
                         showEditUrlDialog = true
                     }
@@ -435,7 +794,7 @@ fun FCMPage(
                     title = stringResource(R.string.fcm_enable_https),
                     checked = useHttps.value,
                     onCheckedChange = viewModel::setFCMHttps,
-                    enabled = false && enabled.value
+                    enabled = false
                 )
             }
             item {
@@ -456,52 +815,53 @@ fun FCMPage(
                     }
                 }
             }
+//            item {
+//                SimpleMenuPreference(
+//                    title = stringResource(R.string.fcm_role),
+//                    optionsMap = mapOf(
+//                        FcmConstants.Role.SENDER.ordinal to stringResource(R.string.fcm_role_sender),
+//                        FcmConstants.Role.RECEIVER.ordinal to stringResource(R.string.fcm_role_receiver)
+//                    ),
+//                    selectedKey = role.value,
+//                    onSelect = {
+//                        coroutineScope.launch {
+//                            snackbarHostState.showSnackbar(
+//                                message = context.getString(R.string.restart_app_to_active),
+//                                actionLabel = context.getString(R.string.restart_app_now),
+//                                withDismissAction = true
+//                            ).also {
+//                                if (it == SnackbarResult.ActionPerformed) {
+//                                    onEvent(ActivityEvent.RestartApp)
+//                                }
+//                            }
+//                        }
+//                        viewModel.setFCMRole(it)
+//                    },
+//                    enabled = enabled.value
+//                )
+//            }
             item {
-                SimpleMenuPreference(
-                    title = stringResource(R.string.fcm_role),
-                    optionsMap = mapOf(
-                        FcmConstants.Role.SENDER.ordinal to stringResource(R.string.fcm_role_sender),
-                        FcmConstants.Role.RECEIVER.ordinal to stringResource(R.string.fcm_role_receiver)
-                    ),
-                    selectedKey = role.value,
-                    onSelect = {
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar(
-                                message = context.getString(R.string.restart_app_to_active),
-                                actionLabel = context.getString(R.string.restart_app_now),
-                                withDismissAction = true
-                            ).also {
-                                if (it == SnackbarResult.ActionPerformed) {
-                                    onEvent(ActivityEvent.RestartApp)
-                                }
-                            }
-                        }
-                        viewModel.setFCMRole(it)
-                    },
-                    enabled = enabled.value
-                )
-            }
-            item {
-                Crossfade(targetState = role.value) {
+                Crossfade(targetState = workingMode) {
                     when (it) {
-                        FcmConstants.Role.SENDER.ordinal -> {
+                        WorkingMode.NORMAL.ordinal, WorkingMode.FCM.ordinal -> {
                             NormalPreference(
                                 title = stringResource(R.string.fcm_send_target_token),
                                 subtitle = when {
                                     targetTokens.value.isEmpty() -> stringResource(R.string.not_set)
-                                    else -> stringResource(R.string.fcm_send_target_token_set, targetTokens.value.size)
+                                    else -> stringResource(
+                                        R.string.fcm_send_target_token_set,
+                                        targetTokens.value.size
+                                    )
                                 },
-                                enabled = enabled.value,
                             ) {
                                 showEditTokensDialog = true
                             }
                         }
 
-                        FcmConstants.Role.RECEIVER.ordinal -> {
+                        WorkingMode.RECEIVER.ordinal -> {
                             NormalPreference(
                                 title = stringResource(id = R.string.fcm_callback_target_token),
                                 subtitle = loopbackToken.value.ifBlank { stringResource(R.string.not_set) },
-                                enabled = enabled.value,
                             ) {
                                 showEditLoopbackTokenDialog = true
                             }
@@ -513,45 +873,27 @@ fun FCMPage(
                 PreferencesCategory(text = stringResource(R.string.fcm_feat_settings))
             }
             item {
-                Crossfade(targetState = selectableService.size <= 1) {
-                    if(it){
-                        NormalPreference(title = stringResource(R.string.object_storage), subtitle = stringResource(
-                                                    R.string.object_storage_none),enabled = enabled.value) {
-                            if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
-                                mainNavController.navigate(CloudPageDestination)
-                            } else {
-                                viewModel.setSelectedSetting(SettingPageState.CLOUD)
-                            }
-                        }
-                    }else{
-                        SimpleMenuPreference(
-                            title = stringResource(R.string.object_storage),
-                            enabled = enabled.value,
-                            optionsMap = selectableService,
-                            selectedKey = cloudStorage.value,
-                            onSelect = viewModel::setFCMCloudStorage)
-                    }
+                NormalPreference(
+                    title = stringResource(R.string.object_storage),
+                    subtitle = when (cloudStorage.value) {
+                        FcmConstants.CloudStorage.NONE.ordinal -> stringResource(R.string.not_set)
+                        FcmConstants.CloudStorage.TENCENT_COS.ordinal -> stringResource(R.string.fcm_cloud_storage_tencent_cos)
+                        FcmConstants.CloudStorage.QINIU_KODO.ordinal -> stringResource(R.string.fcm_cloud_storage_qiniu_kodo)
+                        FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal -> stringResource(R.string.fcm_cloud_storage_google_drive)
+                        else -> stringResource(R.string.not_set)
+                    },
+                ) {
+                    showFcmObjectStorageDialog = true
                 }
             }
             item {
                 NormalPreference(
                     title = stringResource(R.string.fcm_limited_contact),
                     subtitle = stringResource(id = R.string.fcm_limited_contact_subtitle),
-                    enabled = enabled.value,
                 ) {
                     showContactDialog = true
                 }
             }
-//            item {
-//                PreferencesCategory(text = stringResource(R.string.fcm_server_settings))
-//            }
-//            item {
-//                NormalPreference(
-//                    title = "强制执行未完成的发送",
-//                    subtitle = stringResource(R.string.not_set),
-//                    enabled = enabled.value
-//                ) {}
-//            }
             item {
                 PreferencesCategory(text = stringResource(R.string.fcm_other_settings))
             }

@@ -21,6 +21,7 @@ import com.ojhdtapp.parabox.domain.fcm.FcmApiHelper
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.domain.model.*
 import com.ojhdtapp.parabox.domain.repository.MainRepository
+import com.ojhdtapp.parabox.ui.util.WorkingMode
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import retrofit2.awaitResponse
@@ -42,8 +43,14 @@ class MainRepositoryImpl @Inject constructor(
             val enableFcm = context.dataStore.data.map { preferences ->
                 preferences[DataStoreKeys.SETTINGS_ENABLE_FCM] ?: false
             }.first()
-            val fcmRole = context.dataStore.data.map { preferences ->
-                preferences[DataStoreKeys.SETTINGS_FCM_ROLE] ?: FcmConstants.Role.SENDER.ordinal
+            val fcmCloudStorage = context.dataStore.data.map { preferences ->
+                preferences[DataStoreKeys.SETTINGS_FCM_CLOUD_STORAGE] ?: false
+            }.first()
+//            val fcmRole = context.dataStore.data.map { preferences ->
+//                preferences[DataStoreKeys.SETTINGS_FCM_ROLE] ?: FcmConstants.Role.SENDER.ordinal
+//            }.first()
+            val workingMode = context.dataStore.data.map { preferences ->
+                preferences[DataStoreKeys.SETTINGS_WORKING_MODE] ?: WorkingMode.NORMAL.ordinal
             }.first()
 
             val messageEntity = dto.toMessageEntity(context)
@@ -139,8 +146,13 @@ class MainRepositoryImpl @Inject constructor(
                             channelId = dto.pluginConnection.connectionType.toString()
                         )
                     }
-                    if (enableFcm && fcmRole == FcmConstants.Role.SENDER.ordinal && it?.disableFCM != true) {
-                        fcmApiHelper.pushReceiveDto(dto).also {
+                    if (enableFcm && workingMode == WorkingMode.NORMAL.ordinal && it?.disableFCM != true) {
+                        val dtoWithoutUri = dto.copy(
+                            contents = dto.contents.saveLocalResourcesToCloud(
+                                context
+                            )
+                        )
+                        fcmApiHelper.pushReceiveDto(dtoWithoutUri).also {
                             if (it?.isSuccessful == true) {
                                 Log.d("parabox", "fcm success")
                             } else {
@@ -157,7 +169,7 @@ class MainRepositoryImpl @Inject constructor(
                         channelId = dto.pluginConnection.connectionType.toString()
                     )
                 }
-                if (enableFcm && fcmRole == FcmConstants.Role.SENDER.ordinal) {
+                if (enableFcm && workingMode == WorkingMode.NORMAL.ordinal) {
                     fcmApiHelper.pushReceiveDto(dto).also {
                         if (it?.isSuccessful == true) {
                             Log.d("parabox", "fcm success")

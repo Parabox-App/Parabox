@@ -27,6 +27,7 @@ import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.FormUtil
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.ui.util.HashTagEditor
+import com.ojhdtapp.parabox.ui.util.MyFilterChip
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -97,7 +98,7 @@ fun TagEditAlertDialog(
                             textFieldValue = hashTagText,
                             enabled = true,
                             onValueChanged = {
-                                val values = FormUtil.splitPerSpaceOrNewLine(it)
+                                val values = FormUtil.splitTwoSpacesOrNewLine(it)
 
                                 if (values.size >= 2) {
                                     onConfirmDelete = false
@@ -150,7 +151,8 @@ fun TagEditAlertDialog(
                                 }
                             },
                             padding = HashTagEditor.PADDING_NONE,
-                            onConfirmDelete = onConfirmDelete
+                            onConfirmDelete = onConfirmDelete,
+                            chipContainerColor = MaterialTheme.colorScheme.secondaryContainer
                         )
                     }
                     Text(
@@ -168,7 +170,7 @@ fun TagEditAlertDialog(
                             context.getString(R.string.tag_example_family),
                             context.getString(R.string.tag_example_notification),
                             context.getString(R.string.tag_example_classmate))) {
-                            FilterChip(
+                            MyFilterChip(
                                 selected = false,
                                 onClick = {
                                     if (!hashTagList.contains(it)) {
@@ -183,7 +185,9 @@ fun TagEditAlertDialog(
                                         hashTagShouldShowError = true
                                     }
                                 },
-                                label = { Text(text = it) })
+                                label = { Text(text = it) },
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer
+                            )
                         }
                     }
                 }

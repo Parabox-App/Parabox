@@ -24,12 +24,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
+import com.ojhdtapp.parabox.ui.destinations.GuideWelcomePageDestination
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
+import com.ojhdtapp.parabox.ui.util.NormalPreference
 import com.ojhdtapp.parabox.ui.util.PreferencesCategory
 import com.ojhdtapp.parabox.ui.util.SwitchPreference
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import com.ramcosta.composedestinations.navigation.navigate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Destination
@@ -149,6 +152,17 @@ fun ExperimentalPage(
                     checked = viewModel.allowForegroundNotificationFlow.collectAsState(initial = false).value,
                     onCheckedChange = viewModel::setAllowForegroundNotification
                 )
+            }
+            item {
+                PreferencesCategory(text = stringResource(R.string.miscellaneous))
+            }
+            item{
+                NormalPreference(
+                    title = stringResource(R.string.launch_guide_title),
+                    subtitle = stringResource(R.string.launch_guide_text)
+                ) {
+                    mainNavController.navigate(GuideWelcomePageDestination)
+                }
             }
         }
     }
