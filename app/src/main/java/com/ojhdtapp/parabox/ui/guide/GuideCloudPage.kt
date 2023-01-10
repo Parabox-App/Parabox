@@ -115,12 +115,12 @@ fun GuideCloudPage(
                     }
                 } else {
                     coroutineScope.launch {
-                        snackBarHostState.showSnackbar("设备不支持")
+                        snackBarHostState.showSnackbar(context.getString(R.string.device_not_support))
                     }
                 }
             } else {
                 coroutineScope.launch {
-                    snackBarHostState.showSnackbar("设备不支持")
+                    snackBarHostState.showSnackbar(context.getString(R.string.device_not_support))
                 }
             }
         }
@@ -184,7 +184,7 @@ fun GuideCloudPage(
                 OutlinedButton(onClick = {
                     mainNavController.navigateUp()
                 }) {
-                    Text(text = "返回")
+                    Text(text = stringResource(R.string.back))
                 }
                 Spacer(modifier = Modifier.weight(1f))
                 Button(
@@ -194,9 +194,9 @@ fun GuideCloudPage(
                     enabled = true
                 ) {
                     if (cloudService == 0) {
-                        Text(text = "稍后再说")
+                        Text(text = stringResource(R.string.later))
                     } else {
-                        Text(text = "继续")
+                        Text(text = stringResource(R.string.cont))
                     }
                 }
             }
@@ -224,7 +224,7 @@ fun GuideCloudPage(
             item {
                 Text(
                     modifier = Modifier.padding(start = 32.dp, end = 32.dp, bottom = 16.dp),
-                    text = "配置云端服务",
+                    text = stringResource(R.string.setup_cloud_service),
                     style = MaterialTheme.typography.displaySmall,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -232,7 +232,7 @@ fun GuideCloudPage(
             item {
                 Text(
                     modifier = Modifier.padding(horizontal = 32.dp),
-                    text = "连接云端服务后，Parabox 可将指定会话的聊天文件自动备份至云存储，供你随时重新下载与访问。",
+                    text = stringResource(R.string.setup_cloud_service_text_a),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -240,7 +240,7 @@ fun GuideCloudPage(
             item {
                 Text(
                     modifier = Modifier.padding(horizontal = 32.dp),
-                    text = "自动备份功能需手动开启。请稍后前往设置详细配置。",
+                    text = stringResource(R.string.setup_cloud_service_text_b),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -376,7 +376,7 @@ fun GuideCloudPage(
                 if(cloudService != 0){
                     Text(
                         modifier = Modifier.padding(horizontal = 32.dp),
-                        text = "自动备份功能需手动开启。请稍后前往设置详细配置。",
+                        text = stringResource(id = R.string.setup_cloud_service_text_b),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurface
                     )

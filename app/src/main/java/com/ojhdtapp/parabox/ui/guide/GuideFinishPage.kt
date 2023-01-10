@@ -66,7 +66,7 @@ fun GuideFinishPage(
                 OutlinedButton(onClick = {
                     mainNavController.navigateUp()
                 }) {
-                    Text(text = "返回")
+                    Text(text = stringResource(R.string.back))
                 }
                 Spacer(modifier = Modifier.weight(1f))
                 Button(onClick = {
@@ -74,13 +74,13 @@ fun GuideFinishPage(
                         popUpTo(NavGraphs.root)
                         launchSingleTop = true
                     }
-//                    coroutineScope.launch {
-//                        context.dataStore.edit {
-//                            it[DataStoreKeys.IS_FIRST_LAUNCH] = false
-//                        }
-//                    }
+                    coroutineScope.launch {
+                        context.dataStore.edit {
+                            it[DataStoreKeys.IS_FIRST_LAUNCH] = false
+                        }
+                    }
                 }) {
-                    Text(text = "完成")
+                    Text(text = stringResource(R.string.finish))
                 }
             }
         },
@@ -103,7 +103,7 @@ fun GuideFinishPage(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "大功告成",
+                        text = stringResource(R.string.setup_finished_title),
                         style = MaterialTheme.typography.displaySmall,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -112,7 +112,7 @@ fun GuideFinishPage(
             item {
                 Text(
                     modifier = Modifier.padding(horizontal = 32.dp),
-                    text = "您已完成所有必要设置项。点击“完成”按钮进入主界面。",
+                    text = stringResource(R.string.setup_finished_text),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )

@@ -101,13 +101,13 @@ fun GuidePersonalisePage(
                 OutlinedButton(onClick = {
                     mainNavController.navigateUp()
                 }) {
-                    Text(text = "返回")
+                    Text(text = stringResource(R.string.back))
                 }
                 Spacer(modifier = Modifier.weight(1f))
                 Button(onClick = {
                     mainNavController.navigate(GuideTermsPageDestination)
                 }) {
-                    Text(text = "继续")
+                    Text(text = stringResource(id = R.string.cont))
                 }
             }
         },
@@ -130,7 +130,7 @@ fun GuidePersonalisePage(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "个性化",
+                        text = stringResource(R.string.setup_personalise_title),
                         style = MaterialTheme.typography.displaySmall,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -139,14 +139,16 @@ fun GuidePersonalisePage(
             item {
                 Text(
                     modifier = Modifier.padding(horizontal = 32.dp),
-                    text = "设置头像及昵称以提供更好的应用内显示效果。",
+                    text = stringResource(R.string.setup_personalise_text),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
             item{
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 32.dp),
                     horizontalAlignment = Alignment.CenterHorizontally){
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)

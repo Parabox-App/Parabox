@@ -74,10 +74,10 @@ fun BackupPage(
                 showDeleteFileConfirmDialog = false
             },
             title = {
-                Text(text = "删除会话资源")
+                Text(text = stringResource(R.string.delete_chat_files_title))
             },
             text = {
-                Text(text = "选中的会话资源（图片，语音）将被永久删除，无法恢复。是否确认？")
+                Text(text = stringResource(R.string.delete_chat_files_confirm_text))
             },
             confirmButton = {
                 TextButton(
@@ -190,15 +190,15 @@ fun BackupPage(
                 )
             }
             item {
-                PreferencesCategory(text = "会话资源管理")
+                PreferencesCategory(text = stringResource(R.string.chat_files_management))
             }
             item {
                 SliderPreference(
-                    title = "会话资源删除范围",
+                    title = stringResource(R.string.delete_chat_files_time_range),
                     subTitle =
                     when (deleteFilesBeforeDays) {
-                        0f -> "所有"
-                        else -> "${deleteFilesBeforeDays.roundToInt()}天前"
+                        0f -> stringResource(id = R.string.all)
+                        else -> stringResource(R.string.days_ago, deleteFilesBeforeDays.roundToInt())
                     },
                     value = deleteFilesBeforeDays,
                     valueRange = 0f..15f,
@@ -209,9 +209,9 @@ fun BackupPage(
             }
             item {
                 NormalPreference(
-                    title = "删除过期的会话资源",
-                    subtitle = if (deleteFilesBeforeDays.roundToInt() == 0) "所有图片，语音将被删除\n预计可释放 $canSaveSpace 空间"
-                    else "于 ${deleteFilesBeforeDays.roundToInt()} 天或更早前接收的图片，语音将被删除\n预计可释放 $canSaveSpace 空间",
+                    title = stringResource(id = R.string.delete_chat_files_title),
+                    subtitle = if (deleteFilesBeforeDays.roundToInt() == 0) stringResource(id = R.string.delete_chat_files_all_subtitle, canSaveSpace)
+                    else stringResource(id = R.string.delete_chat_files_days_ago_subtitle, deleteFilesBeforeDays.roundToInt(), canSaveSpace),
                     enabled = !viewModel.cleaningFile.value,
                 ) {
                     showDeleteFileConfirmDialog = true

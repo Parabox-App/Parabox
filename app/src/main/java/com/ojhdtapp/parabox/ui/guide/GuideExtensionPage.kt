@@ -98,10 +98,10 @@ fun GuideExtensionPage(
                 )
             },
             title = {
-                Text(text = "略过扩展检查")
+                Text(text = stringResource(R.string.skip_extension_check_title))
             },
             text = {
-                Text(text = "检测到扩展未安装或配置不正确，Parabox 将无法正常使用。\n\n是否继续？")
+                Text(text = stringResource(R.string.skip_extension_check_text))
             }
         )
     }
@@ -122,14 +122,14 @@ fun GuideExtensionPage(
                 OutlinedButton(onClick = {
                     mainNavController.navigateUp()
                 }) {
-                    Text(text = "返回")
+                    Text(text = stringResource(id = R.string.back))
                 }
                 Spacer(modifier = Modifier.weight(1f))
                 if (!pluginList.any { it.runningStatus == AppModel.RUNNING_STATUS_RUNNING }) {
                     TextButton(onClick = {
                         showSkipGuideDialog = true
                     }) {
-                        Text(text = "仍然继续")
+                        Text(text = stringResource(R.string.continue_anyway))
                     }
                 }
                 Spacer(modifier = Modifier.width(8.dp))
@@ -140,9 +140,9 @@ fun GuideExtensionPage(
                     enabled = pluginList.any { it.runningStatus == AppModel.RUNNING_STATUS_RUNNING }
                 ) {
                     if (pluginList.any { it.runningStatus == AppModel.RUNNING_STATUS_RUNNING }) {
-                        Text(text = "继续")
+                        Text(text = stringResource(id = R.string.cont))
                     } else {
-                        Text(text = "未完成")
+                        Text(text = stringResource(R.string.unfinished))
                     }
                 }
             }
@@ -170,7 +170,7 @@ fun GuideExtensionPage(
             item {
                 Text(
                     modifier = Modifier.padding(start = 32.dp, end = 32.dp, bottom = 16.dp),
-                    text = "扩展检查",
+                    text = stringResource(R.string.setup_extension_check_title),
                     style = MaterialTheme.typography.displaySmall,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -178,7 +178,7 @@ fun GuideExtensionPage(
             item {
                 Text(
                     modifier = Modifier.padding(horizontal = 32.dp),
-                    text = "Parabox 需配合扩展运行。扩展将承担与各即时通讯平台对接的职能，为 Parabox 提供消息源与发送信道。",
+                    text = stringResource(R.string.setup_extension_check_text_a),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -186,7 +186,7 @@ fun GuideExtensionPage(
             item {
                 Text(
                     modifier = Modifier.padding(horizontal = 32.dp),
-                    text = "如果已安装的扩展未显示于下方，或状态获取出现延迟，请尝试重置扩展连接。",
+                    text = stringResource(R.string.setup_extension_check_text_b),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -197,21 +197,21 @@ fun GuideExtensionPage(
                     onClick = {
                         onEvent(ActivityEvent.ResetExtension)
                     }) {
-                    Row {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Outlined.Refresh,
                             contentDescription = "reset extension connection",
                             tint = MaterialTheme.colorScheme.primary
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "重置扩展连接")
+                        Text(text = stringResource(id = R.string.reset_extension_connection_title))
                     }
                 }
             }
             item {
                 Text(
                     modifier = Modifier.padding(start = 32.dp, end = 32.dp, top = 16.dp),
-                    text = "已安装的扩展",
+                    text = stringResource(R.string.extension_installled),
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontSize = MaterialTheme.fontSize.title
@@ -220,7 +220,8 @@ fun GuideExtensionPage(
             item {
                 Text(
                     modifier = Modifier.padding(horizontal = 32.dp),
-                    text = "检测到 ${pluginList.size} 个已安装的扩展，其中 ${pluginList.count { it.runningStatus == AppModel.RUNNING_STATUS_RUNNING }} 个扩展运行正常。",
+                    text = stringResource(R.string.extension_installled_text, pluginList.size, pluginList.count { it.runningStatus == AppModel.RUNNING_STATUS_RUNNING }),
+//                    text = "检测到 ${pluginList.size} 个已安装的扩展，其中 ${pluginList.count { it.runningStatus == AppModel.RUNNING_STATUS_RUNNING }} 个扩展运行正常。",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -241,7 +242,7 @@ fun GuideExtensionPage(
             item {
                 Text(
                     modifier = Modifier.padding(start = 32.dp, end = 32.dp, top = 16.dp),
-                    text = "建议",
+                    text = stringResource(R.string.suggestion),
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontSize = MaterialTheme.fontSize.title
@@ -253,7 +254,7 @@ fun GuideExtensionPage(
                     FaIcon(faIcon = FaIcons.GooglePlay, tint = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.width(14.dp))
                     HyperlinkText(
-                        fullText = "前往 Google Play 获取更多由官方维护的扩展。",
+                        fullText = stringResource(R.string.extension_suggestion_a),
                         hyperLinks = mapOf("Google Play" to "https://play.google.com/"),
                         linkTextColor = MaterialTheme.colorScheme.primary,
                         textStyle = MaterialTheme.typography.bodyLarge,
@@ -268,7 +269,7 @@ fun GuideExtensionPage(
                     FaIcon(faIcon = FaIcons.Github, tint = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.width(14.dp))
                     HyperlinkText(
-                        fullText = "前往 Github 搜索由社区贡献的扩展。",
+                        fullText = stringResource(R.string.extension_suggestion_b),
                         hyperLinks = mapOf("Github" to "https://github.com/"),
                         linkTextColor = MaterialTheme.colorScheme.primary,
                         textStyle = MaterialTheme.typography.bodyLarge,
@@ -279,7 +280,7 @@ fun GuideExtensionPage(
             item {
                 Text(
                     modifier = Modifier.padding(start = 32.dp, end = 32.dp, top = 16.dp),
-                    text = "注意事项",
+                    text = stringResource(R.string.notice),
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontSize = MaterialTheme.fontSize.title
@@ -294,7 +295,7 @@ fun GuideExtensionPage(
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = "扩展面向整个开源社区开放，Parabox 不对扩展的来源，真实性等做检验，扩展的预期行为无法受到保证。为了您的数据安全，请不要安装及启用未知来源的扩展。",
+                        text = stringResource(R.string.setup_extension_check_text_c),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -309,7 +310,7 @@ fun GuideExtensionPage(
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = "扩展须保持后台运行以正常工作。若扩展因资源回收而被停止，您可能需要手动重启扩展。以前台服务运行，启用后台锁，关闭电池优化等措施可帮助扩展后台留存。",
+                        text = stringResource(R.string.setup_extension_check_text_d),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurface
                     )

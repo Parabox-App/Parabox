@@ -335,8 +335,8 @@ fun SettingPage(
                                     )
                                 }
                             } else null,
-                            title = "工作模式",
-                            subtitle = "配置应用工作模式",
+                            title = stringResource(id = R.string.working_mode),
+                            subtitle = stringResource(R.string.working_mode_subtitle),
                             selected = sizeClass.widthSizeClass != WindowWidthSizeClass.Compact
                                     && viewModel.selectedSetting.value == SettingPageState.MODE,
                             roundedCorner = true,

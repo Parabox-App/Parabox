@@ -94,12 +94,12 @@ fun GuideFCMReceiverPage(
                     }
                 } else {
                     coroutineScope.launch {
-                        snackBarHostState.showSnackbar("设备不支持")
+                        snackBarHostState.showSnackbar(context.getString(R.string.device_not_support))
                     }
                 }
             } else {
                 coroutineScope.launch {
-                    snackBarHostState.showSnackbar("设备不支持")
+                    snackBarHostState.showSnackbar(context.getString(R.string.device_not_support))
                 }
             }
         }
@@ -135,7 +135,7 @@ fun GuideFCMReceiverPage(
                 OutlinedButton(onClick = {
                     mainNavController.navigateUp()
                 }) {
-                    Text(text = "返回")
+                    Text(text = stringResource(id = R.string.back))
                 }
                 Spacer(modifier = Modifier.weight(1f))
                 Button(
@@ -145,9 +145,9 @@ fun GuideFCMReceiverPage(
                     enabled = fcmEnabled && loopbackToken.isNotBlank()
                 ) {
                     if (fcmEnabled && loopbackToken.isNotBlank()) {
-                        Text(text = "继续")
+                        Text(text = stringResource(id = R.string.cont))
                     } else {
-                        Text(text = "未完成")
+                        Text(text = stringResource(id = R.string.unfinished))
                     }
                 }
             }
@@ -175,7 +175,7 @@ fun GuideFCMReceiverPage(
             item {
                 Text(
                     modifier = Modifier.padding(start = 32.dp, end = 32.dp, bottom = 16.dp),
-                    text = "配置 FCM 回送",
+                    text = stringResource(R.string.setup_fcm_receiver_title),
                     style = MaterialTheme.typography.displaySmall,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -183,7 +183,7 @@ fun GuideFCMReceiverPage(
             item {
                 Text(
                     modifier = Modifier.padding(horizontal = 32.dp),
-                    text = "Firebase云消息传递（FCM）是谷歌推出的系统级消息推送服务。",
+                    text = stringResource(R.string.setup_fcm_receiver_text_a),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -191,7 +191,7 @@ fun GuideFCMReceiverPage(
             item {
                 Text(
                     modifier = Modifier.padding(horizontal = 32.dp),
-                    text = "该功能允许接收来自其他设备的消息，并以同一方式回送待发送的消息。这将避免通信服务于本机后台驻留，大幅减少本机的性能开销。",
+                    text = stringResource(R.string.setup_fcm_receiver_text_b),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -199,14 +199,14 @@ fun GuideFCMReceiverPage(
             item {
                 Text(
                     modifier = Modifier.padding(horizontal = 32.dp),
-                    text = "通常需要您拥有两台及以上运行 Parabox 的设备，且具有稳定的 Google 服务连接。",
+                    text = stringResource(R.string.setup_fcm_receiver_text_c),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
             item {
                 SwitchPreference(
-                    title = "启用",
+                    title = stringResource(R.string.enable),
                     checked = fcmEnabled,
                     onCheckedChange = viewModel::setEnableFCM,
                     enabled = token.isNotBlank(),
@@ -218,13 +218,13 @@ fun GuideFCMReceiverPage(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             modifier = Modifier.padding(start = 32.dp),
-                            text = "无法连接至 FCM 网络。",
+                            text = stringResource(R.string.fcm_unavailable),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.width(16.dp))
                         TextButton(onClick = { onEvent(ActivityEvent.QueryFCMToken) }) {
-                            Text(text = "刷新")
+                            Text(text = stringResource(R.string.refresh))
                         }
                     }
                 }
@@ -261,7 +261,7 @@ fun GuideFCMReceiverPage(
                                     contentAlignment = Alignment.CenterStart
                                 ) {
                                     Text(
-                                        text = "检查连接状态",
+                                        text = stringResource(R.string.setup_fcm_receiver_step_a_title),
                                         style = MaterialTheme.typography.bodyLarge,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
@@ -272,13 +272,13 @@ fun GuideFCMReceiverPage(
                                         verticalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         Text(
-                                            text = "在您的备用设备上以扩展模式运行 Parabox，运行“配置 FCM 转发”引导，并检查 FCM 网络连接状态。",
+                                            text = stringResource(R.string.setup_fcm_receiver_step_a_text),
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Row() {
                                             Button(onClick = { currentStep = 2 }) {
-                                                Text(text = "下一步")
+                                                Text(text = stringResource(R.string.next_step))
                                             }
                                         }
                                     }
@@ -308,7 +308,7 @@ fun GuideFCMReceiverPage(
                                     contentAlignment = Alignment.CenterStart
                                 ) {
                                     Text(
-                                        text = "复制目标 Token",
+                                        text = stringResource(R.string.setup_fcm_receiver_step_b_title),
                                         style = MaterialTheme.typography.bodyLarge,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
@@ -320,7 +320,7 @@ fun GuideFCMReceiverPage(
                                     ) {
                                         Text(
                                             modifier = Modifier.padding(vertical = 8.dp),
-                                            text = "复制本设备 Token，并输入到备用设备对应输入框中。",
+                                            text = stringResource(R.string.setup_fcm_receiver_step_b_text),
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
@@ -344,18 +344,18 @@ fun GuideFCMReceiverPage(
                                             )
                                             Text(
                                                 modifier = Modifier.padding(start = 8.dp),
-                                                text = "复制到剪贴板"
+                                                text = stringResource(R.string.copy_to_clipboard)
                                             )
                                         }
                                         Row() {
                                             OutlinedButton(onClick = { currentStep = 1 }) {
-                                                Text(text = "上一步")
+                                                Text(text = stringResource(R.string.last_step))
                                             }
                                             Spacer(modifier = Modifier.width(8.dp))
                                             Button(onClick = {
                                                 currentStep = 3
                                             }) {
-                                                Text(text = "下一步")
+                                                Text(text = stringResource(R.string.next_step))
                                             }
                                         }
                                     }
@@ -384,7 +384,7 @@ fun GuideFCMReceiverPage(
                                     contentAlignment = Alignment.CenterStart
                                 ) {
                                     Text(
-                                        text = "填入回送 Token",
+                                        text = stringResource(R.string.setup_fcm_receiver_step_c_title),
                                         style = MaterialTheme.typography.bodyLarge,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
@@ -399,7 +399,7 @@ fun GuideFCMReceiverPage(
                                         }
                                         Text(
                                             modifier = Modifier.padding(vertical = 8.dp),
-                                            text = "从您的备用设备复制 Token，粘贴到下面的输入框中。",
+                                            text = stringResource(R.string.setup_fcm_receiver_step_c_text),
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
@@ -409,14 +409,14 @@ fun GuideFCMReceiverPage(
                                         )
                                         Row() {
                                             OutlinedButton(onClick = { currentStep = 2 }) {
-                                                Text(text = "上一步")
+                                                Text(text = stringResource(R.string.last_step))
                                             }
                                             Spacer(modifier = Modifier.width(8.dp))
                                             Button(onClick = {
                                                 currentStep = 4
                                                 viewModel.setFcmLoopbackToken(tempToken)
                                             }) {
-                                                Text(text = "下一步")
+                                                Text(text = stringResource(R.string.next_step))
                                             }
                                         }
                                     }
@@ -445,7 +445,7 @@ fun GuideFCMReceiverPage(
                                     contentAlignment = Alignment.CenterStart
                                 ) {
                                     Text(
-                                        text = "配置媒体文件传输方式",
+                                        text = stringResource(R.string.setup_fcm_receiver_step_d_title),
                                         style = MaterialTheme.typography.bodyLarge,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
@@ -488,22 +488,22 @@ fun GuideFCMReceiverPage(
                                                     FcmConstants.CloudStorage.NONE.ordinal -> context.getString(
                                                         R.string.not_set
                                                     )
-                                                    FcmConstants.CloudStorage.TENCENT_COS.ordinal -> "腾讯云 COS"
-                                                    FcmConstants.CloudStorage.QINIU_KODO.ordinal -> "七牛云 KODO"
-                                                    FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal -> "Google Drive（实验性）"
+                                                    FcmConstants.CloudStorage.TENCENT_COS.ordinal -> context.getString(R.string.fcm_cloud_storage_tencent_cos)
+                                                    FcmConstants.CloudStorage.QINIU_KODO.ordinal -> context.getString(R.string.fcm_cloud_storage_qiniu_kodo)
+                                                    FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal -> context.getString(R.string.fcm_cloud_storage_google_drive)
                                                     else -> context.getString(R.string.not_set)
                                                 }
                                             }
                                         }
                                         Text(
                                             modifier = Modifier.padding(vertical = 8.dp),
-                                            text = "由于 FCM 不允许传输媒体文件，您需要为此类文件另外配置所有设备皆可用的传输方式。",
+                                            text = stringResource(R.string.setup_fcm_receiver_step_d_text_a),
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Text(
                                             modifier = Modifier.padding(vertical = 8.dp),
-                                            text = "目前已配置服务：${cloudStorageText}",
+                                            text = stringResource(R.string.setup_fcm_receiver_step_d_text_b, cloudStorageText),
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
@@ -513,7 +513,7 @@ fun GuideFCMReceiverPage(
                                                 selected = selectedTagIndex == 0,
                                                 onClick = { selectedTagIndex = 0 }) {
                                                 Text(
-                                                    text = "腾讯云 COS",
+                                                    text = stringResource(R.string.fcm_cloud_storage_tencent_cos),
                                                     modifier = Modifier.padding(
                                                         horizontal = 16.dp,
                                                         vertical = 8.dp
@@ -527,7 +527,7 @@ fun GuideFCMReceiverPage(
                                                 selected = selectedTagIndex == 1,
                                                 onClick = { selectedTagIndex = 1 }) {
                                                 Text(
-                                                    text = "七牛云 KODO",
+                                                    text = stringResource(R.string.fcm_cloud_storage_qiniu_kodo),
                                                     modifier = Modifier.padding(
                                                         horizontal = 16.dp,
                                                         vertical = 8.dp
@@ -541,7 +541,7 @@ fun GuideFCMReceiverPage(
                                                 selected = selectedTagIndex == 2,
                                                 onClick = { selectedTagIndex = 2 }) {
                                                 Text(
-                                                    text = "Google Drive（实验性）",
+                                                    text = stringResource(R.string.fcm_cloud_storage_google_drive),
                                                     modifier = Modifier.padding(
                                                         horizontal = 16.dp,
                                                         vertical = 8.dp
@@ -579,7 +579,7 @@ fun GuideFCMReceiverPage(
                                                 0 -> {
                                                     Column {
                                                         Text(
-                                                            text = "将在存储桶根目录下新建“ParaboxTemp”目录，存放待发送的媒体文件（图片，语音等）。文件传输完毕后不会自动删除，请自行按需清理。",
+                                                            text = stringResource(R.string.fcm_cloud_storage_temp_folder_notice),
                                                             style = MaterialTheme.typography.bodyMedium,
                                                             color = MaterialTheme.colorScheme.onSurface
                                                         )
@@ -591,7 +591,9 @@ fun GuideFCMReceiverPage(
                                                             },
                                                             label = { Text(text = "SecretId") },
                                                             singleLine = true,
-                                                            supportingText = { Text(text = "永久密钥 secretId") },
+                                                            supportingText = { Text(text = stringResource(
+                                                                R.string.fcm_cloud_storage_tencent_cos_secretid_supporting_text)
+                                                            ) },
                                                         )
                                                         OutlinedTextField(
                                                             value = tempTencentCOSSecretKey,
@@ -600,7 +602,9 @@ fun GuideFCMReceiverPage(
                                                             },
                                                             label = { Text(text = "SecretKey") },
                                                             singleLine = true,
-                                                            supportingText = { Text(text = "永久密钥 secretKey") },
+                                                            supportingText = { Text(text = stringResource(
+                                                                R.string.fcm_cloud_storage_tencent_cos_secretkey_supporting_text)
+                                                            ) },
                                                         )
                                                         OutlinedTextField(
                                                             value = tempTencentCOSRegion,
@@ -609,7 +613,9 @@ fun GuideFCMReceiverPage(
                                                             },
                                                             label = { Text(text = "Region") },
                                                             singleLine = true,
-                                                            supportingText = { Text(text = "存储桶所在地域简称，如 ap-guangzhou") }
+                                                            supportingText = { Text(text = stringResource(
+                                                                R.string.fcm_cloud_storage_tencent_cos_region_supporting_text)
+                                                            ) }
                                                         )
                                                         OutlinedTextField(
                                                             value = tempTencentCOSBucket,
@@ -618,14 +624,16 @@ fun GuideFCMReceiverPage(
                                                             },
                                                             label = { Text(text = "Bucket") },
                                                             singleLine = true,
-                                                            supportingText = { Text(text = "存储桶名称，由 bucketname-appid 组成，如 examplebucket-1250000000") },
+                                                            supportingText = { Text(text = stringResource(
+                                                                                                                            R.string.fcm_cloud_storage_tencent_cos_bucket_supporting_text)
+                                                            ) },
                                                         )
                                                     }
                                                 }
                                                 1 -> {
                                                     Column {
                                                         Text(
-                                                            text = "将在存储桶根目录下新建“ParaboxTemp”目录，存放待发送的媒体文件（图片，语音等）。文件传输完毕后不会自动删除，请自行按需清理。",
+                                                            text = stringResource(R.string.fcm_cloud_storage_temp_folder_notice),
                                                             style = MaterialTheme.typography.bodyMedium,
                                                             color = MaterialTheme.colorScheme.onSurface
                                                         )
@@ -637,7 +645,9 @@ fun GuideFCMReceiverPage(
                                                             },
                                                             label = { Text(text = "AccessKey") },
                                                             singleLine = true,
-                                                            supportingText = { Text(text = "永久密钥 accessKey") },
+                                                            supportingText = { Text(text = stringResource(
+                                                                R.string.fcm_cloud_storage_qiniu_kodo_accesskey_supporting_text)
+                                                                                                                        ) },
                                                         )
                                                         OutlinedTextField(
                                                             value = tempQiniuKODOSecretKey,
@@ -646,7 +656,9 @@ fun GuideFCMReceiverPage(
                                                             },
                                                             label = { Text(text = "SecretKey") },
                                                             singleLine = true,
-                                                            supportingText = { Text(text = "永久密钥 secretKey") },
+                                                            supportingText = { Text(text = stringResource(
+                                                                R.string.fcm_cloud_storage_qiniu_kodo_secretkey_supporting_text)
+                                                            ) },
                                                         )
                                                         OutlinedTextField(
                                                             value = tempQiniuKODOBucket,
@@ -655,7 +667,9 @@ fun GuideFCMReceiverPage(
                                                             },
                                                             label = { Text(text = "Bucket") },
                                                             singleLine = true,
-                                                            supportingText = { Text(text = "空间名称") },
+                                                            supportingText = { Text(text = stringResource(
+                                                                R.string.fcm_cloud_storage_qiniu_kodo_bucket_supporting_text)
+                                                            ) },
                                                         )
                                                         OutlinedTextField(
                                                             value = tempQiniuKODODomain,
@@ -664,21 +678,23 @@ fun GuideFCMReceiverPage(
                                                             },
                                                             label = { Text(text = "Domain") },
                                                             singleLine = true,
-                                                            supportingText = { Text(text = "域名，不含http/https") },
+                                                            supportingText = { Text(text = stringResource(
+                                                                R.string.fcm_cloud_storage_qiniu_kodo_domain_supporting_text)
+                                                            ) },
                                                         )
                                                     }
                                                 }
                                                 2 -> {
                                                     Column(){
                                                         Text(
-                                                            text = "将在存储桶根目录下新建“ParaboxTemp”目录，存放待发送的媒体文件（图片，语音等）。文件传输完毕后不会自动删除，请自行按需清理。",
+                                                            text = stringResource(R.string.fcm_cloud_storage_temp_folder_notice),
                                                             style = MaterialTheme.typography.bodyMedium,
                                                             color = MaterialTheme.colorScheme.onSurface
                                                         )
                                                         Spacer(modifier = Modifier.height(8.dp))
                                                         if(cloudService == GoogleDriveUtil.SERVICE_CODE){
                                                             Text(
-                                                                text = "已成功连接 Google Drive，可以继续操作。",
+                                                                text = stringResource(R.string.google_drive_connected),
                                                                 style = MaterialTheme.typography.bodyMedium,
                                                                 color = MaterialTheme.colorScheme.onSurface
                                                             )
@@ -694,7 +710,10 @@ fun GuideFCMReceiverPage(
                                                                     tint = MaterialTheme.colorScheme.primary,
                                                                     size = ButtonDefaults.IconSize,
                                                                 )
-                                                                Text(modifier = Modifier.padding(start = 8.dp), text = "连接到 Google Drive")
+                                                                Text(
+                                                                    modifier = Modifier.padding(start = 8.dp),
+                                                                    text = stringResource(R.string.connect_to_google_drive)
+                                                                )
                                                             }
                                                         }
                                                     }
@@ -704,7 +723,7 @@ fun GuideFCMReceiverPage(
                                         }
                                         Row() {
                                             OutlinedButton(onClick = { currentStep = 3 }) {
-                                                Text(text = "上一步")
+                                                Text(text = stringResource(R.string.last_step))
                                             }
                                             Spacer(modifier = Modifier.width(8.dp))
                                             Button(onClick = {
@@ -759,9 +778,9 @@ fun GuideFCMReceiverPage(
                                                     || (selectedTagIndex == 1 && tempQiniuKODOAccessKey.isNotBlank() && tempQiniuKODOSecretKey.isNotBlank() && tempQiniuKODOBucket.isNotBlank() && tempQiniuKODODomain.isNotBlank())
                                                     || (selectedTagIndex == 2 && cloudService == GoogleDriveUtil.SERVICE_CODE)
                                                 ) {
-                                                    Text(text = "保存并启用")
+                                                    Text(text = stringResource(R.string.save_and_enable))
                                                 } else {
-                                                    Text(text = "稍后再说")
+                                                    Text(text = stringResource(R.string.later))
                                                 }
 
                                             }
@@ -792,7 +811,7 @@ fun GuideFCMReceiverPage(
                                     contentAlignment = Alignment.CenterStart
                                 ) {
                                     Text(
-                                        text = "大功告成！",
+                                        text = stringResource(R.string.setup_fcm_receiver_step_e_title),
                                         style = MaterialTheme.typography.bodyLarge,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
@@ -804,13 +823,13 @@ fun GuideFCMReceiverPage(
                                     ) {
                                         Text(
                                             modifier = Modifier.padding(vertical = 8.dp),
-                                            text = "您已完成 FCM 接收端的所有配置，请继续完成其他引导。",
+                                            text = stringResource(R.string.setup_fcm_receiver_step_e_text_a),
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         HyperlinkText(
-                                            fullText = "要获取有关 FCM 使用的其他提示，请浏览用户文档。",
-                                            hyperLinks = mapOf("用户文档" to "https://docs.parabox.ojhdt.dev/"),
+                                            fullText = stringResource(R.string.setup_fcm_receiver_step_e_text_b),
+                                            hyperLinks = mapOf(stringResource(id = R.string.documentation) to "https://docs.parabox.ojhdt.dev/"),
                                             linkTextColor = MaterialTheme.colorScheme.primary,
                                             textStyle = MaterialTheme.typography.bodyMedium,
                                             textColor = MaterialTheme.colorScheme.onSurface
@@ -818,7 +837,7 @@ fun GuideFCMReceiverPage(
                                         )
                                         Row() {
                                             OutlinedButton(onClick = { currentStep = 4 }) {
-                                                Text(text = "上一步")
+                                                Text(text = stringResource(R.string.last_step))
                                             }
                                         }
                                     }

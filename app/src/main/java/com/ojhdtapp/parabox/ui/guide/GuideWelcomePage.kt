@@ -71,7 +71,7 @@ fun GuideWelcomePage(
     val context = LocalContext.current
     val viewModel = hiltViewModel<SettingPageViewModel>()
 
-    var selectedLanguage by remember {
+    val selectedLanguage by remember {
         mutableStateOf(
             AppCompatDelegate.getApplicationLocales()[0]?.displayLanguage ?: "English"
 //            when(AppCompatDelegate.getApplicationLocales()[0]?.toLanguageTag()?:"en"){
@@ -114,10 +114,10 @@ fun GuideWelcomePage(
                 )
             },
             title = {
-                Text(text = "略过引导")
+                Text(text = stringResource(R.string.skip_guide_title))
             },
             text = {
-                Text(text = "略过引导可能错过必要配置项，导致软件无法正常运行。若您首次使用该软件，请谨慎操作。")
+                Text(text = stringResource(R.string.skip_guide_text))
             }
         )
     }
@@ -229,17 +229,18 @@ fun GuideWelcomePage(
         ) {
             Text(
                 modifier = Modifier.padding(horizontal = 32.dp),
-                text = "欢迎使用 \nParabox",
+                text = stringResource(id = R.string.main_welcome),
                 color = MaterialTheme.colorScheme.primary,
                 style = MaterialTheme.typography.displayLarge
             )
             Spacer(modifier = Modifier.height(16.dp))
             NormalPreference(
-                modifier = Modifier.padding(horizontal = 32.dp)
+                modifier = Modifier
+                    .padding(horizontal = 32.dp)
                     .widthIn(
                         0.dp,
-                        if(sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) 480.dp else 3000.dp
-                ),
+                        if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) 480.dp else 3000.dp
+                    ),
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Outlined.Language,
@@ -263,13 +264,13 @@ fun GuideWelcomePage(
                 TextButton(onClick = {
                     showSkipGuideDialog = true
                 }) {
-                    Text(text = "略过引导")
+                    Text(text = stringResource(id = R.string.skip_guide_title))
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Button(onClick = {
                     mainNavController.navigate(GuideModePageDestination)
                 }) {
-                    Text(text = "继续")
+                    Text(text = stringResource(R.string.cont))
                 }
             }
         }

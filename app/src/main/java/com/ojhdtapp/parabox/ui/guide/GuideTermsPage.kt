@@ -96,7 +96,7 @@ fun GuideTermsPage(
                 OutlinedButton(onClick = {
                     mainNavController.navigateUp()
                 }) {
-                    Text(text = "返回")
+                    Text(text = stringResource(R.string.back))
                 }
                 Spacer(modifier = Modifier.weight(1f))
                 Button(onClick = {
@@ -109,9 +109,9 @@ fun GuideTermsPage(
                     }
                 }) {
                     if(reachedBottom){
-                        Text(text = "同意并继续")
+                        Text(text = stringResource(R.string.agree_and_save))
                     }else{
-                        Text(text = "更多")
+                        Text(text = stringResource(R.string.more))
                     }
                 }
             }
@@ -136,7 +136,7 @@ fun GuideTermsPage(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "用户协议",
+                        text = stringResource(id = R.string.terms),
                         style = MaterialTheme.typography.displaySmall,
                         color = MaterialTheme.colorScheme.onSurface
                     )

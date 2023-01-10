@@ -130,10 +130,10 @@ fun FCMPage(
                 showRoleDescription = false
             },
             title = {
-                Text(text = "模式说明")
+                Text(text = stringResource(R.string.working_mode_dialog_title))
             },
             text = {
-                Text(text = "作为转发端工作时，该功能将从已安装扩展获取消息，转发至目标接收设备。\n作为接收端工作时，该功能将待发送消息回送至目标转发端，由其处理后发送。\n默认以转发模式工作。如需切换至接收模式，请前往工作模式设置更改。")
+                Text(text = stringResource(id = R.string.working_mode_dialog_text))
             },
             confirmButton = {
                 TextButton(onClick = {
@@ -373,7 +373,7 @@ fun FCMPage(
                     contentDescription = "select object storage"
                 )
             },
-            title = { Text(text = "对象存储服务") },
+            title = { Text(text = stringResource(R.string.object_storage)) },
             text = {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     Surface(
@@ -389,7 +389,7 @@ fun FCMPage(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "腾讯云 COS",
+                                text = stringResource(R.string.fcm_cloud_storage_tencent_cos),
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }
@@ -407,7 +407,7 @@ fun FCMPage(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "七牛云 KODO",
+                                text = stringResource(R.string.fcm_cloud_storage_qiniu_kodo),
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }
@@ -425,7 +425,7 @@ fun FCMPage(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Google Drive（实验性）",
+                                text = stringResource(R.string.fcm_cloud_storage_google_drive),
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }
@@ -472,39 +472,59 @@ fun FCMPage(
                 }
             },
             title = {
-                Text(text = "腾讯云 COS")
+                Text(text = stringResource(R.string.fcm_cloud_storage_tencent_cos),)
             },
             text = {
                 Column {
-                    Text(text = "将在存储桶根目录下新建“ParaboxTemp”目录，存放待发送的媒体文件（图片，语音等）。文件传输完毕后不会自动删除，请自行按需清理。")
+                    Text(
+                        text = stringResource(R.string.fcm_cloud_storage_temp_folder_notice),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = tempSecretId,
-                        onValueChange = { tempSecretId = it },
+                        onValueChange = {
+                            tempSecretId = it
+                        },
                         label = { Text(text = "SecretId") },
                         singleLine = true,
-                        supportingText = { Text(text = "永久密钥 secretId") },
+                        supportingText = { Text(text = stringResource(
+                            R.string.fcm_cloud_storage_tencent_cos_secretid_supporting_text)
+                        ) },
                     )
                     OutlinedTextField(
                         value = tempSecretKey,
-                        onValueChange = { tempSecretKey = it },
+                        onValueChange = {
+                            tempSecretKey = it
+                        },
                         label = { Text(text = "SecretKey") },
                         singleLine = true,
-                        supportingText = { Text(text = "永久密钥 secretKey") },
+                        supportingText = { Text(text = stringResource(
+                            R.string.fcm_cloud_storage_tencent_cos_secretkey_supporting_text)
+                        ) },
                     )
                     OutlinedTextField(
                         value = tempRegion,
-                        onValueChange = { tempRegion = it },
+                        onValueChange = {
+                            tempRegion = it
+                        },
                         label = { Text(text = "Region") },
                         singleLine = true,
-                        supportingText = { Text(text = "存储桶所在地域简称，如 ap-guangzhou") }
+                        supportingText = { Text(text = stringResource(
+                            R.string.fcm_cloud_storage_tencent_cos_region_supporting_text)
+                        ) }
                     )
                     OutlinedTextField(
                         value = tempBucket,
-                        onValueChange = { tempBucket = it },
+                        onValueChange = {
+                            tempBucket = it
+                        },
                         label = { Text(text = "Bucket") },
                         singleLine = true,
-                        supportingText = { Text(text = "存储桶名称，由 bucketname-appid 组成，如 examplebucket-1250000000") },
+                        supportingText = { Text(text = stringResource(
+                            R.string.fcm_cloud_storage_tencent_cos_bucket_supporting_text)
+                        ) },
                     )
                 }
             },
@@ -548,39 +568,59 @@ fun FCMPage(
                 }
             },
             title = {
-                Text(text = "七牛云 KODO")
+                Text(text = stringResource(id = R.string.fcm_cloud_storage_qiniu_kodo))
             },
             text = {
                 Column {
-                    Text(text = "将在存储桶根目录下新建“ParaboxTemp”目录，存放待发送的媒体文件（图片，语音等）。文件传输完毕后不会自动删除，请自行按需清理。")
+                    Text(
+                        text = stringResource(R.string.fcm_cloud_storage_temp_folder_notice),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = tempAccessKey,
-                        onValueChange = { tempAccessKey = it },
+                        onValueChange = {
+                            tempAccessKey = it
+                        },
                         label = { Text(text = "AccessKey") },
                         singleLine = true,
-                        supportingText = { Text(text = "永久密钥 accessKey") },
+                        supportingText = { Text(text = stringResource(
+                            R.string.fcm_cloud_storage_qiniu_kodo_accesskey_supporting_text)
+                        ) },
                     )
                     OutlinedTextField(
                         value = tempSecretKey,
-                        onValueChange = { tempSecretKey = it },
+                        onValueChange = {
+                            tempSecretKey = it
+                        },
                         label = { Text(text = "SecretKey") },
                         singleLine = true,
-                        supportingText = { Text(text = "永久密钥 secretKey") },
+                        supportingText = { Text(text = stringResource(
+                            R.string.fcm_cloud_storage_qiniu_kodo_secretkey_supporting_text)
+                        ) },
                     )
                     OutlinedTextField(
                         value = tempBucket,
-                        onValueChange = { tempBucket = it },
+                        onValueChange = {
+                            tempBucket = it
+                        },
                         label = { Text(text = "Bucket") },
                         singleLine = true,
-                        supportingText = { Text(text = "空间名称") },
+                        supportingText = { Text(text = stringResource(
+                            R.string.fcm_cloud_storage_qiniu_kodo_bucket_supporting_text)
+                        ) },
                     )
                     OutlinedTextField(
                         value = tempDomain,
-                        onValueChange = { tempDomain = it },
+                        onValueChange = {
+                            tempDomain = it
+                        },
                         label = { Text(text = "Domain") },
                         singleLine = true,
-                        supportingText = { Text(text = "域名，不含http/https") },
+                        supportingText = { Text(text = stringResource(
+                            R.string.fcm_cloud_storage_qiniu_kodo_domain_supporting_text)
+                        ) },
                     )
                 }
             },
@@ -612,9 +652,9 @@ fun FCMPage(
             },
             text = {
                 Column {
-                    Text(text = "将在个人存储空间根目录下新建“ParaboxTemp”目录，存放待发送的媒体文件（图片，语音等）。文件传输完毕后不会自动删除，请自行按需清理。")
+                    Text(text = stringResource(R.string.fcm_cloud_storage_temp_folder_notice))
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = "需连接 Google Drive。请前往“连接云端服务”设置。")
+                    Text(text = stringResource(R.string.fcm_cloud_storage_google_drive_need_connecting))
                 }
             },
         )
@@ -686,7 +726,7 @@ fun FCMPage(
             }
             item {
                 NormalPreference(
-                    title = "运行模式",
+                    title = stringResource(R.string.fcm_working_mode),
                     subtitle = if (workingMode == WorkingMode.NORMAL.ordinal)
                         stringResource(id = R.string.fcm_role_sender) else
                         stringResource(id = R.string.fcm_role_receiver),
@@ -837,9 +877,9 @@ fun FCMPage(
                     title = stringResource(R.string.object_storage),
                     subtitle = when (cloudStorage.value) {
                         FcmConstants.CloudStorage.NONE.ordinal -> stringResource(R.string.not_set)
-                        FcmConstants.CloudStorage.TENCENT_COS.ordinal -> "腾讯云 COS"
-                        FcmConstants.CloudStorage.QINIU_KODO.ordinal -> "七牛云 KODO"
-                        FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal -> "Google Drive（实验性）"
+                        FcmConstants.CloudStorage.TENCENT_COS.ordinal -> stringResource(R.string.fcm_cloud_storage_tencent_cos)
+                        FcmConstants.CloudStorage.QINIU_KODO.ordinal -> stringResource(R.string.fcm_cloud_storage_qiniu_kodo)
+                        FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal -> stringResource(R.string.fcm_cloud_storage_google_drive)
                         else -> stringResource(R.string.not_set)
                     },
                 ) {

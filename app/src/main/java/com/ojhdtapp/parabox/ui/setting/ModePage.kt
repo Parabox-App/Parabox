@@ -77,7 +77,8 @@ fun ModePage(
                 modifier = Modifier
                     .background(appBarContainerColor)
                     .statusBarsPadding(),
-                title = { Text("工作模式") },
+                title = { Text(
+                    text = stringResource(id = R.string.working_mode)) },
                 navigationIcon = {
                     if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
                         IconButton(onClick = {
@@ -99,8 +100,8 @@ fun ModePage(
         ) {
             item {
                 NormalPreference(
-                    title = "扩展模式",
-                    subtitle = "默认使用的模式。将尝试常驻一个扩展连接服务，与本机已安装的扩展建立通信。",
+                    title = stringResource(R.string.working_mode_normal_title),
+                    subtitle = stringResource(R.string.working_mode_normal_text),
                     leadingIcon = {
                         RadioButton(
                             selected = selectedWorkingMode == WorkingMode.NORMAL.ordinal,
@@ -138,8 +139,8 @@ fun ModePage(
             }
             item {
                 NormalPreference(
-                    title = "接收者模式",
-                    subtitle = "将尝试组建多设备间 FCM 网络来通信。此模式下扩展功能将禁用。\n这通常需要拥有两台以上运行 Parabox 的设备，且其中一台已以扩展模式运行，并开启 FCM 转发者模式。",
+                    title = stringResource(R.string.working_mode_receiver_title),
+                    subtitle = stringResource(R.string.working_mode_receiver_text),
                     leadingIcon = {
                         RadioButton(
                             selected = selectedWorkingMode == WorkingMode.RECEIVER.ordinal,
@@ -173,8 +174,8 @@ fun ModePage(
             }
             item {
                 NormalPreference(
-                    title = "FCM 模式",
-                    subtitle = "此模式下消息收发将由 FCM 完全接管，并交由私有服务器进行处理。此模式下扩展功能将禁用。\n这通常需要私有服务器，并遵照教程指引进行相关配置。",
+                    title = stringResource(R.string.working_mode_fcm_title),
+                    subtitle = stringResource(R.string.working_mode_fcm_text),
                     leadingIcon = {
                         RadioButton(
                             selected = selectedWorkingMode == WorkingMode.FCM.ordinal,
@@ -215,12 +216,12 @@ fun ModePage(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "请结合具体使用场景选择恰当的工作模式。",
+                        text = stringResource(R.string.working_mode_info_a),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    ClickableText(text = AnnotatedString("详细了解工作模式"),
+                    ClickableText(text = AnnotatedString(stringResource(R.string.working_mode_info_b)),
                         style = TextStyle(
                             color = MaterialTheme.colorScheme.primary,
                             textDecoration = TextDecoration.Underline
