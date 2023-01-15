@@ -13,4 +13,6 @@ object FcmConstants {
         TENCENT_COS,
         QINIU_KODO
     }
+
+    const val CONNECTION_TYPE = 9999
 }

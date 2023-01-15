@@ -6,7 +6,7 @@ import androidx.room.TypeConverters
 import com.ojhdtapp.parabox.data.local.entity.*
 
 @Database(
-    entities = [ContactEntity::class, MessageEntity::class, ContactMessageCrossRef::class, PluginConnectionEntity::class, ContactPluginConnectionCrossRef::class, TagEntity::class, FileEntity::class],
+    entities = [ContactEntity::class, MessageEntity::class, ContactMessageCrossRef::class, PluginConnectionEntity::class, ContactPluginConnectionCrossRef::class, TagEntity::class, FileEntity::class, FcmMapping::class],
     version = 1,
     exportSchema = false
 )
@@ -17,4 +17,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract val contactMessageCrossRefDao: ContactMessageCrossRefDao
     abstract val tagDao: TagDao
     abstract val fileDao: FileDao
+    abstract val fcmMappingDao: FcmMappingDao
 }

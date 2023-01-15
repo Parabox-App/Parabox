@@ -190,4 +190,13 @@ object AppModule {
     fun provideQueryContactAndMessageUseCase(repository: MainRepository): QueryContactAndMessage {
         return QueryContactAndMessage(repository)
     }
+
+    @Provides
+    @Singleton
+    fun provideGetUriFromCloudResourceInfoUseCase(
+        @ApplicationContext applicationContext: Context,
+        downloadUtil: DownloadUtil
+    ): GetUriFromCloudResourceInfo {
+        return GetUriFromCloudResourceInfo(context = applicationContext, downloadUtil = downloadUtil)
+    }
 }
