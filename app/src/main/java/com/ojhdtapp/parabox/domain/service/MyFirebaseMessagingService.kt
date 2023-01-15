@@ -17,6 +17,7 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.google.gson.Gson
 import com.ojhdtapp.parabox.core.util.*
+import com.ojhdtapp.parabox.data.remote.dto.server.ServerMessageDto
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
@@ -196,7 +197,15 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                     }
                 }
 
-                else -> {}
+                "server" -> {
+//                    Log.d("parabox", dtoJson.toString())
+                    val dto = dtoJson?.let { gson.fromJson(it, ServerMessageDto::class.java) }
+                    Log.d("parabox", "Message data payload: $dto")
+                }
+
+                else -> {
+
+                }
             }
         }
         super.onMessageReceived(remoteMessage)
