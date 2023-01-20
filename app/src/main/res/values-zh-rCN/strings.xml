@@ -504,6 +504,6 @@
     <string name="chat_files_management">会话资源管理</string>
     <string name="delete_chat_files_time_range">会话资源删除范围</string>
     <string name="delete_chat_files_all_subtitle">所有图片，语音将被删除\n预计可释放 %1$s 空间</string>
-    <string name="delete_chat_files_days_ago_subtitle">于 $1$s 天或更早前接收的图片，语音将被删除\n预计可释放 %2$s 空间</string>
+    <string name="delete_chat_files_days_ago_subtitle">于 %1$s 天或更早前接收的图片，语音将被删除\n预计可释放 %2$s 空间</string>
     <string name="documentation">用户文档</string>
 </resources>

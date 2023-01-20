@@ -92,7 +92,7 @@ fun AmplitudeIndicator(
 //            }
 //        }
         LaunchedEffect(key1 = progressFraction) {
-            if (!state.isScrollInProgress) {
+            if (!state.isScrollInProgress && amplitudeList.isNotEmpty()) {
                 if (progressFraction <= 1f) {
 //                    Log.d("parabox", "${progressFraction} * ${widthPx} = ${widthPx * progressFraction}")
                     state.scrollToItem(0, (widthPx * progressFraction).roundToInt())

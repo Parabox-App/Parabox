@@ -3,17 +3,10 @@ package com.ojhdtapp.parabox.domain.service
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
-import android.graphics.drawable.BitmapDrawable
-import android.net.Uri
 import android.os.IBinder
 import android.util.Log
 import android.widget.Toast
-import androidx.core.net.toUri
 import androidx.datastore.preferences.core.edit
-import androidx.lifecycle.LifecycleService
-import coil.ImageLoader
-import coil.request.ImageRequest
-import coil.request.SuccessResult
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.google.gson.Gson
@@ -21,13 +14,14 @@ import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.core.util.FileUtil.toSafeFilename
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.FcmMapping
-import com.ojhdtapp.parabox.data.remote.dto.server.ServerMessageDto
+import com.ojhdtapp.parabox.data.local.entity.FcmMappingSessionIdUpdate
+import com.ojhdtapp.parabox.data.remote.dto.server.ServerReceiveMessageDto
 import com.ojhdtapp.parabox.data.remote.dto.server.content.toDownloadedMessageContentList
 import com.ojhdtapp.parabox.data.remote.dto.server.content.toMessageContentList
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
-import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.domain.use_case.GetUriFromCloudResourceInfo
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
+import com.ojhdtapp.parabox.domain.use_case.UpdateMessage
 import com.ojhdtapp.parabox.ui.util.WorkingMode
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.PluginConnection
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.Profile
@@ -40,6 +34,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import java.lang.Exception
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -57,6 +52,9 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     @Inject
     lateinit var getUriFromCloudResourceInfo: GetUriFromCloudResourceInfo
 
+    @Inject
+    lateinit var updateMessage: UpdateMessage
+
 
     @OptIn(DelicateCoroutinesApi::class)
     override fun onNewToken(token: String) {
@@ -72,9 +70,15 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     @OptIn(DelicateCoroutinesApi::class)
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         Log.d("parabox", "From: ${remoteMessage.from}")
+        Log.d("parabox", "Message data payload: ${remoteMessage.data}")
         if (remoteMessage.data.isNotEmpty()) {
             val type = remoteMessage.data["type"]
             val dtoJson = remoteMessage.data["dto"]
+            val sessionId = remoteMessage.data["ws_session_id"]
+            Log.d("parabox", "type: $type")
+//            Log.d("parabox", "dto: $dtoJson")
+            Log.d("parabox", "sessionId: $sessionId")
+
             when (type) {
                 "receive" -> {
                     val dto = dtoJson?.let { gson.fromJson(it, ReceiveMessageDto::class.java) }
@@ -166,15 +170,24 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 "server" -> {
 //                    Log.d("parabox", dtoJson.toString())
                     if (dtoJson != null && remoteMessage.from != null) {
-                        val dto = gson.fromJson(dtoJson, ServerMessageDto::class.java)
+
+                        val dto = gson.fromJson(dtoJson, ServerReceiveMessageDto::class.java)
                         Log.d("parabox", "Message data payload: $dto")
                         GlobalScope.launch {
                             val fcmMappingId =
-                                database.fcmMappingDao.getFcmMappingByUid(dto.slaveOriginUid)?.id
+                                database.fcmMappingDao.getFcmMappingByUid(dto.slaveOriginUid)?.id?.also{
+                                    database.fcmMappingDao.updateSessionId(
+                                        FcmMappingSessionIdUpdate(
+                                            id = it,
+                                            sessionId = sessionId!!
+                                        )
+                                    )
+                                }
                                     ?: database.fcmMappingDao.insertFcmMapping(
                                         FcmMapping(
-                                            from = remoteMessage.from!!,
-                                            uid = dto.slaveOriginUid
+                                            from = remoteMessage.senderId!!,
+                                            uid = dto.slaveOriginUid,
+                                            sessionId = sessionId!!
                                         )
                                     )
                             val shouldDownloadCloudResource = false
@@ -235,6 +248,22 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onDeletedMessages() {
         super.onDeletedMessages()
+    }
+
+    override fun onMessageSent(msgId: String) {
+        super.onMessageSent(msgId)
+        GlobalScope.launch(Dispatchers.IO) {
+            Log.d("parabox", "onMessageSent: $msgId")
+            updateMessage.verifiedState(msgId.toLong(), true)
+        }
+    }
+
+    override fun onSendError(msgId: String, exception: Exception) {
+        super.onSendError(msgId, exception)
+        GlobalScope.launch(Dispatchers.IO) {
+            Log.d("parabox", "onSendError: $msgId")
+            updateMessage.verifiedState(msgId.toLong(), false)
+        }
     }
 
     private fun bindOnceAndSend(dto: SendMessageDto) {

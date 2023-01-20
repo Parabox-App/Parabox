@@ -10,6 +10,8 @@ import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.parabox.core.util.toDateAndTimeString
 import com.ojhdtapp.parabox.data.local.entity.ContactEntity
 import com.ojhdtapp.parabox.data.local.entity.MessageEntity
+import com.ojhdtapp.parabox.data.remote.dto.server.content.Content
+import com.ojhdtapp.parabox.data.remote.dto.server.content.Text
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.LatestMessage
@@ -324,7 +326,7 @@ suspend fun List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.M
 }
 
 fun List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent>.filterMissing()
-        : List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent>{
+        : List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent> {
     return this.map {
         when (it) {
             is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Image -> {
@@ -349,6 +351,35 @@ fun List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageCo
                 }
             }
             else -> it
+        }
+    }
+}
+
+fun List<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent>.toFcmMessageContentList(): List<Content> {
+    return this.map {
+        when (it) {
+            is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText -> Text(it.text)
+            is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Image -> com.ojhdtapp.parabox.data.remote.dto.server.content.Image(
+                url = it.url ?: "",
+                cloud_type = it.cloudType!!,
+                cloud_id = it.cloudId!!,
+                file_name = it.fileName ?: "Image_${System.currentTimeMillis().toDateAndTimeString()}.png",
+            )
+            is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Audio -> com.ojhdtapp.parabox.data.remote.dto.server.content.Audio(
+                url = it.url ?: "",
+                cloud_type = it.cloudType!!,
+                cloud_id = it.cloudId!!,
+                file_name = it.fileName ?: "Audio_${System.currentTimeMillis().toDateAndTimeString()}.mp3",
+            )
+            is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.File -> com.ojhdtapp.parabox.data.remote.dto.server.content.File(
+                url = it.url ?: "",
+                cloud_type = it.cloudType!!,
+                cloud_id = it.cloudId!!,
+                file_name = it.name,
+            )
+            else -> {
+                Text("Unsupported message content type")
+            }
         }
     }
 }

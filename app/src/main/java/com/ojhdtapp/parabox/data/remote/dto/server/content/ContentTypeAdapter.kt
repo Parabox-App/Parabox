@@ -62,7 +62,45 @@ class ContentTypeAdapter : TypeAdapter<Content>() {
                         json.endObject()
                         Image(url, cloud_type, cloud_id, file_name)
                     }
-                    else -> throw Exception("Unknown type")
+                    3 -> {
+                        var url = ""
+                        var cloud_type = 0
+                        var cloud_id = ""
+                        var file_name = ""
+                        while (json.hasNext()) {
+                            val name = json.nextName()
+                            when (name) {
+                                "url" -> url = json.nextString()
+                                "cloud_type" -> cloud_type = json.nextInt()
+                                "cloud_id" -> cloud_id = json.nextString()
+                                "file_name" -> file_name = json.nextString()
+                                else -> json.skipValue()
+                            }
+                        }
+                        json.endObject()
+                        Audio(url, cloud_type, cloud_id, file_name)
+                    }
+                    4 -> {
+                        var url = ""
+                        var cloud_type = 0
+                        var cloud_id = ""
+                        var file_name = ""
+                        while (json.hasNext()) {
+                            val name = json.nextName()
+                            when (name) {
+                                "url" -> url = json.nextString()
+                                "cloud_type" -> cloud_type = json.nextInt()
+                                "cloud_id" -> cloud_id = json.nextString()
+                                "file_name" -> file_name = json.nextString()
+                                else -> json.skipValue()
+                            }
+                        }
+                        json.endObject()
+                        File(url, cloud_type, cloud_id, file_name)
+                    }
+                    else -> {
+                        throw Exception("Unknown type")
+                    }
                 }
             }
         }
