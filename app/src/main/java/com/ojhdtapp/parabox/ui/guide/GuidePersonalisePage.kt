@@ -69,9 +69,10 @@ fun GuidePersonalisePage(
     val coroutineScope = rememberCoroutineScope()
     val snackBarHostState = remember { SnackbarHostState() }
 
-    val userName = mainSharedViewModel.userNameFlow.collectAsState(initial = DataStoreKeys.DEFAULT_USER_NAME).value
+    val userName =
+        mainSharedViewModel.userNameFlow.collectAsState(initial = DataStoreKeys.DEFAULT_USER_NAME).value
     val avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value
-    var showDialog by remember{
+    var showDialog by remember {
         mutableStateOf(false)
     }
 
@@ -85,39 +86,9 @@ fun GuidePersonalisePage(
         onDismiss = { showDialog = false }
     )
 
-    BottomSheetScaffold(
-        modifier = Modifier
-            .systemBarsPadding(),
-        snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
-        sheetContent = {
-            Row(
-                modifier = Modifier
-                    .height(56.dp)
-                    .padding(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-
-                OutlinedButton(onClick = {
-                    mainNavController.navigateUp()
-                }) {
-                    Text(text = stringResource(R.string.back))
-                }
-                Spacer(modifier = Modifier.weight(1f))
-                Button(onClick = {
-                    mainNavController.navigate(GuideTermsPageDestination)
-                }) {
-                    Text(text = stringResource(id = R.string.cont))
-                }
-            }
-        },
-        sheetElevation = 0.dp,
-        sheetBackgroundColor = Color.Transparent,
-//        sheetPeekHeight = 56.dp,
-        backgroundColor = Color.Transparent
-    ) { paddingValues ->
+    Column(modifier = Modifier.systemBarsPadding()) {
         LazyColumn(
-            modifier = Modifier.padding(paddingValues),
+            modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(bottom = 16.dp)
         ) {
             item {
@@ -185,5 +156,39 @@ fun GuidePersonalisePage(
                 }
             }
         }
+        Row(
+            modifier = Modifier
+                .height(56.dp)
+                .padding(horizontal = 24.dp),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedButton(onClick = {
+                mainNavController.navigateUp()
+            }) {
+                Text(text = stringResource(R.string.back))
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            Button(onClick = {
+                mainNavController.navigate(GuideTermsPageDestination)
+            }) {
+                Text(text = stringResource(id = R.string.cont))
+            }
+        }
     }
 }
+
+//    BottomSheetScaffold(
+//        modifier = Modifier
+//            .systemBarsPadding(),
+//        snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
+//        sheetContent = {
+//
+//        },
+//        sheetElevation = 0.dp,
+//        sheetBackgroundColor = Color.Transparent,
+////        sheetPeekHeight = 56.dp,
+//        backgroundColor = Color.Transparent
+//    ) { paddingValues ->
+//
+//    }

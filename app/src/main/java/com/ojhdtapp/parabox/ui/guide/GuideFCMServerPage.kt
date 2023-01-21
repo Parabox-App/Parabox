@@ -62,7 +62,7 @@ import kotlinx.coroutines.launch
 @Destination
 @GuideNavGraph(start = false)
 @Composable
-fun GuideFCMSenderPage(
+fun GuideFCMServerPage(
     modifier: Modifier = Modifier,
     mainNavController: NavController,
     mainSharedViewModel: MainSharedViewModel,
@@ -132,7 +132,7 @@ fun GuideFCMSenderPage(
     val qiniuKODOBucket = viewModel.qiniuKODOBucketFlow.collectAsState(initial = "")
     val qiniuKODODomain = viewModel.qiniuKODODomainFlow.collectAsState(initial = "")
 
-    Column(modifier = Modifier.systemBarsPadding()){
+    Column(modifier = Modifier.systemBarsPadding()) {
         LazyColumn(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -143,15 +143,15 @@ fun GuideFCMSenderPage(
                     modifier = Modifier
                         .padding(start = 32.dp, end = 32.dp, top = 32.dp)
                         .size(48.dp),
-                    imageVector = Icons.Outlined.Send,
-                    contentDescription = "fcm sender",
+                    imageVector = Icons.Outlined.ImportExport,
+                    contentDescription = "fcm server",
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
             item {
                 Text(
                     modifier = Modifier.padding(start = 32.dp, end = 32.dp, bottom = 16.dp),
-                    text = stringResource(R.string.setup_fcm_sender_title),
+                    text = "配置 FCM 连接",
                     style = MaterialTheme.typography.displaySmall,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -167,7 +167,7 @@ fun GuideFCMSenderPage(
             item {
                 Text(
                     modifier = Modifier.padding(horizontal = 32.dp),
-                    text = stringResource(R.string.setup_fcm_sender_text_b),
+                    text = "该功能将消息收发操作交由FCM完全接管。运行于私有服务器的消息源将消息通过FCM下游消息推送至本机，本机发出的待发送请求交还FCM上游消息返回至私有服务器处理。这将允许在保持基础功能正常运行的前提下关闭所有后台服务，大幅减少本机的性能开销。",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -175,7 +175,15 @@ fun GuideFCMSenderPage(
             item {
                 Text(
                     modifier = Modifier.padding(horizontal = 32.dp),
-                    text = stringResource(R.string.setup_fcm_sender_text_c),
+                    text = "受 FCM 机制限制，所有消息皆须经过 Parabox 公共消息中转服务器（api.parabox.ojhdt.dev）中转。该过程不会记录您的任何聊天数据。",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            item {
+                Text(
+                    modifier = Modifier.padding(horizontal = 32.dp),
+                    text = "通常需要私有服务器，并遵照教程指引进行相关配置，且具有稳定的 Google 服务连接。",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -261,7 +269,6 @@ fun GuideFCMSenderPage(
                                 }
                             }
                         }
-
                         // 2
                         Row() {
                             Surface(
@@ -284,7 +291,7 @@ fun GuideFCMSenderPage(
                                     contentAlignment = Alignment.CenterStart
                                 ) {
                                     Text(
-                                        text = stringResource(R.string.setup_fcm_sender_step_b_title),
+                                        text = "复制本机 Token",
                                         style = MaterialTheme.typography.bodyLarge,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
@@ -294,37 +301,41 @@ fun GuideFCMSenderPage(
                                     Column(
                                         verticalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
-                                        var tempTokens by remember {
-                                            mutableStateOf(buildString {
-                                                targetTokens.value.forEachIndexed { index, s ->
-                                                    append(s)
-                                                    if (index != targetTokens.value.size - 1)
-                                                        append(",\n")
-                                                }
-                                            })
-                                        }
                                         Text(
                                             modifier = Modifier.padding(vertical = 8.dp),
-                                            text = stringResource(R.string.setup_fcm_sender_step_b_text),
+                                            text = "复制 Token，填入服务器配置文件对应配置项中。",
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
-                                        OutlinedTextField(
-                                            value = tempTokens, onValueChange = { tempTokens = it },
-                                            label = { Text(text = stringResource(R.string.fcm_token)) },
-                                            supportingText = { Text(text = stringResource(R.string.fcm_send_target_token_supporting_text)) },
-                                        )
+                                        FilledTonalButton(
+                                            onClick = {
+                                                if (token.isNotBlank()) {
+                                                    clipboardManager.setText(AnnotatedString(token))
+                                                    coroutineScope.launch {
+                                                        snackBarHostState.showSnackbar(
+                                                            context.getString(
+                                                                R.string.save_to_clipboard
+                                                            )
+                                                        )
+                                                    }
+                                                }
+                                            }) {
+                                            Icon(
+                                                modifier = Modifier.size(18.dp),
+                                                imageVector = Icons.Outlined.ContentCopy,
+                                                contentDescription = "copy to clipboard"
+                                            )
+                                            Text(
+                                                modifier = Modifier.padding(start = 8.dp),
+                                                text = stringResource(R.string.copy_to_clipboard)
+                                            )
+                                        }
                                         Row() {
                                             OutlinedButton(onClick = { currentStep = 1 }) {
                                                 Text(text = stringResource(R.string.last_step))
                                             }
                                             Spacer(modifier = Modifier.width(8.dp))
                                             Button(onClick = {
-                                                viewModel.setFcmTargetTokens(
-                                                    if (tempTokens.isBlank()) emptySet<String>()
-                                                    else tempTokens.split(",").map { it.trim() }
-                                                        .toSet()
-                                                )
                                                 currentStep = 3
                                             }) {
                                                 Text(text = stringResource(R.string.next_step))
@@ -356,89 +367,13 @@ fun GuideFCMSenderPage(
                                     contentAlignment = Alignment.CenterStart
                                 ) {
                                     Text(
-                                        text = stringResource(R.string.setup_fcm_sender_step_c_title),
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                }
-                                Spacer(modifier = Modifier.height(8.dp))
-                                AnimatedVisibility(visible = currentStep == 3) {
-                                    Column(
-                                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        Text(
-                                            modifier = Modifier.padding(vertical = 8.dp),
-                                            text = stringResource(R.string.setup_fcm_sender_step_c_text),
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                        FilledTonalButton(
-                                            onClick = {
-                                                if (token.isNotBlank()) {
-                                                    clipboardManager.setText(AnnotatedString(token))
-                                                    coroutineScope.launch {
-                                                        snackBarHostState.showSnackbar(
-                                                            context.getString(
-                                                                R.string.save_to_clipboard
-                                                            )
-                                                        )
-                                                    }
-                                                }
-                                            }) {
-                                            Icon(
-                                                modifier = Modifier.size(18.dp),
-                                                imageVector = Icons.Outlined.ContentCopy,
-                                                contentDescription = "copy to clipboard"
-                                            )
-                                            Text(
-                                                modifier = Modifier.padding(start = 8.dp),
-                                                text = stringResource(R.string.copy_to_clipboard)
-                                            )
-                                        }
-                                        Row() {
-                                            OutlinedButton(onClick = { currentStep = 2 }) {
-                                                Text(text = stringResource(R.string.last_step))
-                                            }
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Button(onClick = {
-                                                currentStep = 4
-                                            }) {
-                                                Text(text = stringResource(R.string.next_step))
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        // 4
-                        Row() {
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.secondary
-                            ) {
-                                Box(
-                                    modifier = Modifier.size(24.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(text = "4", color = MaterialTheme.colorScheme.onSecondary)
-                                }
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(24.dp),
-                                    contentAlignment = Alignment.CenterStart
-                                ) {
-                                    Text(
                                         text = stringResource(R.string.setup_fcm_sender_step_d_title),
                                         style = MaterialTheme.typography.bodyLarge,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                 }
                                 Spacer(modifier = Modifier.height(8.dp))
-                                AnimatedVisibility(visible = currentStep == 4) {
+                                AnimatedVisibility(visible = currentStep == 3) {
                                     Column(
                                         verticalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
@@ -475,9 +410,15 @@ fun GuideFCMSenderPage(
                                                     FcmConstants.CloudStorage.NONE.ordinal -> context.getString(
                                                         R.string.not_set
                                                     )
-                                                    FcmConstants.CloudStorage.TENCENT_COS.ordinal -> context.getString(R.string.fcm_cloud_storage_tencent_cos)
-                                                    FcmConstants.CloudStorage.QINIU_KODO.ordinal -> context.getString(R.string.fcm_cloud_storage_qiniu_kodo)
-                                                    FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal -> context.getString(R.string.fcm_cloud_storage_google_drive)
+                                                    FcmConstants.CloudStorage.TENCENT_COS.ordinal -> context.getString(
+                                                        R.string.fcm_cloud_storage_tencent_cos
+                                                    )
+                                                    FcmConstants.CloudStorage.QINIU_KODO.ordinal -> context.getString(
+                                                        R.string.fcm_cloud_storage_qiniu_kodo
+                                                    )
+                                                    FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal -> context.getString(
+                                                        R.string.fcm_cloud_storage_google_drive
+                                                    )
                                                     else -> context.getString(R.string.not_set)
                                                 }
                                             }
@@ -490,7 +431,10 @@ fun GuideFCMSenderPage(
                                         )
                                         Text(
                                             modifier = Modifier.padding(vertical = 8.dp),
-                                            text = stringResource(R.string.setup_fcm_sender_step_d_text_b, cloudStorageText),
+                                            text = stringResource(
+                                                R.string.setup_fcm_sender_step_d_text_b,
+                                                cloudStorageText
+                                            ),
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
@@ -578,9 +522,13 @@ fun GuideFCMSenderPage(
                                                             },
                                                             label = { Text(text = "SecretId") },
                                                             singleLine = true,
-                                                            supportingText = { Text(text = stringResource(
-                                                                R.string.fcm_cloud_storage_tencent_cos_secretid_supporting_text)
-                                                            ) },
+                                                            supportingText = {
+                                                                Text(
+                                                                    text = stringResource(
+                                                                        R.string.fcm_cloud_storage_tencent_cos_secretid_supporting_text
+                                                                    )
+                                                                )
+                                                            },
                                                         )
                                                         OutlinedTextField(
                                                             value = tempTencentCOSSecretKey,
@@ -589,9 +537,13 @@ fun GuideFCMSenderPage(
                                                             },
                                                             label = { Text(text = "SecretKey") },
                                                             singleLine = true,
-                                                            supportingText = { Text(text = stringResource(
-                                                                R.string.fcm_cloud_storage_tencent_cos_secretkey_supporting_text)
-                                                            ) },
+                                                            supportingText = {
+                                                                Text(
+                                                                    text = stringResource(
+                                                                        R.string.fcm_cloud_storage_tencent_cos_secretkey_supporting_text
+                                                                    )
+                                                                )
+                                                            },
                                                         )
                                                         OutlinedTextField(
                                                             value = tempTencentCOSRegion,
@@ -600,9 +552,13 @@ fun GuideFCMSenderPage(
                                                             },
                                                             label = { Text(text = "Region") },
                                                             singleLine = true,
-                                                            supportingText = { Text(text = stringResource(
-                                                                R.string.fcm_cloud_storage_tencent_cos_region_supporting_text)
-                                                            ) }
+                                                            supportingText = {
+                                                                Text(
+                                                                    text = stringResource(
+                                                                        R.string.fcm_cloud_storage_tencent_cos_region_supporting_text
+                                                                    )
+                                                                )
+                                                            }
                                                         )
                                                         OutlinedTextField(
                                                             value = tempTencentCOSBucket,
@@ -611,9 +567,13 @@ fun GuideFCMSenderPage(
                                                             },
                                                             label = { Text(text = "Bucket") },
                                                             singleLine = true,
-                                                            supportingText = { Text(text = stringResource(
-                                                                R.string.fcm_cloud_storage_tencent_cos_bucket_supporting_text)
-                                                            ) },
+                                                            supportingText = {
+                                                                Text(
+                                                                    text = stringResource(
+                                                                        R.string.fcm_cloud_storage_tencent_cos_bucket_supporting_text
+                                                                    )
+                                                                )
+                                                            },
                                                         )
                                                     }
                                                 }
@@ -632,9 +592,13 @@ fun GuideFCMSenderPage(
                                                             },
                                                             label = { Text(text = "AccessKey") },
                                                             singleLine = true,
-                                                            supportingText = { Text(text = stringResource(
-                                                                R.string.fcm_cloud_storage_qiniu_kodo_accesskey_supporting_text)
-                                                            ) },
+                                                            supportingText = {
+                                                                Text(
+                                                                    text = stringResource(
+                                                                        R.string.fcm_cloud_storage_qiniu_kodo_accesskey_supporting_text
+                                                                    )
+                                                                )
+                                                            },
                                                         )
                                                         OutlinedTextField(
                                                             value = tempQiniuKODOSecretKey,
@@ -643,9 +607,13 @@ fun GuideFCMSenderPage(
                                                             },
                                                             label = { Text(text = "SecretKey") },
                                                             singleLine = true,
-                                                            supportingText = { Text(text = stringResource(
-                                                                R.string.fcm_cloud_storage_qiniu_kodo_secretkey_supporting_text)
-                                                            ) },
+                                                            supportingText = {
+                                                                Text(
+                                                                    text = stringResource(
+                                                                        R.string.fcm_cloud_storage_qiniu_kodo_secretkey_supporting_text
+                                                                    )
+                                                                )
+                                                            },
                                                         )
                                                         OutlinedTextField(
                                                             value = tempQiniuKODOBucket,
@@ -654,9 +622,13 @@ fun GuideFCMSenderPage(
                                                             },
                                                             label = { Text(text = "Bucket") },
                                                             singleLine = true,
-                                                            supportingText = { Text(text = stringResource(
-                                                                R.string.fcm_cloud_storage_qiniu_kodo_bucket_supporting_text)
-                                                            ) },
+                                                            supportingText = {
+                                                                Text(
+                                                                    text = stringResource(
+                                                                        R.string.fcm_cloud_storage_qiniu_kodo_bucket_supporting_text
+                                                                    )
+                                                                )
+                                                            },
                                                         )
                                                         OutlinedTextField(
                                                             value = tempQiniuKODODomain,
@@ -665,32 +637,38 @@ fun GuideFCMSenderPage(
                                                             },
                                                             label = { Text(text = "Domain") },
                                                             singleLine = true,
-                                                            supportingText = { Text(text = stringResource(
-                                                                R.string.fcm_cloud_storage_qiniu_kodo_domain_supporting_text)
-                                                            ) },
+                                                            supportingText = {
+                                                                Text(
+                                                                    text = stringResource(
+                                                                        R.string.fcm_cloud_storage_qiniu_kodo_domain_supporting_text
+                                                                    )
+                                                                )
+                                                            },
                                                         )
                                                     }
                                                 }
                                                 2 -> {
-                                                    Column(){
+                                                    Column() {
                                                         Text(
                                                             text = stringResource(R.string.fcm_cloud_storage_temp_folder_notice),
                                                             style = MaterialTheme.typography.bodyMedium,
                                                             color = MaterialTheme.colorScheme.onSurface
                                                         )
                                                         Spacer(modifier = Modifier.height(8.dp))
-                                                        if(cloudService == GoogleDriveUtil.SERVICE_CODE){
+                                                        if (cloudService == GoogleDriveUtil.SERVICE_CODE) {
                                                             Text(
                                                                 text = stringResource(R.string.google_drive_connected),
                                                                 style = MaterialTheme.typography.bodyMedium,
                                                                 color = MaterialTheme.colorScheme.onSurface
                                                             )
-                                                        }else{
+                                                        } else {
                                                             FilledTonalButton(
                                                                 onClick = {
                                                                     val signInIntent =
                                                                         (context as MainActivity).getGoogleLoginAuth().signInIntent
-                                                                    gDriveLauncher.launch(signInIntent)
+                                                                    gDriveLauncher.launch(
+                                                                        signInIntent
+                                                                    )
                                                                 }) {
                                                                 FaIcon(
                                                                     faIcon = FaIcons.GoogleDrive,
@@ -698,7 +676,9 @@ fun GuideFCMSenderPage(
                                                                     size = ButtonDefaults.IconSize,
                                                                 )
                                                                 Text(
-                                                                    modifier = Modifier.padding(start = 8.dp),
+                                                                    modifier = Modifier.padding(
+                                                                        start = 8.dp
+                                                                    ),
                                                                     text = stringResource(R.string.connect_to_google_drive)
                                                                 )
                                                             }
@@ -712,7 +692,7 @@ fun GuideFCMSenderPage(
                                             }
                                         }
                                         Row() {
-                                            OutlinedButton(onClick = { currentStep = 3 }) {
+                                            OutlinedButton(onClick = { currentStep = 2 }) {
                                                 Text(text = stringResource(R.string.last_step))
                                             }
                                             Spacer(modifier = Modifier.width(8.dp))
@@ -762,7 +742,7 @@ fun GuideFCMSenderPage(
                                                         )
                                                     }
                                                 }
-                                                currentStep = 5
+                                                currentStep = 4
                                             }) {
                                                 if ((selectedTagIndex == 0 && tempTencentCOSSecretId.isNotBlank() && tempTencentCOSSecretKey.isNotBlank() && tempTencentCOSRegion.isNotBlank() && tempTencentCOSBucket.isNotBlank())
                                                     || (selectedTagIndex == 1 && tempQiniuKODOAccessKey.isNotBlank() && tempQiniuKODOSecretKey.isNotBlank() && tempQiniuKODOBucket.isNotBlank() && tempQiniuKODODomain.isNotBlank())
@@ -788,7 +768,7 @@ fun GuideFCMSenderPage(
                                     modifier = Modifier.size(24.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text(text = "5", color = MaterialTheme.colorScheme.onSecondary)
+                                    Text(text = "4", color = MaterialTheme.colorScheme.onSecondary)
                                 }
                             }
                             Spacer(modifier = Modifier.width(12.dp))
@@ -806,7 +786,7 @@ fun GuideFCMSenderPage(
                                     )
                                 }
                                 Spacer(modifier = Modifier.height(8.dp))
-                                AnimatedVisibility(visible = currentStep == 5) {
+                                AnimatedVisibility(visible = currentStep == 4) {
                                     Column(
                                         verticalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
@@ -825,7 +805,7 @@ fun GuideFCMSenderPage(
 
                                         )
                                         Row() {
-                                            OutlinedButton(onClick = { currentStep = 4 }) {
+                                            OutlinedButton(onClick = { currentStep = 3 }) {
                                                 Text(text = stringResource(R.string.last_step))
                                             }
                                         }
@@ -855,11 +835,9 @@ fun GuideFCMSenderPage(
                 onClick = {
                     mainNavController.navigate(GuideCloudPageDestination)
                 },
-                enabled = !fcmEnabled || targetTokens.value.isNotEmpty()
+                enabled = fcmEnabled && cloudStorage.value != FcmConstants.CloudStorage.NONE.ordinal
             ) {
-                if (!fcmEnabled) {
-                    Text(text = stringResource(R.string.later))
-                } else if (targetTokens.value.isNotEmpty()) {
+                if (fcmEnabled && cloudStorage.value != FcmConstants.CloudStorage.NONE.ordinal) {
                     Text(text = stringResource(R.string.cont))
                 } else {
                     Text(text = stringResource(R.string.unfinished))
@@ -867,19 +845,4 @@ fun GuideFCMSenderPage(
             }
         }
     }
-
-//    BottomSheetScaffold(
-//        modifier = Modifier
-//            .systemBarsPadding(),
-//        snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
-//        sheetContent = {
-//
-//        },
-//        sheetElevation = 0.dp,
-//        sheetBackgroundColor = Color.Transparent,
-////        sheetPeekHeight = 56.dp,
-//        backgroundColor = Color.Transparent
-//    ) { paddingValues ->
-//
-//    }
 }

@@ -80,49 +80,9 @@ fun GuideTermsPage(
         }
     }
 
-    BottomSheetScaffold(
-        modifier = Modifier
-            .systemBarsPadding(),
-        snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
-        sheetContent = {
-            Row(
-                modifier = Modifier
-                    .height(56.dp)
-                    .padding(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-
-                OutlinedButton(onClick = {
-                    mainNavController.navigateUp()
-                }) {
-                    Text(text = stringResource(R.string.back))
-                }
-                Spacer(modifier = Modifier.weight(1f))
-                Button(onClick = {
-                    if (reachedBottom) {
-                        mainNavController.navigate(GuideFinishPageDestination)
-                    } else {
-                        coroutineScope.launch {
-                            listState.animateScrollBy(1000f)
-                        }
-                    }
-                }) {
-                    if(reachedBottom){
-                        Text(text = stringResource(R.string.agree_and_save))
-                    }else{
-                        Text(text = stringResource(R.string.more))
-                    }
-                }
-            }
-        },
-        sheetElevation = 0.dp,
-        sheetBackgroundColor = Color.Transparent,
-//        sheetPeekHeight = 56.dp,
-        backgroundColor = Color.Transparent
-    ) { paddingValues ->
+    Column(modifier = Modifier.systemBarsPadding()){
         LazyColumn(
-            modifier = Modifier.padding(paddingValues),
+            modifier = Modifier.weight(1f),
             state = listState,
             contentPadding = PaddingValues(bottom = 16.dp)
         ) {
@@ -146,10 +106,55 @@ fun GuideTermsPage(
                 Text(
                     modifier = Modifier.padding(horizontal = 32.dp),
                     text = stringResource(id = R.string.terms_content),
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
         }
+        Row(
+            modifier = Modifier
+                .height(56.dp)
+                .padding(horizontal = 24.dp),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            OutlinedButton(onClick = {
+                mainNavController.navigateUp()
+            }) {
+                Text(text = stringResource(R.string.back))
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            Button(onClick = {
+                if (reachedBottom) {
+                    mainNavController.navigate(GuideFinishPageDestination)
+                } else {
+                    coroutineScope.launch {
+                        listState.animateScrollBy(1000f)
+                    }
+                }
+            }) {
+                if(reachedBottom){
+                    Text(text = stringResource(R.string.agree_and_save))
+                }else{
+                    Text(text = stringResource(R.string.more))
+                }
+            }
+        }
     }
+
+//    BottomSheetScaffold(
+//        modifier = Modifier
+//            .systemBarsPadding(),
+//        snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
+//        sheetContent = {
+//
+//        },
+//        sheetElevation = 0.dp,
+//        sheetBackgroundColor = Color.Transparent,
+////        sheetPeekHeight = 56.dp,
+//        backgroundColor = Color.Transparent
+//    ) { paddingValues ->
+//
+//    }
 }

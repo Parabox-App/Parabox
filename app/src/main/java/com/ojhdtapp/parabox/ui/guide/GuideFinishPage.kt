@@ -50,47 +50,9 @@ fun GuideFinishPage(
     val coroutineScope = rememberCoroutineScope()
     val snackBarHostState = remember { SnackbarHostState() }
 
-    BottomSheetScaffold(
-        modifier = Modifier
-            .systemBarsPadding(),
-        snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
-        sheetContent = {
-            Row(
-                modifier = Modifier
-                    .height(56.dp)
-                    .padding(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-
-                OutlinedButton(onClick = {
-                    mainNavController.navigateUp()
-                }) {
-                    Text(text = stringResource(R.string.back))
-                }
-                Spacer(modifier = Modifier.weight(1f))
-                Button(onClick = {
-                    mainNavController.navigate(MenuPageDestination) {
-                        popUpTo(NavGraphs.root)
-                        launchSingleTop = true
-                    }
-                    coroutineScope.launch {
-                        context.dataStore.edit {
-                            it[DataStoreKeys.IS_FIRST_LAUNCH] = false
-                        }
-                    }
-                }) {
-                    Text(text = stringResource(R.string.finish))
-                }
-            }
-        },
-        sheetElevation = 0.dp,
-        sheetBackgroundColor = Color.Transparent,
-//        sheetPeekHeight = 56.dp,
-        backgroundColor = Color.Transparent
-    ) { paddingValues ->
+    Column(modifier = Modifier.systemBarsPadding()){
         LazyColumn(
-            modifier = Modifier.padding(paddingValues),
+            modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(bottom = 16.dp)
         ) {
             item {
@@ -118,5 +80,48 @@ fun GuideFinishPage(
                 )
             }
         }
+        Row(
+            modifier = Modifier
+                .height(56.dp)
+                .padding(horizontal = 24.dp),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            OutlinedButton(onClick = {
+                mainNavController.navigateUp()
+            }) {
+                Text(text = stringResource(R.string.back))
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            Button(onClick = {
+                mainNavController.navigate(MenuPageDestination) {
+                    popUpTo(NavGraphs.root)
+                    launchSingleTop = true
+                }
+                coroutineScope.launch {
+                    context.dataStore.edit {
+                        it[DataStoreKeys.IS_FIRST_LAUNCH] = false
+                    }
+                }
+            }) {
+                Text(text = stringResource(R.string.finish))
+            }
+        }
     }
+
+//    BottomSheetScaffold(
+//        modifier = Modifier
+//            .systemBarsPadding(),
+//        snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
+//        sheetContent = {
+//
+//        },
+//        sheetElevation = 0.dp,
+//        sheetBackgroundColor = Color.Transparent,
+////        sheetPeekHeight = 56.dp,
+//        backgroundColor = Color.Transparent
+//    ) { paddingValues ->
+//
+//    }
 }

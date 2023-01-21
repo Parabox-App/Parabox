@@ -106,53 +106,9 @@ fun GuideExtensionPage(
         )
     }
 
-    BottomSheetScaffold(
-        modifier = Modifier
-            .systemBarsPadding(),
-        snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
-        sheetContent = {
-            Row(
-                modifier = Modifier
-                    .height(56.dp)
-                    .padding(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-
-                OutlinedButton(onClick = {
-                    mainNavController.navigateUp()
-                }) {
-                    Text(text = stringResource(id = R.string.back))
-                }
-                Spacer(modifier = Modifier.weight(1f))
-                if (!pluginList.any { it.runningStatus == AppModel.RUNNING_STATUS_RUNNING }) {
-                    TextButton(onClick = {
-                        showSkipGuideDialog = true
-                    }) {
-                        Text(text = stringResource(R.string.continue_anyway))
-                    }
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(
-                    onClick = {
-                        mainNavController.navigate(GuideFCMSenderPageDestination)
-                    },
-                    enabled = pluginList.any { it.runningStatus == AppModel.RUNNING_STATUS_RUNNING }
-                ) {
-                    if (pluginList.any { it.runningStatus == AppModel.RUNNING_STATUS_RUNNING }) {
-                        Text(text = stringResource(id = R.string.cont))
-                    } else {
-                        Text(text = stringResource(R.string.unfinished))
-                    }
-                }
-            }
-        },
-        sheetElevation = 0.dp,
-        sheetBackgroundColor = Color.Transparent,
-        backgroundColor = Color.Transparent
-    ) { paddingValues ->
+    Column(modifier = Modifier.systemBarsPadding()){
         LazyColumn(
-            modifier = Modifier.fillMaxHeight().padding(paddingValues),
+            modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(bottom = 16.dp)
         ) {
@@ -191,7 +147,7 @@ fun GuideExtensionPage(
                 )
             }
             item {
-                TextButton(
+                FilledTonalButton(
                     modifier = Modifier.padding(horizontal = 32.dp),
                     onClick = {
                         onEvent(ActivityEvent.ResetExtension)
@@ -316,7 +272,56 @@ fun GuideExtensionPage(
                 }
             }
         }
+        Row(
+            modifier = Modifier
+                .height(56.dp)
+                .padding(horizontal = 24.dp),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            OutlinedButton(onClick = {
+                mainNavController.navigateUp()
+            }) {
+                Text(text = stringResource(id = R.string.back))
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            if (!pluginList.any { it.runningStatus == AppModel.RUNNING_STATUS_RUNNING }) {
+                TextButton(onClick = {
+                    showSkipGuideDialog = true
+                }) {
+                    Text(text = stringResource(R.string.continue_anyway))
+                }
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(
+                onClick = {
+                    mainNavController.navigate(GuideFCMSenderPageDestination)
+                },
+                enabled = pluginList.any { it.runningStatus == AppModel.RUNNING_STATUS_RUNNING }
+            ) {
+                if (pluginList.any { it.runningStatus == AppModel.RUNNING_STATUS_RUNNING }) {
+                    Text(text = stringResource(id = R.string.cont))
+                } else {
+                    Text(text = stringResource(R.string.unfinished))
+                }
+            }
+        }
     }
+
+//    BottomSheetScaffold(
+//        modifier = Modifier
+//            .systemBarsPadding(),
+//        snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
+//        sheetContent = {
+//
+//        },
+//        sheetElevation = 0.dp,
+//        sheetBackgroundColor = Color.Transparent,
+//        backgroundColor = Color.Transparent
+//    ) { paddingValues ->
+//
+//    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
