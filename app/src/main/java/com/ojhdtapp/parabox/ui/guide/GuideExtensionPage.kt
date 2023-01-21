@@ -149,11 +149,10 @@ fun GuideExtensionPage(
         },
         sheetElevation = 0.dp,
         sheetBackgroundColor = Color.Transparent,
-//        sheetPeekHeight = 56.dp,
         backgroundColor = Color.Transparent
     ) { paddingValues ->
         LazyColumn(
-            modifier = Modifier.padding(paddingValues),
+            modifier = Modifier.fillMaxHeight().padding(paddingValues),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(bottom = 16.dp)
         ) {
@@ -255,7 +254,7 @@ fun GuideExtensionPage(
                     Spacer(modifier = Modifier.width(14.dp))
                     HyperlinkText(
                         fullText = stringResource(R.string.extension_suggestion_a),
-                        hyperLinks = mapOf("Google Play" to "https://play.google.com/"),
+                        hyperLinks = mapOf("Google Play" to "https://play.google.com/store/apps/developer?id=Ojhdt+Apps"),
                         linkTextColor = MaterialTheme.colorScheme.primary,
                         textStyle = MaterialTheme.typography.bodyLarge,
                         textColor = MaterialTheme.colorScheme.onSurface
@@ -270,7 +269,7 @@ fun GuideExtensionPage(
                     Spacer(modifier = Modifier.width(14.dp))
                     HyperlinkText(
                         fullText = stringResource(R.string.extension_suggestion_b),
-                        hyperLinks = mapOf("Github" to "https://github.com/"),
+                        hyperLinks = mapOf("Github" to "https://github.com/topics/parabox-extension"),
                         linkTextColor = MaterialTheme.colorScheme.primary,
                         textStyle = MaterialTheme.typography.bodyLarge,
                         textColor = MaterialTheme.colorScheme.onSurface
