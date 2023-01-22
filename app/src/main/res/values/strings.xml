@@ -502,4 +502,8 @@
     <string name="documentation">documentation</string>
     <string name="mark_as_read">标为已读</string>
     <string name="you">您</string>
+    <string name="fcm_role_server">接管模式</string>
+    <string name="fcm_enable_cache">缓存媒体文件</string>
+    <string name="fcm_enable_cache_subtitle_off">可有效避免图片失效。但将显著提升空间占用，建议定期手动清除。</string>
+    <string name="fcm_enable_cache_subtitle_on">媒体文件将被缓存，预计占用更多空间。</string>
 </resources>

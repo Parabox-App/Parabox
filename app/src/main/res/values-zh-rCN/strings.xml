@@ -495,7 +495,7 @@
     <string name="launch_guide_title">启动引导</string>
     <string name="launch_guide_text">进入首次启动引导</string>
     <string name="working_mode_dialog_title">模式说明</string>
-    <string name="working_mode_dialog_text">作为转发端工作时，该功能将从已安装扩展获取消息，转发至目标接收设备。\n作为接收端工作时，该功能将待发送消息回送至目标转发端，由其处理后发送。\n默认以转发模式工作。如需切换至接收模式，请前往工作模式设置更改。</string>
+    <string name="working_mode_dialog_text">作为转发端工作时，该功能将从已安装扩展获取消息，转发至目标接收设备。\n作为接收端工作时，该功能将待发送消息回送至目标转发端，由其处理后发送。\n以接管模式工作时，接收/发送指令都经由 FCM 发送至服务器进行处理。\n默认以转发模式工作。如需切换至接收模式，请前往工作模式设置更改。</string>
     <string name="fcm_cloud_storage_google_drive_need_connecting">需连接 Google Drive。请前往“连接云端服务”设置。</string>
     <string name="fcm_working_mode">运行模式</string>
     <string name="working_mode_subtitle">配置应用工作模式</string>
@@ -508,4 +508,8 @@
     <string name="documentation">用户文档</string>
     <string name="mark_as_read">标为已读</string>
     <string name="you">您</string>
+    <string name="fcm_role_server">接管模式</string>
+    <string name="fcm_enable_cache">缓存媒体文件</string>
+    <string name="fcm_enable_cache_subtitle_off">可有效避免图片失效。但将显著提升空间占用，建议定期手动清除。</string>
+    <string name="fcm_enable_cache_subtitle_on">媒体文件将被缓存，预计占用更多空间。</string>
 </resources>
