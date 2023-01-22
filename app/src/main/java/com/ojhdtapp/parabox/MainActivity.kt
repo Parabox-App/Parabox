@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox
 
 import android.app.Activity
+import android.app.NotificationManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -1480,6 +1481,14 @@ class MainActivity : AppCompatActivity() {
 
         // ML-Kit
         initializeMLKit()
+
+        // FCM Notification Channel
+        notificationUtil.createNotificationChannel(
+            "9999",
+            "FCM",
+            "FCM 推送的消息",
+            NotificationManager.IMPORTANCE_HIGH
+        )
 
 
         WindowCompat.setDecorFitsSystemWindows(window, false)

@@ -500,4 +500,6 @@
     <string name="delete_chat_files_all_subtitle">All pictures, voices will be deleted\nEstimated to free up %1$s space</string>
     <string name="delete_chat_files_days_ago_subtitle">Pictures received in %1$s days or earlier, audio will be deleted\nEstimated to free up %2$s space</string>
     <string name="documentation">documentation</string>
+    <string name="mark_as_read">标为已读</string>
+    <string name="you">您</string>
 </resources>

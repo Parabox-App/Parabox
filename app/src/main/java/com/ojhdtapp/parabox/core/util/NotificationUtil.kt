@@ -15,6 +15,7 @@ import android.content.pm.PackageManager
 import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Icon
 import android.net.Uri
@@ -48,6 +49,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.io.IOException
+import java.net.URL
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -127,40 +129,33 @@ class NotificationUtil(
             contacts = contacts.take(maxCount)
         }
         var shortcuts = contacts.map {
-            val icon = it.profile.avatar?.let { url ->
+            val icon = it.profile.let { profile ->
                 withContext(Dispatchers.IO) {
-                    try {
-                        val loader = ImageLoader(context)
-                        val request = ImageRequest.Builder(context)
-                            .data(url)
-                            .allowHardware(false) // Disable hardware bitmaps.
-                            .build()
-                        val result = (loader.execute(request) as SuccessResult).drawable
-                        val bitmap = (result as BitmapDrawable).bitmap
-                        Icon.createWithAdaptiveBitmap(bitmap)
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                        null
-                    }
-                }
-            } ?: it.profile.avatarUri?.let { uri ->
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
-                    Icon.createWithAdaptiveBitmapContentUri(uri)
-                else Icon.createWithAdaptiveBitmap(
-                    FileUtil.getBitmapFromUri(
-                        context,
-                        Uri.parse(uri)
+                    if (profile.avatar != null || profile.avatarUri != null) {
+                        try {
+                            val loader = ImageLoader(context)
+                            val request = ImageRequest.Builder(context)
+                                .data(profile.avatarUri ?: profile.avatar)
+                                .allowHardware(false) // Disable hardware bitmaps.
+                                .build()
+                            val result = (loader.execute(request) as SuccessResult).drawable
+                            val bitmap = (result as BitmapDrawable).bitmap.getCircledBitmap()
+                            Icon.createWithAdaptiveBitmap(bitmap)
+                        } catch (e: ClassCastException) {
+                            e.printStackTrace()
+                            null
+                        }
+                    } else null
+                } ?: Icon.createWithAdaptiveBitmap(
+                    AvatarUtil.createNamedAvatarBm(
+                        width = 224,
+                        height = 224,
+                        backgroundColor = context.getThemeColor(com.google.android.material.R.attr.colorPrimary),
+                        textColor = context.getThemeColor(com.google.android.material.R.attr.colorOnPrimary),
+                        name = profile.name.ifBlank { null }?.substring(0, 1)?.uppercase(Locale.getDefault())
                     )
                 )
-            } ?: Icon.createWithAdaptiveBitmap(
-                AvatarUtil.createNamedAvatarBm(
-                    width = 224,
-                    height = 224,
-                    backgroundColor = context.getThemeColor(com.google.android.material.R.attr.colorPrimary),
-                    textColor = context.getThemeColor(com.google.android.material.R.attr.colorOnPrimary),
-                    name = it.profile.name.ifBlank { null }?.substring(0, 1)?.uppercase(Locale.getDefault())
-                )
-            )
+            }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 ShortcutInfo.Builder(context, it.contactId.toString())
                     .setLocusId(LocusId(it.contactId.toString()))
@@ -218,7 +213,7 @@ class NotificationUtil(
                 }
             }
             .map { settings ->
-                settings[DataStoreKeys.USER_NAME] ?: "您"
+                settings[DataStoreKeys.USER_NAME] ?: context.getString(R.string.you)
             }
         val userAvatarFlow: Flow<String?> = context.dataStore.data
             .catch { exception ->
@@ -300,7 +295,7 @@ class NotificationUtil(
                                     .build()
                                 val result = (loader.execute(request) as SuccessResult).drawable
                                 val bitmap = (result as BitmapDrawable).bitmap
-                                Icon.createWithAdaptiveBitmap(bitmap)
+                                Icon.createWithAdaptiveBitmap(bitmap.getCircledBitmap())
                             } catch (e: ClassCastException) {
                                 e.printStackTrace()
                                 null
@@ -318,22 +313,32 @@ class NotificationUtil(
                 }
                 val person =
                     Person.Builder().setName(message.profile.name).setIcon(personIcon).build()
-                val groupIcon = contact.profile.avatar?.let { url ->
+                val groupIcon = contact.profile.let { profile ->
                     withContext(Dispatchers.IO) {
-                        try {
-                            val loader = ImageLoader(context)
-                            val request = ImageRequest.Builder(context)
-                                .data(url)
-                                .allowHardware(false) // Disable hardware bitmaps.
-                                .build()
-                            val result = (loader.execute(request) as SuccessResult).drawable
-                            val bitmap = (result as BitmapDrawable).bitmap
-                            Icon.createWithAdaptiveBitmap(bitmap)
-                        } catch (e: ClassCastException) {
-                            e.printStackTrace()
-                            null
-                        }
-                    }
+                        if (profile.avatar != null || profile.avatarUri != null) {
+                            try {
+                                val loader = ImageLoader(context)
+                                val request = ImageRequest.Builder(context)
+                                    .data(profile.avatarUri ?: profile.avatar)
+                                    .allowHardware(false) // Disable hardware bitmaps.
+                                    .build()
+                                val result = (loader.execute(request) as SuccessResult).drawable
+                                val bitmap = (result as BitmapDrawable).bitmap.getCircledBitmap()
+                                Icon.createWithAdaptiveBitmap(bitmap)
+                            } catch (e: ClassCastException) {
+                                e.printStackTrace()
+                                null
+                            }
+                        } else null
+                    } ?: Icon.createWithAdaptiveBitmap(
+                        AvatarUtil.createNamedAvatarBm(
+                            width = 224,
+                            height = 224,
+                            backgroundColor = context.getThemeColor(com.google.android.material.R.attr.colorPrimary),
+                            textColor = context.getThemeColor(com.google.android.material.R.attr.colorOnPrimary),
+                            name = profile.name.ifBlank { null }?.substring(0, 1)?.uppercase(Locale.getDefault())
+                        )
+                    )
                 }
                 Notification.Builder(context, channelId)
                     .setSmallIcon(R.drawable.ic_stat_name)
@@ -351,7 +356,7 @@ class NotificationUtil(
                         Notification.Action
                             .Builder(
                                 Icon.createWithResource(context, R.drawable.baseline_send_24),
-                                "回复",
+                                context.getString(R.string.reply),
                                 replyPendingIntent
                             )
                             .addRemoteInput(remoteInput)
@@ -359,7 +364,7 @@ class NotificationUtil(
                             .build(),
                         Notification.Action.Builder(
                             Icon.createWithResource(context, R.drawable.baseline_mark_chat_read_24),
-                            "标为已读",
+                            context.getString(R.string.mark_as_read),
                             markAsReadPendingIntent
                         ).build()
                     )
@@ -403,7 +408,7 @@ class NotificationUtil(
                                                 e.printStackTrace()
                                                 null
                                             }
-                                        Log.d("parabox", imageUri.toString())
+//                                        Log.d("parabox", imageUri.toString())
                                         setData(mimetype, imageUri)
                                     }
                                 }
@@ -452,13 +457,14 @@ class NotificationUtil(
                         }
                     }
             } else {
+                Log.d("parabox", "old notification pattern")
                 val notificationBuilder = Notification.Builder(context, channelId)
                     .setSmallIcon(R.drawable.ic_stat_name)
                     .setContentTitle(contact.profile.name)
                     .setContentText(message.contents.getContentString())
                     .setContentIntent(launchPendingIntent)
                     .setAutoCancel(true)
-                val senderName = "Me"
+                val senderName = context.getString(R.string.you)
                 Notification.MessagingStyle(senderName)
                     .addMessage("Check this out!", Date().time, senderName)
                     .setConversationTitle(contact.profile.name)

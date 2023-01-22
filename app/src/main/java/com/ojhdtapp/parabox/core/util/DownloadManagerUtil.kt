@@ -38,13 +38,19 @@ object DownloadManagerUtil {
                     "Parabox" + File.separator + fileName
                 )
             }
-            Looper.prepare()
+            if (Looper.myLooper() == null)
+            {
+                Looper.prepare();
+            }
             Toast.makeText(context, "开始下载${fileName}到/Download/Parabox", Toast.LENGTH_SHORT)
                 .show()
             downloadManager.enqueue(request)
         } catch (e: Exception) {
             e.printStackTrace()
-            Looper.prepare()
+            if (Looper.myLooper() == null)
+            {
+                Looper.prepare();
+            }
             Toast.makeText(context, "下载失败", Toast.LENGTH_SHORT).show()
             null
         }
