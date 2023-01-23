@@ -372,7 +372,7 @@ fun AppTheme(
     CompositionLocalProvider(LocalFontSize provides FontSize()) {
         androidx.compose.material3.MaterialTheme(
             colorScheme = colors,
-            typography = AppTypography,
+            typography = GoogleSansTypography,
             content = content
         )
     }
