@@ -15,8 +15,8 @@ android {
         applicationId "com.ojhdtapp.parabox"
         minSdk 26
         targetSdk 33
-        versionCode 12
-        versionName "1.0.10-beta"
+        versionCode 13
+        versionName "1.1.0-RC"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -110,7 +110,7 @@ dependencies {
     androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_version"
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
     implementation "androidx.compose.material:material-icons-extended:$compose_version"
-    implementation "com.google.android.material:material:1.8.0-beta01"
+    implementation "com.google.android.material:material:1.9.0-alpha01"
 
     // Qiniu
     implementation 'com.qiniu:qiniu-java-sdk:7.12.1'

@@ -860,7 +860,6 @@ class MainActivity : AppCompatActivity() {
         db.collection("config").get().addOnSuccessListener { result ->
             if (result != null) {
                 val config = result.documents.firstOrNull()?.data
-
                 val fcm_url = config?.get("fcm_url")?.toString()
                 Log.d("parabox", "fcm_url: $fcm_url")
                 fcm_url?.let {

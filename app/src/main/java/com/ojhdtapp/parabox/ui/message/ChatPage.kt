@@ -51,6 +51,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.*
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.ImeAction
@@ -1855,7 +1856,7 @@ fun MessageBlock(
                         Spacer(modifier = Modifier.height(2.dp))
                     }
                 }
-                Spacer(modifier = Modifier.width(64.dp))
+//                Spacer(modifier = Modifier.width(64.dp))
             }
         }
     }
@@ -2639,6 +2640,8 @@ private fun MessageContent.toLayout(
                     .crossfade(true)
                     .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
                     .build(),
+                error = painterResource(id = R.drawable.image_lost),
+                fallback = painterResource(id = R.drawable.image_lost),
                 imageLoader = imageLoader,
                 contentDescription = "image",
                 contentScale = ContentScale.FillWidth,
