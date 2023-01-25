@@ -506,4 +506,10 @@
     <string name="fcm_enable_cache">Cache media files</string>
     <string name="fcm_enable_cache_subtitle_off">This can effectively avoid image failure. However, it will significantly increase the space occupation, and it is recommended to clear it manually on a regular basis.</string>
     <string name="fcm_enable_cache_subtitle_on">Media files will be cached and are expected to take up more space.</string>
+    <string name="setup_fcm_server_title">Configure FCM connection</string>
+    <string name="setup_fcm_server_text_b">This feature hands over messaging operations completely to FCM. The message source running on the private server pushes the message to the local machine through the FCM downstream message, and the pending sending request sent by the local machine is returned to the FCM upstream message and returned to the private server for processing. This will allow all background services to be turned off while maintaining the normal operation of basic functions, greatly reducing the performance overhead of the machine.</string>
+    <string name="setup_fcm_server_text_c">Restricted by the FCM mechanism, all messages must be relayed through the Parabox public message transfer server (api.parabox.ojhdt.dev). This process does not record any of your chat data.</string>
+    <string name="setup_fcm_server_text_d">Usually requires a private server, configured according to the tutorial guidelines, and has a stable connection to Google services.</string>
+    <string name="setup_fcm_server_step_b_title">Copy FCM token</string>
+    <string name="setup_fcm_server_step_b_text">Copy the Token and fill it in the corresponding configuration item of the server configuration file.</string>
 </resources>
