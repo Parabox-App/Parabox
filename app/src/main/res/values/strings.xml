@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Parabox</string>
     <string name="privacy">Privacy</string>
@@ -198,7 +199,7 @@
     <string name="auto_backup_then_delete_title">Also delete local files</string>
     <string name="auto_backup_then_delete_subtitle_off">Automatically delete local files after backup is complete</string>
     <string name="auto_backup_then_delete_subtitle_on">Enabled</string>
-    <string name="auto_backup_info">When automatic backup is enabled, your target session files will be automatically backed up when the following conditions are met:\n\nWhile connected to a Wi-Fi network\nNot in Low Battery Mode\nDevice is idle\nNot in an "out of storage space" state.</string>
+    <string name="auto_backup_info">When automatic backup is enabled, your target session files will be automatically backed up when the following conditions are met:\n\nWhile connected to a Wi-Fi network\nNot in Low Battery Mode\nDevice is idle\nNot in an \"out of storage space\" state.</string>
     <string name="contact_list">Chat list</string>
     <string name="no_contact">No chat yet</string>
     <string name="user_name_title">User name</string>
