@@ -6,6 +6,7 @@
 ![stars](https://img.shields.io/github/stars/Parabox-App/Parabox)
 [![Telegram](https://img.shields.io/badge/Join-Telegram-red)](https://t.me/parabox_support)
 ![license](https://img.shields.io/github/license/Parabox-App/Parabox)
+[![Crowdin](https://badges.crowdin.net/parabox/localized.svg)](https://crowdin.com/project/parabox)
 
 An instant messaging client with friendly interface, complete functions, and extensibility.
 

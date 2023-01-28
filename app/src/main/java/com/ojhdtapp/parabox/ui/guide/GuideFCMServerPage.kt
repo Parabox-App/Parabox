@@ -151,7 +151,7 @@ fun GuideFCMServerPage(
             item {
                 Text(
                     modifier = Modifier.padding(start = 32.dp, end = 32.dp, bottom = 16.dp),
-                    text = "配置 FCM 连接",
+                    text = stringResource(R.string.setup_fcm_server_title),
                     style = MaterialTheme.typography.displaySmall,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -167,7 +167,7 @@ fun GuideFCMServerPage(
             item {
                 Text(
                     modifier = Modifier.padding(horizontal = 32.dp),
-                    text = "该功能将消息收发操作交由FCM完全接管。运行于私有服务器的消息源将消息通过FCM下游消息推送至本机，本机发出的待发送请求交还FCM上游消息返回至私有服务器处理。这将允许在保持基础功能正常运行的前提下关闭所有后台服务，大幅减少本机的性能开销。",
+                    text = stringResource(R.string.setup_fcm_server_text_b),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -175,7 +175,7 @@ fun GuideFCMServerPage(
             item {
                 Text(
                     modifier = Modifier.padding(horizontal = 32.dp),
-                    text = "受 FCM 机制限制，所有消息皆须经过 Parabox 公共消息中转服务器（api.parabox.ojhdt.dev）中转。该过程不会记录您的任何聊天数据。",
+                    text = stringResource(R.string.setup_fcm_server_text_c),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -183,7 +183,7 @@ fun GuideFCMServerPage(
             item {
                 Text(
                     modifier = Modifier.padding(horizontal = 32.dp),
-                    text = "通常需要私有服务器，并遵照教程指引进行相关配置，且具有稳定的 Google 服务连接。",
+                    text = stringResource(R.string.setup_fcm_server_text_d),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -291,7 +291,7 @@ fun GuideFCMServerPage(
                                     contentAlignment = Alignment.CenterStart
                                 ) {
                                     Text(
-                                        text = "复制本机 Token",
+                                        text = stringResource(R.string.setup_fcm_server_step_b_title),
                                         style = MaterialTheme.typography.bodyLarge,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
@@ -303,7 +303,7 @@ fun GuideFCMServerPage(
                                     ) {
                                         Text(
                                             modifier = Modifier.padding(vertical = 8.dp),
-                                            text = "复制 Token，填入服务器配置文件对应配置项中。",
+                                            text = stringResource(R.string.setup_fcm_server_step_b_text),
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
