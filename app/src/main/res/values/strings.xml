@@ -506,4 +506,6 @@
     <string name="fcm_enable_cache">Cache media files</string>
     <string name="fcm_enable_cache_subtitle_off">This can effectively avoid image failure. However, it will significantly increase the space occupation, and it is recommended to clear it manually on a regular basis.</string>
     <string name="fcm_enable_cache_subtitle_on">Media files will be cached and are expected to take up more space.</string>
+    <string name="font_family">Font family</string>
+    <string name="default_font_family">Default</string>
 </resources>

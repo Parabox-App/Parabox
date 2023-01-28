@@ -25,6 +25,12 @@ object Theme {
     const val WATER = 3
     const val PURPLE = 4
 }
+
+object FontFamily {
+    const val SANS_SERIF = 0
+    const val GOOGLE_SANS = 1
+}
+
 private val WillowLightThemeColors = lightColorScheme(
     primary = willow_theme_light_primary,
     onPrimary = willow_theme_light_onPrimary,
@@ -348,7 +354,22 @@ fun AppTheme(
                     ?: Theme.WILLOW
             }
     }
+    val fontFamilyFlow = remember {
+        context.dataStore.data
+            .catch { exception ->
+                if (exception is IOException) {
+                    emit(emptyPreferences())
+                } else {
+                    throw exception
+                }
+            }
+            .map { settings ->
+                settings[DataStoreKeys.SETTINGS_FONT_FAMILY]
+                    ?: FontFamily.SANS_SERIF
+            }
+    }
     val theme = themeFlow.collectAsState(initial = Theme.WILLOW).value
+    val fontFamily = fontFamilyFlow.collectAsState(initial = FontFamily.SANS_SERIF).value
     val colors = when {
         enableDynamicColor && !useDarkTheme -> dynamicLightColorScheme(LocalContext.current)
         enableDynamicColor && useDarkTheme -> dynamicDarkColorScheme(LocalContext.current)
@@ -372,7 +393,10 @@ fun AppTheme(
     CompositionLocalProvider(LocalFontSize provides FontSize()) {
         androidx.compose.material3.MaterialTheme(
             colorScheme = colors,
-            typography = GoogleSansTypography,
+            typography = when (fontFamily) {
+                FontFamily.GOOGLE_SANS -> GoogleSansTypography
+                else -> AppTypography
+            },
             content = content
         )
     }

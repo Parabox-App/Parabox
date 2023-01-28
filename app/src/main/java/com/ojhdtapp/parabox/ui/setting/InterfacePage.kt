@@ -22,6 +22,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
+import com.ojhdtapp.parabox.ui.theme.FontFamily
 import com.ojhdtapp.parabox.ui.theme.Theme
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.PreferencesCategory
@@ -123,6 +124,17 @@ fun InterfacePage(
                         val appLocale: LocaleListCompat = LocaleListCompat.forLanguageTags(it)
                         AppCompatDelegate.setApplicationLocales(appLocale)
                     })
+            }
+            item {
+                PreferencesCategory(text = stringResource(R.string.font_family))
+            }
+            item {
+                SimpleMenuPreference(
+                    title = stringResource(R.string.font_family),
+                    optionsMap = mapOf(FontFamily.SANS_SERIF to stringResource(R.string.default_font_family), FontFamily.GOOGLE_SANS to "Google Sans"),
+                    selectedKey = viewModel.fontFamilyFlow.collectAsState(initial = FontFamily.SANS_SERIF).value,
+                    onSelect = viewModel::setFontFamily
+                )
             }
         }
     }
