@@ -513,6 +513,4 @@
     <string name="setup_fcm_server_text_d">Usually requires a private server, configured according to the tutorial guidelines, and has a stable connection to Google services.</string>
     <string name="setup_fcm_server_step_b_title">Copy FCM token</string>
     <string name="setup_fcm_server_step_b_text">Copy the Token and fill it in the corresponding configuration item of the server configuration file.</string>
-    <string name="font_family">Font family</string>
-    <string name="default_font_family">Default</string>
 </resources>

@@ -28,7 +28,6 @@ object DataStoreKeys{
     val SETTINGS_FCM_ENABLE_CACHE = booleanPreferencesKey("settings_fcm_enable_cache")
     val SETTINGS_ENABLE_DYNAMIC_COLOR = booleanPreferencesKey("settings_enable_dynamic_color")
     val SETTINGS_THEME = intPreferencesKey("settings_theme")
-    val SETTINGS_FONT_FAMILY = intPreferencesKey("settings_font_family")
     val SETTINGS_ML_KIT_ENTITY_EXTRACTION = booleanPreferencesKey("settings_ml_kit_entity_extraction")
     val SETTINGS_ML_KIT_SMART_REPLY = booleanPreferencesKey("settings_ml_kit_smart_reply")
     val SETTINGS_ML_KIT_TRANSLATION = booleanPreferencesKey("settings_ml_kit_translation")
