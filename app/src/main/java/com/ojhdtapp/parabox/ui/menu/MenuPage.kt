@@ -9,6 +9,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -165,7 +166,11 @@ fun MenuPage(
                             messageBadge = mainSharedViewModel.messageBadge.value,
                             onSelfItemClick = {
                                 coroutineScope.launch {
-                                    listState.animateScrollToItem(0)
+                                    if(!listState.canScrollForward){
+                                        listState.animateScrollToItem(0)
+                                    } else {
+                                        listState.animateScrollBy(1000f)
+                                    }
                                 }
                             },
                             onMenuClick = {
@@ -237,7 +242,11 @@ fun MenuPage(
                         messageBadge = mainSharedViewModel.messageBadge.value,
                         onSelfItemClick = {
                             coroutineScope.launch {
-                                listState.animateScrollToItem(0)
+                                if(!listState.canScrollForward){
+                                    listState.animateScrollToItem(0)
+                                } else {
+                                    listState.animateScrollBy(1000f)
+                                }
                             }
                         },
                     )
