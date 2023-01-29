@@ -112,10 +112,17 @@ class MainRepositoryImpl @Inject constructor(
 
 
             // Update Avatar or Anything Else Here
-            database.contactDao.getPluginConnectionWithContacts(dto.pluginConnection.objectId).let {
-                database.contactDao.updateContact(it.contactList.map {
+            database.contactDao.getPluginConnectionWithContacts(dto.pluginConnection.objectId).let { pluginConnectionWithContacts ->
+                database.contactDao.updateContact(pluginConnectionWithContacts.contactList.map {
                     it.copy(
-                        profile = if (it.senderId == it.contactId) dto.subjectProfile.toProfile(context) else it.profile,
+                        profile = dto.subjectProfile.toProfile(context).let{ newProfile ->
+                            it.profile.copy(
+                                name = newProfile.name,
+                                avatar = newProfile.avatar,
+                                avatarUri = newProfile.avatarUri,
+                                id = newProfile.id
+                            )
+                        },
                         latestMessage =
                         if (it.latestMessage != null && it.latestMessage.timestamp < dto.timestamp) {
                             LatestMessage(
@@ -372,6 +379,17 @@ class MainRepositoryImpl @Inject constructor(
                 profile.name,
                 profile.avatar,
                 profile.avatarUri,
+                tags
+            )
+        )
+    }
+
+    override fun updateCustomizedContactProfile(id: Long, profile: Profile, tags: List<String>) {
+        database.contactDao.updateCustomizedProfileAndTag(
+            ContactCustomizedProfileAndTagUpdate(
+                id,
+                profile.customizedName,
+                profile.customizedUri,
                 tags
             )
         )

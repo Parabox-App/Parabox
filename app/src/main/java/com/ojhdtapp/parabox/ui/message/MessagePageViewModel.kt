@@ -493,6 +493,12 @@ class MessagePageViewModel @Inject constructor(
         }
     }
 
+    fun setCustomizedContactProfileAndTag(contactId: Long, profile: Profile, tags: List<String>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            updateContact.customizedProfileAndTag(contactId, profile, tags)
+        }
+    }
+
     fun setContactArchived(contactId: Long, isArchived: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
             updateContact.archivedState(contactId, isArchived)
