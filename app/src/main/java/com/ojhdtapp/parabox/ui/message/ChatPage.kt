@@ -1022,7 +1022,7 @@ fun NormalChatPage(
                         TopAppBar(
                             title = {
                                 Text(
-                                    text = messageState.contact?.profile?.name
+                                    text = messageState.contact?.profile?.customizedName?.ifBlank { null } ?: messageState.contact?.profile?.name
                                         ?: stringResource(R.string.conversation),
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis,
