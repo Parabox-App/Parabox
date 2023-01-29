@@ -2154,9 +2154,8 @@ fun SingleMessage(
                         Spacer(modifier = Modifier.width(64.dp))
                     }
                 }
-                MessageContentContainer(
-                    modifier = modifier
-                        .widthIn(0.dp, messageMaxWidth)
+                Box(
+                    modifier = modifier.widthIn(0.dp, messageMaxWidth)
                         .clip(
                             RoundedCornerShape(
                                 topStart = topStartRadius,
@@ -2172,259 +2171,275 @@ fun SingleMessage(
                             enabled = !isSelected,
                             onClick = onClick,
                             onLongClick = onLongClick
-                        )
+                        ),
+                    contentAlignment = Alignment.Center
+                ){
+                    MessageContentContainer(
+                        modifier = Modifier
+                            .padding(horizontal = 3.dp, vertical = 3.dp)
+                            .clip(
+                                RoundedCornerShape(
+                                    if (message.sentByMe || isFirst) (topStartRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp,
+                                    if (!message.sentByMe || isFirst) (topEndRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp,
+                                    if (!message.sentByMe || isLast) (bottomEndRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp,
+                                    if (message.sentByMe || isLast) (bottomStartRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp
+                                )
+                            )
+
 //                        .clickable(enabled = isSelected, onClick = onClick)
 //                        .animateContentSize()
-                    ,
-                    shouldBreak = message.contents.map {
-                        it is Image || it is QuoteReply || it is Audio || it is File
-                    }.plus(arrayOf(true, true))
-                ) {
-                    message.contents.forEachIndexed { index, messageContent ->
-                        messageContent.toLayout(
-                            textColor,
-                            reverseTextColor,
-                            primaryTextColor,
-                            context,
-                            density,
-                            index,
-                            topStartRadius,
-                            topEndRadius,
-                            message,
-                            bottomEndRadius,
-                            bottomStartRadius,
-                            isSelected,
-                            onQuoteReplyClick = onQuoteReplyClick,
-                            onAudioClick = onAudioClick,
-                        )
-                    }
-                    AnimatedVisibility(visible = translatedText != null) {
-                        Surface(
-                            modifier = Modifier.padding(8.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            color = MaterialTheme.colorScheme.surface,
-                            tonalElevation = 1.dp
-                        ) {
-                            Text(
-                                text = translatedText!!,
-                                modifier = Modifier.padding(12.dp),
-                                color = textColor
+                        ,
+                        shouldBreak = message.contents.map {
+                            it is Image || it is QuoteReply || it is Audio || it is File
+                        }.plus(arrayOf(true, true))
+                    ) {
+                        message.contents.forEachIndexed { index, messageContent ->
+                            messageContent.toLayout(
+                                textColor,
+                                reverseTextColor,
+                                primaryTextColor,
+                                context,
+                                density,
+                                index,
+                                topStartRadius,
+                                topEndRadius,
+                                message,
+                                bottomEndRadius,
+                                bottomStartRadius,
+                                isSelected,
+                                onQuoteReplyClick = onQuoteReplyClick,
+                                onAudioClick = onAudioClick,
                             )
                         }
-                    }
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        items(items = entities) {
-                            when (it.first.type) {
-                                Entity.TYPE_ADDRESS -> {
-                                    AssistChip(
-                                        shape = CircleShape,
-                                        onClick = {
-                                            BrowserUtil.launchMap(context, it.second)
-                                        },
-                                        label = {
-                                            Text(
-                                                text = it.second.ellipsis(maxLength = 10),
-                                                color = textColor
-                                            )
-                                        },
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = Icons.Outlined.Place,
-                                                contentDescription = "address",
-                                                tint = primaryTextColor,
-                                            )
-                                        }
-                                    )
-                                }
-                                Entity.TYPE_DATE_TIME -> {
-                                    val timestamp = it.first.asDateTimeEntity()!!.timestampMillis
-                                    AssistChip(
-                                        shape = CircleShape,
-                                        onClick = {
-                                            if (fromBubble) {
-                                                (context as MainActivity).startActivity(
-                                                    Intent(
-                                                        Intent.ACTION_INSERT
-                                                    ).apply {
-                                                        data = CalendarContract.Events.CONTENT_URI
-                                                        putExtra(
-                                                            CalendarContract.EXTRA_EVENT_BEGIN_TIME,
-                                                            timestamp
-                                                        )
-                                                        putExtra(
-                                                            CalendarContract.EXTRA_EVENT_END_TIME,
-                                                            timestamp
-                                                        )
-                                                    })
-                                            } else {
-                                                (context as MainActivity).startActivity(
-                                                    Intent(
-                                                        Intent.ACTION_INSERT
-                                                    ).apply {
-                                                        data = CalendarContract.Events.CONTENT_URI
-                                                        putExtra(
-                                                            CalendarContract.EXTRA_EVENT_BEGIN_TIME,
-                                                            timestamp
-                                                        )
-                                                        putExtra(
-                                                            CalendarContract.EXTRA_EVENT_END_TIME,
-                                                            timestamp
-                                                        )
-                                                    })
+                        androidx.compose.animation.AnimatedVisibility(visible = translatedText != null) {
+                            Surface(
+                                modifier = Modifier.padding(8.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                color = MaterialTheme.colorScheme.surface,
+                                tonalElevation = 1.dp
+                            ) {
+                                Text(
+                                    text = translatedText!!,
+                                    modifier = Modifier.padding(12.dp),
+                                    color = textColor
+                                )
+                            }
+                        }
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            items(items = entities) {
+                                when (it.first.type) {
+                                    Entity.TYPE_ADDRESS -> {
+                                        AssistChip(
+                                            shape = CircleShape,
+                                            onClick = {
+                                                BrowserUtil.launchMap(context, it.second)
+                                            },
+                                            label = {
+                                                Text(
+                                                    text = it.second.ellipsis(maxLength = 10),
+                                                    color = textColor
+                                                )
+                                            },
+                                            leadingIcon = {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.Place,
+                                                    contentDescription = "address",
+                                                    tint = primaryTextColor,
+                                                )
                                             }
-                                        },
-                                        label = {
-                                            Text(
-                                                text = timestamp.toDescriptiveDateAndTime(),
-                                                color = textColor
-                                            )
-                                        },
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = Icons.Outlined.Event,
-                                                contentDescription = "date",
-                                                tint = primaryTextColor,
-                                            )
-                                        }
-                                    )
-                                }
-                                Entity.TYPE_EMAIL -> {
-                                    AssistChip(
-                                        shape = CircleShape,
-                                        onClick = {
-                                            BrowserUtil.composeEmail(
-                                                context,
-                                                arrayOf(it.second),
-                                                null
-                                            )
-                                        },
-                                        label = { Text(text = it.second, color = textColor) },
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = Icons.Outlined.Email,
-                                                contentDescription = "email",
-                                                tint = primaryTextColor,
-                                            )
-                                        }
-                                    )
-                                }
-                                Entity.TYPE_FLIGHT_NUMBER -> {
-                                    val flightStr = it.first.asFlightNumberEntity()!!
-                                        .let { "${it.airlineCode} ${it.flightNumber}" }
-                                    AssistChip(
-                                        shape = CircleShape,
-                                        onClick = { clipboardManager.setText(AnnotatedString(text = flightStr)) },
-                                        label = {
-                                            Text(text = flightStr, color = textColor)
-                                        },
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = Icons.Outlined.FlightTakeoff,
-                                                contentDescription = "flight",
-                                                tint = primaryTextColor,
-                                            )
-                                        }
-                                    )
-                                }
-                                Entity.TYPE_IBAN -> {
-                                    AssistChip(
-                                        shape = CircleShape,
-                                        onClick = { clipboardManager.setText(AnnotatedString(text = it.second)) },
-                                        label = { Text(text = it.second, color = textColor) },
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = Icons.Outlined.AccountBalance,
-                                                contentDescription = "bank",
-                                                tint = primaryTextColor,
-                                            )
-                                        }
-                                    )
-                                }
-                                Entity.TYPE_ISBN -> {
-                                    AssistChip(
-                                        shape = CircleShape,
-                                        onClick = { clipboardManager.setText(AnnotatedString(text = it.second)) },
-                                        label = { Text(text = it.second, color = textColor) },
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = Icons.Outlined.LocalLibrary,
-                                                contentDescription = "isbn",
-                                                tint = primaryTextColor,
-                                            )
-                                        }
-                                    )
-                                }
-                                Entity.TYPE_PAYMENT_CARD -> {
-                                    AssistChip(
-                                        shape = CircleShape,
-                                        onClick = { clipboardManager.setText(AnnotatedString(text = it.second)) },
-                                        label = { Text(text = it.second, color = textColor) },
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = Icons.Outlined.CreditCard,
-                                                contentDescription = "card",
-                                                tint = primaryTextColor,
-                                            )
-                                        }
-                                    )
-                                }
-                                Entity.TYPE_PHONE -> {
-                                    AssistChip(
-                                        shape = CircleShape,
-                                        onClick = {
-                                            if (fromBubble) {
-                                                (context as BubbleActivity).startActivity(
-                                                    Intent(
-                                                        Intent.ACTION_DIAL
-                                                    ).apply {
-                                                        data = Uri.parse("tel:${it.second}")
-                                                    })
-                                            } else {
-                                                (context as MainActivity).startActivity(
-                                                    Intent(
-                                                        Intent.ACTION_DIAL
-                                                    ).apply {
-                                                        data = Uri.parse("tel:${it.second}")
-                                                    })
+                                        )
+                                    }
+                                    Entity.TYPE_DATE_TIME -> {
+                                        val timestamp = it.first.asDateTimeEntity()!!.timestampMillis
+                                        AssistChip(
+                                            shape = CircleShape,
+                                            onClick = {
+                                                if (fromBubble) {
+                                                    (context as MainActivity).startActivity(
+                                                        Intent(
+                                                            Intent.ACTION_INSERT
+                                                        ).apply {
+                                                            data = CalendarContract.Events.CONTENT_URI
+                                                            putExtra(
+                                                                CalendarContract.EXTRA_EVENT_BEGIN_TIME,
+                                                                timestamp
+                                                            )
+                                                            putExtra(
+                                                                CalendarContract.EXTRA_EVENT_END_TIME,
+                                                                timestamp
+                                                            )
+                                                        })
+                                                } else {
+                                                    (context as MainActivity).startActivity(
+                                                        Intent(
+                                                            Intent.ACTION_INSERT
+                                                        ).apply {
+                                                            data = CalendarContract.Events.CONTENT_URI
+                                                            putExtra(
+                                                                CalendarContract.EXTRA_EVENT_BEGIN_TIME,
+                                                                timestamp
+                                                            )
+                                                            putExtra(
+                                                                CalendarContract.EXTRA_EVENT_END_TIME,
+                                                                timestamp
+                                                            )
+                                                        })
+                                                }
+                                            },
+                                            label = {
+                                                Text(
+                                                    text = timestamp.toDescriptiveDateAndTime(),
+                                                    color = textColor
+                                                )
+                                            },
+                                            leadingIcon = {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.Event,
+                                                    contentDescription = "date",
+                                                    tint = primaryTextColor,
+                                                )
                                             }
-                                        },
-                                        label = { Text(text = it.second, color = textColor) },
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = Icons.Outlined.Call,
-                                                contentDescription = "call",
-                                                tint = primaryTextColor,
-                                            )
-                                        }
-                                    )
+                                        )
+                                    }
+                                    Entity.TYPE_EMAIL -> {
+                                        AssistChip(
+                                            shape = CircleShape,
+                                            onClick = {
+                                                BrowserUtil.composeEmail(
+                                                    context,
+                                                    arrayOf(it.second),
+                                                    null
+                                                )
+                                            },
+                                            label = { Text(text = it.second, color = textColor) },
+                                            leadingIcon = {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.Email,
+                                                    contentDescription = "email",
+                                                    tint = primaryTextColor,
+                                                )
+                                            }
+                                        )
+                                    }
+                                    Entity.TYPE_FLIGHT_NUMBER -> {
+                                        val flightStr = it.first.asFlightNumberEntity()!!
+                                            .let { "${it.airlineCode} ${it.flightNumber}" }
+                                        AssistChip(
+                                            shape = CircleShape,
+                                            onClick = { clipboardManager.setText(AnnotatedString(text = flightStr)) },
+                                            label = {
+                                                Text(text = flightStr, color = textColor)
+                                            },
+                                            leadingIcon = {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.FlightTakeoff,
+                                                    contentDescription = "flight",
+                                                    tint = primaryTextColor,
+                                                )
+                                            }
+                                        )
+                                    }
+                                    Entity.TYPE_IBAN -> {
+                                        AssistChip(
+                                            shape = CircleShape,
+                                            onClick = { clipboardManager.setText(AnnotatedString(text = it.second)) },
+                                            label = { Text(text = it.second, color = textColor) },
+                                            leadingIcon = {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.AccountBalance,
+                                                    contentDescription = "bank",
+                                                    tint = primaryTextColor,
+                                                )
+                                            }
+                                        )
+                                    }
+                                    Entity.TYPE_ISBN -> {
+                                        AssistChip(
+                                            shape = CircleShape,
+                                            onClick = { clipboardManager.setText(AnnotatedString(text = it.second)) },
+                                            label = { Text(text = it.second, color = textColor) },
+                                            leadingIcon = {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.LocalLibrary,
+                                                    contentDescription = "isbn",
+                                                    tint = primaryTextColor,
+                                                )
+                                            }
+                                        )
+                                    }
+                                    Entity.TYPE_PAYMENT_CARD -> {
+                                        AssistChip(
+                                            shape = CircleShape,
+                                            onClick = { clipboardManager.setText(AnnotatedString(text = it.second)) },
+                                            label = { Text(text = it.second, color = textColor) },
+                                            leadingIcon = {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.CreditCard,
+                                                    contentDescription = "card",
+                                                    tint = primaryTextColor,
+                                                )
+                                            }
+                                        )
+                                    }
+                                    Entity.TYPE_PHONE -> {
+                                        AssistChip(
+                                            shape = CircleShape,
+                                            onClick = {
+                                                if (fromBubble) {
+                                                    (context as BubbleActivity).startActivity(
+                                                        Intent(
+                                                            Intent.ACTION_DIAL
+                                                        ).apply {
+                                                            data = Uri.parse("tel:${it.second}")
+                                                        })
+                                                } else {
+                                                    (context as MainActivity).startActivity(
+                                                        Intent(
+                                                            Intent.ACTION_DIAL
+                                                        ).apply {
+                                                            data = Uri.parse("tel:${it.second}")
+                                                        })
+                                                }
+                                            },
+                                            label = { Text(text = it.second, color = textColor) },
+                                            leadingIcon = {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.Call,
+                                                    contentDescription = "call",
+                                                    tint = primaryTextColor,
+                                                )
+                                            }
+                                        )
+                                    }
+                                    Entity.TYPE_URL -> {
+                                        AssistChip(
+                                            shape = CircleShape,
+                                            onClick = { BrowserUtil.launchURL(context, it.second) },
+                                            label = {
+                                                Text(
+                                                    text = it.second.ellipsis(20),
+                                                    color = textColor
+                                                )
+                                            },
+                                            leadingIcon = {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.Link,
+                                                    contentDescription = "url",
+                                                    tint = primaryTextColor,
+                                                )
+                                            }
+                                        )
+                                    }
+                                    else -> {}
                                 }
-                                Entity.TYPE_URL -> {
-                                    AssistChip(
-                                        shape = CircleShape,
-                                        onClick = { BrowserUtil.launchURL(context, it.second) },
-                                        label = {
-                                            Text(
-                                                text = it.second.ellipsis(20),
-                                                color = textColor
-                                            )
-                                        },
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = Icons.Outlined.Link,
-                                                contentDescription = "url",
-                                                tint = primaryTextColor,
-                                            )
-                                        }
-                                    )
-                                }
-                                else -> {}
                             }
                         }
                     }
                 }
+
                 if (!message.sentByMe) {
                     if (isTranslationEnabled) {
                         Box(
@@ -2585,7 +2600,7 @@ private fun MessageContent.toLayout(
 ) {
     when (this) {
         is At, AtAll -> Text(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 9.dp),
             text = getContentString(),
             color = primaryTextColor,
         )
@@ -2593,14 +2608,14 @@ private fun MessageContent.toLayout(
         is PlainText ->
             if (isSelected) {
                 Text(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 9.dp),
                     text = text,
                     color = textColor
                 )
             } else {
                 DisableSelection {
                     Text(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 9.dp),
                         text = text,
                         color = textColor
                     )
@@ -2647,19 +2662,7 @@ private fun MessageContent.toLayout(
                 contentScale = ContentScale.FillWidth,
                 modifier = Modifier
                     .widthIn(128.dp, 320.dp)
-                    .padding(horizontal = 3.dp, vertical = 3.dp)
-                    .clip(
-                        RoundedCornerShape(
-                            if (index == 0) (topStartRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp,
-                            if (index == 0) (topEndRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp,
-                            if (index == message.contents.lastIndex) (bottomEndRadius - 3.dp).coerceAtLeast(
-                                0.dp
-                            ) else 0.dp,
-                            if (index == message.contents.lastIndex) (bottomStartRadius - 3.dp).coerceAtLeast(
-                                0.dp
-                            ) else 0.dp
-                        )
-                    )
+
             )
         }
 
@@ -2733,11 +2736,11 @@ private fun MessageContent.toLayout(
 
         is Audio -> {
             Row(
-                modifier = Modifier.padding(start = 1.dp, end = 12.dp, top = 1.dp, bottom = 1.dp),
+                modifier = Modifier.padding(start = 1.dp, end = 9.dp, top = 1.dp, bottom = 1.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
-                    modifier = Modifier.padding(end = 12.dp),
+                    modifier = Modifier.padding(end = 9.dp),
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.surface,
                     tonalElevation = 1.dp,
@@ -2766,11 +2769,11 @@ private fun MessageContent.toLayout(
 
         is File -> {
             Row(
-                modifier = Modifier.padding(12.dp),
+                modifier = Modifier.padding(9.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
-                    modifier = Modifier.padding(end = 12.dp),
+                    modifier = Modifier.padding(end = 9.dp),
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.surface,
                     tonalElevation = 1.dp,
