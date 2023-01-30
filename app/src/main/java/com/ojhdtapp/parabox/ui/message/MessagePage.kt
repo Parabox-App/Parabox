@@ -405,6 +405,7 @@ fun MessagePage(
                             is DropdownMenuItemEvent.DeleteGrouped -> {
                                 showDeleteGroupedContactConfirm = true
                             }
+                            else -> {}
                         }
                     },
                     onExpandAction = {},

@@ -1300,6 +1300,10 @@ class MainActivity : AppCompatActivity() {
             is ActivityEvent.QueryFCMToken -> {
                 queryFCMToken()
             }
+
+            is ActivityEvent.LaunchApp -> {
+
+            }
         }
     }
 
