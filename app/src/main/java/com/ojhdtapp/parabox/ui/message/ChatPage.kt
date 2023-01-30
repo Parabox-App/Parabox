@@ -93,10 +93,7 @@ import com.ojhdtapp.parabox.ui.bubble.BubbleActivity
 import com.ojhdtapp.parabox.ui.destinations.ChatPageDestination
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.RoundedCornerDropdownMenu
-import com.origeek.imageViewer.previewer.ImagePreviewer
-import com.origeek.imageViewer.previewer.ImagePreviewer
-import com.origeek.imageViewer.previewer.rememberPreviewerState
-import com.origeek.imageViewer.previewer.rememberPreviewerState
+import com.origeek.imageViewer.previewer.*
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -513,11 +510,6 @@ fun NormalChatPage(
             imageMessageList.reversed().forEachIndexed { index, t ->
                 if (t.uriString != null || t.url != null) {
                     val imageId = "${message.messageId}${(lastIndex - index).coerceIn(0, lastIndex)}".toLong()
-//                    val painter = rememberAsyncImagePainter(
-//                        model = ImageRequest.Builder(context)
-//                            .data(t.uriString ?: t.url)
-//                            .build()
-//                    )
                     acc.add(
                         imageId to t
                     )
@@ -1244,7 +1236,7 @@ fun NormalChatPage(
         }
         BackHandler(enabled = imageViewerState.visible) {
             coroutineScope.launch {
-                imageViewerState.close()
+                imageViewerState.closeTransform()
             }
         }
             LazyColumn(
@@ -1335,6 +1327,7 @@ fun NormalChatPage(
                             isTranslationEnabled = mainSharedViewModel.translationFlow.collectAsState(
                                 initial = true
                             ).value,
+                            imageViewerState = imageViewerState,
                             onClickingDismiss = { clickingMessage = null },
                             onClickingEvent = {
                                 when (it) {
@@ -1466,7 +1459,7 @@ fun NormalChatPage(
                                         Log.d("parabox", "imageViewer index: ${index}")
                                         if (index != -1) {
                                             coroutineScope.launch {
-                                                imageViewerState.open(index)
+                                                imageViewerState.openTransform(index)
                                             }
                                         }
                                     } else {
@@ -1577,7 +1570,7 @@ fun NormalChatPage(
                         navigationIcon = {
                             IconButton(onClick = {
                                 coroutineScope.launch {
-                                    imageViewerState.close()
+                                    imageViewerState.closeTransform()
                                 }
                             }) {
                                 Icon(
@@ -1784,6 +1777,7 @@ fun MessageBlock(
     avatarUri: String?,
     fromBubble: Boolean = false,
     isTranslationEnabled: Boolean,
+    imageViewerState: ImagePreviewerState,
     onClickingDismiss: () -> Unit,
     onClickingEvent: (event: SingleMessageEvent) -> Unit,
     onMessageClick: () -> Unit,
@@ -1821,6 +1815,7 @@ fun MessageBlock(
                         clickingMessage = clickingMessage,
                         fromBubble = fromBubble,
                         isTranslationEnabled = isTranslationEnabled,
+                        imageViewerState = imageViewerState,
                         onClickingDismiss = onClickingDismiss,
                         onClickingEvent = onClickingEvent,
                         onClick = onMessageClick,
@@ -1870,6 +1865,7 @@ fun MessageBlock(
                         clickingMessage = clickingMessage,
                         fromBubble = fromBubble,
                         isTranslationEnabled = isTranslationEnabled,
+                        imageViewerState = imageViewerState,
                         onClickingDismiss = onClickingDismiss,
                         onClickingEvent = onClickingEvent,
                         onClick = onMessageClick,
@@ -2065,6 +2061,7 @@ fun SingleMessage(
     clickingMessage: Message?,
     fromBubble: Boolean = false,
     isTranslationEnabled: Boolean,
+    imageViewerState: ImagePreviewerState,
     onClickingDismiss: () -> Unit,
     onClickingEvent: (event: SingleMessageEvent) -> Unit,
     onClick: () -> Unit,
@@ -2241,6 +2238,7 @@ fun SingleMessage(
                                 bottomEndRadius,
                                 bottomStartRadius,
                                 isSelected,
+                                imageViewerState = imageViewerState,
                                 onQuoteReplyClick = onQuoteReplyClick,
                                 onAudioClick = onAudioClick,
                             )
@@ -2629,6 +2627,7 @@ private fun MessageContent.toLayout(
     bottomEndRadius: Dp,
     bottomStartRadius: Dp,
     isSelected: Boolean,
+    imageViewerState: ImagePreviewerState,
     onQuoteReplyClick: (messageId: Long) -> Unit = {},
     onAudioClick: (uri: Uri?, url: String?) -> Unit,
 ) {
@@ -2682,22 +2681,40 @@ private fun MessageContent.toLayout(
                     }
                 }
                 .build()
-            AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
+            val painter = rememberAsyncImagePainter(
+                model = ImageRequest.Builder(context)
                     .data(uriString?.let { Uri.parse(it).replacedIfUnavailable(context)}
                         ?: url)
-                    .crossfade(true)
-                    .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
+                    .size(Size.ORIGINAL)
                     .build(),
                 error = painterResource(id = R.drawable.image_lost),
                 fallback = painterResource(id = R.drawable.image_lost),
-                imageLoader = imageLoader,
-                contentDescription = "image",
-                contentScale = ContentScale.FillWidth,
-                modifier = Modifier
-                    .widthIn(128.dp, 320.dp)
-
+                imageLoader = imageLoader
             )
+            val key = "${message.messageId}0".toLong()
+            TransformImageView(
+                modifier = Modifier
+                    .widthIn(128.dp, 320.dp),
+                key = key,
+                painter = painter,
+                previewerState = imageViewerState,
+            )
+//            AsyncImage(
+//                model = ImageRequest.Builder(LocalContext.current)
+//                    .data(uriString?.let { Uri.parse(it).replacedIfUnavailable(context)}
+//                        ?: url)
+//                    .crossfade(true)
+//                    .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
+//                    .build(),
+//                error = painterResource(id = R.drawable.image_lost),
+//                fallback = painterResource(id = R.drawable.image_lost),
+//                imageLoader = imageLoader,
+//                contentDescription = "image",
+//                contentScale = ContentScale.FillWidth,
+//                modifier = Modifier
+//                    .widthIn(128.dp, 320.dp)
+//
+//            )
         }
 
         is QuoteReply -> {
@@ -2755,6 +2772,7 @@ private fun MessageContent.toLayout(
                             0.dp,
                             0.dp,
                             isSelected,
+                            imageViewerState = imageViewerState,
                             onAudioClick = onAudioClick
                         )
                     }

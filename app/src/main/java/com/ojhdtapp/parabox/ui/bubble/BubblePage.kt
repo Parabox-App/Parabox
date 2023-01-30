@@ -1164,6 +1164,7 @@ fun BubbleChatPage(
                             avatarUri = avatarUri,
                             fromBubble = true,
                             isTranslationEnabled = viewModel.translationFlow.collectAsState(initial = true).value,
+                            imageViewerState = imageViewerState,
                             onClickingDismiss = { clickingMessage = null },
                             onClickingEvent = {
                                 when (it) {
