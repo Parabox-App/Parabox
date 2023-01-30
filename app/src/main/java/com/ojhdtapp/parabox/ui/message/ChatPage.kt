@@ -2,6 +2,7 @@ package com.ojhdtapp.parabox.ui.message
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
 import android.os.Build
@@ -58,11 +59,9 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpOffset
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.*
 import androidx.compose.ui.zIndex
+import androidx.core.graphics.drawable.toBitmap
 import androidx.navigation.NavController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
@@ -77,6 +76,7 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import coil.request.SuccessResult
 import coil.size.Size
+import coil.size.pxOrElse
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.mlkit.nl.entityextraction.*
 import com.ojhdtapp.parabox.MainActivity
@@ -98,9 +98,12 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.navigate
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import kotlin.ranges.coerceAtLeast
+import kotlin.ranges.coerceIn
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -2672,6 +2675,13 @@ private fun MessageContent.toLayout(
 //                    }
 //                }
         is Image -> {
+            var boxWidth by remember {
+                mutableStateOf(128.dp)
+            }
+            var boxHeight by remember {
+                mutableStateOf(0.dp)
+            }
+            val coroutineScope = rememberCoroutineScope()
             val imageLoader = ImageLoader.Builder(context)
                 .components {
                     if (SDK_INT >= 28) {
@@ -2689,16 +2699,44 @@ private fun MessageContent.toLayout(
                     .build(),
                 error = painterResource(id = R.drawable.image_lost),
                 fallback = painterResource(id = R.drawable.image_lost),
-                imageLoader = imageLoader
+                imageLoader = imageLoader,
+                contentScale = ContentScale.FillWidth,
+                onSuccess = {
+                    coroutineScope.launch {
+                        Log.d("parabox", "image size: ${it.result.request.sizeResolver.size()}")
+                        val bitmap = it.result.drawable.toBitmap()
+                        val originalWidthDp = with(density) {
+                            bitmap.width.toDp()
+                        }
+                        val originalHeightDp = with(density) {
+                            bitmap.height.toDp()
+                        }
+                        if (originalWidthDp != 0.dp) {
+                            boxWidth = originalWidthDp.coerceIn(128.dp, 320.dp)
+                            boxHeight = boxWidth / originalWidthDp * originalHeightDp
+                        }
+                    }
+                },
+                onError = {
+                    val bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.image_lost)
+                    boxWidth = with(density) {
+                        bitmap.width.toDp()
+                    }
+                    boxHeight = with(density) {
+                        bitmap.height.toDp()
+                    }
+                }
             )
             val key = "${message.messageId}0".toLong()
-            TransformImageView(
-                modifier = Modifier
-                    .widthIn(128.dp, 320.dp),
-                key = key,
-                painter = painter,
-                previewerState = imageViewerState,
-            )
+            Box(modifier = Modifier.size(boxWidth, boxHeight),
+            ) {
+                TransformImageView(
+                    key = key,
+                    painter = painter,
+                    previewerState = imageViewerState,
+                )
+            }
+
 //            AsyncImage(
 //                model = ImageRequest.Builder(LocalContext.current)
 //                    .data(uriString?.let { Uri.parse(it).replacedIfUnavailable(context)}
