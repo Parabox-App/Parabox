@@ -61,5 +61,7 @@ object DataStoreKeys{
     val QINIU_KODO_BUCKET = stringPreferencesKey("qiniu_kodo_bucket")
     val QINIU_KODO_DOMAIN = stringPreferencesKey("qiniu_kodo_domain")
 
+    val MESSAGE_BADGE_NUM = intPreferencesKey("message_badge_num")
+
     const val DEFAULT_USER_NAME = "Me"
 }
