@@ -68,12 +68,12 @@ class MainSharedViewModel @Inject constructor(
         }
     }
 
-    // Badge
-    private val _messageBadge = mutableStateOf<Int>(0)
-    val messageBadge: State<Int> = _messageBadge
-    fun setMessageBadge(value: Int) {
-        _messageBadge.value = value
-    }
+    // Badge "Use datastore instead"
+//    private val _messageBadge = mutableStateOf<Int>(0)
+//    val messageBadge: State<Int> = _messageBadge
+//    fun setMessageBadge(value: Int) {
+//        _messageBadge.value = value
+//    }
 
     // Messages
     // Tips: Do Not use contacts from response.
@@ -450,4 +450,17 @@ class MainSharedViewModel @Inject constructor(
     fun launchedGuide() {
         _guideLaunchedStateFlow.value = true
     }
+
+    // Message Badge Num
+    val messageBadgeNumFlow = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.MESSAGE_BADGE_NUM] ?: 0
+        }
 }

@@ -517,4 +517,11 @@
     <string name="setup_fcm_server_text_d">通常需要私有服务器，并遵照教程指引进行相关配置，且具有稳定的 Google 服务连接。</string>
     <string name="setup_fcm_server_step_b_title">复制本机 Token</string>
     <string name="setup_fcm_server_step_b_text">复制 Token，填入服务器配置文件对应配置项中。</string>
+    <string name="notification_service_state_channel_name">服务状态</string>
+    <string name="notification_service_state_channel_des">后台服务状态</string>
+    <string name="notification_service_state_title">没有已连接的扩展</string>
+    <string name="notification_service_state_ticker">Parabox 正在后台运行</string>
+    <string name="reply_label">输入回复</string>
+    <string name="notification_group_summary">%1$d条新消息</string>
+    <string name="notification_group_title">新消息</string>
 </resources>

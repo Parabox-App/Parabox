@@ -1,15 +1,19 @@
 package com.ojhdtapp.parabox.ui.message
 
+import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.request.Tags
+import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.ReceiveMessageDto
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendMessageDto
 import com.ojhdtapp.parabox.core.util.Resource
+import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.ContactWithMessages
 import com.ojhdtapp.parabox.domain.model.Message
@@ -20,6 +24,7 @@ import com.ojhdtapp.parabox.domain.use_case.*
 import com.ojhdtapp.parabox.ui.file.FilePageUiEvent
 import com.ojhdtapp.parabox.ui.util.SearchAppBar
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -29,6 +34,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MessagePageViewModel @Inject constructor(
+    @ApplicationContext val context: Context,
     private val handleNewMessage: HandleNewMessage,
     val getContacts: GetContacts,
     val getGroupInfoPack: GetGroupInfoPack,
@@ -121,9 +127,15 @@ class MessagePageViewModel @Inject constructor(
                 when (it) {
                     is Resource.Loading -> ContactState()
                     is Resource.Success -> {
-                        _uiEventFlow.emit(MessagePageUiEvent.UpdateMessageBadge(it.data!!.fold(0) { acc, contact ->
+
+                        val messageBadgeNum = it.data!!.fold(0) { acc, contact ->
                             acc + (contact.latestMessage?.unreadMessagesNum ?: 0)
-                        }))
+                        }
+
+                        context.dataStore.edit { preferences ->
+                            preferences[DataStoreKeys.MESSAGE_BADGE_NUM] = messageBadgeNum
+                        }
+
                         ContactState(
                             isLoading = false,
                             data = it.data.filter {
@@ -346,9 +358,9 @@ class MessagePageViewModel @Inject constructor(
     }
 
     // Badge
-    private suspend fun updateMessageBadge(value: Int) {
-        _uiEventFlow.emit(MessagePageUiEvent.UpdateMessageBadge(value))
-    }
+//    private suspend fun updateMessageBadge(value: Int) {
+//        _uiEventFlow.emit(MessagePageUiEvent.UpdateMessageBadge(value))
+//    }
 
     // Selection
     private val _selectedContactStateList = mutableStateListOf<Contact>()

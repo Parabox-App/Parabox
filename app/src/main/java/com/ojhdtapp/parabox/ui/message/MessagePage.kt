@@ -154,9 +154,9 @@ fun MessagePage(
                         }
                     }
                 }
-                is MessagePageUiEvent.UpdateMessageBadge -> {
-                    mainSharedViewModel.setMessageBadge(it.value)
-                }
+//                is MessagePageUiEvent.UpdateMessageBadge -> {
+//                    mainSharedViewModel.setMessageBadge(it.value)
+//                }
             }
         }
     }
