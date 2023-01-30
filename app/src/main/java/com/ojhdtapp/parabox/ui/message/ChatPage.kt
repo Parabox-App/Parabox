@@ -48,6 +48,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.*
@@ -68,12 +69,14 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import coil.ImageLoader
 import coil.annotation.ExperimentalCoilApi
 import coil.compose.AsyncImage
+import coil.compose.rememberAsyncImagePainter
 import coil.decode.GifDecoder
 import coil.decode.ImageDecoderDecoder
 import coil.imageLoader
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import coil.request.SuccessResult
+import coil.size.Size
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.mlkit.nl.entityextraction.*
 import com.ojhdtapp.parabox.MainActivity
@@ -90,8 +93,10 @@ import com.ojhdtapp.parabox.ui.bubble.BubbleActivity
 import com.ojhdtapp.parabox.ui.destinations.ChatPageDestination
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.RoundedCornerDropdownMenu
-import com.origeek.imageViewer.ImagePreviewer
-import com.origeek.imageViewer.rememberPreviewerState
+import com.origeek.imageViewer.previewer.ImagePreviewer
+import com.origeek.imageViewer.previewer.ImagePreviewer
+import com.origeek.imageViewer.previewer.rememberPreviewerState
+import com.origeek.imageViewer.previewer.rememberPreviewerState
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -500,249 +505,84 @@ fun NormalChatPage(
         mutableStateOf(false)
     }
     // Image Preview
-    val imageViewerState = rememberPreviewerState()
-    LaunchedEffect(messageState) {
-        imageViewerState.hide()
-    }
+//    val imageViewerState = rememberPreviewerState()
     val imageList =
-        produceState(
-            initialValue = emptyList<Pair<Long, ImageBitmap>>(),
-            key1 = lazyPagingItems.itemSnapshotList
-        ) {
-            if (!imageViewerState.show) {
-                value =
-                    lazyPagingItems.itemSnapshotList.items.fold(mutableListOf<Pair<Long, ImageBitmap>>()) { acc, message ->
-                        val imageMessageList = message.contents.filterIsInstance<Image>()
-                        val lastIndex = imageMessageList.lastIndex
-                        imageMessageList.reversed().forEachIndexed { index, t ->
-                            if (t.uriString != null) {
-                                Log.d("parabox", "${t.uriString}")
-                                FileUtil.getBitmapFromUri(context, Uri.parse(t.uriString))?.let {
-                                    acc.add(
-                                        "${message.messageId}${
-                                            (lastIndex - index).coerceIn(
-                                                0,
-                                                lastIndex
-                                            )
-                                        }".toLong() to it.asImageBitmap()
-                                    )
-                                }
-                            } else if (t.url != null) {
-                                val loader = ImageLoader(context)
-                                val request = ImageRequest.Builder(context)
-                                    .data(t.url)
-                                    .allowHardware(false)
-                                    .build()
-                                val bitmap = try {
-                                    val result = (loader.execute(request) as SuccessResult).drawable
-                                    (result as BitmapDrawable).bitmap.asImageBitmap()
-                                } catch (e: Exception) {
-                                    e.printStackTrace()
-                                    ImageBitmap(1, 1)
-                                }
-                                acc.add(
-                                    "${message.messageId}${
-                                        (lastIndex - index).coerceIn(
-                                            0,
-                                            lastIndex
-                                        )
-                                    }".toLong() to bitmap
-                                )
-                            }
-                        }
-                        acc
-                    }.reversed()
+        lazyPagingItems.itemSnapshotList.items.fold(mutableListOf<Pair<Long, Image>>()) { acc, message ->
+            val imageMessageList = message.contents.filterIsInstance<Image>()
+            val lastIndex = imageMessageList.lastIndex
+            imageMessageList.reversed().forEachIndexed { index, t ->
+                if (t.uriString != null || t.url != null) {
+                    val imageId = "${message.messageId}${(lastIndex - index).coerceIn(0, lastIndex)}".toLong()
+//                    val painter = rememberAsyncImagePainter(
+//                        model = ImageRequest.Builder(context)
+//                            .data(t.uriString ?: t.url)
+//                            .build()
+//                    )
+                    acc.add(
+                        imageId to t
+                    )
+                }
             }
-        }
+            acc
+        }.reversed()
+//    val imageList =
+//        produceState(
+//            initialValue = emptyList<Pair<Long, ImageBitmap>>(),
+//            key1 = lazyPagingItems.itemSnapshotList
+//        ) {
+//            if (!imageViewerState.visible) {
+//                value =
+//                    lazyPagingItems.itemSnapshotList.items.fold(mutableListOf<Pair<Long, ImageBitmap>>()) { acc, message ->
+//                        val imageMessageList = message.contents.filterIsInstance<Image>()
+//                        val lastIndex = imageMessageList.lastIndex
+//                        imageMessageList.reversed().forEachIndexed { index, t ->
+//                            val imageId = "${message.messageId}${(lastIndex - index).coerceIn(0, lastIndex)}".toLong()
+//                            if (t.uriString != null) {
+//                                FileUtil.getBitmapFromUri(context, Uri.parse(t.uriString))?.let {
+//                                    acc.add(
+//                                        imageId to it.asImageBitmap()
+//                                    )
+//                                }
+//                            } else if (t.url != null) {
+//                                val loader = ImageLoader(context)
+//                                val request = ImageRequest.Builder(context)
+//                                    .data(t.url)
+//                                    .allowHardware(false)
+//                                    .build()
+//                                val bitmap = try {
+//                                    val result = (loader.execute(request) as SuccessResult).drawable
+//                                    (result as BitmapDrawable).bitmap.asImageBitmap()
+//                                } catch (e: Exception) {
+//                                    e.printStackTrace()
+//                                    ImageBitmap(1, 1)
+//                                }
+//                                acc.add(
+//                                    imageId to bitmap
+//                                )
+//                            }
+//                        }
+//                        acc
+//                    }.reversed()
+//            }
+//        }
+    val imageViewerState = rememberPreviewerState(enableVerticalDrag = true){
+        imageList[it].first
+    }
+    LaunchedEffect(messageState) {
+        imageViewerState.close()
+    }
+
     var showImagePreviewerToolbar by remember {
         mutableStateOf(true)
     }
     var imagePreviewerMenuExpanded by remember {
         mutableStateOf(false)
     }
-    ImagePreviewer(modifier = Modifier.zIndex(9f),
-        count = imageList.value.size,
-        state = imageViewerState,
-        imageLoader = { index ->
-            if (index < imageList.value.size) {
-                imageList.value[index].second
-            } else {
-                ImageBitmap(1, 1)
-            }
-        },
-        foreground = { total, current ->
-            AnimatedVisibility(
-                showImagePreviewerToolbar,
-                enter = expandVertically(),
-                exit = shrinkVertically()
-            ) {
-                androidx.compose.material3.TopAppBar(
-                    modifier = Modifier
-                        .background(Color.Black.copy(alpha = 0.5f))
-                        .statusBarsPadding(),
-                    title = {},
-                    navigationIcon = {
-                        IconButton(onClick = { imageViewerState.hide() }) {
-                            Icon(
-                                imageVector = Icons.Outlined.ArrowBack,
-                                contentDescription = "back"
-                            )
-                        }
-                    },
-                    actions = {
-                        Box(
-                            modifier = Modifier
-                                .wrapContentSize(Alignment.TopStart)
-                        ) {
-                            IconButton(onClick = {
-                                imagePreviewerMenuExpanded = !imagePreviewerMenuExpanded
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Outlined.MoreVert,
-                                    contentDescription = "more"
-                                )
-                            }
-                            RoundedCornerDropdownMenu(
-                                expanded = imagePreviewerMenuExpanded,
-                                onDismissRequest = { imagePreviewerMenuExpanded = false },
-                                modifier = Modifier.width(192.dp)
-                            ) {
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(stringResource(R.string.add_meme))
-                                    },
-                                    onClick = {
-                                        imagePreviewerMenuExpanded = false
-                                        try {
-                                            val imageId =
-                                                imageList.value.getOrNull(current)?.first
-                                                    ?: throw NoSuchElementException("id lost")
-                                            val imageIndex = imageId.toString().last().digitToInt()
-                                            val messageId = imageId.toString().let {
-                                                it.substring(0, it.length - 1).toLong()
-                                            }
-                                            val message =
-                                                lazyPagingItems.itemSnapshotList.items.findLast { it.messageId == messageId }
-                                            val image =
-                                                message?.contents?.filterIsInstance<Image>()
-                                                    ?.getOrNull(imageIndex)
-                                                    ?: throw NoSuchElementException("image lost")
-                                            val path = context.getExternalFilesDir("meme")!!
-                                            image.uriString?.let { uriString ->
-                                                val uri = Uri.parse(uriString)
-                                                FileUtil.copyFileToPath(
-                                                    context, path,
-                                                    image.fileName,
-                                                    uri
-                                                )
-                                            } ?: image.url?.let { url ->
-                                                context.imageLoader.diskCache?.get(url)
-                                                    ?.use { snapshot ->
-                                                        val imageFile = snapshot.data.toFile()
-                                                        FileUtil.copyFileToPath(
-                                                            context,
-                                                            path,
-                                                            image.fileName,
-                                                            imageFile
-                                                        )
-                                                    }
-                                            }
-                                            memeUpdateFlag++
-                                            Toast.makeText(
-                                                context,
-                                                context.getString(R.string.add_meme_text, 1),
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        } catch (e: NoSuchElementException) {
-                                            Toast.makeText(
-                                                context,
-                                                context.getString(R.string.cannot_locate_img),
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        }
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector = Icons.Outlined.FavoriteBorder,
-                                            contentDescription = "favorite"
-                                        )
-                                    })
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(stringResource(R.string.save_to_local))
-                                    },
-                                    onClick = {
-                                        imagePreviewerMenuExpanded = false
-                                        try {
-                                            val imageId =
-                                                imageList.value.getOrNull(current)?.first
-                                                    ?: throw NoSuchElementException("id lost")
-                                            val imageIndex = imageId.toString().last().digitToInt()
-                                            val messageId = imageId.toString().let {
-                                                it.substring(0, it.length - 1).toLong()
-                                            }
-                                            val message =
-                                                lazyPagingItems.itemSnapshotList.items.findLast { it.messageId == messageId }
-                                            val image =
-                                                message?.contents?.filterIsInstance<Image>()
-                                                    ?.getOrNull(imageIndex)
-                                                    ?: throw NoSuchElementException("image lost")
-                                            image.uriString?.let { uriString ->
-                                                FileUtil.saveImageToExternalStorage(
-                                                    context,
-                                                    Uri.parse(uriString)
-                                                )
-                                            } ?: image.url?.let { url ->
-                                                context.imageLoader.diskCache?.get(url)
-                                                    ?.use { snapshot ->
-                                                        val imageFile =
-                                                            snapshot.data.toFile()
-                                                        FileUtil.saveImageToExternalStorage(
-                                                            context,
-                                                            imageFile
-                                                        )
-                                                    }
-                                            } ?: throw NoSuchElementException("image lost")
-                                            memeUpdateFlag++
-                                            Toast.makeText(
-                                                context,
-                                                context.getString(R.string.save_to_local_text, 1),
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        } catch (e: Exception) {
-                                            Toast.makeText(
-                                                context,
-                                                context.getString(R.string.cannot_locate_img),
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        }
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector = Icons.Outlined.FileDownload,
-                                            contentDescription = "download"
-                                        )
-                                    })
-                            }
-                        }
-                    },
-                    colors = TopAppBarDefaults.smallTopAppBarColors(
-                        containerColor = Color.Transparent,
-                        navigationIconContentColor = Color(red = 230, green = 225, blue = 229),
-                        titleContentColor = Color(red = 230, green = 225, blue = 229),
-                        actionIconContentColor = Color(red = 230, green = 225, blue = 229),
-                    )
-                )
-            }
-        },
-        onTap = {
-            showImagePreviewerToolbar = !showImagePreviewerToolbar
-        }
-    )
+
     val useDarkIcons = isSystemInDarkTheme()
     val systemUiController = rememberSystemUiController()
-    LaunchedEffect(imageViewerState.show) {
-        if (imageViewerState.show) {
+    LaunchedEffect(imageViewerState.visible) {
+        if (imageViewerState.visible) {
             systemUiController.setSystemBarsColor(
                 color = Color.Transparent,
                 darkIcons = false
@@ -1402,16 +1242,11 @@ fun NormalChatPage(
                 scaffoldState.bottomSheetState.collapse()
             }
         }
-//        if (messageState.state == MessageState.LOADING) {
-//            Box(
-//                modifier = Modifier
-//                    .fillMaxSize()
-//                    .background(MaterialTheme.colorScheme.surface),
-//                contentAlignment = Alignment.Center
-//            ) {
-//                CircularProgressIndicator()
-//            }
-//        } else {
+        BackHandler(enabled = imageViewerState.visible) {
+            coroutineScope.launch {
+                imageViewerState.close()
+            }
+        }
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -1625,9 +1460,14 @@ fun NormalChatPage(
                                 } else {
                                     if (value.contents.any { it is Image }) {
                                         val index =
-                                            imageList.value.indexOfLast { it.first == "${value.messageId}0".toLong() }
+                                            imageList.indexOfLast { it.first == "${value.messageId}0".toLong() }
+                                        Log.d("parabox", "imageViewer list:${imageList.map{ it.first }}")
+                                        Log.d("parabox", "imageViewer clicked: ${value.messageId}0")
+                                        Log.d("parabox", "imageViewer index: ${index}")
                                         if (index != -1) {
-                                            imageViewerState.show(index)
+                                            coroutineScope.launch {
+                                                imageViewerState.open(index)
+                                            }
                                         }
                                     } else {
                                         clickingMessage = value
@@ -1678,25 +1518,7 @@ fun NormalChatPage(
                             }
                         )
                     }
-
                 }
-//                timedList.forEach { (timestamp, chatBlockList) ->
-//                    items(
-//                        items = chatBlockList,
-//                        key = { "${it.profile.name}:${timestamp}:${it.messages.first().timestamp}" }) { chatBlock ->
-//                        com.ojhdtapp.parabox.ui.message.ChatBlock(
-//                            modifier = Modifier.fillMaxWidth(),
-//                            mainSharedViewModel = mainSharedViewModel,
-//                            data = chatBlock,
-//                            sentByMe = chatBlock.messages.first().sentByMe,
-//                            userName = mainSharedViewModel.userNameFlow.collectAsState(initial = DataStoreKeys.DEFAULT_USER_NAME).value,
-//                            avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
-//                        )
-//                    }
-//                    item(key = "$timestamp") {
-//                        TimeDivider(timestamp = timestamp)
-//                    }
-//                }
                 if (lazyPagingItems.loadState.append == LoadState.Loading) {
                     item("loadingIndicator") {
                         Row(
@@ -1713,7 +1535,210 @@ fun NormalChatPage(
 
             }
         }
-//    }
+    ImagePreviewer(modifier = Modifier.fillMaxSize(),
+        count = imageList.size,
+        state = imageViewerState,
+        imageLoader = { index ->
+            if (index < imageList.size) {
+                val t = imageList[index].second
+                val imageLoader = ImageLoader.Builder(context)
+                    .components {
+                        if (SDK_INT >= 28) {
+                            add(ImageDecoderDecoder.Factory())
+                        } else {
+                            add(GifDecoder.Factory())
+                        }
+                    }
+                    .build()
+                rememberAsyncImagePainter(
+                    model = ImageRequest.Builder(context)
+                        .data(t.uriString?.let { Uri.parse(it).replacedIfUnavailable(context)}
+                            ?: t.url)
+                        .size(Size.ORIGINAL)
+                        .build(),
+                    imageLoader = imageLoader
+                )
+            } else {
+                painterResource(R.drawable.image_lost)
+            }
+        },
+        previewerLayer = {
+            foreground = { current ->
+                AnimatedVisibility(
+                    showImagePreviewerToolbar,
+                    enter = expandVertically(),
+                    exit = shrinkVertically()
+                ) {
+                    androidx.compose.material3.TopAppBar(
+                        modifier = Modifier
+                            .background(Color.Black.copy(alpha = 0.5f))
+                            .statusBarsPadding(),
+                        title = {},
+                        navigationIcon = {
+                            IconButton(onClick = {
+                                coroutineScope.launch {
+                                    imageViewerState.close()
+                                }
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.ArrowBack,
+                                    contentDescription = "back"
+                                )
+                            }
+                        },
+                        actions = {
+                            Box(
+                                modifier = Modifier
+                                    .wrapContentSize(Alignment.TopStart)
+                            ) {
+                                IconButton(onClick = {
+                                    imagePreviewerMenuExpanded = !imagePreviewerMenuExpanded
+                                }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.MoreVert,
+                                        contentDescription = "more"
+                                    )
+                                }
+                                RoundedCornerDropdownMenu(
+                                    expanded = imagePreviewerMenuExpanded,
+                                    onDismissRequest = { imagePreviewerMenuExpanded = false },
+                                    modifier = Modifier.width(192.dp)
+                                ) {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(stringResource(R.string.add_meme))
+                                        },
+                                        onClick = {
+                                            imagePreviewerMenuExpanded = false
+                                            try {
+                                                val imageId =
+                                                    imageList.getOrNull(current)?.first
+                                                        ?: throw NoSuchElementException("id lost")
+                                                val imageIndex = imageId.toString().last().digitToInt()
+                                                val messageId = imageId.toString().let {
+                                                    it.substring(0, it.length - 1).toLong()
+                                                }
+                                                val message =
+                                                    lazyPagingItems.itemSnapshotList.items.findLast { it.messageId == messageId }
+                                                val image =
+                                                    message?.contents?.filterIsInstance<Image>()
+                                                        ?.getOrNull(imageIndex)
+                                                        ?: throw NoSuchElementException("image lost")
+                                                val path = context.getExternalFilesDir("meme")!!
+                                                image.uriString?.let { uriString ->
+                                                    val uri = Uri.parse(uriString)
+                                                    FileUtil.copyFileToPath(
+                                                        context, path,
+                                                        image.fileName,
+                                                        uri
+                                                    )
+                                                } ?: image.url?.let { url ->
+                                                    context.imageLoader.diskCache?.get(url)
+                                                        ?.use { snapshot ->
+                                                            val imageFile = snapshot.data.toFile()
+                                                            FileUtil.copyFileToPath(
+                                                                context,
+                                                                path,
+                                                                image.fileName,
+                                                                imageFile
+                                                            )
+                                                        }
+                                                }
+                                                memeUpdateFlag++
+                                                Toast.makeText(
+                                                    context,
+                                                    context.getString(R.string.add_meme_text, 1),
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            } catch (e: NoSuchElementException) {
+                                                Toast.makeText(
+                                                    context,
+                                                    context.getString(R.string.cannot_locate_img),
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Outlined.FavoriteBorder,
+                                                contentDescription = "favorite"
+                                            )
+                                        })
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(stringResource(R.string.save_to_local))
+                                        },
+                                        onClick = {
+                                            imagePreviewerMenuExpanded = false
+                                            try {
+                                                val imageId =
+                                                    imageList.getOrNull(current)?.first
+                                                        ?: throw NoSuchElementException("id lost")
+                                                val imageIndex = imageId.toString().last().digitToInt()
+                                                val messageId = imageId.toString().let {
+                                                    it.substring(0, it.length - 1).toLong()
+                                                }
+                                                val message =
+                                                    lazyPagingItems.itemSnapshotList.items.findLast { it.messageId == messageId }
+                                                val image =
+                                                    message?.contents?.filterIsInstance<Image>()
+                                                        ?.getOrNull(imageIndex)
+                                                        ?: throw NoSuchElementException("image lost")
+                                                image.uriString?.let { uriString ->
+                                                    FileUtil.saveImageToExternalStorage(
+                                                        context,
+                                                        Uri.parse(uriString)
+                                                    )
+                                                } ?: image.url?.let { url ->
+                                                    context.imageLoader.diskCache?.get(url)
+                                                        ?.use { snapshot ->
+                                                            val imageFile =
+                                                                snapshot.data.toFile()
+                                                            FileUtil.saveImageToExternalStorage(
+                                                                context,
+                                                                imageFile
+                                                            )
+                                                        }
+                                                } ?: throw NoSuchElementException("image lost")
+                                                memeUpdateFlag++
+                                                Toast.makeText(
+                                                    context,
+                                                    context.getString(R.string.save_to_local_text, 1),
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            } catch (e: Exception) {
+                                                Toast.makeText(
+                                                    context,
+                                                    context.getString(R.string.cannot_locate_img),
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Outlined.FileDownload,
+                                                contentDescription = "download"
+                                            )
+                                        })
+                                }
+                            }
+                        },
+                        colors = TopAppBarDefaults.smallTopAppBarColors(
+                            containerColor = Color.Transparent,
+                            navigationIconContentColor = Color(red = 230, green = 225, blue = 229),
+                            titleContentColor = Color(red = 230, green = 225, blue = 229),
+                            actionIconContentColor = Color(red = 230, green = 225, blue = 229),
+                        )
+                    )
+                }
+            }
+        },
+        detectGesture = {
+            onTap = {
+                showImagePreviewerToolbar = !showImagePreviewerToolbar
+            }
+        }
+    )
 }
 //@Composable
 //fun ErrorChatPage(modifier: Modifier = Modifier, errMessage: String, onRetry: () -> Unit) {
@@ -2155,7 +2180,8 @@ fun SingleMessage(
                     }
                 }
                 Box(
-                    modifier = modifier.widthIn(0.dp, messageMaxWidth)
+                    modifier = modifier
+                        .widthIn(0.dp, messageMaxWidth)
                         .clip(
                             RoundedCornerShape(
                                 topStart = topStartRadius,
@@ -2179,10 +2205,18 @@ fun SingleMessage(
                             .padding(horizontal = 3.dp, vertical = 3.dp)
                             .clip(
                                 RoundedCornerShape(
-                                    if (message.sentByMe || isFirst) (topStartRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp,
-                                    if (!message.sentByMe || isFirst) (topEndRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp,
-                                    if (!message.sentByMe || isLast) (bottomEndRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp,
-                                    if (message.sentByMe || isLast) (bottomStartRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp
+                                    if (message.sentByMe || isFirst) (topStartRadius - 3.dp).coerceAtLeast(
+                                        0.dp
+                                    ) else 0.dp,
+                                    if (!message.sentByMe || isFirst) (topEndRadius - 3.dp).coerceAtLeast(
+                                        0.dp
+                                    ) else 0.dp,
+                                    if (!message.sentByMe || isLast) (bottomEndRadius - 3.dp).coerceAtLeast(
+                                        0.dp
+                                    ) else 0.dp,
+                                    if (message.sentByMe || isLast) (bottomStartRadius - 3.dp).coerceAtLeast(
+                                        0.dp
+                                    ) else 0.dp
                                 )
                             )
 
