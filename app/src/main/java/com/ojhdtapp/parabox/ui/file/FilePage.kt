@@ -336,6 +336,7 @@ fun FilePage(
                         is DropdownMenuItemEvent.DeleteFile -> {
                             deleteFileConfirm = true
                         }
+                        else -> {}
                     }
                 }
             )

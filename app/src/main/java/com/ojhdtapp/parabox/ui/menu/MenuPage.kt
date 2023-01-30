@@ -125,6 +125,7 @@ fun MenuPage(
                         navController.navigate(ChatPageDestination())
                     }
                 }
+                else -> {}
             }
         }
     }
