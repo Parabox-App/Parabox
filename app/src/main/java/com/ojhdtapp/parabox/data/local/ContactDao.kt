@@ -31,9 +31,6 @@ interface ContactDao {
     fun updateProfileAndTag(obj: ContactProfileAndTagUpdate)
 
     @Update(entity = ContactEntity::class)
-    fun updateCustomizedProfileAndTag(obj: ContactCustomizedProfileAndTagUpdate)
-
-    @Update(entity = ContactEntity::class)
     fun updateTag(obj: ContactTagUpdate)
 
     @Update(entity = ContactEntity::class)
