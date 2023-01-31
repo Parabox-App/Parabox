@@ -1457,9 +1457,9 @@ fun NormalChatPage(
                                     if (value.contents.any { it is Image }) {
                                         val index =
                                             imageList.indexOfLast { it.first == "${value.messageId}0".toLong() }
-                                        Log.d("parabox", "imageViewer list:${imageList.map{ it.first }}")
-                                        Log.d("parabox", "imageViewer clicked: ${value.messageId}0")
-                                        Log.d("parabox", "imageViewer index: ${index}")
+//                                        Log.d("parabox", "imageViewer list:${imageList.map{ it.first }}")
+//                                        Log.d("parabox", "imageViewer clicked: ${value.messageId}0")
+//                                        Log.d("parabox", "imageViewer index: ${index}")
                                         if (index != -1) {
                                             coroutineScope.launch {
                                                 imageViewerState.openTransform(index)
@@ -1552,7 +1552,9 @@ fun NormalChatPage(
                             ?: t.url)
                         .size(Size.ORIGINAL)
                         .build(),
-                    imageLoader = imageLoader
+                    imageLoader = imageLoader,
+                    error = painterResource(id = R.drawable.image_lost),
+                    fallback = painterResource(id = R.drawable.image_lost),
                 )
             } else {
                 painterResource(R.drawable.image_lost)
