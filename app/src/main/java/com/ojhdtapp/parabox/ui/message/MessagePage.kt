@@ -154,9 +154,9 @@ fun MessagePage(
                         }
                     }
                 }
-//                is MessagePageUiEvent.UpdateMessageBadge -> {
-//                    mainSharedViewModel.setMessageBadge(it.value)
-//                }
+                is MessagePageUiEvent.UpdateMessageBadge -> {
+                    mainSharedViewModel.setMessageBadge(it.value)
+                }
             }
         }
     }
@@ -230,7 +230,7 @@ fun MessagePage(
             onEvent = {
                 when (it) {
                     is EditActionDialogEvent.ProfileAndTagUpdate -> {
-                        viewModel.setCustomizedContactProfileAndTag(it.contactId, it.profile, it.tags)
+                        viewModel.setContactProfileAndTag(it.contactId, it.profile, it.tags)
                         viewModel.addContactTag(it.tags)
                     }
                     is EditActionDialogEvent.EnableNotificationStateUpdate -> {
@@ -405,7 +405,6 @@ fun MessagePage(
                             is DropdownMenuItemEvent.DeleteGrouped -> {
                                 showDeleteGroupedContactConfirm = true
                             }
-                            else -> {}
                         }
                     },
                     onExpandAction = {},
@@ -847,10 +846,9 @@ fun ContactItem(
                                     .data(
                                         AvatarUtil.getAvatar(
                                             context = context,
-                                            uri = contact.profile.customizedUri?.let { Uri.parse(it) }
-                                                ?: contact.profile.avatarUri?.let { Uri.parse(it) },
+                                            uri = contact.profile.avatarUri?.let { Uri.parse(it) },
                                             url = contact.profile.avatar,
-                                            name = contact.profile.customizedName?.ifBlank { null } ?: contact.profile.name,
+                                            name = contact.profile.name,
                                             backgroundColor = MaterialTheme.colorScheme.primary,
                                             textColor = MaterialTheme.colorScheme.onPrimary,
                                         )
@@ -894,7 +892,7 @@ fun ContactItem(
                     )
                 } else {
                     Text(
-                        text = title ?: contact?.profile?.customizedName?.ifBlank { null } ?: contact?.profile?.name ?: context.getString(R.string.contact_name),
+                        text = title ?: contact?.profile?.name ?: context.getString(R.string.contact_name),
                         style = MaterialTheme.typography.titleMedium,
                         color = if (noBackground) MaterialTheme.colorScheme.onSurface else textColor,
                         maxLines = 1

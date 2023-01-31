@@ -1,7 +1,6 @@
 package com.ojhdtapp.parabox.ui
 
 import android.content.Context
-import android.os.Build
 import android.widget.Toast
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateListOf
@@ -28,7 +27,6 @@ import com.ojhdtapp.parabox.domain.use_case.GroupNewContact
 import com.ojhdtapp.parabox.domain.use_case.UpdateContact
 import com.ojhdtapp.parabox.ui.message.AudioRecorderState
 import com.ojhdtapp.parabox.ui.message.MessageState
-import com.ojhdtapp.parabox.ui.theme.Theme
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.*
@@ -70,12 +68,12 @@ class MainSharedViewModel @Inject constructor(
         }
     }
 
-    // Badge "Use datastore instead"
-//    private val _messageBadge = mutableStateOf<Int>(0)
-//    val messageBadge: State<Int> = _messageBadge
-//    fun setMessageBadge(value: Int) {
-//        _messageBadge.value = value
-//    }
+    // Badge
+    private val _messageBadge = mutableStateOf<Int>(0)
+    val messageBadge: State<Int> = _messageBadge
+    fun setMessageBadge(value: Int) {
+        _messageBadge.value = value
+    }
 
     // Messages
     // Tips: Do Not use contacts from response.
@@ -452,42 +450,4 @@ class MainSharedViewModel @Inject constructor(
     fun launchedGuide() {
         _guideLaunchedStateFlow.value = true
     }
-
-    // Message Badge Num
-    val messageBadgeNumFlow = context.dataStore.data
-        .catch { exception ->
-            if (exception is IOException) {
-                emit(emptyPreferences())
-            } else {
-                throw exception
-            }
-        }
-        .map { settings ->
-            settings[DataStoreKeys.MESSAGE_BADGE_NUM] ?: 0
-        }
-
-    val enableDynamicColorFlow: Flow<Boolean> = context.dataStore.data
-        .catch { exception ->
-            if (exception is IOException) {
-                emit(emptyPreferences())
-            } else {
-                throw exception
-            }
-        }
-        .map { settings ->
-            settings[DataStoreKeys.SETTINGS_ENABLE_DYNAMIC_COLOR]
-                ?: (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
-        }
-
-    val themeFlow = context.dataStore.data
-        .catch { exception ->
-            if (exception is IOException) {
-                emit(emptyPreferences())
-            } else {
-                throw exception
-            }
-        }
-        .map { settings ->
-            settings[DataStoreKeys.SETTINGS_THEME] ?: Theme.WILLOW
-        }
 }

@@ -57,18 +57,6 @@ data class ContactProfileAndTagUpdate(
 )
 
 @Entity
-data class ContactCustomizedProfileAndTagUpdate(
-    @ColumnInfo(name = "contactId")
-    val contactId: Long,
-    @ColumnInfo(name = "customizedName")
-    val customizedName: String?,
-    @ColumnInfo(name = "customizedUri")
-    val customizedUri: String?,
-    @ColumnInfo(name = "tags")
-    val tags: List<String>,
-)
-
-@Entity
 data class ContactTagUpdate(
     @ColumnInfo(name = "contactId")
     val contactId: Long,

@@ -67,7 +67,6 @@ import com.ojhdtapp.parabox.domain.model.File
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.message.DropdownMenuItemEvent
 import com.ojhdtapp.parabox.ui.setting.EditUserNameDialog
-import com.ojhdtapp.parabox.ui.theme.Theme
 import com.ojhdtapp.parabox.ui.util.*
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -337,7 +336,6 @@ fun FilePage(
                         is DropdownMenuItemEvent.DeleteFile -> {
                             deleteFileConfirm = true
                         }
-                        else -> {}
                     }
                 }
             )
@@ -390,10 +388,6 @@ fun FilePage(
                     gDriveLauncher = gDriveLauncher,
                     workInfoPairList = mainSharedViewModel.workInfoMap.values.toList(),
                     isRefreshing = viewModel.isRefreshing.value,
-                    theme = mainSharedViewModel.themeFlow.collectAsState(initial = Theme.WILLOW).value,
-                    enableDynamicColor = mainSharedViewModel.enableDynamicColorFlow.collectAsState(
-                        initial = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-                    ).value,
                     onLogoutGoogleDrive = {
                         mainSharedViewModel.saveGoogleDriveAccount(null)
                         coroutineScope.launch {
@@ -477,8 +471,6 @@ fun MainArea(
     gDriveLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>,
     workInfoPairList: List<Pair<File, List<WorkInfo>>>,
     isRefreshing: Boolean,
-    theme: Int,
-    enableDynamicColor: Boolean,
     onLogoutGoogleDrive: () -> Unit,
     onChangeSearchAppBarState: (state: Int) -> Unit,
     onEvent: (ActivityEvent) -> Unit,
@@ -619,16 +611,7 @@ fun MainArea(
                                 .build()
                             AsyncImage(
                                 model = ImageRequest.Builder(context)
-                                    .data(
-                                        when {
-                                            enableDynamicColor -> R.drawable.empty_2_dynamic
-                                            theme == Theme.WILLOW -> R.drawable.empty_2_willow
-                                            theme == Theme.PURPLE -> R.drawable.empty_2_purple
-                                            theme == Theme.SAKURA -> R.drawable.empty_2_sakura
-                                            theme == Theme.GARDENIA -> R.drawable.empty_2_gardenia
-                                            theme == Theme.WATER -> R.drawable.empty_2_water
-                                            else -> R.drawable.empty_2_willow
-                                        }                                    )
+                                    .data(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.empty_2_dynamic else R.drawable.empty_2)
                                     .crossfade(true)
                                     .build(),
                                 imageLoader = imageLoader,

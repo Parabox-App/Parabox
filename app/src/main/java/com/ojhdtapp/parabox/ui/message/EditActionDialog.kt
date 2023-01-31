@@ -41,8 +41,11 @@ import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.ojhdtapp.parabox.R
-import com.ojhdtapp.parabox.core.util.*
+import com.ojhdtapp.parabox.core.util.AvatarUtil
+import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.FileUtil.toSafeFilename
+import com.ojhdtapp.parabox.core.util.FormUtil
+import com.ojhdtapp.parabox.core.util.toDescriptiveTime
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Profile
 import com.ojhdtapp.parabox.ui.util.HashTagEditor
@@ -50,9 +53,8 @@ import com.ojhdtapp.parabox.ui.util.NormalPreference
 import com.ojhdtapp.parabox.ui.util.SwitchPreference
 import com.ojhdtapp.parabox.ui.util.clearFocusOnKeyboardDismiss
 
-@OptIn(
-    ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class,
-    ExperimentalFoundationApi::class, ExperimentalAnimationApi::class
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class,
+    ExperimentalFoundationApi::class
 )
 @Composable
 fun EditActionDialog(
@@ -68,7 +70,7 @@ fun EditActionDialog(
     if (showDialog) {
         val isCompact = sizeClass.widthSizeClass == WindowWidthSizeClass.Compact
         var name by remember {
-            mutableStateOf(contact?.profile?.customizedName ?: contact?.profile?.name ?: "")
+            mutableStateOf(contact?.profile?.name ?: "")
         }
         var nameError by remember {
             mutableStateOf(false)
@@ -82,8 +84,8 @@ fun EditActionDialog(
             mutableStateOf(false)
         }
 
-        var selectedLocalAvatar by remember(contact) {
-            mutableStateOf<Uri?>(contact?.profile?.customizedUri?.let { Uri.parse(it) } ?: contact?.profile?.avatarUri?.let { Uri.parse(it) })
+        var selectedLocalAvatar by remember(contact){
+            mutableStateOf<Uri?>(contact?.profile?.avatarUri?.let { Uri.parse(it) })
         }
 
         val imagePickerLauncher =
@@ -156,7 +158,7 @@ fun EditActionDialog(
                                             bottomEnd = 24.dp
                                         )
                                     ),
-                                painter = painterResource(id = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.background_dynamic else R.drawable.background),
+                                painter = painterResource(id = if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.background_dynamic else R.drawable.background),
                                 contentDescription = "background",
                                 contentScale = ContentScale.Crop
                             )
@@ -166,87 +168,57 @@ fun EditActionDialog(
                                     .width(if (isCompact) 84.dp else 96.dp),
                                 contentAlignment = Alignment.CenterEnd
                             ) {
-                                Box {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(68.dp)
-                                            .clip(CircleShape)
-                                            .background(MaterialTheme.colorScheme.surface)
-                                            .combinedClickable(
-                                                enabled = true,
-                                                onLongClick = {
-                                                    if (isEditing) selectedLocalAvatar = null
-                                                },
-                                                onClick = {
-                                                    if (isEditing) {
-                                                        imagePickerLauncher.launch(
-                                                            PickVisualMediaRequest(
-                                                                ActivityResultContracts.PickVisualMedia.ImageOnly
-                                                            )
+                                Box(
+                                    modifier = Modifier
+                                        .size(68.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.surface)
+                                        .combinedClickable(
+                                            enabled = true,
+                                            onLongClick = {
+                                                if (isEditing) selectedLocalAvatar = null
+                                            },
+                                            onClick = {
+                                                if (isEditing) {
+                                                    imagePickerLauncher.launch(
+                                                        PickVisualMediaRequest(
+                                                            ActivityResultContracts.PickVisualMedia.ImageOnly
                                                         )
-                                                    }
-                                                }
-                                            ),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-
-                                        AsyncImage(
-                                            model = ImageRequest.Builder(LocalContext.current)
-                                                .data(
-                                                    AvatarUtil.getAvatar(
-                                                        context = context,
-                                                        uri = selectedLocalAvatar
-                                                            ?: contact?.profile?.customizedUri?.let {
-                                                                Uri.parse(
-                                                                    it
-                                                                )
-                                                            } ?: contact?.profile?.avatarUri?.let {
-                                                                Uri.parse(
-                                                                    it
-                                                                )
-                                                            },
-                                                        url = contact?.profile?.avatar,
-                                                        name = contact?.profile?.name,
-                                                        backgroundColor = MaterialTheme.colorScheme.primary,
-                                                        textColor = MaterialTheme.colorScheme.onPrimary,
-                                                    )
-                                                )
-                                                .crossfade(true)
-                                                .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
-                                                .build(),
-                                            contentDescription = "avatar",
-                                            contentScale = ContentScale.Crop,
-                                            modifier = Modifier
-                                                .size(64.dp)
-                                                .clip(CircleShape)
-                                        )
-
-                                    }
-                                    Crossfade(
-                                        modifier = Modifier.align(Alignment.BottomEnd),
-                                        targetState = isEditing
-                                    ) {
-                                        if (it) {
-                                            Surface(
-                                                shape = CircleShape,
-                                                color = MaterialTheme.colorScheme.primaryContainer
-                                            ) {
-                                                Box(
-                                                    modifier = Modifier.size(24.dp),
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    Icon(
-                                                        modifier = Modifier.size(16.dp),
-                                                        imageVector = Icons.Outlined.Edit,
-                                                        contentDescription = "edit",
-                                                        tint = MaterialTheme.colorScheme.primary
                                                     )
                                                 }
                                             }
+                                        )
+                                    ,
+                                    contentAlignment = Alignment.Center
+                                ) {
+
+                                    AsyncImage(
+                                        model = ImageRequest.Builder(LocalContext.current)
+                                            .data(
+                                                AvatarUtil.getAvatar(
+                                                    context = context,
+                                                    uri = selectedLocalAvatar ?:contact?.profile?.avatarUri?.let { Uri.parse(it) },
+                                                    url = contact?.profile?.avatar,
+                                                    name = contact?.profile?.name,
+                                                    backgroundColor = MaterialTheme.colorScheme.primary,
+                                                    textColor = MaterialTheme.colorScheme.onPrimary,
+                                                )
+                                            )
+                                            .crossfade(true)
+                                            .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
+                                            .build(),
+                                        contentDescription = "avatar",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .size(64.dp)
+                                            .clip(CircleShape)
+                                    )
+                                    Crossfade(targetState = isEditing) {
+                                        if(it){
+                                            Icon(imageVector = Icons.Outlined.Edit, contentDescription = "edit", tint = MaterialTheme.colorScheme.primary)
                                         }
                                     }
                                 }
-
                             }
                         }
                     }
@@ -313,11 +285,8 @@ fun EditActionDialog(
                                 }
                                 Text(
                                     modifier = Modifier.padding(top = 4.dp),
-                                    text = contact?.latestMessage?.timestamp?.toDescriptiveTime(
-                                        context
-                                    )
-                                        ?.let { stringResource(id = R.string.recent_speech_at, it) }
-                                        ?: stringResource(R.string.no_chat_history),
+                                    text = contact?.latestMessage?.timestamp?.toDescriptiveTime(context)
+                                        ?.let { stringResource(id = R.string.recent_speech_at, it) } ?: stringResource(R.string.no_chat_history),
                                     style = MaterialTheme.typography.labelLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -327,8 +296,7 @@ fun EditActionDialog(
                                     if (it) {
                                         FloatingActionButton(
                                             onClick = {
-                                                if (false) {
-                                                    // if name is empty
+                                                if (name.isEmpty()) {
                                                     nameError = true
                                                 } else {
                                                     contact?.also {
@@ -336,14 +304,12 @@ fun EditActionDialog(
                                                             EditActionDialogEvent.ProfileAndTagUpdate(
                                                                 contactId = it.contactId,
                                                                 profile = contact.profile.copy(
-                                                                    customizedName = name.ifBlank { null },
-                                                                    customizedUri = selectedLocalAvatar?.let { it1 ->
+                                                                    name = name,
+                                                                    avatarUri = selectedLocalAvatar?.let { it1 ->
                                                                         FileUtil.getUriByCopyingFileToPath(
                                                                             context,
-                                                                            context.getExternalFilesDir(
-                                                                                "chat"
-                                                                            )!!,
-                                                                            "Avatar_${name.toSafeFilename()}_${System.currentTimeMillis().toDateAndTimeString()}.png",
+                                                                            context.getExternalFilesDir("chat")!!,
+                                                                            "Avatar_${name.toSafeFilename()}.png",
                                                                             it1
                                                                         )?.toString()
                                                                     }
@@ -396,9 +362,11 @@ fun EditActionDialog(
                                                     onEvent(
                                                         EditActionDialogEvent.ProfileAndTagUpdate(
                                                             contactId = it.contactId,
-                                                            profile = contact.profile.copy(
-                                                                customizedName = name.ifBlank { null },
-                                                                customizedUri = null,
+                                                            profile = Profile(
+                                                                name = name,
+                                                                avatar = contact.profile.avatar,
+                                                                avatarUri = null,
+                                                                id = contact.profile.id,
                                                             ),
                                                             tags = hashTagList.toList()
                                                         )
@@ -447,16 +415,13 @@ fun EditActionDialog(
                                 if (values.size >= 2) {
                                     onConfirmDelete = false
                                     if (!FormUtil.checkTagMinimumCharacter(values[0])) {
-                                        hashTagError =
-                                            context.getString(R.string.hash_tag_error_too_short)
+                                        hashTagError = context.getString(R.string.hash_tag_error_too_short)
                                         hashTagShouldShowError = true
                                     } else if (!FormUtil.checkTagMaximumCharacter(values[0])) {
-                                        hashTagError =
-                                            context.getString(R.string.hash_tag_error_too_long)
+                                        hashTagError = context.getString(R.string.hash_tag_error_too_long)
                                         hashTagShouldShowError = true
                                     } else if (hashTagList.contains(values[0])) {
-                                        hashTagError =
-                                            context.getString(R.string.hash_tag_error_duplicate)
+                                        hashTagError = context.getString(R.string.hash_tag_error_duplicate)
                                         hashTagShouldShowError = true
                                     } else {
                                         hashTagShouldShowError = false
@@ -571,14 +536,10 @@ fun EditActionDialog(
                             enter = expandVertically(),
                             exit = shrinkVertically(),
                         ) {
-                            NormalPreference(
-                                title = stringResource(R.string.delete_contact_title),
-                                subtitle = stringResource(
-                                    R.string.delete_contact_subtitle
-                                ),
-                                warning = true,
-                                horizontalPadding = if (isCompact) 24.dp else 32.dp
-                            ) {
+                            NormalPreference(title = stringResource(R.string.delete_contact_title), subtitle = stringResource(
+                                                            R.string.delete_contact_subtitle),
+                            warning = true,
+                                horizontalPadding = if (isCompact) 24.dp else 32.dp) {
                                 onEvent(EditActionDialogEvent.DeleteGrouped)
                             }
                         }

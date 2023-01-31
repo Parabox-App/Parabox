@@ -9,6 +9,4 @@ data class Profile(
     val avatar: String?,
     val avatarUri: String?,
     val id: Long?,
-    val customizedName: String? = null,
-    val customizedUri: String? = null,
 ) : Parcelable

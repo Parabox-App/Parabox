@@ -33,7 +33,6 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.ojhdtapp.parabox.R
@@ -127,9 +126,7 @@ fun NewContactBottomSheet(
                         if (pluginList.isEmpty()) {
                             Text(
                                 text = stringResource(R.string.no_plugin_connection),
-                                style = MaterialTheme.typography.bodyLarge,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                style = MaterialTheme.typography.bodyLarge
                             )
                         } else {
                             val scrollState = rememberLazyListState()

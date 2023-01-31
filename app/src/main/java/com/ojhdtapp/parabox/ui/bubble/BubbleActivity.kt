@@ -506,7 +506,6 @@ class BubbleActivity : AppCompatActivity() {
                 val intent = Intent(this, MainActivity::class.java)
                 startActivity(intent)
             }
-            else -> {}
         }
     }
 
