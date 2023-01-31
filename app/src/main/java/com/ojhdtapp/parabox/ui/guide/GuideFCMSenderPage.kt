@@ -132,48 +132,9 @@ fun GuideFCMSenderPage(
     val qiniuKODOBucket = viewModel.qiniuKODOBucketFlow.collectAsState(initial = "")
     val qiniuKODODomain = viewModel.qiniuKODODomainFlow.collectAsState(initial = "")
 
-    BottomSheetScaffold(
-        modifier = Modifier
-            .systemBarsPadding(),
-        snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
-        sheetContent = {
-            Row(
-                modifier = Modifier
-                    .height(56.dp)
-                    .padding(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-
-                OutlinedButton(onClick = {
-                    mainNavController.navigateUp()
-                }) {
-                    Text(text = stringResource(id = R.string.back))
-                }
-                Spacer(modifier = Modifier.weight(1f))
-                Button(
-                    onClick = {
-                        mainNavController.navigate(GuideCloudPageDestination)
-                    },
-                    enabled = !fcmEnabled || targetTokens.value.isNotEmpty()
-                ) {
-                    if (!fcmEnabled) {
-                        Text(text = stringResource(R.string.later))
-                    } else if (targetTokens.value.isNotEmpty()) {
-                        Text(text = stringResource(R.string.cont))
-                    } else {
-                        Text(text = stringResource(R.string.unfinished))
-                    }
-                }
-            }
-        },
-        sheetElevation = 0.dp,
-        sheetBackgroundColor = Color.Transparent,
-//        sheetPeekHeight = 56.dp,
-        backgroundColor = Color.Transparent
-    ) { paddingValues ->
+    Column(modifier = Modifier.systemBarsPadding()){
         LazyColumn(
-            modifier = Modifier.padding(paddingValues),
+            modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(bottom = 16.dp)
         ) {
@@ -711,57 +672,37 @@ fun GuideFCMSenderPage(
                                                     }
                                                 }
                                                 2 -> {
-                                                    Column {
+                                                    Column(){
                                                         Text(
                                                             text = stringResource(R.string.fcm_cloud_storage_temp_folder_notice),
                                                             style = MaterialTheme.typography.bodyMedium,
                                                             color = MaterialTheme.colorScheme.onSurface
                                                         )
                                                         Spacer(modifier = Modifier.height(8.dp))
-                                                        OutlinedTextField(
-                                                            value = tempQiniuKODOAccessKey,
-                                                            onValueChange = {
-                                                                tempQiniuKODOAccessKey = it
-                                                            },
-                                                            label = { Text(text = "AccessKey") },
-                                                            singleLine = true,
-                                                            supportingText = { Text(text = stringResource(
-                                                                R.string.fcm_cloud_storage_qiniu_kodo_accesskey_supporting_text)
-                                                            ) },
-                                                        )
-                                                        OutlinedTextField(
-                                                            value = tempQiniuKODOSecretKey,
-                                                            onValueChange = {
-                                                                tempQiniuKODOSecretKey = it
-                                                            },
-                                                            label = { Text(text = "SecretKey") },
-                                                            singleLine = true,
-                                                            supportingText = { Text(text = stringResource(
-                                                                R.string.fcm_cloud_storage_qiniu_kodo_secretkey_supporting_text)
-                                                            ) },
-                                                        )
-                                                        OutlinedTextField(
-                                                            value = tempQiniuKODOBucket,
-                                                            onValueChange = {
-                                                                tempQiniuKODOBucket = it
-                                                            },
-                                                            label = { Text(text = "Bucket") },
-                                                            singleLine = true,
-                                                            supportingText = { Text(text = stringResource(
-                                                                R.string.fcm_cloud_storage_qiniu_kodo_bucket_supporting_text)
-                                                            ) },
-                                                        )
-                                                        OutlinedTextField(
-                                                            value = tempQiniuKODODomain,
-                                                            onValueChange = {
-                                                                tempQiniuKODODomain = it
-                                                            },
-                                                            label = { Text(text = "Domain") },
-                                                            singleLine = true,
-                                                            supportingText = { Text(text = stringResource(
-                                                                R.string.fcm_cloud_storage_qiniu_kodo_domain_supporting_text)
-                                                            ) },
-                                                        )
+                                                        if(cloudService == GoogleDriveUtil.SERVICE_CODE){
+                                                            Text(
+                                                                text = stringResource(R.string.google_drive_connected),
+                                                                style = MaterialTheme.typography.bodyMedium,
+                                                                color = MaterialTheme.colorScheme.onSurface
+                                                            )
+                                                        }else{
+                                                            FilledTonalButton(
+                                                                onClick = {
+                                                                    val signInIntent =
+                                                                        (context as MainActivity).getGoogleLoginAuth().signInIntent
+                                                                    gDriveLauncher.launch(signInIntent)
+                                                                }) {
+                                                                FaIcon(
+                                                                    faIcon = FaIcons.GoogleDrive,
+                                                                    tint = MaterialTheme.colorScheme.primary,
+                                                                    size = ButtonDefaults.IconSize,
+                                                                )
+                                                                Text(
+                                                                    modifier = Modifier.padding(start = 8.dp),
+                                                                    text = stringResource(R.string.connect_to_google_drive)
+                                                                )
+                                                            }
+                                                        }
                                                     }
 
                                                 }
@@ -896,5 +837,49 @@ fun GuideFCMSenderPage(
                 }
             }
         }
+        Row(
+            modifier = Modifier
+                .height(56.dp)
+                .padding(horizontal = 24.dp),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            OutlinedButton(onClick = {
+                mainNavController.navigateUp()
+            }) {
+                Text(text = stringResource(id = R.string.back))
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            Button(
+                onClick = {
+                    mainNavController.navigate(GuideCloudPageDestination)
+                },
+                enabled = !fcmEnabled || targetTokens.value.isNotEmpty()
+            ) {
+                if (!fcmEnabled) {
+                    Text(text = stringResource(R.string.later))
+                } else if (targetTokens.value.isNotEmpty()) {
+                    Text(text = stringResource(R.string.cont))
+                } else {
+                    Text(text = stringResource(R.string.unfinished))
+                }
+            }
+        }
     }
+
+//    BottomSheetScaffold(
+//        modifier = Modifier
+//            .systemBarsPadding(),
+//        snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
+//        sheetContent = {
+//
+//        },
+//        sheetElevation = 0.dp,
+//        sheetBackgroundColor = Color.Transparent,
+////        sheetPeekHeight = 56.dp,
+//        backgroundColor = Color.Transparent
+//    ) { paddingValues ->
+//
+//    }
 }

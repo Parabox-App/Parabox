@@ -119,46 +119,9 @@ fun GuideFCMReceiverPage(
     val qiniuKODOBucket = viewModel.qiniuKODOBucketFlow.collectAsState(initial = "")
     val qiniuKODODomain = viewModel.qiniuKODODomainFlow.collectAsState(initial = "")
 
-    BottomSheetScaffold(
-        modifier = Modifier
-            .systemBarsPadding(),
-        snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
-        sheetContent = {
-            Row(
-                modifier = Modifier
-                    .height(56.dp)
-                    .padding(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-
-                OutlinedButton(onClick = {
-                    mainNavController.navigateUp()
-                }) {
-                    Text(text = stringResource(id = R.string.back))
-                }
-                Spacer(modifier = Modifier.weight(1f))
-                Button(
-                    onClick = {
-                        mainNavController.navigate(GuideCloudPageDestination)
-                    },
-                    enabled = fcmEnabled && loopbackToken.isNotBlank()
-                ) {
-                    if (fcmEnabled && loopbackToken.isNotBlank()) {
-                        Text(text = stringResource(id = R.string.cont))
-                    } else {
-                        Text(text = stringResource(id = R.string.unfinished))
-                    }
-                }
-            }
-        },
-        sheetElevation = 0.dp,
-        sheetBackgroundColor = Color.Transparent,
-//        sheetPeekHeight = 56.dp,
-        backgroundColor = Color.Transparent
-    ) { paddingValues ->
+    Column(modifier = Modifier.systemBarsPadding()){
         LazyColumn(
-            modifier = Modifier.padding(paddingValues),
+            modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(bottom = 16.dp)
         ) {
@@ -625,7 +588,7 @@ fun GuideFCMReceiverPage(
                                                             label = { Text(text = "Bucket") },
                                                             singleLine = true,
                                                             supportingText = { Text(text = stringResource(
-                                                                                                                            R.string.fcm_cloud_storage_tencent_cos_bucket_supporting_text)
+                                                                R.string.fcm_cloud_storage_tencent_cos_bucket_supporting_text)
                                                             ) },
                                                         )
                                                     }
@@ -647,7 +610,7 @@ fun GuideFCMReceiverPage(
                                                             singleLine = true,
                                                             supportingText = { Text(text = stringResource(
                                                                 R.string.fcm_cloud_storage_qiniu_kodo_accesskey_supporting_text)
-                                                                                                                        ) },
+                                                            ) },
                                                         )
                                                         OutlinedTextField(
                                                             value = tempQiniuKODOSecretKey,
@@ -845,6 +808,33 @@ fun GuideFCMReceiverPage(
                             }
                         }
                     }
+                }
+            }
+        }
+        Row(
+            modifier = Modifier
+                .height(56.dp)
+                .padding(horizontal = 24.dp),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            OutlinedButton(onClick = {
+                mainNavController.navigateUp()
+            }) {
+                Text(text = stringResource(id = R.string.back))
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            Button(
+                onClick = {
+                    mainNavController.navigate(GuideCloudPageDestination)
+                },
+                enabled = fcmEnabled && loopbackToken.isNotBlank()
+            ) {
+                if (fcmEnabled && loopbackToken.isNotBlank()) {
+                    Text(text = stringResource(id = R.string.cont))
+                } else {
+                    Text(text = stringResource(id = R.string.unfinished))
                 }
             }
         }

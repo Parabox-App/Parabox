@@ -3,24 +3,28 @@ package com.ojhdtapp.parabox.domain.service
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
-import android.graphics.drawable.BitmapDrawable
-import android.net.Uri
 import android.os.IBinder
 import android.util.Log
-import androidx.core.net.toUri
+import android.widget.Toast
 import androidx.datastore.preferences.core.edit
-import androidx.lifecycle.LifecycleService
-import coil.ImageLoader
-import coil.request.ImageRequest
-import coil.request.SuccessResult
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.google.gson.Gson
 import com.ojhdtapp.parabox.core.util.*
+import com.ojhdtapp.parabox.core.util.FileUtil.toSafeFilename
+import com.ojhdtapp.parabox.data.local.AppDatabase
+import com.ojhdtapp.parabox.data.local.entity.FcmMapping
+import com.ojhdtapp.parabox.data.local.entity.FcmMappingSessionIdUpdate
+import com.ojhdtapp.parabox.data.remote.dto.server.ServerReceiveMessageDto
+import com.ojhdtapp.parabox.data.remote.dto.server.content.toDownloadedMessageContentList
+import com.ojhdtapp.parabox.data.remote.dto.server.content.toMessageContentList
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
-import com.ojhdtapp.parabox.domain.model.AppModel
+import com.ojhdtapp.parabox.domain.use_case.GetUriFromCloudResourceInfo
 import com.ojhdtapp.parabox.domain.use_case.HandleNewMessage
+import com.ojhdtapp.parabox.domain.use_case.UpdateMessage
 import com.ojhdtapp.parabox.ui.util.WorkingMode
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.PluginConnection
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.Profile
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.ReceiveMessageDto
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendMessageDto
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Audio
@@ -30,6 +34,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import java.lang.Exception
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -42,7 +47,14 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     lateinit var handleNewMessage: HandleNewMessage
 
     @Inject
-    lateinit var downloadUtil: DownloadUtil
+    lateinit var database: AppDatabase
+
+    @Inject
+    lateinit var getUriFromCloudResourceInfo: GetUriFromCloudResourceInfo
+
+    @Inject
+    lateinit var updateMessage: UpdateMessage
+
 
     @OptIn(DelicateCoroutinesApi::class)
     override fun onNewToken(token: String) {
@@ -58,30 +70,22 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     @OptIn(DelicateCoroutinesApi::class)
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         Log.d("parabox", "From: ${remoteMessage.from}")
+        Log.d("parabox", "Message data payload: ${remoteMessage.data}")
         if (remoteMessage.data.isNotEmpty()) {
             val type = remoteMessage.data["type"]
             val dtoJson = remoteMessage.data["dto"]
+            val sessionId = remoteMessage.data["ws_session_id"]
+            Log.d("parabox", "type: $type")
+//            Log.d("parabox", "dto: $dtoJson")
+            Log.d("parabox", "sessionId: $sessionId")
+
             when (type) {
                 "receive" -> {
                     val dto = dtoJson?.let { gson.fromJson(it, ReceiveMessageDto::class.java) }
                     Log.d("parabox", "Message data payload: $dto")
                     dto?.also {
                         GlobalScope.launch(Dispatchers.IO) {
-                            val workingMode = dataStore.data.map { preferences ->
-                                preferences[DataStoreKeys.SETTINGS_WORKING_MODE]
-                                    ?: WorkingMode.NORMAL.ordinal
-                            }.first()
-                            when (workingMode) {
-                                WorkingMode.NORMAL.ordinal -> {
-
-                                }
-                                WorkingMode.RECEIVER.ordinal -> {
-                                    handleNewMessage(it)
-                                }
-                                WorkingMode.FCM.ordinal -> {
-
-                                }
-                            }
+                            handleNewMessage(it)
                         }
                     }
                 }
@@ -95,12 +99,12 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                                 preferences[DataStoreKeys.SETTINGS_WORKING_MODE]
                                     ?: WorkingMode.NORMAL.ordinal
                             }.first()
-                            when (workingMode) {
-                                WorkingMode.NORMAL.ordinal -> {
-                                    val downloadedContent = dto.contents.map {
-                                        when (it) {
-                                            is Image -> {
-                                                val downloadedUri = getUriFromCloudResourceInfo(
+                            if (workingMode == WorkingMode.NORMAL.ordinal) {
+                                val downloadedContent = dto.contents.map {
+                                    when (it) {
+                                        is Image -> {
+                                            val downloadedUri =
+                                                getUriFromCloudResourceInfo(
                                                     fileName = it.fileName ?: "Image_${
                                                         System.currentTimeMillis()
                                                             .toDateAndTimeString()
@@ -109,10 +113,11 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                                                         ?: FcmConstants.CloudStorage.NONE.ordinal,
                                                     url = it.url, cloudId = it.cloudId
                                                 )
-                                                it.copy(uri = downloadedUri)
-                                            }
-                                            is Audio -> {
-                                                val downloadedUri = getUriFromCloudResourceInfo(
+                                            it.copy(uri = downloadedUri)
+                                        }
+                                        is Audio -> {
+                                            val downloadedUri =
+                                                getUriFromCloudResourceInfo(
                                                     fileName = it.fileName ?: "Audio_${
                                                         System.currentTimeMillis()
                                                             .toDateAndTimeString()
@@ -121,82 +126,124 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                                                         ?: FcmConstants.CloudStorage.NONE.ordinal,
                                                     url = it.url, cloudId = it.cloudId
                                                 )
-                                                it.copy(uri = downloadedUri)
-                                            }
-                                            is File -> {
-                                                val downloadedUri = getUriFromCloudResourceInfo(
+                                            it.copy(uri = downloadedUri)
+                                        }
+                                        is File -> {
+                                            val downloadedUri =
+                                                getUriFromCloudResourceInfo(
                                                     fileName = it.name,
                                                     cloudType = it.cloudType
                                                         ?: FcmConstants.CloudStorage.NONE.ordinal,
                                                     url = it.url, cloudId = it.cloudId
                                                 )
-                                                it.copy(uri = downloadedUri)
-                                            }
-//                                        is Image -> {
-//                                            val downloadedUri =
-//                                                it.url?.let { url ->
-//                                                    downloadUtil.downloadUrl(
-//                                                        url,
-//                                                        it.fileName ?:"Image_${
-//                                                            System.currentTimeMillis()
-//                                                                .toDateAndTimeString()
-//                                                        }.jpg",
-//                                                        baseContext.getExternalFilesDir("chat")!!
-//                                                    )?.let {
-//                                                        FileUtil.getUriOfFile(baseContext, it)
-//                                                    }
-//                                                }
-//                                            it.copy(uri = downloadedUri)
-//                                        }
-//
-//                                        is Audio -> {
-//                                            val downloadedUri =
-//                                                it.url?.let { url ->
-//                                                    downloadUtil.downloadUrl(
-//                                                        url,
-//                                                        it.fileName?: "Audio_${
-//                                                            System.currentTimeMillis()
-//                                                                .toDateAndTimeString()
-//                                                        }.mp3",
-//                                                        baseContext.getExternalFilesDir("chat")!!
-//                                                    )?.let {
-//                                                        FileUtil.getUriOfFile(baseContext, it)
-//                                                    }
-//                                                }
-//                                            it.copy(uri = downloadedUri)
-//                                        }
-
-                                            else -> it
+                                            it.copy(uri = downloadedUri)
                                         }
+                                        else -> it
                                     }
-                                    Log.d("parabox", "downloadedContent: $downloadedContent")
-                                    handleNewMessage(
-                                        downloadedContent,
-                                        dto.pluginConnection,
-                                        dto.timestamp,
-                                        dto.pluginConnection.connectionType
-                                    ).also {
-                                        // Update messageId to latest
-                                        bindOnceAndSend(
-                                            dto.copy(
-                                                contents = downloadedContent,
-                                                messageId = it
-                                            )
+                                }
+//                                Log.d("parabox", "downloadedContent: $downloadedContent")
+                                handleNewMessage(
+                                    downloadedContent,
+                                    dto.pluginConnection,
+                                    dto.timestamp,
+                                    dto.pluginConnection.connectionType
+                                ).also {
+                                    // Update messageId to latest
+                                    bindOnceAndSend(
+                                        dto.copy(
+                                            contents = downloadedContent,
+                                            messageId = it
                                         )
-                                    }
+                                    )
                                 }
-                                WorkingMode.RECEIVER.ordinal -> {
-
-                                }
-                                WorkingMode.FCM.ordinal -> {
-
-                                }
+                            } else {
+                                Toast.makeText(
+                                    baseContext,
+                                    "接收到待处理的发送请求，请转到扩展模式",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
                         }
                     }
                 }
 
-                else -> {}
+                "server" -> {
+//                    Log.d("parabox", dtoJson.toString())
+                    if (dtoJson != null && remoteMessage.from != null) {
+
+                        val dto = gson.fromJson(dtoJson, ServerReceiveMessageDto::class.java)
+                        Log.d("parabox", "Message data payload: $dto")
+                        GlobalScope.launch {
+                            val fcmMappingId =
+                                database.fcmMappingDao.getFcmMappingByUid(dto.slaveOriginUid)?.id?.also{
+                                    database.fcmMappingDao.updateSessionId(
+                                        FcmMappingSessionIdUpdate(
+                                            id = it,
+                                            sessionId = sessionId!!
+                                        )
+                                    )
+                                }
+                                    ?: database.fcmMappingDao.insertFcmMapping(
+                                        FcmMapping(
+                                            from = remoteMessage.senderId!!,
+                                            uid = dto.slaveOriginUid,
+                                            sessionId = sessionId!!
+                                        )
+                                    )
+                            val shouldDownloadCloudResource = dataStore.data.map { preferences ->
+                                preferences[DataStoreKeys.SETTINGS_FCM_ENABLE_CACHE]
+                                    ?: false
+                            }.first()
+                            val messageContents = if (shouldDownloadCloudResource) {
+                                dto.contents.toDownloadedMessageContentList(
+                                    getUriFromCloudResourceInfo = getUriFromCloudResourceInfo
+                                )
+                            } else {
+                                dto.contents.toMessageContentList()
+                            }
+                            val profile = Profile(
+                                name = dto.profile.name,
+                                avatar = dto.profile.avatar,
+                                id = null,
+                                avatarUri = getUriFromCloudResourceInfo(
+                                    fileName = "${dto.profile.name.toSafeFilename()}.png",
+                                    cloudType = dto.profile.avatar_cloud_type,
+                                    url = dto.profile.avatar,
+                                    cloudId = dto.profile.avatar_cloud_id
+                                )
+                            )
+                            val subjectProfile = Profile(
+                                name = dto.subjectProfile.name,
+                                avatar = dto.subjectProfile.avatar,
+                                id = fcmMappingId,
+                                avatarUri = getUriFromCloudResourceInfo(
+                                    fileName = "${dto.subjectProfile.name.toSafeFilename()}.png",
+                                    cloudType = dto.subjectProfile.avatar_cloud_type,
+                                    url = dto.subjectProfile.avatar,
+                                    cloudId = dto.subjectProfile.avatar_cloud_id
+                                )
+                            )
+                            val receiveMessageDto = ReceiveMessageDto(
+                                contents = messageContents,
+                                profile = profile,
+                                subjectProfile = subjectProfile,
+                                timestamp = dto.timestamp,
+                                messageId = null,
+                                pluginConnection = PluginConnection(
+                                    connectionType = FcmConstants.CONNECTION_TYPE,
+                                    sendTargetType = dto.chatType,
+                                    id = fcmMappingId
+                                )
+                            )
+                            handleNewMessage(receiveMessageDto)
+                        }
+                    }
+
+                }
+
+                else -> {
+
+                }
             }
         }
         super.onMessageReceived(remoteMessage)
@@ -204,6 +251,22 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onDeletedMessages() {
         super.onDeletedMessages()
+    }
+
+    override fun onMessageSent(msgId: String) {
+        super.onMessageSent(msgId)
+        GlobalScope.launch(Dispatchers.IO) {
+            Log.d("parabox", "onMessageSent: $msgId")
+            updateMessage.verifiedState(msgId.toLong(), true)
+        }
+    }
+
+    override fun onSendError(msgId: String, exception: Exception) {
+        super.onSendError(msgId, exception)
+        GlobalScope.launch(Dispatchers.IO) {
+            Log.d("parabox", "onSendError: $msgId")
+            updateMessage.verifiedState(msgId.toLong(), false)
+        }
     }
 
     private fun bindOnceAndSend(dto: SendMessageDto) {
@@ -252,118 +315,5 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             },
             BIND_AUTO_CREATE
         )
-    }
-
-    suspend fun getUriFromCloudResourceInfo(
-        fileName: String,
-        cloudType: Int,
-        url: String?,
-        cloudId: String?
-    ): Uri? {
-        return when (cloudType) {
-            FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal -> {
-                cloudId?.let {
-                    GoogleDriveUtil.downloadFile(
-                        baseContext,
-                        it,
-                        baseContext.externalCacheDir!!
-                    )
-                }?.let {
-                    FileUtil.getUriOfFile(baseContext, it)
-                }
-            }
-
-            FcmConstants.CloudStorage.TENCENT_COS.ordinal -> {
-                cloudId?.let { cosPath ->
-                    val secretId =
-                        dataStore.data.first()[DataStoreKeys.TENCENT_COS_SECRET_ID]
-                    val secretKey =
-                        dataStore.data.first()[DataStoreKeys.TENCENT_COS_SECRET_KEY]
-                    val bucket =
-                        dataStore.data.first()[DataStoreKeys.TENCENT_COS_BUCKET]
-                    val region =
-                        dataStore.data.first()[DataStoreKeys.TENCENT_COS_REGION]
-                    if (secretId != null && secretKey != null && bucket != null && region != null) {
-                        val res = TencentCOSUtil.downloadFile(
-                            baseContext,
-                            secretId,
-                            secretKey,
-                            region,
-                            bucket,
-                            cosPath,
-                            baseContext.externalCacheDir!!.absolutePath,
-                            fileName
-                        )
-                        if (res) {
-                            FileUtil.getUriOfFile(
-                                baseContext,
-                                java.io.File(baseContext.externalCacheDir!!, fileName)
-                            )
-//                            val file = baseContext.getExternalFilesDir("chat")!!.listFiles { file ->
-//                                file.name == fileName
-//                            }?.firstOrNull()
-//                            if (file != null) {
-//                                FileUtil.getUriOfFile(
-//                                    baseContext,
-//                                    file
-//                                )
-//                            } else null
-                        } else null
-                    } else null
-                } ?: url?.let { url ->
-                    downloadUtil.downloadUrl(
-                        url,
-                        fileName,
-                        baseContext.externalCacheDir!!
-                    )?.let {
-                        FileUtil.getUriOfFile(baseContext, it)
-                    }
-                }
-            }
-
-            FcmConstants.CloudStorage.QINIU_KODO.ordinal -> {
-                cloudId?.let { key ->
-                    val accessKey =
-                        dataStore.data.first()[DataStoreKeys.QINIU_KODO_ACCESS_KEY]
-                    val secretKey =
-                        dataStore.data.first()[DataStoreKeys.QINIU_KODO_SECRET_KEY]
-                    val bucket =
-                        dataStore.data.first()[DataStoreKeys.QINIU_KODO_BUCKET]
-                    val domain =
-                        dataStore.data.first()[DataStoreKeys.QINIU_KODO_DOMAIN]
-                    if (accessKey != null && secretKey != null && bucket != null && domain != null) {
-                        QiniuKODOUtil.downloadFile(domain, accessKey, secretKey, key)?.let{ newUrl ->
-                            downloadUtil.downloadUrl(
-                                newUrl,
-                                fileName,
-                                baseContext.externalCacheDir!!
-                            )?.let {
-                                FileUtil.getUriOfFile(baseContext, it)
-                            }
-                        }
-                    } else null
-                } ?: url?.let { url ->
-                    downloadUtil.downloadUrl(
-                        url,
-                        fileName,
-                        baseContext.externalCacheDir!!
-                    )?.let {
-                        FileUtil.getUriOfFile(baseContext, it)
-                    }
-                }
-            }
-
-            else -> {
-                url?.let { url ->
-                    downloadUtil.downloadUrl(
-                        url,
-                        fileName,
-                        baseContext.externalCacheDir!!
-                    )?.let {
-                        FileUtil.getUriOfFile(baseContext, it)
-                    }
-                }
-            }
-        }
     }
 }

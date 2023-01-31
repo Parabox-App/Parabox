@@ -105,7 +105,7 @@ fun ExtensionPage(
             if (workingMode.value != WorkingMode.NORMAL.ordinal) {
                 item {
                     Column(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {

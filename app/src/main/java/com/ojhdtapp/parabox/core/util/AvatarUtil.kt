@@ -59,6 +59,7 @@ object AvatarUtil {
 
     fun Bitmap.getCircledBitmap(): Bitmap {
         val output = Bitmap.createBitmap(this.width, this.height, Bitmap.Config.ARGB_8888)
+//        val output = copy(Bitmap.Config.ARGB_8888, true)
         val canvas = Canvas(output)
         val paint = Paint()
         val rect = Rect(0, 0, this.width, this.height)

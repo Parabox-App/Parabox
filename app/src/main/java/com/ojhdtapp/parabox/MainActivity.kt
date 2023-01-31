@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox
 
 import android.app.Activity
+import android.app.NotificationManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -70,6 +71,9 @@ import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderF
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.messaging.FirebaseMessaging
+import com.google.firebase.messaging.RemoteMessage
+import com.google.firebase.messaging.ktx.messaging
+import com.google.gson.Gson
 import com.google.mlkit.common.model.DownloadConditions
 import com.google.mlkit.nl.entityextraction.*
 import com.google.mlkit.nl.languageid.LanguageIdentification
@@ -82,6 +86,8 @@ import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.DownloadingState
 import com.ojhdtapp.parabox.data.remote.dto.filterMissing
 import com.ojhdtapp.parabox.data.remote.dto.saveLocalResourcesToCloud
+import com.ojhdtapp.parabox.data.remote.dto.server.ServerSendMessageDto
+import com.ojhdtapp.parabox.data.remote.dto.toFcmMessageContentList
 import com.ojhdtapp.parabox.domain.fcm.FcmApiHelper
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.domain.model.AppModel
@@ -279,7 +285,7 @@ class MainActivity : AppCompatActivity() {
         stopPlaying()
         player = MediaPlayer().apply {
             try {
-                setDataSource(applicationContext, uri)
+                setDataSource(baseContext, uri)
                 setOnPreparedListener {
                     playerJob = lifecycleScope.launch {
                         while (true) {
@@ -288,9 +294,9 @@ class MainActivity : AppCompatActivity() {
                             delay(30)
                         }
                     }
-                    amplituda = Amplituda(this@MainActivity).also { amplituda ->
+                    amplituda = Amplituda(baseContext).also { amplituda ->
                         amplituda.processAudio(
-                            FileUtil.uriToTempFile(this@MainActivity, uri),
+                            FileUtil.uriToTempFile(baseContext, uri),
                             Compress.withParams(Compress.AVERAGE, 2)
                         ).get(
                             { result ->
@@ -343,26 +349,29 @@ class MainActivity : AppCompatActivity() {
             try {
                 setDataSource(url)
                 setOnPreparedListener {
-                    playerJob = lifecycleScope.launch {
+                    playerJob = lifecycleScope.launch(Dispatchers.IO) {
                         while (true) {
                             val progress = (currentPosition.toFloat() / duration)
                             mainSharedViewModel.setAudioPlayerProgressFraction(progress)
                             delay(30)
                         }
                     }
-                    amplituda = Amplituda(this@MainActivity).also { amplituda ->
-                        amplituda.processAudio(
-                            url,
-                            Compress.withParams(Compress.AVERAGE, 2)
-                        ).get(
-                            { result ->
-                                mainSharedViewModel.insertAllIntoRecordAmplitudeStateList(
-                                    result.amplitudesAsList().map { it * 1000 })
-                            }, { exception ->
-                                exception.printStackTrace()
-                            })
+                    amplituda = Amplituda(baseContext).also { amplituda ->
+                        lifecycleScope.launch(Dispatchers.IO) {
+                            amplituda.processAudio(
+                                url,
+                                Compress.withParams(Compress.AVERAGE, 2)
+                            ).get(
+                                { result ->
+                                    mainSharedViewModel.insertAllIntoRecordAmplitudeStateList(
+                                        result.amplitudesAsList().map { it * 1000 })
+                                }, { exception ->
+                                    exception.printStackTrace()
+                                })
+                        }
                     }
                     mainSharedViewModel.setIsAudioPlaying(true)
+                    start()
                 }
                 setOnCompletionListener {
                     amplituda?.clearCache()
@@ -377,6 +386,7 @@ class MainActivity : AppCompatActivity() {
                 Log.e("parabox", "prepare() failed")
             }
         }
+
     }
 
 //    fun calculateRMSLevel(audioData: ByteArray): Int {
@@ -578,6 +588,8 @@ class MainActivity : AppCompatActivity() {
 
                 WorkingMode.FCM.ordinal -> {
                     // check google server connection
+                    delay(500)
+                    mainSharedViewModel.setIsRefreshing(false)
                 }
             }
         }
@@ -848,7 +860,6 @@ class MainActivity : AppCompatActivity() {
         db.collection("config").get().addOnSuccessListener { result ->
             if (result != null) {
                 val config = result.documents.firstOrNull()?.data
-
                 val fcm_url = config?.get("fcm_url")?.toString()
                 Log.d("parabox", "fcm_url: $fcm_url")
                 fcm_url?.let {
@@ -1062,6 +1073,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             is ActivityEvent.SendMessage -> {
+                Log.d("parabox", "sendMessage at ${System.currentTimeMillis()}")
                 lifecycleScope.launch(Dispatchers.IO) {
                     val timestamp = System.currentTimeMillis()
                     handleNewMessage(
@@ -1111,6 +1123,39 @@ class MainActivity : AppCompatActivity() {
                             }
                             WorkingMode.FCM.ordinal -> {
                                 // to Google server
+                                if (enableFcm) {
+                                    appDatabase.fcmMappingDao.getFcmMappingById(dto.pluginConnection.id)
+                                        ?.also { fcmMapping ->
+                                            val contents = dto.contents.saveLocalResourcesToCloud(
+                                                baseContext
+                                            ).filterMissing().toFcmMessageContentList()
+                                            val dto = ServerSendMessageDto(
+                                                contents = contents,
+                                                slaveOriginUid = fcmMapping.uid,
+                                                timestamp = dto.timestamp
+                                            )
+                                            val json = Gson().toJson(dto)
+                                            val fm = Firebase.messaging
+                                            Log.d("parabox", "message from: ${fcmMapping.from}")
+                                            fm.send(
+                                                RemoteMessage.Builder("${fcmMapping.from}@fcm.googleapis.com")
+                                                    .setMessageId(it.toString())
+                                                    .addData("message", json)
+                                                    .addData("session_id", fcmMapping.sessionId)
+                                                    .build()
+                                            )
+                                            delay(500)
+                                            updateMessage.verifiedState(it, true)
+//                                        if (fcmApiHelper.pushSendDto(
+//                                            )?.isSuccessful == true
+//                                        ) {
+//                                            updateMessage.verifiedState(it, true)
+//                                        } else {
+//                                            updateMessage.verifiedState(it, false)
+//                                        }
+                                        }
+
+                                }
                             }
                         }
                     }
@@ -1255,6 +1300,10 @@ class MainActivity : AppCompatActivity() {
             }
             is ActivityEvent.QueryFCMToken -> {
                 queryFCMToken()
+            }
+
+            is ActivityEvent.LaunchApp -> {
+
             }
         }
     }
@@ -1436,6 +1485,14 @@ class MainActivity : AppCompatActivity() {
 
         // ML-Kit
         initializeMLKit()
+
+        // FCM Notification Channel
+        notificationUtil.createNotificationChannel(
+            "9999",
+            "FCM",
+            "FCM 推送的消息",
+            NotificationManager.IMPORTANCE_HIGH
+        )
 
 
         WindowCompat.setDecorFitsSystemWindows(window, false)

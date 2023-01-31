@@ -44,6 +44,7 @@ import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.*
+import com.ojhdtapp.parabox.ui.theme.Theme
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.NormalPreference
 import com.ojhdtapp.parabox.ui.util.PreferencesCategory
@@ -69,6 +70,11 @@ fun SettingPage(
 ) {
     val viewModel = hiltViewModel<SettingPageViewModel>()
     val coroutineScope = rememberCoroutineScope()
+
+    val theme = viewModel.themeFlow.collectAsState(initial = Theme.WILLOW).value
+    val enableDynamicColor = viewModel.enableDynamicColorFlow.collectAsState(
+        initial = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    ).value
 
     EditUserNameDialog(
         openDialog = viewModel.editUserNameDialogState.value,
@@ -228,6 +234,8 @@ fun SettingPage(
                                 modifier = Modifier.fillMaxWidth(),
                                 userName = mainSharedViewModel.userNameFlow.collectAsState(initial = DataStoreKeys.DEFAULT_USER_NAME).value,
                                 version = BuildConfig.VERSION_NAME,
+                                theme = theme,
+                                enableDynamicColor = enableDynamicColor,
                                 onBlockClick = {},
                                 onUserNameClick = {
                                     viewModel.setEditUserNameDialogState(true)
@@ -648,6 +656,8 @@ fun ThemeBlock(
     modifier: Modifier = Modifier,
     userName: String,
     version: String,
+    theme: Int,
+    enableDynamicColor: Boolean,
     onBlockClick: () -> Unit,
     onUserNameClick: () -> Unit,
     onVersionClick: () -> Unit,
@@ -695,7 +705,17 @@ fun ThemeBlock(
                     .build()
                 AsyncImage(
                     model = ImageRequest.Builder(context)
-                        .data(if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.ic_launcher_foreground_dynamic else R.drawable.ic_launcher_foreground)
+                        .data(
+                            when {
+                                enableDynamicColor -> R.drawable.ic_launcher_foreground_dynamic
+                                theme == Theme.WILLOW -> R.drawable.ic_launcher_foreground_willow
+                                theme == Theme.PURPLE -> R.drawable.ic_launcher_foreground_purple
+                                theme == Theme.SAKURA -> R.drawable.ic_launcher_foreground_sakura
+                                theme == Theme.GARDENIA -> R.drawable.ic_launcher_foreground_gardenia
+                                theme == Theme.WATER -> R.drawable.ic_launcher_foreground_water
+                                else -> R.drawable.ic_launcher_foreground_willow
+                            }
+                        )
                         .crossfade(true)
                         .build(),
                     imageLoader = imageLoader,

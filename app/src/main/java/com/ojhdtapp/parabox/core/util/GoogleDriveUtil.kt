@@ -223,11 +223,17 @@ object GoogleDriveUtil {
         path: File
     ): File? {
         return coroutineScope {
+            if(!path.exists()){
+                path.mkdirs()
+            }
             withContext(Dispatchers.IO) {
                 try {
                     getDriveService(context)?.let { driveService ->
                         val file = driveService.files().get(fileId).execute()
-                        Looper.prepare()
+                        if (Looper.myLooper() == null)
+                        {
+                            Looper.prepare();
+                        }
                         Toast.makeText(context, "开始下载${file.name}", Toast.LENGTH_SHORT)
                             .show()
                         val targetFile = File(path, FileUtil.getAvailableFileName(context, file.name))
@@ -238,7 +244,10 @@ object GoogleDriveUtil {
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
-                    Looper.prepare()
+                    if (Looper.myLooper() == null)
+                    {
+                        Looper.prepare();
+                    }
                     Toast.makeText(context, "下载失败", Toast.LENGTH_SHORT)
                         .show()
                     null

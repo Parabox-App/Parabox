@@ -1,5 +1,9 @@
 package com.ojhdtapp.parabox.ui.setting
 
+import android.graphics.drawable.BitmapDrawable
+import android.net.Uri
+import android.os.Build
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.expandVertically
@@ -18,22 +22,39 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.paging.compose.LazyPagingItems
+import coil.ImageLoader
 import coil.compose.AsyncImage
+import coil.compose.AsyncImagePainter
+import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
+import coil.request.SuccessResult
 import com.ojhdtapp.parabox.BuildConfig
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
+import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.domain.model.AppModel
+import com.ojhdtapp.parabox.domain.model.Message
+import com.ojhdtapp.parabox.domain.model.message_content.Image
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
+import com.ojhdtapp.parabox.ui.message.MessageState
+import com.ojhdtapp.parabox.ui.theme.Theme
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.NormalPreference
 import com.ojhdtapp.parabox.ui.util.PreferencesCategory
 import com.ojhdtapp.parabox.ui.util.SettingNavGraph
+import com.origeek.imageViewer.previewer.ImagePreviewer
+import com.origeek.imageViewer.previewer.rememberPreviewerState
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -49,11 +70,15 @@ fun InfoPage(
     mainNavController: NavController,
     mainSharedViewModel: MainSharedViewModel,
     sizeClass: WindowSizeClass,
-    onEvent: (ActivityEvent) -> Unit
+    onEvent: (ActivityEvent) -> Unit,
 ) {
     val viewModel = hiltViewModel<SettingPageViewModel>()
     val coroutineScope = rememberCoroutineScope()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val theme = viewModel.themeFlow.collectAsState(initial = Theme.WILLOW).value
+    val enableDynamicColor = viewModel.enableDynamicColorFlow.collectAsState(
+        initial = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    ).value
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -91,12 +116,14 @@ fun InfoPage(
         LazyColumn(
             contentPadding = it
         ) {
-            if(sizeClass.widthSizeClass == WindowWidthSizeClass.Medium){
+            if (sizeClass.widthSizeClass == WindowWidthSizeClass.Medium) {
                 item {
                     ThemeBlock(
                         modifier = Modifier.fillMaxWidth(),
                         userName = mainSharedViewModel.userNameFlow.collectAsState(initial = DataStoreKeys.DEFAULT_USER_NAME).value,
                         version = BuildConfig.VERSION_NAME,
+                        theme = theme,
+                        enableDynamicColor = enableDynamicColor,
                         onBlockClick = {},
                         onUserNameClick = {
                             viewModel.setEditUserNameDialogState(true)
@@ -105,61 +132,55 @@ fun InfoPage(
                     )
                 }
             }
-//            item(key = "extension_status") {
-//                AnimatedVisibility(
-//                    visible = pluginList.isNotEmpty(),
-//                    enter = expandVertically(),
-//                    exit = shrinkVertically()
-//                ) {
-//                    PreferencesCategory(text = "扩展状态")
+        }
+//        val context = LocalContext.current
+//        val imageList =
+//            lazyPagingItems.itemSnapshotList.items.fold(mutableListOf<Pair<Long, Painter>>()) { acc, message ->
+//                val imageMessageList = message.contents.filterIsInstance<Image>()
+//                val lastIndex = imageMessageList.lastIndex
+//                imageMessageList.reversed().forEachIndexed { index, t ->
+//                    if (t.uriString != null || t.url != null) {
+//                        val painter = rememberAsyncImagePainter(
+//                            model = ImageRequest.Builder(context)
+//                                .data(t.uriString ?: t.url)
+//                                .build()
+//                        )
+//                        acc.add(
+//                            "${message.messageId}${
+//                                (lastIndex - index).coerceIn(
+//                                    0,
+//                                    lastIndex
+//                                )
+//                            }".toLong()
+//                                    to painter
+//                        )
+//                    }
+//                }
+//                acc
+//            }
+//        val imageViewerState = rememberPreviewerState(enableVerticalDrag = true){
+//            imageList[it].first
+//        }
+//        LaunchedEffect(messageState) {
+//            imageViewerState.close()
+//        }
+//        ImagePreviewer(
+//            modifier = Modifier.fillMaxSize(),
+//            count = imageList.size,
+//            state = imageViewerState,
+//            // 图片加载器
+//            imageLoader = { index ->
+//                imageList[index].second
+//            },
+//            detectGesture = {
+//                // 点击手势
+//                onTap = {
+//                    scope.launch {
+//                        // 关闭预览，带转换效果
+//                        previewerState.closeTransform()
+//                    }
 //                }
 //            }
-//            items(
-//                items = pluginList,
-//                key = { it.packageName }) {
-//                NormalPreference(
-//                    title = it.name,
-//                    subtitle = it.version,
-//                    leadingIcon = {
-//                        AsyncImage(
-//                            model = it.icon,
-//                            contentDescription = "icon",
-//                            modifier = Modifier
-//                                .size(24.dp)
-//                                .clip(
-//                                    CircleShape
-//                                )
-//                        )
-//                    },
-//                    trailingIcon = {
-//                        when (it.runningStatus) {
-//                            AppModel.RUNNING_STATUS_DISABLED -> Icon(
-//                                imageVector = Icons.Outlined.Block,
-//                                contentDescription = "disabled"
-//                            )
-//                            AppModel.RUNNING_STATUS_ERROR -> Icon(
-//                                imageVector = Icons.Outlined.ErrorOutline,
-//                                contentDescription = "error",
-//                                tint = MaterialTheme.colorScheme.error
-//                            )
-//                            AppModel.RUNNING_STATUS_RUNNING -> Icon(
-//                                imageVector = Icons.Outlined.CheckCircleOutline,
-//                                contentDescription = "running",
-//                                tint = MaterialTheme.colorScheme.primary
-//                            )
-//                            AppModel.RUNNING_STATUS_CHECKING -> CircularProgressIndicator(
-//                                modifier = Modifier.size(24.dp),
-//                                strokeWidth = 2.dp
-//                            )
-//                        }
-//                    },
-//                    onClick = {
-//                        it.launchIntent?.let {
-//                            onEvent(ActivityEvent.LaunchIntent(it))
-//                        }
-//                    }
-//                )
-//            }
-        }
+//        )
     }
 }

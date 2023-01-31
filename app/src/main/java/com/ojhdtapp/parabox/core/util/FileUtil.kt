@@ -379,7 +379,11 @@ object FileUtil {
         try {
             if (!path.exists()) path.mkdirs()
             val outputFile = File(path, fileName)
-            targetFile.copyTo(outputFile, overwrite = true, DEFAULT_BUFFER_SIZE)
+            targetFile.inputStream().use { ips ->
+                outputFile.outputStream().use { ops ->
+                    ips.copyTo(ops, DEFAULT_BUFFER_SIZE)
+                }
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }

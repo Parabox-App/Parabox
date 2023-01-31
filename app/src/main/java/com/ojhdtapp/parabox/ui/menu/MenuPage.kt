@@ -9,6 +9,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,9 +22,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.zIndex
@@ -105,6 +104,8 @@ fun MenuPage(
         initialValue = ModalBottomSheetValue.Hidden,
         skipHalfExpanded = true
     )
+    // Message Badge
+    val messageBadgeNum by mainSharedViewModel.messageBadgeNumFlow.collectAsState(initial = 0)
 
     // ui Event
     LaunchedEffect(true) {
@@ -124,6 +125,7 @@ fun MenuPage(
                         navController.navigate(ChatPageDestination())
                     }
                 }
+                else -> {}
             }
         }
     }
@@ -147,7 +149,7 @@ fun MenuPage(
             modifier = modifier.fillMaxSize(),
             navController = menuNavController,
             mainNavController = navController,
-            messageBadge = mainSharedViewModel.messageBadge.value,
+            messageBadge = messageBadgeNum,
             onSelfItemClick = {
 
             },
@@ -162,10 +164,14 @@ fun MenuPage(
                         NavigationRail(
                             modifier = Modifier.zIndex(1f),
                             navController = menuNavController,
-                            messageBadge = mainSharedViewModel.messageBadge.value,
+                            messageBadge = messageBadgeNum,
                             onSelfItemClick = {
                                 coroutineScope.launch {
-                                    listState.animateScrollToItem(0)
+                                    if(!listState.canScrollForward){
+                                        listState.animateScrollToItem(0)
+                                    } else {
+                                        listState.animateScrollBy(1000f)
+                                    }
                                 }
                             },
                             onMenuClick = {
@@ -234,10 +240,14 @@ fun MenuPage(
                 ) {
                     NavigationBar(
                         navController = menuNavController,
-                        messageBadge = mainSharedViewModel.messageBadge.value,
+                        messageBadge = messageBadgeNum,
                         onSelfItemClick = {
                             coroutineScope.launch {
-                                listState.animateScrollToItem(0)
+                                if(!listState.canScrollForward){
+                                    listState.animateScrollToItem(0)
+                                } else {
+                                    listState.animateScrollBy(1000f)
+                                }
                             }
                         },
                     )

@@ -437,6 +437,26 @@ class SettingPageViewModel @Inject constructor(
         }
     }
 
+    val fcmEnableCacheFlow = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.SETTINGS_FCM_ENABLE_CACHE] ?: false
+        }
+
+    fun setFcmEnableCache(value: Boolean) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.SETTINGS_FCM_ENABLE_CACHE] = value
+            }
+        }
+    }
+
     // Backup & Restore
 
     private val _cacheSizeStateFlow =

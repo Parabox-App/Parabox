@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.paging.PagingSource
 import com.ojhdtapp.parabox.MainActivity
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.HiltApplication
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.ReceiveMessageDto
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
@@ -112,10 +113,17 @@ class MainRepositoryImpl @Inject constructor(
 
 
             // Update Avatar or Anything Else Here
-            database.contactDao.getPluginConnectionWithContacts(dto.pluginConnection.objectId).let {
-                database.contactDao.updateContact(it.contactList.map {
+            database.contactDao.getPluginConnectionWithContacts(dto.pluginConnection.objectId).let { pluginConnectionWithContacts ->
+                database.contactDao.updateContact(pluginConnectionWithContacts.contactList.map {
                     it.copy(
-                        profile = if (it.senderId == it.contactId) dto.subjectProfile.toProfile(context) else it.profile,
+                        profile = dto.subjectProfile.toProfile(context).let{ newProfile ->
+                            it.profile.copy(
+                                name = newProfile.name,
+                                avatar = newProfile.avatar,
+                                avatarUri = newProfile.avatarUri,
+                                id = newProfile.id
+                            )
+                        },
                         latestMessage =
                         if (it.latestMessage != null && it.latestMessage.timestamp < dto.timestamp) {
                             LatestMessage(
@@ -210,6 +218,7 @@ class MainRepositoryImpl @Inject constructor(
             val messageIdDeferred = async<Long> {
                 storeSendMessage(contents, timestamp, sendType, withoutVerify)
             }
+            Log.d("parabox", "sendMessage step 2 at ${System.currentTimeMillis()}")
             // Used to create new Conversation only
             val contactIdDeferred = async<Long> {
                 database.contactDao.insertContact(
@@ -236,11 +245,13 @@ class MainRepositoryImpl @Inject constructor(
                     )
                 )
             }
+            Log.d("parabox", "sendMessage step 3 at ${System.currentTimeMillis()}")
             val pluginConnectionDeferred = async<Long> {
                 database.contactDao.insertPluginConnection(
                     pluginConnection.toPluginConnection().toPluginConnectionEntity()
                 )
             }
+            Log.d("parabox", "sendMessage step 4 at ${System.currentTimeMillis()}")
 //            database.contactDao.updateHiddenState(ContactHiddenStateUpdate(dto.pluginConnection.objectId, false))
             if (pluginConnectionDeferred.await() != -1L) {
                 database.contactDao.insertContactPluginConnectionCrossRef(
@@ -259,6 +270,7 @@ class MainRepositoryImpl @Inject constructor(
 
             // Update Avatar or Anything Else Here
             database.contactDao.getPluginConnectionWithContacts(pluginConnection.objectId).let {
+                Log.d("parabox", "sendMessage step 5 at ${System.currentTimeMillis()}")
                 database.contactDao.updateContact(it.contactList.map {
                     it.copy(
                         latestMessage = LatestMessage(
@@ -272,6 +284,7 @@ class MainRepositoryImpl @Inject constructor(
                     )
                 })
             }
+            Log.d("parabox", "sendMessage step 6 at ${System.currentTimeMillis()}")
             messageIdDeferred.await()
         }
     }
@@ -377,6 +390,17 @@ class MainRepositoryImpl @Inject constructor(
         )
     }
 
+    override fun updateCustomizedContactProfile(id: Long, profile: Profile, tags: List<String>) {
+        database.contactDao.updateCustomizedProfileAndTag(
+            ContactCustomizedProfileAndTagUpdate(
+                id,
+                profile.customizedName,
+                profile.customizedUri,
+                tags
+            )
+        )
+    }
+
     override fun updateContactUnreadMessagesNum(id: Long, value: Int) {
         database.contactDao.updateUnreadMessagesNum(ContactUnreadMessagesNumUpdate(id, value))
     }
@@ -418,7 +442,7 @@ class MainRepositoryImpl @Inject constructor(
                 )
             } catch (e: Exception) {
                 e.printStackTrace()
-                emit(Resource.Error<List<Contact>>("获取数据时发生错误"))
+                emit(Resource.Error<List<Contact>>(context.getString(R.string.error_query_data)))
             }
         }
     }
@@ -430,7 +454,7 @@ class MainRepositoryImpl @Inject constructor(
                     it.toContact()
                 }.sortedByDescending { it.latestMessage?.timestamp ?: 0 })
             }.catch() {
-                emit(Resource.Error<List<Contact>>("获取数据时发生错误"))
+                emit(Resource.Error<List<Contact>>(context.getString(R.string.error_query_data)))
             }
     }
 
@@ -441,7 +465,7 @@ class MainRepositoryImpl @Inject constructor(
                     it.toContact()
                 }.sortedByDescending { it.latestMessage?.timestamp ?: 0 })
             }.catch {
-                emit(Resource.Error<List<Contact>>("获取数据时发生错误"))
+                emit(Resource.Error<List<Contact>>(context.getString(R.string.error_query_data)))
             }
     }
 
@@ -452,7 +476,7 @@ class MainRepositoryImpl @Inject constructor(
                     it.toContact()
                 }.sortedByDescending { it.latestMessage?.timestamp ?: 0 })
             }.catch {
-                emit(Resource.Error<List<Contact>>("获取数据时发生错误"))
+                emit(Resource.Error<List<Contact>>(context.getString(R.string.error_query_data)))
             }
     }
 
@@ -467,7 +491,7 @@ class MainRepositoryImpl @Inject constructor(
                     .also { emit(Resource.Success(it)) }
             } catch (e: Exception) {
                 e.printStackTrace()
-                emit(Resource.Error<List<Contact>>("获取数据时发生错误"))
+                emit(Resource.Error<List<Contact>>(context.getString(R.string.error_query_data)))
             }
 
         }
@@ -506,7 +530,7 @@ class MainRepositoryImpl @Inject constructor(
                     .map<ContactWithMessagesEntity, Resource<ContactWithMessages>> {
                         Resource.Success(it.toContactWithMessages())
                     }.catch {
-                        emit(Resource.Error<ContactWithMessages>("获取数据时发生错误"))
+                        emit(Resource.Error<ContactWithMessages>(context.getString(R.string.error_query_data)))
                     }
             )
         }
@@ -533,7 +557,7 @@ class MainRepositoryImpl @Inject constructor(
                             it.toContactWithMessages()
                         })
                     }.catch {
-                        emit(Resource.Error<List<ContactWithMessages>>("获取数据时发生错误"))
+                        emit(Resource.Error<List<ContactWithMessages>>(context.getString(R.string.error_query_data)))
                     }
             )
         }
@@ -628,7 +652,7 @@ class MainRepositoryImpl @Inject constructor(
                         it.toFile()
                     }.sortedByDescending { it.timestamp ?: 0 })
                 }.catch {
-                    emit(Resource.Error("获取数据时发生错误"))
+                    emit(Resource.Error(context.getString(R.string.error_query_data)))
                 }
         } else {
             database.fileDao.queryFiles(query)
@@ -637,7 +661,7 @@ class MainRepositoryImpl @Inject constructor(
                         it.toFile()
                     }.sortedByDescending { it.timestamp ?: 0 })
                 }.catch {
-                    emit(Resource.Error("获取数据时发生错误"))
+                    emit(Resource.Error(context.getString(R.string.error_query_data)))
                 }
         }
     }
@@ -694,7 +718,7 @@ class MainRepositoryImpl @Inject constructor(
                         }
                 } catch (e: Exception) {
                     e.printStackTrace()
-                    emit(Resource.Error<List<Contact>>("获取数据时发生错误"))
+                    emit(Resource.Error<List<Contact>>(context.getString(R.string.error_query_data)))
                 }
             } else {
                 emit(Resource.Success(emptyList()))
@@ -719,7 +743,7 @@ class MainRepositoryImpl @Inject constructor(
                         .also { emit(Resource.Success(it)) }
                 } catch (e: Exception) {
                     e.printStackTrace()
-                    emit(Resource.Error<List<ContactWithMessages>>("获取数据时发生错误"))
+                    emit(Resource.Error<List<ContactWithMessages>>(context.getString(R.string.error_query_data)))
                 }
             } else {
                 emit(Resource.Success(emptyList()))

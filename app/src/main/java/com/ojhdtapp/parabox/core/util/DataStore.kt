@@ -25,6 +25,7 @@ object DataStoreKeys{
     val SETTINGS_FCM_HTTPS = booleanPreferencesKey("settings_fcm_https")
     val SETTINGS_FCM_ROLE = intPreferencesKey("settings_fcm_role")
     val SETTINGS_FCM_CLOUD_STORAGE = intPreferencesKey("settings_fcm_cloud_storage")
+    val SETTINGS_FCM_ENABLE_CACHE = booleanPreferencesKey("settings_fcm_enable_cache")
     val SETTINGS_ENABLE_DYNAMIC_COLOR = booleanPreferencesKey("settings_enable_dynamic_color")
     val SETTINGS_THEME = intPreferencesKey("settings_theme")
     val SETTINGS_ML_KIT_ENTITY_EXTRACTION = booleanPreferencesKey("settings_ml_kit_entity_extraction")
@@ -58,6 +59,8 @@ object DataStoreKeys{
     val QINIU_KODO_SECRET_KEY = stringPreferencesKey("qiniu_kodo_secret_key")
     val QINIU_KODO_BUCKET = stringPreferencesKey("qiniu_kodo_bucket")
     val QINIU_KODO_DOMAIN = stringPreferencesKey("qiniu_kodo_domain")
+
+    val MESSAGE_BADGE_NUM = intPreferencesKey("message_badge_num")
 
     const val DEFAULT_USER_NAME = "Me"
 }

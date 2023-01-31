@@ -253,7 +253,10 @@ class PluginService : LifecycleService() {
         if (appModelList.map { it.connectionType }.contains(type)) {
             pluginConnectionMap[type]?.send(dto)
         } else {
-            Looper.prepare()
+            if (Looper.myLooper() == null)
+            {
+                Looper.prepare();
+            }
             Toast.makeText(this, "插件未安装", Toast.LENGTH_SHORT).show()
         }
     }
@@ -262,7 +265,10 @@ class PluginService : LifecycleService() {
         if (appModelList.map { it.connectionType }.contains(type)) {
             pluginConnectionMap[type]?.recall(messageId)
         } else {
-            Looper.prepare()
+            if (Looper.myLooper() == null)
+            {
+                Looper.prepare();
+            }
             Toast.makeText(this, "插件未安装", Toast.LENGTH_SHORT).show()
         }
     }

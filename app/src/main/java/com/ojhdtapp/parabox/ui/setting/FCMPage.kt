@@ -104,6 +104,7 @@ fun FCMPage(
 
     val cloudStorage =
         viewModel.fcmCloudStorageFlow.collectAsState(initial = FcmConstants.CloudStorage.NONE.ordinal)
+    val enableCache by viewModel.fcmEnableCacheFlow.collectAsState(initial = false)
 
     val tencentCOSSecretId = viewModel.tencentCOSSecretIdFlow.collectAsState(initial = "")
     val tencentCOSSecretKey = viewModel.tencentCOSSecretKeyFlow.collectAsState(initial = "")
@@ -727,9 +728,13 @@ fun FCMPage(
             item {
                 NormalPreference(
                     title = stringResource(R.string.fcm_working_mode),
-                    subtitle = if (workingMode == WorkingMode.NORMAL.ordinal)
-                        stringResource(id = R.string.fcm_role_sender) else
-                        stringResource(id = R.string.fcm_role_receiver),
+                    subtitle =
+                    when(workingMode){
+                        WorkingMode.NORMAL.ordinal -> stringResource(id = R.string.fcm_role_sender)
+                        WorkingMode.RECEIVER.ordinal -> stringResource(id = R.string.fcm_role_receiver)
+                        WorkingMode.FCM.ordinal -> stringResource(R.string.fcm_role_server)
+                        else -> stringResource(id = R.string.not_set)
+                    }
                 ) {
                     showRoleDescription = true
                 }
@@ -789,14 +794,14 @@ fun FCMPage(
                     }
                 }
             }
-            item {
-                SwitchPreference(
-                    title = stringResource(R.string.fcm_enable_https),
-                    checked = useHttps.value,
-                    onCheckedChange = viewModel::setFCMHttps,
-                    enabled = false
-                )
-            }
+//            item {
+//                SwitchPreference(
+//                    title = stringResource(R.string.fcm_enable_https),
+//                    checked = useHttps.value,
+//                    onCheckedChange = viewModel::setFCMHttps,
+//                    enabled = false
+//                )
+//            }
             item {
                 AnimatedVisibility(
                     visible = useHttps.value,
@@ -843,7 +848,7 @@ fun FCMPage(
             item {
                 Crossfade(targetState = workingMode) {
                     when (it) {
-                        WorkingMode.NORMAL.ordinal, WorkingMode.FCM.ordinal -> {
+                        WorkingMode.NORMAL.ordinal -> {
                             NormalPreference(
                                 title = stringResource(R.string.fcm_send_target_token),
                                 subtitle = when {
@@ -887,11 +892,32 @@ fun FCMPage(
                 }
             }
             item {
-                NormalPreference(
-                    title = stringResource(R.string.fcm_limited_contact),
-                    subtitle = stringResource(id = R.string.fcm_limited_contact_subtitle),
+                AnimatedVisibility(
+                    visible = workingMode == WorkingMode.NORMAL.ordinal,
+                    enter = expandVertically(),
+                    exit = shrinkVertically()
                 ) {
-                    showContactDialog = true
+                    NormalPreference(
+                        title = stringResource(R.string.fcm_limited_contact),
+                        subtitle = stringResource(id = R.string.fcm_limited_contact_subtitle),
+                    ) {
+                        showContactDialog = true
+                    }
+                }
+            }
+            item {
+                AnimatedVisibility(
+                    visible = workingMode == WorkingMode.FCM.ordinal,
+                    enter = expandVertically(),
+                    exit = shrinkVertically()
+                ) {
+                    SwitchPreference(
+                        title = stringResource(R.string.fcm_enable_cache),
+                        subtitleOff = stringResource(R.string.fcm_enable_cache_subtitle_off),
+                        subtitleOn = stringResource(R.string.fcm_enable_cache_subtitle_on),
+                        checked = enableCache,
+                        onCheckedChange = viewModel::setFcmEnableCache
+                    )
                 }
             }
             item {

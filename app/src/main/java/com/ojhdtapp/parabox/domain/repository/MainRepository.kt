@@ -22,6 +22,7 @@ interface MainRepository {
     fun updateContactBackupState(id: Long, value: Boolean)
     fun updateContactTag(id: Long, tag: List<String>)
     fun updateContactProfileAndTag(id: Long, profile: Profile, tags: List<String>)
+    fun updateCustomizedContactProfile(id: Long, profile: Profile, tags: List<String>)
     fun updateContactUnreadMessagesNum(id:Long, value: Int)
     fun updateContactDisableFCMState(id: Long, value: Boolean)
     fun getContactTags(): Flow<List<Tag>>

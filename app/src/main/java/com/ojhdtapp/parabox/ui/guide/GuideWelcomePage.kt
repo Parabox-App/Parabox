@@ -34,6 +34,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.app.LocaleManagerCompat
 import androidx.core.os.LocaleListCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -73,7 +74,8 @@ fun GuideWelcomePage(
 
     val selectedLanguage by remember {
         mutableStateOf(
-            AppCompatDelegate.getApplicationLocales()[0]?.displayLanguage ?: "English"
+            (AppCompatDelegate.getApplicationLocales().takeIf { !it.isEmpty }
+                ?: LocaleManagerCompat.getSystemLocales(context))[0]?.displayLanguage ?: "English"
 //            when(AppCompatDelegate.getApplicationLocales()[0]?.toLanguageTag()?:"en"){
 //                "zh-rCN" -> "中文（中国）"
 //                "en" -> "English"

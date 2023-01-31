@@ -7,9 +7,6 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.gestures.snapping.SnapLayoutInfoProvider
-import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,7 +16,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Archive
-import androidx.compose.material.icons.outlined.Done
 import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.rememberSwipeableState
@@ -36,10 +32,8 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import coil.ImageLoader
 import coil.compose.AsyncImage
@@ -54,6 +48,7 @@ import com.ojhdtapp.parabox.core.util.FormUtil
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.ChatPageDestination
+import com.ojhdtapp.parabox.ui.theme.Theme
 import com.ojhdtapp.parabox.ui.util.*
 import com.ramcosta.composedestinations.navigation.navigate
 import com.valentinilk.shimmer.Shimmer
@@ -546,6 +541,10 @@ fun RowScope.MessageArea(
             item {
                 if (contactState.data.isEmpty() && (viewModel.archivedContactHidden.value || archivedContact.isEmpty())) {
                     val context = LocalContext.current
+                    val theme = mainSharedViewModel.themeFlow.collectAsState(initial = Theme.WILLOW).value
+                    val enableDynamicColor = mainSharedViewModel.enableDynamicColorFlow.collectAsState(
+                        initial = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                    ).value
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -560,7 +559,17 @@ fun RowScope.MessageArea(
                             .build()
                         AsyncImage(
                             model = ImageRequest.Builder(context)
-                                .data(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.empty_dynamic else R.drawable.empty)
+                                .data(
+                                    when {
+                                        enableDynamicColor -> R.drawable.empty_dynamic
+                                        theme == Theme.WILLOW -> R.drawable.empty_willow
+                                        theme == Theme.PURPLE -> R.drawable.empty_purple
+                                        theme == Theme.SAKURA -> R.drawable.empty_sakura
+                                        theme == Theme.GARDENIA -> R.drawable.empty_gardenia
+                                        theme == Theme.WATER -> R.drawable.empty_water
+                                        else -> R.drawable.empty_willow
+                                    }
+                                )
                                 .crossfade(true)
                                 .build(),
                             imageLoader = imageLoader,

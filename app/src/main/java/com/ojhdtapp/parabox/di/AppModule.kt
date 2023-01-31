@@ -12,6 +12,8 @@ import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.Converters
 import com.ojhdtapp.parabox.data.remote.dto.ReceiveMessageDtoJsonDeserializer
 import com.ojhdtapp.parabox.data.remote.dto.SendMessageDtoJsonDeserializer
+import com.ojhdtapp.parabox.data.remote.dto.server.content.Content
+import com.ojhdtapp.parabox.data.remote.dto.server.content.ContentTypeAdapter
 import com.ojhdtapp.parabox.data.repository.MainRepositoryImpl
 import com.ojhdtapp.parabox.domain.fcm.FcmApiHelper
 import com.ojhdtapp.parabox.domain.fcm.FcmService
@@ -111,6 +113,10 @@ object AppModule {
             SendMessageDto::class.java,
             SendMessageDtoJsonDeserializer()
         )
+        .registerTypeAdapter(
+            Content::class.java,
+            ContentTypeAdapter()
+        )
         .create()
 
     @Provides
@@ -183,5 +189,14 @@ object AppModule {
     @Singleton
     fun provideQueryContactAndMessageUseCase(repository: MainRepository): QueryContactAndMessage {
         return QueryContactAndMessage(repository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGetUriFromCloudResourceInfoUseCase(
+        @ApplicationContext applicationContext: Context,
+        downloadUtil: DownloadUtil
+    ): GetUriFromCloudResourceInfo {
+        return GetUriFromCloudResourceInfo(context = applicationContext, downloadUtil = downloadUtil)
     }
 }

@@ -168,46 +168,9 @@ fun GuideCloudPage(
         )
     }
 
-    BottomSheetScaffold(
-        modifier = Modifier
-            .systemBarsPadding(),
-        snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
-        sheetContent = {
-            Row(
-                modifier = Modifier
-                    .height(56.dp)
-                    .padding(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-
-                OutlinedButton(onClick = {
-                    mainNavController.navigateUp()
-                }) {
-                    Text(text = stringResource(R.string.back))
-                }
-                Spacer(modifier = Modifier.weight(1f))
-                Button(
-                    onClick = {
-                        mainNavController.navigate(GuidePersonalisePageDestination)
-                    },
-                    enabled = true
-                ) {
-                    if (cloudService == 0) {
-                        Text(text = stringResource(R.string.later))
-                    } else {
-                        Text(text = stringResource(R.string.cont))
-                    }
-                }
-            }
-        },
-        sheetElevation = 0.dp,
-        sheetBackgroundColor = Color.Transparent,
-//        sheetPeekHeight = 56.dp,
-        backgroundColor = Color.Transparent
-    ) { paddingValues ->
+    Column(modifier = Modifier.systemBarsPadding()){
         LazyColumn(
-            modifier = Modifier.padding(paddingValues),
+            modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(bottom = 16.dp)
         ) {
@@ -237,14 +200,14 @@ fun GuideCloudPage(
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
-            item {
-                Text(
-                    modifier = Modifier.padding(horizontal = 32.dp),
-                    text = stringResource(R.string.setup_cloud_service_text_b),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
+//            item {
+//                Text(
+//                    modifier = Modifier.padding(horizontal = 32.dp),
+//                    text = stringResource(R.string.setup_cloud_service_text_b),
+//                    style = MaterialTheme.typography.bodyLarge,
+//                    color = MaterialTheme.colorScheme.onSurface
+//                )
+//            }
             item {
                 when (cloudService) {
                     GoogleDriveUtil.SERVICE_CODE -> {
@@ -383,5 +346,47 @@ fun GuideCloudPage(
                 }
             }
         }
+        Row(
+            modifier = Modifier
+                .height(56.dp)
+                .padding(horizontal = 24.dp),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            OutlinedButton(onClick = {
+                mainNavController.navigateUp()
+            }) {
+                Text(text = stringResource(R.string.back))
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            Button(
+                onClick = {
+                    mainNavController.navigate(GuidePersonalisePageDestination)
+                },
+                enabled = true
+            ) {
+                if (cloudService == 0) {
+                    Text(text = stringResource(R.string.later))
+                } else {
+                    Text(text = stringResource(R.string.cont))
+                }
+            }
+        }
     }
+
+//    BottomSheetScaffold(
+//        modifier = Modifier
+//            .systemBarsPadding(),
+//        snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
+//        sheetContent = {
+//
+//        },
+//        sheetElevation = 0.dp,
+//        sheetBackgroundColor = Color.Transparent,
+//        sheetPeekHeight = 56.dp,
+//        backgroundColor = Color.Transparent
+//    ) { paddingValues ->
+//
+//    }
 }

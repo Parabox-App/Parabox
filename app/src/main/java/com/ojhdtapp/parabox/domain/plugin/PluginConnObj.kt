@@ -325,6 +325,7 @@ class PluginConnObj(
     inner class ConnHandler : Handler() {
         override fun handleMessage(msg: Message) {
             Log.d("parabox", "msg comming!:arg1:${msg.arg1};arg2:${msg.arg2};what:${msg.what}")
+            if (msg.obj == null) return
             val obj = (msg.obj as Bundle)
             when (msg.arg2) {
                 ParaboxKey.TYPE_REQUEST -> {

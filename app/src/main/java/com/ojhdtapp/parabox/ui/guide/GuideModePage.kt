@@ -33,6 +33,7 @@ import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.GuideExtensionPageDestination
 import com.ojhdtapp.parabox.ui.destinations.GuideFCMReceiverPageDestination
+import com.ojhdtapp.parabox.ui.destinations.GuideFCMServerPageDestination
 import com.ojhdtapp.parabox.ui.setting.SettingPageViewModel
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.GuideNavGraph
@@ -60,47 +61,9 @@ fun GuideModePage(
     val coroutineScope = rememberCoroutineScope()
     val snackBarHostState = remember { SnackbarHostState() }
     val selectedWorkingMode by viewModel.workingModeFlow.collectAsState(initial = WorkingMode.NORMAL.ordinal)
-    BottomSheetScaffold(
-        modifier = Modifier
-            .systemBarsPadding(),
-        snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
-        sheetContent = {
-            Row(
-                modifier = Modifier
-                    .height(56.dp)
-                    .padding(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-
-                OutlinedButton(onClick = {
-                    mainNavController.navigateUp()
-                }) {
-                    Text(text = stringResource(R.string.back))
-                }
-                Spacer(modifier = Modifier.weight(1f))
-                Button(onClick = {
-                    when (selectedWorkingMode) {
-                        WorkingMode.NORMAL.ordinal -> {
-                            mainNavController.navigate(GuideExtensionPageDestination)
-                        }
-                        WorkingMode.RECEIVER.ordinal -> {
-                            mainNavController.navigate(GuideFCMReceiverPageDestination)
-                        }
-                        WorkingMode.FCM.ordinal -> {}
-                    }
-                }) {
-                    Text(text = stringResource(id = R.string.cont))
-                }
-            }
-        },
-        sheetElevation = 0.dp,
-        sheetBackgroundColor = Color.Transparent,
-//        sheetPeekHeight = 56.dp,
-        backgroundColor = Color.Transparent
-    ) { paddingValues ->
+    Column(modifier = Modifier.systemBarsPadding()){
         LazyColumn(
-            modifier = Modifier.padding(paddingValues),
+            modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(bottom = 16.dp)
         ) {
             item {
@@ -249,6 +212,36 @@ fun GuideModePage(
                         ),
                         onClick = {})
                 }
+            }
+        }
+        Row(
+            modifier = Modifier
+                .height(56.dp)
+                .padding(horizontal = 24.dp),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            OutlinedButton(onClick = {
+                mainNavController.navigateUp()
+            }) {
+                Text(text = stringResource(R.string.back))
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            Button(onClick = {
+                when (selectedWorkingMode) {
+                    WorkingMode.NORMAL.ordinal -> {
+                        mainNavController.navigate(GuideExtensionPageDestination)
+                    }
+                    WorkingMode.RECEIVER.ordinal -> {
+                        mainNavController.navigate(GuideFCMReceiverPageDestination)
+                    }
+                    WorkingMode.FCM.ordinal -> {
+                        mainNavController.navigate(GuideFCMServerPageDestination)
+                    }
+                }
+            }) {
+                Text(text = stringResource(id = R.string.cont))
             }
         }
     }
