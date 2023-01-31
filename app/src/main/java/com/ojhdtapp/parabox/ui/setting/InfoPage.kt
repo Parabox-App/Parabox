@@ -2,6 +2,7 @@ package com.ojhdtapp.parabox.ui.setting
 
 import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
+import android.os.Build
 import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutLinearInEasing
@@ -47,6 +48,7 @@ import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.message_content.Image
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.message.MessageState
+import com.ojhdtapp.parabox.ui.theme.Theme
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.NormalPreference
 import com.ojhdtapp.parabox.ui.util.PreferencesCategory
@@ -73,6 +75,10 @@ fun InfoPage(
     val viewModel = hiltViewModel<SettingPageViewModel>()
     val coroutineScope = rememberCoroutineScope()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val theme = viewModel.themeFlow.collectAsState(initial = Theme.WILLOW).value
+    val enableDynamicColor = viewModel.enableDynamicColorFlow.collectAsState(
+        initial = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    ).value
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -116,6 +122,8 @@ fun InfoPage(
                         modifier = Modifier.fillMaxWidth(),
                         userName = mainSharedViewModel.userNameFlow.collectAsState(initial = DataStoreKeys.DEFAULT_USER_NAME).value,
                         version = BuildConfig.VERSION_NAME,
+                        theme = theme,
+                        enableDynamicColor = enableDynamicColor,
                         onBlockClick = {},
                         onUserNameClick = {
                             viewModel.setEditUserNameDialogState(true)
