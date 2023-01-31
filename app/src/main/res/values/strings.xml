@@ -520,4 +520,5 @@
     <string name="reply_label">Type reply</string>
     <string name="notification_group_summary">%1$d new messages</string>
     <string name="notification_group_title">New messages</string>
+    <string name="error_query_data">An error occurred while fetching data</string>
 </resources>
