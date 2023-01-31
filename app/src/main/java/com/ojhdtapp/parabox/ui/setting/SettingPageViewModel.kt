@@ -24,7 +24,6 @@ import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.use_case.GetContacts
 import com.ojhdtapp.parabox.domain.use_case.UpdateContact
-import com.ojhdtapp.parabox.ui.theme.FontFamily
 import com.ojhdtapp.parabox.ui.theme.Theme
 import com.ojhdtapp.parabox.ui.util.WorkingMode
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -562,25 +561,6 @@ class SettingPageViewModel @Inject constructor(
         }
     }
 
-    val fontFamilyFlow: Flow<Int> = context.dataStore.data
-        .catch { exception ->
-            if (exception is IOException) {
-                emit(emptyPreferences())
-            } else {
-                throw exception
-            }
-        }
-        .map { settings ->
-            settings[DataStoreKeys.SETTINGS_FONT_FAMILY] ?: FontFamily.SANS_SERIF
-        }
-
-    fun setFontFamily(value: Int) {
-        viewModelScope.launch {
-            context.dataStore.edit { preferences ->
-                preferences[DataStoreKeys.SETTINGS_FONT_FAMILY] = value
-            }
-        }
-    }
     // Experimental
     val entityExtractionFlow = context.dataStore.data
         .catch { exception ->

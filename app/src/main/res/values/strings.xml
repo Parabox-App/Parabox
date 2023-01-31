@@ -513,6 +513,12 @@
     <string name="setup_fcm_server_text_d">Usually requires a private server, configured according to the tutorial guidelines, and has a stable connection to Google services.</string>
     <string name="setup_fcm_server_step_b_title">Copy FCM token</string>
     <string name="setup_fcm_server_step_b_text">Copy the Token and fill it in the corresponding configuration item of the server configuration file.</string>
-    <string name="font_family">Font family</string>
-    <string name="default_font_family">Default</string>
+    <string name="notification_service_state_channel_name">Service status</string>
+    <string name="notification_service_state_channel_des">Background service status</string>
+    <string name="notification_service_state_title">No extensions connected</string>
+    <string name="notification_service_state_ticker">Parabox is running in the background</string>
+    <string name="reply_label">Type reply</string>
+    <string name="notification_group_summary">%1$d new messages</string>
+    <string name="notification_group_title">New messages</string>
+    <string name="error_query_data">An error occurred while fetching data</string>
 </resources>

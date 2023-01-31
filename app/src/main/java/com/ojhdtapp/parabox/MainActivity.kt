@@ -1073,6 +1073,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             is ActivityEvent.SendMessage -> {
+                Log.d("parabox", "sendMessage at ${System.currentTimeMillis()}")
                 lifecycleScope.launch(Dispatchers.IO) {
                     val timestamp = System.currentTimeMillis()
                     handleNewMessage(
@@ -1299,6 +1300,10 @@ class MainActivity : AppCompatActivity() {
             }
             is ActivityEvent.QueryFCMToken -> {
                 queryFCMToken()
+            }
+
+            is ActivityEvent.LaunchApp -> {
+
             }
         }
     }

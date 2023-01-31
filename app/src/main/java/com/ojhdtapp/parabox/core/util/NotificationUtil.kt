@@ -14,16 +14,15 @@ import android.content.LocusId
 import android.content.pm.PackageManager
 import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.util.Log
+import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
-import androidx.compose.material3.MaterialTheme
+import androidx.core.app.NotificationCompat
 import androidx.core.content.getSystemService
 import androidx.core.net.toUri
 import androidx.datastore.preferences.core.emptyPreferences
@@ -40,16 +39,14 @@ import com.ojhdtapp.parabox.domain.model.message_content.Image
 import com.ojhdtapp.parabox.domain.model.message_content.getContentString
 import com.ojhdtapp.parabox.domain.notification.MarkAsReadReceiver
 import com.ojhdtapp.parabox.domain.notification.ReplyReceiver
+import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.bubble.BubbleActivity
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendTargetType
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.withContext
+import okhttp3.internal.notify
 import java.io.IOException
-import java.net.URL
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -61,6 +58,7 @@ class NotificationUtil(
     companion object {
         const val GROUP_KEY_NEW_MESSAGE = "group_new_message"
         const val GROUP_KEY_INTERNAL = "group_internal"
+        const val SUMMARY_ID = 9998
 
         private const val REQUEST_CONTENT = 1
         private const val REQUEST_BUBBLE = 2
@@ -69,12 +67,12 @@ class NotificationUtil(
         private const val FOREGROUND_PLUGIN_SERVICE_NOTIFICATION_ID = 999
 
         const val KEY_TEXT_REPLY = "key_text_reply"
-        val remoteInput: RemoteInput = RemoteInput.Builder(KEY_TEXT_REPLY).run {
-            setLabel("输入回复")
-            build()
-        }
     }
 
+    private val remoteInput: RemoteInput = RemoteInput.Builder(KEY_TEXT_REPLY).run {
+        setLabel(context.getString(R.string.reply_label))
+        build()
+    }
     private val notificationManager: NotificationManager =
         context.getSystemService() ?: throw IllegalStateException()
 
@@ -351,7 +349,7 @@ class NotificationUtil(
                     .setShowWhen(true)
                     .setAutoCancel(true)
                     .setWhen(message.timestamp)
-//                    .setGroup(GROUP_KEY_NEW_MESSAGE)
+                    .setGroup(GROUP_KEY_NEW_MESSAGE)
                     .setActions(
                         Notification.Action
                             .Builder(
@@ -466,11 +464,33 @@ class NotificationUtil(
                     .setAutoCancel(true)
                 val senderName = context.getString(R.string.you)
                 Notification.MessagingStyle(senderName)
-                    .addMessage("Check this out!", Date().time, senderName)
+                    .addMessage(message.contents.getContentString(), Date().time, senderName)
                     .setConversationTitle(contact.profile.name)
                     .setBuilder(notificationBuilder)
                 notificationBuilder
             }
+
+        val messageBadgeNum = context.dataStore.data.map { preferences ->
+            preferences[DataStoreKeys.MESSAGE_BADGE_NUM] ?: 0
+        }.firstOrNull() ?: 0
+
+        val summaryNotificationBuilder = Notification.Builder(context, channelId)
+            .setSmallIcon(R.drawable.ic_stat_name)
+            .setContentTitle(context.getString(R.string.notification_group_title))
+            .setContentText(context.getString(R.string.notification_group_summary, messageBadgeNum))
+            .setShowWhen(true)
+            .setAutoCancel(true)
+            .setWhen(message.timestamp)
+            .setStyle(
+                Notification.InboxStyle()
+                    .addLine(message.contents.getContentString())
+                    .setBigContentTitle(context.getString(R.string.notification_group_summary, messageBadgeNum))
+                    .setSummaryText(context.getString(R.string.notification_group_summary, messageBadgeNum))
+            )
+            .setGroup(GROUP_KEY_NEW_MESSAGE)
+            .setGroupSummary(true)
+
+        notificationManager.notify(SUMMARY_ID, summaryNotificationBuilder.build())
         notificationManager.notify(contact.contactId.toInt(), notificationBuilder.build())
     }
 
@@ -490,17 +510,16 @@ class NotificationUtil(
         }
         createNotificationChannel(
             SERVICE_STATE_CHANNEL_ID,
-            "服务状态",
-            "后台服务状态",
+            context.getString(R.string.notification_service_state_channel_name),
+            context.getString(R.string.notification_service_state_channel_des),
             NotificationManager.IMPORTANCE_MIN
         )
         val notification: Notification =
             Notification.Builder(context, SERVICE_STATE_CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_stat_name)
-                .setContentTitle("没有已连接的扩展")
-//                .setContentText("Parabox 正在后台运行")
+                .setContentTitle(context.getString(R.string.notification_service_state_title))
                 .setContentIntent(pendingIntent)
-                .setTicker("Parabox 正在后台运行")
+                .setTicker(context.getString(R.string.notification_service_state_ticker))
                 .setCategory(Notification.CATEGORY_SERVICE)
                 .setGroup(GROUP_KEY_INTERNAL)
                 .setOnlyAlertOnce(true)

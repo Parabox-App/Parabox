@@ -190,7 +190,10 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                                             sessionId = sessionId!!
                                         )
                                     )
-                            val shouldDownloadCloudResource = false
+                            val shouldDownloadCloudResource = dataStore.data.map { preferences ->
+                                preferences[DataStoreKeys.SETTINGS_FCM_ENABLE_CACHE]
+                                    ?: false
+                            }.first()
                             val messageContents = if (shouldDownloadCloudResource) {
                                 dto.contents.toDownloadedMessageContentList(
                                     getUriFromCloudResourceInfo = getUriFromCloudResourceInfo

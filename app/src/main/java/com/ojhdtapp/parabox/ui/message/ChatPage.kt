@@ -2,6 +2,7 @@ package com.ojhdtapp.parabox.ui.message
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
 import android.os.Build
@@ -48,6 +49,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.*
@@ -57,23 +59,24 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpOffset
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.*
 import androidx.compose.ui.zIndex
+import androidx.core.graphics.drawable.toBitmap
 import androidx.navigation.NavController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import coil.ImageLoader
 import coil.annotation.ExperimentalCoilApi
 import coil.compose.AsyncImage
+import coil.compose.rememberAsyncImagePainter
 import coil.decode.GifDecoder
 import coil.decode.ImageDecoderDecoder
 import coil.imageLoader
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import coil.request.SuccessResult
+import coil.size.Size
+import coil.size.pxOrElse
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.mlkit.nl.entityextraction.*
 import com.ojhdtapp.parabox.MainActivity
@@ -90,15 +93,17 @@ import com.ojhdtapp.parabox.ui.bubble.BubbleActivity
 import com.ojhdtapp.parabox.ui.destinations.ChatPageDestination
 import com.ojhdtapp.parabox.ui.util.ActivityEvent
 import com.ojhdtapp.parabox.ui.util.RoundedCornerDropdownMenu
-import com.origeek.imageViewer.ImagePreviewer
-import com.origeek.imageViewer.rememberPreviewerState
+import com.origeek.imageViewer.previewer.*
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.navigate
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import kotlin.ranges.coerceAtLeast
+import kotlin.ranges.coerceIn
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -500,249 +505,79 @@ fun NormalChatPage(
         mutableStateOf(false)
     }
     // Image Preview
-    val imageViewerState = rememberPreviewerState()
-    LaunchedEffect(messageState) {
-        imageViewerState.hide()
-    }
+//    val imageViewerState = rememberPreviewerState()
     val imageList =
-        produceState(
-            initialValue = emptyList<Pair<Long, ImageBitmap>>(),
-            key1 = lazyPagingItems.itemSnapshotList
-        ) {
-            if (!imageViewerState.show) {
-                value =
-                    lazyPagingItems.itemSnapshotList.items.fold(mutableListOf<Pair<Long, ImageBitmap>>()) { acc, message ->
-                        val imageMessageList = message.contents.filterIsInstance<Image>()
-                        val lastIndex = imageMessageList.lastIndex
-                        imageMessageList.reversed().forEachIndexed { index, t ->
-                            if (t.uriString != null) {
-                                Log.d("parabox", "${t.uriString}")
-                                FileUtil.getBitmapFromUri(context, Uri.parse(t.uriString))?.let {
-                                    acc.add(
-                                        "${message.messageId}${
-                                            (lastIndex - index).coerceIn(
-                                                0,
-                                                lastIndex
-                                            )
-                                        }".toLong() to it.asImageBitmap()
-                                    )
-                                }
-                            } else if (t.url != null) {
-                                val loader = ImageLoader(context)
-                                val request = ImageRequest.Builder(context)
-                                    .data(t.url)
-                                    .allowHardware(false)
-                                    .build()
-                                val bitmap = try {
-                                    val result = (loader.execute(request) as SuccessResult).drawable
-                                    (result as BitmapDrawable).bitmap.asImageBitmap()
-                                } catch (e: Exception) {
-                                    e.printStackTrace()
-                                    ImageBitmap(1, 1)
-                                }
-                                acc.add(
-                                    "${message.messageId}${
-                                        (lastIndex - index).coerceIn(
-                                            0,
-                                            lastIndex
-                                        )
-                                    }".toLong() to bitmap
-                                )
-                            }
-                        }
-                        acc
-                    }.reversed()
+        lazyPagingItems.itemSnapshotList.items.fold(mutableListOf<Pair<Long, Image>>()) { acc, message ->
+            val imageMessageList = message.contents.filterIsInstance<Image>()
+            val lastIndex = imageMessageList.lastIndex
+            imageMessageList.reversed().forEachIndexed { index, t ->
+                if (t.uriString != null || t.url != null) {
+                    val imageId = "${message.messageId}${(lastIndex - index).coerceIn(0, lastIndex)}".toLong()
+                    acc.add(
+                        imageId to t
+                    )
+                }
             }
-        }
+            acc
+        }.reversed()
+//    val imageList =
+//        produceState(
+//            initialValue = emptyList<Pair<Long, ImageBitmap>>(),
+//            key1 = lazyPagingItems.itemSnapshotList
+//        ) {
+//            if (!imageViewerState.visible) {
+//                value =
+//                    lazyPagingItems.itemSnapshotList.items.fold(mutableListOf<Pair<Long, ImageBitmap>>()) { acc, message ->
+//                        val imageMessageList = message.contents.filterIsInstance<Image>()
+//                        val lastIndex = imageMessageList.lastIndex
+//                        imageMessageList.reversed().forEachIndexed { index, t ->
+//                            val imageId = "${message.messageId}${(lastIndex - index).coerceIn(0, lastIndex)}".toLong()
+//                            if (t.uriString != null) {
+//                                FileUtil.getBitmapFromUri(context, Uri.parse(t.uriString))?.let {
+//                                    acc.add(
+//                                        imageId to it.asImageBitmap()
+//                                    )
+//                                }
+//                            } else if (t.url != null) {
+//                                val loader = ImageLoader(context)
+//                                val request = ImageRequest.Builder(context)
+//                                    .data(t.url)
+//                                    .allowHardware(false)
+//                                    .build()
+//                                val bitmap = try {
+//                                    val result = (loader.execute(request) as SuccessResult).drawable
+//                                    (result as BitmapDrawable).bitmap.asImageBitmap()
+//                                } catch (e: Exception) {
+//                                    e.printStackTrace()
+//                                    ImageBitmap(1, 1)
+//                                }
+//                                acc.add(
+//                                    imageId to bitmap
+//                                )
+//                            }
+//                        }
+//                        acc
+//                    }.reversed()
+//            }
+//        }
+    val imageViewerState = rememberPreviewerState(enableVerticalDrag = true){
+        imageList[it].first
+    }
+    LaunchedEffect(messageState) {
+        imageViewerState.close()
+    }
+
     var showImagePreviewerToolbar by remember {
         mutableStateOf(true)
     }
     var imagePreviewerMenuExpanded by remember {
         mutableStateOf(false)
     }
-    ImagePreviewer(modifier = Modifier.zIndex(9f),
-        count = imageList.value.size,
-        state = imageViewerState,
-        imageLoader = { index ->
-            if (index < imageList.value.size) {
-                imageList.value[index].second
-            } else {
-                ImageBitmap(1, 1)
-            }
-        },
-        foreground = { total, current ->
-            AnimatedVisibility(
-                showImagePreviewerToolbar,
-                enter = expandVertically(),
-                exit = shrinkVertically()
-            ) {
-                androidx.compose.material3.TopAppBar(
-                    modifier = Modifier
-                        .background(Color.Black.copy(alpha = 0.5f))
-                        .statusBarsPadding(),
-                    title = {},
-                    navigationIcon = {
-                        IconButton(onClick = { imageViewerState.hide() }) {
-                            Icon(
-                                imageVector = Icons.Outlined.ArrowBack,
-                                contentDescription = "back"
-                            )
-                        }
-                    },
-                    actions = {
-                        Box(
-                            modifier = Modifier
-                                .wrapContentSize(Alignment.TopStart)
-                        ) {
-                            IconButton(onClick = {
-                                imagePreviewerMenuExpanded = !imagePreviewerMenuExpanded
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Outlined.MoreVert,
-                                    contentDescription = "more"
-                                )
-                            }
-                            RoundedCornerDropdownMenu(
-                                expanded = imagePreviewerMenuExpanded,
-                                onDismissRequest = { imagePreviewerMenuExpanded = false },
-                                modifier = Modifier.width(192.dp)
-                            ) {
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(stringResource(R.string.add_meme))
-                                    },
-                                    onClick = {
-                                        imagePreviewerMenuExpanded = false
-                                        try {
-                                            val imageId =
-                                                imageList.value.getOrNull(current)?.first
-                                                    ?: throw NoSuchElementException("id lost")
-                                            val imageIndex = imageId.toString().last().digitToInt()
-                                            val messageId = imageId.toString().let {
-                                                it.substring(0, it.length - 1).toLong()
-                                            }
-                                            val message =
-                                                lazyPagingItems.itemSnapshotList.items.findLast { it.messageId == messageId }
-                                            val image =
-                                                message?.contents?.filterIsInstance<Image>()
-                                                    ?.getOrNull(imageIndex)
-                                                    ?: throw NoSuchElementException("image lost")
-                                            val path = context.getExternalFilesDir("meme")!!
-                                            image.uriString?.let { uriString ->
-                                                val uri = Uri.parse(uriString)
-                                                FileUtil.copyFileToPath(
-                                                    context, path,
-                                                    image.fileName,
-                                                    uri
-                                                )
-                                            } ?: image.url?.let { url ->
-                                                context.imageLoader.diskCache?.get(url)
-                                                    ?.use { snapshot ->
-                                                        val imageFile = snapshot.data.toFile()
-                                                        FileUtil.copyFileToPath(
-                                                            context,
-                                                            path,
-                                                            image.fileName,
-                                                            imageFile
-                                                        )
-                                                    }
-                                            }
-                                            memeUpdateFlag++
-                                            Toast.makeText(
-                                                context,
-                                                context.getString(R.string.add_meme_text, 1),
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        } catch (e: NoSuchElementException) {
-                                            Toast.makeText(
-                                                context,
-                                                context.getString(R.string.cannot_locate_img),
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        }
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector = Icons.Outlined.FavoriteBorder,
-                                            contentDescription = "favorite"
-                                        )
-                                    })
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(stringResource(R.string.save_to_local))
-                                    },
-                                    onClick = {
-                                        imagePreviewerMenuExpanded = false
-                                        try {
-                                            val imageId =
-                                                imageList.value.getOrNull(current)?.first
-                                                    ?: throw NoSuchElementException("id lost")
-                                            val imageIndex = imageId.toString().last().digitToInt()
-                                            val messageId = imageId.toString().let {
-                                                it.substring(0, it.length - 1).toLong()
-                                            }
-                                            val message =
-                                                lazyPagingItems.itemSnapshotList.items.findLast { it.messageId == messageId }
-                                            val image =
-                                                message?.contents?.filterIsInstance<Image>()
-                                                    ?.getOrNull(imageIndex)
-                                                    ?: throw NoSuchElementException("image lost")
-                                            image.uriString?.let { uriString ->
-                                                FileUtil.saveImageToExternalStorage(
-                                                    context,
-                                                    Uri.parse(uriString)
-                                                )
-                                            } ?: image.url?.let { url ->
-                                                context.imageLoader.diskCache?.get(url)
-                                                    ?.use { snapshot ->
-                                                        val imageFile =
-                                                            snapshot.data.toFile()
-                                                        FileUtil.saveImageToExternalStorage(
-                                                            context,
-                                                            imageFile
-                                                        )
-                                                    }
-                                            } ?: throw NoSuchElementException("image lost")
-                                            memeUpdateFlag++
-                                            Toast.makeText(
-                                                context,
-                                                context.getString(R.string.save_to_local_text, 1),
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        } catch (e: Exception) {
-                                            Toast.makeText(
-                                                context,
-                                                context.getString(R.string.cannot_locate_img),
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        }
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector = Icons.Outlined.FileDownload,
-                                            contentDescription = "download"
-                                        )
-                                    })
-                            }
-                        }
-                    },
-                    colors = TopAppBarDefaults.smallTopAppBarColors(
-                        containerColor = Color.Transparent,
-                        navigationIconContentColor = Color(red = 230, green = 225, blue = 229),
-                        titleContentColor = Color(red = 230, green = 225, blue = 229),
-                        actionIconContentColor = Color(red = 230, green = 225, blue = 229),
-                    )
-                )
-            }
-        },
-        onTap = {
-            showImagePreviewerToolbar = !showImagePreviewerToolbar
-        }
-    )
+
     val useDarkIcons = isSystemInDarkTheme()
     val systemUiController = rememberSystemUiController()
-    LaunchedEffect(imageViewerState.show) {
-        if (imageViewerState.show) {
+    LaunchedEffect(imageViewerState.visible) {
+        if (imageViewerState.visible) {
             systemUiController.setSystemBarsColor(
                 color = Color.Transparent,
                 darkIcons = false
@@ -1022,7 +857,7 @@ fun NormalChatPage(
                         TopAppBar(
                             title = {
                                 Text(
-                                    text = messageState.contact?.profile?.name
+                                    text = messageState.contact?.profile?.customizedName?.ifBlank { null } ?: messageState.contact?.profile?.name
                                         ?: stringResource(R.string.conversation),
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis,
@@ -1402,16 +1237,11 @@ fun NormalChatPage(
                 scaffoldState.bottomSheetState.collapse()
             }
         }
-//        if (messageState.state == MessageState.LOADING) {
-//            Box(
-//                modifier = Modifier
-//                    .fillMaxSize()
-//                    .background(MaterialTheme.colorScheme.surface),
-//                contentAlignment = Alignment.Center
-//            ) {
-//                CircularProgressIndicator()
-//            }
-//        } else {
+        BackHandler(enabled = imageViewerState.visible) {
+            coroutineScope.launch {
+                imageViewerState.closeTransform()
+            }
+        }
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -1500,6 +1330,7 @@ fun NormalChatPage(
                             isTranslationEnabled = mainSharedViewModel.translationFlow.collectAsState(
                                 initial = true
                             ).value,
+                            imageViewerState = imageViewerState,
                             onClickingDismiss = { clickingMessage = null },
                             onClickingEvent = {
                                 when (it) {
@@ -1625,9 +1456,14 @@ fun NormalChatPage(
                                 } else {
                                     if (value.contents.any { it is Image }) {
                                         val index =
-                                            imageList.value.indexOfLast { it.first == "${value.messageId}0".toLong() }
+                                            imageList.indexOfLast { it.first == "${value.messageId}0".toLong() }
+//                                        Log.d("parabox", "imageViewer list:${imageList.map{ it.first }}")
+//                                        Log.d("parabox", "imageViewer clicked: ${value.messageId}0")
+//                                        Log.d("parabox", "imageViewer index: ${index}")
                                         if (index != -1) {
-                                            imageViewerState.show(index)
+                                            coroutineScope.launch {
+                                                imageViewerState.openTransform(index)
+                                            }
                                         }
                                     } else {
                                         clickingMessage = value
@@ -1678,25 +1514,7 @@ fun NormalChatPage(
                             }
                         )
                     }
-
                 }
-//                timedList.forEach { (timestamp, chatBlockList) ->
-//                    items(
-//                        items = chatBlockList,
-//                        key = { "${it.profile.name}:${timestamp}:${it.messages.first().timestamp}" }) { chatBlock ->
-//                        com.ojhdtapp.parabox.ui.message.ChatBlock(
-//                            modifier = Modifier.fillMaxWidth(),
-//                            mainSharedViewModel = mainSharedViewModel,
-//                            data = chatBlock,
-//                            sentByMe = chatBlock.messages.first().sentByMe,
-//                            userName = mainSharedViewModel.userNameFlow.collectAsState(initial = DataStoreKeys.DEFAULT_USER_NAME).value,
-//                            avatarUri = mainSharedViewModel.userAvatarFlow.collectAsState(initial = null).value,
-//                        )
-//                    }
-//                    item(key = "$timestamp") {
-//                        TimeDivider(timestamp = timestamp)
-//                    }
-//                }
                 if (lazyPagingItems.loadState.append == LoadState.Loading) {
                     item("loadingIndicator") {
                         Row(
@@ -1713,7 +1531,212 @@ fun NormalChatPage(
 
             }
         }
-//    }
+    ImagePreviewer(modifier = Modifier.fillMaxSize(),
+        count = imageList.size,
+        state = imageViewerState,
+        imageLoader = { index ->
+            if (index < imageList.size) {
+                val t = imageList[index].second
+                val imageLoader = ImageLoader.Builder(context)
+                    .components {
+                        if (SDK_INT >= 28) {
+                            add(ImageDecoderDecoder.Factory())
+                        } else {
+                            add(GifDecoder.Factory())
+                        }
+                    }
+                    .build()
+                rememberAsyncImagePainter(
+                    model = ImageRequest.Builder(context)
+                        .data(t.uriString?.let { Uri.parse(it).replacedIfUnavailable(context)}
+                            ?: t.url)
+                        .size(Size.ORIGINAL)
+                        .build(),
+                    imageLoader = imageLoader,
+                    error = painterResource(id = R.drawable.image_lost),
+                    fallback = painterResource(id = R.drawable.image_lost),
+                )
+            } else {
+                painterResource(R.drawable.image_lost)
+            }
+        },
+        previewerLayer = {
+            foreground = { current ->
+                AnimatedVisibility(
+                    showImagePreviewerToolbar,
+                    enter = expandVertically(),
+                    exit = shrinkVertically()
+                ) {
+                    androidx.compose.material3.TopAppBar(
+                        modifier = Modifier
+                            .background(Color.Black.copy(alpha = 0.5f))
+                            .statusBarsPadding(),
+                        title = {},
+                        navigationIcon = {
+                            IconButton(onClick = {
+                                coroutineScope.launch {
+                                    imageViewerState.closeTransform()
+                                }
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.ArrowBack,
+                                    contentDescription = "back"
+                                )
+                            }
+                        },
+                        actions = {
+                            Box(
+                                modifier = Modifier
+                                    .wrapContentSize(Alignment.TopStart)
+                            ) {
+                                IconButton(onClick = {
+                                    imagePreviewerMenuExpanded = !imagePreviewerMenuExpanded
+                                }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.MoreVert,
+                                        contentDescription = "more"
+                                    )
+                                }
+                                RoundedCornerDropdownMenu(
+                                    expanded = imagePreviewerMenuExpanded,
+                                    onDismissRequest = { imagePreviewerMenuExpanded = false },
+                                    modifier = Modifier.width(192.dp)
+                                ) {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(stringResource(R.string.add_meme))
+                                        },
+                                        onClick = {
+                                            imagePreviewerMenuExpanded = false
+                                            try {
+                                                val imageId =
+                                                    imageList.getOrNull(current)?.first
+                                                        ?: throw NoSuchElementException("id lost")
+                                                val imageIndex = imageId.toString().last().digitToInt()
+                                                val messageId = imageId.toString().let {
+                                                    it.substring(0, it.length - 1).toLong()
+                                                }
+                                                val message =
+                                                    lazyPagingItems.itemSnapshotList.items.findLast { it.messageId == messageId }
+                                                val image =
+                                                    message?.contents?.filterIsInstance<Image>()
+                                                        ?.getOrNull(imageIndex)
+                                                        ?: throw NoSuchElementException("image lost")
+                                                val path = context.getExternalFilesDir("meme")!!
+                                                image.uriString?.let { uriString ->
+                                                    val uri = Uri.parse(uriString)
+                                                    FileUtil.copyFileToPath(
+                                                        context, path,
+                                                        image.fileName,
+                                                        uri
+                                                    )
+                                                } ?: image.url?.let { url ->
+                                                    context.imageLoader.diskCache?.get(url)
+                                                        ?.use { snapshot ->
+                                                            val imageFile = snapshot.data.toFile()
+                                                            FileUtil.copyFileToPath(
+                                                                context,
+                                                                path,
+                                                                image.fileName,
+                                                                imageFile
+                                                            )
+                                                        }
+                                                }
+                                                memeUpdateFlag++
+                                                Toast.makeText(
+                                                    context,
+                                                    context.getString(R.string.add_meme_text, 1),
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            } catch (e: NoSuchElementException) {
+                                                Toast.makeText(
+                                                    context,
+                                                    context.getString(R.string.cannot_locate_img),
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Outlined.FavoriteBorder,
+                                                contentDescription = "favorite"
+                                            )
+                                        })
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(stringResource(R.string.save_to_local))
+                                        },
+                                        onClick = {
+                                            imagePreviewerMenuExpanded = false
+                                            try {
+                                                val imageId =
+                                                    imageList.getOrNull(current)?.first
+                                                        ?: throw NoSuchElementException("id lost")
+                                                val imageIndex = imageId.toString().last().digitToInt()
+                                                val messageId = imageId.toString().let {
+                                                    it.substring(0, it.length - 1).toLong()
+                                                }
+                                                val message =
+                                                    lazyPagingItems.itemSnapshotList.items.findLast { it.messageId == messageId }
+                                                val image =
+                                                    message?.contents?.filterIsInstance<Image>()
+                                                        ?.getOrNull(imageIndex)
+                                                        ?: throw NoSuchElementException("image lost")
+                                                image.uriString?.let { uriString ->
+                                                    FileUtil.saveImageToExternalStorage(
+                                                        context,
+                                                        Uri.parse(uriString)
+                                                    )
+                                                } ?: image.url?.let { url ->
+                                                    context.imageLoader.diskCache?.get(url)
+                                                        ?.use { snapshot ->
+                                                            val imageFile =
+                                                                snapshot.data.toFile()
+                                                            FileUtil.saveImageToExternalStorage(
+                                                                context,
+                                                                imageFile
+                                                            )
+                                                        }
+                                                } ?: throw NoSuchElementException("image lost")
+                                                memeUpdateFlag++
+                                                Toast.makeText(
+                                                    context,
+                                                    context.getString(R.string.save_to_local_text, 1),
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            } catch (e: Exception) {
+                                                Toast.makeText(
+                                                    context,
+                                                    context.getString(R.string.cannot_locate_img),
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Outlined.FileDownload,
+                                                contentDescription = "download"
+                                            )
+                                        })
+                                }
+                            }
+                        },
+                        colors = TopAppBarDefaults.smallTopAppBarColors(
+                            containerColor = Color.Transparent,
+                            navigationIconContentColor = Color(red = 230, green = 225, blue = 229),
+                            titleContentColor = Color(red = 230, green = 225, blue = 229),
+                            actionIconContentColor = Color(red = 230, green = 225, blue = 229),
+                        )
+                    )
+                }
+            }
+        },
+        detectGesture = {
+            onTap = {
+                showImagePreviewerToolbar = !showImagePreviewerToolbar
+            }
+        }
+    )
 }
 //@Composable
 //fun ErrorChatPage(modifier: Modifier = Modifier, errMessage: String, onRetry: () -> Unit) {
@@ -1759,6 +1782,7 @@ fun MessageBlock(
     avatarUri: String?,
     fromBubble: Boolean = false,
     isTranslationEnabled: Boolean,
+    imageViewerState: ImagePreviewerState,
     onClickingDismiss: () -> Unit,
     onClickingEvent: (event: SingleMessageEvent) -> Unit,
     onMessageClick: () -> Unit,
@@ -1796,6 +1820,7 @@ fun MessageBlock(
                         clickingMessage = clickingMessage,
                         fromBubble = fromBubble,
                         isTranslationEnabled = isTranslationEnabled,
+                        imageViewerState = imageViewerState,
                         onClickingDismiss = onClickingDismiss,
                         onClickingEvent = onClickingEvent,
                         onClick = onMessageClick,
@@ -1845,6 +1870,7 @@ fun MessageBlock(
                         clickingMessage = clickingMessage,
                         fromBubble = fromBubble,
                         isTranslationEnabled = isTranslationEnabled,
+                        imageViewerState = imageViewerState,
                         onClickingDismiss = onClickingDismiss,
                         onClickingEvent = onClickingEvent,
                         onClick = onMessageClick,
@@ -2040,6 +2066,7 @@ fun SingleMessage(
     clickingMessage: Message?,
     fromBubble: Boolean = false,
     isTranslationEnabled: Boolean,
+    imageViewerState: ImagePreviewerState,
     onClickingDismiss: () -> Unit,
     onClickingEvent: (event: SingleMessageEvent) -> Unit,
     onClick: () -> Unit,
@@ -2154,7 +2181,7 @@ fun SingleMessage(
                         Spacer(modifier = Modifier.width(64.dp))
                     }
                 }
-                MessageContentContainer(
+                Box(
                     modifier = modifier
                         .widthIn(0.dp, messageMaxWidth)
                         .clip(
@@ -2172,259 +2199,284 @@ fun SingleMessage(
                             enabled = !isSelected,
                             onClick = onClick,
                             onLongClick = onLongClick
-                        )
+                        ),
+                    contentAlignment = Alignment.Center
+                ){
+                    MessageContentContainer(
+                        modifier = Modifier
+                            .padding(horizontal = 3.dp, vertical = 3.dp)
+                            .clip(
+                                RoundedCornerShape(
+                                    if (message.sentByMe || isFirst) (topStartRadius - 3.dp).coerceAtLeast(
+                                        0.dp
+                                    ) else 0.dp,
+                                    if (!message.sentByMe || isFirst) (topEndRadius - 3.dp).coerceAtLeast(
+                                        0.dp
+                                    ) else 0.dp,
+                                    if (!message.sentByMe || isLast) (bottomEndRadius - 3.dp).coerceAtLeast(
+                                        0.dp
+                                    ) else 0.dp,
+                                    if (message.sentByMe || isLast) (bottomStartRadius - 3.dp).coerceAtLeast(
+                                        0.dp
+                                    ) else 0.dp
+                                )
+                            )
+
 //                        .clickable(enabled = isSelected, onClick = onClick)
 //                        .animateContentSize()
-                    ,
-                    shouldBreak = message.contents.map {
-                        it is Image || it is QuoteReply || it is Audio || it is File
-                    }.plus(arrayOf(true, true))
-                ) {
-                    message.contents.forEachIndexed { index, messageContent ->
-                        messageContent.toLayout(
-                            textColor,
-                            reverseTextColor,
-                            primaryTextColor,
-                            context,
-                            density,
-                            index,
-                            topStartRadius,
-                            topEndRadius,
-                            message,
-                            bottomEndRadius,
-                            bottomStartRadius,
-                            isSelected,
-                            onQuoteReplyClick = onQuoteReplyClick,
-                            onAudioClick = onAudioClick,
-                        )
-                    }
-                    AnimatedVisibility(visible = translatedText != null) {
-                        Surface(
-                            modifier = Modifier.padding(8.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            color = MaterialTheme.colorScheme.surface,
-                            tonalElevation = 1.dp
-                        ) {
-                            Text(
-                                text = translatedText!!,
-                                modifier = Modifier.padding(12.dp),
-                                color = textColor
+                        ,
+                        shouldBreak = message.contents.map {
+                            it is Image || it is QuoteReply || it is Audio || it is File
+                        }.plus(arrayOf(true, true))
+                    ) {
+                        message.contents.forEachIndexed { index, messageContent ->
+                            messageContent.toLayout(
+                                textColor,
+                                reverseTextColor,
+                                primaryTextColor,
+                                context,
+                                density,
+                                index,
+                                topStartRadius,
+                                topEndRadius,
+                                message,
+                                bottomEndRadius,
+                                bottomStartRadius,
+                                isSelected,
+                                imageViewerState = imageViewerState,
+                                onQuoteReplyClick = onQuoteReplyClick,
+                                onAudioClick = onAudioClick,
                             )
                         }
-                    }
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        items(items = entities) {
-                            when (it.first.type) {
-                                Entity.TYPE_ADDRESS -> {
-                                    AssistChip(
-                                        shape = CircleShape,
-                                        onClick = {
-                                            BrowserUtil.launchMap(context, it.second)
-                                        },
-                                        label = {
-                                            Text(
-                                                text = it.second.ellipsis(maxLength = 10),
-                                                color = textColor
-                                            )
-                                        },
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = Icons.Outlined.Place,
-                                                contentDescription = "address",
-                                                tint = primaryTextColor,
-                                            )
-                                        }
-                                    )
-                                }
-                                Entity.TYPE_DATE_TIME -> {
-                                    val timestamp = it.first.asDateTimeEntity()!!.timestampMillis
-                                    AssistChip(
-                                        shape = CircleShape,
-                                        onClick = {
-                                            if (fromBubble) {
-                                                (context as MainActivity).startActivity(
-                                                    Intent(
-                                                        Intent.ACTION_INSERT
-                                                    ).apply {
-                                                        data = CalendarContract.Events.CONTENT_URI
-                                                        putExtra(
-                                                            CalendarContract.EXTRA_EVENT_BEGIN_TIME,
-                                                            timestamp
-                                                        )
-                                                        putExtra(
-                                                            CalendarContract.EXTRA_EVENT_END_TIME,
-                                                            timestamp
-                                                        )
-                                                    })
-                                            } else {
-                                                (context as MainActivity).startActivity(
-                                                    Intent(
-                                                        Intent.ACTION_INSERT
-                                                    ).apply {
-                                                        data = CalendarContract.Events.CONTENT_URI
-                                                        putExtra(
-                                                            CalendarContract.EXTRA_EVENT_BEGIN_TIME,
-                                                            timestamp
-                                                        )
-                                                        putExtra(
-                                                            CalendarContract.EXTRA_EVENT_END_TIME,
-                                                            timestamp
-                                                        )
-                                                    })
+                        androidx.compose.animation.AnimatedVisibility(visible = translatedText != null) {
+                            Surface(
+                                modifier = Modifier.padding(8.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                color = MaterialTheme.colorScheme.surface,
+                                tonalElevation = 1.dp
+                            ) {
+                                Text(
+                                    text = translatedText!!,
+                                    modifier = Modifier.padding(12.dp),
+                                    color = textColor
+                                )
+                            }
+                        }
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            items(items = entities) {
+                                when (it.first.type) {
+                                    Entity.TYPE_ADDRESS -> {
+                                        AssistChip(
+                                            shape = CircleShape,
+                                            onClick = {
+                                                BrowserUtil.launchMap(context, it.second)
+                                            },
+                                            label = {
+                                                Text(
+                                                    text = it.second.ellipsis(maxLength = 10),
+                                                    color = textColor
+                                                )
+                                            },
+                                            leadingIcon = {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.Place,
+                                                    contentDescription = "address",
+                                                    tint = primaryTextColor,
+                                                )
                                             }
-                                        },
-                                        label = {
-                                            Text(
-                                                text = timestamp.toDescriptiveDateAndTime(),
-                                                color = textColor
-                                            )
-                                        },
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = Icons.Outlined.Event,
-                                                contentDescription = "date",
-                                                tint = primaryTextColor,
-                                            )
-                                        }
-                                    )
-                                }
-                                Entity.TYPE_EMAIL -> {
-                                    AssistChip(
-                                        shape = CircleShape,
-                                        onClick = {
-                                            BrowserUtil.composeEmail(
-                                                context,
-                                                arrayOf(it.second),
-                                                null
-                                            )
-                                        },
-                                        label = { Text(text = it.second, color = textColor) },
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = Icons.Outlined.Email,
-                                                contentDescription = "email",
-                                                tint = primaryTextColor,
-                                            )
-                                        }
-                                    )
-                                }
-                                Entity.TYPE_FLIGHT_NUMBER -> {
-                                    val flightStr = it.first.asFlightNumberEntity()!!
-                                        .let { "${it.airlineCode} ${it.flightNumber}" }
-                                    AssistChip(
-                                        shape = CircleShape,
-                                        onClick = { clipboardManager.setText(AnnotatedString(text = flightStr)) },
-                                        label = {
-                                            Text(text = flightStr, color = textColor)
-                                        },
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = Icons.Outlined.FlightTakeoff,
-                                                contentDescription = "flight",
-                                                tint = primaryTextColor,
-                                            )
-                                        }
-                                    )
-                                }
-                                Entity.TYPE_IBAN -> {
-                                    AssistChip(
-                                        shape = CircleShape,
-                                        onClick = { clipboardManager.setText(AnnotatedString(text = it.second)) },
-                                        label = { Text(text = it.second, color = textColor) },
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = Icons.Outlined.AccountBalance,
-                                                contentDescription = "bank",
-                                                tint = primaryTextColor,
-                                            )
-                                        }
-                                    )
-                                }
-                                Entity.TYPE_ISBN -> {
-                                    AssistChip(
-                                        shape = CircleShape,
-                                        onClick = { clipboardManager.setText(AnnotatedString(text = it.second)) },
-                                        label = { Text(text = it.second, color = textColor) },
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = Icons.Outlined.LocalLibrary,
-                                                contentDescription = "isbn",
-                                                tint = primaryTextColor,
-                                            )
-                                        }
-                                    )
-                                }
-                                Entity.TYPE_PAYMENT_CARD -> {
-                                    AssistChip(
-                                        shape = CircleShape,
-                                        onClick = { clipboardManager.setText(AnnotatedString(text = it.second)) },
-                                        label = { Text(text = it.second, color = textColor) },
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = Icons.Outlined.CreditCard,
-                                                contentDescription = "card",
-                                                tint = primaryTextColor,
-                                            )
-                                        }
-                                    )
-                                }
-                                Entity.TYPE_PHONE -> {
-                                    AssistChip(
-                                        shape = CircleShape,
-                                        onClick = {
-                                            if (fromBubble) {
-                                                (context as BubbleActivity).startActivity(
-                                                    Intent(
-                                                        Intent.ACTION_DIAL
-                                                    ).apply {
-                                                        data = Uri.parse("tel:${it.second}")
-                                                    })
-                                            } else {
-                                                (context as MainActivity).startActivity(
-                                                    Intent(
-                                                        Intent.ACTION_DIAL
-                                                    ).apply {
-                                                        data = Uri.parse("tel:${it.second}")
-                                                    })
+                                        )
+                                    }
+                                    Entity.TYPE_DATE_TIME -> {
+                                        val timestamp = it.first.asDateTimeEntity()!!.timestampMillis
+                                        AssistChip(
+                                            shape = CircleShape,
+                                            onClick = {
+                                                if (fromBubble) {
+                                                    (context as MainActivity).startActivity(
+                                                        Intent(
+                                                            Intent.ACTION_INSERT
+                                                        ).apply {
+                                                            data = CalendarContract.Events.CONTENT_URI
+                                                            putExtra(
+                                                                CalendarContract.EXTRA_EVENT_BEGIN_TIME,
+                                                                timestamp
+                                                            )
+                                                            putExtra(
+                                                                CalendarContract.EXTRA_EVENT_END_TIME,
+                                                                timestamp
+                                                            )
+                                                        })
+                                                } else {
+                                                    (context as MainActivity).startActivity(
+                                                        Intent(
+                                                            Intent.ACTION_INSERT
+                                                        ).apply {
+                                                            data = CalendarContract.Events.CONTENT_URI
+                                                            putExtra(
+                                                                CalendarContract.EXTRA_EVENT_BEGIN_TIME,
+                                                                timestamp
+                                                            )
+                                                            putExtra(
+                                                                CalendarContract.EXTRA_EVENT_END_TIME,
+                                                                timestamp
+                                                            )
+                                                        })
+                                                }
+                                            },
+                                            label = {
+                                                Text(
+                                                    text = timestamp.toDescriptiveDateAndTime(),
+                                                    color = textColor
+                                                )
+                                            },
+                                            leadingIcon = {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.Event,
+                                                    contentDescription = "date",
+                                                    tint = primaryTextColor,
+                                                )
                                             }
-                                        },
-                                        label = { Text(text = it.second, color = textColor) },
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = Icons.Outlined.Call,
-                                                contentDescription = "call",
-                                                tint = primaryTextColor,
-                                            )
-                                        }
-                                    )
+                                        )
+                                    }
+                                    Entity.TYPE_EMAIL -> {
+                                        AssistChip(
+                                            shape = CircleShape,
+                                            onClick = {
+                                                BrowserUtil.composeEmail(
+                                                    context,
+                                                    arrayOf(it.second),
+                                                    null
+                                                )
+                                            },
+                                            label = { Text(text = it.second, color = textColor) },
+                                            leadingIcon = {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.Email,
+                                                    contentDescription = "email",
+                                                    tint = primaryTextColor,
+                                                )
+                                            }
+                                        )
+                                    }
+                                    Entity.TYPE_FLIGHT_NUMBER -> {
+                                        val flightStr = it.first.asFlightNumberEntity()!!
+                                            .let { "${it.airlineCode} ${it.flightNumber}" }
+                                        AssistChip(
+                                            shape = CircleShape,
+                                            onClick = { clipboardManager.setText(AnnotatedString(text = flightStr)) },
+                                            label = {
+                                                Text(text = flightStr, color = textColor)
+                                            },
+                                            leadingIcon = {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.FlightTakeoff,
+                                                    contentDescription = "flight",
+                                                    tint = primaryTextColor,
+                                                )
+                                            }
+                                        )
+                                    }
+                                    Entity.TYPE_IBAN -> {
+                                        AssistChip(
+                                            shape = CircleShape,
+                                            onClick = { clipboardManager.setText(AnnotatedString(text = it.second)) },
+                                            label = { Text(text = it.second, color = textColor) },
+                                            leadingIcon = {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.AccountBalance,
+                                                    contentDescription = "bank",
+                                                    tint = primaryTextColor,
+                                                )
+                                            }
+                                        )
+                                    }
+                                    Entity.TYPE_ISBN -> {
+                                        AssistChip(
+                                            shape = CircleShape,
+                                            onClick = { clipboardManager.setText(AnnotatedString(text = it.second)) },
+                                            label = { Text(text = it.second, color = textColor) },
+                                            leadingIcon = {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.LocalLibrary,
+                                                    contentDescription = "isbn",
+                                                    tint = primaryTextColor,
+                                                )
+                                            }
+                                        )
+                                    }
+                                    Entity.TYPE_PAYMENT_CARD -> {
+                                        AssistChip(
+                                            shape = CircleShape,
+                                            onClick = { clipboardManager.setText(AnnotatedString(text = it.second)) },
+                                            label = { Text(text = it.second, color = textColor) },
+                                            leadingIcon = {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.CreditCard,
+                                                    contentDescription = "card",
+                                                    tint = primaryTextColor,
+                                                )
+                                            }
+                                        )
+                                    }
+                                    Entity.TYPE_PHONE -> {
+                                        AssistChip(
+                                            shape = CircleShape,
+                                            onClick = {
+                                                if (fromBubble) {
+                                                    (context as BubbleActivity).startActivity(
+                                                        Intent(
+                                                            Intent.ACTION_DIAL
+                                                        ).apply {
+                                                            data = Uri.parse("tel:${it.second}")
+                                                        })
+                                                } else {
+                                                    (context as MainActivity).startActivity(
+                                                        Intent(
+                                                            Intent.ACTION_DIAL
+                                                        ).apply {
+                                                            data = Uri.parse("tel:${it.second}")
+                                                        })
+                                                }
+                                            },
+                                            label = { Text(text = it.second, color = textColor) },
+                                            leadingIcon = {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.Call,
+                                                    contentDescription = "call",
+                                                    tint = primaryTextColor,
+                                                )
+                                            }
+                                        )
+                                    }
+                                    Entity.TYPE_URL -> {
+                                        AssistChip(
+                                            shape = CircleShape,
+                                            onClick = { BrowserUtil.launchURL(context, it.second) },
+                                            label = {
+                                                Text(
+                                                    text = it.second.ellipsis(20),
+                                                    color = textColor
+                                                )
+                                            },
+                                            leadingIcon = {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.Link,
+                                                    contentDescription = "url",
+                                                    tint = primaryTextColor,
+                                                )
+                                            }
+                                        )
+                                    }
+                                    else -> {}
                                 }
-                                Entity.TYPE_URL -> {
-                                    AssistChip(
-                                        shape = CircleShape,
-                                        onClick = { BrowserUtil.launchURL(context, it.second) },
-                                        label = {
-                                            Text(
-                                                text = it.second.ellipsis(20),
-                                                color = textColor
-                                            )
-                                        },
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = Icons.Outlined.Link,
-                                                contentDescription = "url",
-                                                tint = primaryTextColor,
-                                            )
-                                        }
-                                    )
-                                }
-                                else -> {}
                             }
                         }
                     }
                 }
+
                 if (!message.sentByMe) {
                     if (isTranslationEnabled) {
                         Box(
@@ -2580,12 +2632,13 @@ private fun MessageContent.toLayout(
     bottomEndRadius: Dp,
     bottomStartRadius: Dp,
     isSelected: Boolean,
+    imageViewerState: ImagePreviewerState,
     onQuoteReplyClick: (messageId: Long) -> Unit = {},
     onAudioClick: (uri: Uri?, url: String?) -> Unit,
 ) {
     when (this) {
         is At, AtAll -> Text(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 9.dp),
             text = getContentString(),
             color = primaryTextColor,
         )
@@ -2593,14 +2646,14 @@ private fun MessageContent.toLayout(
         is PlainText ->
             if (isSelected) {
                 Text(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 9.dp),
                     text = text,
                     color = textColor
                 )
             } else {
                 DisableSelection {
                     Text(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 9.dp),
                         text = text,
                         color = textColor
                     )
@@ -2624,6 +2677,13 @@ private fun MessageContent.toLayout(
 //                    }
 //                }
         is Image -> {
+            var boxWidth by remember {
+                mutableStateOf(128.dp)
+            }
+            var boxHeight by remember {
+                mutableStateOf(0.dp)
+            }
+            val coroutineScope = rememberCoroutineScope()
             val imageLoader = ImageLoader.Builder(context)
                 .components {
                     if (SDK_INT >= 28) {
@@ -2633,34 +2693,68 @@ private fun MessageContent.toLayout(
                     }
                 }
                 .build()
-            AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
+            val painter = rememberAsyncImagePainter(
+                model = ImageRequest.Builder(context)
                     .data(uriString?.let { Uri.parse(it).replacedIfUnavailable(context)}
                         ?: url)
-                    .crossfade(true)
-                    .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
+                    .size(Size.ORIGINAL)
                     .build(),
                 error = painterResource(id = R.drawable.image_lost),
                 fallback = painterResource(id = R.drawable.image_lost),
                 imageLoader = imageLoader,
-                contentDescription = "image",
                 contentScale = ContentScale.FillWidth,
-                modifier = Modifier
-                    .widthIn(128.dp, 320.dp)
-                    .padding(horizontal = 3.dp, vertical = 3.dp)
-                    .clip(
-                        RoundedCornerShape(
-                            if (index == 0) (topStartRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp,
-                            if (index == 0) (topEndRadius - 3.dp).coerceAtLeast(0.dp) else 0.dp,
-                            if (index == message.contents.lastIndex) (bottomEndRadius - 3.dp).coerceAtLeast(
-                                0.dp
-                            ) else 0.dp,
-                            if (index == message.contents.lastIndex) (bottomStartRadius - 3.dp).coerceAtLeast(
-                                0.dp
-                            ) else 0.dp
-                        )
-                    )
+                onSuccess = {
+                    coroutineScope.launch {
+                        Log.d("parabox", "image size: ${it.result.request.sizeResolver.size()}")
+                        val bitmap = it.result.drawable.toBitmap()
+                        val originalWidthDp = with(density) {
+                            bitmap.width.toDp()
+                        }
+                        val originalHeightDp = with(density) {
+                            bitmap.height.toDp()
+                        }
+                        if (originalWidthDp != 0.dp) {
+                            boxWidth = originalWidthDp.coerceIn(128.dp, 320.dp)
+                            boxHeight = boxWidth / originalWidthDp * originalHeightDp
+                        }
+                    }
+                },
+                onError = {
+                    val bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.image_lost)
+                    boxWidth = with(density) {
+                        bitmap.width.toDp()
+                    }
+                    boxHeight = with(density) {
+                        bitmap.height.toDp()
+                    }
+                }
             )
+            val key = "${message.messageId}0".toLong()
+            Box(modifier = Modifier.size(boxWidth, boxHeight),
+            ) {
+                TransformImageView(
+                    key = key,
+                    painter = painter,
+                    previewerState = imageViewerState,
+                )
+            }
+
+//            AsyncImage(
+//                model = ImageRequest.Builder(LocalContext.current)
+//                    .data(uriString?.let { Uri.parse(it).replacedIfUnavailable(context)}
+//                        ?: url)
+//                    .crossfade(true)
+//                    .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
+//                    .build(),
+//                error = painterResource(id = R.drawable.image_lost),
+//                fallback = painterResource(id = R.drawable.image_lost),
+//                imageLoader = imageLoader,
+//                contentDescription = "image",
+//                contentScale = ContentScale.FillWidth,
+//                modifier = Modifier
+//                    .widthIn(128.dp, 320.dp)
+//
+//            )
         }
 
         is QuoteReply -> {
@@ -2718,6 +2812,7 @@ private fun MessageContent.toLayout(
                             0.dp,
                             0.dp,
                             isSelected,
+                            imageViewerState = imageViewerState,
                             onAudioClick = onAudioClick
                         )
                     }
@@ -2733,11 +2828,11 @@ private fun MessageContent.toLayout(
 
         is Audio -> {
             Row(
-                modifier = Modifier.padding(start = 1.dp, end = 12.dp, top = 1.dp, bottom = 1.dp),
+                modifier = Modifier.padding(start = 1.dp, end = 9.dp, top = 1.dp, bottom = 1.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
-                    modifier = Modifier.padding(end = 12.dp),
+                    modifier = Modifier.padding(end = 9.dp),
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.surface,
                     tonalElevation = 1.dp,
@@ -2766,11 +2861,11 @@ private fun MessageContent.toLayout(
 
         is File -> {
             Row(
-                modifier = Modifier.padding(12.dp),
+                modifier = Modifier.padding(9.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
-                    modifier = Modifier.padding(end = 12.dp),
+                    modifier = Modifier.padding(end = 9.dp),
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.surface,
                     tonalElevation = 1.dp,
