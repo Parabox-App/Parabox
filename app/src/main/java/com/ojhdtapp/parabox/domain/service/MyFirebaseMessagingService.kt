@@ -174,7 +174,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                         Log.d("parabox", "Message data payload: $dto")
                         GlobalScope.launch {
                             val fcmMappingId =
-                                database.fcmMappingDao.getFcmMappingByUid(dto.slaveOriginUid)?.id?.also{
+                                database.fcmMappingDao.getFcmMappingByUid(dto.slaveOriginUid)?.id?.also {
                                     database.fcmMappingDao.updateSessionId(
                                         FcmMappingSessionIdUpdate(
                                             id = it,
@@ -193,15 +193,26 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                                 preferences[DataStoreKeys.SETTINGS_FCM_ENABLE_CACHE]
                                     ?: false
                             }.first()
-                            val shouldDownloadFileCloudResource = dataStore.data.map { preferences ->
-                                preferences[DataStoreKeys.SETTINGS_FCM_ENABLE_FILE_CACHE]
-                                    ?: false
-                            }.first()
+                            val shouldDownloadFileCloudResource =
+                                dataStore.data.map { preferences ->
+                                    preferences[DataStoreKeys.SETTINGS_FCM_ENABLE_FILE_CACHE]
+                                        ?: false
+                                }.first()
                             val messageContents = dto.contents.toMessageContentList(
-                                    getUriFromCloudResourceInfo = getUriFromCloudResourceInfo,
-                                    shouldDownloadCloudResource = shouldDownloadFileCloudResource,
-                                    shouldIncludeFile = shouldDownloadFileCloudResource
-                                )
+                                getUriFromCloudResourceInfo = getUriFromCloudResourceInfo,
+                                shouldDownloadCloudResource = shouldDownloadCloudResource,
+                                shouldIncludeFile = shouldDownloadFileCloudResource
+                            ).map {
+                                if (it is File) {
+                                    it.copy(
+                                        size = FileUtil.getFileSizeFormCloudResourceInfo(
+                                            context = baseContext,
+                                            cloudType = it.cloudType,
+                                            cloudId = it.cloudId
+                                        ) ?: 0L
+                                    )
+                                } else it
+                            }
                             val profile = Profile(
                                 name = dto.profile.name,
                                 avatar = dto.profile.avatar,

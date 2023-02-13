@@ -60,18 +60,20 @@ class MainRepositoryImpl @Inject constructor(
             }
             // If MessageContent Type is File ...
             if (messageIdDeferred.await() != -1L) {
-                messageEntity.contents.filterIsInstance<com.ojhdtapp.parabox.domain.model.message_content.File>().forEach {
+                dto.contents.filterIsInstance<com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.File>().forEach {
                     database.fileDao.insertFile(
                         FileEntity(
                             url = it.url,
-                            uriString = it.uriString,
+                            uriString = it.uri?.toString(),
                             name = it.name,
                             extension = it.extension,
                             size = it.size,
                             timestamp = it.lastModifiedTime,
                             profileName = dto.subjectProfile.name,
                             relatedContactId = dto.pluginConnection.objectId,
-                            relatedMessageId = messageIdDeferred.await()
+                            relatedMessageId = messageIdDeferred.await(),
+                            cloudType = it.cloudType,
+                            cloudId = it.cloudId
                         )
                     )
                 }
