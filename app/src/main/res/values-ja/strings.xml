@@ -34,6 +34,7 @@
     <string name="delete_file_confirm_text">選択した項目は自動的に削除されますが、ダウンロードされたローカルファイルは影響しません。</string>
     <string name="connect_cloud_service">クラウドサービスに接続</string>
     <string name="cloud_service_gd">Google ドライブ</string>
+    <string name="cloud_service_save_to_gd">Google ドライブに保存</string>
     <string name="search_file">ファイルの検索</string>
     <string name="logged_out">ログアウトしました。</string>
     <string name="cloud_service_not_connected">クラウドサービスが接続されていません</string>

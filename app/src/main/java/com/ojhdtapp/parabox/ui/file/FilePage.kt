@@ -230,7 +230,7 @@ fun FilePage(
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
-                                    text = stringResource(R.string.cloud_service_gd),
+                                    text = stringResource(R.string.cloud_service_save_to_gd),
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                             }

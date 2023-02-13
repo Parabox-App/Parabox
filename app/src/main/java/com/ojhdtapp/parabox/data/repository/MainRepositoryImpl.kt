@@ -218,7 +218,6 @@ class MainRepositoryImpl @Inject constructor(
             val messageIdDeferred = async<Long> {
                 storeSendMessage(contents, timestamp, sendType, withoutVerify)
             }
-            Log.d("parabox", "sendMessage step 2 at ${System.currentTimeMillis()}")
             // Used to create new Conversation only
             val contactIdDeferred = async<Long> {
                 database.contactDao.insertContact(
@@ -245,13 +244,11 @@ class MainRepositoryImpl @Inject constructor(
                     )
                 )
             }
-            Log.d("parabox", "sendMessage step 3 at ${System.currentTimeMillis()}")
             val pluginConnectionDeferred = async<Long> {
                 database.contactDao.insertPluginConnection(
                     pluginConnection.toPluginConnection().toPluginConnectionEntity()
                 )
             }
-            Log.d("parabox", "sendMessage step 4 at ${System.currentTimeMillis()}")
 //            database.contactDao.updateHiddenState(ContactHiddenStateUpdate(dto.pluginConnection.objectId, false))
             if (pluginConnectionDeferred.await() != -1L) {
                 database.contactDao.insertContactPluginConnectionCrossRef(
@@ -269,22 +266,22 @@ class MainRepositoryImpl @Inject constructor(
             )
 
             // Update Avatar or Anything Else Here
-            database.contactDao.getPluginConnectionWithContacts(pluginConnection.objectId).let {
-                Log.d("parabox", "sendMessage step 5 at ${System.currentTimeMillis()}")
-                database.contactDao.updateContact(it.contactList.map {
-                    it.copy(
-                        latestMessage = LatestMessage(
-                            sender = it.latestMessage?.sender ?: userName,
-                            content = contents.getContentString(),
-                            timestamp = timestamp,
-                            unreadMessagesNum = (it.latestMessage?.unreadMessagesNum ?: 0) + 1,
-                            sentByMe = true,
-                        ),
-                        isHidden = false
-                    )
-                })
+            launch(Dispatchers.IO) {
+                database.contactDao.getPluginConnectionWithContacts(pluginConnection.objectId).let {
+                    database.contactDao.updateContact(it.contactList.map {
+                        it.copy(
+                            latestMessage = LatestMessage(
+                                sender = it.latestMessage?.sender ?: userName,
+                                content = contents.getContentString(),
+                                timestamp = timestamp,
+                                unreadMessagesNum = (it.latestMessage?.unreadMessagesNum ?: 0) + 1,
+                                sentByMe = true,
+                            ),
+                            isHidden = false
+                        )
+                    })
+                }
             }
-            Log.d("parabox", "sendMessage step 6 at ${System.currentTimeMillis()}")
             messageIdDeferred.await()
         }
     }

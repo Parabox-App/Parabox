@@ -157,7 +157,7 @@ fun GuideCloudPage(
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
-                                    text = stringResource(id = R.string.cloud_service_gd),
+                                    text = stringResource(id = R.string.cloud_service_save_to_gd),
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                             }

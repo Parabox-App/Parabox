@@ -911,7 +911,7 @@ class MainActivity : AppCompatActivity() {
             .requestEmail()
             .requestProfile()
             .requestScopes(
-                Scope(DriveScopes.DRIVE),
+                Scope(DriveScopes.DRIVE_METADATA),
                 Scope(DriveScopes.DRIVE_APPDATA),
                 Scope(DriveScopes.DRIVE_FILE),
             )
