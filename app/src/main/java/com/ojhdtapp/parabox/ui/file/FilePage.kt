@@ -1491,7 +1491,11 @@ fun FileItem(
                             append(" ")
                             append(FileUtil.getSizeString(file.downloadingState.totalBytes.toLong()))
                         } else {
-                            append(FileUtil.getSizeString(file.size))
+                            if(file.size != 0L){
+                                append(FileUtil.getSizeString(file.size))
+                            } else {
+                                append(stringResource(R.string.unknown_file_size))
+                            }
                         }
                     },
                     style = MaterialTheme.typography.bodyMedium,

@@ -509,8 +509,8 @@
     <string name="mark_as_read">标为已读</string>
     <string name="you">您</string>
     <string name="fcm_role_server">接管模式</string>
-    <string name="fcm_enable_cache">缓存媒体文件</string>
-    <string name="fcm_enable_cache_subtitle_off">可有效避免图片失效。但将显著提升空间占用，建议定期手动清除。</string>
+    <string name="fcm_enable_cache">缓存聊天文件</string>
+    <string name="fcm_enable_cache_subtitle_off">本地缓存图片、语音的副本，可有效避免图片、语音失效和重复下载，但将显著提升空间占用。</string>
     <string name="fcm_enable_cache_subtitle_on">媒体文件将被缓存，预计占用更多空间。</string>
     <string name="setup_fcm_server_title">配置 FCM 连接</string>
     <string name="setup_fcm_server_text_b">该功能将消息收发操作交由FCM完全接管。运行于私有服务器的消息源将消息通过FCM下游消息推送至本机，本机发出的待发送请求交还FCM上游消息返回至私有服务器处理。这将允许在保持基础功能正常运行的前提下关闭所有后台服务，大幅减少本机的性能开销。</string>
@@ -529,4 +529,8 @@
     <string name="auto_delete_chat_files_title">自动删除</string>
     <string name="auto_delete_chat_files_subtitle_off">启动应用时自动删除会话资源</string>
     <string name="auto_delete_chat_files_subtitle_on">将删除于 %1$d 天或更早前接收的会话资源</string>
+    <string name="fcm_enable_file_cache">包含普通文件</string>
+    <string name="fcm_enable_file_cache_subtitile_off">开启本选项，将会同时缓存文档，压缩文件，视频等普通文件。一般无需开启。</string>
+    <string name="fcm_enable_file_cache_subtitle_on">将会同时缓存文档，压缩文件，视频等普通文件。</string>
+    <string name="unknown_file_size">未知大小</string>
 </resources>
