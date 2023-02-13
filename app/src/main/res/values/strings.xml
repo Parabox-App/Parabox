@@ -34,6 +34,7 @@
     <string name="delete_file_confirm_text">The selection will be removed from the file list, but will not affect any downloaded local files.</string>
     <string name="connect_cloud_service">Cloud services</string>
     <string name="cloud_service_gd">Google Drive</string>
+    <string name="cloud_service_save_to_gd">Save to Google Drive</string>
     <string name="search_file">Search</string>
     <string name="logged_out">Logged out</string>
     <string name="cloud_service_not_connected">Cloud service not connected</string>

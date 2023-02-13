@@ -33,7 +33,8 @@
     <string name="delete_confirm">确认删除</string>
     <string name="delete_file_confirm_text">选择项将从文件列表移除，但不会影响所有已下载的本地文件。</string>
     <string name="connect_cloud_service">连接云端服务</string>
-    <string name="cloud_service_gd">Google Drive</string>
+    <string name="cloud_service_gd">Google 云端硬盘</string>
+    <string name="cloud_service_save_to_gd">保存到 Google 云端硬盘</string>
     <string name="search_file">搜索文件</string>
     <string name="logged_out">已退出登录</string>
     <string name="cloud_service_not_connected">未连接云服务</string>
