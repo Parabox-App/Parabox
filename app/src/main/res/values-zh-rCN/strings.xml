@@ -526,4 +526,7 @@
     <string name="notification_group_summary">%1$d条新消息</string>
     <string name="notification_group_title">新消息</string>
     <string name="error_query_data">获取数据时发生错误</string>
+    <string name="auto_delete_chat_files_title">自动删除</string>
+    <string name="auto_delete_chat_files_subtitle_off">启动应用时自动删除会话资源</string>
+    <string name="auto_delete_chat_files_subtitle_on">将删除于 %1$d 天或更早前接收的会话资源</string>
 </resources>

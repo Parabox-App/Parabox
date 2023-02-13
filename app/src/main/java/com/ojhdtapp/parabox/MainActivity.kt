@@ -683,6 +683,19 @@ class MainActivity : AppCompatActivity() {
         mainSharedViewModel.setPluginListStateFlow(emptyList())
     }
 
+    private fun deleteChatFiles() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            if (dataStore.data.first()[DataStoreKeys.SETTINGS_AUTO_DELETE_LOCAL_RESOURCE] == true) {
+                dataStore.data.first()[DataStoreKeys.SETTINGS_AUTO_DELETE_LOCAL_RESOURCE_BEFORE_DAYS]?.let {
+                    CacheUtil.deleteChatFilesBeforeTimestamp(
+                        baseContext,
+                        System.currentTimeMillis() - it.roundToInt() * 24 * 60 * 60 * 1000
+                    )
+                }
+            }
+        }
+    }
+
     fun backupFileToCloudService() {
         val workManager = WorkManager.getInstance(this)
 
@@ -1494,6 +1507,8 @@ class MainActivity : AppCompatActivity() {
             NotificationManager.IMPORTANCE_HIGH
         )
 
+        // Auto Delete Chat Resource
+        deleteChatFiles()
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {

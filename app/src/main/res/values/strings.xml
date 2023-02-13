@@ -522,4 +522,7 @@
     <string name="notification_group_summary">%1$d new messages</string>
     <string name="notification_group_title">New messages</string>
     <string name="error_query_data">An error occurred while fetching data</string>
+    <string name="auto_delete_chat_files_title">Automatically delete</string>
+    <string name="auto_delete_chat_files_subtitle_off">Automatically delete chat resources when starting the application</string>
+    <string name="auto_delete_chat_files_subtitle_on">Chat resources received %1$d days or older will be deleted</string>
 </resources>
