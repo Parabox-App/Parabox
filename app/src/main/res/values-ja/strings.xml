@@ -528,4 +528,7 @@
     <string name="notification_group_summary">%1$d 件の新しいメッセージ</string>
     <string name="notification_group_title">新しいメッセージ</string>
     <string name="error_query_data">データの取得中にエラーが発生しました</string>
+    <string name="auto_delete_chat_files_title">自動的に削除</string>
+    <string name="auto_delete_chat_files_subtitle_off">アプリケーションの起動時にセッション リソースを自動的に削除する</string>
+    <string name="auto_delete_chat_files_subtitle_on">%1$d 日以上前に受信したセッション リソースは削除されます</string>
 </resources>

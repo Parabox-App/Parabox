@@ -25,10 +25,7 @@ import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.CacheUtil
 import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
-import com.ojhdtapp.parabox.ui.util.ActivityEvent
-import com.ojhdtapp.parabox.ui.util.NormalPreference
-import com.ojhdtapp.parabox.ui.util.PreferencesCategory
-import com.ojhdtapp.parabox.ui.util.SliderPreference
+import com.ojhdtapp.parabox.ui.util.*
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -52,9 +49,11 @@ fun BackupPage(
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val cacheSize = viewModel.cacheSizeStateFlow.collectAsState()
 
-    var deleteFilesBeforeDays by remember {
-        mutableStateOf(7f)
-    }
+    val autoDeleteLocalResource by viewModel.autoDeleteLocalResourceFlow.collectAsState(initial = false)
+
+    val deleteFilesBeforeDays by viewModel.autoDeleteLocalResourceBeforeDaysFlow.collectAsState(
+        initial = 7f
+    )
     val canSaveSpace by remember(viewModel.cleaningFile.value) {
         derivedStateOf {
             FileUtil.getSizeString(
@@ -65,10 +64,10 @@ fun BackupPage(
             )
         }
     }
-    var showDeleteFileConfirmDialog by remember{
+    var showDeleteFileConfirmDialog by remember {
         mutableStateOf(false)
     }
-    if(showDeleteFileConfirmDialog){
+    if (showDeleteFileConfirmDialog) {
         AlertDialog(
             onDismissRequest = {
                 showDeleteFileConfirmDialog = false
@@ -198,24 +197,46 @@ fun BackupPage(
                     subTitle =
                     when (deleteFilesBeforeDays) {
                         0f -> stringResource(id = R.string.all)
-                        else -> stringResource(R.string.days_ago, deleteFilesBeforeDays.roundToInt())
+                        else -> stringResource(
+                            R.string.days_ago,
+                            deleteFilesBeforeDays.roundToInt()
+                        )
                     },
                     value = deleteFilesBeforeDays,
                     valueRange = 0f..15f,
                     steps = 14,
                     enabled = !viewModel.cleaningFile.value,
-                    onValueChange = { deleteFilesBeforeDays = it },
+                    onValueChange = viewModel::setAutoDeleteLocalResourceBeforeDays
                 )
             }
             item {
                 NormalPreference(
                     title = stringResource(id = R.string.delete_chat_files_title),
-                    subtitle = if (deleteFilesBeforeDays.roundToInt() == 0) stringResource(id = R.string.delete_chat_files_all_subtitle, canSaveSpace)
-                    else stringResource(id = R.string.delete_chat_files_days_ago_subtitle, deleteFilesBeforeDays.roundToInt(), canSaveSpace),
+                    subtitle = if (deleteFilesBeforeDays.roundToInt() == 0) stringResource(
+                        id = R.string.delete_chat_files_all_subtitle,
+                        canSaveSpace
+                    )
+                    else stringResource(
+                        id = R.string.delete_chat_files_days_ago_subtitle,
+                        deleteFilesBeforeDays.roundToInt(),
+                        canSaveSpace
+                    ),
                     enabled = !viewModel.cleaningFile.value,
                 ) {
                     showDeleteFileConfirmDialog = true
                 }
+            }
+            item {
+                SwitchPreference(
+                    title = stringResource(R.string.auto_delete_chat_files_title),
+                    checked = autoDeleteLocalResource,
+                    onCheckedChange = viewModel::setAutoDeleteLocalResource,
+                    subtitleOff = stringResource(R.string.auto_delete_chat_files_subtitle_off),
+                    subtitleOn = stringResource(
+                        R.string.auto_delete_chat_files_subtitle_on,
+                        deleteFilesBeforeDays.roundToInt()
+                    )
+                )
             }
         }
     }

@@ -498,6 +498,46 @@ class SettingPageViewModel @Inject constructor(
         }
     }
 
+    val autoDeleteLocalResourceBeforeDaysFlow = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.SETTINGS_AUTO_DELETE_LOCAL_RESOURCE_BEFORE_DAYS] ?: 7f
+        }
+
+    fun setAutoDeleteLocalResourceBeforeDays(value: Float) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.SETTINGS_AUTO_DELETE_LOCAL_RESOURCE_BEFORE_DAYS] = value
+            }
+        }
+    }
+
+    val autoDeleteLocalResourceFlow = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.SETTINGS_AUTO_DELETE_LOCAL_RESOURCE] ?: false
+        }
+
+    fun setAutoDeleteLocalResource(value: Boolean) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.SETTINGS_AUTO_DELETE_LOCAL_RESOURCE] = value
+            }
+        }
+    }
+
     // Notification
     private val _notificationPermissionGrantedStateFlow = MutableStateFlow(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
