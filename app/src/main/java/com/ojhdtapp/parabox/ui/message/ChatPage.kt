@@ -2144,8 +2144,6 @@ fun SingleMessage(
                 (context as MainActivity).getLanguageCode(message.contents.getContentString())
             }
         shouldTranslate = !(AppCompatDelegate.getApplicationLocales()[0]?.language
-            ?.let {
-                LanguageUtil.languageTagMapper(it) }
             ?.contentEquals(languageCode) ?: true)
     }
     SelectionContainer {

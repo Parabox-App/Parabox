@@ -509,8 +509,8 @@
     <string name="mark_as_read">既読にする</string>
     <string name="you">あなた</string>
     <string name="fcm_role_server">接尾モード</string>
-    <string name="fcm_enable_cache">キャッシュしたメディア</string>
-    <string name="fcm_enable_cache_subtitle_off">検証された画像ファイルの有効期限が切れています。削除を定期的に変更することをおすすめします</string>
+    <string name="fcm_enable_cache">チャットファイルをキャッシュする</string>
+    <string name="fcm_enable_cache_subtitle_off">画像と音声のコピーをローカルにキャッシュすると、画像と音声の無効化とダウンロードの繰り返しを効果的に回避できますが、占有されるスペースが大幅に増加します。</string>
     <string name="fcm_enable_cache_subtitle_on">メディアファイルはキャッシュされ、多くの空き容量が確保されます。</string>
     <string name="setup_fcm_server_title">FCM 接続の設定</string>
     <string name="setup_fcm_server_text_b">このメッセージは、FCMに完全に引き継ぎします。プライベートサーバーのメッセージ送信とまではFCMの下流メッセージをネイティブにプッシュし、こちらの送信リクエストを送り、FCM上流メッセージは、プライベートサーバーに送信しても問題ありません。これにより、すべてのバックグラウンドサービスがオフになっても、その機能を大幅に軽減し、ネイティブの性能を大幅に軽減できます。</string>
@@ -531,4 +531,8 @@
     <string name="auto_delete_chat_files_title">自動的に削除</string>
     <string name="auto_delete_chat_files_subtitle_off">アプリケーションの起動時にセッション リソースを自動的に削除する</string>
     <string name="auto_delete_chat_files_subtitle_on">%1$d 日以上前に受信したセッション リソースは削除されます</string>
+    <string name="fcm_enable_file_cache">通常のファイルが含まれています</string>
+    <string name="fcm_enable_file_cache_subtitile_off">ドキュメント、圧縮ファイル、ビデオなどの一般的なファイルが同時にキャッシュされます。 通常、開く必要はありません。</string>
+    <string name="fcm_enable_file_cache_subtitle_on">ドキュメント、圧縮ファイル、ビデオなどの一般的なファイルが同時にキャッシュされます。</string>
+    <string name="unknown_file_size">サイズ不明</string>
 </resources>

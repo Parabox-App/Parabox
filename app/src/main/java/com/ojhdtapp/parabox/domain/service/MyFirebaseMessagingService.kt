@@ -16,7 +16,6 @@ import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.FcmMapping
 import com.ojhdtapp.parabox.data.local.entity.FcmMappingSessionIdUpdate
 import com.ojhdtapp.parabox.data.remote.dto.server.ServerReceiveMessageDto
-import com.ojhdtapp.parabox.data.remote.dto.server.content.toDownloadedMessageContentList
 import com.ojhdtapp.parabox.data.remote.dto.server.content.toMessageContentList
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.domain.use_case.GetUriFromCloudResourceInfo
@@ -194,13 +193,15 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                                 preferences[DataStoreKeys.SETTINGS_FCM_ENABLE_CACHE]
                                     ?: false
                             }.first()
-                            val messageContents = if (shouldDownloadCloudResource) {
-                                dto.contents.toDownloadedMessageContentList(
-                                    getUriFromCloudResourceInfo = getUriFromCloudResourceInfo
+                            val shouldDownloadFileCloudResource = dataStore.data.map { preferences ->
+                                preferences[DataStoreKeys.SETTINGS_FCM_ENABLE_FILE_CACHE]
+                                    ?: false
+                            }.first()
+                            val messageContents = dto.contents.toMessageContentList(
+                                    getUriFromCloudResourceInfo = getUriFromCloudResourceInfo,
+                                    shouldDownloadCloudResource = shouldDownloadFileCloudResource,
+                                    shouldIncludeFile = shouldDownloadFileCloudResource
                                 )
-                            } else {
-                                dto.contents.toMessageContentList()
-                            }
                             val profile = Profile(
                                 name = dto.profile.name,
                                 avatar = dto.profile.avatar,

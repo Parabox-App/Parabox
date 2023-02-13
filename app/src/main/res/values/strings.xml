@@ -505,8 +505,8 @@
     <string name="mark_as_read">Mark as read</string>
     <string name="you">You</string>
     <string name="fcm_role_server">Takeover mode</string>
-    <string name="fcm_enable_cache">Cache media files</string>
-    <string name="fcm_enable_cache_subtitle_off">This can effectively avoid image failure. However, it will significantly increase the space occupation, and it is recommended to clear it manually on a regular basis.</string>
+    <string name="fcm_enable_cache">Cache chat files</string>
+    <string name="fcm_enable_cache_subtitle_off">Local caching of copies of pictures and voices can effectively avoid invalidation and repeated downloads of pictures and voices, but it will significantly increase the space occupied.</string>
     <string name="fcm_enable_cache_subtitle_on">Media files will be cached and are expected to take up more space.</string>
     <string name="setup_fcm_server_title">Configure FCM connection</string>
     <string name="setup_fcm_server_text_b">This feature hands over messaging operations completely to FCM. The message source running on the private server pushes the message to the local machine through the FCM downstream message, and the pending sending request sent by the local machine is returned to the FCM upstream message and returned to the private server for processing. This will allow all background services to be turned off while maintaining the normal operation of basic functions, greatly reducing the performance overhead of the machine.</string>
@@ -527,4 +527,8 @@
     <string name="auto_delete_chat_files_title">Automatically delete</string>
     <string name="auto_delete_chat_files_subtitle_off">Automatically delete chat resources when starting the application</string>
     <string name="auto_delete_chat_files_subtitle_on">Chat resources received %1$d days or older will be deleted</string>
+    <string name="fcm_enable_file_cache">Contains normal files</string>
+    <string name="fcm_enable_file_cache_subtitile_off">Ordinary files such as documents, compressed files, and videos will be cached at the same time. Generally do not need to open.</string>
+    <string name="fcm_enable_file_cache_subtitle_on">Common files such as documents, compressed files, and videos will be cached at the same time.</string>
+    <string name="unknown_file_size">Unknown size</string>
 </resources>

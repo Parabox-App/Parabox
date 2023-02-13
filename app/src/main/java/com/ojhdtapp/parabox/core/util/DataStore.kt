@@ -26,6 +26,7 @@ object DataStoreKeys{
     val SETTINGS_FCM_ROLE = intPreferencesKey("settings_fcm_role")
     val SETTINGS_FCM_CLOUD_STORAGE = intPreferencesKey("settings_fcm_cloud_storage")
     val SETTINGS_FCM_ENABLE_CACHE = booleanPreferencesKey("settings_fcm_enable_cache")
+    val SETTINGS_FCM_ENABLE_FILE_CACHE = booleanPreferencesKey("settings_fcm_enable_file_cache")
     val SETTINGS_AUTO_DELETE_LOCAL_RESOURCE = booleanPreferencesKey("settings_auto_delete_local_resource")
     val SETTINGS_AUTO_DELETE_LOCAL_RESOURCE_BEFORE_DAYS = floatPreferencesKey("settings_auto_delete_local_resource_before_days")
     val SETTINGS_ENABLE_DYNAMIC_COLOR = booleanPreferencesKey("settings_enable_dynamic_color")

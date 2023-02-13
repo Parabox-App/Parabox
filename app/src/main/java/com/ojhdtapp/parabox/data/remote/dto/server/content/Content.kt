@@ -1,11 +1,15 @@
 package com.ojhdtapp.parabox.data.remote.dto.server.content
 
 import android.content.Context
+import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.FileUtil.toSafeFilename
+import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.parabox.domain.use_case.GetUriFromCloudResourceInfo
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 
 sealed interface Content {
     val type: Int
@@ -13,12 +17,21 @@ sealed interface Content {
     suspend fun toDownloadedMessageContent(getUriFromCloudResourceInfo: GetUriFromCloudResourceInfo) : MessageContent
 }
 
-fun List<Content>.toMessageContentList() : List<MessageContent> {
-    return this.map { it.toMessageContent() }
-}
-
-suspend fun List<Content>.toDownloadedMessageContentList(getUriFromCloudResourceInfo: GetUriFromCloudResourceInfo) : List<MessageContent> {
-    return this.map { it.toDownloadedMessageContent(getUriFromCloudResourceInfo) }
+suspend fun List<Content>.toMessageContentList(
+    getUriFromCloudResourceInfo: GetUriFromCloudResourceInfo,
+                                       shouldDownloadCloudResource: Boolean = false,
+                                       shouldIncludeFile: Boolean = false) : List<MessageContent> {
+    return this.map {
+        if(shouldDownloadCloudResource){
+            if(it.type == 4 && !shouldIncludeFile){
+                it.toMessageContent()
+            }else{
+                it.toDownloadedMessageContent(getUriFromCloudResourceInfo)
+            }
+        }else{
+            it.toMessageContent()
+        }
+    }
 }
 
 data class Text(

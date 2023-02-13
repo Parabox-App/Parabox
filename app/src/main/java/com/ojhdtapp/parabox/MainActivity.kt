@@ -1004,14 +1004,15 @@ class MainActivity : AppCompatActivity() {
 
     suspend fun getTranslation(originalText: String): String? {
         return try {
-            val languageCode = getLanguageCode(originalText)
+            val languageCode = getLanguageCode(originalText).substringBefore("-")
             val currentLanguageTag =
-                AppCompatDelegate.getApplicationLocales()[0]?.toLanguageTag() ?: "en"
+                AppCompatDelegate.getApplicationLocales()[0]?.toLanguageTag()?.substringBefore("-") ?: "en"
+            Log.d("parabox", "getTranslation: $languageCode -> $currentLanguageTag")
             val options = TranslatorOptions.Builder()
                 .setSourceLanguage(TranslateLanguage.fromLanguageTag(languageCode)!!)
                 .setTargetLanguage(
                     TranslateLanguage.fromLanguageTag(
-                        LanguageUtil.languageTagMapper(currentLanguageTag)
+                        currentLanguageTag
                     )!!
                 )
                 .build()
@@ -1051,6 +1052,8 @@ class MainActivity : AppCompatActivity() {
             val languageIdentifier = LanguageIdentification.getClient()
             languageIdentifier.identifyLanguage(str)
                 .addOnSuccessListener { languageCode ->
+//                    Log.d("parabox", "getLanguageCode: $languageCode")
+//                    Log.d("parabox", "selectedLanguageCode: ${AppCompatDelegate.getApplicationLocales()[0]?.language}")
                     if (languageCode == "und") {
                         cot.resume("en")
                     } else {
