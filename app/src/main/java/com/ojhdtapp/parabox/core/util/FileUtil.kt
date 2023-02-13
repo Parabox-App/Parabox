@@ -195,10 +195,15 @@ object FileUtil {
                                 fileName = kodoPath,
                                 localPath = filePath,
                             )
-                            key?.let{
+                            key?.let {
                                 CloudResourceInfo(
                                     cloudType = FcmConstants.CloudStorage.QINIU_KODO.ordinal,
-                                    url = QiniuKODOUtil.downloadFile(domain, accessKey, secretKey, key),
+                                    url = QiniuKODOUtil.downloadFile(
+                                        domain,
+                                        accessKey,
+                                        secretKey,
+                                        key
+                                    ),
                                     cloudId = it
                                 )
                             }
@@ -227,6 +232,59 @@ object FileUtil {
         } catch (e: Exception) {
             e.printStackTrace()
             null
+        }
+    }
+
+    suspend fun getFileSizeFormCloudResourceInfo(
+        context: Context,
+        cloudType: Int?,
+        cloudId: String?,
+    ): Long? {
+        val cloudStorage = context.dataStore.data.first()[DataStoreKeys.SETTINGS_FCM_CLOUD_STORAGE]
+        if (cloudType == null || cloudStorage == null || cloudStorage != cloudType) {
+            return null
+        }
+        return when (cloudType) {
+            FcmConstants.CloudStorage.GOOGLE_DRIVE.ordinal -> {
+                null
+            }
+            FcmConstants.CloudStorage.TENCENT_COS.ordinal -> {
+                val secretId =
+                    context.dataStore.data.first()[DataStoreKeys.TENCENT_COS_SECRET_ID]
+                val secretKey =
+                    context.dataStore.data.first()[DataStoreKeys.TENCENT_COS_SECRET_KEY]
+                val bucket =
+                    context.dataStore.data.first()[DataStoreKeys.TENCENT_COS_BUCKET]
+                val region =
+                    context.dataStore.data.first()[DataStoreKeys.TENCENT_COS_REGION]
+                if (secretId != null && secretKey != null && bucket != null && region != null && cloudId != null) {
+                    TencentCOSUtil.getFileSize(
+                        context,
+                        secretId,
+                        secretKey,
+                        region,
+                        bucket,
+                        cloudId
+                    )
+                } else null
+            }
+            FcmConstants.CloudStorage.QINIU_KODO.ordinal -> {
+                val accessKey =
+                    context.dataStore.data.first()[DataStoreKeys.QINIU_KODO_ACCESS_KEY]
+                val secretKey =
+                    context.dataStore.data.first()[DataStoreKeys.QINIU_KODO_SECRET_KEY]
+                val bucket =
+                    context.dataStore.data.first()[DataStoreKeys.QINIU_KODO_BUCKET]
+                if (accessKey != null && secretKey != null && bucket != null && cloudId != null) {
+                    QiniuKODOUtil.getFileSize(
+                        accessKey = accessKey,
+                        secretKey = secretKey,
+                        bucket = bucket,
+                        key = cloudId
+                    )
+                } else null
+            }
+            else -> null
         }
     }
 

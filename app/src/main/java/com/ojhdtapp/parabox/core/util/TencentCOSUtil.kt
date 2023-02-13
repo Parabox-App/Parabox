@@ -13,11 +13,14 @@ import com.tencent.cos.xml.model.CosXmlResult
 import com.tencent.cos.xml.model.PresignedUrlRequest
 import com.tencent.cos.xml.model.`object`.GetObjectRequest
 import com.tencent.cos.xml.model.`object`.HeadObjectRequest
+import com.tencent.cos.xml.model.`object`.HeadObjectResult
 import com.tencent.cos.xml.model.`object`.PutObjectRequest
 import com.tencent.cos.xml.transfer.TransferConfig
 import com.tencent.cos.xml.transfer.TransferManager
 import com.tencent.qcloud.core.auth.QCloudCredentialProvider
 import com.tencent.qcloud.core.auth.ShortTimeCredentialProvider
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
 object TencentCOSUtil {
@@ -157,9 +160,41 @@ object TencentCOSUtil {
                 addNoSignHeader("Host")
             }
             cosXmlService.getPresignedURL(preSignedUrlRequest)
-        } catch( e: Exception) {
+        } catch (e: Exception) {
             e.printStackTrace()
             null
+        }
+    }
+
+    suspend fun getFileSize(
+        context: Context,
+        secretId: String,
+        secretKey: String,
+        region: String,
+        bucket: String,
+        cosPath: String
+    ): Long? {
+        return suspendCoroutine<Long?> {cot ->
+            try {
+                val cosXmlService = getCosXmlService(context, secretId, secretKey, region)
+                val headObjectRequest = HeadObjectRequest(bucket, cosPath)
+                cosXmlService.headObjectAsync(headObjectRequest, object: CosXmlResultListener{
+                    override fun onSuccess(request: CosXmlRequest?, result: CosXmlResult?) {
+                        cot.resume(result?.headers?.get("Content-Length")?.firstOrNull()?.toLongOrNull())
+                    }
+
+                    override fun onFail(
+                        p0: CosXmlRequest?,
+                        p1: CosXmlClientException?,
+                        p2: CosXmlServiceException?
+                    ) {
+                        cot.resume(null)
+                    }
+                })
+            } catch (e: Exception) {
+                e.printStackTrace()
+                cot.resumeWithException(e)
+            }
         }
     }
 }

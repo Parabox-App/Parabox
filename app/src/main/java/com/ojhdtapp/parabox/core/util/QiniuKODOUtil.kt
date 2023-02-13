@@ -48,4 +48,23 @@ object QiniuKODOUtil {
             null
         }
     }
+
+    suspend fun getFileSize(
+        accessKey: String,
+        secretKey: String,
+        bucket: String,
+        key: String
+    ): Long? {
+        return suspendCoroutine {
+            try {
+                val auth = Auth.create(accessKey, secretKey)
+                val bucketManager = com.qiniu.storage.BucketManager(auth, Configuration(Region.autoRegion()))
+                val fileInfo = bucketManager.stat(bucket, key)
+                it.resumeWith(Result.success(fileInfo.fsize))
+            } catch (e: Exception) {
+                e.printStackTrace()
+                it.resumeWith(Result.success(null))
+            }
+        }
+    }
 }
