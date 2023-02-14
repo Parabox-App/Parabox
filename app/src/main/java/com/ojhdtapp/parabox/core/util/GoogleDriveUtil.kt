@@ -230,12 +230,6 @@ object GoogleDriveUtil {
                 try {
                     getDriveService(context)?.let { driveService ->
                         val file = driveService.files().get(fileId).execute()
-                        if (Looper.myLooper() == null)
-                        {
-                            Looper.prepare();
-                        }
-                        Toast.makeText(context, "开始下载${file.name}", Toast.LENGTH_SHORT)
-                            .show()
                         val targetFile = File(path, FileUtil.getAvailableFileName(context, file.name))
                         targetFile.outputStream().use { fos ->
                             driveService.files().get(fileId).executeMediaAndDownloadTo(fos)
@@ -244,12 +238,6 @@ object GoogleDriveUtil {
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
-                    if (Looper.myLooper() == null)
-                    {
-                        Looper.prepare();
-                    }
-                    Toast.makeText(context, "下载失败", Toast.LENGTH_SHORT)
-                        .show()
                     null
                 }
             }

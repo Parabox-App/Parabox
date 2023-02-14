@@ -204,7 +204,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun downloadFile(file: File, cloudFirst: Boolean = false) {
-        if (file.uri != null) {
+        var resorted = false
+        if (!resorted && file.uri != null) {
             try {
                 val path = FileUtil.getAvailableFileName(baseContext, file.name)
                 FileUtil.saveFileToExternalStorage(baseContext, file.uri, path)
@@ -217,8 +218,138 @@ class MainActivity : AppCompatActivity() {
                     getString(R.string.download_file_success),
                     Toast.LENGTH_SHORT
                 ).show()
+                resorted = true
             } catch (e: Exception) {
                 e.printStackTrace()
+            }
+        }
+        lifecycleScope.launch(Dispatchers.IO) {
+            if (!resorted && cloudFirst) {
+                when (file.cloudType) {
+                    GoogleDriveUtil.SERVICE_CODE -> {
+                        if(file.cloudId != null){
+                            GoogleDriveUtil.downloadFile(
+                                baseContext,
+                                file.cloudId,
+                                java.io.File(
+                                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                                    "Parabox"
+                                ),
+                            )
+                            resorted = true
+                        } else {
+                            Toast.makeText(
+                                baseContext,
+                                "云服务配置错误，尝试常规下载",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+
+                    FcmConstants.CloudStorage.TENCENT_COS.ordinal -> {
+                        val secretId =
+                            dataStore.data.first()[DataStoreKeys.TENCENT_COS_SECRET_ID]
+                        val secretKey =
+                            dataStore.data.first()[DataStoreKeys.TENCENT_COS_SECRET_KEY]
+                        val bucket =
+                            dataStore.data.first()[DataStoreKeys.TENCENT_COS_BUCKET]
+                        val region =
+                            dataStore.data.first()[DataStoreKeys.TENCENT_COS_REGION]
+                        if (secretId != null && secretKey != null && bucket != null && region != null && file.cloudId != null) {
+                            val res = TencentCOSUtil.downloadFile(
+                                baseContext,
+                                secretId,
+                                secretKey,
+                                region,
+                                bucket,
+                                file.cloudId,
+                                java.io.File(
+                                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                                    "Parabox"
+                                ).absolutePath,
+                                file.name
+                            )
+                            if (res) {
+                                resorted = true
+                            }
+                        } else {
+                            Toast.makeText(
+                                baseContext,
+                                "云服务配置错误，尝试常规下载",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+
+                    FcmConstants.CloudStorage.QINIU_KODO.ordinal -> {
+                        val accessKey =
+                            dataStore.data.first()[DataStoreKeys.QINIU_KODO_ACCESS_KEY]
+                        val secretKey =
+                            dataStore.data.first()[DataStoreKeys.QINIU_KODO_SECRET_KEY]
+                        val bucket =
+                            dataStore.data.first()[DataStoreKeys.QINIU_KODO_BUCKET]
+                        val domain =
+                            dataStore.data.first()[DataStoreKeys.QINIU_KODO_DOMAIN]
+                        if (accessKey != null && secretKey != null && bucket != null && domain != null && file.cloudId != null) {
+                            val path = FileUtil.getAvailableFileName(baseContext, file.name)
+                            QiniuKODOUtil.downloadFile(domain, accessKey, secretKey, file.cloudId)
+                                ?.let { newUrl ->
+                                    DownloadManagerUtil.downloadWithManager(
+                                        baseContext,
+                                        newUrl,
+                                        path
+                                    )?.also {
+                                        resorted = true
+                                        updateFile.downloadInfo(path, it, file)
+                                        repeatOnLifecycle(Lifecycle.State.STARTED) {
+                                            DownloadManagerUtil.retrieve(baseContext, it)
+                                                .collectLatest {
+                                                    if (it is DownloadingState.Done) {
+                                                        updateFile.downloadInfo(path, null, file)
+                                                    }
+                                                    updateFile.downloadState(it, file)
+                                                }
+                                        }
+                                    }
+                                }
+                        } else {
+                            Toast.makeText(
+                                baseContext,
+                                "云服务配置错误，尝试常规下载",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+
+                    else -> {
+
+                    }
+                }
+            }
+            if (!resorted) {
+                val url = file.url
+                if (url != null) {
+                    val path = FileUtil.getAvailableFileName(baseContext, file.name)
+                    DownloadManagerUtil.downloadWithManager(
+                        baseContext,
+                        url,
+                        path
+                    )?.also {
+                        resorted = true
+                        updateFile.downloadInfo(path, it, file)
+                        repeatOnLifecycle(Lifecycle.State.STARTED) {
+                            DownloadManagerUtil.retrieve(baseContext, it)
+                                .collectLatest {
+                                    if (it is DownloadingState.Done) {
+                                        updateFile.downloadInfo(path, null, file)
+                                    }
+                                    updateFile.downloadState(it, file)
+                                }
+                        }
+                    }
+                }
+            }
+            if (!resorted) {
                 updateFile.downloadInfo(null, null, file)
                 updateFile.downloadState(DownloadingState.Failure, file)
                 Toast.makeText(
@@ -227,46 +358,7 @@ class MainActivity : AppCompatActivity() {
                     Toast.LENGTH_SHORT
                 ).show()
             }
-        } else {
-            lifecycleScope.launch(Dispatchers.IO) {
-                when (file.cloudType) {
-                    GoogleDriveUtil.SERVICE_CODE -> file.cloudId?.let {
-                        GoogleDriveUtil.downloadFile(
-                            baseContext,
-                            it,
-                            java.io.File(
-                                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                                "Parabox"
-                            ),
-                        )
-                    }
-
-                    else -> {
-                        val url = file.url
-                        if (url != null) {
-                            val path = FileUtil.getAvailableFileName(baseContext, file.name)
-                            DownloadManagerUtil.downloadWithManager(
-                                this@MainActivity,
-                                url,
-                                path
-                            )?.also {
-                                updateFile.downloadInfo(path, it, file)
-                                repeatOnLifecycle(Lifecycle.State.STARTED) {
-                                    DownloadManagerUtil.retrieve(this@MainActivity, it)
-                                        .collectLatest {
-                                            if (it is DownloadingState.Done) {
-                                                updateFile.downloadInfo(path, null, file)
-                                            }
-                                            updateFile.downloadState(it, file)
-                                        }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
         }
-
     }
 
     private suspend fun retrieveDownloadProcess(file: File) {
@@ -1006,7 +1098,8 @@ class MainActivity : AppCompatActivity() {
         return try {
             val languageCode = getLanguageCode(originalText).substringBefore("-")
             val currentLanguageTag =
-                AppCompatDelegate.getApplicationLocales()[0]?.toLanguageTag()?.substringBefore("-") ?: "en"
+                AppCompatDelegate.getApplicationLocales()[0]?.toLanguageTag()?.substringBefore("-")
+                    ?: "en"
             Log.d("parabox", "getTranslation: $languageCode -> $currentLanguageTag")
             val options = TranslatorOptions.Builder()
                 .setSourceLanguage(TranslateLanguage.fromLanguageTag(languageCode)!!)

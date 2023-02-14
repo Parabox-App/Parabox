@@ -165,12 +165,12 @@ fun FilePage(
                     }
                 } else {
                     coroutineScope.launch {
-                        snackBarHostState.showSnackbar("设备不支持")
+                        snackBarHostState.showSnackbar(context.getString(R.string.device_not_support))
                     }
                 }
             } else {
                 coroutineScope.launch {
-                    snackBarHostState.showSnackbar("设备不支持")
+                    snackBarHostState.showSnackbar(context.getString(R.string.device_not_support))
                 }
             }
         }
@@ -317,7 +317,7 @@ fun FilePage(
                             viewModel.selectedFilesId.forEach { id ->
                                 mainState.data.firstOrNull { it.cloudType != null && it.cloudType != 0 && it.cloudId != null && it.fileId == id }
                                     ?.also {
-                                        onEvent(ActivityEvent.DownloadFile(it))
+                                        onEvent(ActivityEvent.DownloadCloudFile(it))
                                     }
                             }
                             viewModel.setSearchBarActivateState(SearchAppBar.NONE)
