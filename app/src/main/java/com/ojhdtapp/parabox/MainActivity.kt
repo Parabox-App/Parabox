@@ -197,7 +197,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun openFile(file: File) {
         file.downloadPath?.let {
-            Log.d("MainActivity", "openFile: $it")
             val path = java.io.File(
                 Environment.getExternalStoragePublicDirectory("${Environment.DIRECTORY_DOWNLOADS}/Parabox"),
                 it
@@ -265,7 +264,7 @@ class MainActivity : AppCompatActivity() {
                         } else {
                             Toast.makeText(
                                 baseContext,
-                                "云服务配置错误，尝试常规下载",
+                                getString(R.string.invalid_cloud_storage_configuration),
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
@@ -293,14 +292,31 @@ class MainActivity : AppCompatActivity() {
                                     "Parabox"
                                 ).absolutePath,
                                 file.name
-                            )
+                            ){ downloadedBytes, allBytes ->
+                                if (allBytes != 0L) {
+                                    if (downloadedBytes == allBytes) {
+                                        updateFile.downloadInfo(file.name, null, file)
+                                        updateFile.downloadState(
+                                            DownloadingState.Done,
+                                            file
+                                        )
+                                    } else {
+                                        updateFile.downloadState(
+                                            DownloadingState.Downloading(
+                                                downloadedBytes = downloadedBytes.toInt(),
+                                                totalBytes = allBytes.toInt()
+                                            ), file
+                                        )
+                                    }
+                                }
+                            }
                             if (res) {
                                 resorted = true
                             }
                         } else {
                             Toast.makeText(
                                 baseContext,
-                                "云服务配置错误，尝试常规下载",
+                                getString(R.string.invalid_cloud_storage_configuration),
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
@@ -340,7 +356,7 @@ class MainActivity : AppCompatActivity() {
                         } else {
                             Toast.makeText(
                                 baseContext,
-                                "云服务配置错误，尝试常规下载",
+                                getString(R.string.invalid_cloud_storage_configuration),
                                 Toast.LENGTH_SHORT
                             ).show()
                         }

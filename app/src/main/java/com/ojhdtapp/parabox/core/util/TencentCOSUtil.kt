@@ -114,8 +114,9 @@ object TencentCOSUtil {
         bucket: String,
         cosPath: String,
         localPath: String,
-        fileName: String
-    ): Boolean {
+        fileName: String,
+        onProgress: (downloadedBytes: Long, allBytes: Long) -> Unit = { _, _ -> },
+        ): Boolean {
         return suspendCoroutine {
             try {
                 val transferManager = TransferManager(
@@ -124,6 +125,9 @@ object TencentCOSUtil {
                 )
                 val downloadTask =
                     transferManager.download(context, bucket, cosPath, localPath, fileName)
+                downloadTask.setCosXmlProgressListener { l, l2 ->
+                    onProgress(l, l2)
+                }
                 downloadTask.setCosXmlResultListener(object : CosXmlResultListener {
                     override fun onSuccess(request: CosXmlRequest?, result: CosXmlResult?) {
                         it.resumeWith(Result.success(true))
