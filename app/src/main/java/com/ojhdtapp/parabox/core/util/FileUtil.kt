@@ -601,8 +601,15 @@ object FileUtil {
 
     fun getAvailableFileName(context: Context, acquireName: String, withNumber: Int = 0): String {
         val separatorIndex = acquireName.lastIndexOf('.')
-        if (separatorIndex == -1) throw IndexOutOfBoundsException("no separator found in name")
-        else {
+        if (separatorIndex == -1) {
+//            throw IndexOutOfBoundsException("no separator found in name")
+            val path = File(
+                Environment.getExternalStoragePublicDirectory("${Environment.DIRECTORY_DOWNLOADS}/Parabox"),
+                acquireName + (if (withNumber == 0) "" else "-${withNumber}")
+            )
+            if (!path.exists()) return acquireName
+            else return getAvailableFileName(context, acquireName, withNumber + 1)
+        } else {
             val path = File(
                 Environment.getExternalStoragePublicDirectory("${Environment.DIRECTORY_DOWNLOADS}/Parabox"),
                 acquireName.substringBeforeLast('.') + (if (withNumber == 0) "" else "-${withNumber}") + "." + acquireName.substringAfterLast(
