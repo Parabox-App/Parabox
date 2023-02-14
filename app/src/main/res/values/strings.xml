@@ -529,4 +529,6 @@
     <string name="fcm_enable_file_cache_subtitile_off">Ordinary files such as documents, compressed files, and videos will be cached at the same time. Generally do not need to open.</string>
     <string name="fcm_enable_file_cache_subtitle_on">Common files such as documents, compressed files, and videos will be cached at the same time.</string>
     <string name="unknown_file_size">Unknown size</string>
+    <string name="cant_handle_file">No app found to open this file</string>
+    <string name="invalid_cloud_storage_configuration">Cloud service misconfiguration, try regular download</string>
 </resources>

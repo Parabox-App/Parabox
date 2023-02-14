@@ -533,4 +533,6 @@
     <string name="fcm_enable_file_cache_subtitile_off">ドキュメント、圧縮ファイル、ビデオなどの一般的なファイルが同時にキャッシュされます。 通常、開く必要はありません。</string>
     <string name="fcm_enable_file_cache_subtitle_on">ドキュメント、圧縮ファイル、ビデオなどの一般的なファイルが同時にキャッシュされます。</string>
     <string name="unknown_file_size">サイズ不明</string>
+    <string name="cant_handle_file">このファイルを処理するアプリケーションが見つかりません</string>
+    <string name="invalid_cloud_storage_configuration">クラウド サービスの設定ミス、通常のダウンロードを試す</string>
 </resources>

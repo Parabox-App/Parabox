@@ -14,6 +14,7 @@ import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.util.Log
 import android.webkit.MimeTypeMap
+import android.widget.Toast
 import androidx.core.content.FileProvider
 import androidx.core.net.toFile
 import com.ojhdtapp.parabox.BuildConfig
@@ -631,7 +632,11 @@ object FileUtil {
             setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             setDataAndType(uri, mineType)
         }.also {
-            context.startActivity(it)
+            try {
+                context.startActivity(it)
+            } catch (e: Exception) {
+                Toast.makeText(context, context.getString(R.string.cant_handle_file), Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
