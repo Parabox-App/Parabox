@@ -42,4 +42,5 @@ sealed interface ActivityEvent {
     data class SaveToCloud(val file: File) : ActivityEvent
     data class CancelBackupWork(val fileId: Long, val tag: String): ActivityEvent
     object QueryFCMToken: ActivityEvent
+    object RefreshCloudStorageFileList: ActivityEvent
 }

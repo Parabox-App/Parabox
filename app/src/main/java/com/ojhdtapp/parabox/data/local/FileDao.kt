@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.Flow
 interface FileDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertFile(file: FileEntity)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    fun insertFiles(files: List<FileEntity>)
 
     @Update(entity = FileEntity::class)
     fun updateDownloadingState(obj: FileDownloadingStateUpdate)

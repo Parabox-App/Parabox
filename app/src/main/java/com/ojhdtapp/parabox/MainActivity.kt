@@ -62,6 +62,8 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.Scope
 import com.google.android.gms.tasks.OnCompleteListener
+import com.google.api.client.googleapis.media.MediaHttpDownloader
+import com.google.api.client.googleapis.media.MediaHttpDownloaderProgressListener
 import com.google.api.services.drive.DriveScopes
 import com.google.firebase.FirebaseApp
 import com.google.firebase.analytics.FirebaseAnalytics
@@ -195,6 +197,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun openFile(file: File) {
         file.downloadPath?.let {
+            Log.d("MainActivity", "openFile: $it")
             val path = java.io.File(
                 Environment.getExternalStoragePublicDirectory("${Environment.DIRECTORY_DOWNLOADS}/Parabox"),
                 it
@@ -227,14 +230,36 @@ class MainActivity : AppCompatActivity() {
             if (!resorted && cloudFirst) {
                 when (file.cloudType) {
                     GoogleDriveUtil.SERVICE_CODE -> {
-                        if(file.cloudId != null){
+                        if (file.cloudId != null) {
+                            updateFile.downloadState(DownloadingState.Downloading(0, 0), file)
+                            val fileName = FileUtil.getAvailableFileName(baseContext, file.name)
                             GoogleDriveUtil.downloadFile(
-                                baseContext,
-                                file.cloudId,
-                                java.io.File(
+                                context = baseContext,
+                                fileId = file.cloudId,
+                                path = java.io.File(
                                     Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
                                     "Parabox"
                                 ),
+                                onProgress = { downloadedBytes, allBytes ->
+                                    if (allBytes != 0L) {
+                                        if (downloadedBytes == allBytes) {
+                                            updateFile.downloadInfo(fileName, null, file)
+                                            updateFile.downloadState(
+                                                DownloadingState.Done,
+                                                file
+                                            )
+                                        } else {
+                                            updateFile.downloadState(
+                                                DownloadingState.Downloading(
+                                                    downloadedBytes = downloadedBytes.toInt(),
+                                                    totalBytes = allBytes.toInt()
+                                                ), file
+                                            )
+                                        }
+
+                                    }
+                                },
+                                fileName = fileName
                             )
                             resorted = true
                         } else {
@@ -1011,6 +1036,43 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun refreshCloudStorageFileList() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            val cloudService = mainSharedViewModel.cloudServiceFlow.first()
+            when (cloudService) {
+                GoogleDriveUtil.SERVICE_CODE -> {
+                    dataStore.data.first().get(DataStoreKeys.GOOGLE_WORK_FOLDER_ID)?.let {
+                        GoogleDriveUtil.getFileList(baseContext, it)?.map {
+                            File(
+                                url = it.webContentLink,
+                                uri = null,
+                                name = it.name,
+                                extension = it.fullFileExtension ?: FileUtil.getExtension(it.name),
+                                size = it.getSize(),
+                                timestamp = it.createdTime.value,
+                                profileName = getString(R.string.cloud_service_gd),
+                                fileId = "${GoogleDriveUtil.SERVICE_CODE}${
+                                    it.id.getAscllString().subSequence(0, 10)
+                                }".toLong(),
+                                cloudType = GoogleDriveUtil.SERVICE_CODE,
+                                cloudId = it.id
+                            )
+                        }?.also {
+                            if (it.isNotEmpty()) {
+                                appDatabase.fileDao.insertFiles(
+                                    it.map { it.toFileEntity() }
+                                )
+                            }
+                        }
+                    }
+                }
+                else -> {
+
+                }
+            }
+        }
+    }
+
     fun getGoogleLoginAuth(): GoogleSignInClient {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
@@ -1414,8 +1476,13 @@ class MainActivity : AppCompatActivity() {
             is ActivityEvent.LaunchApp -> {
 
             }
+
+            is ActivityEvent.RefreshCloudStorageFileList -> {
+                refreshCloudStorageFileList()
+            }
         }
     }
+
 
     private fun handleIntent(intent: Intent) {
         when (intent.action) {
@@ -1565,6 +1632,12 @@ class MainActivity : AppCompatActivity() {
                         updateFile.downloadState(DownloadingState.None, it)
                         updateFile.downloadInfo(null, null, it)
                     } else {
+                        if (it.downloadingState is DownloadingState.Downloading
+                            && ((it.downloadingState as DownloadingState.Downloading).downloadedBytes == 0)
+                        ) {
+                            updateFile.downloadState(DownloadingState.Failure, it)
+                            updateFile.downloadInfo(null, null, it)
+                        }
                         retrieveDownloadProcess(it)
                     }
                 }
@@ -1605,6 +1678,9 @@ class MainActivity : AppCompatActivity() {
 
         // Auto Delete Chat Resource
         deleteChatFiles()
+
+        // CloudStorage Files
+        refreshCloudStorageFileList()
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {

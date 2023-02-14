@@ -7,7 +7,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.work.WorkManager
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.FileUtil
@@ -65,33 +64,33 @@ class FilePageViewModel @Inject constructor(
     }
 
     // Google Drive Files
-    private val googleDriveFilesStateFlow =
-        MutableStateFlow<Resource<List<File>>>(Resource.Loading())
-    fun updateGoogleDriveFilesStateFlow() {
-        viewModelScope.launch {
-            context.dataStore.data.first().get(DataStoreKeys.GOOGLE_WORK_FOLDER_ID)?.let {
-                GoogleDriveUtil.getFileList(context = context, it)?.map {
-                    File(
-                        url = it.webContentLink,
-                        uri = null,
-                        name = it.name,
-                        extension = it.fullFileExtension ?: FileUtil.getExtension(it.name),
-                        size = it.getSize(),
-                        timestamp = it.createdTime.value,
-                        profileName = context.getString(R.string.cloud_service_gd),
-                        fileId = it.createdTime.value,
-                        cloudType = GoogleDriveUtil.SERVICE_CODE,
-                        cloudId = it.id
-                    )
-                }.also {
-                    googleDriveFilesStateFlow.emit(
-                        Resource.Success(it)
-                    )
-                    setIsRefreshing(false)
-                }
-            }
-        }
-    }
+//    private val googleDriveFilesStateFlow =
+//        MutableStateFlow<Resource<List<File>>>(Resource.Loading())
+//    fun updateGoogleDriveFilesStateFlow() {
+//        viewModelScope.launch {
+//            context.dataStore.data.first().get(DataStoreKeys.GOOGLE_WORK_FOLDER_ID)?.let {
+//                GoogleDriveUtil.getFileList(context = context, it)?.map {
+//                    File(
+//                        url = it.webContentLink,
+//                        uri = null,
+//                        name = it.name,
+//                        extension = it.fullFileExtension ?: FileUtil.getExtension(it.name),
+//                        size = it.getSize(),
+//                        timestamp = it.createdTime.value,
+//                        profileName = context.getString(R.string.cloud_service_gd),
+//                        fileId = "${GoogleDriveUtil.SERVICE_CODE}${it.id}".toLong(),
+//                        cloudType = GoogleDriveUtil.SERVICE_CODE,
+//                        cloudId = it.id
+//                    )
+//                }.also {
+//                    googleDriveFilesStateFlow.emit(
+//                        Resource.Success(it)
+//                    )
+//                    setIsRefreshing(false)
+//                }
+//            }
+//        }
+//    }
     // Swipe Refresh
     private val _isRefreshing = mutableStateOf<Boolean>(false)
     val isRefreshing: State<Boolean> = _isRefreshing
@@ -116,32 +115,45 @@ class FilePageViewModel @Inject constructor(
         searchJob = viewModelScope.launch(Dispatchers.IO) {
             if (!withoutDelay) delay(800L)
             getFiles(value)
-                .combine(googleDriveFilesStateFlow) { local, gd ->
-                    val combinedData =
-                        (local.data?.toMutableList() ?: mutableListOf<File>()).apply {
-                            addAll(gd.data?.toMutableList()?.apply {
-                                removeAll {
-                                    it.cloudId in (local.data?.map { it.cloudId } ?: emptyList())
-                                            || (value.isNotBlank() && value !in it.name)
-                                }
-                            } ?: emptyList())
+                .map{
+                    val filedData = it.data?.toMutableList()?.apply {
+                        removeAll {
+                            (value.isNotBlank() && value !in it.name)
                         }
-                    when {
-                        listOf(local, gd).any { it is Resource.Error } -> {
-                            Resource.Error(
-                                listOf(local, gd).firstOrNull() { it is Resource.Error }?.message
-                                    ?: "error",
-                                combinedData
-                            )
-                        }
-
-                        listOf(local, gd).any { it is Resource.Success } -> {
-                            Resource.Success(combinedData)
-                        }
-
-                        else -> Resource.Loading(combinedData)
                     }
+                    when(it){
+                        is Resource.Loading -> Resource.Loading(filedData)
+                        is Resource.Error -> Resource.Error("error", filedData)
+                        is Resource.Success -> Resource.Success(filedData)
+                    }
+
                 }
+//                .combine(googleDriveFilesStateFlow) { local, gd ->
+//                    val combinedData =
+//                        (local.data?.toMutableList() ?: mutableListOf<File>()).apply {
+//                            addAll(gd.data?.toMutableList()?.apply {
+//                                removeAll {
+//                                    it.cloudId in (local.data?.map { it.cloudId } ?: emptyList())
+//                                            || (value.isNotBlank() && value !in it.name)
+//                                }
+//                            } ?: emptyList())
+//                        }
+//                    when {
+//                        listOf(local, gd).any { it is Resource.Error } -> {
+//                            Resource.Error(
+//                                listOf(local, gd).firstOrNull() { it is Resource.Error }?.message
+//                                    ?: "error",
+//                                combinedData
+//                            )
+//                        }
+//
+//                        listOf(local, gd).any { it is Resource.Success } -> {
+//                            Resource.Success(combinedData)
+//                        }
+//
+//                        else -> Resource.Loading(combinedData)
+//                    }
+//                }
                 .onEach { result ->
                     when (result) {
                         is Resource.Success -> {

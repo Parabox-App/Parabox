@@ -117,7 +117,7 @@ fun FilePage(
     }
     LaunchedEffect(key1 = true) {
         viewModel.onSearch("", withoutDelay = true)
-        viewModel.updateGoogleDriveFilesStateFlow()
+//        viewModel.updateGoogleDriveFilesStateFlow()
         viewModel.uiEventFlow.collectLatest {
             when (it) {
                 is FilePageUiEvent.ShowSnackBar -> {
@@ -412,21 +412,11 @@ fun FilePage(
                         showCloudDialog = true
                     },
                     onRefresh = {
-                        when (cloudService) {
-                            GoogleDriveUtil.SERVICE_CODE -> {
-                                viewModel.setIsRefreshing(true)
-                                viewModel.updateGoogleDriveFilesStateFlow()
-                            }
-                            else -> {
-                                coroutineScope.launch {
-                                    snackBarHostState.showSnackbar(context.getString(R.string.cloud_service_not_connected))
-                                }
-                                coroutineScope.launch {
-                                    viewModel.setIsRefreshing(true)
-                                    delay(500)
-                                    viewModel.setIsRefreshing(false)
-                                }
-                            }
+                        onEvent(ActivityEvent.RefreshCloudStorageFileList)
+                        coroutineScope.launch {
+                            viewModel.setIsRefreshing(true)
+                            delay(500)
+                            viewModel.setIsRefreshing(false)
                         }
                     }
                 )
@@ -664,7 +654,7 @@ fun MainArea(
                                             onAddOrRemoveFile(file)
                                         } else {
                                             if (file.downloadingState is DownloadingState.None || file.downloadingState is DownloadingState.Failure) {
-                                                onEvent(ActivityEvent.DownloadFile(file))
+                                                onEvent(ActivityEvent.DownloadCloudFile(file))
                                             } else if (file.downloadingState is DownloadingState.Done) {
                                                 onEvent(ActivityEvent.OpenFile(file))
                                             }
@@ -1298,9 +1288,9 @@ fun SearchArea(
                             onAddOrRemoveFile(item)
                         } else {
                             if (item.downloadingState is DownloadingState.None || item.downloadingState is DownloadingState.Failure) {
-                                onEvent(ActivityEvent.DownloadFile(item))
-                            } else {
-
+                                onEvent(ActivityEvent.DownloadCloudFile(item))
+                            } else if (item.downloadingState is DownloadingState.Done) {
+                                onEvent(ActivityEvent.OpenFile(item))
                             }
                         }
                     },
