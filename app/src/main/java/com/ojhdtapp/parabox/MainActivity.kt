@@ -62,8 +62,6 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.Scope
 import com.google.android.gms.tasks.OnCompleteListener
-import com.google.api.client.googleapis.media.MediaHttpDownloader
-import com.google.api.client.googleapis.media.MediaHttpDownloaderProgressListener
 import com.google.api.services.drive.DriveScopes
 import com.google.firebase.FirebaseApp
 import com.google.firebase.analytics.FirebaseAnalytics
@@ -164,6 +162,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var updateMessage: UpdateMessage
+
+    @Inject
+    lateinit var onedriveUtil: OnedriveUtil
 
     var pluginService: PluginService? = null
     private lateinit var pluginServiceConnection: ServiceConnection
@@ -1237,6 +1238,17 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    suspend fun msLoginIn(){
+        suspendCoroutine<Int> { cot ->
+            onedriveUtil?.signIn(
+                activity = this,
+            ){
+                cot.resume(it)
+            }
+        }
+
+    }
+
     // Event
     fun onEvent(event: ActivityEvent) {
         when (event) {
@@ -1843,11 +1855,6 @@ class MainActivity : AppCompatActivity() {
                 pluginServiceConnection = object : ServiceConnection {
                     override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
                         Log.d("parabox", "mainActivity - service connected")
-//                        Toast.makeText(
-//                            baseContext,
-//                            getString(R.string.start_extension_connection_success),
-//                            Toast.LENGTH_SHORT
-//                        ).show()
                         pluginService =
                             (p1 as PluginService.PluginServiceBinder).getService().also {
                                 mainSharedViewModel.setPluginListStateFlow(it.getAppModelList())

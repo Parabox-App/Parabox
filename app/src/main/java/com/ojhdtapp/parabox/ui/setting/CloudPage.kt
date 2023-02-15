@@ -163,6 +163,28 @@ fun CloudPage(
                             }
                         }
                     }
+                    item {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            onClick = {
+                                (context as MainActivity).msLoginIn()
+                            }) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                FaIcon(
+                                    modifier = Modifier.padding(16.dp),
+                                    faIcon = FaIcons.Microsoft,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = "Microsoft OneDrive",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            }
+                        }
+                    }
                 }
             }
         )
