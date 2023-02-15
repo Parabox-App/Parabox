@@ -98,6 +98,21 @@
             </intent-filter>
         </activity>
 
+        <!--Intent filter to capture authorization code response from the default browser on the device calling back to our app after interactive sign in -->
+        <activity
+            android:name="com.microsoft.identity.client.BrowserTabActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="msauth"
+                    android:host="com.ojhdtapp.parabox"
+                    android:path="/tRs+aB2aiUENDbRJA51OjlWMREM=" />
+            </intent-filter>
+        </activity>
+
         <service
             android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
             android:enabled="false"
