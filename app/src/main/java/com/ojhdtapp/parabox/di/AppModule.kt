@@ -8,10 +8,12 @@ import com.google.gson.GsonBuilder
 import com.ojhdtapp.parabox.core.util.DownloadUtil
 import com.ojhdtapp.parabox.core.util.DownloadUtilService
 import com.ojhdtapp.parabox.core.util.NotificationUtil
+import com.ojhdtapp.parabox.core.util.OnedriveUtil
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.Converters
 import com.ojhdtapp.parabox.data.remote.dto.ReceiveMessageDtoJsonDeserializer
 import com.ojhdtapp.parabox.data.remote.dto.SendMessageDtoJsonDeserializer
+import com.ojhdtapp.parabox.data.remote.dto.onedrive.MsalApi
 import com.ojhdtapp.parabox.data.remote.dto.server.content.Content
 import com.ojhdtapp.parabox.data.remote.dto.server.content.ContentTypeAdapter
 import com.ojhdtapp.parabox.data.repository.MainRepositoryImpl
@@ -91,6 +93,24 @@ object AppModule {
     @Singleton
     fun provideDownloadUtilService(retrofit: Retrofit): DownloadUtilService =
         retrofit.create(DownloadUtilService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideMsalService(): MsalApi =
+        Retrofit.Builder()
+            .baseUrl(OnedriveUtil.BASE_URL)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(MsalApi::class.java)
+    @Provides
+    @Singleton
+    fun provideOnedriveUtil(
+        @ApplicationContext applicationContext: Context,
+        msalApi: MsalApi,
+    ) = OnedriveUtil(
+        applicationContext,
+        msalApi,
+    )
 
     @Provides
     @Singleton
