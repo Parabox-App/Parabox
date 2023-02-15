@@ -293,7 +293,7 @@ class MainActivity : AppCompatActivity() {
                                     "Parabox"
                                 ).absolutePath,
                                 file.name
-                            ){ downloadedBytes, allBytes ->
+                            ) { downloadedBytes, allBytes ->
                                 if (allBytes != 0L) {
                                     if (downloadedBytes == allBytes) {
                                         updateFile.downloadInfo(file.name, null, file)
@@ -1238,15 +1238,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    suspend fun msLoginIn(){
-        suspendCoroutine<Int> { cot ->
-            onedriveUtil?.signIn(
-                activity = this,
-            ){
-                cot.resume(it)
+    suspend fun msLoginIn(): Boolean {
+        return withContext(Dispatchers.IO){
+            val res = suspendCoroutine<Int> { cot ->
+                onedriveUtil.signIn(
+                    activity = this@MainActivity,
+                ) {
+                    cot.resume(it)
+                }
             }
+            if (res == OnedriveUtil.STATUS_SUCCESS) {
+                val driveList = onedriveUtil.getDriveList()
+                Log.d("parabox", "driveList: $driveList")
+                true
+            } else false
         }
-
     }
 
     // Event

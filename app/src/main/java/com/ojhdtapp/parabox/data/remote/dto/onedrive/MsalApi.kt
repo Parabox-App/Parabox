@@ -2,6 +2,7 @@ package com.ojhdtapp.parabox.data.remote.dto.onedrive
 
 import com.ojhdtapp.parabox.core.util.OnedriveUtil.Companion.APP_ROOT_DIR
 import com.ojhdtapp.parabox.core.util.OnedriveUtil.Companion.TOKEN_KEY
+import okhttp3.RequestBody
 import retrofit2.http.*
 import retrofit2.Response
 
@@ -80,4 +81,25 @@ interface MsalApi {
         @Path("userId") userId: String,
         @Path("itemId") itemId: String
     ): Response<Void>
+
+
+    // 上传文件
+    @PUT
+    @Streaming
+    suspend fun uploadFile(
+        @Url url: String,
+        @Header("Content-Length") contentLength: Long,
+        @Header("Content-Range") contentRange: String,
+        @Body body: RequestBody
+    ): MsalSourceItem?
+
+    // 下载文件
+    @GET("users/{user-id}/drive/items/{item-path}/content")
+    @Streaming
+    suspend fun downloadFile(
+        @Header(TOKEN_KEY) authorization: String,
+        @Path("user-id") userId: String,
+        @Path("item-path") itemPath: String
+    ): Response<ByteArray>
+
 }
