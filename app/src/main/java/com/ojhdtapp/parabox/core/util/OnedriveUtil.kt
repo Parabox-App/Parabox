@@ -2,11 +2,23 @@ package com.ojhdtapp.parabox.core.util
 
 import android.app.Activity
 import android.content.Context
+import android.net.Uri
 import android.util.Log
 import com.microsoft.identity.client.*
 import com.microsoft.identity.client.exception.MsalException
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.data.remote.dto.onedrive.DriveItem
 import com.ojhdtapp.parabox.data.remote.dto.onedrive.MsalApi
+import com.ojhdtapp.parabox.data.remote.dto.onedrive.MsalSourceItem
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import org.apache.commons.io.FileUtils
+import java.io.File
+import java.io.FileOutputStream
+import java.net.HttpURLConnection
 import javax.inject.Inject
 
 class OnedriveUtil @Inject constructor(
@@ -142,5 +154,154 @@ class OnedriveUtil @Inject constructor(
         )
     }
 
-    
+    suspend fun getDriveList(): List<DriveItem>? {
+        if (authInfo == null) {
+            return null
+        }
+        val response = msalApi.getDriveList(authInfo!!.accessToken, authInfo?.account?.id ?: "")
+        if (response.value == null) {
+            return null
+        }
+        return response.value
+    }
+
+    suspend fun getFileList(path: String): List<MsalSourceItem>? {
+        if (authInfo == null) {
+            return null
+        }
+        val response = if (path == "/") {
+            msalApi.getAppFolderList(authInfo!!.accessToken, authInfo?.account?.id ?: "")
+        } else {
+            msalApi.getFolderListById(authInfo!!.accessToken, authInfo?.account?.id ?: "", path)
+        }
+        if (response.value == null) {
+            return null
+        }
+        return response.value
+    }
+
+    suspend fun getFileInfo(fileKey: String): MsalSourceItem? {
+        val userId = authInfo?.account?.id ?: ""
+        Log.d("OneDrive", "getFileInfo, userId = ${userId}, fileKey = $fileKey")
+
+        try {
+            val response: MsalSourceItem? = if (fileKey.startsWith("/")) {
+                msalApi.getFileInfoByPath(
+                        authInfo!!.accessToken,
+                        userId,
+                        fileKey.substring(1, fileKey.length)
+                    )
+            } else {
+                msalApi.getFileInfoById(authInfo!!.accessToken, userId, fileKey)
+            }
+            if (response == null) {
+                return null
+            }
+            return response
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return null
+        }
+    }
+
+    /**
+     * 如果成功，此调用将返回 204 No Content 响应，以指明资源已被删除，没有可返回的内容。
+     */
+    suspend fun delFile(fileKey: String): Boolean {
+        if(authInfo == null) {
+            return false
+        }
+        val userId = authInfo?.account?.id ?: ""
+        val response = msalApi
+            .deleteFile(authInfo!!.accessToken, userId, fileKey)
+        return response.code() == HttpURLConnection.HTTP_NO_CONTENT
+    }
+
+
+    suspend fun uploadFile(
+        context: Context,
+        file: File
+    ): Boolean {
+        if(authInfo == null) return false
+        val userId = authInfo?.account?.id ?: ""
+        try {
+            // 创建上传session
+            val uploadSession = msalApi.createUploadSession(
+                    authorization = authInfo!!.accessToken,
+                    userId = userId,
+                    itemPath = file.name
+                )
+
+            // 开始上传文件
+            val desc = file.asRequestBody("multipart/form-data".toMediaType())
+            val body = MultipartBody.Part.createFormData("file", file.name, desc)
+            val fileSize = file.length()
+            val range = "bytes 0-${fileSize - 1}/${fileSize}"
+            val response = msalApi.uploadFile(
+                url = uploadSession.uploadUrl,
+                contentLength = fileSize,
+                contentRange = range,
+                body = body.body
+            )
+
+//            val request = Request.Builder()
+//                .header("Content-Length", fileSize.toString())
+//                .header("Content-Range", "bytes 0-${fileSize - 1}/${fileSize}")
+//                .url(uploadSession.uploadUrl)
+//                .put(body = body.body)
+//                .build()
+//            val response = okClient.newCall(request)
+//                .execute()
+//            if (response.code != HttpURLConnection.HTTP_OK && response.code != HttpURLConnection.HTTP_CREATED) {
+//                Log.d("Onedrive", "上传失败，code = ${response.code}, msg = ${response.message}")
+//                return false
+//            }
+//            val responseBytes = response.body?.bytes()
+            if (response == null) {
+                return false
+            }
+//            val responseContent = String(responseBytes, Charset.forName("UTF-8"))
+//            val obj = Gson().fromJson(responseContent, MsalSourceItem::class.java)
+
+            return true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return false
+        }
+    }
+
+    suspend fun downloadFile(
+        context: Context,
+        cloudPath: String,
+        filePath: File
+    ): String? {
+        return withContext(Dispatchers.IO) {
+//            val hb = Headers.Builder()
+//                .add(TOKEN_KEY, getAuthInfo().accessToken)
+//                .build()
+//            val request: Request = Request.Builder()
+//                .url("$BASE_URL/users/${getUserId()}/drive/items/${dbRecord.cloudDiskPath}/content")
+//                .headers(hb)
+//                .build()
+//            val call = netManager.getClient()
+//                .newCall(request)
+
+            try {
+                val response = msalApi.downloadFile(
+                    authorization = authInfo!!.accessToken,
+                    userId = authInfo?.account?.id ?: "",
+                    itemPath = cloudPath
+                )
+                if (!response.isSuccessful) {
+                    return@withContext null
+                }
+                val byteSystem = response.body() ?: return@withContext null
+                FileUtils.writeByteArrayToFile(filePath, byteSystem)
+                return@withContext filePath.toString()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            return@withContext null
+        }
+    }
 }
