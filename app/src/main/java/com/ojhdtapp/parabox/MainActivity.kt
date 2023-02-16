@@ -1103,16 +1103,36 @@ class MainActivity : AppCompatActivity() {
         return GoogleSignIn.getClient(this, gso)
     }
 
-    fun getGoogleDriveInformation() {
+    fun getDriveInformation() {
         lifecycleScope.launch {
-            GoogleDriveUtil.getDriveInformation(this@MainActivity)?.also {
-                this@MainActivity.dataStore.edit { preferences ->
-                    preferences[DataStoreKeys.GOOGLE_WORK_FOLDER_ID] = it.workFolderId
-                    preferences[DataStoreKeys.CLOUD_TOTAL_SPACE] = it.totalSpace
-                    preferences[DataStoreKeys.CLOUD_USED_SPACE] = it.usedSpace
-                    preferences[DataStoreKeys.CLOUD_APP_USED_SPACE] = it.appUsedSpace
+            delay(5000)
+            val cloudStorage = dataStore.data.first()[DataStoreKeys.SETTINGS_CLOUD_SERVICE] ?: 0
+            when(cloudStorage){
+                GoogleDriveUtil.SERVICE_CODE -> {
+                    GoogleDriveUtil.getDriveInformation(baseContext)?.also {
+                        baseContext.dataStore.edit { preferences ->
+                            preferences[DataStoreKeys.GOOGLE_WORK_FOLDER_ID] = it.workFolderId
+                            preferences[DataStoreKeys.CLOUD_TOTAL_SPACE] = it.totalSpace
+                            preferences[DataStoreKeys.CLOUD_USED_SPACE] = it.usedSpace
+                            preferences[DataStoreKeys.CLOUD_APP_USED_SPACE] = it.appUsedSpace
+                        }
+                    }
+                }
+                OnedriveUtil.SERVICE_CODE -> {
+                    onedriveUtil.getDriveList()?.firstOrNull()?.also {
+                        Log.d("parabox", "driveItem: $it")
+                        baseContext.dataStore.edit { preferences ->
+                            preferences[DataStoreKeys.CLOUD_TOTAL_SPACE] = it.quota.total
+                            preferences[DataStoreKeys.CLOUD_USED_SPACE] = it.quota.used
+                            preferences[DataStoreKeys.CLOUD_APP_USED_SPACE] = 0L
+                        }
+                    }
+                }
+                else -> {
+
                 }
             }
+
         }
     }
 
@@ -1238,7 +1258,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    suspend fun msLoginIn(): Boolean {
+    suspend fun msSignIn(): Boolean {
         return withContext(Dispatchers.IO){
             val res = suspendCoroutine<Int> { cot ->
                 onedriveUtil.signIn(
@@ -1248,10 +1268,33 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             if (res == OnedriveUtil.STATUS_SUCCESS) {
+                dataStore.edit { preferences ->
+                    preferences[DataStoreKeys.SETTINGS_CLOUD_SERVICE] = OnedriveUtil.SERVICE_CODE
+                }
                 val driveList = onedriveUtil.getDriveList()
-                Log.d("parabox", "driveList: $driveList")
+                driveList?.firstOrNull()?.also {
+                    Log.d("parabox", "driveItem: $it")
+                    baseContext.dataStore.edit { preferences ->
+                        preferences[DataStoreKeys.CLOUD_TOTAL_SPACE] = it.quota.total
+                        preferences[DataStoreKeys.CLOUD_USED_SPACE] = it.quota.used
+                        preferences[DataStoreKeys.CLOUD_APP_USED_SPACE] = 0L
+                    }
+                }
                 true
             } else false
+        }
+    }
+
+    suspend fun msSignOut(): Boolean {
+        return withContext(Dispatchers.IO){
+            dataStore.edit { preferences ->
+                preferences[DataStoreKeys.SETTINGS_CLOUD_SERVICE] = 0
+            }
+            suspendCoroutine<Boolean> { cot ->
+                onedriveUtil.signOut(){
+                    cot.resume(it == OnedriveUtil.STATUS_SUCCESS)
+                }
+            }
         }
     }
 
@@ -1678,8 +1721,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Google Drive
-        getGoogleDriveInformation()
+        // Drive
+        getDriveInformation()
 
         // Backup
         backup = RoomBackup(this)
