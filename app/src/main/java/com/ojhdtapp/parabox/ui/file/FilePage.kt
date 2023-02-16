@@ -71,6 +71,7 @@ import com.ojhdtapp.parabox.ui.theme.Theme
 import com.ojhdtapp.parabox.ui.util.*
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -215,7 +216,9 @@ fun FilePage(
             text = {
                 LazyColumn() {
                     item {
-                        Surface(onClick = {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            onClick = {
                             val signInIntent =
                                 (context as MainActivity).getGoogleLoginAuth().signInIntent
                             gDriveLauncher.launch(signInIntent)
@@ -231,6 +234,36 @@ fun FilePage(
                                 )
                                 Text(
                                     text = stringResource(R.string.cloud_service_save_to_gd),
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            }
+                        }
+                    }
+                    item {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            onClick = {
+                                coroutineScope.launch(Dispatchers.IO) {
+                                    val res = (context as MainActivity).msSignIn()
+                                    showCloudDialog = false
+                                    if (res) {
+                                        snackBarHostState.showSnackbar("成功连接 OneDrive")
+                                    } else {
+                                        snackBarHostState.showSnackbar("操作取消")
+                                    }
+                                }
+                            }) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                FaIcon(
+                                    modifier = Modifier.padding(16.dp),
+                                    faIcon = FaIcons.Microsoft,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = stringResource(R.string.cloud_service_od),
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                             }
