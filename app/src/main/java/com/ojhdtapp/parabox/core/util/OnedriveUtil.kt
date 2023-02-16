@@ -167,7 +167,6 @@ class OnedriveUtil @Inject constructor(
     }
 
     suspend fun getDriveList(): List<DriveItem>? {
-        Log.d("MSAL", "getDriveList")
         if (authInfo == null) {
             return null
         }
