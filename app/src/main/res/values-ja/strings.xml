@@ -537,4 +537,5 @@
     <string name="unknown_file_size">サイズ不明</string>
     <string name="cant_handle_file">このファイルを処理するアプリケーションが見つかりません</string>
     <string name="invalid_cloud_storage_configuration">クラウド サービスの設定ミス、通常のダウンロードを試す</string>
+    <string name="cloud_service_od">Microsoft OneDrive</string>
 </resources>

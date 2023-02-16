@@ -26,6 +26,7 @@ class OnedriveUtil @Inject constructor(
     val msalApi: MsalApi
 ) {
     companion object {
+        const val SERVICE_CODE = 1002
         const val APP_ROOT_DIR = "approot"
         const val TOKEN_KEY = "Authorization"
         const val BASE_URL = "https://graph.microsoft.com/v1.0/"
@@ -57,7 +58,8 @@ class OnedriveUtil @Inject constructor(
      * Load currently signed-in accounts, if there's any.
      **/
     fun loadAccounts() {
-        mSingleAccountApp?.getCurrentAccountAsync(object : ISingleAccountPublicClientApplication.CurrentAccountCallback {
+        mSingleAccountApp?.getCurrentAccountAsync(object :
+            ISingleAccountPublicClientApplication.CurrentAccountCallback {
             override fun onAccountLoaded(activeAccount: IAccount?) {
                 if (activeAccount != null) {
                     getTokenByAccountInfo(activeAccount)
@@ -83,6 +85,10 @@ class OnedriveUtil @Inject constructor(
         activity: Activity,
         onResult: (code: Int) -> Unit
     ){
+        if(authInfo != null){
+            onResult(STATUS_CANCEL)
+            return
+        }
         val callback = object: AuthenticationCallback{
             override fun onSuccess(authenticationResult: IAuthenticationResult?) {
                 authInfo = authenticationResult
@@ -106,13 +112,18 @@ class OnedriveUtil @Inject constructor(
             .build())
     }
 
-    fun signOut(){
+    fun signOut(
+        onResult: (code: Int) -> Unit
+    ){
         mSingleAccountApp?.signOut(object : ISingleAccountPublicClientApplication.SignOutCallback {
             override fun onSignOut() {
+                Log.d("MSAL", "Signed Out")
+                onResult(STATUS_SUCCESS)
                 authInfo = null
             }
             override fun onError(exception: MsalException) {
-                // Exception occurred during sign-out
+                exception.printStackTrace()
+                onResult(STATUS_ERROR)
             }
         })
     }
@@ -140,6 +151,7 @@ class OnedriveUtil @Inject constructor(
         mSingleAccountApp?.acquireTokenSilentAsync(
             AcquireTokenSilentParameters.Builder()
                 .forAccount(account)
+                .fromAuthority(account.authority)
                 .withScopes(scopes)
                 .withCallback(object : SilentAuthenticationCallback {
                     override fun onSuccess(authenticationResult: IAuthenticationResult?) {
@@ -147,7 +159,7 @@ class OnedriveUtil @Inject constructor(
                     }
                     override fun onError(exception: MsalException) {
                         exception.printStackTrace()
-                        signOut()
+                        signOut(){}
                     }
                 })
                 .build()
@@ -155,6 +167,7 @@ class OnedriveUtil @Inject constructor(
     }
 
     suspend fun getDriveList(): List<DriveItem>? {
+        Log.d("MSAL", "getDriveList")
         if (authInfo == null) {
             return null
         }

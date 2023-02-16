@@ -394,6 +394,7 @@ fun FilePage(
                     enableDynamicColor = mainSharedViewModel.enableDynamicColorFlow.collectAsState(
                         initial = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
                     ).value,
+                    snackbarHostState = snackBarHostState,
                     onLogoutGoogleDrive = {
                         mainSharedViewModel.saveGoogleDriveAccount(null)
                         coroutineScope.launch {
@@ -469,6 +470,7 @@ fun MainArea(
     isRefreshing: Boolean,
     theme: Int,
     enableDynamicColor: Boolean,
+    snackbarHostState: SnackbarHostState,
     onLogoutGoogleDrive: () -> Unit,
     onChangeSearchAppBarState: (state: Int) -> Unit,
     onEvent: (ActivityEvent) -> Unit,
@@ -480,6 +482,7 @@ fun MainArea(
     onRefresh: () -> Unit,
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     SwipeRefresh(
         state = rememberSwipeRefreshState(isRefreshing = isRefreshing),
         onRefresh = onRefresh,
@@ -747,7 +750,7 @@ fun MainArea(
                         targetState = cloudService,
                     ) {
                         when (it) {
-                            GoogleDriveUtil.SERVICE_CODE -> {
+                            GoogleDriveUtil.SERVICE_CODE, OnedriveUtil.SERVICE_CODE -> {
                                 Column() {
                                     var expanded by remember {
                                         mutableStateOf(false)
@@ -767,20 +770,52 @@ fun MainArea(
                                                         modifier = Modifier.fillMaxSize(),
                                                         contentAlignment = Alignment.Center
                                                     ) {
-                                                        FaIcon(
-                                                            faIcon = FaIcons.GoogleDrive,
-                                                            tint = MaterialTheme.colorScheme.primary
-                                                        )
+                                                        when (cloudService) {
+                                                            GoogleDriveUtil.SERVICE_CODE -> {
+                                                                FaIcon(
+                                                                    faIcon = FaIcons.GoogleDrive,
+                                                                    tint = MaterialTheme.colorScheme.primary
+                                                                )
+                                                            }
+                                                            OnedriveUtil.SERVICE_CODE -> {
+                                                                FaIcon(
+                                                                    faIcon = FaIcons.Microsoft,
+                                                                    tint = MaterialTheme.colorScheme.primary
+                                                                )
+                                                            }
+                                                            else -> {
+                                                                FaIcon(
+                                                                    faIcon = FaIcons.Cloud,
+                                                                    tint = MaterialTheme.colorScheme.primary
+                                                                )
+                                                            }
+                                                        }
                                                     }
                                                 }
                                                 Spacer(modifier = Modifier.width(16.dp))
                                                 Column() {
-                                                    Text(
-                                                        text = stringResource(id = R.string.cloud_service_gd),
-                                                        style = MaterialTheme.typography.titleMedium
-                                                    )
+                                                    when (cloudService) {
+                                                        GoogleDriveUtil.SERVICE_CODE -> {
+                                                            Text(
+                                                                text = stringResource(id = R.string.cloud_service_gd),
+                                                                style = MaterialTheme.typography.titleMedium
+                                                            )
+                                                        }
+                                                        OnedriveUtil.SERVICE_CODE -> {
+                                                            Text(
+                                                                text = stringResource(R.string.cloud_service_od),
+                                                                style = MaterialTheme.typography.titleMedium
+                                                            )
+                                                        }
+                                                        else -> {
+                                                            Text(
+                                                                text = stringResource(id = R.string.cloud_service),
+                                                                style = MaterialTheme.typography.titleMedium
+                                                            )
+                                                        }
+                                                    }
                                                     LinearProgressIndicator(
-                                                        progress = 0.6f,
+                                                        progress = cloudUsedSpacePercent.toFloat() / 100,
                                                         modifier = Modifier
                                                             .padding(vertical = 4.dp)
                                                             .clip(CircleShape),
@@ -820,11 +855,36 @@ fun MainArea(
                                                 text = { Text(text = stringResource(R.string.sign_out_cloud_service)) },
                                                 onClick = {
                                                     expanded = false
-                                                    (context as MainActivity).getGoogleLoginAuth()
-                                                        .signOut()
-                                                        .addOnCompleteListener {
-                                                            onLogoutGoogleDrive()
+                                                    when (cloudService) {
+                                                        GoogleDriveUtil.SERVICE_CODE -> {
+                                                            (context as MainActivity).getGoogleLoginAuth()
+                                                                .signOut()
+                                                                .addOnCompleteListener {
+                                                                    onLogoutGoogleDrive()
+                                                                }
                                                         }
+                                                        OnedriveUtil.SERVICE_CODE -> {
+                                                            coroutineScope.launch {
+                                                                val res = (context as MainActivity).msSignOut()
+                                                                if(res){
+                                                                    snackbarHostState.showSnackbar(
+                                                                        context.getString(
+                                                                            R.string.signed_out_cloud_service
+                                                                        )
+                                                                    )
+                                                                } else {
+                                                                    snackbarHostState.showSnackbar(
+                                                                        context.getString(
+                                                                            R.string.unknown_error
+                                                                        )
+                                                                    )
+                                                                }
+                                                            }
+                                                        }
+                                                        else -> {
+
+                                                        }
+                                                    }
                                                 })
                                         }
                                     }
