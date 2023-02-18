@@ -175,9 +175,9 @@ dependencies {
     implementation 'com.ojhdt:parabox-development-kit:1.0.6'
 
     // Paging
-    def paging_version = "3.2.0-alpha03"
+    def paging_version = "3.2.0-alpha04"
     implementation "androidx.paging:paging-runtime:$paging_version"
-    implementation "androidx.paging:paging-compose:1.0.0-alpha17"
+    implementation "androidx.paging:paging-compose:1.0.0-alpha18"
 
     // Coil
     implementation 'io.coil-kt:coil:2.2.2'

@@ -21,6 +21,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.CreateDocument
 import androidx.activity.viewModels
@@ -168,8 +169,7 @@ class MainActivity : AppCompatActivity() {
 
     var pluginService: PluginService? = null
     private lateinit var pluginServiceConnection: ServiceConnection
-    private lateinit var userAvatarPickerLauncher: ActivityResultLauncher<Intent>
-    private lateinit var userAvatarPickerSLauncher: ActivityResultLauncher<String>
+    private lateinit var userAvatarPickerLauncher: ActivityResultLauncher<PickVisualMediaRequest>
     private lateinit var requestPermissionLauncher: ActivityResultLauncher<String>
 
     private var recorder: MediaRecorder? = null
@@ -625,14 +625,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun pickUserAvatar() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val intent = Intent(MediaStore.ACTION_PICK_IMAGES).apply {
-                type = "image/*"
-            }
-            userAvatarPickerLauncher.launch(intent)
-        } else {
-            userAvatarPickerSLauncher.launch("image/*")
-        }
+        userAvatarPickerLauncher.launch(
+            PickVisualMediaRequest(
+                ActivityResultContracts.PickVisualMedia.ImageOnly
+            )
+        )
     }
 
     private fun setUserAvatar(uri: Uri) {
@@ -663,7 +660,7 @@ class MainActivity : AppCompatActivity() {
                     settings[DataStoreKeys.USER_AVATAR] = it.toString()
                 }
                 Toast.makeText(
-                    this@MainActivity,
+                    baseContext,
                     getString(R.string.avatar_updated),
                     Toast.LENGTH_SHORT
                 ).show()
@@ -1628,19 +1625,12 @@ class MainActivity : AppCompatActivity() {
 
         // Activity Result Api
         userAvatarPickerLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-                if (it.resultCode == Activity.RESULT_OK) {
-                    it.data?.data?.let {
+                registerForActivityResult(ActivityResultContracts.PickVisualMedia()){
+                    if(it != null){
                         setUserAvatar(it)
                     }
                 }
-            }
-        userAvatarPickerSLauncher =
-            registerForActivityResult(ActivityResultContracts.GetContent()) {
-                it?.let {
-                    setUserAvatar(it)
-                }
-            }
+
 
         // Request Permission Launcher
         requestPermissionLauncher = registerForActivityResult(
@@ -1788,10 +1778,14 @@ class MainActivity : AppCompatActivity() {
 //                    exitTransition = { slideOutHorizontally { -it }},
 //                    popEnterTransition = { slideInHorizontally { -it }},
 //                    popExitTransition = { slideOutHorizontally { it }},
-                    enterTransition = { fadeIn(tween(300)) + scaleIn(tween(300), 0.9f) },
-                    exitTransition = { fadeOut(tween(300)) + scaleOut(tween(300), 1.1f) },
-                    popEnterTransition = { fadeIn(tween(300)) + scaleIn(tween(300), 1.1f) },
-                    popExitTransition = { fadeOut(tween(300)) + scaleOut(tween(300), 0.9f) }
+//                    enterTransition = { fadeIn(tween(300)) + scaleIn(tween(300), 0.9f) },
+//                    exitTransition = { fadeOut(tween(300)) + scaleOut(tween(300), 1.1f) },
+//                    popEnterTransition = { fadeIn(tween(300)) + scaleIn(tween(300), 1.1f) },
+//                    popExitTransition = { fadeOut(tween(300)) + scaleOut(tween(300), 0.9f) }
+                    enterTransition = { slideInHorizontally { 100 } + fadeIn() },
+                    exitTransition = { slideOutHorizontally { -100 } + fadeOut() },
+                    popEnterTransition = { slideInHorizontally { -100 } + fadeIn() },
+                    popExitTransition = { slideOutHorizontally { 100 } + fadeOut() }
                 ),
                 defaultAnimationsForNestedNavGraph = mapOf(
                     NavGraphs.guide to NestedNavGraphDefaultAnimations(
@@ -1799,6 +1793,10 @@ class MainActivity : AppCompatActivity() {
                         exitTransition = { slideOutHorizontally { -it } },
                         popEnterTransition = { slideInHorizontally { -it } },
                         popExitTransition = { slideOutHorizontally { it } },
+//                        enterTransition = { slideInHorizontally { 100 } + fadeIn() },
+//                        exitTransition = { slideOutHorizontally { -100 } + fadeOut() },
+//                        popEnterTransition = { slideInHorizontally { -100 } + fadeIn() },
+//                        popExitTransition = { slideOutHorizontally { 100 } + fadeOut() }
                     )
                 )
             )
