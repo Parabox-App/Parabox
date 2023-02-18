@@ -8,6 +8,7 @@ import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.Orientation
@@ -21,8 +22,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Archive
+import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.MarkChatRead
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
+import androidx.compose.material3.DismissDirection
+import androidx.compose.material3.DismissState
+import androidx.compose.material3.DismissValue
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -40,8 +47,10 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -230,7 +239,11 @@ fun MessagePage(
             onEvent = {
                 when (it) {
                     is EditActionDialogEvent.ProfileAndTagUpdate -> {
-                        viewModel.setCustomizedContactProfileAndTag(it.contactId, it.profile, it.tags)
+                        viewModel.setCustomizedContactProfileAndTag(
+                            it.contactId,
+                            it.profile,
+                            it.tags
+                        )
                         viewModel.addContactTag(it.tags)
                     }
                     is EditActionDialogEvent.EnableNotificationStateUpdate -> {
@@ -733,6 +746,104 @@ fun SwipeableContact(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SwipeToDismissContact(
+    modifier: Modifier = Modifier,
+    enabled: Boolean,
+    startToEndIcon: ImageVector? = null,
+    endToStartIcon: ImageVector? = null,
+    onDismissedToEnd: () -> Boolean,
+    onDismissedToStart: () -> Boolean,
+    onVibrate: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    val dismissState = rememberDismissState(
+        confirmValueChange = {
+            when (it) {
+                DismissValue.DismissedToEnd -> {
+                    onDismissedToEnd()
+                }
+                DismissValue.DismissedToStart -> {
+                    onDismissedToStart()
+                }
+                else -> false
+            }
+        },
+        positionalThreshold = { distance -> distance * .25f }
+    )
+    LaunchedEffect(key1 = dismissState.targetValue == DismissValue.Default) {
+        if (dismissState.progress != 0f && dismissState.progress != 1f)
+            onVibrate()
+    }
+    val isDismissed = dismissState.isDismissed(DismissDirection.EndToStart)
+            || dismissState.isDismissed(DismissDirection.StartToEnd)
+    val isDismissedToStart = dismissState.isDismissed(DismissDirection.EndToStart)
+    val isDismissedToEnd = dismissState.isDismissed(DismissDirection.StartToEnd)
+
+
+    AnimatedVisibility(
+        modifier = modifier.fillMaxWidth(),
+        visible = !isDismissedToStart,
+        exit = slideOutHorizontally { -it },
+        enter = expandVertically()
+    ) {
+        AnimatedVisibility(
+            modifier = Modifier.fillMaxWidth(),
+            visible = !isDismissedToEnd,
+            exit = slideOutHorizontally { it }, enter = expandVertically()
+        ) {
+            SwipeToDismiss(
+                state = dismissState,
+                background = {
+                    val direction = dismissState.dismissDirection ?: return@SwipeToDismiss
+                    val color by animateColorAsState(
+                        when (dismissState.targetValue) {
+                            DismissValue.Default -> MaterialTheme.colorScheme.secondary
+                            DismissValue.DismissedToEnd -> MaterialTheme.colorScheme.primary
+                            DismissValue.DismissedToStart -> MaterialTheme.colorScheme.primary
+                        }
+                    )
+                    val alignment = when (direction) {
+                        DismissDirection.StartToEnd -> Alignment.CenterStart
+                        DismissDirection.EndToStart -> Alignment.CenterEnd
+                    }
+                    val icon = when (direction) {
+                        DismissDirection.StartToEnd -> startToEndIcon ?: Icons.Outlined.Done
+                        DismissDirection.EndToStart -> endToStartIcon ?: Icons.Outlined.Done
+                    }
+                    val scale by animateFloatAsState(
+                        if (dismissState.targetValue == DismissValue.Default)
+                            0.75f else 1f
+                    )
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .background(color)
+                            .padding(horizontal = 20.dp),
+                        contentAlignment = alignment
+                    ) {
+                        Icon(
+                            icon,
+                            contentDescription = "Localized description",
+                            modifier = Modifier.scale(scale),
+                            tint = MaterialTheme.colorScheme.contentColorFor(color)
+                        )
+                    }
+                },
+                directions = buildSet {
+                    if (!enabled) return@buildSet
+                    if (startToEndIcon != null) add(DismissDirection.StartToEnd)
+                    if (endToStartIcon != null) add(DismissDirection.EndToStart)
+                },
+                dismissContent = {
+                    content()
+                }
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ContactItem(
@@ -850,7 +961,8 @@ fun ContactItem(
                                             uri = contact.profile.customizedUri?.let { Uri.parse(it) }
                                                 ?: contact.profile.avatarUri?.let { Uri.parse(it) },
                                             url = contact.profile.avatar,
-                                            name = contact.profile.customizedName?.ifBlank { null } ?: contact.profile.name,
+                                            name = contact.profile.customizedName?.ifBlank { null }
+                                                ?: contact.profile.name,
                                             backgroundColor = MaterialTheme.colorScheme.primary,
                                             textColor = MaterialTheme.colorScheme.onPrimary,
                                         )
@@ -894,7 +1006,8 @@ fun ContactItem(
                     )
                 } else {
                     Text(
-                        text = title ?: contact?.profile?.customizedName?.ifBlank { null } ?: contact?.profile?.name ?: context.getString(R.string.contact_name),
+                        text = title ?: contact?.profile?.customizedName?.ifBlank { null }
+                        ?: contact?.profile?.name ?: context.getString(R.string.contact_name),
                         style = MaterialTheme.typography.titleMedium,
                         color = if (noBackground) MaterialTheme.colorScheme.onSurface else textColor,
                         maxLines = 1
@@ -915,7 +1028,7 @@ fun ContactItem(
                             if (subTitle.isNullOrEmpty()) {
                                 if (contact?.profile?.name != contact?.latestMessage?.sender && contact?.latestMessage?.sender != null) {
                                     withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                                        append(if(contact.latestMessage.sentByMe) username else contact.latestMessage.sender)
+                                        append(if (contact.latestMessage.sentByMe) username else contact.latestMessage.sender)
                                         append(": ")
                                     }
                                 }
@@ -942,7 +1055,9 @@ fun ContactItem(
                 ) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = (timestamp ?: contact?.latestMessage?.timestamp)?.toTimeUntilNow(context)
+                        text = (timestamp ?: contact?.latestMessage?.timestamp)?.toTimeUntilNow(
+                            context
+                        )
                             ?: "",
                         style = MaterialTheme.typography.labelMedium
                     )
