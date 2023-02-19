@@ -408,7 +408,7 @@ fun SelectContentField(
                             },
                             leadingIcon = {
                                 Icon(
-                                    Icons.Outlined.HideSource,
+                                    Icons.Outlined.MarkChatRead,
                                     contentDescription = null
                                 )
                             })
@@ -689,7 +689,7 @@ fun SelectSpecContentField(
         Spacer(modifier = Modifier.weight(1f))
         IconButton(onClick = { onDropdownMenuItemEvent(DropdownMenuItemEvent.HideArchive) }) {
             Icon(
-                Icons.Outlined.HideSource,
+                Icons.Outlined.MarkChatRead,
                 contentDescription = null
             )
         }

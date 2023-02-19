@@ -438,7 +438,7 @@ class MessagePageViewModel @Inject constructor(
         tempContactIdForHiddenCancellation.add(contactId)
         updateHiddenStateJob = viewModelScope.launch(Dispatchers.IO) {
 //            _uiEventFlow.emit(MessagePageUiEvent.ShowSnackBar("会话已暂时隐藏", "取消"))
-            delay(200)
+            delay(1000)
             updateContact.hiddenState(contactId, true)
         }
     }
@@ -448,7 +448,7 @@ class MessagePageViewModel @Inject constructor(
         tempContactIdForHiddenCancellation.addAll(contactIds)
         updateHiddenStateJob = viewModelScope.launch(Dispatchers.IO) {
 //            _uiEventFlow.emit(MessagePageUiEvent.ShowSnackBar("会话已暂时隐藏", "取消"))
-            delay(200)
+            delay(1000)
             contactIds.forEach {
                 updateContact.hiddenState(it, true)
             }
@@ -462,6 +462,19 @@ class MessagePageViewModel @Inject constructor(
                     updateContact.hiddenState(it, false)
                 }
             }
+        }
+    }
+
+    fun setContactArchiveBySlide(contactId: Long){
+        viewModelScope.launch(Dispatchers.IO) {
+            delay(1000)
+            updateContact.archivedState(contactId, true)
+        }
+    }
+
+    fun cancelContactArchiveBySlide(contactId: Long){
+        viewModelScope.launch(Dispatchers.IO) {
+            updateContact.archivedState(contactId, false)
         }
     }
 

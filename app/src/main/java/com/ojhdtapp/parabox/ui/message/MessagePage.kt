@@ -776,11 +776,13 @@ fun SwipeToDismissContact(
         if (dismissState.progress != 0f && dismissState.progress != 1f)
             onVibrate()
     }
+    LaunchedEffect(key1 = Unit){
+        dismissState.reset()
+    }
     val isDismissed = dismissState.isDismissed(DismissDirection.EndToStart)
             || dismissState.isDismissed(DismissDirection.StartToEnd)
     val isDismissedToStart = dismissState.isDismissed(DismissDirection.EndToStart)
     val isDismissedToEnd = dismissState.isDismissed(DismissDirection.StartToEnd)
-
 
     AnimatedVisibility(
         modifier = modifier.fillMaxWidth(),
@@ -794,6 +796,7 @@ fun SwipeToDismissContact(
             exit = slideOutHorizontally { it }, enter = expandVertically()
         ) {
             SwipeToDismiss(
+                modifier = Modifier.padding(bottom = 2.dp),
                 state = dismissState,
                 background = {
                     val direction = dismissState.dismissDirection ?: return@SwipeToDismiss
@@ -802,6 +805,13 @@ fun SwipeToDismissContact(
                             DismissValue.Default -> MaterialTheme.colorScheme.secondary
                             DismissValue.DismissedToEnd -> MaterialTheme.colorScheme.primary
                             DismissValue.DismissedToStart -> MaterialTheme.colorScheme.primary
+                        }
+                    )
+                    val textColor by animateColorAsState(
+                        when (dismissState.targetValue) {
+                            DismissValue.Default -> MaterialTheme.colorScheme.onSecondary
+                            DismissValue.DismissedToEnd -> MaterialTheme.colorScheme.onPrimary
+                            DismissValue.DismissedToStart -> MaterialTheme.colorScheme.onPrimary
                         }
                     )
                     val alignment = when (direction) {
@@ -827,7 +837,7 @@ fun SwipeToDismissContact(
                             icon,
                             contentDescription = "Localized description",
                             modifier = Modifier.scale(scale),
-                            tint = MaterialTheme.colorScheme.contentColorFor(color)
+                            tint = textColor
                         )
                     }
                 },
