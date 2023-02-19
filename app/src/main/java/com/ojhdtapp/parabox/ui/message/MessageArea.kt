@@ -385,16 +385,14 @@ fun RowScope.MessageArea(
                                     bottomStart = bottomRadius
                                 )
                             )
-                            .padding(bottom = 2.dp)
+//                            .padding(bottom = 2.dp)
                             .animateItemPlacement(),
                         startToEndIcon = Icons.Outlined.Archive,
                         endToStartIcon = Icons.Outlined.MarkChatRead,
                         onDismissedToStart = {
                             coroutineScope.launch {
-                                val job = launch {
-                                    delay(1000)
-                                    viewModel.setContactHidden(item.contactId)
-                                }
+                                viewModel.setContactHidden(item.contactId)
+                                delay(1000)
                                 snackBarHostState.showSnackbar(
                                     message = context.getString(R.string.contact_hidden),
                                     actionLabel = context.getString(R.string.cancel),
@@ -403,7 +401,6 @@ fun RowScope.MessageArea(
                                     .also { result ->
                                         when (result) {
                                             SnackbarResult.ActionPerformed -> {
-                                                job.cancel()
                                                 viewModel.cancelContactHidden()
                                             }
 
@@ -416,10 +413,8 @@ fun RowScope.MessageArea(
                         },
                         onDismissedToEnd = {
                             coroutineScope.launch {
-                                val job = launch {
-                                    delay(1000)
-                                    viewModel.setContactArchived(item.contactId, true)
-                                }
+                                viewModel.setContactArchiveBySlide(item.contactId)
+                                delay(1000)
                                 snackBarHostState.showSnackbar(
                                     message = context.getString(R.string.archived_contact),
                                     actionLabel = context.getString(R.string.cancel),
@@ -428,8 +423,7 @@ fun RowScope.MessageArea(
                                     .also { result ->
                                         when (result) {
                                             SnackbarResult.ActionPerformed -> {
-                                                job.cancel()
-                                                viewModel.setContactArchived(item.contactId, false)
+                                                viewModel.cancelContactArchiveBySlide(item.contactId)
                                             }
 
                                             SnackbarResult.Dismissed -> {}
@@ -542,13 +536,17 @@ fun RowScope.MessageArea(
                     SwipeToDismissContact(
                         modifier = Modifier
                             .padding(horizontal = 16.dp)
+                            .clip(
+                                RoundedCornerShape(26.dp)
+                            )
                             .animateItemPlacement(),
                         enabled = viewModel.searchBarActivateState.value == SearchAppBar.NONE,
-                        startToEndIcon = Icons.Outlined.Unarchive,
+                        startToEndIcon = Icons.Outlined.MarkChatRead,
+                        endToStartIcon = Icons.Outlined.MarkChatRead,
                         onDismissedToEnd = {
                             coroutineScope.launch {
                                 val job = launch {
-                                    delay(1000)
+                                    delay(2000)
                                     viewModel.hideArchiveContact()
                                 }
                                 snackBarHostState.showSnackbar(
@@ -571,7 +569,29 @@ fun RowScope.MessageArea(
                             true
                         },
                         onDismissedToStart = {
-                            false
+                            coroutineScope.launch {
+                                val job = launch {
+                                    delay(2000)
+                                    viewModel.hideArchiveContact()
+                                }
+                                snackBarHostState.showSnackbar(
+                                    message = context.getString(R.string.contact_hidden),
+                                    actionLabel = context.getString(R.string.cancel),
+                                    duration = SnackbarDuration.Short
+                                )
+                                    .also { result ->
+                                        when (result) {
+                                            SnackbarResult.ActionPerformed -> {
+                                                job.cancel()
+                                                viewModel.showArchiveContact()
+                                            }
+
+                                            SnackbarResult.Dismissed -> {}
+                                            else -> {}
+                                        }
+                                    }
+                            }
+                            true
                         },
                         onVibrate = { onEvent(ActivityEvent.Vibrate) },
                     ) {
