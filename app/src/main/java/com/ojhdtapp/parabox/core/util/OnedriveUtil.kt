@@ -13,7 +13,9 @@ import com.ojhdtapp.parabox.data.remote.dto.onedrive.MsalSourceItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import org.apache.commons.io.FileUtils
 import java.io.File
@@ -35,9 +37,11 @@ class OnedriveUtil @Inject constructor(
         const val STATUS_ERROR = 2
         const val STATUS_CANCEL = 3
     }
-    private var mSingleAccountApp : ISingleAccountPublicClientApplication? = null
+
+    private var mSingleAccountApp: ISingleAccountPublicClientApplication? = null
     private var authInfo: IAuthenticationResult? = null
     private val scopes = listOf<String>("User.Read", "Files.ReadWrite.All")
+
     init {
         PublicClientApplication.createSingleAccountPublicClientApplication(
             context,
@@ -84,12 +88,12 @@ class OnedriveUtil @Inject constructor(
     fun signIn(
         activity: Activity,
         onResult: (code: Int) -> Unit
-    ){
-        if(authInfo != null){
+    ) {
+        if (authInfo != null) {
             onResult(STATUS_CANCEL)
             return
         }
-        val callback = object: AuthenticationCallback{
+        val callback = object : AuthenticationCallback {
             override fun onSuccess(authenticationResult: IAuthenticationResult?) {
                 authInfo = authenticationResult
                 onResult(STATUS_SUCCESS)
@@ -105,22 +109,25 @@ class OnedriveUtil @Inject constructor(
             }
 
         }
-        mSingleAccountApp?.signIn(SignInParameters.builder()
-            .withActivity(activity)
-            .withScopes(scopes)
-            .withCallback(callback)
-            .build())
+        mSingleAccountApp?.signIn(
+            SignInParameters.builder()
+                .withActivity(activity)
+                .withScopes(scopes)
+                .withCallback(callback)
+                .build()
+        )
     }
 
     fun signOut(
         onResult: (code: Int) -> Unit
-    ){
+    ) {
         mSingleAccountApp?.signOut(object : ISingleAccountPublicClientApplication.SignOutCallback {
             override fun onSignOut() {
                 Log.d("MSAL", "Signed Out")
                 onResult(STATUS_SUCCESS)
                 authInfo = null
             }
+
             override fun onError(exception: MsalException) {
                 exception.printStackTrace()
                 onResult(STATUS_ERROR)
@@ -128,8 +135,8 @@ class OnedriveUtil @Inject constructor(
         })
     }
 
-    fun acquireToken(scopes: List<String>){
-        val callback = object: AuthenticationCallback{
+    fun acquireToken(scopes: List<String>) {
+        val callback = object : AuthenticationCallback {
             override fun onSuccess(authenticationResult: IAuthenticationResult?) {
                 authenticationResult?.accessToken
             }
@@ -147,6 +154,7 @@ class OnedriveUtil @Inject constructor(
                 .build()
         )
     }
+
     private fun getTokenByAccountInfo(account: IAccount) {
         mSingleAccountApp?.acquireTokenSilentAsync(
             AcquireTokenSilentParameters.Builder()
@@ -157,13 +165,27 @@ class OnedriveUtil @Inject constructor(
                     override fun onSuccess(authenticationResult: IAuthenticationResult?) {
                         authInfo = authenticationResult
                     }
+
                     override fun onError(exception: MsalException) {
                         exception.printStackTrace()
-                        signOut(){}
+                        signOut() {}
                     }
                 })
                 .build()
         )
+    }
+
+    suspend fun getDrive(): DriveItem? {
+        if (authInfo == null) {
+            return null
+        }
+        val response = try{
+            msalApi.getDrive(authInfo!!.accessToken)
+        }catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+        return response?.body()
     }
 
     suspend fun getDriveList(): List<DriveItem>? {
@@ -177,19 +199,56 @@ class OnedriveUtil @Inject constructor(
         return response.value
     }
 
-    suspend fun getFileList(path: String): List<MsalSourceItem>? {
+    suspend fun getRootList(): List<MsalSourceItem>? {
         if (authInfo == null) {
             return null
         }
-        val response = if (path == "/") {
-            msalApi.getAppFolderList(authInfo!!.accessToken, authInfo?.account?.id ?: "")
-        } else {
-            msalApi.getFolderListById(authInfo!!.accessToken, authInfo?.account?.id ?: "", path)
-        }
+        val response = msalApi.getRootList(authInfo!!.accessToken)
         if (response.value == null) {
             return null
         }
         return response.value
+    }
+
+    suspend fun createFolderAtRoot(folderName: String): DriveItem? {
+        if (authInfo == null) {
+            return null
+        }
+        val body = RequestBody.create(
+            "application/json; charset=utf-8".toMediaTypeOrNull(),
+            "{\"name\": \"${folderName}\", \"folder\": {}, \"@microsoft.graph.conflictBehavior\": \"rename\"}"
+        )
+        val response = msalApi.createFolderAtRoot(authInfo!!.accessToken, body)
+        if (response.body() == null) {
+            return null
+        }
+        return response.body()
+    }
+
+    suspend fun getAppFolder(): MsalSourceItem? {
+        if (authInfo == null) {
+            return null
+        }
+        val response = try{
+            msalApi.getAppFolder(authInfo!!.accessToken)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+        return response?.body()
+    }
+
+    suspend fun getFileList(): List<MsalSourceItem>? {
+        if (authInfo == null) {
+            return null
+        }
+        val response = try {
+            msalApi.getAppFolderList(authInfo!!.accessToken)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+        return response?.value
     }
 
     suspend fun getFileInfo(fileKey: String): MsalSourceItem? {
@@ -199,10 +258,10 @@ class OnedriveUtil @Inject constructor(
         try {
             val response: MsalSourceItem? = if (fileKey.startsWith("/")) {
                 msalApi.getFileInfoByPath(
-                        authInfo!!.accessToken,
-                        userId,
-                        fileKey.substring(1, fileKey.length)
-                    )
+                    authInfo!!.accessToken,
+                    userId,
+                    fileKey.substring(1, fileKey.length)
+                )
             } else {
                 msalApi.getFileInfoById(authInfo!!.accessToken, userId, fileKey)
             }
@@ -220,7 +279,7 @@ class OnedriveUtil @Inject constructor(
      * 如果成功，此调用将返回 204 No Content 响应，以指明资源已被删除，没有可返回的内容。
      */
     suspend fun delFile(fileKey: String): Boolean {
-        if(authInfo == null) {
+        if (authInfo == null) {
             return false
         }
         val userId = authInfo?.account?.id ?: ""
@@ -234,15 +293,14 @@ class OnedriveUtil @Inject constructor(
         context: Context,
         file: File
     ): Boolean {
-        if(authInfo == null) return false
+        if (authInfo == null) return false
         val userId = authInfo?.account?.id ?: ""
         try {
             // 创建上传session
             val uploadSession = msalApi.createUploadSession(
-                    authorization = authInfo!!.accessToken,
-                    userId = userId,
-                    itemPath = file.name
-                )
+                authorization = authInfo!!.accessToken,
+                itemPath = file.name
+            )
 
             // 开始上传文件
             val desc = file.asRequestBody("multipart/form-data".toMediaType())
@@ -285,7 +343,8 @@ class OnedriveUtil @Inject constructor(
     suspend fun downloadFile(
         context: Context,
         cloudPath: String,
-        filePath: File
+        filePath: File,
+        fileName: String,
     ): String? {
         return withContext(Dispatchers.IO) {
 //            val hb = Headers.Builder()
@@ -299,17 +358,17 @@ class OnedriveUtil @Inject constructor(
 //                .newCall(request)
 
             try {
+                val targetFile = File(filePath, fileName)
                 val response = msalApi.downloadFile(
                     authorization = authInfo!!.accessToken,
-                    userId = authInfo?.account?.id ?: "",
                     itemPath = cloudPath
                 )
                 if (!response.isSuccessful) {
                     return@withContext null
                 }
                 val byteSystem = response.body() ?: return@withContext null
-                FileUtils.writeByteArrayToFile(filePath, byteSystem)
-                return@withContext filePath.toString()
+                FileUtils.writeByteArrayToFile(targetFile, byteSystem)
+                return@withContext targetFile.toString()
             } catch (e: Exception) {
                 e.printStackTrace()
             }

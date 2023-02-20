@@ -12,15 +12,22 @@ import retrofit2.Response
  * @Date 2021/2/6
  **/
 interface MsalApi {
+
     /**
-     * @param itemPath 云端的路径，如：/foo.txtNet
+     * 获取 Drive 的根目录
      */
-    @POST("users/{user-id}/drive/special/$APP_ROOT_DIR:/{item-path}:/createUploadSession")
-    suspend fun createUploadSession(
-        @Header(TOKEN_KEY) authorization: String,
-        @Path("user-id") userId: String,
-        @Path("item-path") itemPath: String
-    ): MsalUploadSession
+    @GET("me/drive/root/children")
+    suspend fun getRootList(
+        @Header(TOKEN_KEY) authorization: String
+    ): MsalResponse<List<MsalSourceItem>>
+
+    /**
+     * 获取 Onedrive
+     */
+    @GET("me/drive")
+    suspend fun getDrive(
+        @Header(TOKEN_KEY) authorization: String
+    ): Response<DriveItem>
 
     /**
      * 获取驱动器列表，也就是onedrive 空间信息
@@ -32,22 +39,28 @@ interface MsalApi {
     ): MsalResponse<List<DriveItem>>
 
     /**
-     * 获取应用的app子文件夹列表
+     * 于根新建文件夹
      */
-    @GET("users/{user-id}/drive/items/{item-id}/children")
-    suspend fun getFolderListById(
+    @POST("me/drive/root/children")
+    suspend fun createFolderAtRoot(
         @Header(TOKEN_KEY) authorization: String,
-        @Path("user-id") userId: String,
-        @Path("item-id") itemId: String
-    ): MsalResponse<List<MsalSourceItem>>
+        @Body body: RequestBody,
+    ): Response<DriveItem>
+
+    /**
+     * 获取应用的app文件夹
+     */
+    @GET("me/drive/special/$APP_ROOT_DIR")
+    suspend fun getAppFolder(
+        @Header(TOKEN_KEY) authorization: String,
+    ): Response<MsalSourceItem>
 
     /**
      * 获取应用的app文件夹列表
      */
-    @GET("users/{userId}/drive/special/$APP_ROOT_DIR/children")
+    @GET("me/drive/special/$APP_ROOT_DIR/children")
     suspend fun getAppFolderList(
-        @Header(TOKEN_KEY) authorization: String,
-        @Path("userId") userId: String
+        @Header(TOKEN_KEY) authorization: String
     ): MsalResponse<List<MsalSourceItem>>
 
     /**
@@ -82,6 +95,15 @@ interface MsalApi {
         @Path("itemId") itemId: String
     ): Response<Void>
 
+    /**
+     * @param itemPath 云端的路径，如：/foo.txtNet
+     */
+    @POST("me/drive/special/$APP_ROOT_DIR:/{item-path}:/createUploadSession")
+    suspend fun createUploadSession(
+        @Header(TOKEN_KEY) authorization: String,
+        @Path("item-path") itemPath: String
+    ): MsalUploadSession
+
 
     // 上传文件
     @PUT
@@ -94,11 +116,10 @@ interface MsalApi {
     ): MsalSourceItem?
 
     // 下载文件
-    @GET("users/{user-id}/drive/items/{item-path}/content")
+    @GET("me/drive/items/{item-path}/content")
     @Streaming
     suspend fun downloadFile(
         @Header(TOKEN_KEY) authorization: String,
-        @Path("user-id") userId: String,
         @Path("item-path") itemPath: String
     ): Response<ByteArray>
 

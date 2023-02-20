@@ -97,3 +97,16 @@ fun Long.toMSString(): String{
     val second = totalSecond % 60
     return "${if(totalSecond > 60) minute.plus("′") else ""}${second}“"
 }
+
+// 2023-02-20T14:28:43.593Z
+fun String.toTimestamp(): Long{
+    val year = this.substring(0, 4).toInt()
+    val month = this.substring(5, 7).toInt()
+    val day = this.substring(8, 10).toInt()
+    val hour = this.substring(11, 13).toInt()
+    val minute = this.substring(14, 16).toInt()
+    val second = this.substring(17, 19).toInt()
+    val calendar = Calendar.getInstance()
+    calendar.set(year, month - 1, day, hour, minute, second)
+    return calendar.timeInMillis
+}

@@ -408,7 +408,7 @@ fun SelectContentField(
                             },
                             leadingIcon = {
                                 Icon(
-                                    Icons.Outlined.MarkChatRead,
+                                    Icons.Outlined.ClearAll,
                                     contentDescription = null
                                 )
                             })

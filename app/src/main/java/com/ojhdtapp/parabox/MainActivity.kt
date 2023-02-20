@@ -271,6 +271,19 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
 
+                    OnedriveUtil.SERVICE_CODE -> {
+                        if (file.cloudId != null) {
+                            onedriveUtil.downloadFile(
+                                context = baseContext,
+                                cloudPath = file.cloudId,
+                                filePath = java.io.File(
+                                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                                    "Parabox"),
+                                fileName = file.name,
+                            )
+                        }
+                    }
+
                     FcmConstants.CloudStorage.TENCENT_COS.ordinal -> {
                         val secretId =
                             dataStore.data.first()[DataStoreKeys.TENCENT_COS_SECRET_ID]
@@ -1052,6 +1065,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun refreshCloudStorageFileList() {
         lifecycleScope.launch(Dispatchers.IO) {
+            delay(5000)
             val cloudService = mainSharedViewModel.cloudServiceFlow.first()
             when (cloudService) {
                 GoogleDriveUtil.SERVICE_CODE -> {
@@ -1080,6 +1094,31 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
+                OnedriveUtil.SERVICE_CODE -> {
+                    Log.d("DRIVE", "Query file from onedrive")
+                    onedriveUtil.getFileList()?.map {
+                        File(
+                            url = it.webUrl,
+                            uri = null,
+                            name = it.name,
+                            extension = FileUtil.getExtension(it.name),
+                            size = it.size,
+                            timestamp = it.createdDateTime.toTimestamp(),
+                            profileName = getString(R.string.cloud_service_od),
+                            fileId = "${OnedriveUtil.SERVICE_CODE}${
+                                it.id.getAscllString().subSequence(0, 10)
+                            }".toLong(),
+                            cloudType = OnedriveUtil.SERVICE_CODE,
+                            cloudId = it.id
+                        )
+                    }?.also {
+                        if (it.isNotEmpty()) {
+                            appDatabase.fileDao.insertFiles(
+                                it.map { it.toFileEntity() }
+                            )
+                        }
+                    }
+                }
                 else -> {
 
                 }
@@ -1102,34 +1141,50 @@ class MainActivity : AppCompatActivity() {
 
     fun getDriveInformation() {
         lifecycleScope.launch {
-            delay(5000)
-            val cloudStorage = dataStore.data.first()[DataStoreKeys.SETTINGS_CLOUD_SERVICE] ?: 0
-            when(cloudStorage){
-                GoogleDriveUtil.SERVICE_CODE -> {
-                    GoogleDriveUtil.getDriveInformation(baseContext)?.also {
-                        baseContext.dataStore.edit { preferences ->
-                            preferences[DataStoreKeys.GOOGLE_WORK_FOLDER_ID] = it.workFolderId
-                            preferences[DataStoreKeys.CLOUD_TOTAL_SPACE] = it.totalSpace
-                            preferences[DataStoreKeys.CLOUD_USED_SPACE] = it.usedSpace
-                            preferences[DataStoreKeys.CLOUD_APP_USED_SPACE] = it.appUsedSpace
+            try {
+                delay(5000)
+                val cloudStorage = dataStore.data.first()[DataStoreKeys.SETTINGS_CLOUD_SERVICE] ?: 0
+                when (cloudStorage) {
+                    GoogleDriveUtil.SERVICE_CODE -> {
+                        GoogleDriveUtil.getDriveInformation(baseContext)?.also {
+                            baseContext.dataStore.edit { preferences ->
+                                preferences[DataStoreKeys.GOOGLE_WORK_FOLDER_ID] = it.workFolderId
+                                preferences[DataStoreKeys.CLOUD_TOTAL_SPACE] = it.totalSpace
+                                preferences[DataStoreKeys.CLOUD_USED_SPACE] = it.usedSpace
+                                preferences[DataStoreKeys.CLOUD_APP_USED_SPACE] = it.appUsedSpace
+                            }
                         }
                     }
-                }
-                OnedriveUtil.SERVICE_CODE -> {
-                    onedriveUtil.getDriveList()?.firstOrNull()?.also {
-                        Log.d("parabox", "driveItem: $it")
-                        baseContext.dataStore.edit { preferences ->
-                            preferences[DataStoreKeys.CLOUD_TOTAL_SPACE] = it.quota.total
-                            preferences[DataStoreKeys.CLOUD_USED_SPACE] = it.quota.used
-                            preferences[DataStoreKeys.CLOUD_APP_USED_SPACE] = 0L
+                    OnedriveUtil.SERVICE_CODE -> {
+                        onedriveUtil.getDrive()?.also{
+                            onedriveUtil.getAppFolder()?.also {
+                                baseContext.dataStore.edit { preferences ->
+                                    preferences[DataStoreKeys.CLOUD_APP_USED_SPACE] = it.size
+                                }
+                            }
+                            baseContext.dataStore.edit { preferences ->
+                                preferences[DataStoreKeys.CLOUD_TOTAL_SPACE] = it.quota.total
+                                preferences[DataStoreKeys.CLOUD_USED_SPACE] = it.quota.used
+                            }
                         }
+//                        onedriveUtil.getDriveList()?.firstOrNull()?.also {
+//                            Log.d("Drive", "driveItem: $it")
+//                            baseContext.dataStore.edit { preferences ->
+//                                preferences[DataStoreKeys.CLOUD_TOTAL_SPACE] = it.quota.total
+//                                preferences[DataStoreKeys.CLOUD_USED_SPACE] = it.quota.used
+//                                preferences[DataStoreKeys.CLOUD_APP_USED_SPACE] = 0L
+//                            }
+//                        }
+//                        val response = onedriveUtil.getRootList()
+//                        Log.d("Drive", "getRoot: $response")
                     }
-                }
-                else -> {
+                    else -> {
 
+                    }
                 }
+            } catch (e: Exception) {
+                Log.d("Drive", "DriveError: ${e.message}")
             }
-
         }
     }
 
@@ -1256,7 +1311,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     suspend fun msSignIn(): Boolean {
-        return withContext(Dispatchers.IO){
+        return withContext(Dispatchers.IO) {
             val res = suspendCoroutine<Int> { cot ->
                 onedriveUtil.signIn(
                     activity = this@MainActivity,
@@ -1268,13 +1323,15 @@ class MainActivity : AppCompatActivity() {
                 dataStore.edit { preferences ->
                     preferences[DataStoreKeys.SETTINGS_CLOUD_SERVICE] = OnedriveUtil.SERVICE_CODE
                 }
-                val driveList = onedriveUtil.getDriveList()
-                driveList?.firstOrNull()?.also {
-                    Log.d("parabox", "driveItem: $it")
+                onedriveUtil.getDrive()?.also{
+                    onedriveUtil.getAppFolder()?.also {
+                        baseContext.dataStore.edit { preferences ->
+                            preferences[DataStoreKeys.CLOUD_APP_USED_SPACE] = it.size
+                        }
+                    }
                     baseContext.dataStore.edit { preferences ->
                         preferences[DataStoreKeys.CLOUD_TOTAL_SPACE] = it.quota.total
                         preferences[DataStoreKeys.CLOUD_USED_SPACE] = it.quota.used
-                        preferences[DataStoreKeys.CLOUD_APP_USED_SPACE] = 0L
                     }
                 }
                 true
@@ -1283,12 +1340,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     suspend fun msSignOut(): Boolean {
-        return withContext(Dispatchers.IO){
+        return withContext(Dispatchers.IO) {
             dataStore.edit { preferences ->
                 preferences[DataStoreKeys.SETTINGS_CLOUD_SERVICE] = 0
             }
             suspendCoroutine<Boolean> { cot ->
-                onedriveUtil.signOut(){
+                onedriveUtil.signOut() {
                     cot.resume(it == OnedriveUtil.STATUS_SUCCESS)
                 }
             }
@@ -1625,11 +1682,11 @@ class MainActivity : AppCompatActivity() {
 
         // Activity Result Api
         userAvatarPickerLauncher =
-                registerForActivityResult(ActivityResultContracts.PickVisualMedia()){
-                    if(it != null){
-                        setUserAvatar(it)
-                    }
+            registerForActivityResult(ActivityResultContracts.PickVisualMedia()) {
+                if (it != null) {
+                    setUserAvatar(it)
                 }
+            }
 
 
         // Request Permission Launcher
