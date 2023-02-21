@@ -538,4 +538,8 @@
     <string name="cloud_service_od">Microsoft OneDrive</string>
     <string name="connect_od_successful">成功连接 OneDrive</string>
     <string name="operation_canceled">操作取消</string>
+    <string name="darkmode">深色模式</string>
+    <string name="darkmode_follow_system">跟随系统</string>
+    <string name="darkmode_night_no">始终关闭</string>
+    <string name="darkmode_night_yes">始终开启</string>
 </resources>

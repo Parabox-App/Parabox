@@ -621,6 +621,27 @@ class SettingPageViewModel @Inject constructor(
         }
     }
 
+    val darkModeFlow: Flow<Int> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.SETTINGS_DARK_MODE] ?: DataStoreKeys.DARK_MODE.FOLLOW_SYSTEM.ordinal
+        }
+
+    fun setDarkMode(value: Int) {
+        viewModelScope.launch {
+            delay(100)
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.SETTINGS_DARK_MODE] = value
+            }
+        }
+    }
+
     // Experimental
     val entityExtractionFlow = context.dataStore.data
         .catch { exception ->

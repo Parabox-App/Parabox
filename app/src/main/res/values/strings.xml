@@ -534,4 +534,8 @@
     <string name="cloud_service_od">Microsoft OneDrive</string>
     <string name="connect_od_successful">Successfully connected to OneDrive</string>
     <string name="operation_canceled">Operation canceled</string>
+    <string name="darkmode">Dark mode</string>
+    <string name="darkmode_follow_system">Follow the system</string>
+    <string name="darkmode_night_no">Always off</string>
+    <string name="darkmode_night_yes">Always on</string>
 </resources>
