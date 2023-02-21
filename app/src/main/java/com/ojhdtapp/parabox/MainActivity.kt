@@ -272,15 +272,26 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     OnedriveUtil.SERVICE_CODE -> {
-                        if (file.cloudId != null) {
-                            onedriveUtil.downloadFile(
-                                context = baseContext,
-                                cloudPath = file.cloudId,
-                                filePath = java.io.File(
-                                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                                    "Parabox"),
-                                fileName = file.name,
-                            )
+                        if (file.cloudId != null && file.url != null) {
+                            val url = file.url
+                            val path = FileUtil.getAvailableFileName(baseContext, file.name)
+                            DownloadManagerUtil.downloadWithManager(
+                                baseContext,
+                                url,
+                                path
+                            )?.also {
+                                resorted = true
+                                updateFile.downloadInfo(path, it, file)
+                                repeatOnLifecycle(Lifecycle.State.STARTED) {
+                                    DownloadManagerUtil.retrieve(baseContext, it)
+                                        .collectLatest {
+                                            if (it is DownloadingState.Done) {
+                                                updateFile.downloadInfo(path, null, file)
+                                            }
+                                            updateFile.downloadState(it, file)
+                                        }
+                                }
+                            }
                         }
                     }
 
@@ -1063,9 +1074,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun refreshCloudStorageFileList() {
+    private fun refreshCloudStorageFileList(withDelay: Boolean = false) {
         lifecycleScope.launch(Dispatchers.IO) {
-            delay(5000)
+            if(withDelay){
+                delay(5000)
+            }
             val cloudService = mainSharedViewModel.cloudServiceFlow.first()
             when (cloudService) {
                 GoogleDriveUtil.SERVICE_CODE -> {
@@ -1098,7 +1111,7 @@ class MainActivity : AppCompatActivity() {
                     Log.d("DRIVE", "Query file from onedrive")
                     onedriveUtil.getFileList()?.map {
                         File(
-                            url = it.webUrl,
+                            url = it.downloadUrl,
                             uri = null,
                             name = it.name,
                             extension = FileUtil.getExtension(it.name),
@@ -1106,12 +1119,14 @@ class MainActivity : AppCompatActivity() {
                             timestamp = it.createdDateTime.toTimestamp(),
                             profileName = getString(R.string.cloud_service_od),
                             fileId = "${OnedriveUtil.SERVICE_CODE}${
-                                it.id.getAscllString().subSequence(0, 10)
-                            }".toLong(),
+                                it.id.getAscllString().let{
+                                    it.subSequence(it.length-10, it.length)
+                            }}".toLong(),
                             cloudType = OnedriveUtil.SERVICE_CODE,
                             cloudId = it.id
                         )
                     }?.also {
+                        Log.d("DRIVE", "Query file from onedrive: ${it}")
                         if (it.isNotEmpty()) {
                             appDatabase.fileDao.insertFiles(
                                 it.map { it.toFileEntity() }
@@ -1156,7 +1171,7 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     OnedriveUtil.SERVICE_CODE -> {
-                        onedriveUtil.getDrive()?.also{
+                        onedriveUtil.getDrive()?.also {
                             onedriveUtil.getAppFolder()?.also {
                                 baseContext.dataStore.edit { preferences ->
                                     preferences[DataStoreKeys.CLOUD_APP_USED_SPACE] = it.size
@@ -1323,7 +1338,7 @@ class MainActivity : AppCompatActivity() {
                 dataStore.edit { preferences ->
                     preferences[DataStoreKeys.SETTINGS_CLOUD_SERVICE] = OnedriveUtil.SERVICE_CODE
                 }
-                onedriveUtil.getDrive()?.also{
+                onedriveUtil.getDrive()?.also {
                     onedriveUtil.getAppFolder()?.also {
                         baseContext.dataStore.edit { preferences ->
                             preferences[DataStoreKeys.CLOUD_APP_USED_SPACE] = it.size
@@ -1804,7 +1819,7 @@ class MainActivity : AppCompatActivity() {
         deleteChatFiles()
 
         // CloudStorage Files
-        refreshCloudStorageFileList()
+        refreshCloudStorageFileList(withDelay = true)
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {
