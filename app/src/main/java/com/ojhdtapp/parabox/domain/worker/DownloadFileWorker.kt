@@ -23,7 +23,7 @@ class DownloadFileWorker(private val appContext: Context, workerParams: WorkerPa
         return withContext(Dispatchers.IO) {
             val url = inputData.getString("url")
             val fileName = inputData.getString("name")
-            if (url == null || fileName == null) return@withContext Result.retry()
+            if (url == null || fileName == null) return@withContext Result.failure()
             val tempFile = appContext.externalCacheDir?.let { File(it, fileName) }
             val id = DownloadManagerUtil.downloadWithManagerToUri(
                 appContext,
@@ -37,7 +37,7 @@ class DownloadFileWorker(private val appContext: Context, workerParams: WorkerPa
                     "name" to fileName
                 ))
             } else {
-                Result.retry()
+                Result.failure()
             }
         }
     }
