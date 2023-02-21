@@ -1,7 +1,7 @@
 package com.ojhdtapp.parabox
 
-import android.app.Activity
 import android.app.NotificationManager
+import android.app.UiModeManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -16,7 +16,6 @@ import android.os.IBinder
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
-import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.setContent
@@ -28,7 +27,6 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.*
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.WindowInsets
@@ -1076,7 +1074,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun refreshCloudStorageFileList(withDelay: Boolean = false) {
         lifecycleScope.launch(Dispatchers.IO) {
-            if(withDelay){
+            if (withDelay) {
                 delay(5000)
             }
             val cloudService = mainSharedViewModel.cloudServiceFlow.first()
@@ -1119,9 +1117,10 @@ class MainActivity : AppCompatActivity() {
                             timestamp = it.createdDateTime.toTimestamp(),
                             profileName = getString(R.string.cloud_service_od),
                             fileId = "${OnedriveUtil.SERVICE_CODE}${
-                                it.id.getAscllString().let{
-                                    it.subSequence(it.length-10, it.length)
-                            }}".toLong(),
+                                it.id.getAscllString().let {
+                                    it.subSequence(it.length - 10, it.length)
+                                }
+                            }".toLong(),
                             cloudType = OnedriveUtil.SERVICE_CODE,
                             cloudId = it.id
                         )
@@ -1137,6 +1136,42 @@ class MainActivity : AppCompatActivity() {
                 else -> {
 
                 }
+            }
+        }
+    }
+
+    private fun collectDarkModeFlow() {
+        lifecycleScope.launch {
+            dataStore.data.collectLatest {
+                val darkMode = it[DataStoreKeys.SETTINGS_DARK_MODE]
+                if (BuildConfig.VERSION_CODE >= Build.VERSION_CODES.S) {
+                    val manager = getSystemService(Context.UI_MODE_SERVICE) as UiModeManager
+                    when (darkMode) {
+                        DataStoreKeys.DARK_MODE.YES.ordinal -> {
+                            manager.nightMode = UiModeManager.MODE_NIGHT_YES
+                        }
+                        DataStoreKeys.DARK_MODE.NO.ordinal -> {
+                            manager.nightMode = UiModeManager.MODE_NIGHT_NO
+                        }
+                        else -> {
+                            manager.nightMode = UiModeManager.MODE_NIGHT_AUTO
+                        }
+                    }
+                } else {
+                    when (darkMode) {
+                        DataStoreKeys.DARK_MODE.YES.ordinal -> {
+                            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                        }
+                        DataStoreKeys.DARK_MODE.NO.ordinal -> {
+                            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                        }
+                        else -> {
+                            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+                        }
+                    }
+                    delegate.applyDayNight()
+                }
+
             }
         }
     }
@@ -1679,6 +1714,9 @@ class MainActivity : AppCompatActivity() {
     )
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Apply Darkmode
+        collectDarkModeFlow()
+
         // Navigate to Page
         if (savedInstanceState == null) {
             intent?.let(::handleIntent)

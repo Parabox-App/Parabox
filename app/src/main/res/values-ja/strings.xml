@@ -540,4 +540,8 @@
     <string name="cloud_service_od">Microsoft OneDrive</string>
     <string name="connect_od_successful">OneDrive に正常に接続されました</string>
     <string name="operation_canceled">操作キャンセル</string>
+    <string name="darkmode">ダークモード</string>
+    <string name="darkmode_follow_system">システムに従ってください</string>
+    <string name="darkmode_night_no">常にオフ</string>
+    <string name="darkmode_night_yes">常にオン</string>
 </resources>

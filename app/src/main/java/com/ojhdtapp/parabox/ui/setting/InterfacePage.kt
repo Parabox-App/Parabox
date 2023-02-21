@@ -21,6 +21,7 @@ import androidx.core.os.LocaleListCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.theme.FontFamily
 import com.ojhdtapp.parabox.ui.theme.Theme
@@ -49,6 +50,7 @@ fun InterfacePage(
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     // Dynamic Color
     val enableDynamicColor by viewModel.enableDynamicColorFlow.collectAsState(initial = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+    val darkMode by viewModel.darkModeFlow.collectAsState(initial = DataStoreKeys.DARK_MODE.FOLLOW_SYSTEM.ordinal)
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -110,6 +112,19 @@ fun InterfacePage(
                     ),
                     enabled = !enableDynamicColor,
                     onSelect = viewModel::setTheme
+                )
+            }
+            item {
+                SimpleMenuPreference(
+                    title = stringResource(R.string.darkmode),
+                    selectedKey = darkMode,
+                    optionsMap = mapOf(
+                        DataStoreKeys.DARK_MODE.FOLLOW_SYSTEM.ordinal to stringResource(R.string.darkmode_follow_system),
+                        DataStoreKeys.DARK_MODE.NO.ordinal to stringResource(R.string.darkmode_night_no),
+                        DataStoreKeys.DARK_MODE.YES.ordinal to stringResource(R.string.darkmode_night_yes),
+                    ),
+                    enabled = true,
+                    onSelect = viewModel::setDarkMode
                 )
             }
             item {

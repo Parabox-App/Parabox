@@ -114,7 +114,8 @@ class SettingPageViewModel @Inject constructor(
             context.dataStore.edit { preferences ->
                 preferences[DataStoreKeys.GOOGLE_NAME] = account?.displayName ?: ""
                 preferences[DataStoreKeys.GOOGLE_MAIL] = account?.email ?: ""
-                preferences[DataStoreKeys.SETTINGS_CLOUD_SERVICE] = if(account == null) 0 else GoogleDriveUtil.SERVICE_CODE
+                preferences[DataStoreKeys.SETTINGS_CLOUD_SERVICE] =
+                    if (account == null) 0 else GoogleDriveUtil.SERVICE_CODE
                 preferences[DataStoreKeys.GOOGLE_AVATAR] = account?.photoUrl.toString()
             }
             GoogleDriveUtil.getDriveInformation(context)?.also {
@@ -421,7 +422,8 @@ class SettingPageViewModel @Inject constructor(
             }
         }
         .map { settings ->
-            settings[DataStoreKeys.SETTINGS_FCM_CLOUD_STORAGE] ?: FcmConstants.CloudStorage.NONE.ordinal
+            settings[DataStoreKeys.SETTINGS_FCM_CLOUD_STORAGE]
+                ?: FcmConstants.CloudStorage.NONE.ordinal
         }
 
     fun setFCMCloudStorage(value: Int) {
@@ -641,6 +643,29 @@ class SettingPageViewModel @Inject constructor(
             }
         }
     }
+
+    val darkModeFlow: Flow<Int> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.SETTINGS_DARK_MODE]
+                ?: DataStoreKeys.DARK_MODE.FOLLOW_SYSTEM.ordinal
+        }
+
+    fun setDarkMode(value: Int) {
+        viewModelScope.launch {
+            delay(100)
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.SETTINGS_DARK_MODE] = value
+            }
+        }
+    }
+
     // Experimental
     val entityExtractionFlow = context.dataStore.data
         .catch { exception ->
@@ -653,6 +678,7 @@ class SettingPageViewModel @Inject constructor(
         .map { settings ->
             settings[DataStoreKeys.SETTINGS_ML_KIT_ENTITY_EXTRACTION] ?: true
         }
+
     fun setEntityExtraction(value: Boolean) {
         viewModelScope.launch {
             context.dataStore.edit { preferences ->
@@ -928,6 +954,7 @@ class SettingPageViewModel @Inject constructor(
             }
         }
     }
+
     // Licenses
     val licenseList = listOf<License>(
         License(
