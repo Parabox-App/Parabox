@@ -116,12 +116,12 @@ fun CloudPage(
                     }
                 } else {
                     coroutineScope.launch {
-                        snackBarHostState.showSnackbar("设备不支持")
+                        snackBarHostState.showSnackbar(context.getString(R.string.device_not_support))
                     }
                 }
             } else {
                 coroutineScope.launch {
-                    snackBarHostState.showSnackbar("设备不支持")
+                    snackBarHostState.showSnackbar(context.getString(R.string.device_not_support))
                 }
             }
         }
@@ -172,9 +172,9 @@ fun CloudPage(
                                     val res = (context as MainActivity).msSignIn()
                                     showCloudDialog = false
                                     if (res) {
-                                        snackBarHostState.showSnackbar("成功连接 OneDrive")
+                                        snackBarHostState.showSnackbar(context.getString(R.string.connect_od_successful))
                                     } else {
-                                        snackBarHostState.showSnackbar("操作取消")
+                                        snackBarHostState.showSnackbar(context.getString(R.string.operation_canceled))
                                     }
                                 }
                             }) {

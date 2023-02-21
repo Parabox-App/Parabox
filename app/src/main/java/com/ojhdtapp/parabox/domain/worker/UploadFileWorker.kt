@@ -59,10 +59,10 @@ class UploadFileWorker @AssistedInject constructor(
                     val fileName = inputData.getString("name")
                     if (path == null || fileName == null) return@withContext Result.failure()
                     val res = onedriveUtil.uploadFile(appContext, File(path))
-                    if (res) {
+                    if (res != null) {
                         Result.success(
                             workDataOf(
-                                "cloudId" to fileName,
+                                "cloudId" to res.id,
                                 "service" to service,
                                 "fileUri" to uri.toString()
                             )
