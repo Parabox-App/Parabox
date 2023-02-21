@@ -865,7 +865,7 @@ class MainActivity : AppCompatActivity() {
                 }
             if (enableAutoBackup && defaultBackupService != 0) {
                 val files = getContacts.shouldBackup().map { it.contactId }.let {
-                    getFiles.byContactIdsStatic(it).filter { it.size < autoBackupFileMaxSize }
+                    getFiles.byContactIdsStatic(it).filter { it.size < autoBackupFileMaxSize && it.cloudType == 0 }
                 }
                 val constraints = Constraints.Builder()
                     .setRequiredNetworkType(NetworkType.UNMETERED)
