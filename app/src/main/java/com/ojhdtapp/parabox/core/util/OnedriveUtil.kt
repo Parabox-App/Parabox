@@ -292,8 +292,8 @@ class OnedriveUtil @Inject constructor(
     suspend fun uploadFile(
         context: Context,
         file: File
-    ): Boolean {
-        if (authInfo == null) return false
+    ): MsalSourceItem? {
+        if (authInfo == null) return null
         val userId = authInfo?.account?.id ?: ""
         try {
             // 创建上传session
@@ -307,36 +307,15 @@ class OnedriveUtil @Inject constructor(
             val body = MultipartBody.Part.createFormData("file", file.name, desc)
             val fileSize = file.length()
             val range = "bytes 0-${fileSize - 1}/${fileSize}"
-            val response = msalApi.uploadFile(
+            return msalApi.uploadFile(
                 url = uploadSession.uploadUrl,
                 contentLength = fileSize,
                 contentRange = range,
                 body = body.body
             )
-
-//            val request = Request.Builder()
-//                .header("Content-Length", fileSize.toString())
-//                .header("Content-Range", "bytes 0-${fileSize - 1}/${fileSize}")
-//                .url(uploadSession.uploadUrl)
-//                .put(body = body.body)
-//                .build()
-//            val response = okClient.newCall(request)
-//                .execute()
-//            if (response.code != HttpURLConnection.HTTP_OK && response.code != HttpURLConnection.HTTP_CREATED) {
-//                Log.d("Onedrive", "上传失败，code = ${response.code}, msg = ${response.message}")
-//                return false
-//            }
-//            val responseBytes = response.body?.bytes()
-            if (response == null) {
-                return false
-            }
-//            val responseContent = String(responseBytes, Charset.forName("UTF-8"))
-//            val obj = Gson().fromJson(responseContent, MsalSourceItem::class.java)
-
-            return true
         } catch (e: Exception) {
             e.printStackTrace()
-            return false
+            return null
         }
     }
 

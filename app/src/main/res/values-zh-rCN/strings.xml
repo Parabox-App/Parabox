@@ -538,4 +538,6 @@
     <string name="cant_handle_file">未发现可处理该文件的应用</string>
     <string name="invalid_cloud_storage_configuration">云服务配置错误，尝试常规下载</string>
     <string name="cloud_service_od">Microsoft OneDrive</string>
+    <string name="connect_od_successful">成功连接 OneDrive</string>
+    <string name="operation_canceled">操作取消</string>
 </resources>

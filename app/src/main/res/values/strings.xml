@@ -534,4 +534,6 @@
     <string name="cant_handle_file">No app found to open this file</string>
     <string name="invalid_cloud_storage_configuration">Cloud service misconfiguration, try regular download</string>
     <string name="cloud_service_od">Microsoft OneDrive</string>
+    <string name="connect_od_successful">Successfully connected to OneDrive</string>
+    <string name="operation_canceled">Operation canceled</string>
 </resources>
