@@ -13,11 +13,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Archive
-import androidx.compose.material.icons.outlined.ArrowDropDown
-import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material.rememberSwipeableState
 import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
@@ -26,6 +25,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
@@ -341,50 +341,98 @@ fun RowScope.MessageArea(
                     var loading by remember {
                         mutableStateOf(false)
                     }
-                    val swipeableState = rememberSwipeableState(initialValue = item.isHidden,
-                        confirmStateChange = {
-                            if (it) {
-                                coroutineScope.launch {
-                                    snackBarHostState.showSnackbar(
-                                        message = context.getString(R.string.contact_hidden),
-                                        actionLabel = context.getString(R.string.cancel),
-                                        duration = SnackbarDuration.Short
-                                    )
-                                        .also { result ->
-                                            when (result) {
-                                                SnackbarResult.ActionPerformed -> {
-                                                    viewModel.cancelContactHidden()
-                                                }
 
-                                                SnackbarResult.Dismissed -> {}
-                                                else -> {}
-                                            }
-                                        }
-                                }
-                                viewModel.setContactHidden(item.contactId)
-                            }
-                            true
-                        })
+//                    val swipeableState = rememberSwipeableState(initialValue = item.isHidden,
+//                        confirmStateChange = {
+//                            if (it) {
+//                                coroutineScope.launch {
+//                                    snackBarHostState.showSnackbar(
+//                                        message = context.getString(R.string.contact_hidden),
+//                                        actionLabel = context.getString(R.string.cancel),
+//                                        duration = SnackbarDuration.Short
+//                                    )
+//                                        .also { result ->
+//                                            when (result) {
+//                                                SnackbarResult.ActionPerformed -> {
+//                                                    viewModel.cancelContactHidden()
+//                                                }
+//
+//                                                SnackbarResult.Dismissed -> {}
+//                                                else -> {}
+//                                            }
+//                                        }
+//                                }
+//                                viewModel.setContactHidden(item.contactId)
+//                            }
+//                            true
+//                        })
                     val isFirst = index == 0
                     val isLast = index == contactState.data.lastIndex
-                    val isDragging = swipeableState.offset.value.roundToInt() != 0
                     // Smaller radius to hide lighting Corner
-                    val topRadius by animateDpAsState(targetValue = if (isDragging || isFirst) 26.dp else 0.dp)
-                    val bgTopRadius by animateDpAsState(targetValue = if (isFirst) 28.dp else 0.dp)
-                    val bottomRadius by animateDpAsState(targetValue = if (isDragging || isLast) 26.dp else 0.dp)
-                    val bgBottomRadius by animateDpAsState(targetValue = if (isLast) 28.dp else 0.dp)
+                    val topRadius by animateDpAsState(targetValue = if (isFirst) 26.dp else 0.dp)
+                    val bottomRadius by animateDpAsState(targetValue = if (isLast) 26.dp else 0.dp)
                     val isSelected =
                         viewModel.selectedContactStateList.map { it.contactId }
                             .contains(item.contactId)
-                    SwipeableContact(
+                    SwipeToDismissContact(
                         modifier = Modifier
                             .padding(horizontal = 16.dp)
-                            .animateItemPlacement()
-                            .animateContentSize(),
-                        state = swipeableState,
-                        topRadius = bgTopRadius,
-                        bottomRadius = bgBottomRadius,
-                        extraSpace = 16.dp,
+                            .clip(
+                                RoundedCornerShape(
+                                    topStart = topRadius,
+                                    topEnd = topRadius,
+                                    bottomEnd = bottomRadius,
+                                    bottomStart = bottomRadius
+                                )
+                            )
+//                            .padding(bottom = 2.dp)
+                            .animateItemPlacement(),
+                        startToEndIcon = Icons.Outlined.Archive,
+                        endToStartIcon = Icons.Outlined.MarkChatRead,
+                        onDismissedToStart = {
+                            coroutineScope.launch {
+                                viewModel.setContactHidden(item.contactId)
+                                delay(1000)
+                                snackBarHostState.showSnackbar(
+                                    message = context.getString(R.string.contact_hidden),
+                                    actionLabel = context.getString(R.string.cancel),
+                                    duration = SnackbarDuration.Short
+                                )
+                                    .also { result ->
+                                        when (result) {
+                                            SnackbarResult.ActionPerformed -> {
+                                                viewModel.cancelContactHidden()
+                                            }
+
+                                            SnackbarResult.Dismissed -> {}
+                                            else -> {}
+                                        }
+                                    }
+                            }
+                            true
+                        },
+                        onDismissedToEnd = {
+                            coroutineScope.launch {
+                                viewModel.setContactArchiveBySlide(item.contactId)
+                                delay(1000)
+                                snackBarHostState.showSnackbar(
+                                    message = context.getString(R.string.archived_contact),
+                                    actionLabel = context.getString(R.string.cancel),
+                                    duration = SnackbarDuration.Short
+                                )
+                                    .also { result ->
+                                        when (result) {
+                                            SnackbarResult.ActionPerformed -> {
+                                                viewModel.cancelContactArchiveBySlide(item.contactId)
+                                            }
+
+                                            SnackbarResult.Dismissed -> {}
+                                            else -> {}
+                                        }
+                                    }
+                            }
+                            true
+                        },
                         enabled = viewModel.searchBarActivateState.value == SearchAppBar.NONE,
                         onVibrate = { onEvent(ActivityEvent.Vibrate) }
                     ) {
@@ -425,8 +473,8 @@ fun RowScope.MessageArea(
                             }
                         }
                     }
-                    if (index < contactState.data.lastIndex)
-                        Spacer(modifier = Modifier.height(2.dp))
+//                    if (index < contactState.data.lastIndex)
+//                        Spacer(modifier = Modifier.height(2.dp))
                 }
             }
             item(key = "other") {
@@ -450,6 +498,14 @@ fun RowScope.MessageArea(
             }
             item(key = "archived") {
                 if (!viewModel.archivedContactHidden.value && archivedContact.isNotEmpty()) {
+                    val dismissState = rememberDismissState(
+                        confirmValueChange = {
+                            if (it == DismissValue.DismissedToEnd) {
+                            }
+                            it != DismissValue.DismissedToEnd
+                        },
+                        positionalThreshold = { distance -> distance * .25f }
+                    )
                     val swipeableState = rememberSwipeableState(initialValue = false,
                         confirmStateChange = {
                             if (it) {
@@ -477,14 +533,66 @@ fun RowScope.MessageArea(
                             }
                             true
                         })
-                    SwipeableContact(
+                    SwipeToDismissContact(
                         modifier = Modifier
                             .padding(horizontal = 16.dp)
-                            .animateItemPlacement()
-                            .animateContentSize(),
-                        state = swipeableState,
-                        topRadius = 28.dp, bottomRadius = 28.dp,
+                            .clip(
+                                RoundedCornerShape(26.dp)
+                            )
+                            .animateItemPlacement(),
                         enabled = viewModel.searchBarActivateState.value == SearchAppBar.NONE,
+                        startToEndIcon = Icons.Outlined.MarkChatRead,
+                        endToStartIcon = Icons.Outlined.MarkChatRead,
+                        onDismissedToEnd = {
+                            coroutineScope.launch {
+                                val job = launch {
+                                    delay(2000)
+                                    viewModel.hideArchiveContact()
+                                }
+                                snackBarHostState.showSnackbar(
+                                    message = context.getString(R.string.contact_hidden),
+                                    actionLabel = context.getString(R.string.cancel),
+                                    duration = SnackbarDuration.Short
+                                )
+                                    .also { result ->
+                                        when (result) {
+                                            SnackbarResult.ActionPerformed -> {
+                                                job.cancel()
+                                                viewModel.showArchiveContact()
+                                            }
+
+                                            SnackbarResult.Dismissed -> {}
+                                            else -> {}
+                                        }
+                                    }
+                            }
+                            true
+                        },
+                        onDismissedToStart = {
+                            coroutineScope.launch {
+                                val job = launch {
+                                    delay(2000)
+                                    viewModel.hideArchiveContact()
+                                }
+                                snackBarHostState.showSnackbar(
+                                    message = context.getString(R.string.contact_hidden),
+                                    actionLabel = context.getString(R.string.cancel),
+                                    duration = SnackbarDuration.Short
+                                )
+                                    .also { result ->
+                                        when (result) {
+                                            SnackbarResult.ActionPerformed -> {
+                                                job.cancel()
+                                                viewModel.showArchiveContact()
+                                            }
+
+                                            SnackbarResult.Dismissed -> {}
+                                            else -> {}
+                                        }
+                                    }
+                            }
+                            true
+                        },
                         onVibrate = { onEvent(ActivityEvent.Vibrate) },
                     ) {
                         ContactItem(
@@ -541,10 +649,12 @@ fun RowScope.MessageArea(
             item {
                 if (contactState.data.isEmpty() && (viewModel.archivedContactHidden.value || archivedContact.isEmpty())) {
                     val context = LocalContext.current
-                    val theme = mainSharedViewModel.themeFlow.collectAsState(initial = Theme.WILLOW).value
-                    val enableDynamicColor = mainSharedViewModel.enableDynamicColorFlow.collectAsState(
-                        initial = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-                    ).value
+                    val theme =
+                        mainSharedViewModel.themeFlow.collectAsState(initial = Theme.WILLOW).value
+                    val enableDynamicColor =
+                        mainSharedViewModel.enableDynamicColorFlow.collectAsState(
+                            initial = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                        ).value
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()

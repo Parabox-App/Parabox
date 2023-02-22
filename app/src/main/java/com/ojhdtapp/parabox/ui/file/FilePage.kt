@@ -71,6 +71,7 @@ import com.ojhdtapp.parabox.ui.theme.Theme
 import com.ojhdtapp.parabox.ui.util.*
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -117,7 +118,7 @@ fun FilePage(
     }
     LaunchedEffect(key1 = true) {
         viewModel.onSearch("", withoutDelay = true)
-        viewModel.updateGoogleDriveFilesStateFlow()
+//        viewModel.updateGoogleDriveFilesStateFlow()
         viewModel.uiEventFlow.collectLatest {
             when (it) {
                 is FilePageUiEvent.ShowSnackBar -> {
@@ -165,12 +166,12 @@ fun FilePage(
                     }
                 } else {
                     coroutineScope.launch {
-                        snackBarHostState.showSnackbar("设备不支持")
+                        snackBarHostState.showSnackbar(context.getString(R.string.device_not_support))
                     }
                 }
             } else {
                 coroutineScope.launch {
-                    snackBarHostState.showSnackbar("设备不支持")
+                    snackBarHostState.showSnackbar(context.getString(R.string.device_not_support))
                 }
             }
         }
@@ -215,7 +216,9 @@ fun FilePage(
             text = {
                 LazyColumn() {
                     item {
-                        Surface(onClick = {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            onClick = {
                             val signInIntent =
                                 (context as MainActivity).getGoogleLoginAuth().signInIntent
                             gDriveLauncher.launch(signInIntent)
@@ -230,7 +233,37 @@ fun FilePage(
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
-                                    text = stringResource(R.string.cloud_service_gd),
+                                    text = stringResource(R.string.cloud_service_save_to_gd),
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            }
+                        }
+                    }
+                    item {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            onClick = {
+                                coroutineScope.launch(Dispatchers.IO) {
+                                    val res = (context as MainActivity).msSignIn()
+                                    showCloudDialog = false
+                                    if (res) {
+                                        snackBarHostState.showSnackbar("成功连接 OneDrive")
+                                    } else {
+                                        snackBarHostState.showSnackbar("操作取消")
+                                    }
+                                }
+                            }) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                FaIcon(
+                                    modifier = Modifier.padding(16.dp),
+                                    faIcon = FaIcons.Microsoft,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = stringResource(R.string.cloud_service_od),
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                             }
@@ -317,7 +350,7 @@ fun FilePage(
                             viewModel.selectedFilesId.forEach { id ->
                                 mainState.data.firstOrNull { it.cloudType != null && it.cloudType != 0 && it.cloudId != null && it.fileId == id }
                                     ?.also {
-                                        onEvent(ActivityEvent.DownloadFile(it))
+                                        onEvent(ActivityEvent.DownloadCloudFile(it))
                                     }
                             }
                             viewModel.setSearchBarActivateState(SearchAppBar.NONE)
@@ -394,6 +427,7 @@ fun FilePage(
                     enableDynamicColor = mainSharedViewModel.enableDynamicColorFlow.collectAsState(
                         initial = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
                     ).value,
+                    snackbarHostState = snackBarHostState,
                     onLogoutGoogleDrive = {
                         mainSharedViewModel.saveGoogleDriveAccount(null)
                         coroutineScope.launch {
@@ -412,21 +446,11 @@ fun FilePage(
                         showCloudDialog = true
                     },
                     onRefresh = {
-                        when (cloudService) {
-                            GoogleDriveUtil.SERVICE_CODE -> {
-                                viewModel.setIsRefreshing(true)
-                                viewModel.updateGoogleDriveFilesStateFlow()
-                            }
-                            else -> {
-                                coroutineScope.launch {
-                                    snackBarHostState.showSnackbar(context.getString(R.string.cloud_service_not_connected))
-                                }
-                                coroutineScope.launch {
-                                    viewModel.setIsRefreshing(true)
-                                    delay(500)
-                                    viewModel.setIsRefreshing(false)
-                                }
-                            }
+                        onEvent(ActivityEvent.RefreshCloudStorageFileList)
+                        coroutineScope.launch {
+                            viewModel.setIsRefreshing(true)
+                            delay(500)
+                            viewModel.setIsRefreshing(false)
                         }
                     }
                 )
@@ -479,6 +503,7 @@ fun MainArea(
     isRefreshing: Boolean,
     theme: Int,
     enableDynamicColor: Boolean,
+    snackbarHostState: SnackbarHostState,
     onLogoutGoogleDrive: () -> Unit,
     onChangeSearchAppBarState: (state: Int) -> Unit,
     onEvent: (ActivityEvent) -> Unit,
@@ -490,6 +515,7 @@ fun MainArea(
     onRefresh: () -> Unit,
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     SwipeRefresh(
         state = rememberSwipeRefreshState(isRefreshing = isRefreshing),
         onRefresh = onRefresh,
@@ -664,7 +690,7 @@ fun MainArea(
                                             onAddOrRemoveFile(file)
                                         } else {
                                             if (file.downloadingState is DownloadingState.None || file.downloadingState is DownloadingState.Failure) {
-                                                onEvent(ActivityEvent.DownloadFile(file))
+                                                onEvent(ActivityEvent.DownloadCloudFile(file))
                                             } else if (file.downloadingState is DownloadingState.Done) {
                                                 onEvent(ActivityEvent.OpenFile(file))
                                             }
@@ -757,7 +783,7 @@ fun MainArea(
                         targetState = cloudService,
                     ) {
                         when (it) {
-                            GoogleDriveUtil.SERVICE_CODE -> {
+                            GoogleDriveUtil.SERVICE_CODE, OnedriveUtil.SERVICE_CODE -> {
                                 Column() {
                                     var expanded by remember {
                                         mutableStateOf(false)
@@ -777,20 +803,52 @@ fun MainArea(
                                                         modifier = Modifier.fillMaxSize(),
                                                         contentAlignment = Alignment.Center
                                                     ) {
-                                                        FaIcon(
-                                                            faIcon = FaIcons.GoogleDrive,
-                                                            tint = MaterialTheme.colorScheme.primary
-                                                        )
+                                                        when (cloudService) {
+                                                            GoogleDriveUtil.SERVICE_CODE -> {
+                                                                FaIcon(
+                                                                    faIcon = FaIcons.GoogleDrive,
+                                                                    tint = MaterialTheme.colorScheme.primary
+                                                                )
+                                                            }
+                                                            OnedriveUtil.SERVICE_CODE -> {
+                                                                FaIcon(
+                                                                    faIcon = FaIcons.Microsoft,
+                                                                    tint = MaterialTheme.colorScheme.primary
+                                                                )
+                                                            }
+                                                            else -> {
+                                                                FaIcon(
+                                                                    faIcon = FaIcons.Cloud,
+                                                                    tint = MaterialTheme.colorScheme.primary
+                                                                )
+                                                            }
+                                                        }
                                                     }
                                                 }
                                                 Spacer(modifier = Modifier.width(16.dp))
                                                 Column() {
-                                                    Text(
-                                                        text = stringResource(id = R.string.cloud_service_gd),
-                                                        style = MaterialTheme.typography.titleMedium
-                                                    )
+                                                    when (cloudService) {
+                                                        GoogleDriveUtil.SERVICE_CODE -> {
+                                                            Text(
+                                                                text = stringResource(id = R.string.cloud_service_gd),
+                                                                style = MaterialTheme.typography.titleMedium
+                                                            )
+                                                        }
+                                                        OnedriveUtil.SERVICE_CODE -> {
+                                                            Text(
+                                                                text = stringResource(R.string.cloud_service_od),
+                                                                style = MaterialTheme.typography.titleMedium
+                                                            )
+                                                        }
+                                                        else -> {
+                                                            Text(
+                                                                text = stringResource(id = R.string.cloud_service),
+                                                                style = MaterialTheme.typography.titleMedium
+                                                            )
+                                                        }
+                                                    }
                                                     LinearProgressIndicator(
-                                                        progress = 0.6f,
+                                                        progress = cloudUsedSpacePercent.toFloat() / 100,
                                                         modifier = Modifier
                                                             .padding(vertical = 4.dp)
                                                             .clip(CircleShape),
@@ -830,11 +888,36 @@ fun MainArea(
                                                 text = { Text(text = stringResource(R.string.sign_out_cloud_service)) },
                                                 onClick = {
                                                     expanded = false
-                                                    (context as MainActivity).getGoogleLoginAuth()
-                                                        .signOut()
-                                                        .addOnCompleteListener {
-                                                            onLogoutGoogleDrive()
+                                                    when (cloudService) {
+                                                        GoogleDriveUtil.SERVICE_CODE -> {
+                                                            (context as MainActivity).getGoogleLoginAuth()
+                                                                .signOut()
+                                                                .addOnCompleteListener {
+                                                                    onLogoutGoogleDrive()
+                                                                }
                                                         }
+                                                        OnedriveUtil.SERVICE_CODE -> {
+                                                            coroutineScope.launch {
+                                                                val res = (context as MainActivity).msSignOut()
+                                                                if(res){
+                                                                    snackbarHostState.showSnackbar(
+                                                                        context.getString(
+                                                                            R.string.signed_out_cloud_service
+                                                                        )
+                                                                    )
+                                                                } else {
+                                                                    snackbarHostState.showSnackbar(
+                                                                        context.getString(
+                                                                            R.string.unknown_error
+                                                                        )
+                                                                    )
+                                                                }
+                                                            }
+                                                        }
+                                                        else -> {
+
+                                                        }
+                                                    }
                                                 })
                                         }
                                     }
@@ -1298,9 +1381,9 @@ fun SearchArea(
                             onAddOrRemoveFile(item)
                         } else {
                             if (item.downloadingState is DownloadingState.None || item.downloadingState is DownloadingState.Failure) {
-                                onEvent(ActivityEvent.DownloadFile(item))
-                            } else {
-
+                                onEvent(ActivityEvent.DownloadCloudFile(item))
+                            } else if (item.downloadingState is DownloadingState.Done) {
+                                onEvent(ActivityEvent.OpenFile(item))
                             }
                         }
                     },
@@ -1491,7 +1574,11 @@ fun FileItem(
                             append(" ")
                             append(FileUtil.getSizeString(file.downloadingState.totalBytes.toLong()))
                         } else {
-                            append(FileUtil.getSizeString(file.size))
+                            if(file.size != 0L){
+                                append(FileUtil.getSizeString(file.size))
+                            } else {
+                                append(stringResource(R.string.unknown_file_size))
+                            }
                         }
                     },
                     style = MaterialTheme.typography.bodyMedium,

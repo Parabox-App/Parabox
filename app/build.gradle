@@ -15,8 +15,8 @@ android {
         applicationId "com.ojhdtapp.parabox"
         minSdk 26
         targetSdk 33
-        versionCode 14
-        versionName "1.1.0"
+        versionCode 15
+        versionName "1.1.1"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -112,6 +112,9 @@ dependencies {
     implementation "androidx.compose.material:material-icons-extended:$compose_version"
     implementation "com.google.android.material:material:1.9.0-alpha01"
 
+    // Onedrive
+    implementation 'com.microsoft.identity.client:msal:4.2.0'
+
     // Qiniu
     implementation 'com.qiniu:qiniu-java-sdk:7.12.1'
 
@@ -126,7 +129,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-appcheck-playintegrity'
 
     // WorkManager
-    implementation "androidx.work:work-runtime-ktx:2.7.1"
+    implementation "androidx.work:work-runtime-ktx:2.8.0"
     implementation 'androidx.hilt:hilt-work:1.0.0'
     kapt 'androidx.hilt:hilt-compiler:1.0.0'
 
@@ -172,9 +175,9 @@ dependencies {
     implementation 'com.ojhdt:parabox-development-kit:1.0.6'
 
     // Paging
-    def paging_version = "3.2.0-alpha03"
+    def paging_version = "3.2.0-alpha04"
     implementation "androidx.paging:paging-runtime:$paging_version"
-    implementation "androidx.paging:paging-compose:1.0.0-alpha17"
+    implementation "androidx.paging:paging-compose:1.0.0-alpha18"
 
     // Coil
     implementation 'io.coil-kt:coil:2.2.2'
@@ -206,18 +209,18 @@ dependencies {
     implementation "com.google.accompanist:accompanist-placeholder-material:$acc_version"
 
     // Navigation Compose
-    def nav_version = "2.6.0-alpha04"
+    def nav_version = "2.6.0-alpha05"
     implementation "androidx.navigation:navigation-compose:$nav_version"
 
     // m3
-    implementation "androidx.compose.material3:material3:1.1.0-alpha05"
-    implementation "androidx.compose.material3:material3-window-size-class:1.1.0-alpha05"
+    implementation "androidx.compose.material3:material3:1.1.0-alpha06"
+    implementation "androidx.compose.material3:material3-window-size-class:1.1.0-alpha06"
 
     // Chrome Custom Tab
-    implementation "androidx.browser:browser:1.4.0"
+    implementation "androidx.browser:browser:1.5.0"
 
     // ViewModel
-    def lifecycle_version = "2.6.0-alpha05"
+    def lifecycle_version = "2.6.0-beta01"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
     // ViewModel utilities for Compose
     implementation "androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycle_version"
@@ -241,6 +244,7 @@ dependencies {
     // Retrofit
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.10.0'
 
     // Room
     def room_version = "2.5.0"

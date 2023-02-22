@@ -344,7 +344,7 @@ class BubbleActivity : AppCompatActivity() {
                 .setSourceLanguage(TranslateLanguage.fromLanguageTag(languageCode)!!)
                 .setTargetLanguage(
                     TranslateLanguage.fromLanguageTag(
-                        LanguageUtil.languageTagMapper(currentLanguageTag)
+                        currentLanguageTag
                     )!!
                 )
                 .build()

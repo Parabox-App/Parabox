@@ -25,10 +25,7 @@ import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.CacheUtil
 import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
-import com.ojhdtapp.parabox.ui.util.ActivityEvent
-import com.ojhdtapp.parabox.ui.util.NormalPreference
-import com.ojhdtapp.parabox.ui.util.PreferencesCategory
-import com.ojhdtapp.parabox.ui.util.SliderPreference
+import com.ojhdtapp.parabox.ui.util.*
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -52,9 +49,11 @@ fun BackupPage(
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val cacheSize = viewModel.cacheSizeStateFlow.collectAsState()
 
-    var deleteFilesBeforeDays by remember {
-        mutableStateOf(7f)
-    }
+    val autoDeleteLocalResource by viewModel.autoDeleteLocalResourceFlow.collectAsState(initial = false)
+
+    val deleteFilesBeforeDays by viewModel.autoDeleteLocalResourceBeforeDaysFlow.collectAsState(
+        initial = 7f
+    )
     val canSaveSpace by remember(viewModel.cleaningFile.value) {
         derivedStateOf {
             FileUtil.getSizeString(
@@ -204,7 +203,7 @@ fun BackupPage(
                     valueRange = 0f..15f,
                     steps = 14,
                     enabled = !viewModel.cleaningFile.value,
-                    onValueChange = { deleteFilesBeforeDays = it },
+                    onValueChange = viewModel::setAutoDeleteLocalResourceBeforeDays
                 )
             }
             item {
@@ -216,6 +215,12 @@ fun BackupPage(
                 ) {
                     showDeleteFileConfirmDialog = true
                 }
+            }
+            item {
+                SwitchPreference(title = stringResource(R.string.auto_delete_chat_files_title), checked = autoDeleteLocalResource, onCheckedChange = viewModel::setAutoDeleteLocalResource,
+                subtitleOff = stringResource(R.string.auto_delete_chat_files_subtitle_off),
+                subtitleOn = stringResource(R.string.auto_delete_chat_files_subtitle_on, deleteFilesBeforeDays.roundToInt())
+                                )
             }
         }
     }

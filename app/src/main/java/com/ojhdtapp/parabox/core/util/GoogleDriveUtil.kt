@@ -8,14 +8,15 @@ import android.widget.Toast
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.api.client.extensions.android.http.AndroidHttp
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
+import com.google.api.client.googleapis.media.MediaHttpDownloader
+import com.google.api.client.googleapis.media.MediaHttpDownloaderProgressListener
+import com.google.api.client.googleapis.media.MediaHttpUploader
 import com.google.api.client.json.jackson2.JacksonFactory
 import com.google.api.services.drive.Drive
 import com.google.api.services.drive.DriveScopes
 import com.ojhdtapp.parabox.R
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import com.ojhdtapp.parabox.data.local.entity.DownloadingState
+import kotlinx.coroutines.*
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -217,39 +218,86 @@ object GoogleDriveUtil {
         }
     }
 
+    suspend fun getFileName(
+        context: Context,
+        fileId: String
+    ): String? {
+        return coroutineScope {
+            withContext(Dispatchers.IO) {
+                try {
+                    getDriveService(context)?.let { driveService ->
+                        val result = driveService.files().get(fileId)
+                            .setFields("name")
+                            .execute()
+                        result.name
+                    }
+                } catch (e: SocketTimeoutException) {
+                    e.printStackTrace()
+                    null
+                }
+            }
+        }
+    }
+
     suspend fun downloadFile(
         context: Context,
         fileId: String,
-        path: File
+        path: File,
+//        listener: MediaHttpDownloaderProgressListener? = null,
+        onProgress: (downloadedBytes: Long, allBytes: Long) -> Unit,
+        fileName: String? = null,
     ): File? {
         return coroutineScope {
-            if(!path.exists()){
+            if (!path.exists()) {
                 path.mkdirs()
             }
             withContext(Dispatchers.IO) {
                 try {
                     getDriveService(context)?.let { driveService ->
-                        val file = driveService.files().get(fileId).execute()
-                        if (Looper.myLooper() == null)
-                        {
-                            Looper.prepare();
+                        val listener =
+                            MediaHttpDownloaderProgressListener { downloader ->
+                                if (downloader != null) {
+                                    when (downloader.downloadState) {
+                                        MediaHttpDownloader.DownloadState.MEDIA_IN_PROGRESS -> {
+                                            onProgress(
+                                                downloader.numBytesDownloaded,
+                                                (downloader.numBytesDownloaded / downloader.progress).toLong()
+                                            )
+                                        }
+                                        MediaHttpDownloader.DownloadState.MEDIA_COMPLETE -> {
+                                            onProgress(
+                                                downloader.numBytesDownloaded,
+                                                downloader.numBytesDownloaded
+                                            )
+                                        }
+                                        else -> {}
+                                    }
+                                }
+                            }
+                        val request = driveService.files().get(fileId).apply {
+                            mediaHttpDownloader.progressListener = listener
+                            mediaHttpDownloader.chunkSize = MediaHttpUploader.MINIMUM_CHUNK_SIZE
                         }
-                        Toast.makeText(context, "开始下载${file.name}", Toast.LENGTH_SHORT)
-                            .show()
-                        val targetFile = File(path, FileUtil.getAvailableFileName(context, file.name))
+//                        launch {
+//                            while (request.mediaHttpDownloader.downloadState != MediaHttpDownloader.DownloadState.MEDIA_COMPLETE) {
+//                                delay(1000)
+//                                Log.d("GoogleDrive", "downloadFile: ${request.mediaHttpDownloader.numBytesDownloaded} / ${request.mediaHttpDownloader.progress}")
+//                                onProgress(
+//                                    request.mediaHttpDownloader.numBytesDownloaded,
+//                                    (request.mediaHttpDownloader.numBytesDownloaded / request.mediaHttpDownloader.progress).toLong()
+//                                )
+//                            }
+//                        }
+                        val finalFilename = fileName ?: request.execute().name
+                        val targetFile =
+                            File(path, FileUtil.getAvailableFileName(context, finalFilename))
                         targetFile.outputStream().use { fos ->
-                            driveService.files().get(fileId).executeMediaAndDownloadTo(fos)
+                            request.executeMediaAndDownloadTo(fos)
                         }
                         targetFile
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
-                    if (Looper.myLooper() == null)
-                    {
-                        Looper.prepare();
-                    }
-                    Toast.makeText(context, "下载失败", Toast.LENGTH_SHORT)
-                        .show()
                     null
                 }
             }

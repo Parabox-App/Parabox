@@ -2,6 +2,7 @@ package com.ojhdtapp.parabox.domain.use_case
 
 import android.content.Context
 import android.net.Uri
+import com.google.api.client.googleapis.media.MediaHttpDownloaderProgressListener
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import kotlinx.coroutines.flow.first
@@ -23,7 +24,8 @@ class GetUriFromCloudResourceInfo @Inject constructor(
                     GoogleDriveUtil.downloadFile(
                         context,
                         it,
-                        context.externalCacheDir!!
+                        context.externalCacheDir!!,
+                        {_,_ -> }
                     )
                 }?.let {
                     FileUtil.getUriOfFile(context, it)

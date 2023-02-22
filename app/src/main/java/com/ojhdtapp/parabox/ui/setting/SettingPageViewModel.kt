@@ -457,6 +457,26 @@ class SettingPageViewModel @Inject constructor(
         }
     }
 
+    val fcmEnableFileCacheFlow = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.SETTINGS_FCM_ENABLE_FILE_CACHE] ?: false
+        }
+
+    fun setFcmEnableFileCache(value: Boolean) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.SETTINGS_FCM_ENABLE_FILE_CACHE] = value
+            }
+        }
+    }
+
     // Backup & Restore
 
     private val _cacheSizeStateFlow =
@@ -493,6 +513,46 @@ class SettingPageViewModel @Inject constructor(
                 CacheUtil.deleteChatFilesBeforeTimestamp(context, timestamp)
                 delay(3000)
                 setCleaningFile(false)
+            }
+        }
+    }
+
+    val autoDeleteLocalResourceBeforeDaysFlow = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.SETTINGS_AUTO_DELETE_LOCAL_RESOURCE_BEFORE_DAYS] ?: 7f
+        }
+
+    fun setAutoDeleteLocalResourceBeforeDays(value: Float) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.SETTINGS_AUTO_DELETE_LOCAL_RESOURCE_BEFORE_DAYS] = value
+            }
+        }
+    }
+
+    val autoDeleteLocalResourceFlow = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.SETTINGS_AUTO_DELETE_LOCAL_RESOURCE] ?: false
+        }
+
+    fun setAutoDeleteLocalResource(value: Boolean) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.SETTINGS_AUTO_DELETE_LOCAL_RESOURCE] = value
             }
         }
     }
@@ -557,6 +617,27 @@ class SettingPageViewModel @Inject constructor(
         viewModelScope.launch {
             context.dataStore.edit { preferences ->
                 preferences[DataStoreKeys.SETTINGS_THEME] = value
+            }
+        }
+    }
+
+    val darkModeFlow: Flow<Int> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { settings ->
+            settings[DataStoreKeys.SETTINGS_DARK_MODE] ?: DataStoreKeys.DARK_MODE.FOLLOW_SYSTEM.ordinal
+        }
+
+    fun setDarkMode(value: Int) {
+        viewModelScope.launch {
+            delay(100)
+            context.dataStore.edit { preferences ->
+                preferences[DataStoreKeys.SETTINGS_DARK_MODE] = value
             }
         }
     }

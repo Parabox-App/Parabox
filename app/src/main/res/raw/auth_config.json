@@ -1,0 +1,16 @@
+{
+  "client_id": "1e6118f1-d9ab-47b1-a504-90691d74f909",
+  "authorization_user_agent": "DEFAULT",
+  "broker_redirect_uri_registered": false,
+  "account_mode" : "SINGLE",
+  "redirect_uri": "msauth://com.ojhdtapp.parabox/tRs%2BaB2aiUENDbRJA51OjlWMREM%3D",
+  "authorities": [
+    {
+      "type": "AAD",
+      "audience": {
+        "type": "AzureADandPersonalMicrosoftAccount",
+        "tenant_id": "common"
+      }
+    }
+  ]
+}

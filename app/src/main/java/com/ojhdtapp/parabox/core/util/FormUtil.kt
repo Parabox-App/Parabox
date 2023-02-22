@@ -31,6 +31,14 @@ fun String.ellipsis(maxLength: Int, endKeeping: Int = 3): String {
     }
 }
 
+fun String.getAscllString(): String {
+    var sum = ""
+    for (i in this.indices) {
+        sum += this[i].code.toLong()
+    }
+    return sum
+}
+
 @Composable
 fun HyperlinkText(
     modifier: Modifier = Modifier,

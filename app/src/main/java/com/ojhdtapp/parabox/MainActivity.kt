@@ -1,7 +1,7 @@
 package com.ojhdtapp.parabox
 
-import android.app.Activity
 import android.app.NotificationManager
+import android.app.UiModeManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -16,18 +16,17 @@ import android.os.IBinder
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
-import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.CreateDocument
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.*
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.WindowInsets
@@ -163,10 +162,12 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var updateMessage: UpdateMessage
 
+    @Inject
+    lateinit var onedriveUtil: OnedriveUtil
+
     var pluginService: PluginService? = null
     private lateinit var pluginServiceConnection: ServiceConnection
-    private lateinit var userAvatarPickerLauncher: ActivityResultLauncher<Intent>
-    private lateinit var userAvatarPickerSLauncher: ActivityResultLauncher<String>
+    private lateinit var userAvatarPickerLauncher: ActivityResultLauncher<PickVisualMediaRequest>
     private lateinit var requestPermissionLauncher: ActivityResultLauncher<String>
 
     private var recorder: MediaRecorder? = null
@@ -204,7 +205,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun downloadFile(file: File, cloudFirst: Boolean = false) {
-        if (file.uri != null) {
+        var resorted = false
+        if (!resorted && file.uri != null) {
             try {
                 val path = FileUtil.getAvailableFileName(baseContext, file.name)
                 FileUtil.saveFileToExternalStorage(baseContext, file.uri, path)
@@ -217,42 +219,69 @@ class MainActivity : AppCompatActivity() {
                     getString(R.string.download_file_success),
                     Toast.LENGTH_SHORT
                 ).show()
+                resorted = true
             } catch (e: Exception) {
                 e.printStackTrace()
-                updateFile.downloadInfo(null, null, file)
-                updateFile.downloadState(DownloadingState.Failure, file)
-                Toast.makeText(
-                    baseContext,
-                    getString(R.string.download_file_failed),
-                    Toast.LENGTH_SHORT
-                ).show()
             }
-        } else {
-            lifecycleScope.launch(Dispatchers.IO) {
+        }
+        lifecycleScope.launch(Dispatchers.IO) {
+            if (!resorted && cloudFirst) {
                 when (file.cloudType) {
-                    GoogleDriveUtil.SERVICE_CODE -> file.cloudId?.let {
-                        GoogleDriveUtil.downloadFile(
-                            baseContext,
-                            it,
-                            java.io.File(
-                                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                                "Parabox"
-                            ),
-                        )
+                    GoogleDriveUtil.SERVICE_CODE -> {
+                        if (file.cloudId != null) {
+                            updateFile.downloadState(DownloadingState.Downloading(0, 0), file)
+                            val fileName = FileUtil.getAvailableFileName(baseContext, file.name)
+                            GoogleDriveUtil.downloadFile(
+                                context = baseContext,
+                                fileId = file.cloudId,
+                                path = java.io.File(
+                                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                                    "Parabox"
+                                ),
+                                onProgress = { downloadedBytes, allBytes ->
+                                    if (allBytes != 0L) {
+                                        if (downloadedBytes == allBytes) {
+                                            updateFile.downloadInfo(fileName, null, file)
+                                            updateFile.downloadState(
+                                                DownloadingState.Done,
+                                                file
+                                            )
+                                        } else {
+                                            updateFile.downloadState(
+                                                DownloadingState.Downloading(
+                                                    downloadedBytes = downloadedBytes.toInt(),
+                                                    totalBytes = allBytes.toInt()
+                                                ), file
+                                            )
+                                        }
+
+                                    }
+                                },
+                                fileName = fileName
+                            )
+                            resorted = true
+                        } else {
+                            Toast.makeText(
+                                baseContext,
+                                getString(R.string.invalid_cloud_storage_configuration),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     }
 
-                    else -> {
-                        val url = file.url
-                        if (url != null) {
+                    OnedriveUtil.SERVICE_CODE -> {
+                        if (file.cloudId != null && file.url != null) {
+                            val url = file.url
                             val path = FileUtil.getAvailableFileName(baseContext, file.name)
                             DownloadManagerUtil.downloadWithManager(
-                                this@MainActivity,
+                                baseContext,
                                 url,
                                 path
                             )?.also {
+                                resorted = true
                                 updateFile.downloadInfo(path, it, file)
                                 repeatOnLifecycle(Lifecycle.State.STARTED) {
-                                    DownloadManagerUtil.retrieve(this@MainActivity, it)
+                                    DownloadManagerUtil.retrieve(baseContext, it)
                                         .collectLatest {
                                             if (it is DownloadingState.Done) {
                                                 updateFile.downloadInfo(path, null, file)
@@ -263,10 +292,137 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
                     }
+
+                    FcmConstants.CloudStorage.TENCENT_COS.ordinal -> {
+                        val secretId =
+                            dataStore.data.first()[DataStoreKeys.TENCENT_COS_SECRET_ID]
+                        val secretKey =
+                            dataStore.data.first()[DataStoreKeys.TENCENT_COS_SECRET_KEY]
+                        val bucket =
+                            dataStore.data.first()[DataStoreKeys.TENCENT_COS_BUCKET]
+                        val region =
+                            dataStore.data.first()[DataStoreKeys.TENCENT_COS_REGION]
+                        if (secretId != null && secretKey != null && bucket != null && region != null && file.cloudId != null) {
+                            val res = TencentCOSUtil.downloadFile(
+                                baseContext,
+                                secretId,
+                                secretKey,
+                                region,
+                                bucket,
+                                file.cloudId,
+                                java.io.File(
+                                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                                    "Parabox"
+                                ).absolutePath,
+                                file.name
+                            ) { downloadedBytes, allBytes ->
+                                if (allBytes != 0L) {
+                                    if (downloadedBytes == allBytes) {
+                                        updateFile.downloadInfo(file.name, null, file)
+                                        updateFile.downloadState(
+                                            DownloadingState.Done,
+                                            file
+                                        )
+                                    } else {
+                                        updateFile.downloadState(
+                                            DownloadingState.Downloading(
+                                                downloadedBytes = downloadedBytes.toInt(),
+                                                totalBytes = allBytes.toInt()
+                                            ), file
+                                        )
+                                    }
+                                }
+                            }
+                            if (res) {
+                                resorted = true
+                            }
+                        } else {
+                            Toast.makeText(
+                                baseContext,
+                                getString(R.string.invalid_cloud_storage_configuration),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+
+                    FcmConstants.CloudStorage.QINIU_KODO.ordinal -> {
+                        val accessKey =
+                            dataStore.data.first()[DataStoreKeys.QINIU_KODO_ACCESS_KEY]
+                        val secretKey =
+                            dataStore.data.first()[DataStoreKeys.QINIU_KODO_SECRET_KEY]
+                        val bucket =
+                            dataStore.data.first()[DataStoreKeys.QINIU_KODO_BUCKET]
+                        val domain =
+                            dataStore.data.first()[DataStoreKeys.QINIU_KODO_DOMAIN]
+                        if (accessKey != null && secretKey != null && bucket != null && domain != null && file.cloudId != null) {
+                            val path = FileUtil.getAvailableFileName(baseContext, file.name)
+                            QiniuKODOUtil.downloadFile(domain, accessKey, secretKey, file.cloudId)
+                                ?.let { newUrl ->
+                                    DownloadManagerUtil.downloadWithManager(
+                                        baseContext,
+                                        newUrl,
+                                        path
+                                    )?.also {
+                                        resorted = true
+                                        updateFile.downloadInfo(path, it, file)
+                                        repeatOnLifecycle(Lifecycle.State.STARTED) {
+                                            DownloadManagerUtil.retrieve(baseContext, it)
+                                                .collectLatest {
+                                                    if (it is DownloadingState.Done) {
+                                                        updateFile.downloadInfo(path, null, file)
+                                                    }
+                                                    updateFile.downloadState(it, file)
+                                                }
+                                        }
+                                    }
+                                }
+                        } else {
+                            Toast.makeText(
+                                baseContext,
+                                getString(R.string.invalid_cloud_storage_configuration),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+
+                    else -> {
+
+                    }
                 }
             }
+            if (!resorted) {
+                val url = file.url
+                if (url != null) {
+                    val path = FileUtil.getAvailableFileName(baseContext, file.name)
+                    DownloadManagerUtil.downloadWithManager(
+                        baseContext,
+                        url,
+                        path
+                    )?.also {
+                        resorted = true
+                        updateFile.downloadInfo(path, it, file)
+                        repeatOnLifecycle(Lifecycle.State.STARTED) {
+                            DownloadManagerUtil.retrieve(baseContext, it)
+                                .collectLatest {
+                                    if (it is DownloadingState.Done) {
+                                        updateFile.downloadInfo(path, null, file)
+                                    }
+                                    updateFile.downloadState(it, file)
+                                }
+                        }
+                    }
+                }
+            }
+            if (!resorted) {
+                updateFile.downloadInfo(null, null, file)
+                updateFile.downloadState(DownloadingState.Failure, file)
+                Toast.makeText(
+                    baseContext,
+                    getString(R.string.download_file_failed),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         }
-
     }
 
     private suspend fun retrieveDownloadProcess(file: File) {
@@ -491,14 +647,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun pickUserAvatar() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val intent = Intent(MediaStore.ACTION_PICK_IMAGES).apply {
-                type = "image/*"
-            }
-            userAvatarPickerLauncher.launch(intent)
-        } else {
-            userAvatarPickerSLauncher.launch("image/*")
-        }
+        userAvatarPickerLauncher.launch(
+            PickVisualMediaRequest(
+                ActivityResultContracts.PickVisualMedia.ImageOnly
+            )
+        )
     }
 
     private fun setUserAvatar(uri: Uri) {
@@ -529,7 +682,7 @@ class MainActivity : AppCompatActivity() {
                     settings[DataStoreKeys.USER_AVATAR] = it.toString()
                 }
                 Toast.makeText(
-                    this@MainActivity,
+                    baseContext,
                     getString(R.string.avatar_updated),
                     Toast.LENGTH_SHORT
                 ).show()
@@ -683,6 +836,19 @@ class MainActivity : AppCompatActivity() {
         mainSharedViewModel.setPluginListStateFlow(emptyList())
     }
 
+    private fun deleteChatFiles() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            if (dataStore.data.first()[DataStoreKeys.SETTINGS_AUTO_DELETE_LOCAL_RESOURCE] == true) {
+                dataStore.data.first()[DataStoreKeys.SETTINGS_AUTO_DELETE_LOCAL_RESOURCE_BEFORE_DAYS]?.let {
+                    CacheUtil.deleteChatFilesBeforeTimestamp(
+                        baseContext,
+                        System.currentTimeMillis() - it.roundToInt() * 24 * 60 * 60 * 1000
+                    )
+                }
+            }
+        }
+    }
+
     fun backupFileToCloudService() {
         val workManager = WorkManager.getInstance(this)
 
@@ -699,7 +865,7 @@ class MainActivity : AppCompatActivity() {
                 }
             if (enableAutoBackup && defaultBackupService != 0) {
                 val files = getContacts.shouldBackup().map { it.contactId }.let {
-                    getFiles.byContactIdsStatic(it).filter { it.size < autoBackupFileMaxSize }
+                    getFiles.byContactIdsStatic(it).filter { it.size < autoBackupFileMaxSize && it.cloudType == 0 }
                 }
                 val constraints = Constraints.Builder()
                     .setRequiredNetworkType(NetworkType.UNMETERED)
@@ -906,12 +1072,116 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun refreshCloudStorageFileList(withDelay: Boolean = false) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            if (withDelay) {
+                delay(5000)
+            }
+            val cloudService = mainSharedViewModel.cloudServiceFlow.first()
+            when (cloudService) {
+                GoogleDriveUtil.SERVICE_CODE -> {
+                    dataStore.data.first().get(DataStoreKeys.GOOGLE_WORK_FOLDER_ID)?.let {
+                        GoogleDriveUtil.getFileList(baseContext, it)?.map {
+                            File(
+                                url = it.webContentLink,
+                                uri = null,
+                                name = it.name,
+                                extension = it.fullFileExtension ?: FileUtil.getExtension(it.name),
+                                size = it.getSize(),
+                                timestamp = it.createdTime.value,
+                                profileName = getString(R.string.cloud_service_gd),
+                                fileId = "${GoogleDriveUtil.SERVICE_CODE}${
+                                    it.id.getAscllString().subSequence(0, 10)
+                                }".toLong(),
+                                cloudType = GoogleDriveUtil.SERVICE_CODE,
+                                cloudId = it.id
+                            )
+                        }?.also {
+                            if (it.isNotEmpty()) {
+                                appDatabase.fileDao.insertFiles(
+                                    it.map { it.toFileEntity() }
+                                )
+                            }
+                        }
+                    }
+                }
+                OnedriveUtil.SERVICE_CODE -> {
+                    Log.d("DRIVE", "Query file from onedrive")
+                    onedriveUtil.getFileList()?.map {
+                        File(
+                            url = it.downloadUrl,
+                            uri = null,
+                            name = it.name,
+                            extension = FileUtil.getExtension(it.name),
+                            size = it.size,
+                            timestamp = it.createdDateTime.toTimestamp(),
+                            profileName = getString(R.string.cloud_service_od),
+                            fileId = "${OnedriveUtil.SERVICE_CODE}${
+                                it.id.getAscllString().let {
+                                    it.subSequence(it.length - 10, it.length)
+                                }
+                            }".toLong(),
+                            cloudType = OnedriveUtil.SERVICE_CODE,
+                            cloudId = it.id
+                        )
+                    }?.also {
+                        Log.d("DRIVE", "Query file from onedrive: ${it}")
+                        if (it.isNotEmpty()) {
+                            appDatabase.fileDao.insertFiles(
+                                it.map { it.toFileEntity() }
+                            )
+                        }
+                    }
+                }
+                else -> {
+
+                }
+            }
+        }
+    }
+
+    private fun collectDarkModeFlow() {
+        lifecycleScope.launch {
+            dataStore.data.collectLatest {
+                val darkMode = it[DataStoreKeys.SETTINGS_DARK_MODE]
+                if (BuildConfig.VERSION_CODE >= Build.VERSION_CODES.S) {
+                    val manager = getSystemService(Context.UI_MODE_SERVICE) as UiModeManager
+                    when (darkMode) {
+                        DataStoreKeys.DARK_MODE.YES.ordinal -> {
+                            manager.nightMode = UiModeManager.MODE_NIGHT_YES
+                        }
+                        DataStoreKeys.DARK_MODE.NO.ordinal -> {
+                            manager.nightMode = UiModeManager.MODE_NIGHT_NO
+                        }
+                        else -> {
+                            manager.nightMode = UiModeManager.MODE_NIGHT_AUTO
+                        }
+                    }
+                } else {
+                    when (darkMode) {
+                        DataStoreKeys.DARK_MODE.YES.ordinal -> {
+                            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                        }
+                        DataStoreKeys.DARK_MODE.NO.ordinal -> {
+                            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                        }
+                        else -> {
+                            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+                        }
+                    }
+                    delegate.applyDayNight()
+                }
+
+            }
+        }
+    }
+
     fun getGoogleLoginAuth(): GoogleSignInClient {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
             .requestProfile()
             .requestScopes(
-                Scope(DriveScopes.DRIVE),
+                Scope(DriveScopes.DRIVE_METADATA),
                 Scope(DriveScopes.DRIVE_APPDATA),
                 Scope(DriveScopes.DRIVE_FILE),
             )
@@ -919,15 +1189,51 @@ class MainActivity : AppCompatActivity() {
         return GoogleSignIn.getClient(this, gso)
     }
 
-    fun getGoogleDriveInformation() {
+    fun getDriveInformation() {
         lifecycleScope.launch {
-            GoogleDriveUtil.getDriveInformation(this@MainActivity)?.also {
-                this@MainActivity.dataStore.edit { preferences ->
-                    preferences[DataStoreKeys.GOOGLE_WORK_FOLDER_ID] = it.workFolderId
-                    preferences[DataStoreKeys.CLOUD_TOTAL_SPACE] = it.totalSpace
-                    preferences[DataStoreKeys.CLOUD_USED_SPACE] = it.usedSpace
-                    preferences[DataStoreKeys.CLOUD_APP_USED_SPACE] = it.appUsedSpace
+            try {
+                delay(5000)
+                val cloudStorage = dataStore.data.first()[DataStoreKeys.SETTINGS_CLOUD_SERVICE] ?: 0
+                when (cloudStorage) {
+                    GoogleDriveUtil.SERVICE_CODE -> {
+                        GoogleDriveUtil.getDriveInformation(baseContext)?.also {
+                            baseContext.dataStore.edit { preferences ->
+                                preferences[DataStoreKeys.GOOGLE_WORK_FOLDER_ID] = it.workFolderId
+                                preferences[DataStoreKeys.CLOUD_TOTAL_SPACE] = it.totalSpace
+                                preferences[DataStoreKeys.CLOUD_USED_SPACE] = it.usedSpace
+                                preferences[DataStoreKeys.CLOUD_APP_USED_SPACE] = it.appUsedSpace
+                            }
+                        }
+                    }
+                    OnedriveUtil.SERVICE_CODE -> {
+                        onedriveUtil.getDrive()?.also {
+                            onedriveUtil.getAppFolder()?.also {
+                                baseContext.dataStore.edit { preferences ->
+                                    preferences[DataStoreKeys.CLOUD_APP_USED_SPACE] = it.size
+                                }
+                            }
+                            baseContext.dataStore.edit { preferences ->
+                                preferences[DataStoreKeys.CLOUD_TOTAL_SPACE] = it.quota.total
+                                preferences[DataStoreKeys.CLOUD_USED_SPACE] = it.quota.used
+                            }
+                        }
+//                        onedriveUtil.getDriveList()?.firstOrNull()?.also {
+//                            Log.d("Drive", "driveItem: $it")
+//                            baseContext.dataStore.edit { preferences ->
+//                                preferences[DataStoreKeys.CLOUD_TOTAL_SPACE] = it.quota.total
+//                                preferences[DataStoreKeys.CLOUD_USED_SPACE] = it.quota.used
+//                                preferences[DataStoreKeys.CLOUD_APP_USED_SPACE] = 0L
+//                            }
+//                        }
+//                        val response = onedriveUtil.getRootList()
+//                        Log.d("Drive", "getRoot: $response")
+                    }
+                    else -> {
+
+                    }
                 }
+            } catch (e: Exception) {
+                Log.d("Drive", "DriveError: ${e.message}")
             }
         }
     }
@@ -991,14 +1297,16 @@ class MainActivity : AppCompatActivity() {
 
     suspend fun getTranslation(originalText: String): String? {
         return try {
-            val languageCode = getLanguageCode(originalText)
+            val languageCode = getLanguageCode(originalText).substringBefore("-")
             val currentLanguageTag =
-                AppCompatDelegate.getApplicationLocales()[0]?.toLanguageTag() ?: "en"
+                AppCompatDelegate.getApplicationLocales()[0]?.toLanguageTag()?.substringBefore("-")
+                    ?: "en"
+            Log.d("parabox", "getTranslation: $languageCode -> $currentLanguageTag")
             val options = TranslatorOptions.Builder()
                 .setSourceLanguage(TranslateLanguage.fromLanguageTag(languageCode)!!)
                 .setTargetLanguage(
                     TranslateLanguage.fromLanguageTag(
-                        LanguageUtil.languageTagMapper(currentLanguageTag)
+                        currentLanguageTag
                     )!!
                 )
                 .build()
@@ -1038,6 +1346,8 @@ class MainActivity : AppCompatActivity() {
             val languageIdentifier = LanguageIdentification.getClient()
             languageIdentifier.identifyLanguage(str)
                 .addOnSuccessListener { languageCode ->
+//                    Log.d("parabox", "getLanguageCode: $languageCode")
+//                    Log.d("parabox", "selectedLanguageCode: ${AppCompatDelegate.getApplicationLocales()[0]?.language}")
                     if (languageCode == "und") {
                         cot.resume("en")
                     } else {
@@ -1047,6 +1357,48 @@ class MainActivity : AppCompatActivity() {
                 .addOnFailureListener {
                     cot.resume("en")
                 }
+        }
+    }
+
+    suspend fun msSignIn(): Boolean {
+        return withContext(Dispatchers.IO) {
+            val res = suspendCoroutine<Int> { cot ->
+                onedriveUtil.signIn(
+                    activity = this@MainActivity,
+                ) {
+                    cot.resume(it)
+                }
+            }
+            if (res == OnedriveUtil.STATUS_SUCCESS) {
+                dataStore.edit { preferences ->
+                    preferences[DataStoreKeys.SETTINGS_CLOUD_SERVICE] = OnedriveUtil.SERVICE_CODE
+                }
+                onedriveUtil.getDrive()?.also {
+                    onedriveUtil.getAppFolder()?.also {
+                        baseContext.dataStore.edit { preferences ->
+                            preferences[DataStoreKeys.CLOUD_APP_USED_SPACE] = it.size
+                        }
+                    }
+                    baseContext.dataStore.edit { preferences ->
+                        preferences[DataStoreKeys.CLOUD_TOTAL_SPACE] = it.quota.total
+                        preferences[DataStoreKeys.CLOUD_USED_SPACE] = it.quota.used
+                    }
+                }
+                true
+            } else false
+        }
+    }
+
+    suspend fun msSignOut(): Boolean {
+        return withContext(Dispatchers.IO) {
+            dataStore.edit { preferences ->
+                preferences[DataStoreKeys.SETTINGS_CLOUD_SERVICE] = 0
+            }
+            suspendCoroutine<Boolean> { cot ->
+                onedriveUtil.signOut() {
+                    cot.resume(it == OnedriveUtil.STATUS_SUCCESS)
+                }
+            }
         }
     }
 
@@ -1305,8 +1657,13 @@ class MainActivity : AppCompatActivity() {
             is ActivityEvent.LaunchApp -> {
 
             }
+
+            is ActivityEvent.RefreshCloudStorageFileList -> {
+                refreshCloudStorageFileList()
+            }
         }
     }
+
 
     private fun handleIntent(intent: Intent) {
         when (intent.action) {
@@ -1357,6 +1714,9 @@ class MainActivity : AppCompatActivity() {
     )
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Apply Darkmode
+        collectDarkModeFlow()
+
         // Navigate to Page
         if (savedInstanceState == null) {
             intent?.let(::handleIntent)
@@ -1375,19 +1735,12 @@ class MainActivity : AppCompatActivity() {
 
         // Activity Result Api
         userAvatarPickerLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-                if (it.resultCode == Activity.RESULT_OK) {
-                    it.data?.data?.let {
-                        setUserAvatar(it)
-                    }
-                }
-            }
-        userAvatarPickerSLauncher =
-            registerForActivityResult(ActivityResultContracts.GetContent()) {
-                it?.let {
+            registerForActivityResult(ActivityResultContracts.PickVisualMedia()) {
+                if (it != null) {
                     setUserAvatar(it)
                 }
             }
+
 
         // Request Permission Launcher
         requestPermissionLauncher = registerForActivityResult(
@@ -1456,14 +1809,20 @@ class MainActivity : AppCompatActivity() {
                         updateFile.downloadState(DownloadingState.None, it)
                         updateFile.downloadInfo(null, null, it)
                     } else {
+                        if (it.downloadingState is DownloadingState.Downloading
+                            && ((it.downloadingState as DownloadingState.Downloading).downloadedBytes == 0)
+                        ) {
+                            updateFile.downloadState(DownloadingState.Failure, it)
+                            updateFile.downloadInfo(null, null, it)
+                        }
                         retrieveDownloadProcess(it)
                     }
                 }
             }
         }
 
-        // Google Drive
-        getGoogleDriveInformation()
+        // Drive
+        getDriveInformation()
 
         // Backup
         backup = RoomBackup(this)
@@ -1494,6 +1853,11 @@ class MainActivity : AppCompatActivity() {
             NotificationManager.IMPORTANCE_HIGH
         )
 
+        // Auto Delete Chat Resource
+        deleteChatFiles()
+
+        // CloudStorage Files
+        refreshCloudStorageFileList(withDelay = true)
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {
@@ -1524,10 +1888,14 @@ class MainActivity : AppCompatActivity() {
 //                    exitTransition = { slideOutHorizontally { -it }},
 //                    popEnterTransition = { slideInHorizontally { -it }},
 //                    popExitTransition = { slideOutHorizontally { it }},
-                    enterTransition = { fadeIn(tween(300)) + scaleIn(tween(300), 0.9f) },
-                    exitTransition = { fadeOut(tween(300)) + scaleOut(tween(300), 1.1f) },
-                    popEnterTransition = { fadeIn(tween(300)) + scaleIn(tween(300), 1.1f) },
-                    popExitTransition = { fadeOut(tween(300)) + scaleOut(tween(300), 0.9f) }
+//                    enterTransition = { fadeIn(tween(300)) + scaleIn(tween(300), 0.9f) },
+//                    exitTransition = { fadeOut(tween(300)) + scaleOut(tween(300), 1.1f) },
+//                    popEnterTransition = { fadeIn(tween(300)) + scaleIn(tween(300), 1.1f) },
+//                    popExitTransition = { fadeOut(tween(300)) + scaleOut(tween(300), 0.9f) }
+                    enterTransition = { slideInHorizontally { 100 } + fadeIn() },
+                    exitTransition = { slideOutHorizontally { -100 } + fadeOut() },
+                    popEnterTransition = { slideInHorizontally { -100 } + fadeIn() },
+                    popExitTransition = { slideOutHorizontally { 100 } + fadeOut() }
                 ),
                 defaultAnimationsForNestedNavGraph = mapOf(
                     NavGraphs.guide to NestedNavGraphDefaultAnimations(
@@ -1535,6 +1903,10 @@ class MainActivity : AppCompatActivity() {
                         exitTransition = { slideOutHorizontally { -it } },
                         popEnterTransition = { slideInHorizontally { -it } },
                         popExitTransition = { slideOutHorizontally { it } },
+//                        enterTransition = { slideInHorizontally { 100 } + fadeIn() },
+//                        exitTransition = { slideOutHorizontally { -100 } + fadeOut() },
+//                        popEnterTransition = { slideInHorizontally { -100 } + fadeIn() },
+//                        popExitTransition = { slideOutHorizontally { 100 } + fadeOut() }
                     )
                 )
             )
@@ -1640,11 +2012,6 @@ class MainActivity : AppCompatActivity() {
                 pluginServiceConnection = object : ServiceConnection {
                     override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
                         Log.d("parabox", "mainActivity - service connected")
-//                        Toast.makeText(
-//                            baseContext,
-//                            getString(R.string.start_extension_connection_success),
-//                            Toast.LENGTH_SHORT
-//                        ).show()
                         pluginService =
                             (p1 as PluginService.PluginServiceBinder).getService().also {
                                 mainSharedViewModel.setPluginListStateFlow(it.getAppModelList())

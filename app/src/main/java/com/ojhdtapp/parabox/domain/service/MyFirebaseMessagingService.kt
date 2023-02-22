@@ -16,7 +16,6 @@ import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.FcmMapping
 import com.ojhdtapp.parabox.data.local.entity.FcmMappingSessionIdUpdate
 import com.ojhdtapp.parabox.data.remote.dto.server.ServerReceiveMessageDto
-import com.ojhdtapp.parabox.data.remote.dto.server.content.toDownloadedMessageContentList
 import com.ojhdtapp.parabox.data.remote.dto.server.content.toMessageContentList
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.domain.use_case.GetUriFromCloudResourceInfo
@@ -175,7 +174,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                         Log.d("parabox", "Message data payload: $dto")
                         GlobalScope.launch {
                             val fcmMappingId =
-                                database.fcmMappingDao.getFcmMappingByUid(dto.slaveOriginUid)?.id?.also{
+                                database.fcmMappingDao.getFcmMappingByUid(dto.slaveOriginUid)?.id?.also {
                                     database.fcmMappingDao.updateSessionId(
                                         FcmMappingSessionIdUpdate(
                                             id = it,
@@ -194,12 +193,25 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                                 preferences[DataStoreKeys.SETTINGS_FCM_ENABLE_CACHE]
                                     ?: false
                             }.first()
-                            val messageContents = if (shouldDownloadCloudResource) {
-                                dto.contents.toDownloadedMessageContentList(
-                                    getUriFromCloudResourceInfo = getUriFromCloudResourceInfo
-                                )
-                            } else {
-                                dto.contents.toMessageContentList()
+                            val shouldDownloadFileCloudResource =
+                                dataStore.data.map { preferences ->
+                                    preferences[DataStoreKeys.SETTINGS_FCM_ENABLE_FILE_CACHE]
+                                        ?: false
+                                }.first()
+                            val messageContents = dto.contents.toMessageContentList(
+                                getUriFromCloudResourceInfo = getUriFromCloudResourceInfo,
+                                shouldDownloadCloudResource = shouldDownloadCloudResource,
+                                shouldIncludeFile = shouldDownloadFileCloudResource
+                            ).map {
+                                if (it is File) {
+                                    it.copy(
+                                        size = FileUtil.getFileSizeFormCloudResourceInfo(
+                                            context = baseContext,
+                                            cloudType = it.cloudType,
+                                            cloudId = it.cloudId
+                                        ) ?: 0L
+                                    )
+                                } else it
                             }
                             val profile = Profile(
                                 name = dto.profile.name,

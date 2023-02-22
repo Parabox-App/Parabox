@@ -105,6 +105,7 @@ fun FCMPage(
     val cloudStorage =
         viewModel.fcmCloudStorageFlow.collectAsState(initial = FcmConstants.CloudStorage.NONE.ordinal)
     val enableCache by viewModel.fcmEnableCacheFlow.collectAsState(initial = false)
+    val enableFileCache by viewModel.fcmEnableFileCacheFlow.collectAsState(initial = false)
 
     val tencentCOSSecretId = viewModel.tencentCOSSecretIdFlow.collectAsState(initial = "")
     val tencentCOSSecretKey = viewModel.tencentCOSSecretKeyFlow.collectAsState(initial = "")
@@ -917,6 +918,21 @@ fun FCMPage(
                         subtitleOn = stringResource(R.string.fcm_enable_cache_subtitle_on),
                         checked = enableCache,
                         onCheckedChange = viewModel::setFcmEnableCache
+                    )
+                }
+            }
+            item {
+                AnimatedVisibility(
+                    visible = workingMode == WorkingMode.FCM.ordinal && enableCache,
+                    enter = expandVertically(),
+                    exit = shrinkVertically()
+                ) {
+                    SwitchPreference(
+                        title = stringResource(R.string.fcm_enable_file_cache),
+                        subtitleOff = stringResource(R.string.fcm_enable_file_cache_subtitile_off),
+                        subtitleOn = stringResource(R.string.fcm_enable_file_cache_subtitle_on),
+                        checked = enableFileCache,
+                        onCheckedChange = viewModel::setFcmEnableFileCache
                     )
                 }
             }
