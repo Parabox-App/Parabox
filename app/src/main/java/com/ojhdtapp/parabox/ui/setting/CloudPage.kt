@@ -194,36 +194,6 @@ fun CloudPage(
                             }
                         }
                     }
-                    item {
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            onClick = {
-                                coroutineScope.launch(Dispatchers.IO) {
-                                    val res = (context as MainActivity).msSignIn()
-                                    showCloudDialog = false
-                                    if (res) {
-                                        snackBarHostState.showSnackbar(context.getString(R.string.connect_od_successful))
-                                    } else {
-                                        snackBarHostState.showSnackbar(context.getString(R.string.operation_canceled))
-                                    }
-                                }
-                            }) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                FaIcon(
-                                    modifier = Modifier.padding(16.dp),
-                                    faIcon = FaIcons.Microsoft,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    text = "Microsoft OneDrive",
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
-                            }
-                        }
-                    }
                 }
             }
         )
