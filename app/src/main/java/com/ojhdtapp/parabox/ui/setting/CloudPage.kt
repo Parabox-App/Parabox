@@ -198,7 +198,15 @@ fun CloudPage(
                         Surface(
                             shape = RoundedCornerShape(8.dp),
                             onClick = {
-                                (context as MainActivity).msLoginIn()
+                                coroutineScope.launch(Dispatchers.IO) {
+                                    val res = (context as MainActivity).msSignIn()
+                                    showCloudDialog = false
+                                    if (res) {
+                                        snackBarHostState.showSnackbar(context.getString(R.string.connect_od_successful))
+                                    } else {
+                                        snackBarHostState.showSnackbar(context.getString(R.string.operation_canceled))
+                                    }
+                                }
                             }) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
