@@ -77,6 +77,7 @@ import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.ChatPageDestination
 import com.ojhdtapp.parabox.ui.setting.EditUserNameDialog
+import com.ojhdtapp.parabox.ui.theme.Theme
 import com.ojhdtapp.parabox.ui.util.*
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -234,6 +235,10 @@ fun MessagePage(
             contact = contactState.data.findLast { it.contactId == viewModel.selectedContactStateList.firstOrNull()?.contactId }
                 ?: archivedContact.findLast { it.contactId == viewModel.selectedContactStateList.firstOrNull()?.contactId },
             sizeClass = sizeClass,
+            theme = mainSharedViewModel.themeFlow.collectAsState(initial = Theme.WILLOW).value,
+            enableDynamicColor = mainSharedViewModel.enableDynamicColorFlow.collectAsState(
+                initial = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+            ).value,
             onDismiss = { viewModel.setShowEditActionDialogState(false) },
             onConfirm = {},
             onEvent = {

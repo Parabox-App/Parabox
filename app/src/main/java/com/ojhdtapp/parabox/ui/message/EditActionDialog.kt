@@ -37,7 +37,9 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import coil.ImageLoader
 import coil.compose.AsyncImage
+import coil.decode.SvgDecoder
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.ojhdtapp.parabox.R
@@ -45,6 +47,7 @@ import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.core.util.FileUtil.toSafeFilename
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Profile
+import com.ojhdtapp.parabox.ui.theme.Theme
 import com.ojhdtapp.parabox.ui.util.HashTagEditor
 import com.ojhdtapp.parabox.ui.util.NormalPreference
 import com.ojhdtapp.parabox.ui.util.SwitchPreference
@@ -60,6 +63,8 @@ fun EditActionDialog(
     showDialog: Boolean,
     contact: Contact?,
     sizeClass: WindowSizeClass,
+    theme: Int,
+    enableDynamicColor: Boolean,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
     onEvent: (event: EditActionDialogEvent) -> Unit
@@ -146,7 +151,42 @@ fun EditActionDialog(
                                 .height(176.dp),
                             contentAlignment = Alignment.TopCenter
                         ) {
-                            Image(
+//                            Image(
+//                                modifier = Modifier
+//                                    .fillMaxWidth()
+//                                    .height(140.dp)
+//                                    .clip(
+//                                        RoundedCornerShape(
+//                                            bottomStart = 24.dp,
+//                                            bottomEnd = 24.dp
+//                                        )
+//                                    ),
+//                                painter = painterResource(id = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.background_dynamic else R.drawable.background),
+//                                contentDescription = "background",
+//                                contentScale = ContentScale.Crop
+//                            )
+                            val imageLoader = ImageLoader.Builder(context)
+                                .components {
+                                    add(SvgDecoder.Factory())
+                                }
+                                .build()
+                            AsyncImage(
+                                model = ImageRequest.Builder(context)
+                                    .data(
+                                        when {
+                                            enableDynamicColor -> R.drawable.background_dynamic
+                                            theme == Theme.WILLOW -> R.drawable.background_willow
+                                            theme == Theme.PURPLE -> R.drawable.background_purple
+                                            theme == Theme.SAKURA -> R.drawable.background_sakura
+                                            theme == Theme.GARDENIA -> R.drawable.background_gardenia
+                                            theme == Theme.WATER -> R.drawable.background_water
+                                            else -> R.drawable.background_willow
+                                        }                                    )
+                                    .crossfade(true)
+                                    .build(),
+                                imageLoader = imageLoader,
+                                contentDescription = null,
+                                contentScale = ContentScale.FillWidth,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(140.dp)
@@ -156,9 +196,6 @@ fun EditActionDialog(
                                             bottomEnd = 24.dp
                                         )
                                     ),
-                                painter = painterResource(id = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) R.drawable.background_dynamic else R.drawable.background),
-                                contentDescription = "background",
-                                contentScale = ContentScale.Crop
                             )
                             Box(
                                 modifier = Modifier
