@@ -8,7 +8,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.BottomSheetScaffold
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
@@ -18,7 +17,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
@@ -38,9 +36,8 @@ import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.GuideCloudPageDestination
 import com.ojhdtapp.parabox.ui.setting.SettingPageViewModel
-import com.ojhdtapp.parabox.ui.util.*
+import com.ojhdtapp.parabox.ui.common.*
 import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.navigation.navigate
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class,
@@ -203,7 +200,7 @@ fun GuideFCMReceiverPage(
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         // 1
-                        Row() {
+                        Row {
                             Surface(
                                 shape = CircleShape,
                                 color = MaterialTheme.colorScheme.secondary
@@ -239,7 +236,7 @@ fun GuideFCMReceiverPage(
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
-                                        Row() {
+                                        Row {
                                             Button(onClick = { currentStep = 2 }) {
                                                 Text(text = stringResource(R.string.next_step))
                                             }
@@ -250,7 +247,7 @@ fun GuideFCMReceiverPage(
                         }
 
                         // 2
-                        Row() {
+                        Row {
                             Surface(
                                 shape = CircleShape,
                                 color = MaterialTheme.colorScheme.secondary
@@ -310,7 +307,7 @@ fun GuideFCMReceiverPage(
                                                 text = stringResource(R.string.copy_to_clipboard)
                                             )
                                         }
-                                        Row() {
+                                        Row {
                                             OutlinedButton(onClick = { currentStep = 1 }) {
                                                 Text(text = stringResource(R.string.last_step))
                                             }
@@ -326,7 +323,7 @@ fun GuideFCMReceiverPage(
                             }
                         }
                         // 3
-                        Row() {
+                        Row {
                             Surface(
                                 shape = CircleShape,
                                 color = MaterialTheme.colorScheme.secondary
@@ -370,7 +367,7 @@ fun GuideFCMReceiverPage(
                                             value = tempToken, onValueChange = { tempToken = it },
                                             label = { Text(text = stringResource(id = R.string.fcm_token)) },
                                         )
-                                        Row() {
+                                        Row {
                                             OutlinedButton(onClick = { currentStep = 2 }) {
                                                 Text(text = stringResource(R.string.last_step))
                                             }
@@ -387,7 +384,7 @@ fun GuideFCMReceiverPage(
                             }
                         }
                         // 4
-                        Row() {
+                        Row {
                             Surface(
                                 shape = CircleShape,
                                 color = MaterialTheme.colorScheme.secondary
@@ -648,7 +645,7 @@ fun GuideFCMReceiverPage(
                                                     }
                                                 }
                                                 2 -> {
-                                                    Column(){
+                                                    Column {
                                                         Text(
                                                             text = stringResource(R.string.fcm_cloud_storage_temp_folder_notice),
                                                             style = MaterialTheme.typography.bodyMedium,
@@ -684,7 +681,7 @@ fun GuideFCMReceiverPage(
                                                 }
                                             }
                                         }
-                                        Row() {
+                                        Row {
                                             OutlinedButton(onClick = { currentStep = 3 }) {
                                                 Text(text = stringResource(R.string.last_step))
                                             }
@@ -753,7 +750,7 @@ fun GuideFCMReceiverPage(
                             }
                         }
                         // 5
-                        Row() {
+                        Row {
                             Surface(
                                 shape = CircleShape,
                                 color = MaterialTheme.colorScheme.secondary
@@ -798,7 +795,7 @@ fun GuideFCMReceiverPage(
                                             textColor = MaterialTheme.colorScheme.onSurface
 
                                         )
-                                        Row() {
+                                        Row {
                                             OutlinedButton(onClick = { currentStep = 4 }) {
                                                 Text(text = stringResource(R.string.last_step))
                                             }

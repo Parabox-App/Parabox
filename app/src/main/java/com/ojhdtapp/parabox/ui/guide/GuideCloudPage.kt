@@ -3,16 +3,11 @@ package com.ojhdtapp.parabox.ui.guide
 import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.*
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.ClickableText
-import androidx.compose.material.BottomSheetScaffold
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
@@ -22,18 +17,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.core.os.LocaleListCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -41,20 +30,13 @@ import com.guru.fontawesomecomposelib.FaIcon
 import com.guru.fontawesomecomposelib.FaIcons
 import com.ojhdtapp.parabox.MainActivity
 import com.ojhdtapp.parabox.R
-import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.GoogleDriveUtil
-import com.ojhdtapp.parabox.core.util.HyperlinkText
-import com.ojhdtapp.parabox.core.util.OnedriveUtil
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
-import com.ojhdtapp.parabox.ui.destinations.GuideExtensionPageDestination
 import com.ojhdtapp.parabox.ui.destinations.GuidePersonalisePageDestination
 import com.ojhdtapp.parabox.ui.setting.SettingPageViewModel
-import com.ojhdtapp.parabox.ui.util.*
+import com.ojhdtapp.parabox.ui.common.*
 import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.RootNavGraph
-import com.ramcosta.composedestinations.navigation.navigate
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
@@ -141,7 +123,7 @@ fun GuideCloudPage(
             },
             title = { Text(text = stringResource(id = R.string.connect_cloud_service)) },
             text = {
-                LazyColumn() {
+                LazyColumn {
                     item {
                         Surface(
                             shape = RoundedCornerShape(8.dp),
@@ -286,7 +268,7 @@ fun GuideCloudPage(
                                     }
                                 }
                                 Spacer(modifier = Modifier.width(16.dp))
-                                Column() {
+                                Column {
                                     when (cloudService) {
                                         GoogleDriveUtil.SERVICE_CODE -> {
                                             Text(

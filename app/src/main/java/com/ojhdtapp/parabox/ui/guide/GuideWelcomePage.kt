@@ -1,20 +1,12 @@
 package com.ojhdtapp.parabox.ui.guide
 
-import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.BottomSheetScaffold
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
@@ -24,38 +16,24 @@ import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.*
-import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.app.LocaleManagerCompat
 import androidx.core.os.LocaleListCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
-import com.google.accompanist.flowlayout.FlowRow
 import com.ojhdtapp.parabox.R
-import com.ojhdtapp.parabox.domain.model.AppModel
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
-import com.ojhdtapp.parabox.ui.NavGraphs
 import com.ojhdtapp.parabox.ui.destinations.GuideModePageDestination
 import com.ojhdtapp.parabox.ui.destinations.GuideTermsPageDestination
-import com.ojhdtapp.parabox.ui.destinations.MenuPageDestination
-import com.ojhdtapp.parabox.ui.destinations.MessagePageDestination
 import com.ojhdtapp.parabox.ui.setting.SettingPageViewModel
-import com.ojhdtapp.parabox.ui.util.GuideNavGraph
-import com.ojhdtapp.parabox.ui.util.NormalPreference
-import com.ojhdtapp.parabox.ui.util.onColor
+import com.ojhdtapp.parabox.ui.common.GuideNavGraph
+import com.ojhdtapp.parabox.ui.common.NormalPreference
 import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.RootNavGraph
-import com.ramcosta.composedestinations.navigation.navigate
-import com.ramcosta.composedestinations.navigation.popUpTo
 import java.lang.Math.*
 import kotlin.math.pow
 
@@ -133,7 +111,7 @@ fun GuideWelcomePage(
             onDismissRequest = { showLanguageDialog = false },
             confirmButton = {},
             text = {
-                Column() {
+                Column {
                     NormalPreference(title = "中文（中国）") {
                         val appLocale: LocaleListCompat = LocaleListCompat.forLanguageTags("zh-CN")
                         AppCompatDelegate.setApplicationLocales(appLocale)

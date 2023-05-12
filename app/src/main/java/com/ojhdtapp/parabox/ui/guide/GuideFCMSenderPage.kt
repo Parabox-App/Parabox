@@ -3,16 +3,11 @@ package com.ojhdtapp.parabox.ui.guide
 import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.ClickableText
-import androidx.compose.material.BottomSheetScaffold
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
@@ -22,17 +17,12 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.core.os.LocaleListCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -45,14 +35,9 @@ import com.ojhdtapp.parabox.core.util.HyperlinkText
 import com.ojhdtapp.parabox.domain.fcm.FcmConstants
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.destinations.GuideCloudPageDestination
-import com.ojhdtapp.parabox.ui.destinations.GuideExtensionPageDestination
-import com.ojhdtapp.parabox.ui.destinations.GuidePersonalisePageDestination
 import com.ojhdtapp.parabox.ui.setting.SettingPageViewModel
-import com.ojhdtapp.parabox.ui.util.*
+import com.ojhdtapp.parabox.ui.common.*
 import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.RootNavGraph
-import com.ramcosta.composedestinations.navigation.navigate
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(
@@ -216,7 +201,7 @@ fun GuideFCMSenderPage(
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         // 1
-                        Row() {
+                        Row {
                             Surface(
                                 shape = CircleShape,
                                 color = MaterialTheme.colorScheme.secondary
@@ -252,7 +237,7 @@ fun GuideFCMSenderPage(
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
-                                        Row() {
+                                        Row {
                                             Button(onClick = { currentStep = 2 }) {
                                                 Text(text = stringResource(R.string.next_step))
                                             }
@@ -263,7 +248,7 @@ fun GuideFCMSenderPage(
                         }
 
                         // 2
-                        Row() {
+                        Row {
                             Surface(
                                 shape = CircleShape,
                                 color = MaterialTheme.colorScheme.secondary
@@ -314,7 +299,7 @@ fun GuideFCMSenderPage(
                                             label = { Text(text = stringResource(R.string.fcm_token)) },
                                             supportingText = { Text(text = stringResource(R.string.fcm_send_target_token_supporting_text)) },
                                         )
-                                        Row() {
+                                        Row {
                                             OutlinedButton(onClick = { currentStep = 1 }) {
                                                 Text(text = stringResource(R.string.last_step))
                                             }
@@ -335,7 +320,7 @@ fun GuideFCMSenderPage(
                             }
                         }
                         // 3
-                        Row() {
+                        Row {
                             Surface(
                                 shape = CircleShape,
                                 color = MaterialTheme.colorScheme.secondary
@@ -395,7 +380,7 @@ fun GuideFCMSenderPage(
                                                 text = stringResource(R.string.copy_to_clipboard)
                                             )
                                         }
-                                        Row() {
+                                        Row {
                                             OutlinedButton(onClick = { currentStep = 2 }) {
                                                 Text(text = stringResource(R.string.last_step))
                                             }
@@ -411,7 +396,7 @@ fun GuideFCMSenderPage(
                             }
                         }
                         // 4
-                        Row() {
+                        Row {
                             Surface(
                                 shape = CircleShape,
                                 color = MaterialTheme.colorScheme.secondary
@@ -672,7 +657,7 @@ fun GuideFCMSenderPage(
                                                     }
                                                 }
                                                 2 -> {
-                                                    Column(){
+                                                    Column {
                                                         Text(
                                                             text = stringResource(R.string.fcm_cloud_storage_temp_folder_notice),
                                                             style = MaterialTheme.typography.bodyMedium,
@@ -711,7 +696,7 @@ fun GuideFCMSenderPage(
                                                 }
                                             }
                                         }
-                                        Row() {
+                                        Row {
                                             OutlinedButton(onClick = { currentStep = 3 }) {
                                                 Text(text = stringResource(R.string.last_step))
                                             }
@@ -779,7 +764,7 @@ fun GuideFCMSenderPage(
                             }
                         }
                         // 5
-                        Row() {
+                        Row {
                             Surface(
                                 shape = CircleShape,
                                 color = MaterialTheme.colorScheme.secondary
@@ -824,7 +809,7 @@ fun GuideFCMSenderPage(
                                             textColor = MaterialTheme.colorScheme.onSurface
 
                                         )
-                                        Row() {
+                                        Row {
                                             OutlinedButton(onClick = { currentStep = 4 }) {
                                                 Text(text = stringResource(R.string.last_step))
                                             }

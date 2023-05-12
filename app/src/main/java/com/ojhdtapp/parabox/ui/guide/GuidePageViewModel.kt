@@ -8,6 +8,4 @@ import javax.inject.Inject
 
 @HiltViewModel
 class GuidePageViewModel @Inject constructor(
-    @ApplicationContext val context: Context): ViewModel() {
-
-}
+    @ApplicationContext val context: Context): ViewModel()

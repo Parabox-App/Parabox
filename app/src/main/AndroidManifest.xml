@@ -43,27 +43,20 @@
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_stat_name" />
 
-        <activity
-            android:name=".ui.bubble.BubbleActivity"
-            android:allowEmbedded="true"
-            android:documentLaunchMode="always"
-            android:exported="false"
-            android:resizeableActivity="true"
-            android:theme="@style/Theme.Parabox">
-            <meta-data
-                android:name="android.app.lib_name"
-                android:value="" />
-        </activity>
-
-        <receiver
-            android:name=".domain.notification.MarkAsReadReceiver"
-            android:enabled="true" />
-        <receiver
-            android:name=".domain.notification.ReplyReceiver"
-            android:enabled="true" />
+<!--        <activity-->
+<!--            android:name=".ui.bubble.BubbleActivity"-->
+<!--            android:allowEmbedded="true"-->
+<!--            android:documentLaunchMode="always"-->
+<!--            android:exported="false"-->
+<!--            android:resizeableActivity="true"-->
+<!--            android:theme="@style/Theme.Parabox">-->
+<!--            <meta-data-->
+<!--                android:name="android.app.lib_name"-->
+<!--                android:value="" />-->
+<!--        </activity>-->
 
         <service
-            android:name=".domain.service.PluginService"
+            android:name=".domain.service.ExtensionService"
             android:enabled="true"
             android:exported="true" />
 
