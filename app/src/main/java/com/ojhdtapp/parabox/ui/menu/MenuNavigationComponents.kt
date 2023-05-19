@@ -37,8 +37,8 @@ enum class MenuNavigationDestination(
 fun MenuNavigationBar(
     modifier: Modifier = Modifier,
     navController: NavController,
-    messageBadge: Int = 0,
-    onSelfItemClick: () -> Unit,
+    menuPageUiState: MenuPageUiState,
+    onEvent: (event: MenuPageEvent) -> Unit,
 ) {
 //    val currentDestination: Destination =
 //        navController.appCurrentDestinationAsState().value ?: NavGraphs.root.startAppDestination
@@ -54,10 +54,10 @@ fun MenuNavigationBar(
                 NavigationBarItem(
                     selected = isCurrentDestOnBackStack,
                     onClick = {
-                        if (isCurrentDestOnBackStack) onSelfItemClick()
+                        if (isCurrentDestOnBackStack) onEvent(MenuPageEvent.onBarItemClicked)
                         else {
-                            navController.navigate(destination.graph) {
-                                popUpTo(NavGraphs.menu) {
+                            navController.navigate(destination.graph.route) {
+                                popUpTo(NavGraphs.menu.route) {
                                     saveState = true
                                 }
                                 launchSingleTop = true
@@ -67,8 +67,8 @@ fun MenuNavigationBar(
                     },
                     icon = {
                         BadgedBox(badge = {
-                            if (destination.graph == NavGraphs.message && messageBadge != 0)
-                                Badge { Text(text = "$messageBadge") }
+                            if (destination.graph == NavGraphs.message && menuPageUiState.messageBadgeNum != 0)
+                                Badge { Text(text = "${menuPageUiState.messageBadgeNum}") }
                         }) {
                             Icon(
                                 imageVector = if (isCurrentDestOnBackStack) destination.iconSelected else destination.icon,
@@ -91,98 +91,90 @@ fun MenuNavigationBar(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NavigationDrawer(
-    modifier: Modifier = Modifier,
-    navController: NavController,
-    mainNavController: NavController,
-    messageBadge: Int = 0,
-    settingBadge: Boolean = false,
-    onSelfItemClick: () -> Unit,
-    drawerState: DrawerState = rememberDrawerState(initialValue = DrawerValue.Closed),
-    gesturesEnabled: Boolean = true,
-    content: @Composable () -> Unit,
-) {
-    val coroutineScope = rememberCoroutineScope()
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        gesturesEnabled = gesturesEnabled,
-        drawerContent = { MenuNavigationDrawerContent(
-            navController = navController,
-            messageBadge = messageBadge,
-            onDrawerClicked = {},
-            onSelfItemClicked = {}
-        ) },
-        content = content
-    )
-}
-
-@Composable
 fun MenuNavigationDrawerContent(
     navController: NavController,
     messageBadge: Int = 0,
-    onDrawerClicked: () -> Unit,
-    onSelfItemClicked: () -> Unit,
+    onEvent: (event: MenuPageEvent) -> Unit,
 ) =
-    ModalDrawerSheet(modifier = Modifier
-        .width(304.dp)
-        .fillMaxHeight()
-        .verticalScroll(rememberScrollState())) {
+    ModalDrawerSheet(
+        modifier = Modifier
+            .width(304.dp)
+            .fillMaxHeight()
+            .verticalScroll(rememberScrollState())
+    ) {
+        val coroutineScope = rememberCoroutineScope()
         Spacer(modifier = Modifier.statusBarsPadding())
-        IconButton(modifier = Modifier.padding(start = 12.dp, top = 12.dp, bottom = 24.dp), onClick = onDrawerClicked) {
+        IconButton(
+            modifier = Modifier.padding(12.dp),
+            onClick = {
+                onEvent(MenuPageEvent.OnDrawerClose)
+            }
+        ) {
             Icon(imageVector = Icons.Outlined.MenuOpen, contentDescription = "menu_open")
         }
-            MenuNavigationDestination.values().forEach { destination ->
-                val isCurrentDestOnBackStack =
-                    navController.appCurrentDestinationAsState().value in destination.graph.destinations
-                NavigationDrawerItem(
-                    modifier = Modifier
-                        .height(48.dp)
-                        .padding(horizontal = 12.dp),
-                    icon = {
-                        Icon(
-                            imageVector = if (isCurrentDestOnBackStack) destination.iconSelected else destination.icon,
-                            contentDescription = stringResource(id = destination.labelResId)
-                        )
-                    },
-                    label = {
-                        Text(
-                            text = stringResource(id = destination.labelResId)
-                        )
-                    },
-                    badge = {
-                        if (destination.graph == NavGraphs.message && messageBadge != 0)
-//                                    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary) {
-//                                        Box(modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp), contentAlignment = Alignment.Center) {
-//                                            Text(text = "$messageBadge 条新消息", color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.labelMedium)
-//                                        }
-//                                    }
-                            Badge(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary,
-                            ) { Text(text = "$messageBadge", modifier = Modifier.padding(4.dp)) }
-                    },
-                    selected = isCurrentDestOnBackStack,
-                    onClick = {
-                        if (isCurrentDestOnBackStack) onSelfItemClicked()
-                        else {
-                            coroutineScope.launch {
-                                navController.navigate(destination.graph) {
-                                    popUpTo(NavGraphs.menu) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                                drawerState.close()
-                            }
-                        }
-                    })
+        ExtendedFloatingActionButton(
+            modifier = Modifier.padding(horizontal = 12.dp),
+            onClick = { onEvent(MenuPageEvent.OnFABClicked) },
+            elevation = FloatingActionButtonDefaults.elevation(
+                defaultElevation = 0.dp,
+                pressedElevation = 0.dp
+            )
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(imageVector = Icons.Outlined.Add, contentDescription = "add")
+                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = stringResource(id = R.string.new_contact),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
-            Divider(modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp))
-        Box(modifier = Modifier
-            .height(48.dp)
-            .padding(horizontal = 24.dp), contentAlignment = Alignment.CenterStart) {
-            Text(text = stringResource(R.string.connection), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+
+        }
+        Spacer(modifier = Modifier.height(32.dp))
+        MenuNavigationDestination.values().forEach { destination ->
+            val isCurrentDestOnBackStack =
+                navController.appCurrentDestinationAsState().value in destination.graph.destinations
+            NavigationDrawerItem(
+                modifier = Modifier
+                    .padding(horizontal = 12.dp)
+                    .padding(bottom = 6.dp)
+                    .height(48.dp),
+                icon = {
+                    Icon(
+                        imageVector = if (isCurrentDestOnBackStack) destination.iconSelected else destination.icon,
+                        contentDescription = stringResource(id = destination.labelResId)
+                    )
+                },
+                label = {
+                    Text(
+                        text = stringResource(id = destination.labelResId)
+                    )
+                },
+                badge = {
+                    if (destination.graph == NavGraphs.message && messageBadge != 0)
+                        Badge(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                        ) { Text(text = "$messageBadge", modifier = Modifier.padding(4.dp)) }
+                },
+                selected = isCurrentDestOnBackStack,
+                onClick = {
+                    if (isCurrentDestOnBackStack) onEvent(MenuPageEvent.OnDrawerItemClicked(true))
+                    else {
+                        coroutineScope.launch {
+                            navController.navigate(destination.graph.route) {
+                                popUpTo(NavGraphs.menu.route) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                            onEvent(MenuPageEvent.OnDrawerItemClicked(false))
+                        }
+                    }
+                })
         }
 //                NavigationDrawerItem(
 //                    modifier = Modifier
@@ -226,7 +218,6 @@ fun MenuNavigationRail(
                 Icon(imageVector = Icons.Outlined.Menu, contentDescription = "menu")
             }
             FloatingActionButton(
-//                modifier = Modifier.padding(top = 16.dp),
                 onClick = onFABClick,
                 elevation = FloatingActionButtonDefaults.elevation(
                     defaultElevation = 0.dp,
@@ -237,36 +228,37 @@ fun MenuNavigationRail(
             }
         }
     ) {
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(32.dp))
         MenuNavigationDestination.values().forEach { destination ->
             val isCurrentDestOnBackStack =
                 navController.appCurrentDestinationAsState().value in destination.graph.destinations
             NavigationRailItem(
-                selected = isCurrentDestOnBackStack, onClick = {
+                selected = isCurrentDestOnBackStack,
+                onClick = {
                     if (isCurrentDestOnBackStack) onSelfItemClick()
                     else {
-                        navController.navigate(destination.graph) {
-                            popUpTo(NavGraphs.menu) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
+//                        navController.navigate(destination.graph) {
+//                            popUpTo(NavGraphs.menu) {
+//                                saveState = true
+//                            }
+//                            launchSingleTop = true
+//                            restoreState = true
+//                        }
                     }
                 },
                 icon = {
                     BadgedBox(
                         badge = {
-                        if (destination.graph == NavGraphs.message && messageBadge != 0)
-                            Badge { Text(text = "${if(messageBadge > 99) "99+" else messageBadge}") }
-                    }) {
+                            if (destination.graph == NavGraphs.message && messageBadge != 0)
+                                Badge { Text(text = "${if (messageBadge > 99) "99+" else messageBadge}") }
+                        }) {
                         Icon(
                             imageVector = if (isCurrentDestOnBackStack) destination.iconSelected else destination.icon,
                             contentDescription = stringResource(id = destination.labelResId)
                         )
                     }
                 },
-            label = null,
+                label = null,
             )
         }
     }

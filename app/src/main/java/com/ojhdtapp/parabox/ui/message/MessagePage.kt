@@ -54,93 +54,13 @@ import kotlin.math.sqrt
 @Composable
 fun MessagePage(
     modifier: Modifier = Modifier,
-    navigator: DestinationsNavigator,
     mainNavController: NavController,
     mainSharedViewModel: MainSharedViewModel,
-    sizeClass: WindowSizeClass,
     listState: LazyListState,
     drawerState: DrawerState,
-    bottomSheetState: ModalBottomSheetState,
+    bottomSheetState: SheetState,
 ) {
-}
 
-@OptIn(ExperimentalMaterialApi::class)
-@Composable
-fun SwipeableContact(
-    modifier: Modifier = Modifier,
-    state: SwipeableState<Boolean>,
-    topRadius: Dp,
-    bottomRadius: Dp,
-    extraSpace: Dp? = 0.dp,
-    enabled: Boolean,
-    onVibrate: () -> Unit,
-    content: @Composable () -> Unit
-) = BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
-    val extraSpaceInt = with(LocalDensity.current) {
-        extraSpace?.toPx() ?: 0f
-    }
-    val width = constraints.maxWidth.toFloat() + extraSpaceInt
-    val anchors = mapOf(0f to false, -width to true)
-    val offset = state.offset.value
-    val animationProcess = sqrt((-offset * 2 / width).coerceIn(0f, 1f))
-
-    Box(
-        modifier = Modifier
-            .height(IntrinsicSize.Min)
-            .swipeable(
-                state = state,
-                anchors = anchors,
-                thresholds = { _, _ -> FractionalThreshold(0.3f) },
-                orientation = Orientation.Horizontal,
-                enabled = enabled
-            )
-    ) {
-        LaunchedEffect(key1 = state.targetValue) {
-            if (state.progress.fraction != 1f && state.progress.fraction != 0f)
-                onVibrate()
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .clip(
-                    RoundedCornerShape(
-                        topStart = topRadius,
-                        topEnd = topRadius,
-                        bottomEnd = bottomRadius,
-                        bottomStart = bottomRadius
-                    )
-                )
-                .background(MaterialTheme.colorScheme.primary)
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.End
-        ) {
-            Row(
-                modifier = Modifier
-                    .offset(x = 32.dp * (1f - animationProcess))
-                    .alpha(animationProcess),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(R.string.hide_contact),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Icon(
-                    imageVector = Icons.Outlined.HideSource,
-                    contentDescription = "not disturb",
-                    tint = MaterialTheme.colorScheme.onPrimary
-                )
-            }
-        }
-        Box(
-            modifier = Modifier.offset(offset = { IntOffset(x = offset.roundToInt(), y = 0) }),
-            contentAlignment = Alignment.Center
-        ) {
-            content()
-        }
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

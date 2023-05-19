@@ -28,9 +28,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
-import com.ojhdtapp.parabox.ui.destinations.GuideModePageDestination
-import com.ojhdtapp.parabox.ui.destinations.GuideTermsPageDestination
-import com.ojhdtapp.parabox.ui.setting.SettingPageViewModel
 import com.ojhdtapp.parabox.ui.common.GuideNavGraph
 import com.ojhdtapp.parabox.ui.common.NormalPreference
 import com.ramcosta.composedestinations.annotation.Destination
@@ -48,7 +45,6 @@ fun GuideWelcomePage(
     sizeClass: WindowSizeClass,
 ) {
     val context = LocalContext.current
-    val viewModel = hiltViewModel<SettingPageViewModel>()
 
     val selectedLanguage by remember {
         mutableStateOf(
@@ -74,7 +70,6 @@ fun GuideWelcomePage(
             confirmButton = {
                 TextButton(onClick = {
                     showSkipGuideDialog = false
-                    mainNavController.navigate(GuideTermsPageDestination)
                 }) {
                     Text(text = stringResource(id = R.string.confirm))
                 }
@@ -248,7 +243,6 @@ fun GuideWelcomePage(
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Button(onClick = {
-                    mainNavController.navigate(GuideModePageDestination)
                 }) {
                     Text(text = stringResource(R.string.cont))
                 }

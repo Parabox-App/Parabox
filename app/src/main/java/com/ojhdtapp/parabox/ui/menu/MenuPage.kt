@@ -2,20 +2,27 @@ package com.ojhdtapp.parabox.ui.menu
 
 import FilePage
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.PermanentNavigationDrawer
+import androidx.compose.material3.SheetState
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -26,8 +33,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
+import com.ojhdtapp.parabox.NavGraphs
+import com.ojhdtapp.parabox.destinations.FilePageDestination
+import com.ojhdtapp.parabox.destinations.MessagePageDestination
 import com.ojhdtapp.parabox.ui.MainSharedUiEvent
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.common.DevicePosture
@@ -40,7 +51,7 @@ import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.manualcomposablecalls.composable
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.dependency
-import com.ramcosta.composedestinations.utils.currentDestinationAsState
+import com.ramcosta.composedestinations.spec.NavHostEngine
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -63,9 +74,11 @@ fun MenuPage(
         WindowWidthSizeClass.Compact -> {
             navigationType = MenuNavigationType.BOTTOM_NAVIGATION
         }
+
         WindowWidthSizeClass.Medium -> {
             navigationType = MenuNavigationType.NAVIGATION_RAIL
         }
+
         WindowWidthSizeClass.Expanded -> {
             navigationType = if (devicePosture is DevicePosture.BookPosture) {
                 MenuNavigationType.NAVIGATION_RAIL
@@ -73,14 +86,20 @@ fun MenuPage(
                 MenuNavigationType.PERMANENT_NAVIGATION_DRAWER
             }
         }
+
         else -> {
             navigationType = MenuNavigationType.BOTTOM_NAVIGATION
         }
     }
-    MenuNavigationWrapperUI(navController = navController,mainSharedViewModel = mainSharedViewModel, navigationType = navigationType)
+    MenuNavigationWrapperUI(
+        navController = navController,
+        mainSharedViewModel = mainSharedViewModel,
+        navigationType = navigationType
+    )
 }
 
-@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterialNavigationApi::class,
+@OptIn(
+    ExperimentalAnimationApi::class, ExperimentalMaterialNavigationApi::class,
     ExperimentalMaterial3Api::class
 )
 @Composable
@@ -94,7 +113,7 @@ private fun MenuNavigationWrapperUI(
     val menuNavHostEngine = rememberAnimatedNavHostEngine(
         navHostContentAlignment = Alignment.TopCenter,
         rootDefaultAnimations = RootNavGraphDefaultAnimations(
-            enterTransition = {fadeIn(tween(300)) + slideInVertically { 80 }},
+            enterTransition = { fadeIn(tween(300)) + slideInVertically { 80 } },
             exitTransition = { fadeOut() },
         ),
         defaultAnimationsForNestedNavGraph = mapOf(
@@ -112,9 +131,42 @@ private fun MenuNavigationWrapperUI(
     // Drawer
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val bottomSheetState = rememberModalBottomSheetState()
-    // Message Badge
-    val messageBadgeNum by mainSharedViewModel.messageBadgeNumFlow.collectAsState(initial = 0)
+    // Main State
+    val menuPageState by mainSharedViewModel.menuPageUiState.collectAsState()
 
+    val menuEventHandler: (event: MenuPageEvent) -> Unit = {
+        when (it) {
+            is MenuPageEvent.OnFABClicked -> {
+
+            }
+
+            is MenuPageEvent.OnDrawerItemClicked -> {
+                if (it.selfClicked) {
+
+                } else {
+                    coroutineScope.launch {
+                        drawerState.close()
+                    }
+                }
+            }
+
+            is MenuPageEvent.OnDrawerClose -> {
+                coroutineScope.launch {
+                    drawerState.close()
+                }
+            }
+
+            is MenuPageEvent.onBarItemClicked -> {
+                coroutineScope.launch {
+                    if (!listState.canScrollForward) {
+                        listState.animateScrollToItem(0)
+                    } else {
+                        listState.animateScrollBy(1000f)
+                    }
+                }
+            }
+        }
+    }
 
     // ui Event
     LaunchedEffect(true) {
@@ -122,6 +174,7 @@ private fun MenuNavigationWrapperUI(
             when (it) {
                 is MainSharedUiEvent.ShowSnackBar -> {
                 }
+
                 else -> {}
             }
         }
@@ -139,62 +192,168 @@ private fun MenuNavigationWrapperUI(
     if (navigationType == MenuNavigationType.PERMANENT_NAVIGATION_DRAWER) {
         PermanentNavigationDrawer(drawerContent = {
             MenuNavigationDrawerContent(
-            onDrawerClicked = { /*TODO*/ },
-            onSelfItemClicked = { /*TODO*/ }) }) {
-
+                navController = menuNavController,
+                messageBadge = menuPageState.messageBadgeNum,
+                onEvent = menuEventHandler
+            )
+        }) {
+            MenuAppContent(
+                navController = navController,
+                menuNavController = menuNavController,
+                menuNavHostEngine = menuNavHostEngine,
+                menuPageUiState = menuPageState,
+                navigationType = navigationType,
+                listState = listState,
+                drawerState = drawerState,
+                bottomSheetState = bottomSheetState,
+                mainSharedViewModel = mainSharedViewModel,
+                onEvent = menuEventHandler,
+            )
         }
     } else {
         ModalNavigationDrawer(
             drawerContent = {
-                NavigationDrawerContent(
-                    selectedDestination,
-                    onDrawerClicked = {
-                        scope.launch {
-                            drawerState.close()
-                        }
-                    }
+                MenuNavigationDrawerContent(
+                    navController = menuNavController,
+                    messageBadge = menuPageState.messageBadgeNum,
+                    onEvent = menuEventHandler,
                 )
             },
             drawerState = drawerState
         ) {
-            ReplyAppContent(
-                navigationType, replyHomeUIState,
-                onDrawerClicked = {
-                    scope.launch {
-                        drawerState.open()
-                    }
-                }
+            MenuAppContent(
+                navController = navController,
+                menuNavController = menuNavController,
+                menuNavHostEngine = menuNavHostEngine,
+                menuPageUiState = menuPageState,
+                navigationType = navigationType,
+                listState = listState,
+                drawerState = drawerState,
+                bottomSheetState = bottomSheetState,
+                mainSharedViewModel = mainSharedViewModel,
+                onEvent = menuEventHandler
             )
         }
     }
-    Column {
-        Row(modifier = Modifier.fillMaxSize()) {
-            if (sizeClass.widthSizeClass == WindowWidthSizeClass.Medium) {
-                MenuNavigationRail(
-                    modifier = Modifier.zIndex(1f),
-                    navController = menuNavController,
-                    messageBadge = messageBadgeNum,
-                    onSelfItemClick = {
-                        coroutineScope.launch {
-                            if(!listState.canScrollForward){
-                                listState.animateScrollToItem(0)
-                            } else {
-                                listState.animateScrollBy(1000f)
-                            }
+//    Column {
+//        Row(modifier = Modifier.fillMaxSize()) {
+//            if (sizeClass.widthSizeClass == WindowWidthSizeClass.Medium) {
+//                MenuNavigationRail(
+//                    modifier = Modifier.zIndex(1f),
+//                    navController = menuNavController,
+//                    messageBadge = messageBadgeNum,
+//                    onSelfItemClick = {
+//                        coroutineScope.launch {
+//                            if (!listState.canScrollForward) {
+//                                listState.animateScrollToItem(0)
+//                            } else {
+//                                listState.animateScrollBy(1000f)
+//                            }
+//                        }
+//                    },
+//                    onMenuClick = {
+//                        coroutineScope.launch {
+//                            if (drawerState.isOpen) drawerState.close() else drawerState.open()
+//                        }
+//                    },
+//                    onFABClick = {
+//                        coroutineScope.launch {
+//                            bottomSheetState.show()
+//                        }
+//                    })
+//            }
+//            DestinationsNavHost(
+//                navGraph = NavGraphs.menu,
+//                engine = menuNavHostEngine,
+//                navController = menuNavController,
+//                dependenciesContainerBuilder = {
+//                    dependency(mainSharedViewModel)
+//                    dependency(drawerState)
+//                    dependency(sizeClass)
+//                }
+//            ) {
+//                composable(MessagePageDestination) {
+//                    MessagePage(
+//                        navigator = destinationsNavigator,
+//                        mainNavController = navController,
+//                        mainSharedViewModel = mainSharedViewModel,
+//                        sizeClass = sizeClass,
+//                        listState = listState,
+//                        drawerState = drawerState,
+//                        bottomSheetState = bottomSheetState,
+//                    )
+//                }
+//                composable(FilePageDestination) {
+//                    FilePage(
+//                    )
+//                }
+//            }
+//        }
+//        if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact
+//        ) {
+//            MenuNavigationBar(
+//                navController = menuNavController,
+//                messageBadge = messageBadgeNum,
+//                onSelfItemClick = {
+//                    coroutineScope.launch {
+//                        if (!listState.canScrollForward) {
+//                            listState.animateScrollToItem(0)
+//                        } else {
+//                            listState.animateScrollBy(1000f)
+//                        }
+//                    }
+//                },
+//            )
+//        }
+//    }
+}
+
+@OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)
+@Composable
+fun MenuAppContent(
+    navController: NavController,
+    menuNavController: NavHostController,
+    menuNavHostEngine: NavHostEngine,
+    menuPageUiState: MenuPageUiState,
+    navigationType: MenuNavigationType,
+    listState: LazyListState,
+    drawerState: DrawerState,
+    bottomSheetState: SheetState,
+    mainSharedViewModel: MainSharedViewModel,
+    onEvent: (event: MenuPageEvent) -> Unit,
+) {
+    val coroutineScope = rememberCoroutineScope()
+    Row(modifier = Modifier.fillMaxSize()) {
+        AnimatedVisibility(visible = navigationType == MenuNavigationType.NAVIGATION_RAIL) {
+            MenuNavigationRail(
+                navController = navController,
+                onSelfItemClick = {
+                    coroutineScope.launch {
+                        if (!listState.canScrollForward) {
+                            listState.animateScrollToItem(0)
+                        } else {
+                            listState.animateScrollBy(1000f)
                         }
-                    },
-                    onMenuClick = {
-                        coroutineScope.launch {
-                            if (drawerState.isOpen) drawerState.close() else drawerState.open()
-                        }
-                    },
-                    onFABClick = {
-                        coroutineScope.launch {
-                            bottomSheetState.show()
-                        }
-                    })
-            }
+                    }
+                },
+                onMenuClick = {
+                    coroutineScope.launch {
+                        if (drawerState.isOpen) drawerState.close() else drawerState.open()
+                    }
+                },
+                onFABClick = {
+                    coroutineScope.launch {
+                        bottomSheetState.show()
+                    }
+                })
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.inverseOnSurface)
+        ) {
             DestinationsNavHost(
+                modifier = Modifier.weight(1f),
                 navGraph = NavGraphs.menu,
                 engine = menuNavHostEngine,
                 navController = menuNavController,
@@ -206,42 +365,33 @@ private fun MenuNavigationWrapperUI(
 //                            hiltViewModel<MessagePageViewModel>(parentEntry)
 //                        }
                     dependency(mainSharedViewModel)
+                    dependency(listState)
                     dependency(drawerState)
-                    dependency(sizeClass)
+                    dependency(bottomSheetState)
                 }
             ) {
-                composable(MessagePageDestination) {
-                    MessagePage(
-                        navigator = destinationsNavigator,
-                        mainNavController = navController,
-                        mainSharedViewModel = mainSharedViewModel,
-                        sizeClass = sizeClass,
-                        listState = listState,
-                        drawerState = drawerState,
-                        bottomSheetState = bottomSheetState,
-                    )
-                }
-                composable(FilePageDestination) {
-                    FilePage(
-                    )
-                }
+//                composable(MessagePageDestination) {
+//                    MessagePage(
+//                        mainNavController = navController,
+//                        mainSharedViewModel = mainSharedViewModel,
+//                        listState = listState,
+//                        drawerState = drawerState,
+//                        bottomSheetState = bottomSheetState,
+//                    )
+//                }
+//                composable(FilePageDestination) {
+//                    FilePage(
+//                    )
+//                }
             }
-        }
-        if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact
-        ) {
-            MenuNavigationBar(
-                navController = menuNavController,
-                messageBadge = messageBadgeNum,
-                onSelfItemClick = {
-                    coroutineScope.launch {
-                        if(!listState.canScrollForward){
-                            listState.animateScrollToItem(0)
-                        } else {
-                            listState.animateScrollBy(1000f)
-                        }
-                    }
-                },
-            )
+
+            AnimatedVisibility(visible = navigationType == MenuNavigationType.BOTTOM_NAVIGATION) {
+                MenuNavigationBar(
+                    menuPageUiState = menuPageUiState,
+                    navController = menuNavController,
+                    onEvent = onEvent,
+                )
+            }
         }
     }
 }
