@@ -5,8 +5,10 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.animateScrollBy
@@ -16,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material3.DismissibleNavigationDrawer
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -169,7 +172,7 @@ private fun MenuNavigationWrapperUI(
     }
 
     // ui Event
-    LaunchedEffect(true) {
+    LaunchedEffect(Unit) {
         mainSharedViewModel.uiEventFlow.collectLatest {
             when (it) {
                 is MainSharedUiEvent.ShowSnackBar -> {
@@ -178,6 +181,9 @@ private fun MenuNavigationWrapperUI(
                 else -> {}
             }
         }
+    }
+    LaunchedEffect(Unit){
+        drawerState.snapTo(DrawerValue.Open)
     }
     BackHandler(drawerState.currentValue == DrawerValue.Open) {
         coroutineScope.launch {
@@ -190,13 +196,13 @@ private fun MenuNavigationWrapperUI(
         }
     }
     if (navigationType == MenuNavigationType.PERMANENT_NAVIGATION_DRAWER) {
-        PermanentNavigationDrawer(drawerContent = {
+        DismissibleNavigationDrawer(drawerContent = {
             MenuNavigationDrawerContent(
                 navController = menuNavController,
                 messageBadge = menuPageState.messageBadgeNum,
                 onEvent = menuEventHandler
             )
-        }) {
+        }, drawerState = drawerState) {
             MenuAppContent(
                 navController = navController,
                 menuNavController = menuNavController,

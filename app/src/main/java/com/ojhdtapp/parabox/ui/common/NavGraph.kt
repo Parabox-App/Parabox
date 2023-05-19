@@ -25,3 +25,9 @@ annotation class MessageNavGraph(
 annotation class FileNavGraph(
     val start: Boolean = false
 )
+
+@MenuNavGraph(start = false)
+@NavGraph
+annotation class ContactNavGraph(
+    val start: Boolean = false
+)

@@ -542,4 +542,5 @@
     <string name="darkmode_follow_system">システムに従ってください</string>
     <string name="darkmode_night_no">常にオフ</string>
     <string name="darkmode_night_yes">常にオン</string>
+    <string name="contact_person">連絡窓口</string>
 </resources>

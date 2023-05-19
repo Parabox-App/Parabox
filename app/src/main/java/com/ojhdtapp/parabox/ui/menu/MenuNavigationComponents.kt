@@ -5,6 +5,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.runtime.Composable
@@ -30,6 +31,7 @@ enum class MenuNavigationDestination(
 ) {
     Message(NavGraphs.message, Icons.Outlined.Chat, Icons.Default.Chat, R.string.conversation),
     File(NavGraphs.file, Icons.Outlined.WorkOutline, Icons.Default.Work, R.string.work),
+    Contact(NavGraphs.contact, Icons.Outlined.Contacts, Icons.Default.Contacts, R.string.contact_person)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -538,4 +538,5 @@
     <string name="darkmode_follow_system">Follow the system</string>
     <string name="darkmode_night_no">Always off</string>
     <string name="darkmode_night_yes">Always on</string>
+    <string name="contact_person">Contact</string>
 </resources>
