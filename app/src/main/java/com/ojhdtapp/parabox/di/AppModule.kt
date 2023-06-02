@@ -1,7 +1,12 @@
 package com.ojhdtapp.parabox.di
 
+import android.app.Application
+import androidx.room.Room
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.ojhdtapp.parabox.data.local.AppDatabase
+import com.ojhdtapp.parabox.data.local.Converters
+import com.ojhdtapp.parabox.domain.util.GsonParser
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -16,15 +21,15 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
-//    @Provides
-//    @Singleton
-//    fun provideAppDatabase(app: Application): AppDatabase =
-//        Room.databaseBuilder(
-//            app, AppDatabase::class.java,
-//            "main_db"
-//        )
-//            .addTypeConverter(Converters(GsonParser()))
-//            .build()
+    @Provides
+    @Singleton
+    fun provideAppDatabase(app: Application): AppDatabase =
+        Room.databaseBuilder(
+            app, AppDatabase::class.java,
+            "main_db"
+        )
+            .addTypeConverter(Converters(GsonParser()))
+            .build()
 
 //    @Provides
 //    @Singleton
