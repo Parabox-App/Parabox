@@ -1,14 +1,11 @@
 package com.ojhdtapp.parabox.ui.menu
 
-import FilePage
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.animateScrollBy
@@ -24,7 +21,6 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.PermanentNavigationDrawer
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberDrawerState
@@ -34,24 +30,19 @@ import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.ojhdtapp.parabox.NavGraphs
-import com.ojhdtapp.parabox.destinations.FilePageDestination
-import com.ojhdtapp.parabox.destinations.MessagePageDestination
 import com.ojhdtapp.parabox.ui.MainSharedUiEvent
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.common.DevicePosture
-import com.ojhdtapp.parabox.ui.message.MessagePage
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
 import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
-import com.ramcosta.composedestinations.manualcomposablecalls.composable
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.dependency
 import com.ramcosta.composedestinations.spec.NavHostEngine
@@ -97,7 +88,9 @@ fun MenuPage(
     MenuNavigationWrapperUI(
         navController = navController,
         mainSharedViewModel = mainSharedViewModel,
-        navigationType = navigationType
+        navigationType = navigationType,
+        windowSize = windowSize,
+        devicePosture = devicePosture,
     )
 }
 
@@ -110,6 +103,8 @@ private fun MenuNavigationWrapperUI(
     navController: NavController,
     mainSharedViewModel: MainSharedViewModel,
     navigationType: MenuNavigationType,
+    windowSize: WindowSizeClass,
+    devicePosture: DevicePosture,
 ) {
     // Destination
     val menuNavController = rememberAnimatedNavController()
@@ -182,8 +177,10 @@ private fun MenuNavigationWrapperUI(
             }
         }
     }
-    LaunchedEffect(Unit){
-        drawerState.snapTo(DrawerValue.Open)
+    LaunchedEffect(Unit) {
+        if (navigationType == MenuNavigationType.PERMANENT_NAVIGATION_DRAWER) {
+            drawerState.snapTo(DrawerValue.Open)
+        }
     }
     BackHandler(drawerState.currentValue == DrawerValue.Open) {
         coroutineScope.launch {
@@ -213,6 +210,8 @@ private fun MenuNavigationWrapperUI(
                 drawerState = drawerState,
                 bottomSheetState = bottomSheetState,
                 mainSharedViewModel = mainSharedViewModel,
+                windowSize = windowSize,
+                devicePosture = devicePosture,
                 onEvent = menuEventHandler,
             )
         }
@@ -237,6 +236,8 @@ private fun MenuNavigationWrapperUI(
                 drawerState = drawerState,
                 bottomSheetState = bottomSheetState,
                 mainSharedViewModel = mainSharedViewModel,
+                windowSize = windowSize,
+                devicePosture = devicePosture,
                 onEvent = menuEventHandler
             )
         }
@@ -326,9 +327,12 @@ fun MenuAppContent(
     drawerState: DrawerState,
     bottomSheetState: SheetState,
     mainSharedViewModel: MainSharedViewModel,
+    windowSize: WindowSizeClass,
+    devicePosture: DevicePosture,
     onEvent: (event: MenuPageEvent) -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
+
     Row(modifier = Modifier.fillMaxSize()) {
         AnimatedVisibility(visible = navigationType == MenuNavigationType.NAVIGATION_RAIL) {
             MenuNavigationRail(
@@ -374,15 +378,18 @@ fun MenuAppContent(
                     dependency(listState)
                     dependency(drawerState)
                     dependency(bottomSheetState)
+                    dependency(windowSize)
+                    dependency(devicePosture)
                 }
             ) {
-//                composable(MessagePageDestination) {
-//                    MessagePage(
-//                        mainNavController = navController,
+//                composable(MessageAndChatPageWrapperUIDestination) {
+//                    MessageAndChatPageWrapperUI(
+//                        mainNavController = menuNavController,
 //                        mainSharedViewModel = mainSharedViewModel,
 //                        listState = listState,
 //                        drawerState = drawerState,
 //                        bottomSheetState = bottomSheetState,
+//                        searchType = searchType
 //                    )
 //                }
 //                composable(FilePageDestination) {
