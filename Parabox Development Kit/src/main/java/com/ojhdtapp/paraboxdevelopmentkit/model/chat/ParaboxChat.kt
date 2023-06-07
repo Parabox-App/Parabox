@@ -1,4 +1,4 @@
-package com.ojhdtapp.paraboxdevelopmentkit.model.contact
+package com.ojhdtapp.paraboxdevelopmentkit.model.chat
 
 import android.net.Uri
 import android.os.Parcelable
@@ -8,9 +8,10 @@ import kotlinx.serialization.Serializable
 
 @Parcelize
 @Serializable
-data class ParaboxContact(
+data class ParaboxChat(
     val name: String,
     val avatar: ParaboxResourceInfo,
+    val type: Int,
     val uid: String,
 ) : Parcelable{
     companion object{
