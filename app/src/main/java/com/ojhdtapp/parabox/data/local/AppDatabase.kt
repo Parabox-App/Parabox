@@ -13,5 +13,5 @@ import com.ojhdtapp.parabox.data.local.entity.MessageEntity
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
-    abstract val contactDao: MessageDao
+    abstract val messageDao: MessageDao
 }

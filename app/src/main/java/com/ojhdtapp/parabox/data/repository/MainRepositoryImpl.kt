@@ -7,10 +7,10 @@ import javax.inject.Inject
 
 class MainRepositoryImpl @Inject constructor(
     val context: Context,
-    private val database: AppDatabase,
+    private val db: AppDatabase,
 ) : MainRepository {
     override suspend fun receiveMessage(msg: ReceiveMessage): ReceiveMessageResult {
-        
+        db
+        return ReceiveMessageResult(1, "")
     }
-
 }

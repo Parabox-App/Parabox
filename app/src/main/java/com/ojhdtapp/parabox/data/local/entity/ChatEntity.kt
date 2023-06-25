@@ -14,6 +14,7 @@ data class ChatEntity(
     val isArchived: Boolean = false,
     val isNotificationEnabled : Boolean = true,
     val tags: List<String>,
+    val subChatIds: List<Long>,
     val pkg: String,
     val uid: String,
     @PrimaryKey(autoGenerate = true) val chatId: Long = 0,

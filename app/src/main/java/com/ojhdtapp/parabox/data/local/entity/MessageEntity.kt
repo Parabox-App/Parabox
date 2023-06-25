@@ -10,6 +10,7 @@ data class MessageEntity(
     val contents: List<ParaboxMessageElement>,
     val contentString: String,
     val senderId: Long,
+    val chatId: Long,
     val timestamp: Long,
     val sentByMe: Boolean,
     val verified : Boolean,
