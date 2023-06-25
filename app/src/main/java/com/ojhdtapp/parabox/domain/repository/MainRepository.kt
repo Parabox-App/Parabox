@@ -5,11 +5,12 @@ import coil.request.Tags
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.ReceiveMessageDto
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendMessageDto
 import com.ojhdtapp.parabox.core.util.Resource
+import com.ojhdtapp.parabox.data.local.ExtensionInfo
 import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
 import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessageResult
 import kotlinx.coroutines.flow.Flow
 
 interface MainRepository {
-    suspend fun receiveMessage(msg: ReceiveMessage): ReceiveMessageResult
+    suspend fun receiveMessage(msg: ReceiveMessage, ext: ExtensionInfo): ReceiveMessageResult
 
 }

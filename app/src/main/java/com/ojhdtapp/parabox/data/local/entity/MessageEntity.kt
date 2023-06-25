@@ -15,7 +15,7 @@ data class MessageEntity(
     val sentByMe: Boolean,
     val verified : Boolean,
     val uid: String,
-    @PrimaryKey(autoGenerate = true) val messageId: Long,
+    @PrimaryKey(autoGenerate = true) val messageId: Long = 0,
 ) {
 }
 

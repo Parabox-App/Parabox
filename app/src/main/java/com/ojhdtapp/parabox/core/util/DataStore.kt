@@ -9,10 +9,10 @@ import kotlinx.coroutines.flow.map
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
-suspend fun<T> Context.getDataStoreValue(key: Preferences.Key<T>): T? {
+suspend fun<T> Context.getDataStoreValue(key: Preferences.Key<T>, defaultValue: T): T? {
     return dataStore.data.map { preferences ->
         preferences[key]
-    }.firstOrNull()
+    }.firstOrNull() ?: defaultValue
 }
 
 object DataStoreKeys{
