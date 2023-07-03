@@ -67,6 +67,22 @@ class Converters(
         ) ?: ""
     }
 
+    @TypeConverter
+    fun fromChatIdsJson(json: String): List<Long> {
+        return jsonParser.fromJson<List<Long>>(
+            json,
+            object : TypeToken<List<Long>>() {}.type
+        )!!
+    }
+
+    @TypeConverter
+    fun toChatIdsJson(chatIds: List<Long>): String {
+        return jsonParser.toJson(
+            chatIds,
+            object : TypeToken<List<Long>>() {}.type
+        ) ?: ""
+    }
+
     companion object {
         @OptIn(ExperimentalSerializationApi::class)
         private val messageProtobuf = ProtoBuf {

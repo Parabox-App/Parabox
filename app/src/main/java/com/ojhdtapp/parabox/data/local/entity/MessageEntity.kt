@@ -8,6 +8,7 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxMessageElement
 @Entity(tableName = "message_entity")
 data class MessageEntity(
     val contents: List<ParaboxMessageElement>,
+    val contentTypes: Int,
     val contentString: String,
     val senderId: Long,
     val chatId: Long,

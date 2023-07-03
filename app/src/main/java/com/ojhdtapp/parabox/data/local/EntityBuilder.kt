@@ -4,8 +4,9 @@ import com.ojhdtapp.parabox.data.local.entity.ChatEntity
 import com.ojhdtapp.parabox.data.local.entity.ContactEntity
 import com.ojhdtapp.parabox.data.local.entity.MessageEntity
 import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxMessageElement
 
-fun buildContactEntity(msg: ReceiveMessage, ext: ExtensionInfo): ContactEntity{
+fun buildContactEntity(msg: ReceiveMessage, ext: ExtensionInfo): ContactEntity {
     return ContactEntity(
         name = msg.sender.name,
         avatar = msg.sender.avatar,
@@ -30,9 +31,18 @@ fun buildChatEntity(msg: ReceiveMessage, ext: ExtensionInfo): ChatEntity {
     )
 }
 
-fun buildMessageEntity(msg: ReceiveMessage, senderId: Long, chatId: Long): MessageEntity{
+fun buildMessageEntity(msg: ReceiveMessage, senderId: Long, chatId: Long): MessageEntity {
+    val typeList = msg.contents.map { it.getType() }
+    val contentTypes = buildString {
+        (0 until (typeList.maxOrNull() ?: 0)).forEach {
+            if (it in typeList) {
+                append(1)
+            } else append(0)
+        }
+    }.ifBlank { "0" }.toInt(2)
     return MessageEntity(
         contents = msg.contents,
+        contentTypes = contentTypes,
         contentString = msg.contents.joinToString { it.contentToString() },
         senderId = senderId,
         chatId = chatId,

@@ -12,6 +12,10 @@ data class ParaboxAt(val target: ParaboxContact) : ParaboxMessageElement {
     override fun contentToString(): String {
         return "@${target.name}"
     }
+
+    override fun getType(): Int {
+        return ParaboxMessageElement.Companion.TYPE.AT.ordinal
+    }
 }
 
 @Parcelize
@@ -20,6 +24,9 @@ object ParaboxAtAll : ParaboxMessageElement {
     override fun contentToString(): String {
         return "@全体成员"
     }
+
+    override fun getType(): Int {
+        return ParaboxMessageElement.Companion.TYPE.AT_ALL.ordinal }
 }
 
 @Parcelize
@@ -32,6 +39,10 @@ data class ParaboxAudio(
 ) : ParaboxMessageElement {
     override fun contentToString(): String {
         return "[语音消息]"
+    }
+
+    override fun getType(): Int {
+        return ParaboxMessageElement.Companion.TYPE.AUDIO.ordinal
     }
 }
 
@@ -47,6 +58,10 @@ data class ParaboxFile(
     override fun contentToString(): String {
         return "[文件]${name}"
     }
+
+    override fun getType(): Int {
+        return ParaboxMessageElement.Companion.TYPE.FILE.ordinal
+    }
 }
 
 @Parcelize
@@ -59,6 +74,10 @@ data class ParaboxImage(
 ) : ParaboxMessageElement {
     override fun contentToString(): String {
         return "[图片]"
+    }
+
+    override fun getType(): Int {
+        return ParaboxMessageElement.Companion.TYPE.IMAGE.ordinal
     }
 }
 
@@ -73,6 +92,10 @@ data class ParaboxLocation(
     override fun contentToString(): String {
         return "[位置]"
     }
+
+    override fun getType(): Int {
+        return ParaboxMessageElement.Companion.TYPE.LOCATION.ordinal
+    }
 }
 
 @Parcelize
@@ -82,6 +105,10 @@ data class ParaboxPlainText(
 ) : ParaboxMessageElement {
     override fun contentToString(): String {
         return text
+    }
+
+    override fun getType(): Int {
+        return ParaboxMessageElement.Companion.TYPE.PLAIN_TEXT.ordinal
     }
 }
 
@@ -93,6 +120,10 @@ data class ParaboxQuoteReply(
 ) : ParaboxMessageElement {
     override fun contentToString(): String {
         return "[引用回复]"
+    }
+
+    override fun getType(): Int {
+        return ParaboxMessageElement.Companion.TYPE.QUOTE_REPLY.ordinal
     }
 }
 
@@ -111,5 +142,9 @@ data class ParaboxForward(
 
     override fun contentToString(): String {
         return "[合并转发]"
+    }
+
+    override fun getType(): Int {
+        return ParaboxMessageElement.Companion.TYPE.FORWARD.ordinal
     }
 }

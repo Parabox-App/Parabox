@@ -116,7 +116,7 @@ dependencies {
     androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_version"
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
     implementation "androidx.compose.material:material-icons-extended:$compose_version"
-    implementation "com.google.android.material:material:1.9.0-alpha01"
+    implementation "com.google.android.material:material:1.10.0-alpha05"
 
     implementation "org.jetbrains.kotlin:kotlin-serialization:1.8.10"
     implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0'
@@ -148,7 +148,7 @@ dependencies {
     implementation "androidx.appcompat:appcompat:$appcompat_version"
 
     // Google Drive Api
-    implementation 'com.google.android.gms:play-services-auth:20.5.0'
+    implementation 'com.google.android.gms:play-services-auth:20.6.0'
     implementation('com.google.api-client:google-api-client-android:1.26.0') {
         exclude group: 'org.apache.httpcomponents'
         exclude module: 'guava-jdk5'
@@ -187,7 +187,7 @@ dependencies {
     // Paging
     def paging_version = "3.2.0-rc01"
     implementation "androidx.paging:paging-runtime:$paging_version"
-    implementation "androidx.paging:paging-compose:1.0.0-alpha20"
+    implementation "androidx.paging:paging-compose:3.2.0-rc01"
 
     // Coil
     implementation 'io.coil-kt:coil:2.2.2'
@@ -200,7 +200,7 @@ dependencies {
     implementation "com.airbnb.android:lottie-compose:$lottieVersion"
 
     // Navigation Compose
-    def nav_version = "2.7.0-beta01"
+    def nav_version = "2.7.0-beta02"
     implementation "androidx.navigation:navigation-compose:$nav_version"
 
     // Compose Destinations
@@ -218,7 +218,7 @@ dependencies {
     implementation "com.google.accompanist:accompanist-placeholder-material:$acc_version"
 
     // Window
-    implementation "androidx.window:window:1.1.0-rc01"
+    implementation "androidx.window:window:1.2.0-alpha03"
 
     // M3
     implementation "androidx.compose.material3:material3:1.2.0-alpha03"

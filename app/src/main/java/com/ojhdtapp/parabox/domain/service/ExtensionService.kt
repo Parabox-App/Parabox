@@ -4,10 +4,14 @@ import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
 import androidx.lifecycle.LifecycleService
+import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class ExtensionService : LifecycleService() {
+    val extensionManager by lazy {
+        ExtensionManager(context = this)
+    }
     private var bridge: ExtensionServiceBridge? = null
 
     fun setBridge(mBridge: ExtensionServiceBridge){
@@ -29,6 +33,7 @@ class ExtensionService : LifecycleService() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
+        extensionManager.loadExtensions()
         return START_STICKY
     }
 

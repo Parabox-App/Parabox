@@ -19,6 +19,11 @@ interface MessageDao {
             "WHERE chatId IN (:chatIdList) " + "ORDER BY message_entity.timestamp DESC")
     fun getMessagePagingSource(chatIdList: List<Long>): PagingSource<Int, MessageEntity>
 
+    @Query("SELECT * FROM message_entity " +
+            "WHERE contentTypes & 8 > 0 " +
+            "ORDER BY message_entity.timestamp DESC")
+    fun getFileMessagePagingSource(): PagingSource<Int, MessageEntity>
+
     @Query("DELETE FROM message_entity WHERE messageId = :messageId")
     fun deleteMessageById(messageId: Long): Int
     @Query("DELETE FROM message_entity WHERE messageId IN (:messageIdList)")
