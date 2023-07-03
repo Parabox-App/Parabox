@@ -18,7 +18,7 @@
 
     <queries>
         <intent>
-            <action android:name="com.ojhdtapp.parabox.PLUGIN" />
+            <action android:name="com.ojhdtapp.parabox.EXTENSION" />
         </intent>
         <intent>
             <action android:name="android.intent.action.INSERT" />

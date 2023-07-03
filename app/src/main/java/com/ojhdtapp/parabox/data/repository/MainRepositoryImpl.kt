@@ -8,7 +8,7 @@ import com.ojhdtapp.parabox.data.local.buildContactEntity
 import com.ojhdtapp.parabox.data.local.buildMessageEntity
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
-import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessageResult
+import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
 import javax.inject.Inject
 import kotlinx.coroutines.*
 
@@ -16,7 +16,7 @@ class MainRepositoryImpl @Inject constructor(
     val context: Context,
     private val db: AppDatabase,
 ) : MainRepository {
-    override suspend fun receiveMessage(msg: ReceiveMessage, ext: ExtensionInfo): ReceiveMessageResult {
+    override suspend fun receiveMessage(msg: ReceiveMessage, ext: ExtensionInfo): ParaboxResult {
         coroutineScope {
             val allowForegroundNotification = context.getDataStoreValue(DataStoreKeys.SETTINGS_ALLOW_FOREGROUND_NOTIFICATION, false)
             val chatEntity = buildChatEntity(msg, ext)
@@ -31,6 +31,6 @@ class MainRepositoryImpl @Inject constructor(
             db.messageDao.insertMessage(messageEntity)
         }
 
-        return ReceiveMessageResult(1, "")
+        return ParaboxResult(1, "")
     }
 }

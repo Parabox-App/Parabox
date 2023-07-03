@@ -34,6 +34,11 @@ class ExtensionService : LifecycleService() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
         extensionManager.loadExtensions()
+        extensionManager.installedExtensionsFlow.collect{
+            it.forEach {
+                lifecycle.addObserver(it.ext)
+            }
+        }
         return START_STICKY
     }
 

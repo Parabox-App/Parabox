@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
 import androidx.core.content.pm.PackageInfoCompat
+import androidx.lifecycle.Lifecycle
 import com.ojhdtapp.parabox.domain.model.Extension
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxExtension
 import dalvik.system.PathClassLoader
@@ -63,7 +64,8 @@ object ExtensionLoader {
         val classLoader = PathClassLoader(appInfo.sourceDir, null, context.classLoader)
         return try {
             val ext = appInfo.metaData.getString(EXTENSION_CLASS)?.let {
-                Class.forName(it, false, classLoader).newInstance()
+                val clazz = Class.forName(it, false, classLoader)
+                val constructor = clazz.getConstructor()
             } as ParaboxExtension
             LoadResult.Success(
                 Extension(

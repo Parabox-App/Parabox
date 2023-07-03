@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.domain.service.extension
 
 import android.content.Context
+import androidx.lifecycle.Lifecycle
 import com.ojhdtapp.parabox.domain.model.Extension
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxExtension
 import kotlinx.coroutines.flow.MutableStateFlow
