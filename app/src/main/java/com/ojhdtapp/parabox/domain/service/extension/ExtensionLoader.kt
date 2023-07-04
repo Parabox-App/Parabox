@@ -69,13 +69,16 @@ object ExtensionLoader {
             } as ParaboxExtension
             LoadResult.Success(
                 Extension(
-                name = extName,
-                pkgName = pkgName,
-                versionName = versionName,
-                versionCode = versionCode,
-                ext = ext
-            ))
+                    name = extName,
+                    pkgName = pkgName,
+                    versionName = versionName,
+                    versionCode = versionCode,
+                    ext = ext
+                )
+            )
         } catch (e: ClassCastException) {
+            LoadResult.Error
+        } catch (e: ClassNotFoundException) {
             LoadResult.Error
         }
     }

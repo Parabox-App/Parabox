@@ -43,6 +43,7 @@ import com.google.mlkit.nl.entityextraction.*
 import com.google.mlkit.nl.smartreply.*
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.domain.service.ExtensionService
+import com.ojhdtapp.parabox.domain.service.ExtensionServiceConnection
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.common.DevicePosture
 import com.ojhdtapp.parabox.ui.theme.AppTheme
@@ -63,8 +64,7 @@ import kotlinx.coroutines.flow.*
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
-    var extensionService: ExtensionService? = null
-    private lateinit var pluginServiceConnection: ServiceConnection
+    private lateinit var extensionServiceConnection : ExtensionServiceConnection
     private fun collectDarkModeFlow() {
         lifecycleScope.launch {
             dataStore.data.collectLatest {
@@ -75,9 +75,11 @@ class MainActivity : AppCompatActivity() {
                         DataStoreKeys.DARK_MODE.YES.ordinal -> {
                             manager.nightMode = UiModeManager.MODE_NIGHT_YES
                         }
+
                         DataStoreKeys.DARK_MODE.NO.ordinal -> {
                             manager.nightMode = UiModeManager.MODE_NIGHT_NO
                         }
+
                         else -> {
                             manager.nightMode = UiModeManager.MODE_NIGHT_AUTO
                         }
@@ -87,9 +89,11 @@ class MainActivity : AppCompatActivity() {
                         DataStoreKeys.DARK_MODE.YES.ordinal -> {
                             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
                         }
+
                         DataStoreKeys.DARK_MODE.NO.ordinal -> {
                             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
                         }
+
                         else -> {
                             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
                         }
@@ -106,13 +110,16 @@ class MainActivity : AppCompatActivity() {
     )
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Apply Darkmode
+        // Apply Dark Mode
         collectDarkModeFlow()
+        // Bind Extension Service
+        extensionServiceConnection = ExtensionServiceConnection(baseContext)
+        lifecycle.addObserver(extensionServiceConnection)
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         // Device Posture
-        val devicePostureFlow =  WindowInfoTracker.getOrCreate(this).windowLayoutInfo(this)
+        val devicePostureFlow = WindowInfoTracker.getOrCreate(this).windowLayoutInfo(this)
             .flowWithLifecycle(this.lifecycle)
             .map { layoutInfo ->
                 val foldingFeature =
@@ -120,8 +127,10 @@ class MainActivity : AppCompatActivity() {
                 when {
                     isBookPosture(foldingFeature) ->
                         DevicePosture.BookPosture(foldingFeature.bounds)
+
                     isSeparating(foldingFeature) ->
                         DevicePosture.Separating(foldingFeature.bounds, foldingFeature.orientation)
+
                     else -> DevicePosture.NormalPosture
                 }
             }
@@ -262,5 +271,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStop() {
         super.onStop()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
     }
 }

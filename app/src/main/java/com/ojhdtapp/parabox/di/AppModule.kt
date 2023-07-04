@@ -9,6 +9,7 @@ import com.google.gson.GsonBuilder
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.Converters
 import com.ojhdtapp.parabox.domain.repository.MainRepository
+import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
 import com.ojhdtapp.parabox.domain.util.GsonParser
 import dagger.Module
 import dagger.Provides
@@ -34,15 +35,6 @@ object AppModule {
             .addTypeConverter(Converters(GsonParser()))
             .build()
 
-//    @Provides
-//    @Singleton
-//    fun provideMainRepository(
-//        database: AppDatabase,
-//        @ApplicationContext applicationContext: Context,
-//        notificationUtil: NotificationUtil,
-//        fcmApiHelper: FcmApiHelper
-//    ): MainRepository =
-//        MainRepositoryImpl(database, applicationContext, notificationUtil, fcmApiHelper)
     @Provides
     @Singleton
     fun provideRetrofit(): Retrofit {
@@ -59,9 +51,14 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideExtensionManager(
+        @ApplicationContext applicationContext: Context,
+    ): ExtensionManager = ExtensionManager(applicationContext)
+
+    @Provides
+    @Singleton
     fun provideMainRepository(
         @ApplicationContext applicationContext: Context,
         database: AppDatabase
-    ): MainRepository
-        = MainRepositoryImpl(context = applicationContext, db = database)
+    ): MainRepository = MainRepositoryImpl(context = applicationContext, db = database)
 }

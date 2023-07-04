@@ -8,15 +8,23 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 class ExtensionManager(val context: Context) {
+    var isInitialized = false
+        private set
+    private val _installedExtensionsFlow = MutableStateFlow(emptyList<Extension>())
+    val installedExtensionsFlow = _installedExtensionsFlow.asStateFlow()
+    init {
+        loadExtensions()
+    }
     fun loadExtensions(){
         val extensions = ExtensionLoader.loadExtensions(context)
 
         _installedExtensionsFlow.value = extensions
             .filterIsInstance<LoadResult.Success>()
             .map { it.extension }
-
+        isInitialized = true
     }
 
-    private val _installedExtensionsFlow = MutableStateFlow(emptyList<Extension>())
-    val installedExtensionsFlow = _installedExtensionsFlow.asStateFlow()
+    fun refreshExtensions(){
+
+    }
 }
