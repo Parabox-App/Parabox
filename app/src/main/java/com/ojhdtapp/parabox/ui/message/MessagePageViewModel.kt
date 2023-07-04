@@ -3,7 +3,10 @@ package com.ojhdtapp.parabox.ui.message
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
 import com.ojhdtapp.parabox.data.local.ExtensionInfo
+import com.ojhdtapp.parabox.domain.repository.ChatRepository
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
 import com.ojhdtapp.paraboxdevelopmentkit.model.chat.ParaboxChat
@@ -20,6 +23,7 @@ import javax.inject.Inject
 class MessagePageViewModel @Inject constructor(
     @ApplicationContext val context: Context,
     val mainRepository: MainRepository,
+    val chatRepository: ChatRepository
 ): ViewModel() {
     fun testFun(){
         viewModelScope.launch(Dispatchers.IO) {

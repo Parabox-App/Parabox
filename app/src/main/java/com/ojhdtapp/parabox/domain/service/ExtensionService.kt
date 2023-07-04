@@ -4,8 +4,14 @@ import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
 import androidx.lifecycle.LifecycleService
+import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.lifecycleScope
+import com.ojhdtapp.parabox.data.local.ExtensionInfo
+import com.ojhdtapp.parabox.domain.repository.MainRepository
 import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
+import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxBridge
+import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
+import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -15,6 +21,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class ExtensionService : LifecycleService() {
     @Inject lateinit var extensionManager: ExtensionManager
+    @Inject lateinit var mainRepository: MainRepository
 
     private var bridge: ExtensionServiceBridge? = null
 
@@ -28,6 +35,17 @@ class ExtensionService : LifecycleService() {
         lifecycleScope.launch {
             extensionManager.installedExtensionsFlow.collectLatest {
                 it.forEach {
+                    val bridge = object: ParaboxBridge {
+                        override suspend fun receiveMessage(message: ReceiveMessage): ParaboxResult {
+                            return mainRepository.receiveMessage(msg = message, ext = it.toExtensionInfo())
+                        }
+
+                        override suspend fun recallMessage(uuid: String): ParaboxResult {
+                            TODO("Not yet implemented")
+                        }
+
+                    }
+                    it.ext.init(baseContext, bridge)
                     lifecycle.addObserver(it.ext)
                 }
             }

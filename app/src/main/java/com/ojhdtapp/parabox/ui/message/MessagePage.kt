@@ -50,6 +50,7 @@ fun MessagePage(
     }) {
         LazyColumn(modifier = Modifier.padding(it),state = listState){
 
+
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.domain.service.extension
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.Lifecycle
 import com.ojhdtapp.parabox.domain.model.Extension
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxExtension
@@ -22,6 +23,7 @@ class ExtensionManager(val context: Context) {
             .filterIsInstance<LoadResult.Success>()
             .map { it.extension }
         isInitialized = true
+        Log.d("parabox", "successfully load ${_installedExtensionsFlow.value.size} extensions")
     }
 
     fun refreshExtensions(){

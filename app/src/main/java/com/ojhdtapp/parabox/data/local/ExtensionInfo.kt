@@ -4,5 +4,5 @@ data class ExtensionInfo(
     val pkg: String,
     val name: String,
     val version: String,
-    val versionCode: Int,
+    val versionCode: Long,
 )

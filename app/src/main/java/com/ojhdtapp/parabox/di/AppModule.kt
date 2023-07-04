@@ -8,6 +8,10 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.Converters
+import com.ojhdtapp.parabox.data.repository.ChatRepositoryImpl
+import com.ojhdtapp.parabox.data.repository.ContactRepositoryImpl
+import com.ojhdtapp.parabox.domain.repository.ChatRepository
+import com.ojhdtapp.parabox.domain.repository.ContactRepository
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
 import com.ojhdtapp.parabox.domain.util.GsonParser
@@ -61,4 +65,18 @@ object AppModule {
         @ApplicationContext applicationContext: Context,
         database: AppDatabase
     ): MainRepository = MainRepositoryImpl(context = applicationContext, db = database)
+
+    @Provides
+    @Singleton
+    fun provideContactRepository(
+        @ApplicationContext applicationContext: Context,
+        database: AppDatabase
+    ): ContactRepository = ContactRepositoryImpl(context = applicationContext, db = database)
+
+    @Provides
+    @Singleton
+    fun provideChatRepository(
+        @ApplicationContext applicationContext: Context,
+        database: AppDatabase
+    ): ChatRepository = ChatRepositoryImpl(context = applicationContext, db = database)
 }

@@ -63,9 +63,10 @@ object ExtensionLoader {
         }
         val classLoader = PathClassLoader(appInfo.sourceDir, null, context.classLoader)
         return try {
-            val ext = appInfo.metaData.getString(EXTENSION_CLASS)?.let {
-                val clazz = Class.forName(it, false, classLoader)
-                val constructor = clazz.getConstructor()
+            val ext = appInfo.metaData.getString(EXTENSION_CLASS)?.let { extClass ->
+                val fullExtClass = extClass.takeUnless { it.startsWith(".") } ?: (pkgInfo.packageName + extClass)
+                val clazz = Class.forName(fullExtClass, false, classLoader)
+                clazz.newInstance()
             } as ParaboxExtension
             LoadResult.Success(
                 Extension(
@@ -77,8 +78,10 @@ object ExtensionLoader {
                 )
             )
         } catch (e: ClassCastException) {
+            e.printStackTrace()
             LoadResult.Error
         } catch (e: ClassNotFoundException) {
+            e.printStackTrace()
             LoadResult.Error
         }
     }

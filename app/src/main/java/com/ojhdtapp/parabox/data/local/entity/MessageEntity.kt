@@ -3,6 +3,7 @@ package com.ojhdtapp.parabox.data.local.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxMessageElement
 
 @Entity(tableName = "message_entity")
@@ -14,10 +15,24 @@ data class MessageEntity(
     val chatId: Long,
     val timestamp: Long,
     val sentByMe: Boolean,
-    val verified : Boolean,
+    val verified: Boolean,
     val uid: String,
     @PrimaryKey(autoGenerate = true) val messageId: Long = 0,
 ) {
+    fun toMessage(): Message {
+        return Message(
+            contents,
+            contentTypes,
+            contentString,
+            senderId,
+            chatId,
+            timestamp,
+            sentByMe,
+            verified,
+            uid,
+            messageId
+        )
+    }
 }
 
 @Entity
