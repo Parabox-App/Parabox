@@ -61,7 +61,7 @@ fun MenuNavigationBar(
                 NavigationBarItem(
                     selected = isCurrentDestOnBackStack,
                     onClick = {
-                        if (isCurrentDestOnBackStack) onEvent(MenuPageEvent.onBarItemClicked)
+                        if (isCurrentDestOnBackStack) onEvent(MenuPageEvent.OnBarItemClicked)
                         else {
                             navController.navigate(destination.graph.route) {
                                 popUpTo(NavGraphs.menu.route) {
@@ -241,7 +241,7 @@ fun MenuNavigationRail(
             NavigationRailItem(
                 selected = isCurrentDestOnBackStack,
                 onClick = {
-                    if (isCurrentDestOnBackStack) onEvent(MenuPageEvent.onBarItemClicked)
+                    if (isCurrentDestOnBackStack) onEvent(MenuPageEvent.OnBarItemClicked)
                     else {
                         navController.navigate(destination.graph.route) {
                             popUpTo(NavGraphs.menu.route) {

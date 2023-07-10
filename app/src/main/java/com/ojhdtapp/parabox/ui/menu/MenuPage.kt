@@ -33,7 +33,6 @@ import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
@@ -159,7 +158,7 @@ private fun MenuNavigationWrapperUI(
                 }
             }
 
-            is MenuPageEvent.onBarItemClicked -> {
+            is MenuPageEvent.OnBarItemClicked -> {
                 coroutineScope.launch {
                     if (!listState.canScrollForward) {
                         listState.animateScrollToItem(0)

@@ -4,7 +4,7 @@ sealed class MenuPageEvent {
     object OnFABClicked: MenuPageEvent()
     object OnMenuClick: MenuPageEvent()
     data class OnDrawerItemClicked(val selfClicked: Boolean): MenuPageEvent()
-    object onBarItemClicked: MenuPageEvent()
+    object OnBarItemClicked: MenuPageEvent()
 }
 
 data class MenuPageUiState(

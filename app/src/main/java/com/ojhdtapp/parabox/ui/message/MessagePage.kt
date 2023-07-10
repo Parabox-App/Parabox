@@ -58,7 +58,12 @@ fun MessagePage(
                 key = chatLazyPagingData.itemKey { it.chat.chatId },
                 contentType = chatLazyPagingData.itemContentType { "chat" }
             ){ index ->  
-                
+                SwipeToDismissContact(
+                    enabled = true,
+                    onDismissedToEnd = { true },
+                    onDismissedToStart = { true },
+                    onVibrate = {  }) {
+                }
             }
         }
     }

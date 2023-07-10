@@ -211,11 +211,11 @@ dependencies {
     implementation "androidx.datastore:datastore-preferences:1.0.0"
 
     // Accompanist
-    def acc_version = "0.28.0"
+    def acc_version = "0.31.5-beta"
     implementation "com.google.accompanist:accompanist-systemuicontroller:$acc_version"
     implementation "com.google.accompanist:accompanist-permissions:$acc_version"
     implementation "com.google.accompanist:accompanist-swiperefresh:$acc_version"
-    implementation "com.google.accompanist:accompanist-placeholder-material:$acc_version"
+    implementation "com.google.accompanist:accompanist-placeholder-material3:$acc_version"
 
     // Window
     implementation "androidx.window:window:1.2.0-alpha03"
