@@ -6,7 +6,10 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.Column
@@ -30,6 +33,7 @@ import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
@@ -114,14 +118,15 @@ private fun MenuNavigationWrapperUI(
             enterTransition = { fadeIn(tween(300)) + slideInVertically { 80 } },
             exitTransition = { fadeOut() },
         ),
-        defaultAnimationsForNestedNavGraph = mapOf(
+        defaultAnimationsForNestedNavGraph = emptyMap()
+//        mapOf(
 //                    NavGraphs.message to NestedNavGraphDefaultAnimations(
 //                        enterTransition = { scaleIn(tween(200), 0.9f) + fadeIn(tween(200)) },
 //                        exitTransition = { scaleOut(tween(200), 1.1f) + fadeOut(tween(200)) },
 //                        popEnterTransition = {scaleIn(tween(200), 1.1f) + fadeIn(tween(200))},
 //                        popExitTransition = {scaleOut(tween(200), 0.9f) + fadeOut(tween(200))}
 //                    )
-        )
+//        )
     )
     val coroutineScope = rememberCoroutineScope()
     // List
@@ -148,9 +153,9 @@ private fun MenuNavigationWrapperUI(
                 }
             }
 
-            is MenuPageEvent.OnDrawerClose -> {
+            is MenuPageEvent.OnMenuClick -> {
                 coroutineScope.launch {
-                    drawerState.close()
+                    if (drawerState.isOpen) drawerState.close() else drawerState.open()
                 }
             }
 
@@ -334,28 +339,15 @@ fun MenuAppContent(
     val coroutineScope = rememberCoroutineScope()
 
     Row(modifier = Modifier.fillMaxSize()) {
-        AnimatedVisibility(visible = navigationType == MenuNavigationType.NAVIGATION_RAIL) {
+        AnimatedVisibility(
+            visible = navigationType == MenuNavigationType.NAVIGATION_RAIL,
+            enter = slideInHorizontally(),
+            exit = slideOutHorizontally()
+        ) {
             MenuNavigationRail(
-                navController = navController,
-                onSelfItemClick = {
-                    coroutineScope.launch {
-                        if (!listState.canScrollForward) {
-                            listState.animateScrollToItem(0)
-                        } else {
-                            listState.animateScrollBy(1000f)
-                        }
-                    }
-                },
-                onMenuClick = {
-                    coroutineScope.launch {
-                        if (drawerState.isOpen) drawerState.close() else drawerState.open()
-                    }
-                },
-                onFABClick = {
-                    coroutineScope.launch {
-                        bottomSheetState.show()
-                    }
-                })
+                navController = menuNavController,
+                onEvent = onEvent
+            )
         }
         Column(
             modifier = Modifier
@@ -382,23 +374,13 @@ fun MenuAppContent(
                     dependency(devicePosture)
                 }
             ) {
-//                composable(MessageAndChatPageWrapperUIDestination) {
-//                    MessageAndChatPageWrapperUI(
-//                        mainNavController = menuNavController,
-//                        mainSharedViewModel = mainSharedViewModel,
-//                        listState = listState,
-//                        drawerState = drawerState,
-//                        bottomSheetState = bottomSheetState,
-//                        searchType = searchType
-//                    )
-//                }
-//                composable(FilePageDestination) {
-//                    FilePage(
-//                    )
-//                }
             }
 
-            AnimatedVisibility(visible = navigationType == MenuNavigationType.BOTTOM_NAVIGATION) {
+            AnimatedVisibility(
+                visible = navigationType == MenuNavigationType.BOTTOM_NAVIGATION,
+                enter = slideInVertically(),
+                exit = slideOutVertically()
+            ) {
                 MenuNavigationBar(
                     menuPageUiState = menuPageUiState,
                     navController = menuNavController,

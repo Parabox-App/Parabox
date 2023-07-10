@@ -221,7 +221,7 @@ class MainActivity : AppCompatActivity() {
             AppTheme {
                 CompositionLocalProvider(values = arrayOf(LocalFixedInsets provides fixedInsets)) {
                     DestinationsNavHost(
-                        modifier = Modifier.background(MaterialTheme.colorScheme.surface),
+                        modifier = Modifier.background(Color.Cyan),
                         navGraph = NavGraphs.root,
                         engine = mainNavHostEngine,
                         navController = mainNavController,

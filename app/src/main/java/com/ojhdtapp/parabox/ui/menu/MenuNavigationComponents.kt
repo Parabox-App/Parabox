@@ -31,7 +31,12 @@ enum class MenuNavigationDestination(
 ) {
     Message(NavGraphs.message, Icons.Outlined.Chat, Icons.Default.Chat, R.string.conversation),
     File(NavGraphs.file, Icons.Outlined.WorkOutline, Icons.Default.Work, R.string.work),
-    Contact(NavGraphs.contact, Icons.Outlined.Contacts, Icons.Default.Contacts, R.string.contact_person)
+    Contact(
+        NavGraphs.contact,
+        Icons.Outlined.Contacts,
+        Icons.Default.Contacts,
+        R.string.contact_person
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -109,7 +114,7 @@ fun MenuNavigationDrawerContent(
         IconButton(
             modifier = Modifier.padding(12.dp),
             onClick = {
-                onEvent(MenuPageEvent.OnDrawerClose)
+                onEvent(MenuPageEvent.OnMenuClick)
             }
         ) {
             Icon(imageVector = Icons.Outlined.MenuOpen, contentDescription = "menu_open")
@@ -208,19 +213,18 @@ fun MenuNavigationRail(
     modifier: Modifier = Modifier,
     navController: NavController,
     messageBadge: Int = 0,
-    onSelfItemClick: () -> Unit,
-    onMenuClick: () -> Unit,
-    onFABClick: () -> Unit
+    onEvent: (event: MenuPageEvent) -> Unit,
 ) {
     NavigationRail(
         modifier = modifier,
-        containerColor = NavigationRailDefaults.ContainerColor,
         header = {
-            IconButton(modifier = Modifier.statusBarsPadding(), onClick = onMenuClick) {
+            IconButton(
+                modifier = Modifier.statusBarsPadding(),
+                onClick = { onEvent(MenuPageEvent.OnMenuClick) }) {
                 Icon(imageVector = Icons.Outlined.Menu, contentDescription = "menu")
             }
             FloatingActionButton(
-                onClick = onFABClick,
+                onClick = { onEvent(MenuPageEvent.OnFABClicked) },
                 elevation = FloatingActionButtonDefaults.elevation(
                     defaultElevation = 0.dp,
                     pressedElevation = 0.dp
@@ -237,15 +241,15 @@ fun MenuNavigationRail(
             NavigationRailItem(
                 selected = isCurrentDestOnBackStack,
                 onClick = {
-                    if (isCurrentDestOnBackStack) onSelfItemClick()
+                    if (isCurrentDestOnBackStack) onEvent(MenuPageEvent.onBarItemClicked)
                     else {
-//                        navController.navigate(destination.graph) {
-//                            popUpTo(NavGraphs.menu) {
-//                                saveState = true
-//                            }
-//                            launchSingleTop = true
-//                            restoreState = true
-//                        }
+                        navController.navigate(destination.graph.route) {
+                            popUpTo(NavGraphs.menu.route) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
                 },
                 icon = {

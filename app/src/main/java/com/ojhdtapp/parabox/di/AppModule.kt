@@ -14,6 +14,7 @@ import com.ojhdtapp.parabox.domain.repository.ChatRepository
 import com.ojhdtapp.parabox.domain.repository.ContactRepository
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
+import com.ojhdtapp.parabox.domain.use_case.GetChat
 import com.ojhdtapp.parabox.domain.util.GsonParser
 import dagger.Module
 import dagger.Provides
@@ -79,4 +80,10 @@ object AppModule {
         @ApplicationContext applicationContext: Context,
         database: AppDatabase
     ): ChatRepository = ChatRepositoryImpl(context = applicationContext, db = database)
+
+    @Provides
+    @Singleton
+    fun provideGetChatUseCase(
+        chatRepository: ChatRepository
+    ): GetChat = GetChat(chatRepository)
 }

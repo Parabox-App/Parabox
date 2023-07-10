@@ -6,6 +6,7 @@ data class Chat (
     val name: String,
     val avatar: ParaboxResourceInfo,
     val latestMessageId: Long?,
+    val unreadMessageNum: Int = 0,
     val isHidden: Boolean = false,
     val isPinned : Boolean = false,
     val isArchived: Boolean = false,

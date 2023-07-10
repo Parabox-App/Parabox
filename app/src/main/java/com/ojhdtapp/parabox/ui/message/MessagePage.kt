@@ -25,6 +25,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemContentType
+import androidx.paging.compose.itemKey
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.common.*
@@ -42,15 +45,21 @@ fun MessagePage(
     layoutType: MessageLayoutType
 ) {
     val viewModel = hiltViewModel<MessagePageViewModel>()
+    val chatLazyPagingData =  viewModel.getChatPagingDataFlow().collectAsLazyPagingItems()
     Scaffold(modifier = modifier,
-    topBar = {
+        topBar = {
 //        SearchBar(query = , onQueryChange = , onSearch = , active = , onActiveChange = ) {
 //
 //    }
-    }) {
-        LazyColumn(modifier = Modifier.padding(it),state = listState){
-
-
+        }) {
+        LazyColumn(modifier = Modifier.padding(it), state = listState) {
+            items(
+                count = chatLazyPagingData.itemCount,
+                key = chatLazyPagingData.itemKey { it.chat.chatId },
+                contentType = chatLazyPagingData.itemContentType { "chat" }
+            ){ index ->  
+                
+            }
         }
     }
 }
@@ -73,9 +82,11 @@ fun SwipeToDismissContact(
                 DismissValue.DismissedToEnd -> {
                     onDismissedToEnd()
                 }
+
                 DismissValue.DismissedToStart -> {
                     onDismissedToStart()
                 }
+
                 else -> false
             }
         },
@@ -85,7 +96,7 @@ fun SwipeToDismissContact(
         if (dismissState.progress != 0f && dismissState.progress != 1f)
             onVibrate()
     }
-    LaunchedEffect(key1 = Unit){
+    LaunchedEffect(key1 = Unit) {
         dismissState.reset()
     }
     val isDismissed = dismissState.isDismissed(DismissDirection.EndToStart)

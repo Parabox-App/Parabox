@@ -6,8 +6,8 @@ data class ParaboxResult(
 ){
     companion object{
         const val SUCCESS = 10000
+        const val SUCCESS_MSG = "Success"
         const val ERROR_UNINITIALIZED = 20001
-
         const val ERROR_UNINITIALIZED_MSG = "Uninitialized"
     }
 }

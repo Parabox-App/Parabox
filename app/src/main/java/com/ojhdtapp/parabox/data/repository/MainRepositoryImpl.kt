@@ -31,6 +31,6 @@ class MainRepositoryImpl @Inject constructor(
             db.messageDao.insertMessage(messageEntity)
         }
 
-        return ParaboxResult(1, "")
+        return ParaboxResult(ParaboxResult.SUCCESS, ParaboxResult.SUCCESS_MSG)
     }
 }

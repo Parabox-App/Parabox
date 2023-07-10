@@ -187,7 +187,7 @@ dependencies {
     // Paging
     def paging_version = "3.2.0-rc01"
     implementation "androidx.paging:paging-runtime:$paging_version"
-    implementation "androidx.paging:paging-compose:3.2.0-rc01"
+    implementation "androidx.paging:paging-compose:$paging_version"
 
     // Coil
     implementation 'io.coil-kt:coil:2.2.2'
