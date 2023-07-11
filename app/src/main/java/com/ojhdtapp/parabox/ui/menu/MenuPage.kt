@@ -12,6 +12,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -352,7 +353,8 @@ fun MenuAppContent(
         }
         Column(
             modifier = Modifier.weight(1f)
-                .background(MaterialTheme.colorScheme.inverseOnSurface)
+                .background(MaterialTheme.colorScheme.inverseOnSurface),
+            verticalArrangement = Arrangement.Bottom
         ) {
             DestinationsNavHost(
                 modifier = Modifier

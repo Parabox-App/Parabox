@@ -33,7 +33,7 @@ import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.common.*
 
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun MessagePage(
     modifier: Modifier = Modifier,
@@ -45,7 +45,7 @@ fun MessagePage(
     layoutType: MessageLayoutType
 ) {
     val viewModel = hiltViewModel<MessagePageViewModel>()
-    val chatLazyPagingData =  viewModel.getChatPagingDataFlow().collectAsLazyPagingItems()
+    val chatLazyPagingData = viewModel.getChatPagingDataFlow().collectAsLazyPagingItems()
     Scaffold(modifier = modifier,
         topBar = {
 //        SearchBar(query = , onQueryChange = , onSearch = , active = , onActiveChange = ) {
@@ -54,18 +54,40 @@ fun MessagePage(
         }) {
         LazyColumn(contentPadding = it, state = listState) {
             item {
-                androidx.compose.material3.Text(text = "text", )
+                androidx.compose.material3.Text(text = "text")
             }
             items(
                 count = chatLazyPagingData.itemCount,
                 key = chatLazyPagingData.itemKey { it.chat.chatId },
                 contentType = chatLazyPagingData.itemContentType { "chat" }
-            ){ index ->  
+            ) { index ->
                 SwipeToDismissContact(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .animateItemPlacement(),
                     enabled = true,
+                    startToEndIcon = Icons.Outlined.Archive,
+                    endToStartIcon = Icons.Outlined.MarkChatRead,
                     onDismissedToEnd = { true },
                     onDismissedToStart = { true },
-                    onVibrate = {  }) {
+                    onVibrate = { }) {
+                    if (chatLazyPagingData[index] == null) {
+                        EmptyChatItem(
+                            isFirst = index == 0,
+                            isLast = index == chatLazyPagingData.itemCount - 1
+                        )
+                    } else {
+                        ChatItem(
+                            chatWithLatestMessage = chatLazyPagingData[index]!!,
+                            contact =
+                                viewModel.getLatestMessageSenderWithCache(
+                                    chatLazyPagingData[index]!!.message?.senderId
+                                ).collectAsState(initial = Resource.Loading())
+                            ,
+                            isFirst = index == 0,
+                            isLast = index == chatLazyPagingData.itemCount - 1
+                        )
+                    }
                 }
             }
         }
@@ -98,7 +120,7 @@ fun SwipeToDismissContact(
                 else -> false
             }
         },
-        positionalThreshold = { distance -> distance * .25f }
+        positionalThreshold = { distance -> distance * .2f }
     )
     LaunchedEffect(key1 = dismissState.targetValue == DismissValue.Default) {
         if (dismissState.progress != 0f && dismissState.progress != 1f)

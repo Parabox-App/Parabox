@@ -10,11 +10,15 @@ import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.Converters
 import com.ojhdtapp.parabox.data.repository.ChatRepositoryImpl
 import com.ojhdtapp.parabox.data.repository.ContactRepositoryImpl
+import com.ojhdtapp.parabox.data.repository.MessageRepositoryImpl
 import com.ojhdtapp.parabox.domain.repository.ChatRepository
 import com.ojhdtapp.parabox.domain.repository.ContactRepository
 import com.ojhdtapp.parabox.domain.repository.MainRepository
+import com.ojhdtapp.parabox.domain.repository.MessageRepository
 import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
 import com.ojhdtapp.parabox.domain.use_case.GetChat
+import com.ojhdtapp.parabox.domain.use_case.GetContact
+import com.ojhdtapp.parabox.domain.use_case.GetMessage
 import com.ojhdtapp.parabox.domain.util.GsonParser
 import dagger.Module
 import dagger.Provides
@@ -83,7 +87,26 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideMessageRepository(
+        @ApplicationContext applicationContext: Context,
+        database: AppDatabase
+    ): MessageRepository = MessageRepositoryImpl(context = applicationContext, db = database)
+
+    @Provides
+    @Singleton
     fun provideGetChatUseCase(
         chatRepository: ChatRepository
     ): GetChat = GetChat(chatRepository)
+
+    @Provides
+    @Singleton
+    fun provideGetMessageUseCase(
+        messageRepository: MessageRepository
+    ): GetMessage = GetMessage(messageRepository)
+
+    @Provides
+    @Singleton
+    fun provideGetContactUseCase(
+        contactRepository: ContactRepository
+    ): GetContact = GetContact(contactRepository)
 }

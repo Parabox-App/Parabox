@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.domain.use_case
 
+import android.util.Log
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
@@ -21,6 +22,7 @@ class GetChat @Inject constructor(
         return Pager(
             PagingConfig(
                 pageSize = 20,
+                enablePlaceholders = true
             )
         ) { repository.getChatPagingSource() }
             .flow
@@ -28,7 +30,7 @@ class GetChat @Inject constructor(
                 pagingData.map {
                     it.toChatWithLatestMessage()
                 }.filter { chatWithMsg ->
-                    filter.all { it.check(chatWithMsg.chat) }
+                    filter.isEmpty() || filter.all { it.check(chatWithMsg.chat) }
                 }
             }
     }

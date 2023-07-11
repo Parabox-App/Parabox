@@ -6,4 +6,6 @@ import kotlinx.coroutines.flow.Flow
 
 interface ContactRepository {
     fun queryContact(query: String): Flow<Resource<List<Contact>>>
+
+    fun getContactById(contactId: Long): Flow<Resource<Contact>>
 }

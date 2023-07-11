@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Done
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -41,18 +42,21 @@ import coil.request.ImageRequest
 import com.google.accompanist.placeholder.placeholder
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.AvatarUtil
+import com.ojhdtapp.parabox.core.util.Resource
+import com.ojhdtapp.parabox.core.util.toTimeUntilNow
 import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.ChatWithLatestMessage
+import com.ojhdtapp.parabox.domain.model.Contact
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ChatItem(
     modifier: Modifier = Modifier,
     chatWithLatestMessage: ChatWithLatestMessage,
+    contact: State<Resource<Contact>>,
     icon: @Composable() (() -> Unit)? = null,
     isFirst: Boolean,
     isLast: Boolean,
-    isLoading: Boolean = true,
     isSelected: Boolean = false,
     isEditing: Boolean = false,
     isExpanded: Boolean = false,
@@ -113,15 +117,6 @@ fun ChatItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (isLoading) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.secondary)
-                        .placeholder(true, MaterialTheme.colorScheme.secondaryContainer)
-                )
-            } else {
                 Box(
                     modifier = Modifier
                         .clip(CircleShape)
@@ -170,19 +165,18 @@ fun ChatItem(
                         }
                     }
                 }
-            }
             Spacer(modifier = Modifier.width(16.dp))
             Column(
                 modifier = Modifier
                     .weight(1f), verticalArrangement = Arrangement.Center
             ) {
-                    Text(
-                        modifier = Modifier.placeholder(visible = isLoading, MaterialTheme.colorScheme.onSecondaryContainer),
-                        text = chatWithLatestMessage.chat.name ?: context.getString(R.string.contact_name),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = textColor,
-                        maxLines = 1
-                    )
+                Text(
+                    text = chatWithLatestMessage.chat.name
+                        ?: context.getString(R.string.contact_name),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = textColor,
+                    maxLines = 1
+                )
                 Spacer(modifier = Modifier.height(4.dp))
 //                    Text(
 //                        text = buildAnnotatedString {
@@ -210,27 +204,95 @@ fun ChatItem(
 //                        maxLines = 1
 //                    )
             }
-            if (!isLoading) {
-//                Column(
-//                    modifier = Modifier.align(Alignment.Top),
-//                    horizontalAlignment = Alignment.End,
-//                    verticalArrangement = Arrangement.Top
-//                ) {
-//                    Spacer(modifier = Modifier.height(4.dp))
-//                    Text(
-//                        text = (timestamp ?: contact?.latestMessage?.timestamp)?.toTimeUntilNow(
-//                            context
-//                        )
-//                            ?: "",
-//                        style = MaterialTheme.typography.labelMedium
-//                    )
-//                    Spacer(modifier = Modifier.height(8.dp))
-//                    val unreadMessagesNum =
-//                        unreadMessagesNum ?: contact?.latestMessage?.unreadMessagesNum ?: 0
-//                    if (unreadMessagesNum != 0) {
-//                        Badge(containerColor = MaterialTheme.colorScheme.primary) { Text(text = "$unreadMessagesNum") }
-//                    }
-//                }
+                Column(
+                    modifier = Modifier.align(Alignment.Top),
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.Top
+                ) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = (chatWithLatestMessage.message?.timestamp)?.toTimeUntilNow(
+                            context
+                        ) ?: "",
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    if (chatWithLatestMessage.chat.unreadMessageNum > 0) {
+                        Badge(containerColor = MaterialTheme.colorScheme.primary) { Text(text = "${chatWithLatestMessage.chat.unreadMessageNum}") }
+                    }
+                }
+            }
+        }
+}
+
+@Composable
+fun EmptyChatItem(
+    modifier: Modifier = Modifier,
+    icon: @Composable() (() -> Unit)? = null,
+    isFirst: Boolean,
+    isLast: Boolean,
+) {
+    val context = LocalContext.current
+    val topRadius by animateDpAsState(
+        targetValue = if (isFirst) 24.dp else 3.dp
+    )
+    val bottomRadius by animateDpAsState(
+        targetValue = if (isLast) 24.dp else 3.dp
+    )
+    Surface(
+        modifier = modifier
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(
+            topStart = topRadius,
+            topEnd = topRadius,
+            bottomEnd = bottomRadius,
+            bottomStart = bottomRadius
+        ),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 3.dp
+    ) {
+        Row(
+            modifier = Modifier
+//            .background(backgroundColor)
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.secondary)
+                    .placeholder(true, MaterialTheme.colorScheme.secondaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                icon?.invoke()
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(
+                modifier = Modifier
+                    .weight(1f), verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    modifier = Modifier.placeholder(
+                        visible = true,
+                        MaterialTheme.colorScheme.onSecondaryContainer
+                    ),
+                    text = context.getString(R.string.contact_name),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    modifier = Modifier.placeholder(
+                        visible = true,
+                        MaterialTheme.colorScheme.onSecondaryContainer
+                    ),
+                    text = context.getString(R.string.contact_name),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1
+                )
             }
         }
     }
