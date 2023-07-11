@@ -15,6 +15,7 @@ import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.ExperimentalMaterialApi
@@ -33,6 +34,7 @@ import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
@@ -337,7 +339,7 @@ fun MenuAppContent(
 ) {
     val coroutineScope = rememberCoroutineScope()
 
-    Row(modifier = Modifier.fillMaxSize()) {
+    Row(modifier = Modifier.fillMaxWidth()) {
         AnimatedVisibility(
             visible = navigationType == MenuNavigationType.NAVIGATION_RAIL,
             enter = slideInHorizontally(),
@@ -349,12 +351,13 @@ fun MenuAppContent(
             )
         }
         Column(
-            modifier = Modifier
-                .fillMaxSize()
+            modifier = Modifier.weight(1f)
                 .background(MaterialTheme.colorScheme.inverseOnSurface)
         ) {
             DestinationsNavHost(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
                 navGraph = NavGraphs.menu,
                 engine = menuNavHostEngine,
                 navController = menuNavController,

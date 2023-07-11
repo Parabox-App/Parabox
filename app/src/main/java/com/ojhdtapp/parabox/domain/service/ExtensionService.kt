@@ -45,8 +45,8 @@ class ExtensionService : LifecycleService() {
                         }
 
                     }
-                    it.ext.init(baseContext, bridge)
                     lifecycle.addObserver(it.ext)
+                    it.ext.init(baseContext, bridge)
                 }
             }
         }

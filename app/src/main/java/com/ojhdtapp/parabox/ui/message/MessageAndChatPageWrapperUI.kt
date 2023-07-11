@@ -2,7 +2,9 @@ package com.ojhdtapp.parabox.ui.message
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.DrawerState
@@ -56,11 +58,12 @@ fun MessageAndChatPageWrapperUI(
             layoutType = MessageLayoutType.NORMAL
         }
     }
-    Row(modifier = modifier) {
+//    Box(modifier = Modifier.size(200.dp).background(Color.Red))
+    Row() {
         MessagePage(
             modifier =
             if (layoutType == MessageLayoutType.SPLIT)
-                modifier.width(400.dp) else modifier.weight(1f),
+                modifier.width(400.dp) else modifier.weight(1f).background(Color.Red),
             mainNavController = mainNavController,
             mainSharedViewModel = mainSharedViewModel,
             listState = listState,

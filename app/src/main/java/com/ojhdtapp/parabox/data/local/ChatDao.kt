@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import com.ojhdtapp.parabox.data.local.entity.ChatBeanEntity
 import com.ojhdtapp.parabox.data.local.entity.ChatEntity
 import com.ojhdtapp.parabox.data.local.entity.ChatWithLatestMessageEntity
 import kotlinx.coroutines.flow.Flow

@@ -178,56 +178,59 @@ fun ChatItem(
             ) {
                     Text(
                         modifier = Modifier.placeholder(visible = isLoading, MaterialTheme.colorScheme.onSecondaryContainer),
-                        text = chat?.name ?: context.getString(R.string.contact_name),
+                        text = chatWithLatestMessage.chat.name ?: context.getString(R.string.contact_name),
                         style = MaterialTheme.typography.titleMedium,
                         color = textColor,
                         maxLines = 1
                     )
                 Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = buildAnnotatedString {
-                            if (subTitle.isNullOrEmpty()) {
-                                if (contact?.profile?.name != contact?.latestMessage?.sender && contact?.latestMessage?.sender != null) {
-                                    withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                                        append(if (contact.latestMessage.sentByMe) username else contact.latestMessage.sender)
-                                        append(": ")
-                                    }
-                                }
-                                withStyle(style = SpanStyle(color = if (noBackground) MaterialTheme.colorScheme.onSurface else textColor)) {
-                                    append(subTitle ?: contact?.latestMessage?.content ?: "")
-                                }
-                            } else {
-                                withStyle(style = SpanStyle(color = if (noBackground) MaterialTheme.colorScheme.onSurface else textColor)) {
-                                    append(subTitle)
-                                }
-                            }
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = textColor,
-                        maxLines = 1
-                    )
+//                    Text(
+//                        text = buildAnnotatedString {
+//                            chatWithLatestMessage.message?.also { message ->
+//                                message.
+//                            }
+//                            if (subTitle.isNullOrEmpty()) {
+//                                if (contact?.profile?.name != contact?.latestMessage?.sender && contact?.latestMessage?.sender != null) {
+//                                    withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+//                                        append(if (contact.latestMessage.sentByMe) username else contact.latestMessage.sender)
+//                                        append(": ")
+//                                    }
+//                                }
+//                                withStyle(style = SpanStyle(color = if (noBackground) MaterialTheme.colorScheme.onSurface else textColor)) {
+//                                    append(subTitle ?: contact?.latestMessage?.content ?: "")
+//                                }
+//                            } else {
+//                                withStyle(style = SpanStyle(color = if (noBackground) MaterialTheme.colorScheme.onSurface else textColor)) {
+//                                    append(subTitle)
+//                                }
+//                            }
+//                        },
+//                        style = MaterialTheme.typography.bodyMedium,
+//                        color = textColor,
+//                        maxLines = 1
+//                    )
             }
             if (!isLoading) {
-                Column(
-                    modifier = Modifier.align(Alignment.Top),
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.Top
-                ) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = (timestamp ?: contact?.latestMessage?.timestamp)?.toTimeUntilNow(
-                            context
-                        )
-                            ?: "",
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    val unreadMessagesNum =
-                        unreadMessagesNum ?: contact?.latestMessage?.unreadMessagesNum ?: 0
-                    if (unreadMessagesNum != 0) {
-                        Badge(containerColor = MaterialTheme.colorScheme.primary) { Text(text = "$unreadMessagesNum") }
-                    }
-                }
+//                Column(
+//                    modifier = Modifier.align(Alignment.Top),
+//                    horizontalAlignment = Alignment.End,
+//                    verticalArrangement = Arrangement.Top
+//                ) {
+//                    Spacer(modifier = Modifier.height(4.dp))
+//                    Text(
+//                        text = (timestamp ?: contact?.latestMessage?.timestamp)?.toTimeUntilNow(
+//                            context
+//                        )
+//                            ?: "",
+//                        style = MaterialTheme.typography.labelMedium
+//                    )
+//                    Spacer(modifier = Modifier.height(8.dp))
+//                    val unreadMessagesNum =
+//                        unreadMessagesNum ?: contact?.latestMessage?.unreadMessagesNum ?: 0
+//                    if (unreadMessagesNum != 0) {
+//                        Badge(containerColor = MaterialTheme.colorScheme.primary) { Text(text = "$unreadMessagesNum") }
+//                    }
+//                }
             }
         }
     }

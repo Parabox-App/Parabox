@@ -52,7 +52,10 @@ fun MessagePage(
 //
 //    }
         }) {
-        LazyColumn(modifier = Modifier.padding(it), state = listState) {
+        LazyColumn(contentPadding = it, state = listState) {
+            item {
+                androidx.compose.material3.Text(text = "text", )
+            }
             items(
                 count = chatLazyPagingData.itemCount,
                 key = chatLazyPagingData.itemKey { it.chat.chatId },

@@ -5,6 +5,7 @@ import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.filter
 import androidx.paging.map
+import com.ojhdtapp.parabox.domain.model.ChatBean
 import com.ojhdtapp.parabox.domain.model.ChatWithLatestMessage
 import com.ojhdtapp.parabox.domain.repository.ChatRepository
 import com.ojhdtapp.parabox.ui.message.GetChatFilter

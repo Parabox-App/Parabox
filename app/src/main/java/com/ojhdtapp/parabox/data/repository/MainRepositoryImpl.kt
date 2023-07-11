@@ -1,4 +1,5 @@
 import android.content.Context
+import android.util.Log
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.getDataStoreValue
 import com.ojhdtapp.parabox.data.local.AppDatabase
@@ -17,6 +18,7 @@ class MainRepositoryImpl @Inject constructor(
     private val db: AppDatabase,
 ) : MainRepository {
     override suspend fun receiveMessage(msg: ReceiveMessage, ext: ExtensionInfo): ParaboxResult {
+        Log.d("parabox", "receiving msg from ${ext.name}")
         coroutineScope {
             val allowForegroundNotification = context.getDataStoreValue(DataStoreKeys.SETTINGS_ALLOW_FOREGROUND_NOTIFICATION, false)
             val chatEntity = buildChatEntity(msg, ext)

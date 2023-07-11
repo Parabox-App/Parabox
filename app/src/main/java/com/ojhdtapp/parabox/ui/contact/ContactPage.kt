@@ -18,7 +18,7 @@ fun ContactPage(
     modifier: Modifier = Modifier
 ){
     val viewModel = hiltViewModel<ContactPageViewModel>()
-    Scaffold(modifier = modifier.fillMaxSize()) {
+    Scaffold() {
         LazyColumn(contentPadding = it){
 
         }

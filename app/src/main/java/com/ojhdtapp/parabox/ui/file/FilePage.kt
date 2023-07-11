@@ -17,7 +17,7 @@ fun FilePage(
     modifier: Modifier = Modifier,
 ) {
     val viewModel: FilePageViewModel = hiltViewModel()
-    Scaffold(modifier = modifier.fillMaxSize()) {
+    Scaffold() {
         LazyColumn(contentPadding = it){
 
         }
