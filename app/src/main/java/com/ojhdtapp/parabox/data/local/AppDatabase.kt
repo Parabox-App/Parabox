@@ -4,6 +4,7 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.ojhdtapp.parabox.data.local.entity.ChatEntity
+import com.ojhdtapp.parabox.data.local.entity.ChatLatestMessageIdUpdate
 import com.ojhdtapp.parabox.data.local.entity.ContactEntity
 import com.ojhdtapp.parabox.data.local.entity.MessageEntity
 

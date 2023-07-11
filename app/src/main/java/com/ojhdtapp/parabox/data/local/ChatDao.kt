@@ -6,9 +6,10 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
-import com.ojhdtapp.parabox.data.local.entity.ChatBeanEntity
+import androidx.room.Update
 import com.ojhdtapp.parabox.data.local.entity.ChatEntity
 import com.ojhdtapp.parabox.data.local.entity.ChatWithLatestMessageEntity
+import com.ojhdtapp.parabox.data.local.entity.ChatLatestMessageIdUpdate
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -17,10 +18,12 @@ interface ChatDao {
     fun insertChat(chat: ChatEntity): Long
 
     @Transaction
-    @Query("SELECT chat_entity.* FROM chat_entity " +
-            "INNER JOIN message_entity ON chat_entity.latestMessageId = message_entity.messageId " +
-            "WHERE NOT isHidden " +
-            "ORDER BY message_entity.timestamp DESC")
+    @Query(
+        "SELECT chat_entity.* FROM chat_entity " +
+                "INNER JOIN message_entity ON chat_entity.latestMessageId = message_entity.messageId " +
+                "WHERE NOT isHidden " +
+                "ORDER BY message_entity.timestamp DESC"
+    )
     fun getChatPagingSource(): PagingSource<Int, ChatWithLatestMessageEntity>
 
     @Query("SELECT * FROM chat_entity WHERE chatId = :id LIMIT 1")
@@ -40,4 +43,7 @@ interface ChatDao {
 
     @Query("SELECT * FROM chat_entity WHERE NOT isHidden AND NOT isArchived")
     fun getAllUnhiddenChats(): Flow<List<ChatEntity>>
+
+    @Update(entity = ChatEntity::class)
+    fun updateLatestMessageId(obj: ChatLatestMessageIdUpdate): Int
 }

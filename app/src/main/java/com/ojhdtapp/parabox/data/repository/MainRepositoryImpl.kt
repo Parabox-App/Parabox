@@ -7,6 +7,7 @@ import com.ojhdtapp.parabox.data.local.ExtensionInfo
 import com.ojhdtapp.parabox.data.local.buildChatEntity
 import com.ojhdtapp.parabox.data.local.buildContactEntity
 import com.ojhdtapp.parabox.data.local.buildMessageEntity
+import com.ojhdtapp.parabox.data.local.entity.ChatLatestMessageIdUpdate
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
@@ -30,7 +31,10 @@ class MainRepositoryImpl @Inject constructor(
                 db.contactDao.insertContact(contactEntity)
             }
             val messageEntity = buildMessageEntity(msg, chatIdDeferred.await(), contactIdDeferred.await())
-            db.messageDao.insertMessage(messageEntity)
+            val messageIdDeferred = async {
+                db.messageDao.insertMessage(messageEntity)
+            }
+            db.chatDao.updateLatestMessageId(ChatLatestMessageIdUpdate(chatId = chatIdDeferred.await(), latestMessageId = messageIdDeferred.await()))
         }
 
         return ParaboxResult(ParaboxResult.SUCCESS, ParaboxResult.SUCCESS_MSG)

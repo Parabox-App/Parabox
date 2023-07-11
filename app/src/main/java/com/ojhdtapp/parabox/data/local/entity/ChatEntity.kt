@@ -40,3 +40,11 @@ data class ChatEntity(
         )
     }
 }
+
+@Entity
+data class ChatLatestMessageIdUpdate(
+    @ColumnInfo(name = "chatId")
+    val chatId: Long,
+    @ColumnInfo(name = "latestMessageId")
+    val latestMessageId: Long?,
+)
