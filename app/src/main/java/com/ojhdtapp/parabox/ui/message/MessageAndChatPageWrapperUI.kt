@@ -13,9 +13,12 @@ import androidx.compose.material3.SheetState
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.common.DevicePosture
@@ -58,12 +61,21 @@ fun MessageAndChatPageWrapperUI(
             layoutType = MessageLayoutType.NORMAL
         }
     }
-//    Box(modifier = Modifier.size(200.dp).background(Color.Red))
+    val messagePageViewModel = hiltViewModel<MessagePageViewModel>()
+    val messagePageState by messagePageViewModel.pageStateFlow.collectAsState()
     Row() {
+        EnabledChatFilterDialog(
+            openDialog = messagePageState.openEnabledChatFilterDialog,
+            enabledList = messagePageState.enabledGetChatFilterList,
+            onConfirm = {},
+            onDismiss = {}
+        )
         MessagePage(
             modifier =
             if (layoutType == MessageLayoutType.SPLIT)
-                modifier.width(400.dp) else modifier.weight(1f).background(Color.Red),
+                modifier.width(400.dp) else modifier
+                .weight(1f)
+                .background(Color.Red),
             mainNavController = mainNavController,
             mainSharedViewModel = mainSharedViewModel,
             listState = listState,

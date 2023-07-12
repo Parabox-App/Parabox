@@ -18,6 +18,7 @@ data class ChatEntity(
     val isNotificationEnabled: Boolean = true,
     val tags: List<String>,
     val subChatIds: List<Long>,
+    val type: Int,
     val pkg: String,
     val uid: String,
     @PrimaryKey(autoGenerate = true) val chatId: Long = 0,
@@ -34,6 +35,7 @@ data class ChatEntity(
             isNotificationEnabled,
             tags,
             subChatIds,
+            type,
             pkg,
             uid,
             chatId

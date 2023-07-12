@@ -2,33 +2,21 @@
 
 package com.ojhdtapp.parabox.ui.message
 
-import android.util.Log
 import androidx.compose.animation.*
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
-import androidx.compose.material3.DismissDirection
-import androidx.compose.material3.DismissValue
 import androidx.compose.material3.DrawerState
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.rememberNestedScrollInteropConnection
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
@@ -49,6 +37,7 @@ fun MessagePage(
     layoutType: MessageLayoutType
 ) {
     val viewModel = hiltViewModel<MessagePageViewModel>()
+    val pageState by viewModel.pageStateFlow.collectAsState()
     val chatLazyPagingData = viewModel.getChatPagingDataFlow().collectAsLazyPagingItems()
     Scaffold(modifier = modifier,
         topBar = {
@@ -62,7 +51,23 @@ fun MessagePage(
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             item {
-                androidx.compose.material3.Text(text = "text")
+                Text(text = "text")
+            }
+            item {
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    FilledTonalIconButton(onClick = { /* doSomething() */ }) {
+                        Icon(Icons.Outlined.Lock, contentDescription = "Localized description")
+                    }
+                    pageState.selectedGetChatFilterList.forEach {
+                        MyFilterChip(selected = it in pageState.selectedGetChatFilterList,
+                            label = { Text(text = "text") }) {
+                            viewModel.addOrRemoveSelectedGetChatFilter(it)
+                        }
+                    }
+                }
             }
 //            if (chatLazyPagingData.loadState.refresh == LoadState.Loading) {
 //                items(12) {
@@ -83,7 +88,7 @@ fun MessagePage(
                     modifier = Modifier
                         .padding(start = 16.dp, end = 16.dp)
                         .animateItemPlacement(),
-                    enabled = viewModel.enableSwipeToDismissFlow.collectAsState(initial = false).value,
+                    enabled = pageState.datastore.enableSwipeToDismiss,
                     startToEndIcon = Icons.Outlined.Archive,
                     endToStartIcon = Icons.Outlined.MarkChatRead,
                     onDismissedToEnd = { true },

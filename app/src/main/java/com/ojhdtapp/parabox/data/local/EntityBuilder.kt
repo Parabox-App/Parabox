@@ -26,6 +26,7 @@ fun buildChatEntity(msg: ReceiveMessage, ext: ExtensionInfo): ChatEntity {
         isNotificationEnabled = false,
         tags = emptyList(),
         subChatIds = emptyList(),
+        type = msg.chat.type,
         pkg = ext.pkg,
         uid = msg.chat.uid
     )

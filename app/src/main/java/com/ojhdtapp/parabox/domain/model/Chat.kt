@@ -13,6 +13,7 @@ data class Chat (
     val isNotificationEnabled : Boolean = true,
     val tags: List<String>,
     val subChatIds: List<Long>,
+    val type: Int,
     val pkg: String,
     val uid: String,
     val chatId: Long,
