@@ -5,8 +5,10 @@ import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.repository.ContactRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class ContactRepositoryImpl @Inject constructor(
@@ -21,10 +23,15 @@ class ContactRepositoryImpl @Inject constructor(
         return flow {
             emit(Resource.Loading())
             try {
-                emit(db.contactDao.getContactById(contactId)?.toContact()?.let {
-                    Resource.Success(it)
-                } ?: Resource.Error("not found"))
+                emit(
+                    withContext(Dispatchers.IO){
+                        db.contactDao.getContactById(contactId)?.toContact()?.let {
+                            Resource.Success(it)
+                        }
+                    } ?: Resource.Error("not found")
+                )
             } catch (e: Exception) {
+                e.printStackTrace()
                 emit(Resource.Error("unknown error"))
             }
         }

@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.ui.message
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -28,9 +29,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -38,23 +42,29 @@ class MessagePageViewModel @Inject constructor(
     @ApplicationContext val context: Context,
     val getChat: GetChat,
     val getContact: GetContact,
-): ViewModel() {
+) : ViewModel() {
     private var _pageStateFlow = MutableStateFlow(MessagePageState())
     val pageStateFlow get() = _pageStateFlow.asStateFlow()
 
-    val chatLatestMessageSenderMap = mutableMapOf<Long, Resource<Contact>>()
+    private val chatLatestMessageSenderMap = mutableMapOf<Long, Resource<Contact>>()
 
-    fun getLatestMessageSenderWithCache(senderId: Long?): Flow<Resource<Contact>>{
+    fun getLatestMessageSenderWithCache(senderId: Long?): Flow<Resource<Contact>> {
         return flow {
-            if(senderId == null){
+            if (senderId == null) {
                 emit(Resource.Error("no sender"))
-            }else{
-                emit(chatLatestMessageSenderMap.getOrPut(senderId){
-
-                })
-                emitAll(getContact.byId(senderId))
+            } else {
+                if (chatLatestMessageSenderMap[senderId] != null) {
+                    emit(chatLatestMessageSenderMap[senderId]!!)
+                } else {
+                    emitAll(
+                        getContact.byId(senderId).onEach {
+                            if (it is Resource.Success) {
+                                chatLatestMessageSenderMap[senderId] = it
+                            }
+                        }
+                    )
+                }
             }
-
         }
     }
 

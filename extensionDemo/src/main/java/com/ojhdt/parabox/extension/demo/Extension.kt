@@ -14,8 +14,8 @@ import kotlinx.coroutines.launch
 class Extension : ParaboxExtension() {
     override fun onInitialized() {
         lifecycleScope!!.launch(Dispatchers.IO) {
-            delay(5000)
             repeat(5) { num ->
+                delay(3000)
                 receiveMessage(
                     message = ReceiveMessage(
                         contents = listOf(

@@ -65,7 +65,7 @@ fun MessagePage(
                     modifier = Modifier
                         .padding(horizontal = 16.dp)
                         .animateItemPlacement(),
-                    enabled = true,
+                    enabled = false,
                     startToEndIcon = Icons.Outlined.Archive,
                     endToStartIcon = Icons.Outlined.MarkChatRead,
                     onDismissedToEnd = { true },
@@ -77,13 +77,12 @@ fun MessagePage(
                             isLast = index == chatLazyPagingData.itemCount - 1
                         )
                     } else {
+                        val contact by viewModel.getLatestMessageSenderWithCache(
+                                chatLazyPagingData[index]!!.message?.senderId
+                            ).collectAsState(initial = Resource.Loading())
                         ChatItem(
                             chatWithLatestMessage = chatLazyPagingData[index]!!,
-                            contact =
-                                viewModel.getLatestMessageSenderWithCache(
-                                    chatLazyPagingData[index]!!.message?.senderId
-                                ).collectAsState(initial = Resource.Loading())
-                            ,
+                            contact = contact,
                             isFirst = index == 0,
                             isLast = index == chatLazyPagingData.itemCount - 1
                         )

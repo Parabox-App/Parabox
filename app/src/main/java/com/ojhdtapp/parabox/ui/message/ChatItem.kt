@@ -31,7 +31,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
@@ -53,7 +55,7 @@ import com.ojhdtapp.parabox.domain.model.Contact
 fun ChatItem(
     modifier: Modifier = Modifier,
     chatWithLatestMessage: ChatWithLatestMessage,
-    contact: State<Resource<Contact>>,
+    contact: Resource<Contact>,
     icon: @Composable() (() -> Unit)? = null,
     isFirst: Boolean,
     isLast: Boolean,
@@ -153,7 +155,7 @@ fun ChatItem(
                                             .fillMaxSize()
                                             .placeholder(
                                                 visible = state is AsyncImagePainter.State.Loading,
-                                                color = MaterialTheme.colorScheme.primary
+                                                color = MaterialTheme.colorScheme.secondaryContainer
                                             ),
                                         bitmap = namedAvatarBm,
                                         contentDescription = "named_avatar"
@@ -178,31 +180,30 @@ fun ChatItem(
                     maxLines = 1
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-//                    Text(
-//                        text = buildAnnotatedString {
-//                            chatWithLatestMessage.message?.also { message ->
-//                                message.
-//                            }
-//                            if (subTitle.isNullOrEmpty()) {
-//                                if (contact?.profile?.name != contact?.latestMessage?.sender && contact?.latestMessage?.sender != null) {
-//                                    withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-//                                        append(if (contact.latestMessage.sentByMe) username else contact.latestMessage.sender)
-//                                        append(": ")
-//                                    }
-//                                }
-//                                withStyle(style = SpanStyle(color = if (noBackground) MaterialTheme.colorScheme.onSurface else textColor)) {
-//                                    append(subTitle ?: contact?.latestMessage?.content ?: "")
-//                                }
-//                            } else {
-//                                withStyle(style = SpanStyle(color = if (noBackground) MaterialTheme.colorScheme.onSurface else textColor)) {
-//                                    append(subTitle)
-//                                }
-//                            }
-//                        },
-//                        style = MaterialTheme.typography.bodyMedium,
-//                        color = textColor,
-//                        maxLines = 1
-//                    )
+                    Text(
+                        modifier = Modifier.placeholder(
+                            visible = contact !is Resource.Success,
+                            color = MaterialTheme.colorScheme.secondaryContainer),
+                        text = buildAnnotatedString {
+                            chatWithLatestMessage.message?.also { message ->
+                                message.contentString
+                            }
+                            withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                                if(chatWithLatestMessage.message?.sentByMe == true){
+                                    append(username)
+                                } else {
+                                    append(contact.data?.name)
+                                }
+                                append(": ")
+                            }
+                            withStyle(style = SpanStyle(color = textColor)) {
+                                append(chatWithLatestMessage.message?.contentString)
+                            }
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = textColor,
+                        maxLines = 1
+                    )
             }
                 Column(
                     modifier = Modifier.align(Alignment.Top),
@@ -275,7 +276,7 @@ fun EmptyChatItem(
                 Text(
                     modifier = Modifier.placeholder(
                         visible = true,
-                        MaterialTheme.colorScheme.onSecondaryContainer
+                        MaterialTheme.colorScheme.secondaryContainer
                     ),
                     text = context.getString(R.string.contact_name),
                     style = MaterialTheme.typography.titleMedium,
@@ -286,7 +287,7 @@ fun EmptyChatItem(
                 Text(
                     modifier = Modifier.placeholder(
                         visible = true,
-                        MaterialTheme.colorScheme.onSecondaryContainer
+                        MaterialTheme.colorScheme.secondaryContainer
                     ),
                     text = context.getString(R.string.contact_name),
                     style = MaterialTheme.typography.bodyMedium,
