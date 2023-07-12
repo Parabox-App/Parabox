@@ -8,6 +8,7 @@ import com.ojhdtapp.parabox.data.local.buildChatEntity
 import com.ojhdtapp.parabox.data.local.buildContactEntity
 import com.ojhdtapp.parabox.data.local.buildMessageEntity
 import com.ojhdtapp.parabox.data.local.entity.ChatLatestMessageIdUpdate
+import com.ojhdtapp.parabox.data.local.entity.ChatUnreadMessagesNumUpdate
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
@@ -21,7 +22,10 @@ class MainRepositoryImpl @Inject constructor(
     override suspend fun receiveMessage(msg: ReceiveMessage, ext: ExtensionInfo): ParaboxResult {
         Log.d("parabox", "receiving msg from ${ext.name}")
         coroutineScope {
-            val allowForegroundNotification = context.getDataStoreValue(DataStoreKeys.SETTINGS_ALLOW_FOREGROUND_NOTIFICATION, false)
+            val allowForegroundNotification = context.getDataStoreValue(
+                DataStoreKeys.SETTINGS_ALLOW_FOREGROUND_NOTIFICATION,
+                false
+            )
             val chatEntity = buildChatEntity(msg, ext)
             val contactEntity = buildContactEntity(msg, ext)
             val chatIdDeferred = async {
@@ -30,11 +34,27 @@ class MainRepositoryImpl @Inject constructor(
             val contactIdDeferred = async {
                 db.contactDao.insertContact(contactEntity)
             }
-            val messageEntity = buildMessageEntity(msg, chatIdDeferred.await(), contactIdDeferred.await())
+            val messageEntity =
+                buildMessageEntity(msg, chatIdDeferred.await(), contactIdDeferred.await())
             val messageIdDeferred = async {
                 db.messageDao.insertMessage(messageEntity)
             }
-            db.chatDao.updateLatestMessageId(ChatLatestMessageIdUpdate(chatId = chatIdDeferred.await(), latestMessageId = messageIdDeferred.await()))
+            db.chatDao.updateLatestMessageId(
+                ChatLatestMessageIdUpdate(
+                    chatId = chatIdDeferred.await(),
+                    latestMessageId = messageIdDeferred.await()
+                )
+            )
+            if (chatIdDeferred.await() != -1L) {
+                val originalNum =
+                    db.chatDao.getChatById(chatIdDeferred.await())?.unreadMessageNum ?: 0
+                db.chatDao.updateUnreadMessageNum(
+                    ChatUnreadMessagesNumUpdate(
+                        chatId = chatIdDeferred.await(),
+                        unreadMessageNum = originalNum + 1
+                    )
+                )
+            }
         }
 
         return ParaboxResult(ParaboxResult.SUCCESS, ParaboxResult.SUCCESS_MSG)

@@ -9,7 +9,10 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
+import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.Resource
+import com.ojhdtapp.parabox.core.util.getDataStoreValue
+import com.ojhdtapp.parabox.core.util.getDataStoreValueFlow
 import com.ojhdtapp.parabox.data.local.ExtensionInfo
 import com.ojhdtapp.parabox.domain.model.ChatWithLatestMessage
 import com.ojhdtapp.parabox.domain.model.Contact
@@ -33,6 +36,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -45,6 +49,9 @@ class MessagePageViewModel @Inject constructor(
 ) : ViewModel() {
     private var _pageStateFlow = MutableStateFlow(MessagePageState())
     val pageStateFlow get() = _pageStateFlow.asStateFlow()
+
+    // Datastore
+    val enableSwipeToDismissFlow = context.getDataStoreValueFlow(DataStoreKeys.SETTINGS_ENABLE_SWIPE_TO_DISMISS, false)
 
     private val chatLatestMessageSenderMap = mutableMapOf<Long, Resource<Contact>>()
 

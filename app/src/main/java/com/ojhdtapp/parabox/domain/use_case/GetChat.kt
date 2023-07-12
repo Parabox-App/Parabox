@@ -22,7 +22,8 @@ class GetChat @Inject constructor(
         return Pager(
             PagingConfig(
                 pageSize = 20,
-                enablePlaceholders = true
+                enablePlaceholders = true,
+                initialLoadSize = 20
             )
         ) { repository.getChatPagingSource() }
             .flow

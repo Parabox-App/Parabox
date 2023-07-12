@@ -7,4 +7,6 @@ import com.ojhdtapp.parabox.domain.model.ChatWithLatestMessage
 
 interface ChatRepository {
     fun getChatPagingSource() : PagingSource<Int, ChatWithLatestMessageEntity>
+
+
 }

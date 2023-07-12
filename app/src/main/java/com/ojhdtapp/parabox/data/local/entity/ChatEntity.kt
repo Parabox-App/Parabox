@@ -48,3 +48,11 @@ data class ChatLatestMessageIdUpdate(
     @ColumnInfo(name = "latestMessageId")
     val latestMessageId: Long?,
 )
+
+@Entity
+data class ChatUnreadMessagesNumUpdate(
+    @ColumnInfo(name = "chatId")
+    val chatId: Long,
+    @ColumnInfo(name = "unreadMessageNum")
+    val unreadMessageNum: Int,
+)

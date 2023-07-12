@@ -10,6 +10,7 @@ import androidx.room.Update
 import com.ojhdtapp.parabox.data.local.entity.ChatEntity
 import com.ojhdtapp.parabox.data.local.entity.ChatWithLatestMessageEntity
 import com.ojhdtapp.parabox.data.local.entity.ChatLatestMessageIdUpdate
+import com.ojhdtapp.parabox.data.local.entity.ChatUnreadMessagesNumUpdate
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -21,7 +22,6 @@ interface ChatDao {
     @Query(
         "SELECT chat_entity.* FROM chat_entity " +
                 "INNER JOIN message_entity ON chat_entity.latestMessageId = message_entity.messageId " +
-                "WHERE NOT isHidden " +
                 "ORDER BY message_entity.timestamp DESC"
     )
     fun getChatPagingSource(): PagingSource<Int, ChatWithLatestMessageEntity>
@@ -46,4 +46,7 @@ interface ChatDao {
 
     @Update(entity = ChatEntity::class)
     fun updateLatestMessageId(obj: ChatLatestMessageIdUpdate): Int
+
+    @Update(entity = ChatEntity::class)
+    fun updateUnreadMessageNum(obj: ChatUnreadMessagesNumUpdate): Int
 }

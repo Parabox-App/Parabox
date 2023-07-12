@@ -4,18 +4,28 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
-suspend fun<T> Context.getDataStoreValue(key: Preferences.Key<T>, defaultValue: T): T? {
+suspend fun <T> Context.getDataStoreValue(key: Preferences.Key<T>, defaultValue: T): T {
     return dataStore.data.map { preferences ->
         preferences[key]
     }.firstOrNull() ?: defaultValue
 }
 
-object DataStoreKeys{
+fun <T> Context.getDataStoreValueFlow(key: Preferences.Key<T>, defaultValue: T): Flow<T> {
+    return dataStore.data.map { preferences ->
+        preferences[key] ?: defaultValue
+    }
+}
+
+object DataStoreKeys {
     val SEND_MESSAGE_ID = longPreferencesKey("send_message_id")
     val USER_NAME = stringPreferencesKey("user_name")
     val USER_AVATAR = stringPreferencesKey("user_avatar")
@@ -24,7 +34,8 @@ object DataStoreKeys{
     val SETTINGS_WORKING_MODE = intPreferencesKey("settings_working_mode")
     val SETTINGS_CLOUD_SERVICE = intPreferencesKey("settings_cloud_service")
     val SETTINGS_AUTO_BACKUP = booleanPreferencesKey("settings_auto_backup")
-    val SETTINGS_AUTO_BACKUP_FILE_MAX_SIZE = floatPreferencesKey("settings_auto_backup_file_max_size")
+    val SETTINGS_AUTO_BACKUP_FILE_MAX_SIZE =
+        floatPreferencesKey("settings_auto_backup_file_max_size")
     val SETTINGS_AUTO_DELETE_LOCAL_FILE = booleanPreferencesKey("settings_auto_delete_local_file")
     val SETTINGS_ENABLE_FCM = booleanPreferencesKey("settings_enable_fcm")
     val SETTINGS_ENABLE_FCM_CUSTOM_URL = booleanPreferencesKey("settings_enable_fcm_custom_url")
@@ -35,20 +46,27 @@ object DataStoreKeys{
     val SETTINGS_FCM_CLOUD_STORAGE = intPreferencesKey("settings_fcm_cloud_storage")
     val SETTINGS_FCM_ENABLE_CACHE = booleanPreferencesKey("settings_fcm_enable_cache")
     val SETTINGS_FCM_ENABLE_FILE_CACHE = booleanPreferencesKey("settings_fcm_enable_file_cache")
-    val SETTINGS_AUTO_DELETE_LOCAL_RESOURCE = booleanPreferencesKey("settings_auto_delete_local_resource")
-    val SETTINGS_AUTO_DELETE_LOCAL_RESOURCE_BEFORE_DAYS = floatPreferencesKey("settings_auto_delete_local_resource_before_days")
+    val SETTINGS_AUTO_DELETE_LOCAL_RESOURCE =
+        booleanPreferencesKey("settings_auto_delete_local_resource")
+    val SETTINGS_AUTO_DELETE_LOCAL_RESOURCE_BEFORE_DAYS =
+        floatPreferencesKey("settings_auto_delete_local_resource_before_days")
     val SETTINGS_ENABLE_DYNAMIC_COLOR = booleanPreferencesKey("settings_enable_dynamic_color")
     val SETTINGS_THEME = intPreferencesKey("settings_theme")
     val SETTINGS_DARK_MODE = intPreferencesKey("settings_dark_mode")
-    val SETTINGS_ML_KIT_ENTITY_EXTRACTION = booleanPreferencesKey("settings_ml_kit_entity_extraction")
+    val SETTINGS_ML_KIT_ENTITY_EXTRACTION =
+        booleanPreferencesKey("settings_ml_kit_entity_extraction")
     val SETTINGS_ML_KIT_SMART_REPLY = booleanPreferencesKey("settings_ml_kit_smart_reply")
     val SETTINGS_ML_KIT_TRANSLATION = booleanPreferencesKey("settings_ml_kit_translation")
     val SETTINGS_ALLOW_BUBBLE_HOME = booleanPreferencesKey("settings_allow_bubble_home")
-    val SETTINGS_ALLOW_FOREGROUND_NOTIFICATION = booleanPreferencesKey("settings_allow_foreground_notification")
+    val SETTINGS_ALLOW_FOREGROUND_NOTIFICATION =
+        booleanPreferencesKey("settings_allow_foreground_notification")
+
+    val SETTINGS_ENABLE_SWIPE_TO_DISMISS = booleanPreferencesKey("settings_enable_swipe_to_dismiss")
 
     val GOOGLE_MAIL = stringPreferencesKey("google_mail")
     val GOOGLE_NAME = stringPreferencesKey("google_name")
-//    val GOOGLE_LOGIN = booleanPreferencesKey("google_login")
+
+    //    val GOOGLE_LOGIN = booleanPreferencesKey("google_login")
     val GOOGLE_AVATAR = stringPreferencesKey("google_avatar")
     val GOOGLE_WORK_FOLDER_ID = stringPreferencesKey("google_work_folder_id")
 
@@ -56,7 +74,8 @@ object DataStoreKeys{
     val CLOUD_USED_SPACE = longPreferencesKey("cloud_used_space")
     val CLOUD_APP_USED_SPACE = longPreferencesKey("cloud_app_used_space")
 
-    val REQUEST_NOTIFICATION_PERMISSION_FIRST_TIME = booleanPreferencesKey("show_notification_first_time")
+    val REQUEST_NOTIFICATION_PERMISSION_FIRST_TIME =
+        booleanPreferencesKey("show_notification_first_time")
 
     val FCM_TOKEN = stringPreferencesKey("fcm_token")
     val FCM_TARGET_TOKENS = stringSetPreferencesKey("fcm_target_tokens")
@@ -76,7 +95,7 @@ object DataStoreKeys{
 
     const val DEFAULT_USER_NAME = "Me"
 
-    enum class DARK_MODE{
+    enum class DARK_MODE {
         NO,
         YES,
         FOLLOW_SYSTEM

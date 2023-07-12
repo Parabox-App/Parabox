@@ -2,6 +2,7 @@
 
 package com.ojhdtapp.parabox.ui.message
 
+import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.*
@@ -22,9 +23,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.rememberNestedScrollInteropConnection
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
@@ -51,11 +55,25 @@ fun MessagePage(
 //        SearchBar(query = , onQueryChange = , onSearch = , active = , onActiveChange = ) {
 //
 //    }
-        }) {
-        LazyColumn(contentPadding = it, state = listState) {
+        }) { it ->
+        LazyColumn(
+            contentPadding = it,
+            state = listState,
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
             item {
                 androidx.compose.material3.Text(text = "text")
             }
+//            if (chatLazyPagingData.loadState.refresh == LoadState.Loading) {
+//                items(12) {
+//                    EmptyChatItem(
+//                        modifier = Modifier
+//                            .padding(start = 16.dp, end = 16.dp),
+//                        isFirst = it == 0,
+//                        isLast = it == 11
+//                    )
+//                }
+//            }
             items(
                 count = chatLazyPagingData.itemCount,
                 key = chatLazyPagingData.itemKey { it.chat.chatId },
@@ -63,9 +81,9 @@ fun MessagePage(
             ) { index ->
                 SwipeToDismissContact(
                     modifier = Modifier
-                        .padding(horizontal = 16.dp)
+                        .padding(start = 16.dp, end = 16.dp)
                         .animateItemPlacement(),
-                    enabled = false,
+                    enabled = viewModel.enableSwipeToDismissFlow.collectAsState(initial = false).value,
                     startToEndIcon = Icons.Outlined.Archive,
                     endToStartIcon = Icons.Outlined.MarkChatRead,
                     onDismissedToEnd = { true },
@@ -78,8 +96,8 @@ fun MessagePage(
                         )
                     } else {
                         val contact by viewModel.getLatestMessageSenderWithCache(
-                                chatLazyPagingData[index]!!.message?.senderId
-                            ).collectAsState(initial = Resource.Loading())
+                            chatLazyPagingData[index]!!.message?.senderId
+                        ).collectAsState(initial = Resource.Loading())
                         ChatItem(
                             chatWithLatestMessage = chatLazyPagingData[index]!!,
                             contact = contact,
@@ -89,116 +107,6 @@ fun MessagePage(
                     }
                 }
             }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SwipeToDismissContact(
-    modifier: Modifier = Modifier,
-    enabled: Boolean,
-    startToEndIcon: ImageVector? = null,
-    endToStartIcon: ImageVector? = null,
-    onDismissedToEnd: () -> Boolean,
-    onDismissedToStart: () -> Boolean,
-    onVibrate: () -> Unit,
-    content: @Composable () -> Unit
-) {
-    val dismissState = rememberDismissState(
-        confirmValueChange = {
-            when (it) {
-                DismissValue.DismissedToEnd -> {
-                    onDismissedToEnd()
-                }
-
-                DismissValue.DismissedToStart -> {
-                    onDismissedToStart()
-                }
-
-                else -> false
-            }
-        },
-        positionalThreshold = { distance -> distance * .2f }
-    )
-    LaunchedEffect(key1 = dismissState.targetValue == DismissValue.Default) {
-        if (dismissState.progress != 0f && dismissState.progress != 1f)
-            onVibrate()
-    }
-    LaunchedEffect(key1 = Unit) {
-        dismissState.reset()
-    }
-    val isDismissed = dismissState.isDismissed(DismissDirection.EndToStart)
-            || dismissState.isDismissed(DismissDirection.StartToEnd)
-    val isDismissedToStart = dismissState.isDismissed(DismissDirection.EndToStart)
-    val isDismissedToEnd = dismissState.isDismissed(DismissDirection.StartToEnd)
-
-    AnimatedVisibility(
-        modifier = modifier.fillMaxWidth(),
-        visible = !isDismissedToStart,
-        exit = slideOutHorizontally { -it },
-        enter = expandVertically()
-    ) {
-        AnimatedVisibility(
-            modifier = Modifier.fillMaxWidth(),
-            visible = !isDismissedToEnd,
-            exit = slideOutHorizontally { it }, enter = expandVertically()
-        ) {
-            SwipeToDismiss(
-                modifier = Modifier.padding(bottom = 2.dp),
-                state = dismissState,
-                background = {
-                    val direction = dismissState.dismissDirection ?: return@SwipeToDismiss
-                    val color by animateColorAsState(
-                        when (dismissState.targetValue) {
-                            DismissValue.Default -> MaterialTheme.colorScheme.secondary
-                            DismissValue.DismissedToEnd -> MaterialTheme.colorScheme.primary
-                            DismissValue.DismissedToStart -> MaterialTheme.colorScheme.primary
-                        }
-                    )
-                    val textColor by animateColorAsState(
-                        when (dismissState.targetValue) {
-                            DismissValue.Default -> MaterialTheme.colorScheme.onSecondary
-                            DismissValue.DismissedToEnd -> MaterialTheme.colorScheme.onPrimary
-                            DismissValue.DismissedToStart -> MaterialTheme.colorScheme.onPrimary
-                        }
-                    )
-                    val alignment = when (direction) {
-                        DismissDirection.StartToEnd -> Alignment.CenterStart
-                        DismissDirection.EndToStart -> Alignment.CenterEnd
-                    }
-                    val icon = when (direction) {
-                        DismissDirection.StartToEnd -> startToEndIcon ?: Icons.Outlined.Done
-                        DismissDirection.EndToStart -> endToStartIcon ?: Icons.Outlined.Done
-                    }
-                    val scale by animateFloatAsState(
-                        if (dismissState.targetValue == DismissValue.Default)
-                            0.75f else 1f
-                    )
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .background(color)
-                            .padding(horizontal = 20.dp),
-                        contentAlignment = alignment
-                    ) {
-                        Icon(
-                            icon,
-                            contentDescription = "Localized description",
-                            modifier = Modifier.scale(scale),
-                            tint = textColor
-                        )
-                    }
-                },
-                directions = buildSet {
-                    if (!enabled) return@buildSet
-                    if (startToEndIcon != null) add(DismissDirection.StartToEnd)
-                    if (endToStartIcon != null) add(DismissDirection.EndToStart)
-                },
-                dismissContent = {
-                    content()
-                }
-            )
         }
     }
 }
