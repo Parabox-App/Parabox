@@ -69,28 +69,31 @@ class MessagePageViewModel @Inject constructor(
     }
 
     fun getChatPagingDataFlow(): Flow<PagingData<ChatWithLatestMessage>> {
-        return getChat(pageStateFlow.value.enabledGetChatFilterList).cachedIn(viewModelScope)
+        return getChat(pageStateFlow.value.selectedGetChatFilterList).cachedIn(viewModelScope)
     }
 
-    fun addOrRemoveEnabledGetChatFilter(filter: GetChatFilter) {
+    fun setOpenEnabledChatFilterDialog(value: Boolean) {
         viewModelScope.launch {
-            val newList = if (pageStateFlow.value.enabledGetChatFilterList.contains(filter)) {
-                pageStateFlow.value.enabledGetChatFilterList.toMutableList().apply {
-                    remove(filter)
-                }
-            } else {
-                pageStateFlow.value.enabledGetChatFilterList.toMutableList().apply {
-                    add(filter)
-                }
-            }.ifEmpty { listOf(GetChatFilter.Normal) }
             _pageStateFlow.value = pageStateFlow.value.copy(
-                enabledGetChatFilterList = newList
+                openEnabledChatFilterDialog = value
+            )
+        }
+    }
+
+    fun submitEnabledGetChatFilterList(list: List<GetChatFilter>) {
+        viewModelScope.launch {
+            _pageStateFlow.value = pageStateFlow.value.copy(
+                enabledGetChatFilterList = list,
+                selectedGetChatFilterList = pageStateFlow.value.selectedGetChatFilterList.toMutableList()
+                    .apply {
+                        retainAll(list)
+                    }
             )
         }
     }
 
     fun addOrRemoveSelectedGetChatFilter(filter: GetChatFilter) {
-        if(filter is GetChatFilter.Normal) return
+        if (filter is GetChatFilter.Normal) return
         viewModelScope.launch {
             val newList = if (pageStateFlow.value.selectedGetChatFilterList.contains(filter)) {
                 pageStateFlow.value.selectedGetChatFilterList.toMutableList().apply {
@@ -99,6 +102,12 @@ class MessagePageViewModel @Inject constructor(
             } else {
                 pageStateFlow.value.selectedGetChatFilterList.toMutableList().apply {
                     add(filter)
+                }
+            }.apply {
+                if (isEmpty()) {
+                    add(GetChatFilter.Normal)
+                } else {
+                    remove(GetChatFilter.Normal)
                 }
             }
             _pageStateFlow.value = pageStateFlow.value.copy(

@@ -7,6 +7,8 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -14,12 +16,14 @@ import androidx.compose.material3.DrawerState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.common.*
@@ -54,16 +58,31 @@ fun MessagePage(
                 Text(text = "text")
             }
             item {
-                Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
-                    verticalAlignment = Alignment.CenterVertically
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    contentPadding = PaddingValues(horizontal = 16.dp)
                 ) {
-                    FilledTonalIconButton(onClick = { /* doSomething() */ }) {
-                        Icon(Icons.Outlined.Lock, contentDescription = "Localized description")
+                    item {
+                        MyFilterChip(selected = false, label = {
+                            Icon(
+                                imageVector = Icons.Outlined.FilterList,
+                                contentDescription = "filter"
+                            )
+                        }) {
+                            viewModel.setOpenEnabledChatFilterDialog(true)
+                        }
                     }
-                    pageState.selectedGetChatFilterList.forEach {
+                    item {
+                        if (pageState.selectedGetChatFilterList.contains(GetChatFilter.Normal)) {
+                            MyFilterChip(selected = false,
+                                label = { Text(text = stringResource(id = R.string.get_chat_filter_normal)) }) {
+                            }
+                        }
+                    }
+                    items(items = pageState.enabledGetChatFilterList) {
                         MyFilterChip(selected = it in pageState.selectedGetChatFilterList,
-                            label = { Text(text = "text") }) {
+                            label = { Text(text = stringResource(id = it.labelResId)) }) {
                             viewModel.addOrRemoveSelectedGetChatFilter(it)
                         }
                     }

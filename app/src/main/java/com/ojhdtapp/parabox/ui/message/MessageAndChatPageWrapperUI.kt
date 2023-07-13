@@ -67,8 +67,8 @@ fun MessageAndChatPageWrapperUI(
         EnabledChatFilterDialog(
             openDialog = messagePageState.openEnabledChatFilterDialog,
             enabledList = messagePageState.enabledGetChatFilterList,
-            onConfirm = {},
-            onDismiss = {}
+            onConfirm = messagePageViewModel::submitEnabledGetChatFilterList,
+            onDismiss = { messagePageViewModel.setOpenEnabledChatFilterDialog(false) }
         )
         MessagePage(
             modifier =

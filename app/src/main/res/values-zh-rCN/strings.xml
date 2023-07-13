@@ -543,4 +543,11 @@
     <string name="darkmode_night_no">始终关闭</string>
     <string name="darkmode_night_yes">始终开启</string>
     <string name="contact_person">联系人</string>
+    <string name="get_chat_filter_normal">消息</string>
+    <string name="get_chat_filter_archived">归档</string>
+    <string name="get_chat_filter_hidden">已隐藏</string>
+    <string name="get_chat_filter_read">已读</string>
+    <string name="get_chat_filter_unread">未读</string>
+    <string name="get_chat_filter_private">单聊</string>
+    <string name="get_chat_filter_group">群组</string>
 </resources>
