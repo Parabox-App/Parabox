@@ -28,6 +28,7 @@ import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.*
+import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.common.*
 import kotlinx.coroutines.flow.collectLatest
@@ -45,8 +46,10 @@ fun MessagePage(
     layoutType: MessageLayoutType
 ) {
     val viewModel = hiltViewModel<MessagePageViewModel>()
+    val sharedViewModel = hiltViewModel<MainSharedViewModel>()
     val lifecycleOwner = LocalLifecycleOwner.current
     val state by viewModel.uiState.collectAsState()
+    val sharedState by sharedViewModel.uiState.collectAsState()
     LaunchedEffect(Unit) {
         viewModel.uiEffect.flowWithLifecycle(lifecycleOwner.lifecycle, Lifecycle.State.STARTED)
             .collectLatest {
@@ -58,9 +61,20 @@ fun MessagePage(
     val chatLazyPagingData = state.chatPagingDataFlow.collectAsLazyPagingItems()
     Scaffold(modifier = modifier,
         topBar = {
-//        SearchBar(query = , onQueryChange = , onSearch = , active = , onActiveChange = ) {
-//
-//    }
+            SearchBar(
+                modifier = Modifier.fillMaxWidth(),
+                query = sharedState.search.query,
+                onQueryChange = {
+                    sharedViewModel.sendEvent(
+                        MainSharedEvent.QueryInput(it)
+                    )
+                },
+                onSearch = {},
+                active = sharedState.search.isActive,
+                onActiveChange = { sharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(it)) }
+            ) {
+
+            }
         }) { it ->
         LazyColumn(
             contentPadding = it,

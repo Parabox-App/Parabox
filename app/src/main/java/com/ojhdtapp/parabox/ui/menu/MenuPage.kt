@@ -15,7 +15,6 @@ import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -35,13 +34,16 @@ import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.flowWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.ojhdtapp.parabox.NavGraphs
-import com.ojhdtapp.parabox.ui.MainSharedUiEvent
+import com.ojhdtapp.parabox.ui.MainSharedEffect
+import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.common.DevicePosture
 import com.ramcosta.composedestinations.DestinationsNavHost
@@ -131,6 +133,7 @@ private fun MenuNavigationWrapperUI(
 //        )
     )
     val coroutineScope = rememberCoroutineScope()
+    val lifecycleOwner = LocalLifecycleOwner.current
     // List
     val listState = rememberLazyListState()
     // Drawer
@@ -175,11 +178,11 @@ private fun MenuNavigationWrapperUI(
 
     // ui Event
     LaunchedEffect(Unit) {
-        mainSharedViewModel.uiEventFlow.collectLatest {
+        mainSharedViewModel.uiEffect.flowWithLifecycle(lifecycleOwner.lifecycle, Lifecycle.State.STARTED).collectLatest {
             when (it) {
-                is MainSharedUiEvent.ShowSnackBar -> {
-                }
+                is MainSharedEffect.ShowSnackBar -> {
 
+                }
                 else -> {}
             }
         }

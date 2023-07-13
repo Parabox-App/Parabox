@@ -16,7 +16,19 @@ class ContactRepositoryImpl @Inject constructor(
     private val db: AppDatabase,
 ) : ContactRepository {
     override fun queryContact(query: String): Flow<Resource<List<Contact>>> {
-        TODO("Not yet implemented")
+        return flow {
+            emit(Resource.Loading())
+            try {
+                emit(
+                    withContext(Dispatchers.IO) {
+                        Resource.Success(db.contactDao.queryContact(query).map { it.toContact() })
+                    }
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+                emit(Resource.Error("unknown error"))
+            }
+        }
     }
 
     override fun getContactById(contactId: Long): Flow<Resource<Contact>> {
@@ -24,7 +36,7 @@ class ContactRepositoryImpl @Inject constructor(
             emit(Resource.Loading())
             try {
                 emit(
-                    withContext(Dispatchers.IO){
+                    withContext(Dispatchers.IO) {
                         db.contactDao.getContactById(contactId)?.toContact()?.let {
                             Resource.Success(it)
                         }

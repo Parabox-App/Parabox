@@ -16,4 +16,7 @@ interface ContactDao {
             "WHERE contactId = :contactId " +
             "LIMIT 1")
     fun getContactById(contactId: Long): ContactEntity?
+
+    @Query("SELECT * FROM contact_entity WHERE name LIKE '%' || :query || '%'")
+    fun queryContact(query: String): List<ContactEntity>
 }

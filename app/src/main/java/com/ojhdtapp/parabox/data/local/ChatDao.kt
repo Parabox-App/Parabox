@@ -44,6 +44,9 @@ interface ChatDao {
     @Query("SELECT * FROM chat_entity WHERE NOT isHidden AND NOT isArchived")
     fun getAllUnhiddenChats(): Flow<List<ChatEntity>>
 
+    @Query("SELECT * FROM chat_entity WHERE name LIKE '%' || :query || '%'")
+    fun queryChat(query: String): List<ChatEntity>
+
     @Update(entity = ChatEntity::class)
     fun updateLatestMessageId(obj: ChatLatestMessageIdUpdate): Int
 

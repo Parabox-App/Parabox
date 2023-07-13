@@ -19,6 +19,7 @@ import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
 import com.ojhdtapp.parabox.domain.use_case.GetChat
 import com.ojhdtapp.parabox.domain.use_case.GetContact
 import com.ojhdtapp.parabox.domain.use_case.GetMessage
+import com.ojhdtapp.parabox.domain.use_case.Query
 import com.ojhdtapp.parabox.domain.util.GsonParser
 import dagger.Module
 import dagger.Provides
@@ -109,4 +110,14 @@ object AppModule {
     fun provideGetContactUseCase(
         contactRepository: ContactRepository
     ): GetContact = GetContact(contactRepository)
+
+    @Provides
+    @Singleton
+    fun provideQueryUseCase(
+        messageRepository: MessageRepository,
+        contactRepository: ContactRepository,
+        chatRepository: ChatRepository
+    ): Query = Query(
+        messageRepository, contactRepository, chatRepository
+    )
 }

@@ -6,6 +6,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.dataStore
+import com.ojhdtapp.parabox.domain.use_case.Query
+import com.ojhdtapp.parabox.ui.base.BaseViewModel
+import com.ojhdtapp.parabox.ui.base.UiEffect
 import com.ojhdtapp.parabox.ui.menu.MenuPageUiState
 
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,10 +21,49 @@ import javax.inject.Inject
 @HiltViewModel
 class MainSharedViewModel @Inject constructor(
     @ApplicationContext val context: Context,
-) : ViewModel() {
+    val query: Query,
+) : BaseViewModel<MainSharedState, MainSharedEvent, UiEffect>() {
+
+    override fun initialState(): MainSharedState {
+        return MainSharedState()
+    }
+
+    override suspend fun handleEvent(
+        event: MainSharedEvent,
+        state: MainSharedState
+    ): MainSharedState? {
+        when (event) {
+            is MainSharedEvent.QueryInput -> {
+                searchJob?.cancel()
+                searchJob = viewModelScope.launch(Dispatchers.IO) {
+                    delay(800L)
+                    realSearch()
+                }
+                return state.copy(
+                    search = state.search.copy(
+                        query = event.input
+                    )
+                )
+            }
+
+            is MainSharedEvent.TriggerSearchBar -> {
+                return state.copy(
+                    search = state.search.copy(
+                        isActive = event.isActive
+                    )
+                )
+            }
+        }
+    }
+
+    private var searchJob: Job? = null
+    private suspend fun realSearch() {
+
+    }
+
     init {
         // update badge num
-        viewModelScope.launch(Dispatchers.IO){
+        viewModelScope.launch(Dispatchers.IO) {
             context.dataStore.data
                 .catch { exception ->
                     if (exception is IOException) {
@@ -41,10 +83,8 @@ class MainSharedViewModel @Inject constructor(
         }
     }
 
-    private val _uiEventFlow = MutableSharedFlow<MainSharedUiEvent>()
-    val uiEventFlow = _uiEventFlow.asSharedFlow()
-
     // MenuPage State
     private val _menuPageUiState = MutableStateFlow(MenuPageUiState())
     val menuPageUiState = _menuPageUiState.asStateFlow()
+
 }

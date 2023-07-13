@@ -6,9 +6,12 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.RoomWarnings
+import androidx.room.Transaction
 import androidx.room.Update
 import com.ojhdtapp.parabox.data.local.entity.MessageEntity
 import com.ojhdtapp.parabox.data.local.entity.MessageVerifyStateUpdate
+import com.ojhdtapp.parabox.data.local.entity.QueryMessageEntity
+import com.ojhdtapp.parabox.domain.model.QueryMessage
 
 @Dao
 interface MessageDao {
@@ -45,4 +48,8 @@ interface MessageDao {
 //            "JOIN contact_entity ON contact_entity.contactId = contact_message_cross_ref.contactId " +
 //            "WHERE message_entity.name LIKE '%' || :query || '%' OR message_entity.contentString LIKE '%' || :query || '%' ")
 //    fun queryContactWithMessages(query: String) : Map<ContactEntity, List<MessageEntity>>
+
+    @Transaction
+    @Query("SELECT * FROM message_entity WHERE contentString LIKE '%' || :query || '%'")
+    fun queryMessage(query: String): List<QueryMessageEntity>
 }
