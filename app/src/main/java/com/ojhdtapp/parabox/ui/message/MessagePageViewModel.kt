@@ -12,6 +12,7 @@ import com.ojhdtapp.parabox.domain.model.ChatWithLatestMessage
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.use_case.GetChat
 import com.ojhdtapp.parabox.domain.use_case.GetContact
+import com.ojhdtapp.parabox.ui.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -29,23 +30,79 @@ class MessagePageViewModel @Inject constructor(
     @ApplicationContext val context: Context,
     val getChat: GetChat,
     val getContact: GetContact,
-) : ViewModel() {
-    private var _pageStateFlow = MutableStateFlow(MessagePageState())
-    val pageStateFlow get() = _pageStateFlow.asStateFlow()
+) : BaseViewModel<MessagePageState, MessagePageEvent, MessagePageEffect>() {
 
-    // Datastore
-    init {
-        viewModelScope.launch(Dispatchers.IO) {
-            val enableSwipeToDismiss =
-                context.getDataStoreValue(DataStoreKeys.SETTINGS_ENABLE_SWIPE_TO_DISMISS, false)
-            _pageStateFlow.value = pageStateFlow.value.copy(
-                datastore = MessagePageState.DataStore(
-                    enableSwipeToDismiss = enableSwipeToDismiss
-                )
-            )
-        }
+    override fun initialState(): MessagePageState {
+        return MessagePageState(
+            chatPagingDataFlow = getChat(listOf(GetChatFilter.Normal)).cachedIn(viewModelScope)
+        )
     }
 
+    init {
+        sendEvent(MessagePageEvent.UpdateDataStore)
+    }
+
+    override suspend fun handleEvent(
+        event: MessagePageEvent,
+        state: MessagePageState
+    ): MessagePageState? {
+        return when (event) {
+            is MessagePageEvent.UpdateDataStore -> {
+                state.copy(
+                    datastore = state.datastore.copy(
+                        enableSwipeToDismiss = context.getDataStoreValue(
+                            DataStoreKeys.SETTINGS_ENABLE_SWIPE_TO_DISMISS,
+                            false
+                        )
+                    )
+                )
+            }
+
+            is MessagePageEvent.OpenEnabledChatFilterDialog -> {
+                state.copy(
+                    openEnabledChatFilterDialog = event.open
+                )
+            }
+
+            is MessagePageEvent.UpdateEnabledGetChatFilterList -> {
+                state.copy(
+                    enabledGetChatFilterList = event.list,
+                    selectedGetChatFilterList = state.selectedGetChatFilterList.toMutableList()
+                        .apply {
+                            retainAll(event.list)
+                        }
+                )
+            }
+
+            is MessagePageEvent.AddOrRemoveSelectedGetChatFilter -> {
+                if (event.filter is GetChatFilter.Normal) return state
+                val newList = if (state.selectedGetChatFilterList.contains(event.filter)) {
+                    state.selectedGetChatFilterList.toMutableList().apply {
+                        remove(event.filter)
+                    }
+                } else {
+                    state.selectedGetChatFilterList.toMutableList().apply {
+                        add(event.filter)
+                    }
+                }.apply {
+                    if (isEmpty()) {
+                        add(GetChatFilter.Normal)
+                    } else {
+                        remove(GetChatFilter.Normal)
+                    }
+                }
+                return state.copy(
+                    selectedGetChatFilterList = newList
+                )
+            }
+
+            is MessagePageEvent.GetChatPagingDataFlow -> {
+                return state.copy(
+                    chatPagingDataFlow = getChat(state.selectedGetChatFilterList)
+                )
+            }
+        }
+    }
     private val chatLatestMessageSenderMap = mutableMapOf<Long, Resource<Contact>>()
 
     fun getLatestMessageSenderWithCache(senderId: Long?): Flow<Resource<Contact>> {
@@ -65,54 +122,6 @@ class MessagePageViewModel @Inject constructor(
                     )
                 }
             }
-        }
-    }
-
-    fun getChatPagingDataFlow(): Flow<PagingData<ChatWithLatestMessage>> {
-        return getChat(pageStateFlow.value.selectedGetChatFilterList).cachedIn(viewModelScope)
-    }
-
-    fun setOpenEnabledChatFilterDialog(value: Boolean) {
-        viewModelScope.launch {
-            _pageStateFlow.value = pageStateFlow.value.copy(
-                openEnabledChatFilterDialog = value
-            )
-        }
-    }
-
-    fun submitEnabledGetChatFilterList(list: List<GetChatFilter>) {
-        viewModelScope.launch {
-            _pageStateFlow.value = pageStateFlow.value.copy(
-                enabledGetChatFilterList = list,
-                selectedGetChatFilterList = pageStateFlow.value.selectedGetChatFilterList.toMutableList()
-                    .apply {
-                        retainAll(list)
-                    }
-            )
-        }
-    }
-
-    fun addOrRemoveSelectedGetChatFilter(filter: GetChatFilter) {
-        if (filter is GetChatFilter.Normal) return
-        viewModelScope.launch {
-            val newList = if (pageStateFlow.value.selectedGetChatFilterList.contains(filter)) {
-                pageStateFlow.value.selectedGetChatFilterList.toMutableList().apply {
-                    remove(filter)
-                }
-            } else {
-                pageStateFlow.value.selectedGetChatFilterList.toMutableList().apply {
-                    add(filter)
-                }
-            }.apply {
-                if (isEmpty()) {
-                    add(GetChatFilter.Normal)
-                } else {
-                    remove(GetChatFilter.Normal)
-                }
-            }
-            _pageStateFlow.value = pageStateFlow.value.copy(
-                selectedGetChatFilterList = newList
-            )
         }
     }
 }
