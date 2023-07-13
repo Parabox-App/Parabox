@@ -65,12 +65,17 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.UpdateEnabledGetChatFilterList -> {
-                state.copy(
-                    enabledGetChatFilterList = event.list,
-                    selectedGetChatFilterList = state.selectedGetChatFilterList.toMutableList()
-                        .apply {
-                            retainAll(event.list)
+                val newList = state.selectedGetChatFilterList.toMutableList()
+                    .apply {
+                        retainAll(event.list)
+                        if (isEmpty()) {
+                            add(GetChatFilter.Normal)
                         }
+                    }
+                state.copy(
+                    chatPagingDataFlow = getChat(newList),
+                    enabledGetChatFilterList = event.list,
+                    selectedGetChatFilterList = newList,
                 )
             }
 
@@ -92,6 +97,7 @@ class MessagePageViewModel @Inject constructor(
                     }
                 }
                 return state.copy(
+                    chatPagingDataFlow = getChat(newList),
                     selectedGetChatFilterList = newList
                 )
             }
@@ -103,6 +109,7 @@ class MessagePageViewModel @Inject constructor(
             }
         }
     }
+
     private val chatLatestMessageSenderMap = mutableMapOf<Long, Resource<Contact>>()
 
     fun getLatestMessageSenderWithCache(senderId: Long?): Flow<Resource<Contact>> {

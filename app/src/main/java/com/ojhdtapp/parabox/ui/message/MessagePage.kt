@@ -97,10 +97,26 @@ fun MessagePage(
                         }
                     }
                     items(items = state.enabledGetChatFilterList) {
-                        MyFilterChip(selected = it in state.selectedGetChatFilterList,
-                            modifier = Modifier.padding(end = 8.dp),
-                            label = { Text(text = stringResource(id = it.labelResId)) }) {
-                            viewModel.sendEvent(MessagePageEvent.AddOrRemoveSelectedGetChatFilter(it))
+                        if (it is GetChatFilter.Tag) {
+                            MyFilterChip(selected = it in state.selectedGetChatFilterList,
+                                modifier = Modifier.padding(end = 8.dp),
+                                label = { Text(text = it.tag) }) {
+                                viewModel.sendEvent(
+                                    MessagePageEvent.AddOrRemoveSelectedGetChatFilter(
+                                        it
+                                    )
+                                )
+                            }
+                        } else {
+                            MyFilterChip(selected = it in state.selectedGetChatFilterList,
+                                modifier = Modifier.padding(end = 8.dp),
+                                label = { Text(text = stringResource(id = it.labelResId)) }) {
+                                viewModel.sendEvent(
+                                    MessagePageEvent.AddOrRemoveSelectedGetChatFilter(
+                                        it
+                                    )
+                                )
+                            }
                         }
                     }
                 }

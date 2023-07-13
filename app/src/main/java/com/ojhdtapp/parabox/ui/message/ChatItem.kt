@@ -41,6 +41,8 @@ import coil.compose.AsyncImagePainter.State.Empty.painter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 import coil.request.ImageRequest
+import com.google.accompanist.placeholder.PlaceholderHighlight
+import com.google.accompanist.placeholder.material3.fade
 import com.google.accompanist.placeholder.placeholder
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.AvatarUtil
@@ -155,7 +157,8 @@ fun ChatItem(
                                             .fillMaxSize()
                                             .placeholder(
                                                 visible = state is AsyncImagePainter.State.Loading,
-                                                color = MaterialTheme.colorScheme.secondaryContainer
+                                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                                highlight = PlaceholderHighlight.fade(),
                                             ),
                                         bitmap = namedAvatarBm,
                                         contentDescription = "named_avatar"
@@ -183,7 +186,9 @@ fun ChatItem(
                     Text(
                         modifier = Modifier.placeholder(
                             visible = contact !is Resource.Success,
-                            color = MaterialTheme.colorScheme.secondaryContainer),
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            highlight = PlaceholderHighlight.fade(),
+                        ),
                         text = buildAnnotatedString {
                             chatWithLatestMessage.message?.also { message ->
                                 message.contentString
@@ -263,7 +268,8 @@ fun EmptyChatItem(
                     .size(48.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.secondary)
-                    .placeholder(true, MaterialTheme.colorScheme.secondaryContainer),
+                    .placeholder(true, MaterialTheme.colorScheme.secondaryContainer,
+                        highlight = PlaceholderHighlight.fade(),),
                 contentAlignment = Alignment.Center
             ) {
                 icon?.invoke()
@@ -276,7 +282,8 @@ fun EmptyChatItem(
                 Text(
                     modifier = Modifier.placeholder(
                         visible = true,
-                        MaterialTheme.colorScheme.secondaryContainer
+                        MaterialTheme.colorScheme.secondaryContainer,
+                        highlight = PlaceholderHighlight.fade(),
                     ),
                     text = context.getString(R.string.contact_name),
                     style = MaterialTheme.typography.titleMedium,
@@ -287,7 +294,8 @@ fun EmptyChatItem(
                 Text(
                     modifier = Modifier.placeholder(
                         visible = true,
-                        MaterialTheme.colorScheme.secondaryContainer
+                        MaterialTheme.colorScheme.secondaryContainer,
+                        highlight = PlaceholderHighlight.fade(),
                     ),
                     text = context.getString(R.string.contact_name),
                     style = MaterialTheme.typography.bodyMedium,

@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.FilterList
@@ -21,9 +23,11 @@ import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -33,12 +37,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.ui.common.MyFilterChip
+import com.ojhdtapp.parabox.ui.common.clearFocusOnKeyboardDismiss
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -50,6 +59,8 @@ fun EnabledChatFilterDialog(
     onDismiss: () -> Unit,
 ) {
     if (openDialog) {
+
+
         var openCustomTagFilterDialog by remember {
             mutableStateOf(false)
         }
@@ -59,9 +70,14 @@ fun EnabledChatFilterDialog(
         LaunchedEffect(Unit) {
             selectedList.addAll(enabledList)
         }
-        if (openCustomTagFilterDialog) {
-
-        }
+        NewChatFilterDialog(
+            openDialog = openCustomTagFilterDialog,
+            onConfirm = {
+                selectedList.add(GetChatFilter.Tag(it.trim()))
+                openCustomTagFilterDialog = false
+            },
+            onDismiss = { openCustomTagFilterDialog = false }
+        )
         AlertDialog(
             onDismissRequest = onDismiss,
             confirmButton = {
@@ -92,7 +108,10 @@ fun EnabledChatFilterDialog(
                 Text(text = "编辑分组")
             },
             text = {
-                Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Column(
+                    modifier = modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         GetChatFilter.allFilterList.forEach {
                             MyFilterChip(
@@ -111,7 +130,12 @@ fun EnabledChatFilterDialog(
                             }
                         }
                         MyFilterChip(selected = false,
-                            label = { Icon(imageVector = Icons.Outlined.Add, contentDescription = "new tag filter")  }
+                            label = {
+                                Icon(
+                                    imageVector = Icons.Outlined.Add,
+                                    contentDescription = "new tag filter"
+                                )
+                            }
                         ) {
                             openCustomTagFilterDialog = true
                         }
@@ -125,42 +149,89 @@ fun EnabledChatFilterDialog(
                 usePlatformDefaultWidth = true
             ),
         )
-//        {
-//            Surface(
-//                modifier = Modifier
-//                    .wrapContentWidth()
-//                    .wrapContentHeight(),
-//                shape = MaterialTheme.shapes.large,
-//                tonalElevation = AlertDialogDefaults.TonalElevation
-//            ) {
-//                Column(modifier = Modifier.padding(16.dp)) {
-//                    Text(
-//                        text = "This area typically contains the supportive text " +
-//                                "which presents the details regarding the Dialog's purpose.",
-//                    )
-//                    Spacer(modifier = Modifier.height(24.dp))
-//                    Row(
-//                        modifier = Modifier.align(Alignment.End)
-//                    ) {
-//                        TextButton(
-//                            onClick = {
-//                                onDismiss()
-//                            },
-//                        ) {
-//                            Text("Cancel")
-//                        }
-//                        TextButton(
-//                            onClick = {
-//                                onConfirm(selectedList)
-//                            },
-//                        ) {
-//                            Text("Confirm")
-//                        }
-//                    }
-//                }
-//            }
-//        }
     }
+}
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
+@Composable
+fun NewChatFilterDialog(
+    modifier: Modifier = Modifier,
+    openDialog: Boolean,
+    onConfirm: (text: String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+    if (openDialog) {
+        var text by remember {
+            mutableStateOf("")
+        }
+        AlertDialog(
+            onDismissRequest = { /*TODO*/ },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (text.isBlank()) {
+                            onDismiss()
+                        } else {
+                            onConfirm(text)
+                        }
+                    },
+                ) {
+                    Text(text = stringResource(id = R.string.confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        onDismiss()
+                    },
+                ) {
+                    Text(text = stringResource(id = R.string.cancel))
+                }
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Outlined.NewLabel,
+                    contentDescription = "new label"
+                )
+            },
+            title = {
+                Text(text = "新增标签筛选")
+            },
+            text = {
+                Column(
+                    modifier = modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    OutlinedTextField(
+                        modifier = Modifier.clearFocusOnKeyboardDismiss(),
+                        value = text,
+                        onValueChange = { text = it },
+                        label = { Text("自定义标签") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                focusManager.clearFocus()
+                                keyboardController?.hide()
+                                if (text.isBlank()) {
+                                    onDismiss()
+                                } else {
+                                    onConfirm(text)
+                                }
+                            }
+                        )
+                    )
+                    Text(text = "新建自定义标签筛选，启用后仅命中该标签的会话被展示。")
+                }
+            },
+            properties = DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = true,
+                usePlatformDefaultWidth = true
+            ),
+        )
+    }
 }
 
