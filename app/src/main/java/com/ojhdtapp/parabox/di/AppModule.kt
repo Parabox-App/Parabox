@@ -114,10 +114,11 @@ object AppModule {
     @Provides
     @Singleton
     fun provideQueryUseCase(
+        mainRepository: MainRepository,
         messageRepository: MessageRepository,
         contactRepository: ContactRepository,
         chatRepository: ChatRepository
     ): Query = Query(
-        messageRepository, contactRepository, chatRepository
+        mainRepository, messageRepository, contactRepository, chatRepository
     )
 }

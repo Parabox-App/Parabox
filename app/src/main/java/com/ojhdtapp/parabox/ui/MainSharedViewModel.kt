@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.lifecycle.viewModelScope
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
+import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.parabox.domain.use_case.Query
@@ -48,14 +49,17 @@ class MainSharedViewModel @Inject constructor(
                         query = event.input,
                         isActive = true,
                         showRecent = false,
-                        message = MainSharedState.Search.MessageSearch(isLoading = true),
-                        contact = MainSharedState.Search.ContactSearch(isLoading = true),
-                        chat = MainSharedState.Search.ChatSearch(isLoading = true)
+                        message = MainSharedState.Search.MessageSearch(),
+                        contact = MainSharedState.Search.ContactSearch(),
+                        chat = MainSharedState.Search.ChatSearch()
                     )
                 )
             }
 
             is MainSharedEvent.TriggerSearchBar -> {
+                if (event.isActive) {
+                    sendEvent(MainSharedEvent.GetRecentQuery)
+                }
                 return state.copy(
                     search = state.search.copy(
                         showRecent = true,
@@ -64,12 +68,55 @@ class MainSharedViewModel @Inject constructor(
                 )
             }
 
+            is MainSharedEvent.GetRecentQuery -> {
+                coroutineScope {
+                    launch {
+                        query.recentQuery().collectLatest {
+                            when (it) {
+                                is Resource.Success -> {
+                                    sendEvent(MainSharedEvent.GetRecentQueryDone(it.data!!, true))
+                                }
+
+                                is Resource.Error -> {
+                                    sendEvent(MainSharedEvent.GetRecentQueryDone(emptyList(), false))
+                                }
+
+                                else -> {}
+                            }
+                        }
+                    }
+                }
+                return state.copy(
+                    search = state.search.copy(
+                        recentQueryState = LoadState.LOADING
+                    )
+                )
+            }
+
+            is MainSharedEvent.GetRecentQueryDone -> {
+                return state.copy(
+                    search = state.search.copy(
+                        recentQueryState = if (event.isSuccess) LoadState.SUCCESS else LoadState.ERROR,
+                        recentQuery = if (event.isSuccess) event.res else emptyList()
+                    )
+                )
+            }
+
+            is MainSharedEvent.DeleteRecentQuery -> {
+                return state.copy(
+                    search = state.search.copy(
+                        recentQuery = state.search.recentQuery.toMutableList().apply {
+                            removeAll { it.id == event.id }
+                        }
+                    )
+                )
+            }
+
             is MainSharedEvent.MessageSearchDone -> {
                 return state.copy(
                     search = state.search.copy(
                         message = MainSharedState.Search.MessageSearch(
-                            isLoading = false,
-                            isError = !event.isSuccess,
+                            loadState = if (event.isSuccess) LoadState.SUCCESS else LoadState.ERROR,
                             result = event.res
                         )
                     )
@@ -80,8 +127,7 @@ class MainSharedViewModel @Inject constructor(
                 return state.copy(
                     search = state.search.copy(
                         contact = MainSharedState.Search.ContactSearch(
-                            isLoading = false,
-                            isError = !event.isSuccess,
+                            loadState = if (event.isSuccess) LoadState.SUCCESS else LoadState.ERROR,
                             result = event.res
                         )
                     )
@@ -92,8 +138,7 @@ class MainSharedViewModel @Inject constructor(
                 return state.copy(
                     search = state.search.copy(
                         chat = MainSharedState.Search.ChatSearch(
-                            isLoading = false,
-                            isError = !event.isSuccess,
+                            loadState = if (event.isSuccess) LoadState.SUCCESS else LoadState.ERROR,
                             result = event.res
                         )
                     )

@@ -1,6 +1,7 @@
 import android.content.Context
 import android.util.Log
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
+import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.getDataStoreValue
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.ExtensionInfo
@@ -9,11 +10,14 @@ import com.ojhdtapp.parabox.data.local.buildContactEntity
 import com.ojhdtapp.parabox.data.local.buildMessageEntity
 import com.ojhdtapp.parabox.data.local.entity.ChatLatestMessageIdUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatUnreadMessagesNumUpdate
+import com.ojhdtapp.parabox.domain.model.RecentQuery
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
 import javax.inject.Inject
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 class MainRepositoryImpl @Inject constructor(
     val context: Context,
@@ -58,5 +62,18 @@ class MainRepositoryImpl @Inject constructor(
         }
 
         return ParaboxResult(ParaboxResult.SUCCESS, ParaboxResult.SUCCESS_MSG)
+    }
+
+    override fun getRecentQuery(): Flow<Resource<List<RecentQuery>>> {
+        return flow {
+            emit(Resource.Loading())
+            try {
+                emit(
+                    Resource.Success(db.recentQueryDao.getAllRecentQuery().map { it.toRecentQuery() })
+                )
+            } catch (e: Exception) {
+                emit(Resource.Error("unknown error"))
+            }
+        }
     }
 }
