@@ -3,9 +3,11 @@ package com.ojhdtapp.parabox.ui.common
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.TabRow
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -55,6 +57,11 @@ enum class SearchContent {
 
 @Composable
 fun RecentSearchContent(modifier: Modifier = Modifier) {
+    LazyColumn(){
+        item{
+            Text(text = "近期搜索", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+        }
+    }
 }
 
 @Composable
