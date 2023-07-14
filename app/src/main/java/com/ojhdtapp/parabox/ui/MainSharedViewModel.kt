@@ -2,9 +2,9 @@ package com.ojhdtapp.parabox.ui
 
 import android.content.Context
 import androidx.datastore.preferences.core.emptyPreferences
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
+import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.parabox.domain.use_case.Query
 import com.ojhdtapp.parabox.ui.base.BaseViewModel
@@ -34,11 +34,6 @@ class MainSharedViewModel @Inject constructor(
     ): MainSharedState? {
         when (event) {
             is MainSharedEvent.QueryInput -> {
-                searchJob?.cancel()
-                searchJob = viewModelScope.launch(Dispatchers.IO) {
-                    delay(800L)
-                    realSearch()
-                }
                 return state.copy(
                     search = state.search.copy(
                         query = event.input
@@ -46,18 +41,148 @@ class MainSharedViewModel @Inject constructor(
                 )
             }
 
+            is MainSharedEvent.SearchConfirm -> {
+                realSearch(event.input)
+                return state.copy(
+                    search = MainSharedState.Search(
+                        query = event.input,
+                        isActive = true,
+                        showRecent = false,
+                        message = MainSharedState.Search.MessageSearch(isLoading = true),
+                        contact = MainSharedState.Search.ContactSearch(isLoading = true),
+                        chat = MainSharedState.Search.ChatSearch(isLoading = true)
+                    )
+                )
+            }
+
             is MainSharedEvent.TriggerSearchBar -> {
                 return state.copy(
                     search = state.search.copy(
+                        showRecent = true,
                         isActive = event.isActive
+                    )
+                )
+            }
+
+            is MainSharedEvent.MessageSearchDone -> {
+                return state.copy(
+                    search = state.search.copy(
+                        message = MainSharedState.Search.MessageSearch(
+                            isLoading = false,
+                            isError = !event.isSuccess,
+                            result = event.res
+                        )
+                    )
+                )
+            }
+
+            is MainSharedEvent.ContactSearchDone -> {
+                return state.copy(
+                    search = state.search.copy(
+                        contact = MainSharedState.Search.ContactSearch(
+                            isLoading = false,
+                            isError = !event.isSuccess,
+                            result = event.res
+                        )
+                    )
+                )
+            }
+
+            is MainSharedEvent.ChatSearchDone -> {
+                return state.copy(
+                    search = state.search.copy(
+                        chat = MainSharedState.Search.ChatSearch(
+                            isLoading = false,
+                            isError = !event.isSuccess,
+                            result = event.res
+                        )
                     )
                 )
             }
         }
     }
 
-    private var searchJob: Job? = null
-    private suspend fun realSearch() {
+    private suspend fun realSearch(input: String) {
+        coroutineScope {
+            launch {
+                query.message(input).collectLatest {
+                    when (it) {
+                        is Resource.Success -> {
+                            sendEvent(
+                                MainSharedEvent.MessageSearchDone(
+                                    res = it.data!!,
+                                    isSuccess = true
+                                )
+                            )
+                        }
+
+                        is Resource.Error -> {
+                            sendEvent(
+                                MainSharedEvent.MessageSearchDone(
+                                    res = it.data ?: emptyList(), isSuccess = false
+                                )
+                            )
+                        }
+
+                        else -> {
+
+                        }
+                    }
+                }
+            }
+            launch {
+                query.contact(input).collectLatest {
+                    when (it) {
+                        is Resource.Success -> {
+                            sendEvent(
+                                MainSharedEvent.ContactSearchDone(
+                                    res = it.data!!,
+                                    isSuccess = true
+                                )
+                            )
+                        }
+
+                        is Resource.Error -> {
+                            sendEvent(
+                                MainSharedEvent.ContactSearchDone(
+                                    res = it.data ?: emptyList(), isSuccess = false
+                                )
+                            )
+                        }
+
+                        else -> {
+
+                        }
+                    }
+                }
+            }
+            launch {
+                query.chat(input).collectLatest {
+                    when (it) {
+                        is Resource.Success -> {
+                            sendEvent(
+                                MainSharedEvent.ChatSearchDone(
+                                    res = it.data!!,
+                                    isSuccess = true
+                                )
+                            )
+                        }
+
+                        is Resource.Error -> {
+                            sendEvent(
+                                MainSharedEvent.ChatSearchDone(
+                                    res = it.data ?: emptyList(), isSuccess = false
+                                )
+                            )
+                        }
+
+                        else -> {
+
+                        }
+                    }
+                }
+            }
+        }
 
     }
 

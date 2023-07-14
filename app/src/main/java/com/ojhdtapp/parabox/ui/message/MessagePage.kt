@@ -62,18 +62,22 @@ fun MessagePage(
     Scaffold(modifier = modifier,
         topBar = {
             SearchBar(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .fillMaxWidth(),
                 query = sharedState.search.query,
                 onQueryChange = {
                     sharedViewModel.sendEvent(
                         MainSharedEvent.QueryInput(it)
                     )
                 },
-                onSearch = {},
+                onSearch = {
+                    sharedViewModel.sendEvent(MainSharedEvent.SearchConfirm(it))
+                },
                 active = sharedState.search.isActive,
                 onActiveChange = { sharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(it)) }
             ) {
-
+                SearchContent(state = sharedState.search, onEvent = sharedViewModel::sendEvent)
             }
         }) { it ->
         LazyColumn(
