@@ -50,7 +50,7 @@ fun MyFilterChip(
         shape = RoundedCornerShape(shapeCorner),
         colors = FilterChipDefaults.filterChipColors(
             containerColor = containerColor,
-            labelColor = MaterialTheme.colorScheme.contentColorFor(containerColor),
+            labelColor = MaterialTheme.colorScheme.onSurface,
             selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
             selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
         ),

@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.menu
 
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -175,6 +176,12 @@ private fun MenuNavigationWrapperUI(
         }
     }
 
+    LaunchedEffect(drawerState.isAnimationRunning) {
+        if (!drawerState.isAnimationRunning) {
+            mainSharedViewModel.sendEvent(MainSharedEvent.OpenDrawer(drawerState.isOpen, true))
+        }
+    }
+
     // ui Event
     LaunchedEffect(mainSharedState.openDrawer) {
         coroutineScope.launch {
@@ -188,9 +195,9 @@ private fun MenuNavigationWrapperUI(
     LaunchedEffect(mainSharedState.openBottomSheet) {
         coroutineScope.launch {
             if (mainSharedState.openBottomSheet.snap) {
-                drawerState.snapTo(if (mainSharedState.openBottomSheet.open) DrawerValue.Open else DrawerValue.Closed)
+
             } else {
-                if (mainSharedState.openBottomSheet.open) bottomSheetState.show() else bottomSheetState.hide()
+                if (mainSharedState.openBottomSheet.open) bottomSheetState.expand() else bottomSheetState.hide()
             }
         }
     }

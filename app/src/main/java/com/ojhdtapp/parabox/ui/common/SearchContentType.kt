@@ -20,7 +20,6 @@ import androidx.compose.ui.res.stringResource
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
-import com.ojhdtapp.parabox.ui.base.UiEvent
 import kotlinx.coroutines.launch
 
 @Composable
@@ -28,30 +27,30 @@ fun SearchContent(modifier: Modifier = Modifier, state: MainSharedState, onEvent
     val searchPageState by remember {
         derivedStateOf {
             when {
-                state.search.showRecent && state.search.query.isEmpty() -> SearchContent.RECENT
-                state.search.showRecent && state.search.query.isNotBlank() -> SearchContent.TYPING
-                else -> SearchContent.DONE
+                state.search.showRecent && state.search.query.isEmpty() -> SearchContentType.RECENT
+                state.search.showRecent && state.search.query.isNotBlank() -> SearchContentType.TYPING
+                else -> SearchContentType.DONE
             }
         }
     }
     Crossfade(targetState = searchPageState, modifier = modifier) {
         when (it) {
-            SearchContent.RECENT -> {
+            SearchContentType.RECENT -> {
                 RecentSearchContent()
             }
 
-            SearchContent.TYPING -> {
+            SearchContentType.TYPING -> {
                 TypingSearchContent()
             }
 
-            SearchContent.DONE -> {
+            SearchContentType.DONE -> {
                 DoneSearchContent(state = state.search)
             }
         }
     }
 }
 
-enum class SearchContent {
+enum class SearchContentType {
     RECENT, TYPING, DONE
 }
 

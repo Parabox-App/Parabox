@@ -2,12 +2,16 @@
 
 package com.ojhdtapp.parabox.ui.message
 
+import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
+import androidx.compose.animation.graphics.res.animatedVectorResource
+import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
+import androidx.compose.animation.graphics.vector.AnimatedImageVector
 import androidx.compose.foundation.*
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -16,12 +20,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
-import androidx.compose.material3.DrawerState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -47,7 +51,7 @@ import com.ojhdtapp.parabox.ui.common.*
 import kotlinx.coroutines.flow.collectLatest
 
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalAnimationGraphicsApi::class)
 @Composable
 fun MessagePage(
     modifier: Modifier = Modifier,
@@ -57,10 +61,12 @@ fun MessagePage(
     layoutType: MessageLayoutType
 ) {
     val viewModel = hiltViewModel<MessagePageViewModel>()
-    val sharedViewModel = hiltViewModel<MainSharedViewModel>()
     val lifecycleOwner = LocalLifecycleOwner.current
     val state by viewModel.uiState.collectAsState()
-    val sharedState by sharedViewModel.uiState.collectAsState()
+    val sharedState by mainSharedViewModel.uiState.collectAsState()
+    LaunchedEffect(key1 = sharedState, block = {
+        Log.d("parabox", "active: ${sharedState.search.isActive}")
+    })
     LaunchedEffect(Unit) {
         viewModel.uiEffect.flowWithLifecycle(lifecycleOwner.lifecycle, Lifecycle.State.STARTED)
             .collectLatest {
@@ -74,6 +80,24 @@ fun MessagePage(
         targetValue = if (sharedState.search.isActive) 0.dp else 16.dp,
         animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
     )
+    val shouldHoverSearchBar by remember {
+        derivedStateOf {
+            listState.firstVisibleItemIndex > 1
+        }
+    }
+    val searchBarShadowElevation by animateDpAsState(
+        targetValue = if (shouldHoverSearchBar) 3.dp else 0.dp
+    )
+    val menuState by remember {
+        derivedStateOf {
+            sharedState.search.isActive
+        }
+    }
+    val menuPainter = rememberAnimatedVectorPainter(
+        animatedImageVector = AnimatedImageVector.animatedVectorResource(id = R.drawable.avd_pathmorph_drawer_hamburger_to_arrow),
+        atEnd = menuState
+    )
+
     Scaffold(modifier = modifier,
         topBar = {
             SearchBar(
@@ -82,21 +106,30 @@ fun MessagePage(
                     .padding(horizontal = searchBarPadding),
                 query = sharedState.search.query,
                 onQueryChange = {
-                    sharedViewModel.sendEvent(
+                    mainSharedViewModel.sendEvent(
                         MainSharedEvent.QueryInput(it)
                     )
                 },
                 onSearch = {
-                    sharedViewModel.sendEvent(MainSharedEvent.SearchConfirm(it))
+                    mainSharedViewModel.sendEvent(MainSharedEvent.SearchConfirm(it))
                 },
                 active = sharedState.search.isActive,
-                onActiveChange = { sharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(it)) },
+                onActiveChange = { mainSharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(it)) },
                 placeholder = { Text(text = "搜索 Parabox") },
                 leadingIcon = {
                     IconButton(
-                        onClick = { mainSharedViewModel.sendEvent(MainSharedEvent.OpenDrawer(!sharedState.openDrawer.open)) },
+                        onClick = {
+                            if (sharedState.search.isActive) {
+                                mainSharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(false))
+                            } else {
+                                mainSharedViewModel.sendEvent(MainSharedEvent.OpenDrawer(!sharedState.openDrawer.open))
+                            }
+                        }
                     ) {
-                        Icon(imageVector = Icons.Outlined.Menu, contentDescription = "menu")
+                        Image(
+                            painter = menuPainter, contentDescription = "drawer",
+                            contentScale = ContentScale.FillBounds
+                        )
                     }
                 },
                 trailingIcon = {
@@ -106,7 +139,7 @@ fun MessagePage(
                         exit = fadeOut()
                     ) {
                         IconButton(
-                            onClick = { sharedViewModel.sendEvent(MainSharedEvent.SearchAvatarClicked) },
+                            onClick = { mainSharedViewModel.sendEvent(MainSharedEvent.SearchAvatarClicked) },
                         ) {
                             SubcomposeAsyncImage(
                                 modifier = Modifier.size(30.dp),
@@ -139,8 +172,9 @@ fun MessagePage(
                         }
                     }
                 },
+                shadowElevation = searchBarShadowElevation,
             ) {
-                SearchContent(state = sharedState, onEvent = sharedViewModel::sendEvent)
+                SearchContent(state = sharedState, onEvent = mainSharedViewModel::sendEvent)
             }
         }) { it ->
         LazyColumn(
@@ -151,7 +185,7 @@ fun MessagePage(
             item {
                 LazyRow(
                     verticalAlignment = Alignment.CenterVertically,
-                    contentPadding = PaddingValues(horizontal = 16.dp)
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     item {
                         MyFilterChip(

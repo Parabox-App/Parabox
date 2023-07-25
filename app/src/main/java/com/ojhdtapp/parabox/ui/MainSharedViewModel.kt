@@ -2,6 +2,7 @@ package com.ojhdtapp.parabox.ui
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.core.util.Resource
@@ -67,8 +68,12 @@ class MainSharedViewModel @Inject constructor(
             }
 
             is MainSharedEvent.TriggerSearchBar -> {
-                if (event.isActive) {
-                    sendEvent(MainSharedEvent.GetRecentQuery)
+                coroutineScope {
+                    if (event.isActive) {
+                        launch {
+                            sendEvent(MainSharedEvent.GetRecentQuery)
+                        }
+                    }
                 }
                 return state.copy(
                     search = state.search.copy(
@@ -183,7 +188,7 @@ class MainSharedViewModel @Inject constructor(
 
     private suspend fun realSearch(input: String) {
         coroutineScope {
-            launch {
+            launch(Dispatchers.IO) {
                 query.submitRecentQuery(input)
                 query.message(input).collectLatest {
                     when (it) {
