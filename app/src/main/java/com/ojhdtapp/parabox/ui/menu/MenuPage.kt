@@ -44,6 +44,7 @@ import com.google.accompanist.navigation.material.ExperimentalMaterialNavigation
 import com.ojhdtapp.parabox.NavGraphs
 import com.ojhdtapp.parabox.ui.MainSharedEffect
 import com.ojhdtapp.parabox.ui.MainSharedEvent
+import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.common.DevicePosture
 import com.ramcosta.composedestinations.DestinationsNavHost
@@ -140,7 +141,7 @@ private fun MenuNavigationWrapperUI(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val bottomSheetState = rememberModalBottomSheetState()
     // Main State
-    val menuPageState by mainSharedViewModel.menuPageUiState.collectAsState()
+    val mainSharedState by mainSharedViewModel.uiState.collectAsState()
 
     val menuEventHandler: (event: MenuPageEvent) -> Unit = {
         when (it) {
@@ -206,7 +207,7 @@ private fun MenuNavigationWrapperUI(
         DismissibleNavigationDrawer(drawerContent = {
             MenuNavigationDrawerContent(
                 navController = menuNavController,
-                messageBadge = menuPageState.messageBadgeNum,
+                messageBadge = mainSharedState.datastore.messageBadgeNum,
                 onEvent = menuEventHandler
             )
         }, drawerState = drawerState) {
@@ -214,7 +215,7 @@ private fun MenuNavigationWrapperUI(
                 navController = navController,
                 menuNavController = menuNavController,
                 menuNavHostEngine = menuNavHostEngine,
-                menuPageUiState = menuPageState,
+                mainSharedState = mainSharedState,
                 navigationType = navigationType,
                 listState = listState,
                 drawerState = drawerState,
@@ -230,7 +231,7 @@ private fun MenuNavigationWrapperUI(
             drawerContent = {
                 MenuNavigationDrawerContent(
                     navController = menuNavController,
-                    messageBadge = menuPageState.messageBadgeNum,
+                    messageBadge = mainSharedState.datastore.messageBadgeNum,
                     onEvent = menuEventHandler,
                 )
             },
@@ -240,7 +241,7 @@ private fun MenuNavigationWrapperUI(
                 navController = navController,
                 menuNavController = menuNavController,
                 menuNavHostEngine = menuNavHostEngine,
-                menuPageUiState = menuPageState,
+                mainSharedState = mainSharedState,
                 navigationType = navigationType,
                 listState = listState,
                 drawerState = drawerState,
@@ -331,7 +332,7 @@ fun MenuAppContent(
     navController: NavController,
     menuNavController: NavHostController,
     menuNavHostEngine: NavHostEngine,
-    menuPageUiState: MenuPageUiState,
+    mainSharedState: MainSharedState,
     navigationType: MenuNavigationType,
     listState: LazyListState,
     drawerState: DrawerState,
@@ -355,7 +356,8 @@ fun MenuAppContent(
             )
         }
         Column(
-            modifier = Modifier.weight(1f)
+            modifier = Modifier
+                .weight(1f)
                 .background(MaterialTheme.colorScheme.inverseOnSurface),
             verticalArrangement = Arrangement.Bottom
         ) {
@@ -389,7 +391,7 @@ fun MenuAppContent(
                 exit = slideOutVertically()
             ) {
                 MenuNavigationBar(
-                    menuPageUiState = menuPageUiState,
+                    mainSharedState = mainSharedState,
                     navController = menuNavController,
                     onEvent = onEvent,
                 )

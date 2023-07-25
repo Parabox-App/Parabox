@@ -20,6 +20,7 @@ object AvatarUtil {
         textColor: Int,
         name: String?
     ): Bitmap {
+        val shortName = name?.substring(0, 1)
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val rect = Rect(0, 0, width, height)
         val canvas = Canvas(bitmap)
@@ -33,9 +34,9 @@ object AvatarUtil {
         textPaint.textSize = 72f
         textPaint.textScaleX = 1f
         textPaint.textAlign = Paint.Align.CENTER
-        if (name != null) {
+        if (shortName != null) {
             val baselineY = rect.centerY() - (textPaint.descent() + textPaint.ascent()) / 2
-            canvas.drawText(name, rect.centerX().toFloat(), baselineY, textPaint)
+            canvas.drawText(shortName, rect.centerX().toFloat(), baselineY, textPaint)
         }
         return bitmap
     }

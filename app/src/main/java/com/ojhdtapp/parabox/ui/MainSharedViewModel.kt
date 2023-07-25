@@ -1,16 +1,18 @@
 package com.ojhdtapp.parabox.ui
 
 import android.content.Context
+import android.net.Uri
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.lifecycle.viewModelScope
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.dataStore
+import com.ojhdtapp.parabox.core.util.getDataStoreValue
+import com.ojhdtapp.parabox.core.util.getDataStoreValueFlow
 import com.ojhdtapp.parabox.domain.use_case.Query
 import com.ojhdtapp.parabox.ui.base.BaseViewModel
 import com.ojhdtapp.parabox.ui.base.UiEffect
-import com.ojhdtapp.parabox.ui.menu.MenuPageUiState
 
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -34,6 +36,19 @@ class MainSharedViewModel @Inject constructor(
         state: MainSharedState
     ): MainSharedState? {
         when (event) {
+            is MainSharedEvent.UpdateDataStore -> {
+                return state.copy(
+                    datastore = state.datastore.copy(
+                        messageBadgeNum = context.getDataStoreValue(DataStoreKeys.MESSAGE_BADGE_NUM, 0),
+                        localName = context.getDataStoreValue(DataStoreKeys.USER_NAME, "User"),
+                        localAvatarUri = context.getDataStoreValue(DataStoreKeys.USER_AVATAR, "")
+                            .takeIf { it.isNotBlank() }
+                            ?.let { Uri.parse(it) }
+                            ?: Uri.EMPTY,
+                    )
+                )
+            }
+
             is MainSharedEvent.QueryInput -> {
                 return state.copy(
                     search = state.search.copy(
@@ -144,12 +159,19 @@ class MainSharedViewModel @Inject constructor(
                     )
                 )
             }
+
+            is MainSharedEvent.ClickSearchAvatar -> {
+                return state.copy(
+                    openMainDialog = !state.openMainDialog
+                )
+            }
         }
     }
 
     private suspend fun realSearch(input: String) {
         coroutineScope {
             launch {
+                query.submitRecentQuery(input)
                 query.message(input).collectLatest {
                     when (it) {
                         is Resource.Success -> {
@@ -232,29 +254,6 @@ class MainSharedViewModel @Inject constructor(
     }
 
     init {
-        // update badge num
-        viewModelScope.launch(Dispatchers.IO) {
-            context.dataStore.data
-                .catch { exception ->
-                    if (exception is IOException) {
-                        emit(emptyPreferences())
-                    } else {
-                        throw exception
-                    }
-                }
-                .map { settings ->
-                    settings[DataStoreKeys.MESSAGE_BADGE_NUM] ?: 0
-                }.collectLatest {
-                    _menuPageUiState.value = menuPageUiState.value.copy(
-                        messageBadgeNum = it
-                    )
-                }
-
-        }
+        sendEvent(MainSharedEvent.UpdateDataStore)
     }
-
-    // MenuPage State
-    private val _menuPageUiState = MutableStateFlow(MenuPageUiState())
-    val menuPageUiState = _menuPageUiState.asStateFlow()
-
 }

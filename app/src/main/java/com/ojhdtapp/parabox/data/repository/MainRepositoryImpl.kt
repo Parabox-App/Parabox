@@ -1,7 +1,9 @@
 import android.content.Context
 import android.util.Log
+import androidx.datastore.preferences.core.edit
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.Resource
+import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.parabox.core.util.getDataStoreValue
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.ExtensionInfo
@@ -10,6 +12,8 @@ import com.ojhdtapp.parabox.data.local.buildContactEntity
 import com.ojhdtapp.parabox.data.local.buildMessageEntity
 import com.ojhdtapp.parabox.data.local.entity.ChatLatestMessageIdUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatUnreadMessagesNumUpdate
+import com.ojhdtapp.parabox.data.local.entity.RecentQueryEntity
+import com.ojhdtapp.parabox.data.local.entity.RecentQueryTimestampUpdate
 import com.ojhdtapp.parabox.domain.model.RecentQuery
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
@@ -59,6 +63,12 @@ class MainRepositoryImpl @Inject constructor(
                     )
                 )
             }
+
+            context.getDataStoreValue(DataStoreKeys.MESSAGE_BADGE_NUM, 0).also {
+                context.dataStore.edit { preferences ->
+                    preferences[DataStoreKeys.MESSAGE_BADGE_NUM] = it + 1
+                }
+            }
         }
 
         return ParaboxResult(ParaboxResult.SUCCESS, ParaboxResult.SUCCESS_MSG)
@@ -75,5 +85,22 @@ class MainRepositoryImpl @Inject constructor(
                 emit(Resource.Error("unknown error"))
             }
         }
+    }
+
+    override suspend fun submitRecentQuery(value: String): Boolean {
+        return db.recentQueryDao.getRecentQueryByValue(value)?.let {
+            return db.recentQueryDao.updateTimestamp(
+                RecentQueryTimestampUpdate(it.id, System.currentTimeMillis())
+            ) == 1
+        } ?: kotlin.run {
+            db.recentQueryDao.insertRecentQuery(
+                RecentQueryEntity(value, System.currentTimeMillis())
+            )
+            true
+        }
+    }
+
+    override suspend fun deleteRecentQuery(id: Long): Boolean {
+        return db.recentQueryDao.deleteRecentQueryById(id) == 1
     }
 }

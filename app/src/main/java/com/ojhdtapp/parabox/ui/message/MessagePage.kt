@@ -16,6 +16,8 @@ import androidx.compose.material3.DrawerState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -26,8 +28,15 @@ import androidx.navigation.NavController
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
+import coil.compose.AsyncImagePainter
+import coil.compose.SubcomposeAsyncImage
+import coil.compose.SubcomposeAsyncImageContent
+import com.google.accompanist.placeholder.PlaceholderHighlight
+import com.google.accompanist.placeholder.material3.fade
+import com.google.accompanist.placeholder.placeholder
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.*
+import com.ojhdtapp.parabox.core.util.AvatarUtil.getCircledBitmap
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.common.*
@@ -63,7 +72,6 @@ fun MessagePage(
         topBar = {
             SearchBar(
                 modifier = Modifier
-                    .padding(horizontal = 16.dp)
                     .fillMaxWidth(),
                 query = sharedState.search.query,
                 onQueryChange = {
@@ -75,9 +83,47 @@ fun MessagePage(
                     sharedViewModel.sendEvent(MainSharedEvent.SearchConfirm(it))
                 },
                 active = sharedState.search.isActive,
-                onActiveChange = { sharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(it)) }
+                onActiveChange = { sharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(it)) },
+                placeholder = { Text(text = "搜索 Parabox") },
+                leadingIcon = {
+                    IconButton(onClick = { /*TODO*/ }) {
+                        Icon(imageVector = Icons.Outlined.Menu, contentDescription = "menu")
+                    }
+                },
+                trailingIcon = {
+                    IconButton(onClick = { sharedViewModel.sendEvent(MainSharedEvent.ClickSearchAvatar) }) {
+                        SubcomposeAsyncImage(
+                            model = sharedState.datastore.localAvatarUri,
+                            contentDescription = "user_avatar",
+                            modifier = Modifier.size(30.dp),
+                        ) {
+                            val state = painter.state
+                            val namedAvatarBm =
+                                AvatarUtil.createNamedAvatarBm(
+                                    backgroundColor = MaterialTheme.colorScheme.primary.toArgb(),
+                                    textColor = MaterialTheme.colorScheme.onPrimary.toArgb(),
+                                    name = sharedState.datastore.localName
+                                ).getCircledBitmap().asImageBitmap()
+                            if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
+                                Image(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .placeholder(
+                                            visible = state is AsyncImagePainter.State.Loading,
+                                            color = MaterialTheme.colorScheme.secondaryContainer,
+                                            highlight = PlaceholderHighlight.fade(),
+                                        ),
+                                    bitmap = namedAvatarBm,
+                                    contentDescription = "named_avatar"
+                                )
+                            } else {
+                                SubcomposeAsyncImageContent()
+                            }
+                        }
+                    }
+                },
             ) {
-                SearchContent(state = sharedState.search, onEvent = sharedViewModel::sendEvent)
+                SearchContent(state = sharedState, onEvent = sharedViewModel::sendEvent)
             }
         }) { it ->
         LazyColumn(

@@ -24,12 +24,12 @@ import com.ojhdtapp.parabox.ui.base.UiEvent
 import kotlinx.coroutines.launch
 
 @Composable
-fun SearchContent(modifier: Modifier = Modifier, state: MainSharedState.Search, onEvent: (e: MainSharedEvent) -> Unit) {
+fun SearchContent(modifier: Modifier = Modifier, state: MainSharedState, onEvent: (e: MainSharedEvent) -> Unit) {
     val searchPageState by remember {
         derivedStateOf {
             when {
-                state.showRecent && state.query.isEmpty() -> SearchContent.RECENT
-                state.showRecent && state.query.isNotBlank() -> SearchContent.TYPING
+                state.search.showRecent && state.search.query.isEmpty() -> SearchContent.RECENT
+                state.search.showRecent && state.search.query.isNotBlank() -> SearchContent.TYPING
                 else -> SearchContent.DONE
             }
         }
@@ -45,7 +45,7 @@ fun SearchContent(modifier: Modifier = Modifier, state: MainSharedState.Search, 
             }
 
             SearchContent.DONE -> {
-                DoneSearchContent(state = state)
+                DoneSearchContent(state = state.search)
             }
         }
     }

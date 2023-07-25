@@ -19,6 +19,9 @@ interface RecentQueryDao {
     @Query("SELECT * FROM recent_query_entity")
     fun getAllRecentQuery(): List<RecentQueryEntity>
 
+    @Query("SELECT * FROM recent_query_entity WHERE value = :value")
+    fun getRecentQueryByValue(value: String): RecentQueryEntity?
+
     @Update(entity = RecentQueryEntity::class)
     fun updateTimestamp(obj: RecentQueryTimestampUpdate): Int
 }

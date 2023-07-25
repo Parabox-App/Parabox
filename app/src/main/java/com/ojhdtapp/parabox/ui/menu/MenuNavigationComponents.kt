@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import com.ojhdtapp.parabox.NavGraphs
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.appCurrentDestinationAsState
+import com.ojhdtapp.parabox.ui.MainSharedState
 import kotlinx.coroutines.launch
 
 enum class MenuNavigationDestination(
@@ -43,8 +44,8 @@ enum class MenuNavigationDestination(
 @Composable
 fun MenuNavigationBar(
     modifier: Modifier = Modifier,
+    mainSharedState: MainSharedState,
     navController: NavController,
-    menuPageUiState: MenuPageUiState,
     onEvent: (event: MenuPageEvent) -> Unit,
 ) {
 //    val currentDestination: Destination =
@@ -74,8 +75,8 @@ fun MenuNavigationBar(
                     },
                     icon = {
                         BadgedBox(badge = {
-                            if (destination.graph == NavGraphs.message && menuPageUiState.messageBadgeNum != 0)
-                                Badge { Text(text = "${menuPageUiState.messageBadgeNum}") }
+                            if (destination.graph == NavGraphs.message && mainSharedState.datastore.messageBadgeNum != 0)
+                                Badge { Text(text = "${mainSharedState.datastore.messageBadgeNum}") }
                         }) {
                             Icon(
                                 imageVector = if (isCurrentDestOnBackStack) destination.iconSelected else destination.icon,

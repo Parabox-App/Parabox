@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui
 
+import android.net.Uri
 import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.Contact
@@ -8,8 +9,15 @@ import com.ojhdtapp.parabox.domain.model.RecentQuery
 import com.ojhdtapp.parabox.ui.base.UiState
 
 data class MainSharedState(
-    val search: Search = Search()
+    val datastore: DataStore = DataStore(),
+    val search: Search = Search(),
+    val openMainDialog: Boolean = false
 ): UiState{
+    data class DataStore(
+        val messageBadgeNum: Int = 0,
+        val localName: String = "User",
+        val localAvatarUri: Uri = Uri.EMPTY,
+    )
     data class Search(
         val query: String = "",
         val recentQuery: List<RecentQuery> = emptyList(),
