@@ -153,16 +153,14 @@ private fun MenuNavigationWrapperUI(
                 if (it.selfClicked) {
 
                 } else {
-                    coroutineScope.launch {
-                        drawerState.close()
-                    }
+                    mainSharedViewModel.sendEvent(MainSharedEvent.OpenDrawer(false))
                 }
             }
 
             is MenuPageEvent.OnMenuClick -> {
-                coroutineScope.launch {
-                    if (drawerState.isOpen) drawerState.close() else drawerState.open()
-                }
+                mainSharedViewModel.sendEvent(
+                    MainSharedEvent.OpenDrawer(!mainSharedState.openDrawer.open)
+                )
             }
 
             is MenuPageEvent.OnBarItemClicked -> {
@@ -178,30 +176,46 @@ private fun MenuNavigationWrapperUI(
     }
 
     // ui Event
-    LaunchedEffect(Unit) {
-        mainSharedViewModel.uiEffect.flowWithLifecycle(lifecycleOwner.lifecycle, Lifecycle.State.STARTED).collectLatest {
-            when (it) {
-                is MainSharedEffect.ShowSnackBar -> {
-
-                }
-                else -> {}
+    LaunchedEffect(mainSharedState.openDrawer) {
+        coroutineScope.launch {
+            if (mainSharedState.openDrawer.snap) {
+                drawerState.snapTo(if (mainSharedState.openDrawer.open) DrawerValue.Open else DrawerValue.Closed)
+            } else {
+                if (mainSharedState.openDrawer.open) drawerState.open() else drawerState.close()
+            }
+        }
+    }
+    LaunchedEffect(mainSharedState.openBottomSheet) {
+        coroutineScope.launch {
+            if (mainSharedState.openBottomSheet.snap) {
+                drawerState.snapTo(if (mainSharedState.openBottomSheet.open) DrawerValue.Open else DrawerValue.Closed)
+            } else {
+                if (mainSharedState.openBottomSheet.open) bottomSheetState.show() else bottomSheetState.hide()
             }
         }
     }
     LaunchedEffect(Unit) {
+        mainSharedViewModel.uiEffect.flowWithLifecycle(lifecycleOwner.lifecycle, Lifecycle.State.STARTED)
+            .collectLatest {
+                when (it) {
+                    is MainSharedEffect.ShowSnackBar -> {
+
+                    }
+
+                    else -> {}
+                }
+            }
+    }
+    LaunchedEffect(Unit) {
         if (navigationType == MenuNavigationType.PERMANENT_NAVIGATION_DRAWER) {
-            drawerState.snapTo(DrawerValue.Open)
+            mainSharedViewModel.sendEvent(MainSharedEvent.OpenDrawer(open = true, snap = true))
         }
     }
-    BackHandler(drawerState.currentValue == DrawerValue.Open) {
-        coroutineScope.launch {
-            drawerState.close()
-        }
+    BackHandler(mainSharedState.openDrawer.open) {
+        mainSharedViewModel.sendEvent(MainSharedEvent.OpenDrawer(false))
     }
-    BackHandler(bottomSheetState.currentValue == SheetValue.Expanded) {
-        coroutineScope.launch {
-            bottomSheetState.hide()
-        }
+    BackHandler(mainSharedState.openBottomSheet.open) {
+        mainSharedViewModel.sendEvent(MainSharedEvent.OpenBottomSheet(false))
     }
     if (navigationType == MenuNavigationType.PERMANENT_NAVIGATION_DRAWER) {
         DismissibleNavigationDrawer(drawerContent = {

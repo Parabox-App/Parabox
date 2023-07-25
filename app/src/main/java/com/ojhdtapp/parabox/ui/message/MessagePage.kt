@@ -3,7 +3,11 @@
 package com.ojhdtapp.parabox.ui.message
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -50,8 +54,6 @@ fun MessagePage(
     mainNavController: NavController,
     mainSharedViewModel: MainSharedViewModel,
     listState: LazyListState,
-    drawerState: DrawerState,
-    bottomSheetState: SheetState,
     layoutType: MessageLayoutType
 ) {
     val viewModel = hiltViewModel<MessagePageViewModel>()
@@ -68,11 +70,16 @@ fun MessagePage(
             }
     }
     val chatLazyPagingData = state.chatPagingDataFlow.collectAsLazyPagingItems()
+    val searchBarPadding by animateDpAsState(
+        targetValue = if (sharedState.search.isActive) 0.dp else 16.dp,
+        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+    )
     Scaffold(modifier = modifier,
         topBar = {
             SearchBar(
                 modifier = Modifier
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .padding(horizontal = searchBarPadding),
                 query = sharedState.search.query,
                 onQueryChange = {
                     sharedViewModel.sendEvent(
@@ -86,38 +93,48 @@ fun MessagePage(
                 onActiveChange = { sharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(it)) },
                 placeholder = { Text(text = "搜索 Parabox") },
                 leadingIcon = {
-                    IconButton(onClick = { /*TODO*/ }) {
+                    IconButton(
+                        onClick = { mainSharedViewModel.sendEvent(MainSharedEvent.OpenDrawer(!sharedState.openDrawer.open)) },
+                    ) {
                         Icon(imageVector = Icons.Outlined.Menu, contentDescription = "menu")
                     }
                 },
                 trailingIcon = {
-                    IconButton(onClick = { sharedViewModel.sendEvent(MainSharedEvent.ClickSearchAvatar) }) {
-                        SubcomposeAsyncImage(
-                            model = sharedState.datastore.localAvatarUri,
-                            contentDescription = "user_avatar",
-                            modifier = Modifier.size(30.dp),
+                    AnimatedVisibility(
+                        visible = !sharedState.search.isActive,
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        IconButton(
+                            onClick = { sharedViewModel.sendEvent(MainSharedEvent.SearchAvatarClicked) },
                         ) {
-                            val state = painter.state
-                            val namedAvatarBm =
-                                AvatarUtil.createNamedAvatarBm(
-                                    backgroundColor = MaterialTheme.colorScheme.primary.toArgb(),
-                                    textColor = MaterialTheme.colorScheme.onPrimary.toArgb(),
-                                    name = sharedState.datastore.localName
-                                ).getCircledBitmap().asImageBitmap()
-                            if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
-                                Image(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .placeholder(
-                                            visible = state is AsyncImagePainter.State.Loading,
-                                            color = MaterialTheme.colorScheme.secondaryContainer,
-                                            highlight = PlaceholderHighlight.fade(),
-                                        ),
-                                    bitmap = namedAvatarBm,
-                                    contentDescription = "named_avatar"
-                                )
-                            } else {
-                                SubcomposeAsyncImageContent()
+                            SubcomposeAsyncImage(
+                                modifier = Modifier.size(30.dp),
+                                model = sharedState.datastore.localAvatarUri,
+                                contentDescription = "user_avatar",
+                            ) {
+                                val state = painter.state
+                                val namedAvatarBm =
+                                    AvatarUtil.createNamedAvatarBm(
+                                        backgroundColor = MaterialTheme.colorScheme.primary.toArgb(),
+                                        textColor = MaterialTheme.colorScheme.onPrimary.toArgb(),
+                                        name = sharedState.datastore.localName
+                                    ).getCircledBitmap().asImageBitmap()
+                                if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
+                                    Image(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .placeholder(
+                                                visible = state is AsyncImagePainter.State.Loading,
+                                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                                highlight = PlaceholderHighlight.fade(),
+                                            ),
+                                        bitmap = namedAvatarBm,
+                                        contentDescription = "named_avatar"
+                                    )
+                                } else {
+                                    SubcomposeAsyncImageContent()
+                                }
                             }
                         }
                     }
@@ -131,9 +148,6 @@ fun MessagePage(
             state = listState,
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            item {
-                Text(text = "text")
-            }
             item {
                 LazyRow(
                     verticalAlignment = Alignment.CenterVertically,

@@ -34,8 +34,6 @@ fun MessageAndChatPageWrapperUI(
     mainNavController: NavController,
     mainSharedViewModel: MainSharedViewModel,
     listState: LazyListState,
-    drawerState: DrawerState,
-    bottomSheetState: SheetState,
     windowSize: WindowSizeClass,
     devicePosture: DevicePosture,
 ) {
@@ -88,8 +86,6 @@ fun MessageAndChatPageWrapperUI(
             mainNavController = mainNavController,
             mainSharedViewModel = mainSharedViewModel,
             listState = listState,
-            drawerState = drawerState,
-            bottomSheetState = bottomSheetState,
             layoutType = layoutType
         )
         AnimatedVisibility(visible = layoutType == MessageLayoutType.SPLIT) {

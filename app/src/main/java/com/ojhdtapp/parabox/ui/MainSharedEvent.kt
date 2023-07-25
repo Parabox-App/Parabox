@@ -8,7 +8,7 @@ import com.ojhdtapp.parabox.ui.base.UiEvent
 
 sealed interface MainSharedEvent : UiEvent {
 
-    object UpdateDataStore: MainSharedEvent
+    object UpdateDataStore : MainSharedEvent
     data class QueryInput(val input: String) : MainSharedEvent
     data class SearchConfirm(val input: String) : MainSharedEvent
     object GetRecentQuery : MainSharedEvent
@@ -21,5 +21,7 @@ sealed interface MainSharedEvent : UiEvent {
     data class ChatSearchDone(val res: List<Chat>, val isSuccess: Boolean) : MainSharedEvent
     data class TriggerSearchBar(val isActive: Boolean) : MainSharedEvent
 
-    object ClickSearchAvatar : MainSharedEvent
+    data class OpenDrawer(val open: Boolean, val snap: Boolean = false) : MainSharedEvent
+    data class OpenBottomSheet(val open: Boolean, val snap: Boolean = false) : MainSharedEvent
+    object SearchAvatarClicked : MainSharedEvent
 }

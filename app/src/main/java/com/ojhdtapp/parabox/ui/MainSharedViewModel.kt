@@ -2,14 +2,10 @@ package com.ojhdtapp.parabox.ui
 
 import android.content.Context
 import android.net.Uri
-import androidx.datastore.preferences.core.emptyPreferences
-import androidx.lifecycle.viewModelScope
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.core.util.Resource
-import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.parabox.core.util.getDataStoreValue
-import com.ojhdtapp.parabox.core.util.getDataStoreValueFlow
 import com.ojhdtapp.parabox.domain.use_case.Query
 import com.ojhdtapp.parabox.ui.base.BaseViewModel
 import com.ojhdtapp.parabox.ui.base.UiEffect
@@ -18,7 +14,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import java.io.IOException
 import javax.inject.Inject
 
 @HiltViewModel
@@ -160,7 +155,25 @@ class MainSharedViewModel @Inject constructor(
                 )
             }
 
-            is MainSharedEvent.ClickSearchAvatar -> {
+            is MainSharedEvent.OpenDrawer -> {
+                return state.copy(
+                    openDrawer = MainSharedState.OpenDrawer(
+                        open = event.open,
+                        snap = event.snap
+                    )
+                )
+            }
+
+            is MainSharedEvent.OpenBottomSheet -> {
+                return state.copy(
+                    openBottomSheet = MainSharedState.OpenBottomSheet(
+                        open = event.open,
+                        snap = event.snap
+                    )
+                )
+            }
+
+            is MainSharedEvent.SearchAvatarClicked -> {
                 return state.copy(
                     openMainDialog = !state.openMainDialog
                 )

@@ -11,6 +11,9 @@ import com.ojhdtapp.parabox.ui.base.UiState
 data class MainSharedState(
     val datastore: DataStore = DataStore(),
     val search: Search = Search(),
+    val openDrawer:OpenDrawer = OpenDrawer(),
+    val openBottomSheet: OpenBottomSheet = OpenBottomSheet(),
+    val showNavigationBar: Boolean = false,
     val openMainDialog: Boolean = false
 ): UiState{
     data class DataStore(
@@ -45,4 +48,14 @@ data class MainSharedState(
             val filterResult: List<Chat> = emptyList()
         )
     }
+
+    data class OpenDrawer(
+        val open: Boolean = false,
+        val snap: Boolean = false,
+    )
+
+    data class OpenBottomSheet(
+        val open: Boolean = false,
+        val snap: Boolean = false,
+    )
 }
