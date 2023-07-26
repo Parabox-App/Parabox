@@ -125,6 +125,9 @@ dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0'
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.5.0"
 
+    // DropdownMenu
+    implementation "me.saket.cascade:cascade-compose:2.2.0"
+
     // swipe
     implementation "me.saket.swipe:swipe:1.2.0"
 

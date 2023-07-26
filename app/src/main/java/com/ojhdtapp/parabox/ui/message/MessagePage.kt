@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,6 +37,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.PopupProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
@@ -56,6 +58,7 @@ import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.common.*
 import kotlinx.coroutines.flow.collectLatest
+import me.saket.cascade.CascadeDropdownMenu
 import me.saket.swipe.SwipeAction
 import me.saket.swipe.SwipeableActionsBox
 import me.saket.swipe.rememberSwipeableActionsState
@@ -269,7 +272,6 @@ fun MessagePage(
                     }
                 }
                 LaunchedEffect(reachThreshold){
-                    Log.d("parabox", "vibrate!")
                     if(reachThreshold){
                         hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                     }
@@ -324,6 +326,30 @@ fun MessagePage(
                         )
                         .animateItemPlacement()
                 ) {
+                    var isMenuVisible by rememberSaveable { mutableStateOf(false) }
+                    CascadeDropdownMenu(
+                        expanded = isMenuVisible,
+                        onDismissRequest = { isMenuVisible = false },
+                        modifier = Modifier.clip(MaterialTheme.shapes.medium),
+                        properties = PopupProperties(
+                            dismissOnBackPress = true,
+                            dismissOnClickOutside = true
+                        ),
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Horizon") },
+                            children = {
+                                DropdownMenuItem(
+                                    text = { Text("Zero Dawn") },
+                                    onClick = { }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Forbidden West") },
+                                    onClick = { }
+                                )
+                            }
+                        )
+                    }
                     SwipeableActionsBox(
                         state = swipeableActionsState,
                         startActions = if (state.datastore.enableSwipeToDismiss) listOf(archive) else emptyList(),
@@ -340,8 +366,10 @@ fun MessagePage(
                             ChatItem(
                                 chatWithLatestMessage = chatLazyPagingData[index]!!,
                                 contact = contact,
-//                                isFirst = index == 0,
-//                                isLast = index == chatLazyPagingData.itemCount - 1
+                                onLongClick = {
+                                    isMenuVisible = true
+                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                }
                             )
                         }
                     }

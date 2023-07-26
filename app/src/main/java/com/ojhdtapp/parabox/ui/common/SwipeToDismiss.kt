@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Archive
 import androidx.compose.material.icons.outlined.Done
 import androidx.compose.material3.DismissDirection
 import androidx.compose.material3.DismissValue
@@ -21,12 +22,123 @@ import androidx.compose.material3.SwipeToDismiss
 import androidx.compose.material3.rememberDismissState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import me.saket.swipe.SwipeAction
+import me.saket.swipe.SwipeableActionsBox
+import me.saket.swipe.rememberSwipeableActionsState
+import kotlin.math.abs
+
+@Composable
+fun SwipeableActionsDismissBox(
+    modifier: Modifier = Modifier,
+    enabled: Boolean,
+    threshold: Dp,
+    onReachThreshold: () -> Unit,
+    startToEndIcon: ImageVector,
+    endToStartIcon: ImageVector,
+    onDismissedToEnd: () -> Unit,
+    onDismissedToStart: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    val density = LocalDensity.current
+    val coroutineScope = rememberCoroutineScope()
+    val swipeableActionsState = rememberSwipeableActionsState()
+    var isDismissedToStart by remember {
+        mutableStateOf(false)
+    }
+    var isDismissedToEnd by remember {
+        mutableStateOf(false)
+    }
+    val reachThreshold by remember {
+        derivedStateOf {
+            abs(swipeableActionsState.offset.value) > with(density) { threshold.toPx() }
+        }
+    }
+    LaunchedEffect(reachThreshold) {
+        if (reachThreshold) {
+            onReachThreshold()
+        }
+    }
+    val scale by animateFloatAsState(
+        if (reachThreshold) 1f else 0.75f
+    )
+    val startToEnd = SwipeAction(
+        icon = {
+            Icon(
+                imageVector = startToEndIcon, contentDescription = "end",
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .scale(scale),
+                tint = MaterialTheme.colorScheme.onPrimary
+            )
+        },
+        background = MaterialTheme.colorScheme.primary,
+        onSwipe = {
+            isDismissedToEnd = true
+            coroutineScope.launch {
+                delay(1000)
+                onDismissedToEnd()
+            }
+        }
+    )
+    val endToStart = SwipeAction(
+        icon = {
+            Icon(
+                imageVector = endToStartIcon, contentDescription = "start",
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .scale(scale),
+                tint = MaterialTheme.colorScheme.onPrimary
+            )
+        },
+        background = MaterialTheme.colorScheme.primary,
+        onSwipe = {
+            isDismissedToStart = true
+            coroutineScope.launch {
+                delay(1000)
+                onDismissedToStart()
+            }
+        }
+    )
+
+    AnimatedVisibility(
+        modifier = modifier.fillMaxWidth(),
+        visible = !isDismissedToStart,
+        exit = slideOutHorizontally { -it },
+        enter = expandVertically()
+    ) {
+        AnimatedVisibility(
+            modifier = Modifier.fillMaxWidth(),
+            visible = !isDismissedToEnd,
+            exit = slideOutHorizontally { it }, enter = expandVertically()
+        ) {
+            SwipeableActionsBox(
+                state = swipeableActionsState,
+                startActions = if (enabled) listOf(startToEnd) else emptyList(),
+                endActions = if (enabled) listOf(endToStart) else emptyList(),
+                swipeThreshold = threshold,
+                backgroundUntilSwipeThreshold = MaterialTheme.colorScheme.secondary
+            ) {
+                content()
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
