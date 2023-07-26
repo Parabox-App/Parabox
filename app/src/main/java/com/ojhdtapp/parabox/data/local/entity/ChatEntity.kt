@@ -58,3 +58,31 @@ data class ChatUnreadMessagesNumUpdate(
     @ColumnInfo(name = "unreadMessageNum")
     val unreadMessageNum: Int,
 )
+
+data class ChatPinUpdate(
+    @ColumnInfo(name = "chatId")
+    val chatId: Long,
+    @ColumnInfo(name = "isPinned")
+    val isPinned: Boolean,
+)
+
+data class ChatHideUpdate(
+    @ColumnInfo(name = "chatId")
+    val chatId: Long,
+    @ColumnInfo(name = "isHidden")
+    val isHidden: Boolean,
+)
+
+data class ChatArchiveUpdate(
+    @ColumnInfo(name = "chatId")
+    val chatId: Long,
+    @ColumnInfo(name = "isArchived")
+    val isArchived: Boolean,
+)
+
+data class ChatTagsUpdate(
+    @ColumnInfo(name = "chatId")
+    val chatId: Long,
+    @ColumnInfo(name = "tags")
+    val tags: List<String>,
+)

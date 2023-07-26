@@ -31,6 +31,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
@@ -139,6 +141,7 @@ private fun MenuNavigationWrapperUI(
     )
     val coroutineScope = rememberCoroutineScope()
     val lifecycleOwner = LocalLifecycleOwner.current
+    val snackBarHostState = remember { SnackbarHostState() }
     // List
     val listState = rememberLazyListState()
     // Drawer
@@ -209,7 +212,17 @@ private fun MenuNavigationWrapperUI(
             .collectLatest {
                 when (it) {
                     is MainSharedEffect.ShowSnackBar -> {
-
+                        coroutineScope.launch {
+                            snackBarHostState.showSnackbar(it.message, it.label).also { result ->
+                                when (result) {
+                                    SnackbarResult.ActionPerformed -> {
+                                        it.callback?.invoke()
+                                    }
+                                    SnackbarResult.Dismissed -> {}
+                                    else -> {}
+                                }
+                            }
+                        }
                     }
 
                     else -> {}

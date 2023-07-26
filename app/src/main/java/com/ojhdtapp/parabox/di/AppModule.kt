@@ -20,6 +20,7 @@ import com.ojhdtapp.parabox.domain.use_case.GetChat
 import com.ojhdtapp.parabox.domain.use_case.GetContact
 import com.ojhdtapp.parabox.domain.use_case.GetMessage
 import com.ojhdtapp.parabox.domain.use_case.Query
+import com.ojhdtapp.parabox.domain.use_case.UpdateChat
 import com.ojhdtapp.parabox.domain.util.GsonParser
 import dagger.Module
 import dagger.Provides
@@ -120,5 +121,13 @@ object AppModule {
         chatRepository: ChatRepository
     ): Query = Query(
         mainRepository, messageRepository, contactRepository, chatRepository
+    )
+
+    @Provides
+    @Singleton
+    fun provideUpdateChatUseCase(
+        chatRepository: ChatRepository
+    ): UpdateChat = UpdateChat(
+        chatRepository
     )
 }

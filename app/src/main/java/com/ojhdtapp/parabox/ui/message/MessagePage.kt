@@ -59,11 +59,8 @@ import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.common.*
 import kotlinx.coroutines.flow.collectLatest
-import me.saket.cascade.CascadeDropdownMenu
-import me.saket.swipe.SwipeAction
-import me.saket.swipe.SwipeableActionsBox
+import kotlinx.coroutines.launch
 import me.saket.swipe.rememberSwipeableActionsState
-import kotlin.math.abs
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalAnimationGraphicsApi::class)
@@ -76,19 +73,30 @@ fun MessagePage(
     layoutType: MessageLayoutType
 ) {
     val viewModel = hiltViewModel<MessagePageViewModel>()
+    val coroutineScope = rememberCoroutineScope()
     val lifecycleOwner = LocalLifecycleOwner.current
     val hapticFeedback = LocalHapticFeedback.current
-    val density = LocalDensity.current
+    val snackBarHostState = remember { SnackbarHostState() }
     val state by viewModel.uiState.collectAsState()
     val sharedState by mainSharedViewModel.uiState.collectAsState()
-    LaunchedEffect(key1 = sharedState, block = {
-        Log.d("parabox", "active: ${sharedState.search.isActive}")
-    })
     LaunchedEffect(Unit) {
         viewModel.uiEffect.flowWithLifecycle(lifecycleOwner.lifecycle, Lifecycle.State.STARTED)
             .collectLatest {
                 when (it) {
-                    else -> {}
+                    is MessagePageEffect.ShowSnackBar -> {
+                        coroutineScope.launch {
+                            snackBarHostState.showSnackbar(it.message, it.label).also { result ->
+                                when (result) {
+                                    SnackbarResult.ActionPerformed -> {
+                                        it.callback?.invoke()
+                                    }
+
+                                    SnackbarResult.Dismissed -> {}
+                                    else -> {}
+                                }
+                            }
+                        }
+                    }
                 }
             }
     }
@@ -300,45 +308,147 @@ fun MessagePage(
                             focusable = true
                         ),
                     ) {
-                        DropdownMenuItem(
-                            text = { Text(text = stringResource(R.string.dropdown_menu_pin)) },
-                            onClick = {},
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Outlined.Flag,
-                                    contentDescription = null
-                                )
-                            })
-                        DropdownMenuItem(
-                            text = { Text(text = stringResource(R.string.dropdown_menu_mark_as_read)) },
-                            onClick = {},
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Outlined.MarkChatRead,
-                                    contentDescription = null
-                                )
-                            })
+                        if (item.chat.isPinned) {
+                            DropdownMenuItem(
+                                text = { Text(text = stringResource(R.string.dropdown_menu_not_pin)) },
+                                onClick = {
+                                    viewModel.sendEvent(
+                                        MessagePageEvent.UpdateChatPin(
+                                            item.chat.chatId,
+                                            false,
+                                            item.chat.isPinned
+                                        )
+                                    )
+                                    isMenuVisible = false
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.Flag,
+                                        contentDescription = null
+                                    )
+                                })
+                        } else {
+                            DropdownMenuItem(
+                                text = { Text(text = stringResource(R.string.dropdown_menu_pin)) },
+                                onClick = {
+                                    viewModel.sendEvent(
+                                        MessagePageEvent.UpdateChatPin(
+                                            item.chat.chatId,
+                                            true,
+                                            item.chat.isPinned
+                                        )
+                                    )
+                                    isMenuVisible = false
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.Flag,
+                                        contentDescription = null
+                                    )
+                                })
+                        }
+                        if (item.chat.unreadMessageNum > 0) {
+                            DropdownMenuItem(
+                                text = { Text(text = stringResource(R.string.dropdown_menu_mark_as_read)) },
+                                onClick = {
+                                    viewModel.sendEvent(
+                                        MessagePageEvent.UpdateChatUnreadMessagesNum(
+                                            item.chat.chatId,
+                                            0,
+                                            item.chat.unreadMessageNum
+                                        )
+                                    )
+                                    isMenuVisible = false
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.MarkChatRead,
+                                        contentDescription = null
+                                    )
+                                })
+                        } else {
+                            DropdownMenuItem(
+                                text = { Text(text = stringResource(R.string.dropdown_menu_mark_as_unread)) },
+                                onClick = {
+                                    viewModel.sendEvent(
+                                        MessagePageEvent.UpdateChatUnreadMessagesNum(
+                                            item.chat.chatId,
+                                            1,
+                                            item.chat.unreadMessageNum
+                                        )
+                                    )
+                                    isMenuVisible = false
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.MarkChatUnread,
+                                        contentDescription = null
+                                    )
+                                })
+                        }
+
                         DropdownMenuItem(
                             text = { Text(text = "标记已完成") },
-                            onClick = {},
+                            onClick = {
+                                viewModel.sendEvent(
+                                    MessagePageEvent.UpdateChatHide(
+                                        item.chat.chatId,
+                                        true,
+                                        item.chat.isHidden
+                                    )
+                                )
+                                isMenuVisible = false
+                            },
                             leadingIcon = {
                                 Icon(
                                     Icons.Outlined.Done,
                                     contentDescription = null
                                 )
                             })
-                        DropdownMenuItem(
-                            text = { Text(text =  stringResource(R.string.dropdown_menu_archive))  },
-                            onClick = {},
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Outlined.Archive,
-                                    contentDescription = null
-                                )
-                            })
+                        if (item.chat.isArchived) {
+                            DropdownMenuItem(
+                                text = { Text(text = stringResource(R.string.dropdown_menu_unarchive)) },
+                                onClick = {
+                                    viewModel.sendEvent(
+                                        MessagePageEvent.UpdateChatArchive(
+                                            item.chat.chatId,
+                                            false,
+                                            item.chat.isArchived
+                                        )
+                                    )
+                                    isMenuVisible = false
+
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.Unarchive,
+                                        contentDescription = null
+                                    )
+                                })
+                        } else {
+                            DropdownMenuItem(
+                                text = { Text(text = stringResource(R.string.dropdown_menu_archive)) },
+                                onClick = {
+                                    viewModel.sendEvent(
+                                        MessagePageEvent.UpdateChatArchive(
+                                            item.chat.chatId,
+                                            true,
+                                            item.chat.isArchived
+                                        )
+                                    )
+                                    isMenuVisible = false
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.Archive,
+                                        contentDescription = null
+                                    )
+                                })
+                        }
                         DropdownMenuItem(
                             text = { Text(text = stringResource(R.string.dropdown_menu_new_tag)) },
                             onClick = {
+                                isMenuVisible = false
                             },
                             leadingIcon = {
                                 Icon(
@@ -349,6 +459,7 @@ fun MessagePage(
                         DropdownMenuItem(
                             text = { Text(text = stringResource(R.string.dropdown_menu_info)) },
                             onClick = {
+                                isMenuVisible = false
                             },
                             leadingIcon = {
                                 Icon(
@@ -364,8 +475,8 @@ fun MessagePage(
                         onReachThreshold = { hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress) },
                         startToEndIcon = Icons.Outlined.Archive,
                         endToStartIcon = Icons.Outlined.Done,
-                        onDismissedToEnd = {  },
-                        onDismissedToStart = {  }) {
+                        onDismissedToEnd = { },
+                        onDismissedToStart = { }) {
                         if (chatLazyPagingData[index] == null) {
                             EmptyChatItem()
                         } else {

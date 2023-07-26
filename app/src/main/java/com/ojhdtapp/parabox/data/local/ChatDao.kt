@@ -7,9 +7,13 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
+import com.ojhdtapp.parabox.data.local.entity.ChatArchiveUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatEntity
+import com.ojhdtapp.parabox.data.local.entity.ChatHideUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatWithLatestMessageEntity
 import com.ojhdtapp.parabox.data.local.entity.ChatLatestMessageIdUpdate
+import com.ojhdtapp.parabox.data.local.entity.ChatPinUpdate
+import com.ojhdtapp.parabox.data.local.entity.ChatTagsUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatUnreadMessagesNumUpdate
 import kotlinx.coroutines.flow.Flow
 
@@ -52,4 +56,16 @@ interface ChatDao {
 
     @Update(entity = ChatEntity::class)
     fun updateUnreadMessageNum(obj: ChatUnreadMessagesNumUpdate): Int
+
+    @Update(entity = ChatEntity::class)
+    fun updateIsHidden(obj: ChatHideUpdate): Int
+
+    @Update(entity = ChatEntity::class)
+    fun updateIsPinned(obj: ChatPinUpdate): Int
+
+    @Update(entity = ChatEntity::class)
+    fun updateArchived(obj: ChatArchiveUpdate): Int
+
+    @Update(entity = ChatEntity::class)
+    fun updateTags(obj: ChatTagsUpdate): Int
 }

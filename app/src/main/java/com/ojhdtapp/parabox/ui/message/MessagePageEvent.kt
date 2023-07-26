@@ -8,4 +8,9 @@ sealed interface MessagePageEvent : UiEvent {
     data class UpdateEnabledGetChatFilterList(val list: List<GetChatFilter>) : MessagePageEvent
     data class AddOrRemoveSelectedGetChatFilter(val filter: GetChatFilter) : MessagePageEvent
     data class GetChatPagingDataFlow(val filterList: List<GetChatFilter>) : MessagePageEvent
+    data class UpdateChatUnreadMessagesNum(val chatId: Long, val value: Int, val oldValue: Int) : MessagePageEvent
+    data class UpdateChatHide(val chatId: Long, val value: Boolean, val oldValue: Boolean) : MessagePageEvent
+    data class UpdateChatPin(val chatId: Long, val value: Boolean, val oldValue: Boolean) : MessagePageEvent
+    data class UpdateChatArchive(val chatId: Long, val value: Boolean, val oldValue: Boolean) : MessagePageEvent
+    data class UpdateChatTags(val chatId: Long, val value: List<String>, val oldValue: List<String>) : MessagePageEvent
 }

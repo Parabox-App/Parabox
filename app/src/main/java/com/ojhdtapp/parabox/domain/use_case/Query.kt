@@ -14,10 +14,10 @@ import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class Query @Inject constructor(
-    val mainRepository: MainRepository,
-    val messageRepository: MessageRepository,
-    val contactRepository: ContactRepository,
-    val chatRepository: ChatRepository,
+    private val mainRepository: MainRepository,
+    private val messageRepository: MessageRepository,
+    private val contactRepository: ContactRepository,
+    private val chatRepository: ChatRepository,
 ) {
     fun recentQuery(): Flow<Resource<List<RecentQuery>>> {
         return mainRepository.getRecentQuery()
