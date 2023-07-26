@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -196,7 +197,6 @@ fun MessagePage(
         LazyColumn(
             contentPadding = it,
             state = listState,
-            verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             item {
                 LazyRow(
@@ -264,47 +264,8 @@ fun MessagePage(
                 key = chatLazyPagingData.itemKey { it.chat.chatId },
                 contentType = chatLazyPagingData.itemContentType { "chat" }
             ) { index ->
-                val threshold = 84.dp
+                val item = chatLazyPagingData[index]!!
                 val swipeableActionsState = rememberSwipeableActionsState()
-                val reachThreshold by remember{
-                    derivedStateOf {
-                        abs(swipeableActionsState.offset.value) > with(density) { threshold.toPx() }
-                    }
-                }
-                LaunchedEffect(reachThreshold){
-                    if(reachThreshold){
-                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                    }
-                }
-                val scale by animateFloatAsState(
-                    if (reachThreshold) 1f else 0.75f
-                )
-                val archive = SwipeAction(
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Outlined.Archive, contentDescription = "archive",
-                            modifier = Modifier
-                                .padding(horizontal = 16.dp)
-                                .scale(scale),
-                            tint = MaterialTheme.colorScheme.onPrimary
-                        )
-                    },
-                    background = MaterialTheme.colorScheme.primary,
-                    onSwipe = {}
-                )
-                val done = SwipeAction(
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Outlined.Done, contentDescription = "archive",
-                            modifier = Modifier
-                                .padding(horizontal = 16.dp)
-                                .scale(scale),
-                            tint = MaterialTheme.colorScheme.onPrimary
-                        )
-                    },
-                    background = MaterialTheme.colorScheme.primary,
-                    onSwipe = {}
-                )
                 val isFirst = index == 0
                 val isLast = index == chatLazyPagingData.itemCount - 1
                 val topRadius by animateDpAsState(
@@ -313,6 +274,7 @@ fun MessagePage(
                 val bottomRadius by animateDpAsState(
                     targetValue = if (isLast && swipeableActionsState.offset.value == 0f) 24.dp else 3.dp
                 )
+
                 Box(
                     modifier = Modifier
                         .padding(horizontal = 16.dp)
@@ -327,36 +289,83 @@ fun MessagePage(
                         .animateItemPlacement()
                 ) {
                     var isMenuVisible by rememberSaveable { mutableStateOf(false) }
-                    CascadeDropdownMenu(
+                    RoundedCornerCascadeDropdownMenu(
                         expanded = isMenuVisible,
                         onDismissRequest = { isMenuVisible = false },
                         modifier = Modifier.clip(MaterialTheme.shapes.medium),
+                        offset = DpOffset(16.dp, 0.dp),
                         properties = PopupProperties(
                             dismissOnBackPress = true,
-                            dismissOnClickOutside = true
+                            dismissOnClickOutside = true,
+                            focusable = true
                         ),
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Horizon") },
-                            children = {
-                                DropdownMenuItem(
-                                    text = { Text("Zero Dawn") },
-                                    onClick = { }
+                            text = { Text(text = stringResource(R.string.dropdown_menu_pin)) },
+                            onClick = {},
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Outlined.Flag,
+                                    contentDescription = null
                                 )
-                                DropdownMenuItem(
-                                    text = { Text("Forbidden West") },
-                                    onClick = { }
+                            })
+                        DropdownMenuItem(
+                            text = { Text(text = stringResource(R.string.dropdown_menu_mark_as_read)) },
+                            onClick = {},
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Outlined.MarkChatRead,
+                                    contentDescription = null
                                 )
-                            }
-                        )
+                            })
+                        DropdownMenuItem(
+                            text = { Text(text = "标记已完成") },
+                            onClick = {},
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Outlined.Done,
+                                    contentDescription = null
+                                )
+                            })
+                        DropdownMenuItem(
+                            text = { Text(text =  stringResource(R.string.dropdown_menu_archive))  },
+                            onClick = {},
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Outlined.Archive,
+                                    contentDescription = null
+                                )
+                            })
+                        DropdownMenuItem(
+                            text = { Text(text = stringResource(R.string.dropdown_menu_new_tag)) },
+                            onClick = {
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Outlined.NewLabel,
+                                    contentDescription = null
+                                )
+                            })
+                        DropdownMenuItem(
+                            text = { Text(text = stringResource(R.string.dropdown_menu_info)) },
+                            onClick = {
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Outlined.Info,
+                                    contentDescription = null
+                                )
+                            })
                     }
-                    SwipeableActionsBox(
+                    SwipeableActionsDismissBox(
+                        enabled = state.datastore.enableSwipeToDismiss,
                         state = swipeableActionsState,
-                        startActions = if (state.datastore.enableSwipeToDismiss) listOf(archive) else emptyList(),
-                        endActions = if (state.datastore.enableSwipeToDismiss) listOf(done) else emptyList(),
-                        swipeThreshold = threshold,
-                        backgroundUntilSwipeThreshold = MaterialTheme.colorScheme.secondary
-                    ) {
+                        threshold = 72.dp,
+                        onReachThreshold = { hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress) },
+                        startToEndIcon = Icons.Outlined.Archive,
+                        endToStartIcon = Icons.Outlined.Done,
+                        onDismissedToEnd = {  },
+                        onDismissedToStart = {  }) {
                         if (chatLazyPagingData[index] == null) {
                             EmptyChatItem()
                         } else {
@@ -364,7 +373,8 @@ fun MessagePage(
                                 chatLazyPagingData[index]!!.message?.senderId
                             ).collectAsState(initial = Resource.Loading())
                             ChatItem(
-                                chatWithLatestMessage = chatLazyPagingData[index]!!,
+                                modifier = Modifier.padding(bottom = 2.dp),
+                                chatWithLatestMessage = item,
                                 contact = contact,
                                 onLongClick = {
                                     isMenuVisible = true

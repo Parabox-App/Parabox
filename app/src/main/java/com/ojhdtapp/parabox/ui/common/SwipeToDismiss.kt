@@ -40,6 +40,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.saket.swipe.SwipeAction
 import me.saket.swipe.SwipeableActionsBox
+import me.saket.swipe.SwipeableActionsState
 import me.saket.swipe.rememberSwipeableActionsState
 import kotlin.math.abs
 
@@ -47,6 +48,7 @@ import kotlin.math.abs
 fun SwipeableActionsDismissBox(
     modifier: Modifier = Modifier,
     enabled: Boolean,
+    state: SwipeableActionsState,
     threshold: Dp,
     onReachThreshold: () -> Unit,
     startToEndIcon: ImageVector,
@@ -57,7 +59,6 @@ fun SwipeableActionsDismissBox(
 ) {
     val density = LocalDensity.current
     val coroutineScope = rememberCoroutineScope()
-    val swipeableActionsState = rememberSwipeableActionsState()
     var isDismissedToStart by remember {
         mutableStateOf(false)
     }
@@ -66,7 +67,7 @@ fun SwipeableActionsDismissBox(
     }
     val reachThreshold by remember {
         derivedStateOf {
-            abs(swipeableActionsState.offset.value) > with(density) { threshold.toPx() }
+            abs(state.offset.value) > with(density) { threshold.toPx() }
         }
     }
     LaunchedEffect(reachThreshold) {
@@ -91,7 +92,7 @@ fun SwipeableActionsDismissBox(
         onSwipe = {
             isDismissedToEnd = true
             coroutineScope.launch {
-                delay(1000)
+                delay(500)
                 onDismissedToEnd()
             }
         }
@@ -110,7 +111,7 @@ fun SwipeableActionsDismissBox(
         onSwipe = {
             isDismissedToStart = true
             coroutineScope.launch {
-                delay(1000)
+                delay(500)
                 onDismissedToStart()
             }
         }
@@ -128,7 +129,7 @@ fun SwipeableActionsDismissBox(
             exit = slideOutHorizontally { it }, enter = expandVertically()
         ) {
             SwipeableActionsBox(
-                state = swipeableActionsState,
+                state = state,
                 startActions = if (enabled) listOf(startToEnd) else emptyList(),
                 endActions = if (enabled) listOf(endToStart) else emptyList(),
                 swipeThreshold = threshold,
