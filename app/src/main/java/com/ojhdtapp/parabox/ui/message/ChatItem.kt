@@ -59,8 +59,6 @@ fun ChatItem(
     chatWithLatestMessage: ChatWithLatestMessage,
     contact: Resource<Contact>,
     icon: @Composable() (() -> Unit)? = null,
-    isFirst: Boolean,
-    isLast: Boolean,
     isSelected: Boolean = false,
     isEditing: Boolean = false,
     isExpanded: Boolean = false,
@@ -88,12 +86,6 @@ fun ChatItem(
     val avatarBackgroundColor by animateColorAsState(
         targetValue = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.primary
     )
-    val topRadius by animateDpAsState(
-        targetValue = if (isFirst) 24.dp else 3.dp
-    )
-    val bottomRadius by animateDpAsState(
-        targetValue = if (isLast) 24.dp else 3.dp
-    )
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -106,12 +98,7 @@ fun ChatItem(
                 onLongClick = onLongClick,
                 onClick = onClick
             ),
-        shape = RoundedCornerShape(
-            topStart = topRadius,
-            topEnd = topRadius,
-            bottomEnd = bottomRadius,
-            bottomStart = bottomRadius
-        ),
+
         color = backgroundColor,
         tonalElevation = 3.dp
     ) {
@@ -235,25 +222,11 @@ fun ChatItem(
 fun EmptyChatItem(
     modifier: Modifier = Modifier,
     icon: @Composable() (() -> Unit)? = null,
-    isFirst: Boolean,
-    isLast: Boolean,
 ) {
     val context = LocalContext.current
-    val topRadius by animateDpAsState(
-        targetValue = if (isFirst) 24.dp else 3.dp
-    )
-    val bottomRadius by animateDpAsState(
-        targetValue = if (isLast) 24.dp else 3.dp
-    )
     Surface(
         modifier = modifier
             .fillMaxWidth(),
-        shape = RoundedCornerShape(
-            topStart = topRadius,
-            topEnd = topRadius,
-            bottomEnd = bottomRadius,
-            bottomStart = bottomRadius
-        ),
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 3.dp
     ) {

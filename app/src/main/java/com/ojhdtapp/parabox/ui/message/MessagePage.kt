@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
 import androidx.compose.animation.graphics.res.animatedVectorResource
@@ -17,15 +18,21 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -49,6 +56,10 @@ import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.common.*
 import kotlinx.coroutines.flow.collectLatest
+import me.saket.swipe.SwipeAction
+import me.saket.swipe.SwipeableActionsBox
+import me.saket.swipe.rememberSwipeableActionsState
+import kotlin.math.abs
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalAnimationGraphicsApi::class)
@@ -62,6 +73,8 @@ fun MessagePage(
 ) {
     val viewModel = hiltViewModel<MessagePageViewModel>()
     val lifecycleOwner = LocalLifecycleOwner.current
+    val hapticFeedback = LocalHapticFeedback.current
+    val density = LocalDensity.current
     val state by viewModel.uiState.collectAsState()
     val sharedState by mainSharedViewModel.uiState.collectAsState()
     LaunchedEffect(key1 = sharedState, block = {
@@ -248,31 +261,89 @@ fun MessagePage(
                 key = chatLazyPagingData.itemKey { it.chat.chatId },
                 contentType = chatLazyPagingData.itemContentType { "chat" }
             ) { index ->
-                SwipeToDismissContact(
+                val threshold = 84.dp
+                val swipeableActionsState = rememberSwipeableActionsState()
+                val reachThreshold by remember{
+                    derivedStateOf {
+                        abs(swipeableActionsState.offset.value) > with(density) { threshold.toPx() }
+                    }
+                }
+                LaunchedEffect(reachThreshold){
+                    Log.d("parabox", "vibrate!")
+                    if(reachThreshold){
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                    }
+                }
+                val scale by animateFloatAsState(
+                    if (reachThreshold) 1f else 0.75f
+                )
+                val archive = SwipeAction(
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Outlined.Archive, contentDescription = "archive",
+                            modifier = Modifier
+                                .padding(horizontal = 16.dp)
+                                .scale(scale),
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    },
+                    background = MaterialTheme.colorScheme.primary,
+                    onSwipe = {}
+                )
+                val done = SwipeAction(
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Outlined.Done, contentDescription = "archive",
+                            modifier = Modifier
+                                .padding(horizontal = 16.dp)
+                                .scale(scale),
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    },
+                    background = MaterialTheme.colorScheme.primary,
+                    onSwipe = {}
+                )
+                val isFirst = index == 0
+                val isLast = index == chatLazyPagingData.itemCount - 1
+                val topRadius by animateDpAsState(
+                    targetValue = if (isFirst && swipeableActionsState.offset.value == 0f) 24.dp else 3.dp
+                )
+                val bottomRadius by animateDpAsState(
+                    targetValue = if (isLast && swipeableActionsState.offset.value == 0f) 24.dp else 3.dp
+                )
+                Box(
                     modifier = Modifier
-                        .padding(start = 16.dp, end = 16.dp)
-                        .animateItemPlacement(),
-                    enabled = state.datastore.enableSwipeToDismiss,
-                    startToEndIcon = Icons.Outlined.Archive,
-                    endToStartIcon = Icons.Outlined.MarkChatRead,
-                    onDismissedToEnd = { true },
-                    onDismissedToStart = { true },
-                    onVibrate = { }) {
-                    if (chatLazyPagingData[index] == null) {
-                        EmptyChatItem(
-                            isFirst = index == 0,
-                            isLast = index == chatLazyPagingData.itemCount - 1
+                        .padding(horizontal = 16.dp)
+                        .clip(
+                            RoundedCornerShape(
+                                topStart = topRadius,
+                                topEnd = topRadius,
+                                bottomEnd = bottomRadius,
+                                bottomStart = bottomRadius
+                            )
                         )
-                    } else {
-                        val contact by viewModel.getLatestMessageSenderWithCache(
-                            chatLazyPagingData[index]!!.message?.senderId
-                        ).collectAsState(initial = Resource.Loading())
-                        ChatItem(
-                            chatWithLatestMessage = chatLazyPagingData[index]!!,
-                            contact = contact,
-                            isFirst = index == 0,
-                            isLast = index == chatLazyPagingData.itemCount - 1
-                        )
+                        .animateItemPlacement()
+                ) {
+                    SwipeableActionsBox(
+                        state = swipeableActionsState,
+                        startActions = if (state.datastore.enableSwipeToDismiss) listOf(archive) else emptyList(),
+                        endActions = if (state.datastore.enableSwipeToDismiss) listOf(done) else emptyList(),
+                        swipeThreshold = threshold,
+                        backgroundUntilSwipeThreshold = MaterialTheme.colorScheme.secondary
+                    ) {
+                        if (chatLazyPagingData[index] == null) {
+                            EmptyChatItem()
+                        } else {
+                            val contact by viewModel.getLatestMessageSenderWithCache(
+                                chatLazyPagingData[index]!!.message?.senderId
+                            ).collectAsState(initial = Resource.Loading())
+                            ChatItem(
+                                chatWithLatestMessage = chatLazyPagingData[index]!!,
+                                contact = contact,
+//                                isFirst = index == 0,
+//                                isLast = index == chatLazyPagingData.itemCount - 1
+                            )
+                        }
                     }
                 }
             }

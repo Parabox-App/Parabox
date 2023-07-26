@@ -52,7 +52,7 @@ class MessagePageViewModel @Inject constructor(
                     datastore = state.datastore.copy(
                         enableSwipeToDismiss = context.getDataStoreValue(
                             DataStoreKeys.SETTINGS_ENABLE_SWIPE_TO_DISMISS,
-                            false
+                            true
                         )
                     )
                 )
