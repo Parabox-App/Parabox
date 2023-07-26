@@ -20,8 +20,8 @@ sealed interface MainSharedEvent : UiEvent {
     data class ContactSearchDone(val res: List<Contact>, val isSuccess: Boolean) : MainSharedEvent
     data class ChatSearchDone(val res: List<Chat>, val isSuccess: Boolean) : MainSharedEvent
     data class TriggerSearchBar(val isActive: Boolean) : MainSharedEvent
-
     data class OpenDrawer(val open: Boolean, val snap: Boolean = false) : MainSharedEvent
     data class OpenBottomSheet(val open: Boolean, val snap: Boolean = false) : MainSharedEvent
     object SearchAvatarClicked : MainSharedEvent
+    data class ShowNavigationBar(val show: Boolean) : MainSharedEvent
 }

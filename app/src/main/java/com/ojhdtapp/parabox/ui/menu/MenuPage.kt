@@ -4,9 +4,12 @@ import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
@@ -217,6 +220,9 @@ private fun MenuNavigationWrapperUI(
         if (navigationType == MenuNavigationType.PERMANENT_NAVIGATION_DRAWER) {
             mainSharedViewModel.sendEvent(MainSharedEvent.OpenDrawer(open = true, snap = true))
         }
+        if (navigationType == MenuNavigationType.BOTTOM_NAVIGATION) {
+            mainSharedViewModel.sendEvent(MainSharedEvent.ShowNavigationBar(true))
+        }
     }
     BackHandler(mainSharedState.openDrawer.open) {
         mainSharedViewModel.sendEvent(MainSharedEvent.OpenDrawer(false))
@@ -407,9 +413,13 @@ fun MenuAppContent(
             }
 
             AnimatedVisibility(
-                visible = navigationType == MenuNavigationType.BOTTOM_NAVIGATION,
-                enter = slideInVertically(),
-                exit = slideOutVertically()
+                visible = navigationType == MenuNavigationType.BOTTOM_NAVIGATION && mainSharedState.showNavigationBar,
+                enter = expandVertically(
+                    expandFrom = Alignment.Top
+                ),
+                exit = shrinkVertically(
+                    shrinkTowards = Alignment.Top
+                )
             ) {
                 MenuNavigationBar(
                     mainSharedState = mainSharedState,

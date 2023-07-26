@@ -76,6 +76,7 @@ class MainSharedViewModel @Inject constructor(
                     }
                 }
                 return state.copy(
+                    showNavigationBar = !event.isActive,
                     search = state.search.copy(
                         showRecent = true,
                         isActive = event.isActive
@@ -181,6 +182,12 @@ class MainSharedViewModel @Inject constructor(
             is MainSharedEvent.SearchAvatarClicked -> {
                 return state.copy(
                     openMainDialog = !state.openMainDialog
+                )
+            }
+
+            is MainSharedEvent.ShowNavigationBar -> {
+                return state.copy(
+                    showNavigationBar = event.show
                 )
             }
         }
