@@ -220,7 +220,7 @@ fun ChatItem(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun PinnedChatItems(
     modifier: Modifier = Modifier,
@@ -246,55 +246,65 @@ fun PinnedChatItems(
         tonalElevation = 3.dp,
         shape = RoundedCornerShape(16.dp)
     ) {
-        Column(
-            modifier = Modifier.width(width = 72.dp).padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Box(
+        Box() {
+            Column(
                 modifier = Modifier
-                    .clip(CircleShape)
-                    .size(40.dp)
-                    .background(avatarBackgroundColor),
-                contentAlignment = Alignment.Center
+                    .width(width = 72.dp)
+                    .padding(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                icon?.invoke() ?: SubcomposeAsyncImage(
-                    model = chat.avatar.getModel(),
-                    contentDescription = "chat_avatar",
-                    modifier = Modifier.fillMaxSize(),
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .size(40.dp)
+                        .background(avatarBackgroundColor),
+                    contentAlignment = Alignment.Center
                 ) {
-                    val state = painter.state
-                    val namedAvatarBm =
-                        AvatarUtil.createNamedAvatarBm(
-                            backgroundColor = MaterialTheme.colorScheme.secondaryContainer.toArgb(),
-                            textColor = MaterialTheme.colorScheme.onSecondaryContainer.toArgb(),
-                            name = chat.name
-                        ).asImageBitmap()
-                    if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
-                        Image(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .placeholder(
-                                    visible = state is AsyncImagePainter.State.Loading,
-                                    color = MaterialTheme.colorScheme.secondaryContainer,
-                                    highlight = PlaceholderHighlight.fade(),
-                                ),
-                            bitmap = namedAvatarBm,
-                            contentDescription = "named_avatar"
-                        )
-                    } else {
-                        SubcomposeAsyncImageContent()
+                    icon?.invoke() ?: SubcomposeAsyncImage(
+                        model = chat.avatar.getModel(),
+                        contentDescription = "chat_avatar",
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        val state = painter.state
+                        val namedAvatarBm =
+                            AvatarUtil.createNamedAvatarBm(
+                                backgroundColor = MaterialTheme.colorScheme.secondaryContainer.toArgb(),
+                                textColor = MaterialTheme.colorScheme.onSecondaryContainer.toArgb(),
+                                name = chat.name
+                            ).asImageBitmap()
+                        if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
+                            Image(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .placeholder(
+                                        visible = state is AsyncImagePainter.State.Loading,
+                                        color = MaterialTheme.colorScheme.secondaryContainer,
+                                        highlight = PlaceholderHighlight.fade(),
+                                    ),
+                                bitmap = namedAvatarBm,
+                                contentDescription = "named_avatar"
+                            )
+                        } else {
+                            SubcomposeAsyncImageContent()
+                        }
                     }
                 }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = chat.name,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = textColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = chat.name,
-                style = MaterialTheme.typography.labelMedium,
-                color = textColor,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            if (chat.unreadMessageNum > 0) {
+                Badge(
+                    modifier = Modifier.padding(8.dp).align(Alignment.TopEnd),
+                    containerColor = MaterialTheme.colorScheme.primary
+                ) { Text(text = "${chat.unreadMessageNum}") }
+            }
         }
     }
 }
