@@ -11,7 +11,7 @@ sealed class GetChatFilter(
     object Normal : GetChatFilter(
         labelResId = R.string.get_chat_filter_normal,
         check = {
-            !it.isHidden
+            !it.isHidden && !it.isPinned
         }
     )
 

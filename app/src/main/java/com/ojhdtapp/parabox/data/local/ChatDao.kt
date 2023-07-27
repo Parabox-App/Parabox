@@ -30,6 +30,15 @@ interface ChatDao {
     )
     fun getChatPagingSource(): PagingSource<Int, ChatWithLatestMessageEntity>
 
+    @Transaction
+    @Query(
+        "SELECT chat_entity.* FROM chat_entity " +
+                "INNER JOIN message_entity ON chat_entity.latestMessageId = message_entity.messageId " +
+                "WHERE isPinned " +
+                "ORDER BY message_entity.timestamp DESC"
+    )
+    fun getPinnedChatPagingSource(): PagingSource<Int, ChatEntity>
+
     @Query("SELECT * FROM chat_entity WHERE chatId = :id LIMIT 1")
     suspend fun getChatById(id: Long): ChatEntity?
 

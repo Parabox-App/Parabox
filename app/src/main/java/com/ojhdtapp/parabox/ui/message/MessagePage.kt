@@ -114,6 +114,7 @@ fun MessagePage(
             }
     }
     val chatLazyPagingData = state.chatPagingDataFlow.collectAsLazyPagingItems()
+    val pinnedChatLazyPagingData = state.pinnedChatPagingDataFlow.collectAsLazyPagingItems()
     val searchBarPadding by animateDpAsState(
         targetValue = if (sharedState.search.isActive) 0.dp else 16.dp,
         animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
@@ -254,6 +255,69 @@ fun MessagePage(
             contentPadding = it,
             state = listState,
         ) {
+            item(key = "pinned") {
+                AnimatedVisibility(
+                    visible = pinnedChatLazyPagingData.itemCount > 0,
+                    enter = expandVertically(),
+                    exit = shrinkVertically()
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = "置顶",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
+            item {
+                AnimatedVisibility(
+                    visible = pinnedChatLazyPagingData.itemCount > 0,
+                    enter = expandVertically(),
+                    exit = shrinkVertically()
+                ) {
+                    LazyRow(
+                        verticalAlignment = Alignment.CenterVertically,
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        items(
+                            count = pinnedChatLazyPagingData.itemCount,
+                            key = pinnedChatLazyPagingData.itemKey { it.chatId },
+                            contentType = pinnedChatLazyPagingData.itemContentType { "pinned_chat" }
+                        ) { index ->
+                            val item = pinnedChatLazyPagingData[index]!!
+                            PinnedChatItems(
+                                chat = item,
+                                onClick = {},
+                                onLongClick = {
+
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+            item(key = "main") {
+                AnimatedVisibility(
+                    visible = pinnedChatLazyPagingData.itemCount > 0,
+                    enter = expandVertically(),
+                    exit = shrinkVertically()
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.main),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
             item {
                 LazyRow(
                     verticalAlignment = Alignment.CenterVertically,

@@ -6,6 +6,7 @@ import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.ChatArchiveUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatBeanEntity
+import com.ojhdtapp.parabox.data.local.entity.ChatEntity
 import com.ojhdtapp.parabox.data.local.entity.ChatHideUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatPinUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatTagsUpdate
@@ -25,6 +26,10 @@ class ChatRepositoryImpl @Inject constructor(
 ) : ChatRepository {
     override fun getChatPagingSource(): PagingSource<Int, ChatWithLatestMessageEntity> {
         return db.chatDao.getChatPagingSource()
+    }
+
+    override fun getPinnedChatPagingSource(): PagingSource<Int, ChatEntity> {
+        return db.chatDao.getPinnedChatPagingSource()
     }
 
     override fun queryChat(query: String): Flow<Resource<List<Chat>>> {

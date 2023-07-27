@@ -28,11 +28,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -108,55 +110,55 @@ fun ChatItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-                Box(
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .size(48.dp)
-                        .background(avatarBackgroundColor)
-                        .clickable {
-                            onAvatarClick()
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Crossfade(targetState = isSelected) {
-                        if (it) {
-                            Icon(
-                                imageVector = Icons.Outlined.Done,
-                                contentDescription = "selected",
-                                tint = MaterialTheme.colorScheme.onPrimary
-                            )
-                        } else {
-                            icon?.invoke() ?: SubcomposeAsyncImage(
-                                model = chatWithLatestMessage.chat?.avatar?.getModel(),
-                                contentDescription = "chat_avatar",
-                                modifier = Modifier.fillMaxSize(),
-                            ) {
-                                val state = painter.state
-                                val namedAvatarBm =
-                                    AvatarUtil.createNamedAvatarBm(
-                                        backgroundColor = MaterialTheme.colorScheme.secondaryContainer.toArgb(),
-                                        textColor = MaterialTheme.colorScheme.onSecondaryContainer.toArgb(),
-                                        name = chatWithLatestMessage.chat?.name ?: "name"
-                                    ).asImageBitmap()
-                                if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
-                                    Image(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .placeholder(
-                                                visible = state is AsyncImagePainter.State.Loading,
-                                                color = MaterialTheme.colorScheme.secondaryContainer,
-                                                highlight = PlaceholderHighlight.fade(),
-                                            ),
-                                        bitmap = namedAvatarBm,
-                                        contentDescription = "named_avatar"
-                                    )
-                                } else {
-                                    SubcomposeAsyncImageContent()
-                                }
+            Box(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .size(48.dp)
+                    .background(avatarBackgroundColor)
+                    .clickable {
+                        onAvatarClick()
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Crossfade(targetState = isSelected) {
+                    if (it) {
+                        Icon(
+                            imageVector = Icons.Outlined.Done,
+                            contentDescription = "selected",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    } else {
+                        icon?.invoke() ?: SubcomposeAsyncImage(
+                            model = chatWithLatestMessage.chat?.avatar?.getModel(),
+                            contentDescription = "chat_avatar",
+                            modifier = Modifier.fillMaxSize(),
+                        ) {
+                            val state = painter.state
+                            val namedAvatarBm =
+                                AvatarUtil.createNamedAvatarBm(
+                                    backgroundColor = MaterialTheme.colorScheme.secondaryContainer.toArgb(),
+                                    textColor = MaterialTheme.colorScheme.onSecondaryContainer.toArgb(),
+                                    name = chatWithLatestMessage.chat?.name ?: "name"
+                                ).asImageBitmap()
+                            if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
+                                Image(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .placeholder(
+                                            visible = state is AsyncImagePainter.State.Loading,
+                                            color = MaterialTheme.colorScheme.secondaryContainer,
+                                            highlight = PlaceholderHighlight.fade(),
+                                        ),
+                                    bitmap = namedAvatarBm,
+                                    contentDescription = "named_avatar"
+                                )
+                            } else {
+                                SubcomposeAsyncImageContent()
                             }
                         }
                     }
                 }
+            }
             Spacer(modifier = Modifier.width(16.dp))
             Column(
                 modifier = Modifier
@@ -170,52 +172,131 @@ fun ChatItem(
                     maxLines = 1
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        modifier = Modifier.placeholder(
-                            visible = contact !is Resource.Success,
-                            color = MaterialTheme.colorScheme.secondaryContainer,
-                            highlight = PlaceholderHighlight.fade(),
-                        ),
-                        text = buildAnnotatedString {
-                            chatWithLatestMessage.message?.also { message ->
-                                message.contentString
+                Text(
+                    modifier = Modifier.placeholder(
+                        visible = contact !is Resource.Success,
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        highlight = PlaceholderHighlight.fade(),
+                    ),
+                    text = buildAnnotatedString {
+                        chatWithLatestMessage.message?.also { message ->
+                            message.contentString
+                        }
+                        withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                            if (chatWithLatestMessage.message?.sentByMe == true) {
+                                append(username)
+                            } else {
+                                append(contact.data?.name)
                             }
-                            withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                                if(chatWithLatestMessage.message?.sentByMe == true){
-                                    append(username)
-                                } else {
-                                    append(contact.data?.name)
-                                }
-                                append(": ")
-                            }
-                            withStyle(style = SpanStyle(color = textColor)) {
-                                append(chatWithLatestMessage.message?.contentString)
-                            }
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = textColor,
-                        maxLines = 1
-                    )
+                            append(": ")
+                        }
+                        withStyle(style = SpanStyle(color = textColor)) {
+                            append(chatWithLatestMessage.message?.contentString)
+                        }
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = textColor,
+                    maxLines = 1
+                )
             }
-                Column(
-                    modifier = Modifier.align(Alignment.Top),
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.Top
-                ) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = (chatWithLatestMessage.message?.timestamp)?.toTimeUntilNow(
-                            context
-                        ) ?: "",
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    if (chatWithLatestMessage.chat.unreadMessageNum > 0) {
-                        Badge(containerColor = MaterialTheme.colorScheme.primary) { Text(text = "${chatWithLatestMessage.chat.unreadMessageNum}") }
-                    }
+            Column(
+                modifier = Modifier.align(Alignment.Top),
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.Top
+            ) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = (chatWithLatestMessage.message?.timestamp)?.toTimeUntilNow(
+                        context
+                    ) ?: "",
+                    style = MaterialTheme.typography.labelMedium
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                if (chatWithLatestMessage.chat.unreadMessageNum > 0) {
+                    Badge(containerColor = MaterialTheme.colorScheme.primary) { Text(text = "${chatWithLatestMessage.chat.unreadMessageNum}") }
                 }
             }
         }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun PinnedChatItems(
+    modifier: Modifier = Modifier,
+    chat: Chat,
+    icon: @Composable (() -> Unit)? = null,
+    onClick: () -> Unit = {},
+    onLongClick: () -> Unit = {},
+) {
+    val backgroundColor = Color.Transparent
+    val textColor = MaterialTheme.colorScheme.onSurface
+    val avatarBackgroundColor = MaterialTheme.colorScheme.primary
+    Surface(
+        modifier = modifier.combinedClickable(
+            interactionSource = remember {
+                MutableInteractionSource()
+            },
+            indication = LocalIndication.current,
+            enabled = true,
+            onLongClick = onLongClick,
+            onClick = onClick
+        ),
+        color = backgroundColor,
+        tonalElevation = 3.dp,
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(
+            modifier = Modifier.width(width = 72.dp).padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .size(40.dp)
+                    .background(avatarBackgroundColor),
+                contentAlignment = Alignment.Center
+            ) {
+                icon?.invoke() ?: SubcomposeAsyncImage(
+                    model = chat.avatar.getModel(),
+                    contentDescription = "chat_avatar",
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    val state = painter.state
+                    val namedAvatarBm =
+                        AvatarUtil.createNamedAvatarBm(
+                            backgroundColor = MaterialTheme.colorScheme.secondaryContainer.toArgb(),
+                            textColor = MaterialTheme.colorScheme.onSecondaryContainer.toArgb(),
+                            name = chat.name
+                        ).asImageBitmap()
+                    if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
+                        Image(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .placeholder(
+                                    visible = state is AsyncImagePainter.State.Loading,
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    highlight = PlaceholderHighlight.fade(),
+                                ),
+                            bitmap = namedAvatarBm,
+                            contentDescription = "named_avatar"
+                        )
+                    } else {
+                        SubcomposeAsyncImageContent()
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = chat.name,
+                style = MaterialTheme.typography.labelMedium,
+                color = textColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
 }
 
 @Composable
@@ -241,8 +322,10 @@ fun EmptyChatItem(
                     .size(48.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.secondary)
-                    .placeholder(true, MaterialTheme.colorScheme.secondaryContainer,
-                        highlight = PlaceholderHighlight.fade(),),
+                    .placeholder(
+                        true, MaterialTheme.colorScheme.secondaryContainer,
+                        highlight = PlaceholderHighlight.fade(),
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 icon?.invoke()

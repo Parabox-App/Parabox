@@ -40,7 +40,8 @@ class MessagePageViewModel @Inject constructor(
 
     override fun initialState(): MessagePageState {
         return MessagePageState(
-            chatPagingDataFlow = getChat(listOf(GetChatFilter.Normal)).cachedIn(viewModelScope)
+            chatPagingDataFlow = getChat(listOf(GetChatFilter.Normal)).cachedIn(viewModelScope),
+            pinnedChatPagingDataFlow = getChat.pinned()
         )
     }
 
