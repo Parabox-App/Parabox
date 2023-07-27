@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.ui.message
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
@@ -124,9 +125,7 @@ class MessagePageViewModel @Inject constructor(
                                 message = "操作成功",
                                 label = context.getString(R.string.cancel),
                                 callback = {
-                                    launch(Dispatchers.IO) {
-                                        updateChat.unreadMessagesNum(event.chatId, event.oldValue)
-                                    }
+                                    updateChat.unreadMessagesNum(event.chatId, event.oldValue)
                                 })
                         )
                     } else {
