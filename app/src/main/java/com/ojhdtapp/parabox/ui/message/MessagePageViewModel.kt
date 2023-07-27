@@ -70,6 +70,12 @@ class MessagePageViewModel @Inject constructor(
                 )
             }
 
+            is MessagePageEvent.UpdateEditingChatTags -> {
+                state.copy(
+                    editingChatTags = event.obj
+                )
+            }
+
             is MessagePageEvent.UpdateEnabledGetChatFilterList -> {
                 val newList = state.selectedGetChatFilterList.toMutableList()
                     .apply {

@@ -55,6 +55,7 @@ import com.google.accompanist.placeholder.placeholder
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.core.util.AvatarUtil.getCircledBitmap
+import com.ojhdtapp.parabox.data.local.entity.ChatTagsUpdate
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.common.*
@@ -82,7 +83,7 @@ fun MessagePage(
     val snackBarHostState = remember { SnackbarHostState() }
     val state by viewModel.uiState.collectAsState()
     val sharedState by mainSharedViewModel.uiState.collectAsState()
-    var snackBarJob: Job? by remember{
+    var snackBarJob: Job? by remember {
         mutableStateOf(null)
     }
     LaunchedEffect(Unit) {
@@ -90,16 +91,16 @@ fun MessagePage(
             .collectLatest {
                 when (it) {
                     is MessagePageEffect.ShowSnackBar -> {
-                        snackBarJob?.cancel()?: kotlin.run {
-                            snackBarJob = launch {
-                                delay(4000)
-                                snackBarHostState.currentSnackbarData?.dismiss()
-                            }
+                        snackBarJob?.cancel()
+                        snackBarJob = launch {
+                            delay(4000)
+                            snackBarHostState.currentSnackbarData?.dismiss()
                         }
+
                         snackBarHostState.showSnackbar(it.message, it.label).also { result ->
                             when (result) {
                                 SnackbarResult.ActionPerformed -> {
-                                    launch(Dispatchers.IO){
+                                    launch(Dispatchers.IO) {
                                         it.callback?.invoke()
                                     }
                                 }
@@ -134,6 +135,39 @@ fun MessagePage(
         animatedImageVector = AnimatedImageVector.animatedVectorResource(id = R.drawable.avd_pathmorph_drawer_hamburger_to_arrow),
         atEnd = menuState
     )
+
+    EnabledChatFilterDialog(
+        openDialog = state.openEnabledChatFilterDialog,
+        enabledList = state.enabledGetChatFilterList,
+        onConfirm = {
+            viewModel.sendEvent(MessagePageEvent.UpdateEnabledGetChatFilterList(it))
+            viewModel.sendEvent(MessagePageEvent.OpenEnabledChatFilterDialog(false))
+        },
+        onDismiss = {
+            viewModel.sendEvent(
+                MessagePageEvent.OpenEnabledChatFilterDialog(
+                    false
+                )
+            )
+        }
+    )
+
+    EditChatTagsDialog(
+        openDialog = state.editingChatTags != null,
+        tags = state.editingChatTags?.tags ?: emptyList(),
+        onConfirm = {
+            viewModel.sendEvent(
+                MessagePageEvent.UpdateChatTags(
+                    state.editingChatTags!!.chatId,
+                    it,
+                    state.editingChatTags!!.tags
+                )
+            )
+            viewModel.sendEvent(MessagePageEvent.UpdateEditingChatTags(null))
+        },
+        onDismiss = {
+            viewModel.sendEvent(MessagePageEvent.UpdateEditingChatTags(null))
+        })
 
     Scaffold(
         modifier = modifier,
@@ -313,7 +347,7 @@ fun MessagePage(
                         EmptyChatItem(
                             modifier = Modifier.padding(bottom = 2.dp),
                         )
-                    }else{
+                    } else {
                         val item = chatLazyPagingData[index]!!
                         var isMenuVisible by rememberSaveable { mutableStateOf(false) }
                         RoundedCornerCascadeDropdownMenu(
@@ -467,6 +501,14 @@ fun MessagePage(
                             DropdownMenuItem(
                                 text = { Text(text = stringResource(R.string.dropdown_menu_new_tag)) },
                                 onClick = {
+                                    viewModel.sendEvent(
+                                        MessagePageEvent.UpdateEditingChatTags(
+                                            ChatTagsUpdate(
+                                                item.chat.chatId,
+                                                item.chat.tags
+                                            )
+                                        )
+                                    )
                                     isMenuVisible = false
                                 },
                                 leadingIcon = {

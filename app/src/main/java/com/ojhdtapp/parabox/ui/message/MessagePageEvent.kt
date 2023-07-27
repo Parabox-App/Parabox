@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.message
 
+import com.ojhdtapp.parabox.data.local.entity.ChatTagsUpdate
 import com.ojhdtapp.parabox.ui.base.UiEvent
 
 sealed interface MessagePageEvent : UiEvent {
@@ -13,4 +14,5 @@ sealed interface MessagePageEvent : UiEvent {
     data class UpdateChatPin(val chatId: Long, val value: Boolean, val oldValue: Boolean) : MessagePageEvent
     data class UpdateChatArchive(val chatId: Long, val value: Boolean, val oldValue: Boolean) : MessagePageEvent
     data class UpdateChatTags(val chatId: Long, val value: List<String>, val oldValue: List<String>) : MessagePageEvent
+    data class UpdateEditingChatTags(val obj: ChatTagsUpdate?): MessagePageEvent
 }

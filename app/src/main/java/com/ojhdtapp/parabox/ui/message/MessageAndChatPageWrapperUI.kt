@@ -59,24 +59,7 @@ fun MessageAndChatPageWrapperUI(
             layoutType = MessageLayoutType.NORMAL
         }
     }
-    val messagePageViewModel = hiltViewModel<MessagePageViewModel>()
-    val messagePageState by messagePageViewModel.uiState.collectAsState()
     Row() {
-        EnabledChatFilterDialog(
-            openDialog = messagePageState.openEnabledChatFilterDialog,
-            enabledList = messagePageState.enabledGetChatFilterList,
-            onConfirm = {
-                messagePageViewModel.sendEvent(MessagePageEvent.UpdateEnabledGetChatFilterList(it))
-                messagePageViewModel.sendEvent(MessagePageEvent.OpenEnabledChatFilterDialog(false))
-            },
-            onDismiss = {
-                messagePageViewModel.sendEvent(
-                    MessagePageEvent.OpenEnabledChatFilterDialog(
-                        false
-                    )
-                )
-            }
-        )
         MessagePage(
             modifier =
             if (layoutType == MessageLayoutType.SPLIT)

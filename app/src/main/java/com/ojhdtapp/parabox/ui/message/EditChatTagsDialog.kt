@@ -4,30 +4,22 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material.icons.outlined.NewLabel
+import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,8 +27,6 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.toMutableStateList
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
@@ -51,39 +41,39 @@ import com.ojhdtapp.parabox.ui.common.clearFocusOnKeyboardDismiss
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun EnabledChatFilterDialog(
+fun EditChatTagsDialog(
     modifier: Modifier = Modifier,
     openDialog: Boolean,
-    enabledList: List<GetChatFilter>,
-    onConfirm: (List<GetChatFilter>) -> Unit,
+    tags: List<String>,
+    onConfirm: (List<String>) -> Unit,
     onDismiss: () -> Unit,
 ) {
     if (openDialog) {
 
 
-        var openCustomTagFilterDialog by remember {
+        var openCustomTagDialog by remember {
             mutableStateOf(false)
         }
-        val selectedList = remember {
-            mutableStateListOf<GetChatFilter>()
+        val tagList = remember {
+            mutableStateListOf<String>()
         }
         LaunchedEffect(Unit) {
-            selectedList.addAll(enabledList)
+            tagList.addAll(tags)
         }
-        NewChatFilterDialog(
-            openDialog = openCustomTagFilterDialog,
+        NewChatTagDialog(
+            openDialog = openCustomTagDialog,
             onConfirm = {
-                selectedList.add(GetChatFilter.Tag(it.trim()))
-                openCustomTagFilterDialog = false
+                tagList.add(it.trim())
+                openCustomTagDialog = false
             },
-            onDismiss = { openCustomTagFilterDialog = false }
+            onDismiss = { openCustomTagDialog = false }
         )
         AlertDialog(
             onDismissRequest = onDismiss,
             confirmButton = {
                 TextButton(
                     onClick = {
-                        onConfirm(selectedList)
+                        onConfirm(tagList)
                     },
                 ) {
                     Text(text = stringResource(id = R.string.confirm))
@@ -100,12 +90,12 @@ fun EnabledChatFilterDialog(
             },
             icon = {
                 Icon(
-                    imageVector = Icons.Outlined.FilterList,
-                    contentDescription = "enable filter"
+                    imageVector = Icons.Outlined.NewLabel,
+                    contentDescription = "new label"
                 )
             },
             title = {
-                Text(text = "编辑分组")
+                Text(text = "快速添加标签")
             },
             text = {
                 Column(
@@ -113,20 +103,15 @@ fun EnabledChatFilterDialog(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        GetChatFilter.allFilterList.forEach {
+                        tagList.forEach {
                             MyFilterChip(
-                                selected = it in selectedList,
-                                label = { Text(text = stringResource(id = it.labelResId)) }) {
-                                if (selectedList.contains(it)) {
-                                    selectedList.remove(it)
-                                } else {
-                                    selectedList.add(it)
+                                selected = false,
+                                label = { Text(text = it) },
+                                trailingIcon = {
+                                    Icon(imageVector = Icons.Outlined.Close, contentDescription = "delete tag")
                                 }
-                            }
-                        }
-                        selectedList.filterIsInstance<GetChatFilter.Tag>().forEach {
-                            MyFilterChip(selected = true, label = { Text(text = it.tag) }) {
-                                selectedList.remove(it)
+                            ) {
+                                tagList.remove(it)
                             }
                         }
                         MyFilterChip(selected = false,
@@ -137,10 +122,10 @@ fun EnabledChatFilterDialog(
                                 )
                             }
                         ) {
-                            openCustomTagFilterDialog = true
+                            openCustomTagDialog = true
                         }
                     }
-                    Text(text = "选中标签将于主页顶部显示。")
+                    Text(text = "该会话已附加的标签，可手动增改。")
                 }
             },
             properties = DialogProperties(
@@ -154,7 +139,7 @@ fun EnabledChatFilterDialog(
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
-fun NewChatFilterDialog(
+fun NewChatTagDialog(
     modifier: Modifier = Modifier,
     openDialog: Boolean,
     onConfirm: (text: String) -> Unit,
@@ -197,7 +182,7 @@ fun NewChatFilterDialog(
                 )
             },
             title = {
-                Text(text = "新增标签筛选")
+                Text(text = "新增标签")
             },
             text = {
                 Column(
@@ -223,7 +208,7 @@ fun NewChatFilterDialog(
                             }
                         )
                     )
-                    Text(text = "新建自定义标签筛选，启用后仅命中该标签的会话被展示。")
+                    Text(text = "为该会话添加自定义标签，可用于筛选")
                 }
             },
             properties = DialogProperties(
