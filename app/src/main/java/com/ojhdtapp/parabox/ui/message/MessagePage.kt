@@ -289,11 +289,18 @@ fun MessagePage(
                             contentType = pinnedChatLazyPagingData.itemContentType { "pinned_chat" }
                         ) { index ->
                             val item = pinnedChatLazyPagingData[index]!!
+                            var isMenuVisible by rememberSaveable { mutableStateOf(false) }
+                            ChatDropdownMenu(
+                                chat = item,
+                                isMenuVisible = isMenuVisible,
+                                onEvent = viewModel::sendEvent,
+                                onDismiss = { isMenuVisible = false })
                             PinnedChatItems(
+                                modifier = Modifier.animateItemPlacement(),
                                 chat = item,
                                 onClick = {},
                                 onLongClick = {
-
+                                    isMenuVisible = true
                                 },
                             )
                         }
@@ -414,185 +421,11 @@ fun MessagePage(
                     } else {
                         val item = chatLazyPagingData[index]!!
                         var isMenuVisible by rememberSaveable { mutableStateOf(false) }
-                        RoundedCornerCascadeDropdownMenu(
-                            expanded = isMenuVisible,
-                            onDismissRequest = { isMenuVisible = false },
-                            modifier = Modifier.clip(MaterialTheme.shapes.medium),
-                            offset = DpOffset(16.dp, 0.dp),
-                            properties = PopupProperties(
-                                dismissOnBackPress = true,
-                                dismissOnClickOutside = true,
-                                focusable = true
-                            ),
-                        ) {
-                            if (item.chat.isPinned) {
-                                DropdownMenuItem(
-                                    text = { Text(text = stringResource(R.string.dropdown_menu_not_pin)) },
-                                    onClick = {
-                                        viewModel.sendEvent(
-                                            MessagePageEvent.UpdateChatPin(
-                                                item.chat.chatId,
-                                                false,
-                                                item.chat.isPinned
-                                            )
-                                        )
-                                        isMenuVisible = false
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Outlined.Flag,
-                                            contentDescription = null
-                                        )
-                                    })
-                            } else {
-                                DropdownMenuItem(
-                                    text = { Text(text = stringResource(R.string.dropdown_menu_pin)) },
-                                    onClick = {
-                                        viewModel.sendEvent(
-                                            MessagePageEvent.UpdateChatPin(
-                                                item.chat.chatId,
-                                                true,
-                                                item.chat.isPinned
-                                            )
-                                        )
-                                        isMenuVisible = false
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Outlined.Flag,
-                                            contentDescription = null
-                                        )
-                                    })
-                            }
-                            if (item.chat.unreadMessageNum > 0) {
-                                DropdownMenuItem(
-                                    text = { Text(text = stringResource(R.string.dropdown_menu_mark_as_read)) },
-                                    onClick = {
-                                        viewModel.sendEvent(
-                                            MessagePageEvent.UpdateChatUnreadMessagesNum(
-                                                item.chat.chatId,
-                                                0,
-                                                item.chat.unreadMessageNum
-                                            )
-                                        )
-                                        isMenuVisible = false
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Outlined.MarkChatRead,
-                                            contentDescription = null
-                                        )
-                                    })
-                            } else {
-                                DropdownMenuItem(
-                                    text = { Text(text = stringResource(R.string.dropdown_menu_mark_as_unread)) },
-                                    onClick = {
-                                        viewModel.sendEvent(
-                                            MessagePageEvent.UpdateChatUnreadMessagesNum(
-                                                item.chat.chatId,
-                                                1,
-                                                item.chat.unreadMessageNum
-                                            )
-                                        )
-                                        isMenuVisible = false
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Outlined.MarkChatUnread,
-                                            contentDescription = null
-                                        )
-                                    })
-                            }
-
-                            DropdownMenuItem(
-                                text = { Text(text = "标记已完成") },
-                                onClick = {
-                                    viewModel.sendEvent(
-                                        MessagePageEvent.UpdateChatHide(
-                                            item.chat.chatId,
-                                            true,
-                                            item.chat.isHidden
-                                        )
-                                    )
-                                    isMenuVisible = false
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Outlined.Done,
-                                        contentDescription = null
-                                    )
-                                })
-                            if (item.chat.isArchived) {
-                                DropdownMenuItem(
-                                    text = { Text(text = stringResource(R.string.dropdown_menu_unarchive)) },
-                                    onClick = {
-                                        viewModel.sendEvent(
-                                            MessagePageEvent.UpdateChatArchive(
-                                                item.chat.chatId,
-                                                false,
-                                                item.chat.isArchived
-                                            )
-                                        )
-                                        isMenuVisible = false
-
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Outlined.Unarchive,
-                                            contentDescription = null
-                                        )
-                                    })
-                            } else {
-                                DropdownMenuItem(
-                                    text = { Text(text = stringResource(R.string.dropdown_menu_archive)) },
-                                    onClick = {
-                                        viewModel.sendEvent(
-                                            MessagePageEvent.UpdateChatArchive(
-                                                item.chat.chatId,
-                                                true,
-                                                item.chat.isArchived
-                                            )
-                                        )
-                                        isMenuVisible = false
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Outlined.Archive,
-                                            contentDescription = null
-                                        )
-                                    })
-                            }
-                            DropdownMenuItem(
-                                text = { Text(text = stringResource(R.string.dropdown_menu_new_tag)) },
-                                onClick = {
-                                    viewModel.sendEvent(
-                                        MessagePageEvent.UpdateEditingChatTags(
-                                            ChatTagsUpdate(
-                                                item.chat.chatId,
-                                                item.chat.tags
-                                            )
-                                        )
-                                    )
-                                    isMenuVisible = false
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Outlined.NewLabel,
-                                        contentDescription = null
-                                    )
-                                })
-                            DropdownMenuItem(
-                                text = { Text(text = stringResource(R.string.dropdown_menu_info)) },
-                                onClick = {
-                                    isMenuVisible = false
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Outlined.Info,
-                                        contentDescription = null
-                                    )
-                                })
-                        }
+                        ChatDropdownMenu(
+                            chat = item.chat,
+                            isMenuVisible = isMenuVisible,
+                            onEvent = viewModel::sendEvent,
+                            onDismiss = { isMenuVisible = false })
                         SwipeableActionsDismissBox(
                             enabled = state.datastore.enableSwipeToDismiss,
                             state = swipeableActionsState,
