@@ -6,48 +6,38 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.IconButton
 import androidx.compose.material.Surface
 import androidx.compose.material.TabRow
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Cancel
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material3.Badge
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.InputChip
-import androidx.compose.material3.InputChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
@@ -63,7 +53,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -104,7 +93,7 @@ fun SearchContent(modifier: Modifier = Modifier, state: MainSharedState, onEvent
             }
 
             SearchContentType.TYPING -> {
-                TypingSearchContent()
+                TypingSearchContent(state = state.search, onEvent = onEvent)
             }
 
             SearchContentType.DONE -> {
@@ -125,7 +114,6 @@ fun RecentSearchContent(
     state: MainSharedState.Search,
     onEvent: (e: MainSharedEvent) -> Unit
 ) {
-    val density = LocalDensity.current
     LazyColumn() {
         item {
             AnimatedVisibility(
@@ -234,7 +222,7 @@ fun RecentSearchContent(
             if (state.contact.result.isNotEmpty()) {
                 Box(
                     modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
                 ) {
                     Text(
                         text = "联系人",
@@ -282,7 +270,7 @@ fun RecentSearchContent(
             if (state.message.result.isNotEmpty()) {
                 Box(
                     modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
                 ) {
                     Text(
                         text = "消息",
@@ -353,7 +341,52 @@ fun RecentSearchContent(
 }
 
 @Composable
-fun TypingSearchContent(modifier: Modifier = Modifier) {
+fun TypingSearchContent(
+    modifier: Modifier = Modifier,
+    state: MainSharedState.Search,
+    onEvent: (e: MainSharedEvent) -> Unit
+) {
+    LazyColumn() {
+        item {
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .clip(MaterialTheme.shapes.extraLarge),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                state.recentQuery.forEach {
+                    SearchResultItem(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .placeholder(
+                                visible = state.chat.loadState == LoadState.LOADING,
+                                color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                                shape = MaterialTheme.shapes.extraLarge,
+                                highlight = PlaceholderHighlight.fade(),
+                            ),
+                        avatarModel = null,
+                        title = buildAnnotatedString { append(it.value) },
+                        subTitle = null,
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Outlined.History,
+                                contentDescription = "history",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        },
+                        trailingIcon = {
+                            Icon(modifier = Modifier.clickable {
+                                onEvent(MainSharedEvent.DeleteRecentQuery(it.id))
+                            }, imageVector = Icons.Outlined.Close, contentDescription = "delete recent query")
+                        }
+                    ) {
+                        onEvent(MainSharedEvent.SearchConfirm(it.value))
+                    }
+                }
+            }
+        }
+    }
+
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -389,6 +422,8 @@ fun SearchResultItem(
     avatarModel: Any?,
     title: AnnotatedString,
     subTitle: AnnotatedString?,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
     onClick: () -> Unit,
 ) {
     Surface(
@@ -407,10 +442,13 @@ fun SearchResultItem(
                 modifier = Modifier
                     .clip(CircleShape)
                     .size(32.dp)
-                    .background(MaterialTheme.colorScheme.primary),
+                    .background(
+                        if (leadingIcon != null) MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+                        else MaterialTheme.colorScheme.primary
+                    ),
                 contentAlignment = Alignment.Center
             ) {
-                SubcomposeAsyncImage(
+                leadingIcon?.invoke() ?: SubcomposeAsyncImage(
                     model = avatarModel,
                     contentDescription = "chat_avatar",
                     modifier = Modifier.fillMaxSize(),
@@ -459,6 +497,10 @@ fun SearchResultItem(
                         maxLines = 1
                     )
                 }
+            }
+            if (trailingIcon != null) {
+                Spacer(modifier = Modifier.width(16.dp))
+                trailingIcon()
             }
         }
     }

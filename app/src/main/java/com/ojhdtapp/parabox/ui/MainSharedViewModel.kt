@@ -83,7 +83,7 @@ class MainSharedViewModel @Inject constructor(
                     search = state.search.copy(
                         showRecent = true,
                         isActive = event.isActive,
-                        recentQueryState = if(event.isActive) LoadState.LOADING else state.search.recentQueryState,
+                        recentQueryState = if (event.isActive) LoadState.LOADING else state.search.recentQueryState,
                     )
                 )
             }
@@ -108,6 +108,11 @@ class MainSharedViewModel @Inject constructor(
             }
 
             is MainSharedEvent.DeleteRecentQuery -> {
+                coroutineScope {
+                    launch(Dispatchers.IO) {
+                        query.deleteRecentQuery(event.id)
+                    }
+                }
                 return state.copy(
                     search = state.search.copy(
                         recentQuery = state.search.recentQuery.toMutableList().apply {
@@ -204,7 +209,7 @@ class MainSharedViewModel @Inject constructor(
         }
     }
 
-    private suspend fun getRecentSearch(){
+    private suspend fun getRecentSearch() {
         coroutineScope {
             launch(Dispatchers.IO) {
                 query.recentMessage().collectLatest {

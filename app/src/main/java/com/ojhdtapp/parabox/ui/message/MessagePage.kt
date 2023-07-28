@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -253,6 +254,7 @@ fun MessagePage(
                     }
                 },
                 shadowElevation = searchBarShadowElevation,
+                colors = SearchBarDefaults.colors(dividerColor = Color.Transparent)
             ) {
                 SearchContent(state = sharedState, onEvent = mainSharedViewModel::sendEvent)
             }
