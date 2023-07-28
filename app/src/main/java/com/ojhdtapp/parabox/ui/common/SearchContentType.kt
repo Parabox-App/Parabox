@@ -6,17 +6,24 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -26,14 +33,17 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.IconButton
 import androidx.compose.material.Surface
 import androidx.compose.material.TabRow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Cancel
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material3.Badge
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.InputChip
@@ -41,6 +51,7 @@ import androidx.compose.material3.InputChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -49,13 +60,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImagePainter
@@ -77,7 +91,7 @@ fun SearchContent(modifier: Modifier = Modifier, state: MainSharedState, onEvent
     val searchPageState by remember(state.search) {
         derivedStateOf {
             when {
-                state.search.showRecent && state.search.query.isEmpty() -> SearchContentType.RECENT
+                state.search.showRecent && state.search.query.isBlank() -> SearchContentType.RECENT
                 state.search.showRecent && state.search.query.isNotBlank() -> SearchContentType.TYPING
                 else -> SearchContentType.DONE
             }
@@ -111,6 +125,7 @@ fun RecentSearchContent(
     state: MainSharedState.Search,
     onEvent: (e: MainSharedEvent) -> Unit
 ) {
+    val density = LocalDensity.current
     LazyColumn() {
         item {
             AnimatedVisibility(
@@ -175,32 +190,90 @@ fun RecentSearchContent(
             }
         }
         item {
-            Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface, elevation = 3.dp) {
-                Column() {
-                    state.chat.result.take(6).forEach {
-                        SearchResultItem(
-                            modifier = Modifier.fillMaxWidth(),
-                            avatarModel = it.avatar,
-                            title = buildAnnotatedString {
-                                it.name.splitKeeping(state.query).forEach {
-                                    if (it == state.query) {
-                                        withStyle(
-                                            style = SpanStyle(
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.primary
-                                            )
-                                        ) {
-                                            append(it)
-                                        }
-                                    } else {
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .clip(MaterialTheme.shapes.extraLarge),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                state.chat.result.forEach {
+                    SearchResultItem(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .placeholder(
+                                visible = state.chat.loadState == LoadState.LOADING,
+                                color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                                shape = MaterialTheme.shapes.extraLarge,
+                                highlight = PlaceholderHighlight.fade(),
+                            ),
+                        avatarModel = it.avatar.getModel(),
+                        title = buildAnnotatedString {
+                            it.name.splitKeeping(state.query).forEach {
+                                if (it == state.query) {
+                                    withStyle(
+                                        style = SpanStyle(
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    ) {
                                         append(it)
                                     }
+                                } else {
+                                    append(it)
                                 }
-                            },
-                            subTitle = null
-                        ) {
+                            }
+                        },
+                        subTitle = null
+                    ) {
 
-                        }
+                    }
+                }
+            }
+        }
+        item {
+            if (state.contact.result.isNotEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        text = "联系人",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
+        item {
+            Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                state.contact.result.forEach {
+                    SearchResultItemVertical(
+                        modifier = Modifier.placeholder(
+                            visible = state.contact.loadState == LoadState.LOADING,
+                            color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                            shape = MaterialTheme.shapes.extraLarge,
+                            highlight = PlaceholderHighlight.fade(),
+                        ),
+                        avatarModel = it.avatar.getModel(),
+                        title = buildAnnotatedString {
+                            it.name.splitKeeping(state.query).forEach {
+                                if (it == state.query) {
+                                    withStyle(
+                                        style = SpanStyle(
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    ) {
+                                        append(it)
+                                    }
+                                } else {
+                                    append(it)
+                                }
+                            }
+                        },
+                        subTitle = null
+                    ) {
+
                     }
                 }
             }
@@ -220,64 +293,59 @@ fun RecentSearchContent(
             }
         }
         item {
-            Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface, elevation = 3.dp) {
-                Column() {
-                    state.message.result.take(6).forEach {
-                        SearchResultItem(
-                            modifier = Modifier.fillMaxWidth(),
-                            avatarModel = it.chat!!.avatar,
-                            title = buildAnnotatedString {
-                                it.chat.name.splitKeeping(state.query).forEach {
-                                    if (it == state.query) {
-                                        withStyle(
-                                            style = SpanStyle(
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.primary
-                                            )
-                                        ) {
-                                            append(it)
-                                        }
-                                    } else {
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .clip(MaterialTheme.shapes.extraLarge)
+                    .placeholder(
+                        visible = state.message.loadState == LoadState.LOADING,
+                        color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                        shape = MaterialTheme.shapes.extraLarge,
+                        highlight = PlaceholderHighlight.fade(),
+                    ),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                state.message.result.forEach {
+                    SearchResultItem(
+                        modifier = Modifier.fillMaxWidth(),
+                        avatarModel = it.chat!!.avatar.getModel(),
+                        title = buildAnnotatedString {
+                            it.chat.name.splitKeeping(state.query).forEach {
+                                if (it == state.query) {
+                                    withStyle(
+                                        style = SpanStyle(
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    ) {
                                         append(it)
                                     }
+                                } else {
+                                    append(it)
                                 }
-                            },
-                            subTitle = buildAnnotatedString {
-                                append(it.contact!!.name)
-                                append(": ")
-                                it.message.contentString.splitKeeping(state.query).forEach {
-                                    if (it == state.query) {
-                                        withStyle(
-                                            style = SpanStyle(
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.primary
-                                            )
-                                        ) {
-                                            append(it)
-                                        }
-                                    } else {
+                            }
+                        },
+                        subTitle = buildAnnotatedString {
+                            append(it.contact!!.name)
+                            append(": ")
+                            it.message.contentString.splitKeeping(state.query).forEach {
+                                if (it == state.query) {
+                                    withStyle(
+                                        style = SpanStyle(
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    ) {
                                         append(it)
                                     }
+                                } else {
+                                    append(it)
                                 }
-                            },
-                        ) {
+                            }
+                        },
+                    ) {
 
-                        }
                     }
-                }
-            }
-        }
-        item {
-            if (state.contact.result.isNotEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                ) {
-                    Text(
-                        text = "联系人",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
                 }
             }
         }
@@ -314,63 +382,153 @@ fun DoneSearchContent(modifier: Modifier = Modifier, state: MainSharedState.Sear
     }
 }
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun SearchResultItem(
     modifier: Modifier = Modifier,
-    avatarModel: Any,
+    avatarModel: Any?,
     title: AnnotatedString,
     subTitle: AnnotatedString?,
     onClick: () -> Unit,
 ) {
-    Row(modifier = modifier.clickable {
-        onClick()
-    }, verticalAlignment = Alignment.CenterVertically) {
-        Box(
+    Surface(
+        modifier = modifier,
+        onClick = onClick,
+        elevation = 0.dp,
+        color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
+    ) {
+        Row(
             modifier = Modifier
-                .clip(CircleShape)
-                .size(40.dp)
-                .background(MaterialTheme.colorScheme.primary),
-            contentAlignment = Alignment.Center
+                .padding(horizontal = 16.dp)
+                .height(56.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            SubcomposeAsyncImage(
-                model = avatarModel,
-                contentDescription = "chat_avatar",
-                modifier = Modifier.fillMaxSize(),
+            Box(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .size(32.dp)
+                    .background(MaterialTheme.colorScheme.primary),
+                contentAlignment = Alignment.Center
             ) {
-                val state = painter.state
-                val namedAvatarBm =
-                    AvatarUtil.createNamedAvatarBm(
-                        backgroundColor = MaterialTheme.colorScheme.secondaryContainer.toArgb(),
-                        textColor = MaterialTheme.colorScheme.onSecondaryContainer.toArgb(),
-                        name = title.text
-                    ).asImageBitmap()
-                if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
-                    Image(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .placeholder(
-                                visible = state is AsyncImagePainter.State.Loading,
-                                color = MaterialTheme.colorScheme.secondaryContainer,
-                                highlight = PlaceholderHighlight.fade(),
-                            ),
-                        bitmap = namedAvatarBm,
-                        contentDescription = "named_avatar"
+                SubcomposeAsyncImage(
+                    model = avatarModel,
+                    contentDescription = "chat_avatar",
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    val state = painter.state
+                    val namedAvatarBm =
+                        AvatarUtil.createNamedAvatarBm(
+                            backgroundColor = MaterialTheme.colorScheme.secondaryContainer.toArgb(),
+                            textColor = MaterialTheme.colorScheme.onSecondaryContainer.toArgb(),
+                            name = title.text
+                        ).asImageBitmap()
+                    if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
+                        Image(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .placeholder(
+                                    visible = state is AsyncImagePainter.State.Loading,
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    highlight = PlaceholderHighlight.fade(),
+                                ),
+                            bitmap = namedAvatarBm,
+                            contentDescription = "named_avatar"
+                        )
+                    } else {
+                        SubcomposeAsyncImageContent()
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(
+                modifier = Modifier
+                    .weight(1f), verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = title,
+                    style = if (subTitle?.isNotBlank() == true) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1
+                )
+                if (subTitle?.isNotBlank() == true) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = subTitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1
                     )
-                } else {
-                    SubcomposeAsyncImageContent()
                 }
             }
         }
-        Spacer(modifier = Modifier.width(16.dp))
+    }
+}
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun SearchResultItemVertical(
+    modifier: Modifier = Modifier,
+    avatarModel: Any?,
+    title: AnnotatedString,
+    subTitle: AnnotatedString?,
+    onClick: () -> Unit,
+) {
+    Surface(
+        modifier = modifier,
+        onClick = onClick,
+        elevation = 0.dp,
+        color = Color.Transparent
+    ) {
         Column(
             modifier = Modifier
-                .weight(1f), verticalArrangement = Arrangement.Center
+                .width(width = 96.dp)
+                .padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
+            Box(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .size(48.dp)
+                    .background(MaterialTheme.colorScheme.primary),
+                contentAlignment = Alignment.Center
+            ) {
+                SubcomposeAsyncImage(
+                    model = avatarModel,
+                    contentDescription = "chat_avatar",
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    val state = painter.state
+                    val namedAvatarBm =
+                        AvatarUtil.createNamedAvatarBm(
+                            backgroundColor = MaterialTheme.colorScheme.secondaryContainer.toArgb(),
+                            textColor = MaterialTheme.colorScheme.onSecondaryContainer.toArgb(),
+                            name = title.text
+                        ).asImageBitmap()
+                    if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
+                        Image(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .placeholder(
+                                    visible = state is AsyncImagePainter.State.Loading,
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    highlight = PlaceholderHighlight.fade(),
+                                ),
+                            bitmap = namedAvatarBm,
+                            contentDescription = "named_avatar"
+                        )
+                    } else {
+                        SubcomposeAsyncImageContent()
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleSmall,
+                style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             if (subTitle?.isNotBlank() == true) {
                 Spacer(modifier = Modifier.height(4.dp))
@@ -384,4 +542,3 @@ fun SearchResultItem(
         }
     }
 }
-

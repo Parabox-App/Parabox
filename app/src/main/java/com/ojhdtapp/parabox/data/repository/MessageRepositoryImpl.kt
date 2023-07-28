@@ -36,6 +36,7 @@ class MessageRepositoryImpl @Inject constructor(
                     Resource.Success(db.messageDao.getMessageWithLimit(limit).map { it.toQueryMessage() })
                 )
             } catch (e: Exception) {
+                e.printStackTrace()
                 emit(Resource.Error("unknown error"))
             }
         }

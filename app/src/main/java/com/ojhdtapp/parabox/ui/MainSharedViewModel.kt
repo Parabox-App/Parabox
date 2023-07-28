@@ -206,7 +206,7 @@ class MainSharedViewModel @Inject constructor(
 
     private suspend fun getRecentSearch(){
         coroutineScope {
-            launch {
+            launch(Dispatchers.IO) {
                 query.recentMessage().collectLatest {
                     when (it) {
                         is Resource.Success -> {
@@ -232,7 +232,7 @@ class MainSharedViewModel @Inject constructor(
                     }
                 }
             }
-            launch {
+            launch(Dispatchers.IO) {
                 query.recentContact().collectLatest {
                     when (it) {
                         is Resource.Success -> {
@@ -258,7 +258,7 @@ class MainSharedViewModel @Inject constructor(
                     }
                 }
             }
-            launch {
+            launch(Dispatchers.IO) {
                 query.recentChat().collectLatest {
                     when (it) {
                         is Resource.Success -> {
@@ -292,7 +292,7 @@ class MainSharedViewModel @Inject constructor(
             launch(Dispatchers.IO) {
                 query.submitRecentQuery(input)
             }
-            launch {
+            launch(Dispatchers.IO) {
                 query.message(input).collectLatest {
                     when (it) {
                         is Resource.Success -> {
@@ -318,7 +318,7 @@ class MainSharedViewModel @Inject constructor(
                     }
                 }
             }
-            launch {
+            launch(Dispatchers.IO) {
                 query.contact(input).collectLatest {
                     when (it) {
                         is Resource.Success -> {
@@ -344,7 +344,7 @@ class MainSharedViewModel @Inject constructor(
                     }
                 }
             }
-            launch {
+            launch(Dispatchers.IO) {
                 query.chat(input).collectLatest {
                     when (it) {
                         is Resource.Success -> {
