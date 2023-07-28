@@ -17,23 +17,31 @@ import com.ojhdtapp.parabox.domain.model.QueryMessage
 interface MessageDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertMessage(message: MessageEntity): Long
+
     @SuppressWarnings(RoomWarnings.CURSOR_MISMATCH)
-    @Query("SELECT * FROM message_entity " +
-            "WHERE chatId IN (:chatIdList) " + "ORDER BY message_entity.timestamp DESC")
+    @Query(
+        "SELECT * FROM message_entity " +
+                "WHERE chatId IN (:chatIdList) " + "ORDER BY message_entity.timestamp DESC"
+    )
     fun getMessagePagingSource(chatIdList: List<Long>): PagingSource<Int, MessageEntity>
 
-    @Query("SELECT * FROM message_entity " +
-            "WHERE contentTypes & 8 > 0 " +
-            "ORDER BY message_entity.timestamp DESC")
+    @Query(
+        "SELECT * FROM message_entity " +
+                "WHERE contentTypes & 8 > 0 " +
+                "ORDER BY message_entity.timestamp DESC"
+    )
     fun getFileMessagePagingSource(): PagingSource<Int, MessageEntity>
 
-    @Query("SELECT * FROM message_entity " +
-            "WHERE messageId = :messageId " +
-            "LIMIT 1")
+    @Query(
+        "SELECT * FROM message_entity " +
+                "WHERE messageId = :messageId " +
+                "LIMIT 1"
+    )
     fun getMessageById(messageId: Long): MessageEntity?
 
     @Query("DELETE FROM message_entity WHERE messageId = :messageId")
     fun deleteMessageById(messageId: Long): Int
+
     @Query("DELETE FROM message_entity WHERE messageId IN (:messageIdList)")
     fun deleteMessageById(messageIdList: List<Long>): Int
 
@@ -52,4 +60,12 @@ interface MessageDao {
     @Transaction
     @Query("SELECT * FROM message_entity WHERE contentString LIKE '%' || :query || '%'")
     fun queryMessage(query: String): List<QueryMessageEntity>
+
+    @Transaction
+    @Query(
+        "SELECT * FROM message_entity " +
+                "ORDER BY message_entity.timestamp DESC " +
+                "LIMIT :limit"
+    )
+    fun getMessageWithLimit(limit: Int): List<QueryMessageEntity>
 }

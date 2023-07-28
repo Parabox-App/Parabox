@@ -1,6 +1,9 @@
 package com.ojhdtapp.parabox.ui.common
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -30,9 +33,11 @@ import androidx.compose.material.Surface
 import androidx.compose.material.TabRow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Cancel
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.InputChip
+import androidx.compose.material3.InputChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
@@ -61,6 +66,7 @@ import com.google.accompanist.placeholder.material3.fade
 import com.google.accompanist.placeholder.placeholder
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.AvatarUtil
+import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.core.util.splitKeeping
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
@@ -68,7 +74,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun SearchContent(modifier: Modifier = Modifier, state: MainSharedState, onEvent: (e: MainSharedEvent) -> Unit) {
-    val searchPageState by remember {
+    val searchPageState by remember(state.search) {
         derivedStateOf {
             when {
                 state.search.showRecent && state.search.query.isEmpty() -> SearchContentType.RECENT
@@ -77,7 +83,7 @@ fun SearchContent(modifier: Modifier = Modifier, state: MainSharedState, onEvent
             }
         }
     }
-    Crossfade(targetState = searchPageState, modifier = modifier) {
+    Crossfade(targetState = searchPageState, modifier = modifier, label = "search_pages") {
         when (it) {
             SearchContentType.RECENT -> {
                 RecentSearchContent(state = state.search, onEvent = onEvent)
@@ -107,7 +113,11 @@ fun RecentSearchContent(
 ) {
     LazyColumn() {
         item {
-            if (state.recentQuery.isNotEmpty()) {
+            AnimatedVisibility(
+                visible = state.recentQueryState == LoadState.LOADING || state.recentQuery.isNotEmpty(),
+                enter = expandVertically(),
+                exit = shrinkVertically()
+            ) {
                 Box(
                     modifier = Modifier
                         .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -128,16 +138,24 @@ fun RecentSearchContent(
             ) {
                 items(items = state.recentQuery) {
                     InputChip(
+                        modifier = Modifier.placeholder(
+                            visible = state.recentQueryState == LoadState.LOADING,
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            shape = MaterialTheme.shapes.small,
+                            highlight = PlaceholderHighlight.fade(),
+                        ),
                         selected = false,
                         onClick = { onEvent(MainSharedEvent.QueryInput(it.value)) },
                         label = { Text(text = it.value) },
                         trailingIcon = {
-                            IconButton(onClick = { onEvent(MainSharedEvent.DeleteRecentQuery(it.id)) }) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Cancel,
-                                    contentDescription = "delete recent query"
-                                )
-                            }
+                            Icon(
+                                modifier = Modifier.clickable {
+                                    onEvent(MainSharedEvent.DeleteRecentQuery(it.id))
+                                },
+                                imageVector = Icons.Outlined.Close,
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                contentDescription = "delete recent query"
+                            )
                         })
                 }
             }

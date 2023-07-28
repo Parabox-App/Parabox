@@ -13,6 +13,7 @@ interface ChatRepository {
     fun getChatPagingSource() : PagingSource<Int, ChatWithLatestMessageEntity>
     fun getPinnedChatPagingSource() : PagingSource<Int, ChatEntity>
     fun queryChat(query: String): Flow<Resource<List<Chat>>>
+    fun getChatWithLimit(limit: Int): Flow<Resource<List<Chat>>>
     fun updateUnreadMessagesNum(chatId: Long, value: Int): Boolean
     fun updatePin(chatId: Long, value: Boolean): Boolean
     fun updateHide(chatId: Long, value: Boolean): Boolean

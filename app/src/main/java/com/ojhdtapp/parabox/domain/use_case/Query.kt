@@ -19,6 +19,10 @@ class Query @Inject constructor(
     private val contactRepository: ContactRepository,
     private val chatRepository: ChatRepository,
 ) {
+    companion object {
+        const val SEARCH_RECENT_DATA_NUM = 6
+    }
+
     fun recentQuery(): Flow<Resource<List<RecentQuery>>> {
         return mainRepository.getRecentQuery()
     }
@@ -31,12 +35,24 @@ class Query @Inject constructor(
         return mainRepository.deleteRecentQuery(id)
     }
 
+    fun recentMessage(): Flow<Resource<List<QueryMessage>>> {
+        return messageRepository.getMessageWithLimit(SEARCH_RECENT_DATA_NUM)
+    }
+
     fun message(query: String): Flow<Resource<List<QueryMessage>>> {
         return messageRepository.queryMessage(query)
     }
 
+    fun recentContact(): Flow<Resource<List<Contact>>> {
+        return contactRepository.getContactWithLimit(SEARCH_RECENT_DATA_NUM)
+    }
+
     fun contact(query: String): Flow<Resource<List<Contact>>> {
         return contactRepository.queryContact(query)
+    }
+
+    fun recentChat(): Flow<Resource<List<Chat>>> {
+        return chatRepository.getChatWithLimit(SEARCH_RECENT_DATA_NUM)
     }
 
     fun chat(query: String): Flow<Resource<List<Chat>>> {

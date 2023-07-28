@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.base
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.Flow
@@ -16,6 +17,7 @@ abstract class BaseViewModel< S : UiState, E : UiEvent,F : UiEffect>  : ViewMode
     val uiState: StateFlow<S> by lazy { _uiState }
 
     private fun sendState(newState: S.() -> S) {
+        Log.d("parabox", "new state: ${uiState.value.newState()}")
         _uiState.value = uiState.value.newState()
     }
 

@@ -48,6 +48,22 @@ class ChatRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun getChatWithLimit(limit: Int): Flow<Resource<List<Chat>>> {
+        return flow {
+            emit(Resource.Loading())
+            try {
+                emit(
+                    withContext(Dispatchers.IO) {
+                        Resource.Success(db.chatDao.getChatWithLimit(limit).map { it.toChat() })
+                    }
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+                emit(Resource.Error("unknown error"))
+            }
+        }
+    }
+
     override fun updateUnreadMessagesNum(chatId: Long, value: Int): Boolean {
         return db.chatDao.updateUnreadMessageNum(ChatUnreadMessagesNumUpdate(chatId, value)) == 1
     }

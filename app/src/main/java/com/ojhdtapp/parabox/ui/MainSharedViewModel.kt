@@ -3,6 +3,7 @@ package com.ojhdtapp.parabox.ui
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import androidx.lifecycle.viewModelScope
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.core.util.Resource
@@ -68,40 +69,27 @@ class MainSharedViewModel @Inject constructor(
             }
 
             is MainSharedEvent.TriggerSearchBar -> {
-                coroutineScope {
-                    if (event.isActive) {
-                        launch {
-                            sendEvent(MainSharedEvent.GetRecentQuery)
-                        }
+                if (event.isActive) {
+                    viewModelScope.launch {
+                        delay(200)
+                        sendEvent(MainSharedEvent.GetRecentQuery)
+                        getRecentQuery()
+                        getRecentSearch()
                     }
                 }
+                Log.d("parabox", "trigger search bar:${event.isActive}")
                 return state.copy(
                     showNavigationBar = !event.isActive,
                     search = state.search.copy(
                         showRecent = true,
-                        isActive = event.isActive
+                        isActive = event.isActive,
+                        recentQueryState = if(event.isActive) LoadState.LOADING else state.search.recentQueryState,
                     )
                 )
             }
 
             is MainSharedEvent.GetRecentQuery -> {
-                coroutineScope {
-                    launch {
-                        query.recentQuery().collectLatest {
-                            when (it) {
-                                is Resource.Success -> {
-                                    sendEvent(MainSharedEvent.GetRecentQueryDone(it.data!!, true))
-                                }
-
-                                is Resource.Error -> {
-                                    sendEvent(MainSharedEvent.GetRecentQueryDone(emptyList(), false))
-                                }
-
-                                else -> {}
-                            }
-                        }
-                    }
-                }
+                Log.d("parabox", "recent query loading")
                 return state.copy(
                     search = state.search.copy(
                         recentQueryState = LoadState.LOADING
@@ -110,6 +98,7 @@ class MainSharedViewModel @Inject constructor(
             }
 
             is MainSharedEvent.GetRecentQueryDone -> {
+                Log.d("parabox", "recent query success")
                 return state.copy(
                     search = state.search.copy(
                         recentQueryState = if (event.isSuccess) LoadState.SUCCESS else LoadState.ERROR,
@@ -193,10 +182,117 @@ class MainSharedViewModel @Inject constructor(
         }
     }
 
+    private suspend fun getRecentQuery() {
+        Log.d("parabox", "getting recent query")
+        coroutineScope {
+            launch(Dispatchers.IO) {
+                query.recentQuery().collectLatest {
+                    Log.d("parabox", "recent query res coming:${it}")
+                    when (it) {
+                        is Resource.Success -> {
+                            sendEvent(MainSharedEvent.GetRecentQueryDone(it.data!!, true))
+                        }
+
+                        is Resource.Error -> {
+                            sendEvent(MainSharedEvent.GetRecentQueryDone(emptyList(), false))
+                        }
+
+                        else -> {}
+                    }
+                }
+            }
+        }
+    }
+
+    private suspend fun getRecentSearch(){
+        coroutineScope {
+            launch {
+                query.recentMessage().collectLatest {
+                    when (it) {
+                        is Resource.Success -> {
+                            sendEvent(
+                                MainSharedEvent.MessageSearchDone(
+                                    res = it.data!!,
+                                    isSuccess = true
+                                )
+                            )
+                        }
+
+                        is Resource.Error -> {
+                            sendEvent(
+                                MainSharedEvent.MessageSearchDone(
+                                    res = it.data ?: emptyList(), isSuccess = false
+                                )
+                            )
+                        }
+
+                        else -> {
+
+                        }
+                    }
+                }
+            }
+            launch {
+                query.recentContact().collectLatest {
+                    when (it) {
+                        is Resource.Success -> {
+                            sendEvent(
+                                MainSharedEvent.ContactSearchDone(
+                                    res = it.data!!,
+                                    isSuccess = true
+                                )
+                            )
+                        }
+
+                        is Resource.Error -> {
+                            sendEvent(
+                                MainSharedEvent.ContactSearchDone(
+                                    res = it.data ?: emptyList(), isSuccess = false
+                                )
+                            )
+                        }
+
+                        else -> {
+
+                        }
+                    }
+                }
+            }
+            launch {
+                query.recentChat().collectLatest {
+                    when (it) {
+                        is Resource.Success -> {
+                            sendEvent(
+                                MainSharedEvent.ChatSearchDone(
+                                    res = it.data!!,
+                                    isSuccess = true
+                                )
+                            )
+                        }
+
+                        is Resource.Error -> {
+                            sendEvent(
+                                MainSharedEvent.ChatSearchDone(
+                                    res = it.data ?: emptyList(), isSuccess = false
+                                )
+                            )
+                        }
+
+                        else -> {
+
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private suspend fun realSearch(input: String) {
         coroutineScope {
             launch(Dispatchers.IO) {
                 query.submitRecentQuery(input)
+            }
+            launch {
                 query.message(input).collectLatest {
                     when (it) {
                         is Resource.Success -> {

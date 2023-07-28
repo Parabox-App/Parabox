@@ -12,11 +12,19 @@ interface ContactDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insertContact(contact: ContactEntity): Long
 
-    @Query("SELECT * FROM contact_entity " +
-            "WHERE contactId = :contactId " +
-            "LIMIT 1")
+    @Query(
+        "SELECT * FROM contact_entity " +
+                "WHERE contactId = :contactId " +
+                "LIMIT 1"
+    )
     fun getContactById(contactId: Long): ContactEntity?
 
     @Query("SELECT * FROM contact_entity WHERE name LIKE '%' || :query || '%'")
     fun queryContact(query: String): List<ContactEntity>
+
+    @Query(
+        "SELECT * FROM contact_entity " +
+                "LIMIT :limit"
+    )
+    fun getContactWithLimit(limit: Int): List<ContactEntity>
 }

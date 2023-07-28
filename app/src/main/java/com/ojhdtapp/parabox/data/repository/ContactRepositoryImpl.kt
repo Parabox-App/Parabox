@@ -31,6 +31,22 @@ class ContactRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun getContactWithLimit(limit: Int): Flow<Resource<List<Contact>>> {
+        return flow {
+            emit(Resource.Loading())
+            try {
+                emit(
+                    withContext(Dispatchers.IO) {
+                        Resource.Success(db.contactDao.getContactWithLimit(limit).map { it.toContact() })
+                    }
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+                emit(Resource.Error("unknown error"))
+            }
+        }
+    }
+
     override fun getContactById(contactId: Long): Flow<Resource<Contact>> {
         return flow {
             emit(Resource.Loading())

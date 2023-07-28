@@ -7,7 +7,7 @@ import com.ojhdtapp.parabox.domain.model.QueryMessage
 import kotlinx.coroutines.flow.Flow
 
 interface MessageRepository {
-    fun getMessageById(messageId: Long) : Flow<Resource<Message>>
-
+    fun getMessageById(messageId: Long): Flow<Resource<Message>>
+    fun getMessageWithLimit(limit: Int): Flow<Resource<List<QueryMessage>>>
     fun queryMessage(query: String): Flow<Resource<List<QueryMessage>>>
 }

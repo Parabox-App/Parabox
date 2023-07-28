@@ -60,6 +60,15 @@ interface ChatDao {
     @Query("SELECT * FROM chat_entity WHERE name LIKE '%' || :query || '%'")
     fun queryChat(query: String): List<ChatEntity>
 
+    @Transaction
+    @Query(
+        "SELECT chat_entity.* FROM chat_entity " +
+                "INNER JOIN message_entity ON chat_entity.latestMessageId = message_entity.messageId " +
+                "ORDER BY message_entity.timestamp DESC " +
+                "LIMIT :limit"
+    )
+    fun getChatWithLimit(limit: Int): List<ChatEntity>
+
     @Update(entity = ChatEntity::class)
     fun updateLatestMessageId(obj: ChatLatestMessageIdUpdate): Int
 

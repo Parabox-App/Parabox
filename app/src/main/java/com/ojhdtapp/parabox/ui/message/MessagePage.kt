@@ -76,6 +76,7 @@ fun MessagePage(
     listState: LazyListState,
     layoutType: MessageLayoutType
 ) {
+
     val viewModel = hiltViewModel<MessagePageViewModel>()
     val coroutineScope = rememberCoroutineScope()
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -85,6 +86,9 @@ fun MessagePage(
     val sharedState by mainSharedViewModel.uiState.collectAsState()
     var snackBarJob: Job? by remember {
         mutableStateOf(null)
+    }
+    LaunchedEffect(sharedState.search){
+        Log.d("parabox", sharedState.search.toString())
     }
     LaunchedEffect(Unit) {
         viewModel.uiEffect.flowWithLifecycle(lifecycleOwner.lifecycle, Lifecycle.State.STARTED)
@@ -185,7 +189,9 @@ fun MessagePage(
                     )
                 },
                 onSearch = {
-                    mainSharedViewModel.sendEvent(MainSharedEvent.SearchConfirm(it))
+                    if(it.isNotBlank()){
+                        mainSharedViewModel.sendEvent(MainSharedEvent.SearchConfirm(it))
+                    }
                 },
                 active = sharedState.search.isActive,
                 onActiveChange = { mainSharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(it)) },
@@ -300,6 +306,7 @@ fun MessagePage(
                                 chat = item,
                                 onClick = {},
                                 onLongClick = {
+                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                     isMenuVisible = true
                                 },
                             )
