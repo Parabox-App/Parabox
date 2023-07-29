@@ -35,6 +35,7 @@ import androidx.compose.material.TabRow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.InputChip
@@ -116,8 +117,32 @@ fun RecentSearchContent(
 ) {
     LazyColumn() {
         item {
+            if (state.recentQuery.isEmpty() && state.recentQueryState != LoadState.LOADING
+                && state.chat.result.isEmpty() && state.chat.loadState != LoadState.LOADING
+                && state.contact.result.isEmpty() && state.contact.loadState != LoadState.LOADING
+                && state.message.result.isEmpty() && state.message.loadState != LoadState.LOADING) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Search,
+                        contentDescription = "search result",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "搜索 Parabox",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+            }
+        }
+        item {
             AnimatedVisibility(
-                visible = state.recentQueryState == LoadState.LOADING || state.recentQuery.isNotEmpty(),
+                visible = state.recentQueryState != LoadState.LOADING && state.recentQuery.isNotEmpty(),
                 enter = expandVertically(),
                 exit = shrinkVertically()
             ) {
@@ -134,35 +159,73 @@ fun RecentSearchContent(
             }
         }
         item {
-            LazyRow(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .clip(MaterialTheme.shapes.extraLarge),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
-                items(items = state.recentQuery) {
-                    InputChip(
-                        modifier = Modifier.placeholder(
-                            visible = state.recentQueryState == LoadState.LOADING,
-                            color = MaterialTheme.colorScheme.secondaryContainer,
-                            shape = MaterialTheme.shapes.small,
-                            highlight = PlaceholderHighlight.fade(),
-                        ),
-                        selected = false,
-                        onClick = { onEvent(MainSharedEvent.QueryInput(it.value)) },
-                        label = { Text(text = it.value) },
-                        trailingIcon = {
+                state.recentQuery.forEach {
+                    SearchResultItem(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .placeholder(
+                                visible = state.chat.loadState == LoadState.LOADING,
+                                color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                                shape = MaterialTheme.shapes.extraLarge,
+                                highlight = PlaceholderHighlight.fade(),
+                            ),
+                        avatarModel = null,
+                        title = buildAnnotatedString { append(it.value) },
+                        subTitle = null,
+                        leadingIcon = {
                             Icon(
-                                modifier = Modifier.clickable {
-                                    onEvent(MainSharedEvent.DeleteRecentQuery(it.id))
-                                },
-                                imageVector = Icons.Outlined.Close,
-                                tint = MaterialTheme.colorScheme.onSurface,
-                                contentDescription = "delete recent query"
+                                imageVector = Icons.Outlined.History,
+                                contentDescription = "history",
+                                tint = MaterialTheme.colorScheme.primary
                             )
-                        })
+                        },
+                        trailingIcon = {
+                            Icon(modifier = Modifier.clickable {
+                                onEvent(MainSharedEvent.DeleteRecentQuery(it.id))
+                            }, imageVector = Icons.Outlined.Close, contentDescription = "delete recent query")
+                        }
+                    ) {
+                        onEvent(MainSharedEvent.SearchConfirm(it.value))
+                    }
                 }
             }
         }
+//        item {
+//            LazyRow(
+//                verticalAlignment = Alignment.CenterVertically,
+//                horizontalArrangement = Arrangement.spacedBy(8.dp),
+//                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+//            ) {
+//                items(items = state.recentQuery) {
+//                    InputChip(
+//                        modifier = Modifier.placeholder(
+//                            visible = state.recentQueryState == LoadState.LOADING,
+//                            color = MaterialTheme.colorScheme.secondaryContainer,
+//                            shape = MaterialTheme.shapes.small,
+//                            highlight = PlaceholderHighlight.fade(),
+//                        ),
+//                        selected = false,
+//                        onClick = { onEvent(MainSharedEvent.QueryInput(it.value)) },
+//                        label = { Text(text = it.value) },
+//                        trailingIcon = {
+//                            Icon(
+//                                modifier = Modifier.clickable {
+//                                    onEvent(MainSharedEvent.DeleteRecentQuery(it.id))
+//                                },
+//                                imageVector = Icons.Outlined.Close,
+//                                tint = MaterialTheme.colorScheme.onSurface,
+//                                contentDescription = "delete recent query"
+//                            )
+//                        })
+//                }
+//            }
+//        }
         item {
             if (state.chat.result.isNotEmpty()) {
                 Box(

@@ -1,20 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="com.ojhdtapp.parabox">
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />
-    <uses-permission android:name="com.google.android.gms.permission.AD_ID"/>
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 
     <queries>
         <intent>
@@ -43,17 +42,17 @@
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_stat_name" />
 
-<!--        <activity-->
-<!--            android:name=".ui.bubble.BubbleActivity"-->
-<!--            android:allowEmbedded="true"-->
-<!--            android:documentLaunchMode="always"-->
-<!--            android:exported="false"-->
-<!--            android:resizeableActivity="true"-->
-<!--            android:theme="@style/Theme.Parabox">-->
-<!--            <meta-data-->
-<!--                android:name="android.app.lib_name"-->
-<!--                android:value="" />-->
-<!--        </activity>-->
+        <!--        <activity-->
+        <!--            android:name=".ui.bubble.BubbleActivity"-->
+        <!--            android:allowEmbedded="true"-->
+        <!--            android:documentLaunchMode="always"-->
+        <!--            android:exported="false"-->
+        <!--            android:resizeableActivity="true"-->
+        <!--            android:theme="@style/Theme.Parabox">-->
+        <!--            <meta-data-->
+        <!--                android:name="android.app.lib_name"-->
+        <!--                android:value="" />-->
+        <!--        </activity>-->
 
         <service
             android:name=".domain.service.ExtensionService"
@@ -82,12 +81,14 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+
                 <data
-                    android:scheme="msauth"
                     android:host="com.ojhdtapp.parabox"
-                    android:path="/tRs+aB2aiUENDbRJA51OjlWMREM=" />
+                    android:path="/tRs+aB2aiUENDbRJA51OjlWMREM="
+                    android:scheme="msauth" />
             </intent-filter>
         </activity>
 
