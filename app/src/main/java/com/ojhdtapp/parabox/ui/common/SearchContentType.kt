@@ -120,7 +120,8 @@ fun RecentSearchContent(
             if (state.recentQuery.isEmpty() && state.recentQueryState != LoadState.LOADING
                 && state.chat.result.isEmpty() && state.chat.loadState != LoadState.LOADING
                 && state.contact.result.isEmpty() && state.contact.loadState != LoadState.LOADING
-                && state.message.result.isEmpty() && state.message.loadState != LoadState.LOADING) {
+                && state.message.result.isEmpty() && state.message.loadState != LoadState.LOADING
+            ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -142,7 +143,7 @@ fun RecentSearchContent(
         }
         item {
             AnimatedVisibility(
-                visible = state.recentQueryState != LoadState.LOADING && state.recentQuery.isNotEmpty(),
+                visible = state.recentQueryState == LoadState.LOADING || state.recentQuery.isNotEmpty(),
                 enter = expandVertically(),
                 exit = shrinkVertically()
             ) {
@@ -165,33 +166,33 @@ fun RecentSearchContent(
                     .clip(MaterialTheme.shapes.extraLarge),
                 verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
-                state.recentQuery.forEach {
-                    SearchResultItem(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .placeholder(
-                                visible = state.chat.loadState == LoadState.LOADING,
-                                color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-                                shape = MaterialTheme.shapes.extraLarge,
-                                highlight = PlaceholderHighlight.fade(),
-                            ),
-                        avatarModel = null,
-                        title = buildAnnotatedString { append(it.value) },
-                        subTitle = null,
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Outlined.History,
-                                contentDescription = "history",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        },
-                        trailingIcon = {
-                            Icon(modifier = Modifier.clickable {
-                                onEvent(MainSharedEvent.DeleteRecentQuery(it.id))
-                            }, imageVector = Icons.Outlined.Close, contentDescription = "delete recent query")
+                if (state.chat.loadState == LoadState.LOADING) {
+                    repeat(3) {
+                        EmptySearchResultItem()
+                    }
+                } else {
+                    state.recentQuery.forEach {
+                        SearchResultItem(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            avatarModel = null,
+                            title = buildAnnotatedString { append(it.value) },
+                            subTitle = null,
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.History,
+                                    contentDescription = "history",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            },
+                            trailingIcon = {
+                                Icon(modifier = Modifier.clickable {
+                                    onEvent(MainSharedEvent.DeleteRecentQuery(it.id))
+                                }, imageVector = Icons.Outlined.Close, contentDescription = "delete recent query")
+                            }
+                        ) {
+                            onEvent(MainSharedEvent.SearchConfirm(it.value))
                         }
-                    ) {
-                        onEvent(MainSharedEvent.SearchConfirm(it.value))
                     }
                 }
             }
@@ -227,7 +228,11 @@ fun RecentSearchContent(
 //            }
 //        }
         item {
-            if (state.chat.result.isNotEmpty()) {
+            AnimatedVisibility(
+                visible = state.chat.loadState == LoadState.LOADING || state.chat.result.isNotEmpty(),
+                enter = expandVertically(),
+                exit = shrinkVertically()
+            ) {
                 Box(
                     modifier = Modifier
                         .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -247,36 +252,42 @@ fun RecentSearchContent(
                     .clip(MaterialTheme.shapes.extraLarge),
                 verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
-                state.chat.result.forEach {
-                    SearchResultItem(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .placeholder(
-                                visible = state.chat.loadState == LoadState.LOADING,
-                                color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-                                shape = MaterialTheme.shapes.extraLarge,
-                                highlight = PlaceholderHighlight.fade(),
-                            ),
-                        avatarModel = it.avatar.getModel(),
-                        title = buildAnnotatedString {
-                            it.name.splitKeeping(state.query).forEach {
-                                if (it == state.query) {
-                                    withStyle(
-                                        style = SpanStyle(
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                    ) {
+                if (state.chat.loadState == LoadState.LOADING) {
+                    repeat(3) {
+                        EmptySearchResultItem()
+                    }
+                } else {
+                    state.chat.result.forEach {
+                        SearchResultItem(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .placeholder(
+                                    visible = state.chat.loadState == LoadState.LOADING,
+                                    color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                                    shape = MaterialTheme.shapes.extraLarge,
+                                    highlight = PlaceholderHighlight.fade(),
+                                ),
+                            avatarModel = it.avatar.getModel(),
+                            title = buildAnnotatedString {
+                                it.name.splitKeeping(state.query).forEach {
+                                    if (it == state.query) {
+                                        withStyle(
+                                            style = SpanStyle(
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        ) {
+                                            append(it)
+                                        }
+                                    } else {
                                         append(it)
                                     }
-                                } else {
-                                    append(it)
                                 }
-                            }
-                        },
-                        subTitle = null
-                    ) {
+                            },
+                            subTitle = null
+                        ) {
 
+                        }
                     }
                 }
             }
@@ -330,10 +341,14 @@ fun RecentSearchContent(
             }
         }
         item {
-            if (state.message.result.isNotEmpty()) {
+            AnimatedVisibility(
+                visible = state.message.loadState == LoadState.LOADING || state.message.result.isNotEmpty(),
+                enter = expandVertically(),
+                exit = shrinkVertically()
+            ) {
                 Box(
                     modifier = Modifier
-                        .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     Text(
                         text = "消息",
@@ -347,57 +362,58 @@ fun RecentSearchContent(
             Column(
                 modifier = Modifier
                     .padding(horizontal = 16.dp)
-                    .clip(MaterialTheme.shapes.extraLarge)
-                    .placeholder(
-                        visible = state.message.loadState == LoadState.LOADING,
-                        color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-                        shape = MaterialTheme.shapes.extraLarge,
-                        highlight = PlaceholderHighlight.fade(),
-                    ),
+                    .clip(MaterialTheme.shapes.extraLarge),
                 verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
-                state.message.result.forEach {
-                    SearchResultItem(
-                        modifier = Modifier.fillMaxWidth(),
-                        avatarModel = it.chat!!.avatar.getModel(),
-                        title = buildAnnotatedString {
-                            it.chat.name.splitKeeping(state.query).forEach {
-                                if (it == state.query) {
-                                    withStyle(
-                                        style = SpanStyle(
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                    ) {
+                if (state.message.loadState == LoadState.LOADING) {
+                    repeat(3) {
+                        EmptySearchResultItem()
+                    }
+                } else {
+                    state.message.result.forEach {
+                        SearchResultItem(
+                            modifier = Modifier.fillMaxWidth(),
+                            avatarModel = it.chat!!.avatar.getModel(),
+                            title = buildAnnotatedString {
+                                it.chat.name.splitKeeping(state.query).forEach {
+                                    if (it == state.query) {
+                                        withStyle(
+                                            style = SpanStyle(
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        ) {
+                                            append(it)
+                                        }
+                                    } else {
                                         append(it)
                                     }
-                                } else {
-                                    append(it)
                                 }
-                            }
-                        },
-                        subTitle = buildAnnotatedString {
-                            append(it.contact!!.name)
-                            append(": ")
-                            it.message.contentString.splitKeeping(state.query).forEach {
-                                if (it == state.query) {
-                                    withStyle(
-                                        style = SpanStyle(
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                    ) {
+                            },
+                            subTitle = buildAnnotatedString {
+                                append(it.contact!!.name)
+                                append(": ")
+                                it.message.contentString.splitKeeping(state.query).forEach {
+                                    if (it == state.query) {
+                                        withStyle(
+                                            style = SpanStyle(
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        ) {
+                                            append(it)
+                                        }
+                                    } else {
                                         append(it)
                                     }
-                                } else {
-                                    append(it)
                                 }
-                            }
-                        },
-                    ) {
+                            },
+                        ) {
 
+                        }
                     }
                 }
+
             }
         }
     }
@@ -564,6 +580,70 @@ fun SearchResultItem(
             if (trailingIcon != null) {
                 Spacer(modifier = Modifier.width(16.dp))
                 trailingIcon()
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun EmptySearchResultItem(
+    modifier: Modifier = Modifier,
+    hasSubtitle: Boolean = false,
+) {
+    Surface(
+        modifier = modifier,
+        elevation = 0.dp,
+        color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 16.dp)
+                .height(56.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .size(32.dp)
+                    .background(MaterialTheme.colorScheme.primary)
+                    .placeholder(
+                        visible = true,
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        highlight = PlaceholderHighlight.fade(),
+                    ),
+                contentAlignment = Alignment.Center
+            ) {}
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(
+                modifier = Modifier
+                    .weight(1f), verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    modifier = Modifier.placeholder(
+                        visible = true,
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        highlight = PlaceholderHighlight.fade(),
+                    ),
+                    text = "title",
+                    style = if (hasSubtitle) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1
+                )
+                if (hasSubtitle) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        modifier = Modifier.placeholder(
+                            visible = true,
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            highlight = PlaceholderHighlight.fade(),
+                        ),
+                        text = "subtitle",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1
+                    )
+                }
             }
         }
     }

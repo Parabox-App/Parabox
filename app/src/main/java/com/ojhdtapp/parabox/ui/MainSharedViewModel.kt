@@ -47,6 +47,14 @@ class MainSharedViewModel @Inject constructor(
             }
 
             is MainSharedEvent.QueryInput -> {
+                realSearchJob?.cancel()
+                realSearchJob = null
+                realSearchJob = viewModelScope.launch {
+                    delay(1500)
+                    if(event.input.isNotBlank()){
+                        realSearch(event.input)
+                    }
+                }
                 return state.copy(
                     search = state.search.copy(
                         query = event.input
@@ -55,7 +63,12 @@ class MainSharedViewModel @Inject constructor(
             }
 
             is MainSharedEvent.SearchConfirm -> {
-                realSearch(event.input)
+                realSearchJob?.cancel()
+                realSearchJob = null
+                realSearchJob = viewModelScope.launch {
+                    query.submitRecentQuery(event.input)
+                    realSearch(event.input)
+                }
                 return state.copy(
                     search = MainSharedState.Search(
                         query = event.input,
@@ -292,11 +305,10 @@ class MainSharedViewModel @Inject constructor(
         }
     }
 
+    private var realSearchJob: Job? = null
+
     private suspend fun realSearch(input: String) {
         coroutineScope {
-            launch(Dispatchers.IO) {
-                query.submitRecentQuery(input)
-            }
             launch(Dispatchers.IO) {
                 query.message(input).collectLatest {
                     when (it) {
