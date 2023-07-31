@@ -4,14 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -19,15 +12,11 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material.icons.outlined.NewLabel
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,8 +24,6 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.toMutableStateList
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
@@ -46,6 +33,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.ui.common.MyFilterChip
 import com.ojhdtapp.parabox.ui.common.clearFocusOnKeyboardDismiss
 
@@ -54,8 +42,8 @@ import com.ojhdtapp.parabox.ui.common.clearFocusOnKeyboardDismiss
 fun EnabledChatFilterDialog(
     modifier: Modifier = Modifier,
     openDialog: Boolean,
-    enabledList: List<GetChatFilter>,
-    onConfirm: (List<GetChatFilter>) -> Unit,
+    enabledList: List<ChatFilter>,
+    onConfirm: (List<ChatFilter>) -> Unit,
     onDismiss: () -> Unit,
 ) {
     if (openDialog) {
@@ -65,7 +53,7 @@ fun EnabledChatFilterDialog(
             mutableStateOf(false)
         }
         val selectedList = remember {
-            mutableStateListOf<GetChatFilter>()
+            mutableStateListOf<ChatFilter>()
         }
         LaunchedEffect(Unit) {
             selectedList.addAll(enabledList)
@@ -73,7 +61,7 @@ fun EnabledChatFilterDialog(
         NewChatFilterDialog(
             openDialog = openCustomTagFilterDialog,
             onConfirm = {
-                selectedList.add(GetChatFilter.Tag(it.trim()))
+                selectedList.add(ChatFilter.Tag(it.trim()))
                 openCustomTagFilterDialog = false
             },
             onDismiss = { openCustomTagFilterDialog = false }
@@ -113,7 +101,7 @@ fun EnabledChatFilterDialog(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        GetChatFilter.allFilterList.forEach {
+                        ChatFilter.allFilterList.forEach {
                             MyFilterChip(
                                 selected = it in selectedList,
                                 label = { Text(text = stringResource(id = it.labelResId)) }) {
@@ -124,7 +112,7 @@ fun EnabledChatFilterDialog(
                                 }
                             }
                         }
-                        selectedList.filterIsInstance<GetChatFilter.Tag>().forEach {
+                        selectedList.filterIsInstance<ChatFilter.Tag>().forEach {
                             MyFilterChip(selected = true, label = { Text(text = it.tag) }) {
                                 selectedList.remove(it)
                             }

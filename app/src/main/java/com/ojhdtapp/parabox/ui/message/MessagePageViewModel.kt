@@ -1,17 +1,14 @@
 package com.ojhdtapp.parabox.ui.message
 
 import android.content.Context
-import android.util.Log
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.getDataStoreValue
-import com.ojhdtapp.parabox.domain.model.ChatWithLatestMessage
 import com.ojhdtapp.parabox.domain.model.Contact
+import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.domain.use_case.GetChat
 import com.ojhdtapp.parabox.domain.use_case.GetContact
 import com.ojhdtapp.parabox.domain.use_case.UpdateChat
@@ -21,8 +18,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onEach
@@ -40,7 +35,7 @@ class MessagePageViewModel @Inject constructor(
 
     override fun initialState(): MessagePageState {
         return MessagePageState(
-            chatPagingDataFlow = getChat(listOf(GetChatFilter.Normal)).cachedIn(viewModelScope),
+            chatPagingDataFlow = getChat(listOf(ChatFilter.Normal)).cachedIn(viewModelScope),
             pinnedChatPagingDataFlow = getChat.pinned()
         )
     }
@@ -77,47 +72,47 @@ class MessagePageViewModel @Inject constructor(
                 )
             }
 
-            is MessagePageEvent.UpdateEnabledGetChatFilterList -> {
-                val newList = state.selectedGetChatFilterList.toMutableList()
+            is MessagePageEvent.UpdateEnabledChatFilterList -> {
+                val newList = state.selectedChatFilterLists.toMutableList()
                     .apply {
                         retainAll(event.list)
                         if (isEmpty()) {
-                            add(GetChatFilter.Normal)
+                            add(ChatFilter.Normal)
                         }
                     }
                 state.copy(
                     chatPagingDataFlow = getChat(newList),
-                    enabledGetChatFilterList = event.list,
-                    selectedGetChatFilterList = newList,
+                    enabledChatFilterList = event.list,
+                    selectedChatFilterLists = newList,
                 )
             }
 
-            is MessagePageEvent.AddOrRemoveSelectedGetChatFilter -> {
-                if (event.filter is GetChatFilter.Normal) return state
-                val newList = if (state.selectedGetChatFilterList.contains(event.filter)) {
-                    state.selectedGetChatFilterList.toMutableList().apply {
+            is MessagePageEvent.AddOrRemoveSelectedChatFilter -> {
+                if (event.filter is ChatFilter.Normal) return state
+                val newList = if (state.selectedChatFilterLists.contains(event.filter)) {
+                    state.selectedChatFilterLists.toMutableList().apply {
                         remove(event.filter)
                     }
                 } else {
-                    state.selectedGetChatFilterList.toMutableList().apply {
+                    state.selectedChatFilterLists.toMutableList().apply {
                         add(event.filter)
                     }
                 }.apply {
                     if (isEmpty()) {
-                        add(GetChatFilter.Normal)
+                        add(ChatFilter.Normal)
                     } else {
-                        remove(GetChatFilter.Normal)
+                        remove(ChatFilter.Normal)
                     }
                 }
                 return state.copy(
                     chatPagingDataFlow = getChat(newList),
-                    selectedGetChatFilterList = newList
+                    selectedChatFilterLists = newList
                 )
             }
 
             is MessagePageEvent.GetChatPagingDataFlow -> {
                 return state.copy(
-                    chatPagingDataFlow = getChat(state.selectedGetChatFilterList)
+                    chatPagingDataFlow = getChat(state.selectedChatFilterLists)
                 )
             }
 

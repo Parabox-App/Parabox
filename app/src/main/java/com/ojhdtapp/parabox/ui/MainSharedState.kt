@@ -6,6 +6,8 @@ import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.QueryMessage
 import com.ojhdtapp.parabox.domain.model.RecentQuery
+import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
+import com.ojhdtapp.parabox.domain.model.filter.MessageFilter
 import com.ojhdtapp.parabox.ui.base.UiState
 
 data class MainSharedState(
@@ -34,6 +36,7 @@ data class MainSharedState(
         data class MessageSearch(
             val loadState: LoadState = LoadState.LOADING,
             val result: List<QueryMessage> = emptyList(),
+            val filterList: List<MessageFilter> = listOf(MessageFilter.SenderFilter.All, MessageFilter.ChatFilter.All, MessageFilter.TimeFilter.All),
             val filterResult: List<QueryMessage> = emptyList()
         )
         data class ContactSearch(

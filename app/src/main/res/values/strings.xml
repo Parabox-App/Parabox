@@ -533,7 +533,7 @@
     <string name="invalid_cloud_storage_configuration">Cloud service misconfiguration, try regular download</string>
     <string name="cloud_service_od">Microsoft OneDrive</string>
     <string name="connect_od_successful">Successfully connected to OneDrive</string>
-    <string name="operation_canceled">Operation canceled</string>
+    <string name="operation_canceled" translatable="false">Operation canceled</string>
     <string name="darkmode">Dark mode</string>
     <string name="darkmode_follow_system">Follow the system</string>
     <string name="darkmode_night_no">Always off</string>
@@ -547,4 +547,6 @@
     <string name="get_chat_filter_unread">Unread</string>
     <string name="get_chat_filter_private">Private</string>
     <string name="get_chat_filter_group">Group</string>
+    <string name="message_filter_sender_all">来自联系人</string>
+    <string name="message_filter_chat_all">所在会话</string>
 </resources>

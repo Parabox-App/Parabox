@@ -1,25 +1,22 @@
 package com.ojhdtapp.parabox.domain.use_case
 
-import android.util.Log
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.filter
 import androidx.paging.map
 import com.ojhdtapp.parabox.domain.model.Chat
-import com.ojhdtapp.parabox.domain.model.ChatBean
 import com.ojhdtapp.parabox.domain.model.ChatWithLatestMessage
 import com.ojhdtapp.parabox.domain.repository.ChatRepository
-import com.ojhdtapp.parabox.ui.message.GetChatFilter
+import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class GetChat @Inject constructor(
     val repository: ChatRepository
 ) {
-    operator fun invoke(filter: List<GetChatFilter>): Flow<PagingData<ChatWithLatestMessage>> {
+    operator fun invoke(filter: List<ChatFilter>): Flow<PagingData<ChatWithLatestMessage>> {
         return Pager(
             PagingConfig(
                 pageSize = 20,

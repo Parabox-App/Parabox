@@ -101,7 +101,7 @@ fun SearchContent(modifier: Modifier = Modifier, state: MainSharedState, onEvent
             }
 
             SearchContentType.DONE -> {
-                DoneSearchContent(state = state.search)
+                DoneSearchContent(state = state.search, onEvent = onEvent)
             }
         }
     }
@@ -721,16 +721,16 @@ fun TypingSearchContent(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun DoneSearchContent(modifier: Modifier = Modifier, state: MainSharedState.Search) {
+fun DoneSearchContent(modifier: Modifier = Modifier, state: MainSharedState.Search, onEvent: (e: MainSharedEvent) -> Unit) {
     val coroutineScope = rememberCoroutineScope()
     Column() {
         val tabList = listOf<String>(
-            stringResource(id = R.string.confirm),
-            stringResource(id = R.string.confirm),
-            stringResource(id = R.string.confirm)
+            "消息",
+            "联系人",
+            "会话"
         )
         val pagerState = rememberPagerState() { tabList.size }
-        TabRow(selectedTabIndex = pagerState.currentPage) {
+        androidx.compose.material3.TabRow(selectedTabIndex = pagerState.currentPage) {
             tabList.forEachIndexed { index, s ->
                 Tab(selected = index == pagerState.currentPage, onClick = {
                     coroutineScope.launch {
@@ -740,9 +740,31 @@ fun DoneSearchContent(modifier: Modifier = Modifier, state: MainSharedState.Sear
             }
         }
         HorizontalPager(state = pagerState) {
-
+            when(it){
+                0 -> {
+                    DoneSearchMessageContent(state = state.message, onEvent = onEvent)
+                }
+                1 -> {
+                    DoneSearchContactContent(state = state.contact, onEvent = onEvent)
+                }
+                2 -> {
+                    DoneSearchChatContent(state = state.chat, onEvent = onEvent)
+                }
+            }
         }
     }
+}
+
+fun DoneSearchMessageContent(modifier: Modifier = Modifier, state: MainSharedState.Search.MessageSearch, onEvent: (e: MainSharedEvent) -> Unit) {
+
+}
+
+fun DoneSearchContactContent(modifier: Modifier = Modifier, state: MainSharedState.Search.ContactSearch, onEvent: (e: MainSharedEvent) -> Unit) {
+
+}
+
+fun DoneSearchChatContent(modifier: Modifier = Modifier, state: MainSharedState.Search.ChatSearch, onEvent: (e: MainSharedEvent) -> Unit) {
+
 }
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -961,7 +983,7 @@ fun SearchResultItemVertical(
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis

@@ -6,7 +6,6 @@ import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
 import androidx.compose.animation.graphics.res.animatedVectorResource
@@ -27,19 +26,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.PopupProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
@@ -56,7 +51,7 @@ import com.google.accompanist.placeholder.placeholder
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.core.util.AvatarUtil.getCircledBitmap
-import com.ojhdtapp.parabox.data.local.entity.ChatTagsUpdate
+import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.common.*
@@ -144,9 +139,9 @@ fun MessagePage(
 
     EnabledChatFilterDialog(
         openDialog = state.openEnabledChatFilterDialog,
-        enabledList = state.enabledGetChatFilterList,
+        enabledList = state.enabledChatFilterList,
         onConfirm = {
-            viewModel.sendEvent(MessagePageEvent.UpdateEnabledGetChatFilterList(it))
+            viewModel.sendEvent(MessagePageEvent.UpdateEnabledChatFilterList(it))
             viewModel.sendEvent(MessagePageEvent.OpenEnabledChatFilterDialog(false))
         },
         onDismiss = {
@@ -353,7 +348,7 @@ fun MessagePage(
                         }
                     }
                     item {
-                        if (state.selectedGetChatFilterList.contains(GetChatFilter.Normal)) {
+                        if (state.selectedChatFilterLists.contains(ChatFilter.Normal)) {
                             MyFilterChip(
                                 modifier = Modifier.padding(end = 8.dp),
                                 selected = false,
@@ -361,23 +356,23 @@ fun MessagePage(
                             }
                         }
                     }
-                    items(items = state.enabledGetChatFilterList) {
-                        if (it is GetChatFilter.Tag) {
-                            MyFilterChip(selected = it in state.selectedGetChatFilterList,
+                    items(items = state.enabledChatFilterList) {
+                        if (it is ChatFilter.Tag) {
+                            MyFilterChip(selected = it in state.selectedChatFilterLists,
                                 modifier = Modifier.padding(end = 8.dp),
                                 label = { Text(text = it.tag) }) {
                                 viewModel.sendEvent(
-                                    MessagePageEvent.AddOrRemoveSelectedGetChatFilter(
+                                    MessagePageEvent.AddOrRemoveSelectedChatFilter(
                                         it
                                     )
                                 )
                             }
                         } else {
-                            MyFilterChip(selected = it in state.selectedGetChatFilterList,
+                            MyFilterChip(selected = it in state.selectedChatFilterLists,
                                 modifier = Modifier.padding(end = 8.dp),
                                 label = { Text(text = stringResource(id = it.labelResId)) }) {
                                 viewModel.sendEvent(
-                                    MessagePageEvent.AddOrRemoveSelectedGetChatFilter(
+                                    MessagePageEvent.AddOrRemoveSelectedChatFilter(
                                         it
                                     )
                                 )
