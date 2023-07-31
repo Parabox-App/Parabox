@@ -113,7 +113,7 @@ fun EnabledChatFilterDialog(
                             }
                         }
                         selectedList.filterIsInstance<ChatFilter.Tag>().forEach {
-                            MyFilterChip(selected = true, label = { Text(text = it.tag) }) {
+                            MyFilterChip(selected = true, label = { Text(text = it.label) }) {
                                 selectedList.remove(it)
                             }
                         }

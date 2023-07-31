@@ -275,7 +275,8 @@ private fun MenuNavigationWrapperUI(
                     onEvent = menuEventHandler,
                 )
             },
-            drawerState = drawerState
+            drawerState = drawerState,
+            gesturesEnabled = !mainSharedState.search.isActive,
         ) {
             MenuAppContent(
                 navController = navController,

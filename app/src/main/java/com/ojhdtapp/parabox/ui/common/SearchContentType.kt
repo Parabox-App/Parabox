@@ -74,6 +74,8 @@ import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.AvatarUtil
 import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.core.util.splitKeeping
+import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
+import com.ojhdtapp.parabox.domain.model.filter.MessageFilter
 import com.ojhdtapp.parabox.domain.use_case.Query.Companion.SEARCH_RECENT_DATA_NUM
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
@@ -313,12 +315,14 @@ fun RecentSearchContent(
             Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
                 state.contact.result.forEach {
                     SearchResultItemVertical(
-                        modifier = Modifier.padding(start = 16.dp).placeholder(
-                            visible = state.contact.loadState == LoadState.LOADING,
-                            color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-                            shape = MaterialTheme.shapes.large,
-                            highlight = PlaceholderHighlight.fade(),
-                        ),
+                        modifier = Modifier
+                            .padding(start = 16.dp)
+                            .placeholder(
+                                visible = state.contact.loadState == LoadState.LOADING,
+                                color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                                shape = MaterialTheme.shapes.large,
+                                highlight = PlaceholderHighlight.fade(),
+                            ),
                         avatarModel = it.avatar.getModel(),
                         title = buildAnnotatedString {
                             it.name.splitKeeping(state.query).forEach {
@@ -589,12 +593,14 @@ fun TypingSearchContent(
             Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
                 state.contact.result.forEach {
                     SearchResultItemVertical(
-                        modifier = Modifier.padding(start = 16.dp).placeholder(
-                            visible = state.contact.loadState == LoadState.LOADING,
-                            color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-                            shape = MaterialTheme.shapes.large,
-                            highlight = PlaceholderHighlight.fade(),
-                        ),
+                        modifier = Modifier
+                            .padding(start = 16.dp)
+                            .placeholder(
+                                visible = state.contact.loadState == LoadState.LOADING,
+                                color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                                shape = MaterialTheme.shapes.large,
+                                highlight = PlaceholderHighlight.fade(),
+                            ),
                         avatarModel = it.avatar.getModel(),
                         title = buildAnnotatedString {
                             it.name.splitKeeping(state.query).forEach {
@@ -692,7 +698,7 @@ fun TypingSearchContent(
                         }
                     }
                 }
-                if(state.message.result.size >= SEARCH_RECENT_DATA_NUM){
+                if (state.message.result.size >= SEARCH_RECENT_DATA_NUM) {
                     SearchResultItem(
                         modifier = Modifier
                             .fillMaxWidth(),
@@ -721,7 +727,11 @@ fun TypingSearchContent(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun DoneSearchContent(modifier: Modifier = Modifier, state: MainSharedState.Search, onEvent: (e: MainSharedEvent) -> Unit) {
+fun DoneSearchContent(
+    modifier: Modifier = Modifier,
+    state: MainSharedState.Search,
+    onEvent: (e: MainSharedEvent) -> Unit
+) {
     val coroutineScope = rememberCoroutineScope()
     Column() {
         val tabList = listOf<String>(
@@ -740,31 +750,233 @@ fun DoneSearchContent(modifier: Modifier = Modifier, state: MainSharedState.Sear
             }
         }
         HorizontalPager(state = pagerState) {
-            when(it){
+            when (it) {
                 0 -> {
-                    DoneSearchMessageContent(state = state.message, onEvent = onEvent)
+                    DoneSearchMessageContent(state = state, onEvent = onEvent)
                 }
+
                 1 -> {
-                    DoneSearchContactContent(state = state.contact, onEvent = onEvent)
+                    DoneSearchContactContent(state = state, onEvent = onEvent)
                 }
+
                 2 -> {
-                    DoneSearchChatContent(state = state.chat, onEvent = onEvent)
+                    DoneSearchChatContent(state = state, onEvent = onEvent)
                 }
             }
         }
     }
 }
 
-fun DoneSearchMessageContent(modifier: Modifier = Modifier, state: MainSharedState.Search.MessageSearch, onEvent: (e: MainSharedEvent) -> Unit) {
+@Composable
+fun DoneSearchMessageContent(
+    modifier: Modifier = Modifier,
+    state: MainSharedState.Search,
+    onEvent: (e: MainSharedEvent) -> Unit
+) {
+    LazyColumn() {
+        item {
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Spacer(modifier = Modifier.width(16.dp))
+                state.message.filterList.forEach {
+                    MyFilterChip(
+                        selected = it !is MessageFilter.SenderFilter.All && it !is MessageFilter.ChatFilter.All && it !is MessageFilter.TimeFilter.All,
+                        label = { Text(text = it.label ?: stringResource(id = it.labelResId)) }) {
+                        when (it) {
+                            is MessageFilter.SenderFilter -> {
 
+                            }
+
+                            is MessageFilter.ChatFilter -> {
+
+                            }
+
+                            is MessageFilter.TimeFilter -> {
+
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        item {
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .clip(MaterialTheme.shapes.extraLarge),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                if (state.message.loadState == LoadState.LOADING) {
+                    repeat(3) {
+                        EmptySearchResultItem()
+                    }
+                } else {
+                    state.message.filterResult.forEach {
+                        SearchResultItem(
+                            modifier = Modifier.fillMaxWidth(),
+                            avatarModel = it.chat!!.avatar.getModel(),
+                            title = buildAnnotatedString {
+                                it.chat.name.splitKeeping(state.query).forEach {
+                                    if (it == state.query) {
+                                        withStyle(
+                                            style = SpanStyle(
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        ) {
+                                            append(it)
+                                        }
+                                    } else {
+                                        append(it)
+                                    }
+                                }
+                            },
+                            subTitle = buildAnnotatedString {
+                                append(it.contact!!.name)
+                                append(": ")
+                                it.message.contentString.splitKeeping(state.query).forEach {
+                                    if (it == state.query) {
+                                        withStyle(
+                                            style = SpanStyle(
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        ) {
+                                            append(it)
+                                        }
+                                    } else {
+                                        append(it)
+                                    }
+                                }
+                            },
+                        ) {
+
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
-fun DoneSearchContactContent(modifier: Modifier = Modifier, state: MainSharedState.Search.ContactSearch, onEvent: (e: MainSharedEvent) -> Unit) {
+@Composable
+fun DoneSearchContactContent(
+    modifier: Modifier = Modifier,
+    state: MainSharedState.Search,
+    onEvent: (e: MainSharedEvent) -> Unit
+) {
+    LazyColumn() {
+        item {
+            Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                state.contact.result.forEach {
+                    SearchResultItemVertical(
+                        modifier = Modifier
+                            .padding(start = 16.dp)
+                            .placeholder(
+                                visible = state.contact.loadState == LoadState.LOADING,
+                                color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                                shape = MaterialTheme.shapes.large,
+                                highlight = PlaceholderHighlight.fade(),
+                            ),
+                        avatarModel = it.avatar.getModel(),
+                        title = buildAnnotatedString {
+                            it.name.splitKeeping(state.query).forEach {
+                                if (it == state.query) {
+                                    withStyle(
+                                        style = SpanStyle(
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    ) {
+                                        append(it)
+                                    }
+                                } else {
+                                    append(it)
+                                }
+                            }
+                        },
+                        subTitle = null
+                    ) {
 
+                    }
+                }
+            }
+        }
+    }
 }
 
-fun DoneSearchChatContent(modifier: Modifier = Modifier, state: MainSharedState.Search.ChatSearch, onEvent: (e: MainSharedEvent) -> Unit) {
+@Composable
+fun DoneSearchChatContent(
+    modifier: Modifier = Modifier,
+    state: MainSharedState.Search,
+    onEvent: (e: MainSharedEvent) -> Unit
+) {
+    LazyColumn() {
+        item {
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Spacer(modifier = Modifier.width(16.dp))
+                ChatFilter.allFilterList.forEach {
+                    MyFilterChip(
+                        selected = it in state.chat.enabledFilterList,
+                        label = { Text(text = it.label ?: stringResource(id = it.labelResId)) }) {
 
+                    }
+                }
+            }
+        }
+        item {
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .clip(MaterialTheme.shapes.extraLarge),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                if (state.chat.loadState == LoadState.LOADING) {
+                    repeat(3) {
+                        EmptySearchResultItem()
+                    }
+                } else {
+                    state.chat.filterResult.forEach {
+                        SearchResultItem(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .placeholder(
+                                    visible = state.chat.loadState == LoadState.LOADING,
+                                    color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                                    shape = MaterialTheme.shapes.extraLarge,
+                                    highlight = PlaceholderHighlight.fade(),
+                                ),
+                            avatarModel = it.avatar.getModel(),
+                            title = buildAnnotatedString {
+                                it.name.splitKeeping(state.query).forEach {
+                                    if (it == state.query) {
+                                        withStyle(
+                                            style = SpanStyle(
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        ) {
+                                            append(it)
+                                        }
+                                    } else {
+                                        append(it)
+                                    }
+                                }
+                            },
+                            subTitle = null
+                        ) {
+
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterialApi::class)

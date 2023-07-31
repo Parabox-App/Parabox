@@ -156,7 +156,8 @@ class MainSharedViewModel @Inject constructor(
                     search = state.search.copy(
                         message = MainSharedState.Search.MessageSearch(
                             loadState = if (event.isSuccess) LoadState.SUCCESS else LoadState.ERROR,
-                            result = event.res
+                            result = event.res,
+                            filterResult = event.res
                         )
                     )
                 )
@@ -178,7 +179,8 @@ class MainSharedViewModel @Inject constructor(
                     search = state.search.copy(
                         chat = MainSharedState.Search.ChatSearch(
                             loadState = if (event.isSuccess) LoadState.SUCCESS else LoadState.ERROR,
-                            result = event.res
+                            result = event.res,
+                            filterResult = event.res
                         )
                     )
                 )

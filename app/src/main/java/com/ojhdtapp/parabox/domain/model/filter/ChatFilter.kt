@@ -5,6 +5,7 @@ import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.paraboxdevelopmentkit.model.chat.ParaboxChat
 
 sealed class ChatFilter(
+    open val label: String? = null,
     val labelResId: Int,
     val check: (chat: Chat) -> Boolean
 ) {
@@ -57,10 +58,10 @@ sealed class ChatFilter(
         }
     )
 
-    class Tag(val tag: String) : ChatFilter(
+    class Tag(override val label: String) : ChatFilter(
         labelResId = -1,
         check = {
-            it.tags.contains(tag)
+            it.tags.contains(label)
         }
     )
 

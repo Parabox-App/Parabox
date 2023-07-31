@@ -5,6 +5,7 @@ import com.ojhdtapp.parabox.domain.model.Message
 import kotlin.math.abs
 
 sealed class MessageFilter(
+    open val label: String? = null,
     open val labelResId: Int,
     open val check: (message: Message) -> Boolean
 ) {
@@ -12,7 +13,7 @@ sealed class MessageFilter(
     sealed class SenderFilter(
         override val labelResId: Int,
         override val check: (message: Message) -> Boolean
-    ) : MessageFilter(labelResId, check) {
+    ) : MessageFilter(labelResId = labelResId, check = check) {
         object All : SenderFilter(
             R.string.message_filter_sender_all,
             check = { true }
@@ -27,14 +28,14 @@ sealed class MessageFilter(
                 message.senderId == senderId
             }
         ) {
-            val label = "来自${senderName}"
+            override val label = "来自${senderName}"
         }
     }
 
     sealed class ChatFilter(
         override val labelResId: Int,
         override val check: (message: Message) -> Boolean
-    ) : MessageFilter(labelResId, check) {
+    ) : MessageFilter(labelResId = labelResId, check = check) {
         object All : ChatFilter(
             R.string.message_filter_chat_all,
             check = { true }
@@ -49,14 +50,14 @@ sealed class MessageFilter(
                 message.chatId == chatId
             }
         ) {
-            val label = "属于${chatName}"
+            override val label = "属于${chatName}"
         }
     }
 
     sealed class TimeFilter(
         override val labelResId: Int,
         override val check: (message: Message) -> Boolean
-    ) : MessageFilter(labelResId, check) {
+    ) : MessageFilter(labelResId = labelResId, check = check) {
         object All : TimeFilter(R.string.time_filter_all_label, { true })
         object WithinThreeDays : TimeFilter(
             R.string.time_filter_within_three_days_label,

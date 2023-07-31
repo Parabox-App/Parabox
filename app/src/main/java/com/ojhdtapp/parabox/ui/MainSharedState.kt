@@ -42,12 +42,12 @@ data class MainSharedState(
         data class ContactSearch(
             val loadState: LoadState = LoadState.LOADING,
             val result: List<Contact> = emptyList(),
-            val filterResult: List<Contact> = emptyList()
         )
 
         data class ChatSearch(
             val loadState: LoadState = LoadState.LOADING,
             val result: List<Chat> = emptyList(),
+            val enabledFilterList: List<ChatFilter> = emptyList(),
             val filterResult: List<Chat> = emptyList()
         )
     }
