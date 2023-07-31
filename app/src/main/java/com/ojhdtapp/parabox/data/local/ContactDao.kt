@@ -22,6 +22,9 @@ interface ContactDao {
     @Query("SELECT * FROM contact_entity WHERE name LIKE '%' || :query || '%'")
     fun queryContact(query: String): List<ContactEntity>
 
+    @Query("SELECT * FROM contact_entity WHERE name LIKE '%' || :query || '%' LIMIT :limit")
+    fun queryContactWithLimit(query: String, limit: Int): List<ContactEntity>
+
     @Query(
         "SELECT * FROM contact_entity " +
                 "LIMIT :limit"

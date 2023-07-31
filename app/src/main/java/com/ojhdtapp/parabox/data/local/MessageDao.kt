@@ -62,6 +62,10 @@ interface MessageDao {
     fun queryMessage(query: String): List<QueryMessageEntity>
 
     @Transaction
+    @Query("SELECT * FROM message_entity WHERE contentString LIKE '%' || :query || '%' LIMIT :limit")
+    fun queryMessageWithLimit(query: String, limit: Int): List<QueryMessageEntity>
+
+    @Transaction
     @Query(
         "SELECT * FROM message_entity " +
                 "ORDER BY message_entity.timestamp DESC " +

@@ -33,8 +33,10 @@ import androidx.compose.material.IconButton
 import androidx.compose.material.Surface
 import androidx.compose.material.TabRow
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ArrowOutward
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -72,6 +74,7 @@ import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.AvatarUtil
 import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.core.util.splitKeeping
+import com.ojhdtapp.parabox.domain.use_case.Query.Companion.SEARCH_RECENT_DATA_NUM
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
 import kotlinx.coroutines.launch
@@ -310,10 +313,10 @@ fun RecentSearchContent(
             Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
                 state.contact.result.forEach {
                     SearchResultItemVertical(
-                        modifier = Modifier.placeholder(
+                        modifier = Modifier.padding(start = 16.dp).placeholder(
                             visible = state.contact.loadState == LoadState.LOADING,
                             color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-                            shape = MaterialTheme.shapes.extraLarge,
+                            shape = MaterialTheme.shapes.large,
                             highlight = PlaceholderHighlight.fade(),
                         ),
                         avatarModel = it.avatar.getModel(),
@@ -436,13 +439,7 @@ fun TypingSearchContent(
                 state.recentQuery.forEach {
                     SearchResultItem(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .placeholder(
-                                visible = state.chat.loadState == LoadState.LOADING,
-                                color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-                                shape = MaterialTheme.shapes.extraLarge,
-                                highlight = PlaceholderHighlight.fade(),
-                            ),
+                            .fillMaxWidth(),
                         avatarModel = null,
                         title = buildAnnotatedString { append(it.value) },
                         subTitle = null,
@@ -460,6 +457,260 @@ fun TypingSearchContent(
                         }
                     ) {
                         onEvent(MainSharedEvent.SearchConfirm(it.value))
+                    }
+                }
+            }
+        }
+        item {
+            if (state.chat.result.isEmpty() && state.chat.loadState != LoadState.LOADING
+                && state.contact.result.isEmpty() && state.contact.loadState != LoadState.LOADING
+                && state.message.result.isEmpty() && state.message.loadState != LoadState.LOADING
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Search,
+                        contentDescription = "search result",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "无搜索结果",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+            }
+        }
+        item {
+            AnimatedVisibility(
+                visible = state.chat.loadState == LoadState.LOADING || state.chat.result.isNotEmpty(),
+                enter = expandVertically(),
+                exit = shrinkVertically()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        text = "会话",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
+        item {
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .clip(MaterialTheme.shapes.extraLarge),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                if (state.chat.loadState == LoadState.LOADING) {
+                    repeat(3) {
+                        EmptySearchResultItem()
+                    }
+                } else {
+                    state.chat.result.forEach {
+                        SearchResultItem(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .placeholder(
+                                    visible = state.chat.loadState == LoadState.LOADING,
+                                    color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                                    shape = MaterialTheme.shapes.extraLarge,
+                                    highlight = PlaceholderHighlight.fade(),
+                                ),
+                            avatarModel = it.avatar.getModel(),
+                            title = buildAnnotatedString {
+                                it.name.splitKeeping(state.query).forEach {
+                                    if (it == state.query) {
+                                        withStyle(
+                                            style = SpanStyle(
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        ) {
+                                            append(it)
+                                        }
+                                    } else {
+                                        append(it)
+                                    }
+                                }
+                            },
+                            subTitle = null
+                        ) {
+
+                        }
+                    }
+                    if (state.chat.result.size >= SEARCH_RECENT_DATA_NUM) {
+                        SearchResultItem(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            avatarModel = null,
+                            title = buildAnnotatedString { append("查看完整结果") },
+                            subTitle = null,
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.MoreVert,
+                                    contentDescription = "more",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            },
+                            trailingIcon = {
+                                Icon(imageVector = Icons.Outlined.ArrowOutward, contentDescription = "jump")
+                            }
+                        ) {
+                            onEvent(MainSharedEvent.SearchConfirm(state.query))
+                        }
+                    }
+                }
+            }
+        }
+        item {
+            if (state.contact.result.isNotEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
+                ) {
+                    Text(
+                        text = "联系人",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
+        item {
+            Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                state.contact.result.forEach {
+                    SearchResultItemVertical(
+                        modifier = Modifier.padding(start = 16.dp).placeholder(
+                            visible = state.contact.loadState == LoadState.LOADING,
+                            color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                            shape = MaterialTheme.shapes.large,
+                            highlight = PlaceholderHighlight.fade(),
+                        ),
+                        avatarModel = it.avatar.getModel(),
+                        title = buildAnnotatedString {
+                            it.name.splitKeeping(state.query).forEach {
+                                if (it == state.query) {
+                                    withStyle(
+                                        style = SpanStyle(
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    ) {
+                                        append(it)
+                                    }
+                                } else {
+                                    append(it)
+                                }
+                            }
+                        },
+                        subTitle = null
+                    ) {
+
+                    }
+                }
+            }
+        }
+        item {
+            AnimatedVisibility(
+                visible = state.message.loadState == LoadState.LOADING || state.message.result.isNotEmpty(),
+                enter = expandVertically(),
+                exit = shrinkVertically()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        text = "消息",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
+        item {
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .clip(MaterialTheme.shapes.extraLarge),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                if (state.message.loadState == LoadState.LOADING) {
+                    repeat(3) {
+                        EmptySearchResultItem()
+                    }
+                } else {
+                    state.message.result.forEach {
+                        SearchResultItem(
+                            modifier = Modifier.fillMaxWidth(),
+                            avatarModel = it.chat!!.avatar.getModel(),
+                            title = buildAnnotatedString {
+                                it.chat.name.splitKeeping(state.query).forEach {
+                                    if (it == state.query) {
+                                        withStyle(
+                                            style = SpanStyle(
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        ) {
+                                            append(it)
+                                        }
+                                    } else {
+                                        append(it)
+                                    }
+                                }
+                            },
+                            subTitle = buildAnnotatedString {
+                                append(it.contact!!.name)
+                                append(": ")
+                                it.message.contentString.splitKeeping(state.query).forEach {
+                                    if (it == state.query) {
+                                        withStyle(
+                                            style = SpanStyle(
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        ) {
+                                            append(it)
+                                        }
+                                    } else {
+                                        append(it)
+                                    }
+                                }
+                            },
+                        ) {
+
+                        }
+                    }
+                }
+                if(state.message.result.size >= SEARCH_RECENT_DATA_NUM){
+                    SearchResultItem(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        avatarModel = null,
+                        title = buildAnnotatedString { append("查看完整结果") },
+                        subTitle = null,
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Outlined.MoreVert,
+                                contentDescription = "more",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        },
+                        trailingIcon = {
+                            Icon(imageVector = Icons.Outlined.ArrowOutward, contentDescription = "jump")
+                        }
+                    ) {
+                        onEvent(MainSharedEvent.SearchConfirm(state.query))
                     }
                 }
             }
@@ -666,7 +917,7 @@ fun SearchResultItemVertical(
     ) {
         Column(
             modifier = Modifier
-                .width(width = 96.dp)
+                .width(width = 80.dp)
                 .padding(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center

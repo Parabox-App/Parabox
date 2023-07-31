@@ -88,7 +88,7 @@ fun MessagePage(
     var snackBarJob: Job? by remember {
         mutableStateOf(null)
     }
-    LaunchedEffect(sharedState.search){
+    LaunchedEffect(sharedState.search) {
         Log.d("parabox", sharedState.search.toString())
     }
     LaunchedEffect(Unit) {
@@ -182,7 +182,8 @@ fun MessagePage(
             SearchBar(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = searchBarPadding),
+                    .padding(horizontal = searchBarPadding)
+                    .clearFocusOnKeyboardDismiss(),
                 query = sharedState.search.query,
                 onQueryChange = {
                     mainSharedViewModel.sendEvent(
@@ -190,7 +191,7 @@ fun MessagePage(
                     )
                 },
                 onSearch = {
-                    if(it.isNotBlank()){
+                    if (it.isNotBlank()) {
                         mainSharedViewModel.sendEvent(MainSharedEvent.SearchConfirm(it))
                     }
                 },

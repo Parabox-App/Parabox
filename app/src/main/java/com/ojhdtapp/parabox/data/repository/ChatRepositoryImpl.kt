@@ -32,15 +32,19 @@ class ChatRepositoryImpl @Inject constructor(
         return db.chatDao.getPinnedChatPagingSource()
     }
 
-    override fun queryChat(query: String): Flow<Resource<List<Chat>>> {
+    override fun queryChatWithLimit(query: String, limit: Int): Flow<Resource<List<Chat>>> {
         return flow {
             emit(Resource.Loading())
             try {
-                emit(
-                    withContext(Dispatchers.IO) {
+                if(limit == 0) {
+                    emit(
                         Resource.Success(db.chatDao.queryChat(query).map { it.toChat() })
-                    }
-                )
+                    )
+                } else {
+                    emit(
+                        Resource.Success(db.chatDao.queryChatWithLimit(query, limit).map { it.toChat() })
+                    )
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
                 emit(Resource.Error("unknown error"))

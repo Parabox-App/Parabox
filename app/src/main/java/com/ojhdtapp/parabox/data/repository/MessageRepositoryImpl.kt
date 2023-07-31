@@ -42,13 +42,19 @@ class MessageRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun queryMessage(query: String): Flow<Resource<List<QueryMessage>>> {
+    override fun queryMessageWithLimit(query: String, limit: Int): Flow<Resource<List<QueryMessage>>> {
         return flow {
             emit(Resource.Loading())
             try {
-                emit(
-                    Resource.Success(db.messageDao.queryMessage(query).map { it.toQueryMessage() })
-                )
+                if(limit == 0) {
+                    emit(
+                        Resource.Success(db.messageDao.queryMessage(query).map { it.toQueryMessage() })
+                    )
+                } else {
+                    emit(
+                        Resource.Success(db.messageDao.queryMessageWithLimit(query, limit).map { it.toQueryMessage() })
+                    )
+                }
             } catch (e: Exception) {
                 emit(Resource.Error("unknown error"))
             }

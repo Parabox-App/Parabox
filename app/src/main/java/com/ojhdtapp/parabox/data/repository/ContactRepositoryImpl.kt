@@ -15,13 +15,15 @@ class ContactRepositoryImpl @Inject constructor(
     val context: Context,
     private val db: AppDatabase,
 ) : ContactRepository {
-    override fun queryContact(query: String): Flow<Resource<List<Contact>>> {
+    override fun queryContactWithLimit(query: String, limit: Int): Flow<Resource<List<Contact>>> {
         return flow {
             emit(Resource.Loading())
             try {
                 emit(
-                    withContext(Dispatchers.IO) {
+                    if (limit == 0) {
                         Resource.Success(db.contactDao.queryContact(query).map { it.toContact() })
+                    } else {
+                        Resource.Success(db.contactDao.queryContactWithLimit(query, limit).map { it.toContact() })
                     }
                 )
             } catch (e: Exception) {
