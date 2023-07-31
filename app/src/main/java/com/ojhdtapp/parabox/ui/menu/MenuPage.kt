@@ -48,10 +48,13 @@ import androidx.navigation.NavHostController
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.ojhdtapp.parabox.NavGraphs
+import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.ui.MainSharedEffect
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
+import com.ojhdtapp.parabox.ui.common.ChatPickerDialog
+import com.ojhdtapp.parabox.ui.common.ContactPickerDialog
 import com.ojhdtapp.parabox.ui.common.DevicePosture
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
@@ -218,6 +221,7 @@ private fun MenuNavigationWrapperUI(
                                     SnackbarResult.ActionPerformed -> {
                                         it.callback?.invoke()
                                     }
+
                                     SnackbarResult.Dismissed -> {}
                                     else -> {}
                                 }
@@ -384,6 +388,35 @@ fun MenuAppContent(
     onEvent: (event: MenuPageEvent) -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
+    ChatPickerDialog(
+        openDialog = mainSharedState.chatPicker.showDialog,
+        data = mainSharedState.chatPicker.result,
+        query = mainSharedState.chatPicker.query,
+        onQueryChange = {
+            mainSharedViewModel.sendEvent(MainSharedEvent.PickChatQueryInput(it))
+        },
+        loadState = mainSharedState.chatPicker.loadState,
+        onConfirm = {
+            mainSharedViewModel.sendEvent(MainSharedEvent.PickChatDone(it))
+        },
+        onDismiss = {
+            mainSharedViewModel.sendEvent(MainSharedEvent.PickChatDone(null))
+        }
+    )
+    ContactPickerDialog(openDialog = mainSharedState.contactPicker.showDialog,
+        data = mainSharedState.contactPicker.result,
+        query = mainSharedState.contactPicker.query,
+        onQueryChange = {
+            mainSharedViewModel.sendEvent(MainSharedEvent.PickContactQueryInput(it))
+        },
+        loadState = mainSharedState.contactPicker.loadState,
+        onConfirm = {
+            mainSharedViewModel.sendEvent(MainSharedEvent.PickContactDone(it))
+        },
+        onDismiss = {
+            mainSharedViewModel.sendEvent(MainSharedEvent.PickContactDone(null))
+        }
+    )
 
     Row(modifier = Modifier.fillMaxWidth()) {
         AnimatedVisibility(

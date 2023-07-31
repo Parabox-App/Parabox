@@ -4,6 +4,8 @@ import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.QueryMessage
 import com.ojhdtapp.parabox.domain.model.RecentQuery
+import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
+import com.ojhdtapp.parabox.domain.model.filter.MessageFilter
 import com.ojhdtapp.parabox.ui.base.UiEvent
 
 sealed interface MainSharedEvent : UiEvent {
@@ -24,4 +26,14 @@ sealed interface MainSharedEvent : UiEvent {
     data class OpenBottomSheet(val open: Boolean, val snap: Boolean = false) : MainSharedEvent
     object SearchAvatarClicked : MainSharedEvent
     data class ShowNavigationBar(val show: Boolean) : MainSharedEvent
+    data class UpdateSearchDoneChatFilter(val filter: ChatFilter): MainSharedEvent
+    data class UpdateSearchDoneMessageFilter(val filter: MessageFilter): MainSharedEvent
+    data class PickChat(val onDone: (Chat?) -> Unit) : MainSharedEvent
+    data class PickChatDone(val res: Chat?) : MainSharedEvent
+    data class PickChatQueryInput(val input: String) : MainSharedEvent
+    data class GetPickChatDone(val res: List<Chat>, val isSuccess: Boolean) : MainSharedEvent
+    data class PickContact(val onDone: (Contact?) -> Unit) : MainSharedEvent
+    data class PickContactDone(val res: Contact?) : MainSharedEvent
+    data class PickContactQueryInput(val input: String) : MainSharedEvent
+    data class GetPickContactDone(val res: List<Contact>, val isSuccess: Boolean) : MainSharedEvent
 }

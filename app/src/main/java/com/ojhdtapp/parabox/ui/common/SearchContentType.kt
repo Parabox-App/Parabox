@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.common
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.expandVertically
@@ -776,21 +777,64 @@ fun DoneSearchMessageContent(
     LazyColumn() {
         item {
             Row(
-                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                modifier = Modifier.padding(vertical = 8.dp).horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 state.message.filterList.forEach {
                     MyFilterChip(
                         selected = it !is MessageFilter.SenderFilter.All && it !is MessageFilter.ChatFilter.All && it !is MessageFilter.TimeFilter.All,
                         label = { Text(text = it.label ?: stringResource(id = it.labelResId)) }) {
                         when (it) {
                             is MessageFilter.SenderFilter -> {
+                                if (it is MessageFilter.SenderFilter.All) {
+                                    onEvent(MainSharedEvent.PickContact {
+                                        if (it != null) {
+                                            onEvent(
+                                                MainSharedEvent.UpdateSearchDoneMessageFilter(
+                                                    MessageFilter.SenderFilter.Custom(
+                                                        senderName = it.name,
+                                                        senderId = it.contactId
+                                                    )
+                                                )
+                                            )
+                                        } else {
 
+                                        }
+                                    })
+                                } else {
+                                    onEvent(
+                                        MainSharedEvent.UpdateSearchDoneMessageFilter(
+                                            MessageFilter.SenderFilter.All
+                                        )
+                                    )
+                                }
                             }
 
                             is MessageFilter.ChatFilter -> {
+                                if (it is MessageFilter.ChatFilter.All) {
+                                    onEvent(MainSharedEvent.PickChat {
+                                        Log.d("parabox", "pick chat success:${it}")
+                                        if (it != null) {
+                                            onEvent(
+                                                MainSharedEvent.UpdateSearchDoneMessageFilter(
+                                                    MessageFilter.ChatFilter.Custom(
+                                                        chatName = it.name,
+                                                        chatId = it.chatId
+                                                    )
+                                                )
+                                            )
+                                        } else {
 
+                                        }
+                                    })
+                                } else {
+                                    onEvent(
+                                        MainSharedEvent.UpdateSearchDoneMessageFilter(
+                                            MessageFilter.ChatFilter.All
+                                        )
+                                    )
+                                }
                             }
 
                             is MessageFilter.TimeFilter -> {
@@ -916,10 +960,10 @@ fun DoneSearchChatContent(
     LazyColumn() {
         item {
             Row(
-                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                modifier = Modifier.padding(vertical = 8.dp).horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 ChatFilter.allFilterList.forEach {
                     MyFilterChip(
                         selected = it in state.chat.enabledFilterList,

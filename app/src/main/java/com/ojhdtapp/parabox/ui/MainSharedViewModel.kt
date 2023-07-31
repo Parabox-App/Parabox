@@ -8,6 +8,9 @@ import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.getDataStoreValue
+import com.ojhdtapp.parabox.domain.model.Chat
+import com.ojhdtapp.parabox.domain.model.Contact
+import com.ojhdtapp.parabox.domain.model.filter.MessageFilter
 import com.ojhdtapp.parabox.domain.use_case.Query
 import com.ojhdtapp.parabox.ui.base.BaseViewModel
 import com.ojhdtapp.parabox.ui.base.UiEffect
@@ -215,15 +218,152 @@ class MainSharedViewModel @Inject constructor(
                     showNavigationBar = event.show
                 )
             }
+
+            is MainSharedEvent.UpdateSearchDoneChatFilter -> {
+                event.filter
+                val newEnabledFilterList = state.search.chat.enabledFilterList
+                return state.copy(
+                    search = state.search.copy(
+                        chat = state.search.chat.copy(
+                            enabledFilterList = newEnabledFilterList,
+                            filterResult = state.search.chat.result.filter { chat ->
+                                newEnabledFilterList.all { it.check(chat) }
+                            }
+                        )
+                    )
+                )
+            }
+
+            is MainSharedEvent.UpdateSearchDoneMessageFilter -> {
+                val newFilterList = state.search.message.filterList.toMutableList().apply {
+                    when(event.filter){
+                        is MessageFilter.SenderFilter -> {
+                            set(0, event.filter)
+                        }
+                        is MessageFilter.ChatFilter -> {
+                            set(1, event.filter)
+                        }
+                        is MessageFilter.TimeFilter -> {
+                            set(2, event.filter)
+                        }
+                    }
+                }
+                return state.copy(
+                    search = state.search.copy(
+                        message = state.search.message.copy(
+                            filterList = newFilterList,
+                            filterResult = state.search.message.result.filter { queryMessage ->
+                                newFilterList.all { it.check(queryMessage.message) }
+                            }
+                        )
+                    )
+                )
+            }
+
+            is MainSharedEvent.PickChat -> {
+                onPickChatDone = event.onDone
+                viewModelScope.launch(Dispatchers.IO) {
+                    chatPickerQuery("")
+                }
+                return state.copy(
+                    chatPicker = MainSharedState.ChatPicker(
+                        showDialog = true,
+                        loadState = LoadState.LOADING,
+                        query = "",
+                        result = emptyList(),
+                    )
+                )
+            }
+
+            is MainSharedEvent.PickChatQueryInput -> {
+                chatPickerQueryJob?.cancel()
+                chatPickerQueryJob = null
+                chatPickerQueryJob = viewModelScope.launch(Dispatchers.IO) {
+                    delay(1000)
+                    chatPickerQuery(event.input)
+                }
+                return state.copy(
+                    chatPicker = state.chatPicker.copy(
+                        query = event.input,
+                        loadState = LoadState.LOADING,
+                    )
+                )
+            }
+
+            is MainSharedEvent.GetPickChatDone -> {
+                return state.copy(
+                    chatPicker = state.chatPicker.copy(
+                        loadState = if (event.isSuccess) LoadState.SUCCESS else LoadState.ERROR,
+                        result = event.res
+                    )
+                )
+            }
+
+            is MainSharedEvent.PickChatDone -> {
+                viewModelScope.launch(Dispatchers.IO) {
+                    onPickChatDone?.invoke(event.res)
+                }
+                return state.copy(
+                    chatPicker = MainSharedState.ChatPicker()
+                )
+            }
+
+            is MainSharedEvent.PickContact -> {
+                viewModelScope.launch(Dispatchers.IO) {
+                    contactPickerQuery("")
+                }
+                onPickContactDone = event.onDone
+                return state.copy(
+                    contactPicker = MainSharedState.ContactPicker(
+                        showDialog = true,
+                        loadState = LoadState.LOADING,
+                        query = "",
+                        result = emptyList(),
+                    )
+                )
+            }
+
+            is MainSharedEvent.PickContactQueryInput -> {
+                contactPickerJob?.cancel()
+                contactPickerJob = null
+                if (event.input.isNotBlank()) {
+                    contactPickerJob = viewModelScope.launch(Dispatchers.IO) {
+                        delay(1000)
+                        contactPickerQuery(event.input)
+                    }
+                }
+                return state.copy(
+                    contactPicker = state.contactPicker.copy(
+                        query = event.input,
+                        loadState = LoadState.LOADING,
+                    )
+                )
+            }
+
+            is MainSharedEvent.GetPickContactDone -> {
+                return state.copy(
+                    contactPicker = state.contactPicker.copy(
+                        loadState = if (event.isSuccess) LoadState.SUCCESS else LoadState.ERROR,
+                        result = event.res
+                    )
+                )
+            }
+
+            is MainSharedEvent.PickContactDone -> {
+                viewModelScope.launch(Dispatchers.IO) {
+                    onPickContactDone?.invoke(event.res)
+                }
+                return state.copy(
+                    contactPicker = MainSharedState.ContactPicker()
+                )
+            }
         }
     }
 
     private suspend fun getRecentQuery() {
-        Log.d("parabox", "getting recent query")
         coroutineScope {
             launch(Dispatchers.IO) {
                 query.recentQuery().collectLatest {
-                    Log.d("parabox", "recent query res coming:${it}")
                     when (it) {
                         is Resource.Success -> {
                             sendEvent(MainSharedEvent.GetRecentQueryDone(it.data!!, true))
@@ -407,6 +547,74 @@ class MainSharedViewModel @Inject constructor(
             }
         }
 
+    }
+
+    private var chatPickerQueryJob: Job? = null
+    private var contactPickerJob: Job? = null
+    private var onPickChatDone: ((Chat?) -> Unit)? = null
+    private var onPickContactDone: ((Contact?) -> Unit)? = null
+    private suspend fun chatPickerQuery(input: String) {
+        coroutineScope {
+            launch(Dispatchers.IO) {
+                Log.d("parabox", "chat picker query: $input")
+                query.chat(input, false).collectLatest {
+                    Log.d("parabox", "chat picker res coming:${it}")
+                    when (it) {
+                        is Resource.Success -> {
+                            sendEvent(
+                                MainSharedEvent.GetPickChatDone(
+                                    res = it.data!!,
+                                    isSuccess = true
+                                )
+                            )
+                        }
+
+                        is Resource.Error -> {
+                            sendEvent(
+                                MainSharedEvent.GetPickChatDone(
+                                    res = it.data ?: emptyList(), isSuccess = false
+                                )
+                            )
+                        }
+
+                        else -> {
+
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private suspend fun contactPickerQuery(input: String) {
+        coroutineScope {
+            launch(Dispatchers.IO) {
+                query.contact(input, false).collectLatest {
+                    when (it) {
+                        is Resource.Success -> {
+                            sendEvent(
+                                MainSharedEvent.GetPickContactDone(
+                                    res = it.data!!,
+                                    isSuccess = true
+                                )
+                            )
+                        }
+
+                        is Resource.Error -> {
+                            sendEvent(
+                                MainSharedEvent.GetPickContactDone(
+                                    res = it.data ?: emptyList(), isSuccess = false
+                                )
+                            )
+                        }
+
+                        else -> {
+
+                        }
+                    }
+                }
+            }
+        }
     }
 
     init {

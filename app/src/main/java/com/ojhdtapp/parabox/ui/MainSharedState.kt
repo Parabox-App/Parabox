@@ -16,7 +16,9 @@ data class MainSharedState(
     val openDrawer:OpenDrawer = OpenDrawer(),
     val openBottomSheet: OpenBottomSheet = OpenBottomSheet(),
     val showNavigationBar: Boolean = false,
-    val openMainDialog: Boolean = false
+    val openMainDialog: Boolean = false,
+    val contactPicker: ContactPicker = ContactPicker(),
+    val chatPicker: ChatPicker = ChatPicker(),
 ): UiState{
     data class DataStore(
         val messageBadgeNum: Int = 0,
@@ -60,5 +62,19 @@ data class MainSharedState(
     data class OpenBottomSheet(
         val open: Boolean = false,
         val snap: Boolean = false,
+    )
+
+    data class ContactPicker(
+        val showDialog: Boolean = false,
+        val loadState: LoadState = LoadState.LOADING,
+        val query: String = "",
+        val result: List<Contact> = emptyList(),
+    )
+
+    data class ChatPicker(
+        val showDialog: Boolean = false,
+        val loadState: LoadState = LoadState.LOADING,
+        val query: String = "",
+        val result: List<Chat> = emptyList(),
     )
 }
