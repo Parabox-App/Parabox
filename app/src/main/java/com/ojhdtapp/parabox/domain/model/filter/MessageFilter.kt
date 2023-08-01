@@ -1,6 +1,8 @@
 package com.ojhdtapp.parabox.domain.model.filter
 
+import android.content.Context
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.core.util.toFormattedDate
 import com.ojhdtapp.parabox.domain.model.Message
 import kotlin.math.abs
 
@@ -9,6 +11,7 @@ sealed class MessageFilter(
     open val labelResId: Int,
     open val check: (message: Message) -> Boolean
 ) {
+    open fun getLabel(context: Context): String? = label
 
     sealed class SenderFilter(
         override val labelResId: Int,
@@ -56,8 +59,9 @@ sealed class MessageFilter(
 
     sealed class DateFilter(
         override val labelResId: Int,
-        override val check: (message: Message) -> Boolean
-    ) : MessageFilter(labelResId = labelResId, check = check, label = null) {
+        override val check: (message: Message) -> Boolean,
+        override val label: String? = null,
+    ) : MessageFilter(labelResId = labelResId, check = check) {
         object All : DateFilter(R.string.time_filter_all_label, { message: Message -> true })
         object WithinThreeDays : DateFilter(
             R.string.time_filter_within_three_days_label,
@@ -83,14 +87,25 @@ sealed class MessageFilter(
             val timestampEnd: Long? = null
         ) :
             DateFilter(
-//            label = "从 ${timestampStart?.toFormattedDate() ?: "不受限制"} 到 ${timestampEnd?.toFormattedDate() ?: "不受限制"}",
                 R.string.time_filter_custom_label,
                 check = { message: Message ->
                     message.timestamp in (timestampStart ?: System.currentTimeMillis()) until (timestampEnd
                         ?: System.currentTimeMillis())
                 }
-            )
-        companion object{
+            ) {
+            override fun getLabel(context: Context): String? {
+                return context.getString(
+                    R.string.time_filter_custom_label,
+                    timestampStart?.toFormattedDate(context)
+                        ?: context.getString(R.string.time_filter_custom_not_set_label),
+                    timestampEnd?.toFormattedDate(context)
+                        ?: context.getString(R.string.time_filter_custom_not_set_label)
+                )
+            }
+
+        }
+
+        companion object {
             val allFilterList = listOf<DateFilter>(
                 WithinThreeDays,
                 WithinThisWeek,

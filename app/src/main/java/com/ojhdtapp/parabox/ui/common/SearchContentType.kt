@@ -23,10 +23,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
@@ -57,6 +60,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -245,7 +249,7 @@ fun RecentSearchContent(
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     Text(
-                        text = "会话",
+                        text = "近期会话",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -306,7 +310,7 @@ fun RecentSearchContent(
                         .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
                 ) {
                     Text(
-                        text = "联系人",
+                        text = "近期联系人",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -360,7 +364,7 @@ fun RecentSearchContent(
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     Text(
-                        text = "消息",
+                        text = "最新消息",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -751,18 +755,18 @@ fun DoneSearchContent(
                 }, text = { Text(text = s) })
             }
         }
-        HorizontalPager(state = pagerState) {
+        HorizontalPager(modifier = Modifier.weight(1f), state = pagerState) {
             when (it) {
                 0 -> {
-                    DoneSearchMessageContent(state = state, onEvent = onEvent)
+                    DoneSearchMessageContent(modifier = Modifier.fillMaxSize(), state = state, onEvent = onEvent)
                 }
 
                 1 -> {
-                    DoneSearchContactContent(state = state, onEvent = onEvent)
+                    DoneSearchContactContent(modifier = Modifier.fillMaxSize(), state = state, onEvent = onEvent)
                 }
 
                 2 -> {
-                    DoneSearchChatContent(state = state, onEvent = onEvent)
+                    DoneSearchChatContent(modifier = Modifier.fillMaxSize(), state = state, onEvent = onEvent)
                 }
             }
         }
@@ -776,7 +780,11 @@ fun DoneSearchMessageContent(
     state: MainSharedState.Search,
     onEvent: (e: MainSharedEvent) -> Unit
 ) {
-    LazyColumn() {
+    val context = LocalContext.current
+    LazyColumn(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(3.dp)
+    ) {
         item {
             Row(
                 modifier = Modifier
@@ -790,7 +798,7 @@ fun DoneSearchMessageContent(
                     Box(modifier = Modifier.wrapContentSize()) {
                         MyFilterChip(
                             selected = it !is MessageFilter.SenderFilter.All && it !is MessageFilter.ChatFilter.All && it !is MessageFilter.DateFilter.All,
-                            label = { Text(text = it.label ?: stringResource(id = it.labelResId)) },
+                            label = { Text(text = it.getLabel(context) ?: stringResource(id = it.labelResId)) },
                             trailingIcon = {
                                 Icon(
                                     imageVector = Icons.Outlined.ArrowDropDown,
@@ -905,65 +913,80 @@ fun DoneSearchMessageContent(
                 }
             }
         }
-        item {
-            Column(
+        if (state.message.loadState == LoadState.LOADING) {
+            itemsIndexed(items = listOf(1, 2, 3)) { index, res ->
+                val topRadius = if (index == 0) 24.dp else 0.dp
+                val bottomRadius = if (index == 2) 24.dp else 0.dp
+                EmptySearchResultItem(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .clip(
+                            RoundedCornerShape(
+                                topStart = topRadius,
+                                topEnd = topRadius,
+                                bottomStart = bottomRadius,
+                                bottomEnd = bottomRadius
+                            )
+                        )
+                )
+            }
+        }
+        itemsIndexed(items = state.message.filterResult) { index, res ->
+            val topRadius = if (index == 0) 24.dp else 0.dp
+            val bottomRadius = if (index == state.message.filterResult.lastIndex) 24.dp else 0.dp
+            SearchResultItem(
                 modifier = Modifier
                     .padding(horizontal = 16.dp)
-                    .clip(MaterialTheme.shapes.extraLarge),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
-            ) {
-                if (state.message.loadState == LoadState.LOADING) {
-                    repeat(3) {
-                        EmptySearchResultItem()
-                    }
-                } else {
-                    state.message.filterResult.forEach {
-                        SearchResultItem(
-                            modifier = Modifier.fillMaxWidth(),
-                            avatarModel = it.chat!!.avatar.getModel(),
-                            title = buildAnnotatedString {
-                                it.chat.name.splitKeeping(state.query).forEach {
-                                    if (it == state.query) {
-                                        withStyle(
-                                            style = SpanStyle(
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.primary
-                                            )
-                                        ) {
-                                            append(it)
-                                        }
-                                    } else {
-                                        append(it)
-                                    }
-                                }
-                            },
-                            subTitle = buildAnnotatedString {
-                                append(it.contact!!.name)
-                                append(": ")
-                                it.message.contentString.splitKeeping(state.query).forEach {
-                                    if (it == state.query) {
-                                        withStyle(
-                                            style = SpanStyle(
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.primary
-                                            )
-                                        ) {
-                                            append(it)
-                                        }
-                                    } else {
-                                        append(it)
-                                    }
-                                }
-                            },
-                        ) {
-
+                    .fillMaxWidth()
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = topRadius,
+                            topEnd = topRadius,
+                            bottomStart = bottomRadius,
+                            bottomEnd = bottomRadius
+                        )
+                    ),
+                avatarModel = res.chat!!.avatar.getModel(),
+                title = buildAnnotatedString {
+                    res.chat.name.splitKeeping(state.query).forEach {
+                        if (it == state.query) {
+                            withStyle(
+                                style = SpanStyle(
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            ) {
+                                append(it)
+                            }
+                        } else {
+                            append(it)
                         }
                     }
-                }
+                },
+                subTitle = buildAnnotatedString {
+                    append(res.contact!!.name)
+                    append(": ")
+                    res.message.contentString.splitKeeping(state.query).forEach {
+                        if (it == state.query) {
+                            withStyle(
+                                style = SpanStyle(
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            ) {
+                                append(it)
+                            }
+                        } else {
+                            append(it)
+                        }
+                    }
+                },
+            ) {
+
             }
         }
         item {
-            if (state.message.result.isEmpty() && state.message.loadState != LoadState.LOADING
+            if (state.message.filterResult.isEmpty() && state.message.loadState != LoadState.LOADING
             ) {
                 Column(
                     modifier = Modifier
@@ -993,45 +1016,63 @@ fun DoneSearchContactContent(
     state: MainSharedState.Search,
     onEvent: (e: MainSharedEvent) -> Unit
 ) {
-    LazyColumn() {
-        item {
-            Column(
+    LazyColumn(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(3.dp)
+    ) {
+        if (state.contact.loadState == LoadState.LOADING) {
+            itemsIndexed(items = listOf(1, 2, 3)) { index, res ->
+                val topRadius = if (index == 0) 24.dp else 0.dp
+                val bottomRadius = if (index == 2) 24.dp else 0.dp
+                EmptySearchResultItem(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .clip(
+                            RoundedCornerShape(
+                                topStart = topRadius,
+                                topEnd = topRadius,
+                                bottomStart = bottomRadius,
+                                bottomEnd = bottomRadius
+                            )
+                        )
+                )
+            }
+        }
+        itemsIndexed(items = state.contact.result) { index, res ->
+            val topRadius = if (index == 0) 24.dp else 0.dp
+            val bottomRadius = if (index == state.contact.result.lastIndex) 24.dp else 0.dp
+            SearchResultItem(
                 modifier = Modifier
-                    .padding(start = 16.dp, end = 16.dp, top = 16.dp)
-                    .clip(MaterialTheme.shapes.extraLarge),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
-            ) {
-                if (state.contact.loadState == LoadState.LOADING) {
-                    repeat(3) {
-                        EmptySearchResultItem()
-                    }
-                } else {
-                    state.contact.result.forEach {
-                        SearchResultItem(
-                            modifier = Modifier.fillMaxWidth(),
-                            avatarModel = it.avatar.getModel(),
-                            title = buildAnnotatedString {
-                                it.name.splitKeeping(state.query).forEach {
-                                    if (it == state.query) {
-                                        withStyle(
-                                            style = SpanStyle(
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.primary
-                                            )
-                                        ) {
-                                            append(it)
-                                        }
-                                    } else {
-                                        append(it)
-                                    }
-                                }
-                            },
-                            subTitle = null,
-                        ) {
-
+                    .padding(horizontal = 16.dp)
+                    .fillMaxWidth()
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = topRadius,
+                            topEnd = topRadius,
+                            bottomStart = bottomRadius,
+                            bottomEnd = bottomRadius
+                        )
+                    ),
+                avatarModel = res.avatar.getModel(),
+                title = buildAnnotatedString {
+                    res.name.splitKeeping(state.query).forEach {
+                        if (it == state.query) {
+                            withStyle(
+                                style = SpanStyle(
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            ) {
+                                append(it)
+                            }
+                        } else {
+                            append(it)
                         }
                     }
-                }
+                },
+                subTitle = null,
+            ) {
+
             }
         }
         item {
@@ -1064,7 +1105,9 @@ fun DoneSearchChatContent(
     state: MainSharedState.Search,
     onEvent: (e: MainSharedEvent) -> Unit
 ) {
-    LazyColumn() {
+    LazyColumn(modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
         item {
             Row(
                 modifier = Modifier
@@ -1077,60 +1120,68 @@ fun DoneSearchChatContent(
                     MyFilterChip(
                         selected = it in state.chat.enabledFilterList,
                         label = { Text(text = it.label ?: stringResource(id = it.labelResId)) }) {
-
+                        onEvent(MainSharedEvent.UpdateSearchDoneChatFilter(it))
                     }
                 }
             }
         }
-        item {
-            Column(
+        if (state.message.loadState == LoadState.LOADING) {
+            itemsIndexed(items = listOf(1, 2, 3)) { index, res ->
+                val topRadius = if (index == 0) 24.dp else 0.dp
+                val bottomRadius = if (index == 2) 24.dp else 0.dp
+                EmptySearchResultItem(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .clip(
+                            RoundedCornerShape(
+                                topStart = topRadius,
+                                topEnd = topRadius,
+                                bottomStart = bottomRadius,
+                                bottomEnd = bottomRadius
+                            )
+                        )
+                )
+            }
+        }
+        itemsIndexed(items = state.chat.filterResult) { index, res ->
+            val topRadius = if (index == 0) 24.dp else 0.dp
+            val bottomRadius = if (index == state.chat.filterResult.lastIndex) 24.dp else 0.dp
+            SearchResultItem(
                 modifier = Modifier
                     .padding(horizontal = 16.dp)
-                    .clip(MaterialTheme.shapes.extraLarge),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
-            ) {
-                if (state.chat.loadState == LoadState.LOADING) {
-                    repeat(3) {
-                        EmptySearchResultItem()
-                    }
-                } else {
-                    state.chat.filterResult.forEach {
-                        SearchResultItem(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .placeholder(
-                                    visible = state.chat.loadState == LoadState.LOADING,
-                                    color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-                                    shape = MaterialTheme.shapes.extraLarge,
-                                    highlight = PlaceholderHighlight.fade(),
-                                ),
-                            avatarModel = it.avatar.getModel(),
-                            title = buildAnnotatedString {
-                                it.name.splitKeeping(state.query).forEach {
-                                    if (it == state.query) {
-                                        withStyle(
-                                            style = SpanStyle(
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.primary
-                                            )
-                                        ) {
-                                            append(it)
-                                        }
-                                    } else {
-                                        append(it)
-                                    }
-                                }
-                            },
-                            subTitle = null
-                        ) {
-
+                    .fillMaxWidth()
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = topRadius,
+                            topEnd = topRadius,
+                            bottomStart = bottomRadius,
+                            bottomEnd = bottomRadius
+                        )
+                    ),
+                avatarModel = res.avatar.getModel(),
+                title = buildAnnotatedString {
+                    res.name.splitKeeping(state.query).forEach {
+                        if (it == state.query) {
+                            withStyle(
+                                style = SpanStyle(
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            ) {
+                                append(it)
+                            }
+                        } else {
+                            append(it)
                         }
                     }
-                }
+                },
+                subTitle = null,
+            ) {
+
             }
         }
         item {
-            if (state.chat.result.isEmpty() && state.chat.loadState != LoadState.LOADING) {
+            if (state.chat.filterResult.isEmpty() && state.chat.loadState != LoadState.LOADING) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()

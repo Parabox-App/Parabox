@@ -68,15 +68,18 @@ class MainSharedViewModel @Inject constructor(
                 return state.copy(
                     search = state.search.copy(
                         query = event.input,
+                        showRecent = true,
                         message = state.search.message.copy(
-                            loadState = LoadState.LOADING
+                            loadState = LoadState.LOADING,
+                            result = emptyList(),
+                            filterResult = emptyList(),
                         ),
                         chat = state.search.chat.copy(
-                            loadState = LoadState.LOADING
+                            loadState = LoadState.LOADING,
+                            result = emptyList(),
+                            filterResult = emptyList(),
                         ),
-                        contact = state.search.contact.copy(
-                            loadState = LoadState.LOADING
-                        )
+                        contact = MainSharedState.Search.ContactSearch()
                     )
                 )
             }
@@ -112,10 +115,25 @@ class MainSharedViewModel @Inject constructor(
                 Log.d("parabox", "trigger search bar:${event.isActive}")
                 return state.copy(
                     showNavigationBar = !event.isActive,
-                    search = state.search.copy(
+                    search = MainSharedState.Search(
+                        query = if (event.isActive) state.search.query else "",
                         showRecent = true,
                         isActive = event.isActive,
                         recentQueryState = if (event.isActive) LoadState.LOADING else state.search.recentQueryState,
+                        message = MainSharedState.Search.MessageSearch(
+                            loadState = if (event.isActive) LoadState.LOADING else state.search.message.loadState,
+                            result = if (event.isActive) emptyList() else state.search.message.result,
+                            filterResult = if (event.isActive) emptyList() else state.search.message.filterResult,
+                        ),
+                        contact = MainSharedState.Search.ContactSearch(
+                            loadState = if (event.isActive) LoadState.LOADING else state.search.contact.loadState,
+                            result = if (event.isActive) emptyList() else state.search.contact.result,
+                        ),
+                        chat = MainSharedState.Search.ChatSearch(
+                            loadState = if (event.isActive) LoadState.LOADING else state.search.chat.loadState,
+                            result = if (event.isActive) emptyList() else state.search.chat.result,
+                            filterResult = if (event.isActive) emptyList() else state.search.chat.filterResult,
+                        )
                     )
                 )
             }
@@ -220,7 +238,7 @@ class MainSharedViewModel @Inject constructor(
             }
 
             is MainSharedEvent.UpdateSearchDoneChatFilter -> {
-                val newEnabledFilterList = if(state.search.chat.enabledFilterList.contains(event.filter)){
+                val newEnabledFilterList = if (state.search.chat.enabledFilterList.contains(event.filter)) {
                     state.search.chat.enabledFilterList.toMutableList().apply {
                         remove(event.filter)
                     }
@@ -243,13 +261,15 @@ class MainSharedViewModel @Inject constructor(
 
             is MainSharedEvent.UpdateSearchDoneMessageFilter -> {
                 val newFilterList = state.search.message.filterList.toMutableList().apply {
-                    when(event.filter){
+                    when (event.filter) {
                         is MessageFilter.SenderFilter -> {
                             set(0, event.filter)
                         }
+
                         is MessageFilter.ChatFilter -> {
                             set(1, event.filter)
                         }
+
                         is MessageFilter.DateFilter -> {
                             set(2, event.filter)
                         }
