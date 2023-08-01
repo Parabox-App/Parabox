@@ -21,6 +21,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -70,8 +72,9 @@ fun MessagePage(
     mainNavController: NavController,
     mainSharedViewModel: MainSharedViewModel,
     listState: LazyListState,
-    layoutType: MessageLayoutType
-) {
+    layoutType: MessageLayoutType,
+    windowSize: WindowSizeClass,
+    ) {
 
     val viewModel = hiltViewModel<MessagePageViewModel>()
     val coroutineScope = rememberCoroutineScope()
@@ -174,86 +177,171 @@ fun MessagePage(
         modifier = modifier,
         snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
         topBar = {
-            SearchBar(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = searchBarPadding)
-                    .clearFocusOnKeyboardDismiss(),
-                query = sharedState.search.query,
-                onQueryChange = {
-                    mainSharedViewModel.sendEvent(
-                        MainSharedEvent.QueryInput(it)
-                    )
-                },
-                onSearch = {
-                    if (it.isNotBlank()) {
-                        mainSharedViewModel.sendEvent(MainSharedEvent.SearchConfirm(it))
-                    }
-                },
-                active = sharedState.search.isActive,
-                onActiveChange = { mainSharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(it)) },
-                placeholder = { Text(text = "搜索 Parabox") },
-                leadingIcon = {
-                    IconButton(
-                        onClick = {
-                            if (sharedState.search.isActive) {
-                                mainSharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(false))
-                            } else {
-                                mainSharedViewModel.sendEvent(MainSharedEvent.OpenDrawer(!sharedState.openDrawer.open))
-                            }
-                        }
-                    ) {
-                        Image(
-                            painter = menuPainter, contentDescription = "drawer",
-                            contentScale = ContentScale.FillBounds
+            if(windowSize.widthSizeClass == WindowWidthSizeClass.Expanded){
+                DockedSearchBar(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .statusBarsPadding()
+                        .clearFocusOnKeyboardDismiss(),
+                    query = sharedState.search.query,
+                    onQueryChange = {
+                        mainSharedViewModel.sendEvent(
+                            MainSharedEvent.QueryInput(it)
                         )
-                    }
-                },
-                trailingIcon = {
-                    AnimatedVisibility(
-                        visible = !sharedState.search.isActive,
-                        enter = fadeIn(),
-                        exit = fadeOut()
-                    ) {
+                    },
+                    onSearch = {
+                        if (it.isNotBlank()) {
+                            mainSharedViewModel.sendEvent(MainSharedEvent.SearchConfirm(it))
+                        }
+                    },
+                    active = sharedState.search.isActive,
+                    onActiveChange = { mainSharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(it)) },
+                    placeholder = { Text(text = "搜索 Parabox") },
+                    leadingIcon = {
                         IconButton(
-                            onClick = { mainSharedViewModel.sendEvent(MainSharedEvent.SearchAvatarClicked) },
-                        ) {
-                            SubcomposeAsyncImage(
-                                modifier = Modifier.size(30.dp),
-                                model = sharedState.datastore.localAvatarUri,
-                                contentDescription = "user_avatar",
-                            ) {
-                                val state = painter.state
-                                val namedAvatarBm =
-                                    AvatarUtil.createNamedAvatarBm(
-                                        backgroundColor = MaterialTheme.colorScheme.primary.toArgb(),
-                                        textColor = MaterialTheme.colorScheme.onPrimary.toArgb(),
-                                        name = sharedState.datastore.localName
-                                    ).getCircledBitmap().asImageBitmap()
-                                if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
-                                    Image(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .placeholder(
-                                                visible = state is AsyncImagePainter.State.Loading,
-                                                color = MaterialTheme.colorScheme.secondaryContainer,
-                                                highlight = PlaceholderHighlight.fade(),
-                                            ),
-                                        bitmap = namedAvatarBm,
-                                        contentDescription = "named_avatar"
-                                    )
+                            onClick = {
+                                if (sharedState.search.isActive) {
+                                    mainSharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(false))
                                 } else {
-                                    SubcomposeAsyncImageContent()
+                                    mainSharedViewModel.sendEvent(MainSharedEvent.OpenDrawer(!sharedState.openDrawer.open))
+                                }
+                            }
+                        ) {
+                            Image(
+                                painter = menuPainter, contentDescription = "drawer",
+                                contentScale = ContentScale.FillBounds
+                            )
+                        }
+                    },
+                    trailingIcon = {
+                        AnimatedVisibility(
+                            visible = !sharedState.search.isActive,
+                            enter = fadeIn(),
+                            exit = fadeOut()
+                        ) {
+                            IconButton(
+                                onClick = { mainSharedViewModel.sendEvent(MainSharedEvent.SearchAvatarClicked) },
+                            ) {
+                                SubcomposeAsyncImage(
+                                    modifier = Modifier.size(30.dp),
+                                    model = sharedState.datastore.localAvatarUri,
+                                    contentDescription = "user_avatar",
+                                ) {
+                                    val state = painter.state
+                                    val namedAvatarBm =
+                                        AvatarUtil.createNamedAvatarBm(
+                                            backgroundColor = MaterialTheme.colorScheme.primary.toArgb(),
+                                            textColor = MaterialTheme.colorScheme.onPrimary.toArgb(),
+                                            name = sharedState.datastore.localName
+                                        ).getCircledBitmap().asImageBitmap()
+                                    if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
+                                        Image(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .placeholder(
+                                                    visible = state is AsyncImagePainter.State.Loading,
+                                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                                    highlight = PlaceholderHighlight.fade(),
+                                                ),
+                                            bitmap = namedAvatarBm,
+                                            contentDescription = "named_avatar"
+                                        )
+                                    } else {
+                                        SubcomposeAsyncImageContent()
+                                    }
                                 }
                             }
                         }
-                    }
-                },
-                shadowElevation = searchBarShadowElevation,
-                colors = SearchBarDefaults.colors(dividerColor = Color.Transparent)
-            ) {
-                SearchContent(state = sharedState, onEvent = mainSharedViewModel::sendEvent)
+                    },
+                    shadowElevation = searchBarShadowElevation,
+                    colors = SearchBarDefaults.colors(dividerColor = Color.Transparent)
+                ) {
+                    SearchContent(state = sharedState, onEvent = mainSharedViewModel::sendEvent)
+                }
+            } else {
+                SearchBar(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = searchBarPadding)
+                        .clearFocusOnKeyboardDismiss(),
+                    query = sharedState.search.query,
+                    onQueryChange = {
+                        mainSharedViewModel.sendEvent(
+                            MainSharedEvent.QueryInput(it)
+                        )
+                    },
+                    onSearch = {
+                        if (it.isNotBlank()) {
+                            mainSharedViewModel.sendEvent(MainSharedEvent.SearchConfirm(it))
+                        }
+                    },
+                    active = sharedState.search.isActive,
+                    onActiveChange = { mainSharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(it)) },
+                    placeholder = { Text(text = "搜索 Parabox") },
+                    leadingIcon = {
+                        IconButton(
+                            onClick = {
+                                if (sharedState.search.isActive) {
+                                    mainSharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(false))
+                                } else {
+                                    mainSharedViewModel.sendEvent(MainSharedEvent.OpenDrawer(!sharedState.openDrawer.open))
+                                }
+                            }
+                        ) {
+                            Image(
+                                painter = menuPainter, contentDescription = "drawer",
+                                contentScale = ContentScale.FillBounds
+                            )
+                        }
+                    },
+                    trailingIcon = {
+                        AnimatedVisibility(
+                            visible = !sharedState.search.isActive,
+                            enter = fadeIn(),
+                            exit = fadeOut()
+                        ) {
+                            IconButton(
+                                onClick = { mainSharedViewModel.sendEvent(MainSharedEvent.SearchAvatarClicked) },
+                            ) {
+                                SubcomposeAsyncImage(
+                                    modifier = Modifier.size(30.dp),
+                                    model = sharedState.datastore.localAvatarUri,
+                                    contentDescription = "user_avatar",
+                                ) {
+                                    val state = painter.state
+                                    val namedAvatarBm =
+                                        AvatarUtil.createNamedAvatarBm(
+                                            backgroundColor = MaterialTheme.colorScheme.primary.toArgb(),
+                                            textColor = MaterialTheme.colorScheme.onPrimary.toArgb(),
+                                            name = sharedState.datastore.localName
+                                        ).getCircledBitmap().asImageBitmap()
+                                    if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
+                                        Image(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .placeholder(
+                                                    visible = state is AsyncImagePainter.State.Loading,
+                                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                                    highlight = PlaceholderHighlight.fade(),
+                                                ),
+                                            bitmap = namedAvatarBm,
+                                            contentDescription = "named_avatar"
+                                        )
+                                    } else {
+                                        SubcomposeAsyncImageContent()
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    shadowElevation = searchBarShadowElevation,
+                    colors = SearchBarDefaults.colors(dividerColor = Color.Transparent)
+                ) {
+                    SearchContent(state = sharedState, onEvent = mainSharedViewModel::sendEvent)
+                }
             }
+
         }) { it ->
         LazyColumn(
             contentPadding = it,
@@ -388,10 +476,10 @@ fun MessagePage(
                 val isFirst = index == 0
                 val isLast = index == chatLazyPagingData.itemCount - 1
                 val topRadius by animateDpAsState(
-                    targetValue = if (isFirst && swipeableActionsState.offset.value == 0f) 24.dp else 3.dp
+                    targetValue = if (isFirst && swipeableActionsState.offset.value == 0f) 24.dp else 3.dp, label = "top_radius"
                 )
                 val bottomRadius by animateDpAsState(
-                    targetValue = if (isLast && swipeableActionsState.offset.value == 0f) 24.dp else 3.dp
+                    targetValue = if (isLast && swipeableActionsState.offset.value == 0f) 24.dp else 3.dp, label = "bottom_radius"
                 )
 
                 Box(
@@ -426,10 +514,14 @@ fun MessagePage(
                             onReachThreshold = { hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress) },
                             startToEndIcon = Icons.Outlined.Archive,
                             endToStartIcon = Icons.Outlined.Done,
-                            onDismissedToEnd = { },
-                            onDismissedToStart = { }) {
+                            onDismissedToEnd = {
+                                viewModel.sendEvent(MessagePageEvent.UpdateChatArchive(item.chat.chatId, true, item.chat.isArchived))
+                            },
+                            onDismissedToStart = {
+                                viewModel.sendEvent(MessagePageEvent.UpdateChatHide(item.chat.chatId, true, item.chat.isHidden))
+                            }) {
                             val contact by viewModel.getLatestMessageSenderWithCache(
-                                chatLazyPagingData[index]!!.message?.senderId
+                                chatLazyPagingData[index]?.message?.senderId
                             ).collectAsState(initial = Resource.Loading())
                             ChatItem(
                                 modifier = Modifier.padding(bottom = 2.dp),

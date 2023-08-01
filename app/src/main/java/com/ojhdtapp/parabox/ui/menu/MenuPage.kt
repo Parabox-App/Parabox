@@ -17,8 +17,10 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -40,6 +42,7 @@ import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
@@ -238,6 +241,9 @@ private fun MenuNavigationWrapperUI(
         if (navigationType == MenuNavigationType.PERMANENT_NAVIGATION_DRAWER) {
             mainSharedViewModel.sendEvent(MainSharedEvent.OpenDrawer(open = true, snap = true))
         }
+        if (navigationType == MenuNavigationType.NAVIGATION_RAIL){
+            mainSharedViewModel.sendEvent(MainSharedEvent.OpenDrawer(open = false, snap = false))
+        }
         if (navigationType == MenuNavigationType.BOTTOM_NAVIGATION) {
             mainSharedViewModel.sendEvent(MainSharedEvent.ShowNavigationBar(true))
         }
@@ -299,77 +305,6 @@ private fun MenuNavigationWrapperUI(
             )
         }
     }
-//    Column {
-//        Row(modifier = Modifier.fillMaxSize()) {
-//            if (sizeClass.widthSizeClass == WindowWidthSizeClass.Medium) {
-//                MenuNavigationRail(
-//                    modifier = Modifier.zIndex(1f),
-//                    navController = menuNavController,
-//                    messageBadge = messageBadgeNum,
-//                    onSelfItemClick = {
-//                        coroutineScope.launch {
-//                            if (!listState.canScrollForward) {
-//                                listState.animateScrollToItem(0)
-//                            } else {
-//                                listState.animateScrollBy(1000f)
-//                            }
-//                        }
-//                    },
-//                    onMenuClick = {
-//                        coroutineScope.launch {
-//                            if (drawerState.isOpen) drawerState.close() else drawerState.open()
-//                        }
-//                    },
-//                    onFABClick = {
-//                        coroutineScope.launch {
-//                            bottomSheetState.show()
-//                        }
-//                    })
-//            }
-//            DestinationsNavHost(
-//                navGraph = NavGraphs.menu,
-//                engine = menuNavHostEngine,
-//                navController = menuNavController,
-//                dependenciesContainerBuilder = {
-//                    dependency(mainSharedViewModel)
-//                    dependency(drawerState)
-//                    dependency(sizeClass)
-//                }
-//            ) {
-//                composable(MessagePageDestination) {
-//                    MessagePage(
-//                        navigator = destinationsNavigator,
-//                        mainNavController = navController,
-//                        mainSharedViewModel = mainSharedViewModel,
-//                        sizeClass = sizeClass,
-//                        listState = listState,
-//                        drawerState = drawerState,
-//                        bottomSheetState = bottomSheetState,
-//                    )
-//                }
-//                composable(FilePageDestination) {
-//                    FilePage(
-//                    )
-//                }
-//            }
-//        }
-//        if (sizeClass.widthSizeClass == WindowWidthSizeClass.Compact
-//        ) {
-//            MenuNavigationBar(
-//                navController = menuNavController,
-//                messageBadge = messageBadgeNum,
-//                onSelfItemClick = {
-//                    coroutineScope.launch {
-//                        if (!listState.canScrollForward) {
-//                            listState.animateScrollToItem(0)
-//                        } else {
-//                            listState.animateScrollBy(1000f)
-//                        }
-//                    }
-//                },
-//            )
-//        }
-//    }
 }
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)

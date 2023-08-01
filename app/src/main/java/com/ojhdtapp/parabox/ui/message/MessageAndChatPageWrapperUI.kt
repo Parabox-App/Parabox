@@ -25,7 +25,6 @@ import com.ojhdtapp.parabox.ui.common.DevicePosture
 import com.ojhdtapp.parabox.ui.common.MessageNavGraph
 import com.ramcosta.composedestinations.annotation.Destination
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Destination
 @MessageNavGraph(start = true)
 @Composable
@@ -64,12 +63,12 @@ fun MessageAndChatPageWrapperUI(
             modifier =
             if (layoutType == MessageLayoutType.SPLIT)
                 modifier.width(400.dp) else modifier
-                .weight(1f)
-                .background(Color.Red),
+                .weight(1f),
             mainNavController = mainNavController,
             mainSharedViewModel = mainSharedViewModel,
             listState = listState,
-            layoutType = layoutType
+            layoutType = layoutType,
+            windowSize = windowSize
         )
         AnimatedVisibility(visible = layoutType == MessageLayoutType.SPLIT) {
             ChatPage()

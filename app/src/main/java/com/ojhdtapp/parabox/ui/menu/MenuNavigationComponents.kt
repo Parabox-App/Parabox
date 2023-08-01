@@ -106,7 +106,7 @@ fun MenuNavigationDrawerContent(
 ) =
     ModalDrawerSheet(
         modifier = Modifier
-            .width(304.dp)
+//            .width(304.dp)
             .fillMaxHeight()
             .verticalScroll(rememberScrollState())
     ) {

@@ -64,33 +64,33 @@ fun DateRangePickerDialog(
                     Text(stringResource(id = R.string.cancel))
                 }
             }) {
-                Column() {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(64.dp)
-                            .padding(start = 12.dp, end = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        IconButton(onClick = onDismiss) {
-                            Icon(Icons.Outlined.Close, contentDescription = "Localized description")
-                        }
-                        TextButton(
-                            onClick = {
-                                onConfirm(
-                                    dateRangePickerState.selectedStartDateMillis!!,
-                                    dateRangePickerState.selectedEndDateMillis!!
-                                )
-                            },
-                            enabled = confirmEnabled.value
-                        ) {
-                            Text(text = stringResource(id = R.string.confirm))
-                        }
+            Column() {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(64.dp)
+                        .padding(start = 12.dp, end = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Outlined.Close, contentDescription = "Localized description")
                     }
-
-                    DateRangePicker(state = dateRangePickerState, modifier = Modifier.weight(1f))
+                    TextButton(
+                        onClick = {
+                            onConfirm(
+                                dateRangePickerState.selectedStartDateMillis!!,
+                                dateRangePickerState.selectedEndDateMillis!!
+                            )
+                        },
+                        enabled = confirmEnabled.value
+                    ) {
+                        Text(text = stringResource(id = R.string.confirm))
+                    }
                 }
+
+                DateRangePicker(state = dateRangePickerState, modifier = Modifier.weight(1f))
+            }
         }
     }
 }
