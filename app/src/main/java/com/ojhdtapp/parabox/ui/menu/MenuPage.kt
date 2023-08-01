@@ -55,6 +55,7 @@ import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.common.ChatPickerDialog
 import com.ojhdtapp.parabox.ui.common.ContactPickerDialog
+import com.ojhdtapp.parabox.ui.common.DateRangePickerDialog
 import com.ojhdtapp.parabox.ui.common.DevicePosture
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
@@ -417,6 +418,11 @@ fun MenuAppContent(
             mainSharedViewModel.sendEvent(MainSharedEvent.PickContactDone(null))
         }
     )
+    DateRangePickerDialog(openDialog = mainSharedState.openDateRangePicker, onConfirm = { start, end ->
+        mainSharedViewModel.sendEvent(MainSharedEvent.PickDateRangeDone(start to end))
+    }, onDismiss = {
+        mainSharedViewModel.sendEvent(MainSharedEvent.PickDateRangeDone(null))
+    })
 
     Row(modifier = Modifier.fillMaxWidth()) {
         AnimatedVisibility(

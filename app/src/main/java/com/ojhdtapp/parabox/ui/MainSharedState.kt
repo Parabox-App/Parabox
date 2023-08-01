@@ -19,6 +19,7 @@ data class MainSharedState(
     val openMainDialog: Boolean = false,
     val contactPicker: ContactPicker = ContactPicker(),
     val chatPicker: ChatPicker = ChatPicker(),
+    val openDateRangePicker: Boolean = false,
 ): UiState{
     data class DataStore(
         val messageBadgeNum: Int = 0,
@@ -38,7 +39,7 @@ data class MainSharedState(
         data class MessageSearch(
             val loadState: LoadState = LoadState.LOADING,
             val result: List<QueryMessage> = emptyList(),
-            val filterList: List<MessageFilter> = listOf(MessageFilter.SenderFilter.All, MessageFilter.ChatFilter.All, MessageFilter.TimeFilter.All),
+            val filterList: List<MessageFilter> = listOf(MessageFilter.SenderFilter.All, MessageFilter.ChatFilter.All, MessageFilter.DateFilter.All),
             val filterResult: List<QueryMessage> = emptyList()
         )
         data class ContactSearch(

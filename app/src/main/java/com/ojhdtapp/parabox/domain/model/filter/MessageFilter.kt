@@ -54,26 +54,26 @@ sealed class MessageFilter(
         }
     }
 
-    sealed class TimeFilter(
+    sealed class DateFilter(
         override val labelResId: Int,
         override val check: (message: Message) -> Boolean
-    ) : MessageFilter(labelResId = labelResId, check = check) {
-        object All : TimeFilter(R.string.time_filter_all_label, { true })
-        object WithinThreeDays : TimeFilter(
+    ) : MessageFilter(labelResId = labelResId, check = check, label = null) {
+        object All : DateFilter(R.string.time_filter_all_label, { message: Message -> true })
+        object WithinThreeDays : DateFilter(
             R.string.time_filter_within_three_days_label,
             { message: Message -> abs(System.currentTimeMillis() - message.timestamp) < 259200000 })
 
-        object WithinThisWeek : TimeFilter(
+        object WithinThisWeek : DateFilter(
             R.string.time_filter_within_this_week_label,
             { message: Message -> abs(System.currentTimeMillis() - message.timestamp) < 604800000 }
         )
 
-        object WithinThisMonth : TimeFilter(
+        object WithinThisMonth : DateFilter(
             R.string.time_filter_within_this_month_label,
             { message: Message -> abs(System.currentTimeMillis() - message.timestamp) < 2592000000 }
         )
 
-        object MoreThanAMonth : TimeFilter(
+        object MoreThanAMonth : DateFilter(
             R.string.time_filter_more_than_a_month_label,
             { message: Message -> abs(System.currentTimeMillis() - message.timestamp) >= 2592000000 }
         )
@@ -82,7 +82,7 @@ sealed class MessageFilter(
             val timestampStart: Long? = null,
             val timestampEnd: Long? = null
         ) :
-            TimeFilter(
+            DateFilter(
 //            label = "从 ${timestampStart?.toFormattedDate() ?: "不受限制"} 到 ${timestampEnd?.toFormattedDate() ?: "不受限制"}",
                 R.string.time_filter_custom_label,
                 check = { message: Message ->
@@ -90,5 +90,13 @@ sealed class MessageFilter(
                         ?: System.currentTimeMillis())
                 }
             )
+        companion object{
+            val allFilterList = listOf<DateFilter>(
+                WithinThreeDays,
+                WithinThisWeek,
+                WithinThisMonth,
+                MoreThanAMonth
+            )
+        }
     }
 }

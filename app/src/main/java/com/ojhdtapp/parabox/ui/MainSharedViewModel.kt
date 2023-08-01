@@ -220,8 +220,15 @@ class MainSharedViewModel @Inject constructor(
             }
 
             is MainSharedEvent.UpdateSearchDoneChatFilter -> {
-                event.filter
-                val newEnabledFilterList = state.search.chat.enabledFilterList
+                val newEnabledFilterList = if(state.search.chat.enabledFilterList.contains(event.filter)){
+                    state.search.chat.enabledFilterList.toMutableList().apply {
+                        remove(event.filter)
+                    }
+                } else {
+                    state.search.chat.enabledFilterList.toMutableList().apply {
+                        add(event.filter)
+                    }
+                }
                 return state.copy(
                     search = state.search.copy(
                         chat = state.search.chat.copy(
@@ -243,7 +250,7 @@ class MainSharedViewModel @Inject constructor(
                         is MessageFilter.ChatFilter -> {
                             set(1, event.filter)
                         }
-                        is MessageFilter.TimeFilter -> {
+                        is MessageFilter.DateFilter -> {
                             set(2, event.filter)
                         }
                     }
@@ -355,6 +362,22 @@ class MainSharedViewModel @Inject constructor(
                 }
                 return state.copy(
                     contactPicker = MainSharedState.ContactPicker()
+                )
+            }
+
+            is MainSharedEvent.PickDateRange -> {
+                onPickDateRangeDone = event.onDone
+                return state.copy(
+                    openDateRangePicker = true
+                )
+            }
+
+            is MainSharedEvent.PickDateRangeDone -> {
+                viewModelScope.launch(Dispatchers.IO) {
+                    onPickDateRangeDone?.invoke(event.res)
+                }
+                return state.copy(
+                    openDateRangePicker = false
                 )
             }
         }
@@ -553,6 +576,7 @@ class MainSharedViewModel @Inject constructor(
     private var contactPickerJob: Job? = null
     private var onPickChatDone: ((Chat?) -> Unit)? = null
     private var onPickContactDone: ((Contact?) -> Unit)? = null
+    private var onPickDateRangeDone: ((Pair<Long, Long>?) -> Unit)? = null
     private suspend fun chatPickerQuery(input: String) {
         coroutineScope {
             launch(Dispatchers.IO) {

@@ -36,4 +36,6 @@ sealed interface MainSharedEvent : UiEvent {
     data class PickContactDone(val res: Contact?) : MainSharedEvent
     data class PickContactQueryInput(val input: String) : MainSharedEvent
     data class GetPickContactDone(val res: List<Contact>, val isSuccess: Boolean) : MainSharedEvent
+    data class PickDateRange(val onDone: (Pair<Long, Long>?) -> Unit) : MainSharedEvent
+    data class PickDateRangeDone(val res: Pair<Long, Long>?) : MainSharedEvent
 }

@@ -13,7 +13,6 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,26 +21,24 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.IconButton
 import androidx.compose.material.Surface
-import androidx.compose.material.TabRow
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material.icons.outlined.ArrowOutward
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
@@ -49,8 +46,11 @@ import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,6 +65,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.PopupProperties
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
@@ -768,6 +769,7 @@ fun DoneSearchContent(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DoneSearchMessageContent(
     modifier: Modifier = Modifier,
@@ -777,24 +779,117 @@ fun DoneSearchMessageContent(
     LazyColumn() {
         item {
             Row(
-                modifier = Modifier.padding(vertical = 8.dp).horizontalScroll(rememberScrollState()),
+                modifier = Modifier
+                    .padding(vertical = 8.dp)
+                    .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Spacer(modifier = Modifier.width(8.dp))
                 state.message.filterList.forEach {
-                    MyFilterChip(
-                        selected = it !is MessageFilter.SenderFilter.All && it !is MessageFilter.ChatFilter.All && it !is MessageFilter.TimeFilter.All,
-                        label = { Text(text = it.label ?: stringResource(id = it.labelResId)) }) {
-                        when (it) {
-                            is MessageFilter.SenderFilter -> {
-                                if (it is MessageFilter.SenderFilter.All) {
-                                    onEvent(MainSharedEvent.PickContact {
+                    var isMenuVisible by rememberSaveable { mutableStateOf(false) }
+                    Box(modifier = Modifier.wrapContentSize()) {
+                        MyFilterChip(
+                            selected = it !is MessageFilter.SenderFilter.All && it !is MessageFilter.ChatFilter.All && it !is MessageFilter.DateFilter.All,
+                            label = { Text(text = it.label ?: stringResource(id = it.labelResId)) },
+                            trailingIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.ArrowDropDown,
+                                    contentDescription = "expand",
+                                    modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                )
+                            }) {
+                            when (it) {
+                                is MessageFilter.SenderFilter -> {
+                                    if (it is MessageFilter.SenderFilter.All) {
+                                        onEvent(MainSharedEvent.PickContact {
+                                            if (it != null) {
+                                                onEvent(
+                                                    MainSharedEvent.UpdateSearchDoneMessageFilter(
+                                                        MessageFilter.SenderFilter.Custom(
+                                                            senderName = it.name,
+                                                            senderId = it.contactId
+                                                        )
+                                                    )
+                                                )
+                                            } else {
+
+                                            }
+                                        })
+                                    } else {
+                                        onEvent(
+                                            MainSharedEvent.UpdateSearchDoneMessageFilter(
+                                                MessageFilter.SenderFilter.All
+                                            )
+                                        )
+                                    }
+                                }
+
+                                is MessageFilter.ChatFilter -> {
+                                    if (it is MessageFilter.ChatFilter.All) {
+                                        onEvent(MainSharedEvent.PickChat {
+                                            Log.d("parabox", "pick chat success:${it}")
+                                            if (it != null) {
+                                                onEvent(
+                                                    MainSharedEvent.UpdateSearchDoneMessageFilter(
+                                                        MessageFilter.ChatFilter.Custom(
+                                                            chatName = it.name,
+                                                            chatId = it.chatId
+                                                        )
+                                                    )
+                                                )
+                                            } else {
+
+                                            }
+                                        })
+                                    } else {
+                                        onEvent(
+                                            MainSharedEvent.UpdateSearchDoneMessageFilter(
+                                                MessageFilter.ChatFilter.All
+                                            )
+                                        )
+                                    }
+                                }
+
+                                is MessageFilter.DateFilter -> {
+                                    isMenuVisible = true
+                                }
+                            }
+                        }
+                        if (it is MessageFilter.DateFilter) {
+                            RoundedCornerCascadeDropdownMenu(
+                                expanded = isMenuVisible, onDismissRequest = { isMenuVisible = false },
+                                properties = PopupProperties(
+                                    dismissOnBackPress = true,
+                                    dismissOnClickOutside = true,
+                                    focusable = true
+                                ),
+                            ) {
+                                Log.d("parabox", "list:${MessageFilter.DateFilter.allFilterList}")
+                                androidx.compose.material3.DropdownMenuItem(text = {
+                                    Text(text = stringResource(id = R.string.time_filter_all_label))
+                                }, onClick = {
+                                    isMenuVisible = false
+                                    onEvent(MainSharedEvent.UpdateSearchDoneMessageFilter(MessageFilter.DateFilter.All))
+                                })
+                                MessageFilter.DateFilter.allFilterList.forEach {
+                                    androidx.compose.material3.DropdownMenuItem(text = {
+                                        Text(text = it.label ?: stringResource(id = it.labelResId))
+                                    }, onClick = {
+                                        isMenuVisible = false
+                                        onEvent(MainSharedEvent.UpdateSearchDoneMessageFilter(it))
+                                    })
+                                }
+                                androidx.compose.material3.DropdownMenuItem(text = {
+                                    Text(text = "自定义")
+                                }, onClick = {
+                                    isMenuVisible = false
+                                    onEvent(MainSharedEvent.PickDateRange {
                                         if (it != null) {
                                             onEvent(
                                                 MainSharedEvent.UpdateSearchDoneMessageFilter(
-                                                    MessageFilter.SenderFilter.Custom(
-                                                        senderName = it.name,
-                                                        senderId = it.contactId
+                                                    MessageFilter.DateFilter.Custom(
+                                                        timestampStart = it.first,
+                                                        timestampEnd = it.second
                                                     )
                                                 )
                                             )
@@ -802,46 +897,11 @@ fun DoneSearchMessageContent(
 
                                         }
                                     })
-                                } else {
-                                    onEvent(
-                                        MainSharedEvent.UpdateSearchDoneMessageFilter(
-                                            MessageFilter.SenderFilter.All
-                                        )
-                                    )
-                                }
-                            }
-
-                            is MessageFilter.ChatFilter -> {
-                                if (it is MessageFilter.ChatFilter.All) {
-                                    onEvent(MainSharedEvent.PickChat {
-                                        Log.d("parabox", "pick chat success:${it}")
-                                        if (it != null) {
-                                            onEvent(
-                                                MainSharedEvent.UpdateSearchDoneMessageFilter(
-                                                    MessageFilter.ChatFilter.Custom(
-                                                        chatName = it.name,
-                                                        chatId = it.chatId
-                                                    )
-                                                )
-                                            )
-                                        } else {
-
-                                        }
-                                    })
-                                } else {
-                                    onEvent(
-                                        MainSharedEvent.UpdateSearchDoneMessageFilter(
-                                            MessageFilter.ChatFilter.All
-                                        )
-                                    )
-                                }
-                            }
-
-                            is MessageFilter.TimeFilter -> {
-
+                                })
                             }
                         }
                     }
+
                 }
             }
         }
@@ -902,6 +962,28 @@ fun DoneSearchMessageContent(
                 }
             }
         }
+        item {
+            if (state.message.result.isEmpty() && state.message.loadState != LoadState.LOADING
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Search,
+                        contentDescription = "search result",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "无搜索结果",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -913,38 +995,63 @@ fun DoneSearchContactContent(
 ) {
     LazyColumn() {
         item {
-            Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
-                state.contact.result.forEach {
-                    SearchResultItemVertical(
-                        modifier = Modifier
-                            .padding(start = 16.dp)
-                            .placeholder(
-                                visible = state.contact.loadState == LoadState.LOADING,
-                                color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-                                shape = MaterialTheme.shapes.large,
-                                highlight = PlaceholderHighlight.fade(),
-                            ),
-                        avatarModel = it.avatar.getModel(),
-                        title = buildAnnotatedString {
-                            it.name.splitKeeping(state.query).forEach {
-                                if (it == state.query) {
-                                    withStyle(
-                                        style = SpanStyle(
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                    ) {
+            Column(
+                modifier = Modifier
+                    .padding(start = 16.dp, end = 16.dp, top = 16.dp)
+                    .clip(MaterialTheme.shapes.extraLarge),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                if (state.contact.loadState == LoadState.LOADING) {
+                    repeat(3) {
+                        EmptySearchResultItem()
+                    }
+                } else {
+                    state.contact.result.forEach {
+                        SearchResultItem(
+                            modifier = Modifier.fillMaxWidth(),
+                            avatarModel = it.avatar.getModel(),
+                            title = buildAnnotatedString {
+                                it.name.splitKeeping(state.query).forEach {
+                                    if (it == state.query) {
+                                        withStyle(
+                                            style = SpanStyle(
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        ) {
+                                            append(it)
+                                        }
+                                    } else {
                                         append(it)
                                     }
-                                } else {
-                                    append(it)
                                 }
-                            }
-                        },
-                        subTitle = null
-                    ) {
+                            },
+                            subTitle = null,
+                        ) {
 
+                        }
                     }
+                }
+            }
+        }
+        item {
+            if (state.contact.result.isEmpty() && state.contact.loadState != LoadState.LOADING) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Search,
+                        contentDescription = "search result",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "无搜索结果",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
                 }
             }
         }
@@ -960,7 +1067,9 @@ fun DoneSearchChatContent(
     LazyColumn() {
         item {
             Row(
-                modifier = Modifier.padding(vertical = 8.dp).horizontalScroll(rememberScrollState()),
+                modifier = Modifier
+                    .padding(vertical = 8.dp)
+                    .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Spacer(modifier = Modifier.width(8.dp))
@@ -1017,6 +1126,27 @@ fun DoneSearchChatContent(
 
                         }
                     }
+                }
+            }
+        }
+        item {
+            if (state.chat.result.isEmpty() && state.chat.loadState != LoadState.LOADING) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Search,
+                        contentDescription = "search result",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "无搜索结果",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
                 }
             }
         }
