@@ -44,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.navigation.NavController
@@ -60,6 +61,10 @@ import com.ojhdtapp.parabox.ui.common.ChatPickerDialog
 import com.ojhdtapp.parabox.ui.common.ContactPickerDialog
 import com.ojhdtapp.parabox.ui.common.DateRangePickerDialog
 import com.ojhdtapp.parabox.ui.common.DevicePosture
+import com.ojhdtapp.parabox.ui.common.MyDismissibleNavigationDrawer
+import com.ojhdtapp.parabox.ui.common.MyDrawerState
+import com.ojhdtapp.parabox.ui.common.MyModalNavigationDrawer
+import com.ojhdtapp.parabox.ui.common.rememberMyDrawerState
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
 import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
@@ -152,7 +157,7 @@ private fun MenuNavigationWrapperUI(
     // List
     val listState = rememberLazyListState()
     // Drawer
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val drawerState = rememberMyDrawerState(initialValue = DrawerValue.Closed)
     val bottomSheetState = rememberModalBottomSheetState()
     // Main State
     val mainSharedState by mainSharedViewModel.uiState.collectAsState()
@@ -255,13 +260,13 @@ private fun MenuNavigationWrapperUI(
         mainSharedViewModel.sendEvent(MainSharedEvent.OpenBottomSheet(false))
     }
     if (navigationType == MenuNavigationType.PERMANENT_NAVIGATION_DRAWER) {
-        DismissibleNavigationDrawer(drawerContent = {
+        MyDismissibleNavigationDrawer(drawerContent = {
             MenuNavigationDrawerContent(
                 navController = menuNavController,
                 messageBadge = mainSharedState.datastore.messageBadgeNum,
                 onEvent = menuEventHandler
             )
-        }, drawerState = drawerState) {
+        }, drawerState = drawerState, drawerWidth = 304.dp) {
             MenuAppContent(
                 navController = navController,
                 menuNavController = menuNavController,
@@ -278,7 +283,7 @@ private fun MenuNavigationWrapperUI(
             )
         }
     } else {
-        ModalNavigationDrawer(
+        MyModalNavigationDrawer(
             drawerContent = {
                 MenuNavigationDrawerContent(
                     navController = menuNavController,
@@ -288,6 +293,7 @@ private fun MenuNavigationWrapperUI(
             },
             drawerState = drawerState,
             gesturesEnabled = !mainSharedState.search.isActive,
+            drawerWidth = 304.dp
         ) {
             MenuAppContent(
                 navController = navController,
@@ -316,7 +322,7 @@ fun MenuAppContent(
     mainSharedState: MainSharedState,
     navigationType: MenuNavigationType,
     listState: LazyListState,
-    drawerState: DrawerState,
+    drawerState: MyDrawerState,
     bottomSheetState: SheetState,
     mainSharedViewModel: MainSharedViewModel,
     windowSize: WindowSizeClass,
