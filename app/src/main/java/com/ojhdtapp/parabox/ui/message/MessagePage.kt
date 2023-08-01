@@ -86,9 +86,6 @@ fun MessagePage(
     var snackBarJob: Job? by remember {
         mutableStateOf(null)
     }
-    LaunchedEffect(sharedState.search) {
-        Log.d("parabox", sharedState.search.toString())
-    }
     LaunchedEffect(Unit) {
         viewModel.uiEffect.flowWithLifecycle(lifecycleOwner.lifecycle, Lifecycle.State.STARTED)
             .collectLatest {
@@ -527,6 +524,10 @@ fun MessagePage(
                                 modifier = Modifier.padding(bottom = 2.dp),
                                 chatWithLatestMessage = item,
                                 contact = contact,
+                                isEditing = state.currentChat?.chatId == item.chat.chatId,
+                                onClick = {
+                                    viewModel.sendEvent(MessagePageEvent.LoadMessage(item.chat))
+                                },
                                 onLongClick = {
                                     isMenuVisible = true
                                     hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)

@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.data.repository
 
 import android.content.Context
+import androidx.paging.PagingSource
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.MessageEntity
@@ -15,6 +16,10 @@ class MessageRepositoryImpl @Inject constructor(
     val context: Context,
     private val db: AppDatabase,
 ) : MessageRepository {
+    override fun getMessagePagingSource(chatIdList: List<Long>): PagingSource<Int, MessageEntity> {
+        return db.messageDao.getMessagePagingSource(chatIdList)
+    }
+
     override fun getMessageById(messageId: Long): Flow<Resource<Message>> {
         return flow {
             emit(Resource.Loading())

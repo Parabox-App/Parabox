@@ -2,6 +2,7 @@ package com.ojhdtapp.parabox.ui.message
 
 import android.content.Context
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
@@ -11,6 +12,7 @@ import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.domain.use_case.GetChat
 import com.ojhdtapp.parabox.domain.use_case.GetContact
+import com.ojhdtapp.parabox.domain.use_case.GetMessage
 import com.ojhdtapp.parabox.domain.use_case.UpdateChat
 import com.ojhdtapp.parabox.ui.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -29,6 +31,7 @@ import javax.inject.Inject
 class MessagePageViewModel @Inject constructor(
     @ApplicationContext val context: Context,
     val getChat: GetChat,
+    val getMessage: GetMessage,
     val getContact: GetContact,
     val updateChat: UpdateChat,
 ) : BaseViewModel<MessagePageState, MessagePageEvent, MessagePageEffect>() {
@@ -36,7 +39,8 @@ class MessagePageViewModel @Inject constructor(
     override fun initialState(): MessagePageState {
         return MessagePageState(
             chatPagingDataFlow = getChat(listOf(ChatFilter.Normal)).cachedIn(viewModelScope),
-            pinnedChatPagingDataFlow = getChat.pinned()
+            pinnedChatPagingDataFlow = getChat.pinned(),
+            messagePagingDataFlow = flow { emit(PagingData.empty()) }
         )
     }
 
@@ -227,6 +231,13 @@ class MessagePageViewModel @Inject constructor(
                     }
                     state
                 }
+            }
+
+            is MessagePageEvent.LoadMessage -> {
+                return state.copy(
+                    currentChat = event.chat,
+                    messagePagingDataFlow = getMessage(event.chat.subChatIds).cachedIn(viewModelScope)
+                )
             }
         }
     }
