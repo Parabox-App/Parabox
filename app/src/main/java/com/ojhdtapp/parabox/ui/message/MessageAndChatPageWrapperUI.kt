@@ -62,7 +62,12 @@ fun MessageAndChatPageWrapperUI(
             windowSize = windowSize
         )
         AnimatedVisibility(visible = layoutType == MessageLayoutType.SPLIT) {
-            ChatPage()
+            ChatPage(
+                mainNavController = mainNavController,
+                mainSharedViewModel = mainSharedViewModel,
+                layoutType = layoutType,
+                windowSize = windowSize
+            )
         }
     }
 }

@@ -17,6 +17,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.contentDescription
@@ -92,6 +93,90 @@ fun MyModalNavigationDrawer(
                 },
         ) {
             drawerContent()
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
+@Composable
+fun MyModalNavigationDrawerReverse(
+    drawerContent: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    drawerState: MyDrawerState = rememberMyDrawerState(DrawerValue.Closed),
+    gesturesEnabled: Boolean = true,
+    scrimColor: Color = DrawerDefaults.scrimColor,
+    drawerWidth: Dp,
+    content: @Composable () -> Unit
+) {
+    val scope = rememberCoroutineScope()
+    val navigationMenu = "navigation_menu"
+    val minValue = -with(LocalDensity.current) { drawerWidth.toPx() }
+    val maxValue = 0f
+
+    val anchors = mapOf(maxValue to DrawerValue.Closed, minValue to DrawerValue.Open)
+    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    Box(
+        modifier
+            .fillMaxSize()
+            .swipeable(
+                state = drawerState.swipeableState,
+                anchors = anchors,
+                thresholds = { _, _ -> androidx.compose.material.FractionalThreshold(0.5f) },
+                orientation = Orientation.Horizontal,
+                enabled = gesturesEnabled,
+                reverseDirection = isRtl,
+                velocityThreshold = 400.dp,
+                resistance = null
+            )
+    ) {
+        Layout(content = {
+            Box {
+                content()
+            }
+            Scrim(
+                open = drawerState.isOpen,
+                onClose = {
+                    if (
+                        gesturesEnabled) {
+                        scope.launch { drawerState.close() }
+                    }
+                },
+                fraction = {
+                    1f - calculateFraction(minValue, maxValue, drawerState.offset.value)
+                },
+                color = scrimColor
+            )
+            Box(
+                Modifier
+                    .semantics {
+                        paneTitle = navigationMenu
+                        if (drawerState.isOpen) {
+                            dismiss {
+                                scope.launch { drawerState.close() }; true
+                            }
+                        }
+                    },
+            ) {
+                drawerContent()
+            }
+        }){ measurables, constraints ->
+            val contentPlaceable = measurables[0].measure(constraints)
+            val scrimPlaceable = measurables[1].measure(constraints)
+            val drawerPlaceable = measurables[2].measure(constraints)
+            layout(contentPlaceable.width, contentPlaceable.height) {
+                contentPlaceable.placeRelative(
+                    0,
+                    0
+                )
+                scrimPlaceable.placeRelative(
+                    0,
+                    0
+                )
+                drawerPlaceable.placeRelative(
+                    contentPlaceable.width + drawerState.offset.value.roundToInt(),
+                    0
+                )
+            }
         }
     }
 }

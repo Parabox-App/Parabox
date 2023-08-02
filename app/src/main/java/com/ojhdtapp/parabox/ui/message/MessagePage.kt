@@ -524,7 +524,7 @@ fun MessagePage(
                                 modifier = Modifier.padding(bottom = 2.dp),
                                 chatWithLatestMessage = item,
                                 contact = contact,
-                                isEditing = state.currentChat?.chatId == item.chat.chatId,
+                                isEditing = state.currentChat.chat?.chatId == item.chat.chatId,
                                 onClick = {
                                     viewModel.sendEvent(MessagePageEvent.LoadMessage(item.chat))
                                 },

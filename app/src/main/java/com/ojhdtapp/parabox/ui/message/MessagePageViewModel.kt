@@ -235,7 +235,9 @@ class MessagePageViewModel @Inject constructor(
 
             is MessagePageEvent.LoadMessage -> {
                 return state.copy(
-                    currentChat = event.chat,
+                    currentChat = state.currentChat.copy(
+                        chat = event.chat
+                    ),
                     messagePagingDataFlow = getMessage(event.chat.subChatIds).cachedIn(viewModelScope)
                 )
             }
