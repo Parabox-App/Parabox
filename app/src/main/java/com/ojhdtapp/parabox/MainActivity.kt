@@ -42,6 +42,8 @@ import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.mlkit.nl.entityextraction.*
 import com.google.mlkit.nl.smartreply.*
 import com.ojhdtapp.parabox.core.util.*
+import com.ojhdtapp.parabox.core.util.audio.AudioRecorder
+import com.ojhdtapp.parabox.core.util.audio.LocalAudioRecorder
 import com.ojhdtapp.parabox.domain.service.ExtensionService
 import com.ojhdtapp.parabox.domain.service.ExtensionServiceConnection
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
@@ -196,6 +198,7 @@ class MainActivity : AppCompatActivity() {
             val sizeClass = calculateWindowSizeClass(activity = this)
             val devicePosture = devicePostureFlow.collectAsState().value
 
+
 //            val shouldShowNav = menuNavController.appCurrentDestinationAsState().value in listOf(
 //                MessagePageDestination,
 //                FilePageDestination,
@@ -219,7 +222,11 @@ class MainActivity : AppCompatActivity() {
 //                }
 //            }
             AppTheme {
-                CompositionLocalProvider(values = arrayOf(LocalFixedInsets provides fixedInsets)) {
+                CompositionLocalProvider(
+                    values = arrayOf(
+                        LocalFixedInsets provides fixedInsets,
+                        LocalAudioRecorder provides AudioRecorder
+                    )) {
                     DestinationsNavHost(
                         navGraph = NavGraphs.root,
                         engine = mainNavHostEngine,

@@ -1,13 +1,19 @@
 package com.ojhdtapp.parabox.ui.message
 
 import android.content.Context
+import android.content.Intent
+import android.util.Log
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
+import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.Resource
+import com.ojhdtapp.parabox.core.util.buildFileName
 import com.ojhdtapp.parabox.core.util.getDataStoreValue
+import com.ojhdtapp.parabox.core.util.toDateAndTimeString
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.domain.use_case.GetChat
@@ -15,6 +21,17 @@ import com.ojhdtapp.parabox.domain.use_case.GetContact
 import com.ojhdtapp.parabox.domain.use_case.GetMessage
 import com.ojhdtapp.parabox.domain.use_case.UpdateChat
 import com.ojhdtapp.parabox.ui.base.BaseViewModel
+import com.ojhdtapp.parabox.ui.message.chat.AudioRecorderState
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Image
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.QuoteReply
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAudio
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxFile
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxMessageElement
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxPlainText
+import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -25,6 +42,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 import javax.inject.Inject
 
 @HiltViewModel
@@ -34,6 +52,7 @@ class MessagePageViewModel @Inject constructor(
     val getMessage: GetMessage,
     val getContact: GetContact,
     val updateChat: UpdateChat,
+    val fileUtil: FileUtil,
 ) : BaseViewModel<MessagePageState, MessagePageEvent, MessagePageEffect>() {
 
     override fun initialState(): MessagePageState {
@@ -241,6 +260,152 @@ class MessagePageViewModel @Inject constructor(
                     messagePagingDataFlow = getMessage(event.chat.subChatIds).cachedIn(viewModelScope)
                 )
             }
+
+            is MessagePageEvent.OpenEditArea -> {
+                return state.copy(
+                    currentChat = state.currentChat.copy(
+                        editAreaState = state.currentChat.editAreaState.copy(
+                            expanded = event.open
+                        )
+                    )
+                )
+            }
+
+            is MessagePageEvent.UpdateEditAreaInput -> {
+                return state.copy(
+                    currentChat = state.currentChat.copy(
+                        editAreaState = state.currentChat.editAreaState.copy(
+                            input = event.input,
+                            iconShrink = when {
+                                event.input.length > 6 -> true
+                                event.input.isEmpty() -> false
+                                else -> state.currentChat.editAreaState.iconShrink
+                            }
+                        )
+                    )
+                )
+            }
+
+            is MessagePageEvent.UpdateToolbarState -> {
+                return state.copy(
+                    currentChat = state.currentChat.copy(
+                        editAreaState = state.currentChat.editAreaState.copy(
+                            toolbarState = event.state
+                        )
+                    )
+                )
+            }
+
+            is MessagePageEvent.EnableAudioRecorder -> {
+                return state.copy(
+                    currentChat = state.currentChat.copy(
+                        editAreaState = state.currentChat.editAreaState.copy(
+                            enableAudioRecorder = event.enable
+                        )
+                    )
+                )
+            }
+
+            is MessagePageEvent.UpdateAudioRecorderState -> {
+                return state.copy(
+                    currentChat = state.currentChat.copy(
+                        editAreaState = state.currentChat.editAreaState.copy(
+                            audioRecorderState = event.state
+                        )
+                    )
+                )
+            }
+
+            is MessagePageEvent.ExpandImagePreviewerMenu -> {
+                return state.copy(
+                    currentChat = state.currentChat.copy(
+                        imagePreviewerState = state.currentChat.imagePreviewerState.copy(
+                            expandMenu = event.expand
+                        )
+                    )
+                )
+            }
+
+            is MessagePageEvent.ExpandImagePreviewerToolbar -> {
+                return state.copy(
+                    currentChat = state.currentChat.copy(
+                        imagePreviewerState = state.currentChat.imagePreviewerState.copy(
+                            showToolbar = event.expand
+                        )
+                    )
+                )
+            }
+
+            is MessagePageEvent.AddMemeUri -> {
+                val extension = fileUtil.getFileNameExtension(event.imageUri)
+                val path = fileUtil.createPathOnExternalFilesDir(
+                    FileUtil.EXTERNAL_FILES_DIR_MEME,
+                    buildFileName(FileUtil.EXTERNAL_FILES_DIR_MEME, extension ?: FileUtil.DEFAULT_IMAGE_EXTENSION)
+                )
+                if(fileUtil.copyFileToPath(event.imageUri, path)){
+                    event.onSuccess(path)
+                } else {
+                    event.onFailure()
+                }
+                return state
+            }
+
+            is MessagePageEvent.SaveImageToLocal -> {
+//                fileUtil.saveImageToExternalStorage(event.image.resourceInfo.getModel())
+                return state
+            }
+
+            is MessagePageEvent.AddImageUriToChosenList -> {
+                return state.copy(
+                    currentChat = state.currentChat.copy(
+                        editAreaState = state.currentChat.editAreaState.copy(
+                            chosenImageList = state.currentChat.editAreaState.chosenImageList.toMutableList().apply {
+                                add(event.imageUri)
+                            }
+                        ),
+                    )
+                )
+            }
+
+            is MessagePageEvent.ShowVoicePermissionDeniedDialog -> {
+                return state.copy(
+                    currentChat = state.currentChat.copy(
+                        editAreaState = state.currentChat.editAreaState.copy(
+                            showVoicePermissionDeniedDialog = event.open
+                        )
+                    )
+                )
+            }
+
+            is MessagePageEvent.UpdateIconShrink -> {
+                return state.copy(
+                    currentChat = state.currentChat.copy(
+                        editAreaState = state.currentChat.editAreaState.copy(
+                            iconShrink = event.shouldShrink
+                        )
+                    )
+                )
+            }
+
+            is MessagePageEvent.SendMessage -> {
+                viewModelScope.launch {
+                    buildParaboxSendMessage()
+                }
+                return state.copy(
+                    currentChat = state.currentChat.copy(
+                        editAreaState = state.currentChat.editAreaState.copy(
+                            input = "",
+                            chosenImageList = emptyList(),
+                            chosenAudioUri = null,
+                            chosenFileUri = null,
+                            chosenAtId = null,
+                            chosenQuoteReplyMessageId = null,
+                            audioRecorderState = AudioRecorderState.Ready,
+                            iconShrink = false
+                        )
+                    )
+                )
+            }
         }
     }
 
@@ -263,6 +428,23 @@ class MessagePageViewModel @Inject constructor(
                     )
                 }
             }
+        }
+    }
+
+    fun buildParaboxSendMessage(){
+        buildList<ParaboxMessageElement> {
+            if(uiState.value.currentChat.editAreaState.input.isNotEmpty()){
+                add(ParaboxPlainText(uiState.value.currentChat.editAreaState.input))
+            }
+            uiState.value.currentChat.editAreaState.chosenImageList.forEach {
+                add(ParaboxImage(resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(it)))
+            }
+            if(uiState.value.currentChat.editAreaState.chosenAudioUri != null){
+                add(ParaboxAudio(resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(uiState.value.currentChat.editAreaState.chosenAudioUri!!)))
+            }
+//            if(uiState.value.currentChat.editAreaState.chosenFileUri != null){
+//                add(ParaboxFile(uiState.value.currentChat.editAreaState.chosenFileUri!!.toString()))
+//            }
         }
     }
 }
