@@ -15,9 +15,11 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -136,17 +138,23 @@ fun NormalChatPage(
             Scaffold(
                 topBar = {},
             ) { paddingValues ->
-                Column(modifier = Modifier.padding(paddingValues)) {
+                Column() {
                     val messageLazyPagingItems = state.messagePagingDataFlow.collectAsLazyPagingItems()
                     MyImagePreviewer(
                         messageLazyPagingItems = messageLazyPagingItems,
                         state = state.currentChat.imagePreviewerState,
                         onEvent = onEvent
                     )
-                    LazyColumn(modifier = Modifier.weight(1f), ) {
+                    LazyColumn(modifier = Modifier.weight(1f)) {
 
                     }
-                    EditArea(state = state.currentChat.editAreaState, onEvent = onEvent)
+                    EditArea(
+                        modifier = Modifier
+                            .padding(paddingValues)
+                            .background(MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)),
+                        state = state.currentChat.editAreaState,
+                        onEvent = onEvent
+                    )
                 }
             }
         }

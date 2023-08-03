@@ -31,9 +31,11 @@ sealed interface MessagePageEvent : UiEvent {
     data class ExpandImagePreviewerMenu(val expand: Boolean): MessagePageEvent
     data class ExpandImagePreviewerToolbar(val expand: Boolean): MessagePageEvent
     data class AddMemeUri(val imageUri: Uri, val onSuccess: (path: File) -> Unit, val onFailure: () -> Unit): MessagePageEvent
+    data class RemoveMemeUri(val imageUri: Uri, val onSuccess: () -> Unit, val onFailure: () -> Unit): MessagePageEvent
     data class SaveImageToLocal(val image: ParaboxImage,  val onSuccess: (path: File) -> Unit, val onFailure: () -> Unit): MessagePageEvent
     data class AddImageUriToChosenList(val imageUri: Uri): MessagePageEvent
     data class ShowVoicePermissionDeniedDialog(val open: Boolean): MessagePageEvent
     data class UpdateIconShrink(val shouldShrink: Boolean): MessagePageEvent
     object SendMessage: MessagePageEvent
+    data class SendMemeMessage(val imageUri: Uri): MessagePageEvent
 }

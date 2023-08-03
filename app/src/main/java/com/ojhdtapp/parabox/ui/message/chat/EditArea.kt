@@ -82,20 +82,11 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.ojhdtapp.parabox.BuildConfig
 import com.ojhdtapp.parabox.R
-import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.buildFileName
 import com.ojhdtapp.parabox.core.util.launchSetting
-import com.ojhdtapp.parabox.core.util.toDateAndTimeString
-import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.common.clearFocusOnKeyboardDismiss
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageState
-import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Image
-import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
-import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText
-import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.QuoteReply
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import java.io.File
 
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
@@ -108,30 +99,6 @@ fun EditArea(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val keyboardController = LocalSoftwareKeyboardController.current
-    val chooseImageLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(10)) { uris ->
-            if (uris.isNotEmpty()) {
-                uris.forEach {
-                    onEvent(MessagePageEvent.AddImageUriToChosenList(it))
-                }
-            } else {
-                Log.d("PhotoPicker", "No media selected")
-            }
-        }
-    val addMemeLauncher =
-        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetMultipleContents()) { uris ->
-            if (uris.isNotEmpty()) {
-                uris.forEach {
-                    onEvent(MessagePageEvent.AddMemeUri(it, {
-                                                            Log.d("PhotoPicker", "${it.name} saved")
-                    }, {
-                        Log.d("PhotoPicker", "Save failed")
-                    }))
-                }
-            } else {
-                Log.d("PhotoPicker", "No media selected")
-            }
-        }
     var tempCameraUri by remember {
         mutableStateOf<Uri?>(null)
     }
@@ -203,25 +170,32 @@ fun EditArea(
             val isRecording by remember {
                 derivedStateOf { state.audioRecorderState is AudioRecorderState.Ready || state.audioRecorderState is AudioRecorderState.Done }
             }
-            Crossfade(targetState = state.iconShrink, label = "icon_shrink", modifier = Modifier.padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp).animateContentSize()) {
-                if(it){
+            Crossfade(
+                targetState = state.iconShrink,
+                label = "icon_shrink",
+                modifier = Modifier
+                    .padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp)
+                    .animateContentSize()
+            ) {
+                if (it) {
                     IconButton(onClick = { onEvent(MessagePageEvent.UpdateIconShrink(false)) }) {
                         Icon(
                             imageVector = Icons.Outlined.NavigateNext,
                             contentDescription = "expand"
                         )
                     }
-                }else{
+                } else {
                     Row {
                         IconButton(
                             enabled = isRecording,
                             onClick = {
                                 keyboardController?.hide()
-                                if(state.toolbarState == ToolbarState.Tools){
-                                    onEvent(MessagePageEvent.OpenEditArea(!state.expanded))
+                                if (state.toolbarState == ToolbarState.Tools && state.expanded) {
+                                    onEvent(MessagePageEvent.OpenEditArea(false))
                                 } else {
-                                    onEvent(MessagePageEvent.UpdateToolbarState(ToolbarState.Tools))
+                                    onEvent(MessagePageEvent.OpenEditArea(true))
                                 }
+                                onEvent(MessagePageEvent.UpdateToolbarState(ToolbarState.Tools))
                                 onEvent(MessagePageEvent.EnableAudioRecorder(false))
                             }) {
                             Icon(
@@ -233,11 +207,13 @@ fun EditArea(
                             enabled = isRecording,
                             onClick = {
                                 keyboardController?.hide()
-                                if(state.toolbarState == ToolbarState.Emoji){
-                                    onEvent(MessagePageEvent.OpenEditArea(!state.expanded))
+                                if (state.toolbarState == ToolbarState.Emoji && state.expanded) {
+                                    onEvent(MessagePageEvent.OpenEditArea(false))
                                 } else {
-                                    onEvent(MessagePageEvent.UpdateToolbarState(ToolbarState.Emoji))
+                                    onEvent(MessagePageEvent.OpenEditArea(true))
                                 }
+                                onEvent(MessagePageEvent.UpdateToolbarState(ToolbarState.Emoji))
+
                                 onEvent(MessagePageEvent.EnableAudioRecorder(false))
                             }) {
                             Icon(
