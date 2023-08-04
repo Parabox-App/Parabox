@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.ui.message.chat
 
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -121,7 +122,7 @@ fun NormalChatPage(
         }
     }
     DismissibleBottomSheet(sheetContent = {
-        Toolbar(modifier = Modifier.height(160.dp))
+        Toolbar(modifier = Modifier.height(160.dp), state = state.currentChat.editAreaState, onEvent = onEvent)
     }, sheetHeight = 160.dp, sheetState = sheetState) {
         MyModalNavigationDrawerReverse(
             drawerContent = {
@@ -138,6 +139,9 @@ fun NormalChatPage(
             Scaffold(
                 topBar = {},
             ) { paddingValues ->
+                val bottomPadding = animateDpAsState(
+                    targetValue = if(sheetState.isOpen) 0.dp else paddingValues.calculateBottomPadding(), label = "edit_area_bottom_padding"
+                )
                 Column() {
                     val messageLazyPagingItems = state.messagePagingDataFlow.collectAsLazyPagingItems()
                     MyImagePreviewer(
@@ -150,7 +154,7 @@ fun NormalChatPage(
                     }
                     EditArea(
                         modifier = Modifier
-                            .padding(paddingValues)
+                            .padding(bottom = bottomPadding.value)
                             .background(MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)),
                         state = state.currentChat.editAreaState,
                         onEvent = onEvent

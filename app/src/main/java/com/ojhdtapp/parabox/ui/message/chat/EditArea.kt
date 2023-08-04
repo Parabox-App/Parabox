@@ -99,31 +99,6 @@ fun EditArea(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val keyboardController = LocalSoftwareKeyboardController.current
-    var tempCameraUri by remember {
-        mutableStateOf<Uri?>(null)
-    }
-    val cameraSelected = remember {
-        mutableStateListOf<Uri>()
-    }
-    val targetCameraShotUri = remember(cameraSelected.size) {
-        val path = context.getExternalFilesDir("camera")!!
-        val outPutFile = File(path.also {
-            if (!it.exists()) {
-                it.mkdirs()
-            }
-        }, buildFileName("Camera", "jpg"))
-        FileProvider.getUriForFile(
-            context,
-            BuildConfig.APPLICATION_ID + ".provider", outPutFile
-        )
-    }
-    val cameraLauncher =
-        rememberLauncherForActivityResult(contract = ActivityResultContracts.TakePicture()) {
-            if (it) {
-                onEvent(MessagePageEvent.AddImageUriToChosenList(tempCameraUri!!))
-                tempCameraUri = null
-            }
-        }
     val audioPermissionState =
         rememberPermissionState(permission = Manifest.permission.RECORD_AUDIO)
     if (state.showVoicePermissionDeniedDialog) {
@@ -163,10 +138,10 @@ fun EditArea(
         )
     }
     Surface(
-//        shape = (RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)),
+        shape = (RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)),
         tonalElevation = 3.dp
     ) {
-        Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+        Row(modifier = modifier.fillMaxWidth().padding(vertical = 16.dp), verticalAlignment = Alignment.Bottom) {
             val isRecording by remember {
                 derivedStateOf { state.audioRecorderState is AudioRecorderState.Ready || state.audioRecorderState is AudioRecorderState.Done }
             }
@@ -390,7 +365,7 @@ fun EditArea(
                                     TextStyle(color = MaterialTheme.colorScheme.onSurface)
                                 ),
                                 decorationBox = { innerTextField ->
-                                    if (state.input.isEmpty()) {
+                                    if (state.input.text.isEmpty()) {
                                         Text(
                                             text = stringResource(R.string.input_placeholder),
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -404,7 +379,7 @@ fun EditArea(
                             )
                         }
                         AnimatedVisibility(
-                            visible = state.input.isEmpty() && state.chosenImageList.isEmpty(),
+                            visible = state.input.text.isEmpty() && state.chosenImageList.isEmpty(),
                             enter = fadeIn(),
                             exit = fadeOut()
                         ) {
@@ -425,7 +400,7 @@ fun EditArea(
                     }
                 }
             }
-            AnimatedVisibility(visible = ((state.input.isNotEmpty() || state.chosenImageList.isNotEmpty()) && !state.enableAudioRecorder) || (state.audioRecorderState is AudioRecorderState.Done && state.enableAudioRecorder),
+            AnimatedVisibility(visible = ((state.input.text.isNotEmpty() || state.chosenImageList.isNotEmpty()) && !state.enableAudioRecorder) || (state.audioRecorderState is AudioRecorderState.Done && state.enableAudioRecorder),
                 enter = expandHorizontally() { width -> 0 },
                 exit = shrinkHorizontally() { width -> 0 }
             ) {

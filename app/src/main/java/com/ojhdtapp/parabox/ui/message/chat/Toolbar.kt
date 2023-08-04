@@ -1,20 +1,19 @@
 package com.ojhdtapp.parabox.ui.message.chat
 
-import android.content.Intent
+import android.net.Uri
 import android.os.Build
-import android.provider.MediaStore
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedContentTransitionScope
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.animation.with
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -26,8 +25,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -42,8 +39,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.AddAPhoto
-import androidx.compose.material.icons.outlined.AddPhotoAlternate
 import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.Face
 import androidx.compose.material.icons.outlined.FavoriteBorder
@@ -51,8 +46,6 @@ import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.Place
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
@@ -61,6 +54,7 @@ import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -69,18 +63,17 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.getTextAfterSelection
 import androidx.compose.ui.text.input.getTextBeforeSelection
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toFile
+import androidx.core.net.toUri
 import coil.ImageLoader
 import coil.compose.AsyncImage
 import coil.decode.GifDecoder
@@ -89,19 +82,22 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.FileUtil
+import com.ojhdtapp.parabox.core.util.buildFileName
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageState
-import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Image
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalAnimationApi::class)
 @Composable
 fun Toolbar(
     modifier: Modifier = Modifier,
     state: MessagePageState.EditAreaState,
     onEvent: (MessagePageEvent) -> Unit,
-){
+) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val fileUtil = remember {
+        FileUtil(context)
+    }
     val chooseImageLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(10)) { uris ->
             if (uris.isNotEmpty()) {
@@ -113,10 +109,10 @@ fun Toolbar(
             }
         }
     val addMemeLauncher =
-        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetMultipleContents()) { uris ->
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.PickMultipleVisualMedia(10)) { uris ->
             if (uris.isNotEmpty()) {
                 uris.forEach {
-                    onEvent(MessagePageEvent.AddMemeUri(it, {
+                    onEvent(MessagePageEvent.AddMeme(it, {
                         Log.d("PhotoPicker", "${it.name} saved")
                     }, {
                         Log.d("PhotoPicker", "Save failed")
@@ -126,21 +122,42 @@ fun Toolbar(
                 Log.d("PhotoPicker", "No media selected")
             }
         }
+    var tempCameraUri by remember {
+        mutableStateOf<Uri?>(null)
+    }
+    val cameraLauncher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.TakePicture()) {
+            if (it) {
+                onEvent(MessagePageEvent.AddImageUriToChosenList(tempCameraUri!!))
+                tempCameraUri = null
+            }
+        }
+    val filePickerLauncher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.OpenDocument()) {
+            if (it != null) {
+                val size = context.contentResolver.openFileDescriptor(it, "r")?.use {
+                    it.statSize
+                } ?: 0
+                val name = fileUtil.getFileName(it) ?: ""
+                onEvent(MessagePageEvent.SendFileMessage(fileUri = it, size = size, name = name))
+            }
+        }
     AnimatedContent(
+        modifier = modifier.background(MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)),
         targetState = state.toolbarState,
         transitionSpec = {
             if (targetState == ToolbarState.Emoji) {
-                (slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start)) with slideOutOfContainer(
+                (slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start)) togetherWith slideOutOfContainer(
                     AnimatedContentTransitionScope.SlideDirection.Start
                 )
             } else {
-                (slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End) with slideOutOfContainer(
+                (slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End) togetherWith slideOutOfContainer(
                     AnimatedContentTransitionScope.SlideDirection.End
                 ))
             }
         }, label = "toolbar"
     ) {
-        when(it){
+        when (it) {
             ToolbarState.Emoji -> {
                 Row(
                     modifier = Modifier
@@ -221,7 +238,7 @@ fun Toolbar(
                                 contentPadding = PaddingValues(end = 16.dp),
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                if (state.memePathList.isEmpty()) {
+                                if (state.memeList.isEmpty()) {
                                     item {
                                         Column(
                                             modifier = Modifier.fillParentMaxSize(),
@@ -233,14 +250,18 @@ fun Toolbar(
                                                 style = MaterialTheme.typography.labelMedium
                                             )
                                             TextButton(onClick = {
-                                                addMemeLauncher.launch("image/*")
+                                                addMemeLauncher.launch(
+                                                    PickVisualMediaRequest(
+                                                        ActivityResultContracts.PickVisualMedia.ImageOnly
+                                                    )
+                                                )
                                             }) {
                                                 Text(text = stringResource(R.string.add_meme_by_hand))
                                             }
                                         }
                                     }
                                 } else {
-                                    items(items = state.memePathList) {
+                                    items(items = state.memeList) {
                                         Surface(
                                             modifier = Modifier.animateItemPlacement(),
                                             color = MaterialTheme.colorScheme.secondaryContainer,
@@ -299,7 +320,7 @@ fun Toolbar(
                                                             .size(32.dp)
                                                             .padding(4.dp),
                                                         onClick = {
-                                                                  onEvent(MessagePageEvent.RemoveMemeUri(it, {}, {}))
+                                                            onEvent(MessagePageEvent.RemoveMeme(it, {}, {}))
                                                         },
                                                     ) {
                                                         Icon(
@@ -313,7 +334,7 @@ fun Toolbar(
                                         }
                                     }
                                     item {
-                                        if (state.memePathList.isNotEmpty())
+                                        if (state.memeList.isNotEmpty())
                                             Column(
                                                 modifier = Modifier
                                                     .fillMaxHeight()
@@ -324,7 +345,11 @@ fun Toolbar(
                                             ) {
                                                 SmallFloatingActionButton(
                                                     onClick = {
-                                                        addMemeLauncher.launch("image/*")
+                                                        addMemeLauncher.launch(
+                                                            PickVisualMediaRequest(
+                                                                ActivityResultContracts.PickVisualMedia.ImageOnly
+                                                            )
+                                                        )
                                                     },
                                                     shape = CircleShape,
                                                     elevation = FloatingActionButtonDefaults.elevation(
@@ -380,7 +405,7 @@ fun Toolbar(
                                         "\uD83D\uDCA7",
                                         "☔"
                                     )
-                                ) {
+                                ) { emoji ->
                                     Surface(
                                         modifier = Modifier.width(48.dp),
                                         color = Color.Transparent,
@@ -391,32 +416,22 @@ fun Toolbar(
                                             modifier = Modifier
                                                 .fillMaxSize()
                                                 .clickable {
-                                                    val value =
-                                                        textFieldValueState.let { textFieldValue ->
-                                                            textFieldValue
-                                                                .getTextBeforeSelection(
-                                                                    500
-                                                                )
-                                                                .toString()
-                                                                .plus(it)
-                                                                .plus(
-                                                                    textFieldValue.getTextAfterSelection(
-                                                                        500
-                                                                    )
-                                                                )
-                                                                .toString()
-                                                        }
-                                                    textFieldValueState =
-                                                        textFieldValueState.copy(
-                                                            text = value,
-                                                            selection = TextRange(
-                                                                textFieldValueState.selection.end + it.length
+                                                    onEvent(
+                                                        MessagePageEvent.UpdateEditAreaInput(
+                                                            state.input.copy(
+                                                                text = buildString {
+                                                                    append(state.input.getTextBeforeSelection(500))
+                                                                    append(emoji)
+                                                                    append(state.input.getTextAfterSelection(500))
+                                                                },
+                                                                selection = TextRange(state.input.selection.end + emoji.length)
                                                             )
                                                         )
+                                                    )
                                                 },
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            Text(text = it)
+                                            Text(text = emoji)
                                         }
                                     }
                                 }
@@ -425,408 +440,144 @@ fun Toolbar(
                     }
                 }
             }
+
             ToolbarState.Tools -> {
-
-            }
-        }
-        if (true) {
-
-        } else {
-            AnimatedContent(targetState = gallerySelected.isNotEmpty() || cameraSelected.isNotEmpty()) {
-                if (it) {
-                    Row(
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .navigationBarsPadding()
+                        .padding(bottom = 4.dp)
+                ) {
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Surface(
                         modifier = Modifier
-                            .height(height)
-                            .fillMaxWidth()
-                            .navigationBarsPadding()
-                            .padding(bottom = 4.dp)
+                            .padding(horizontal = 2.dp)
+                            .weight(1f),
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        tonalElevation = 3.dp,
+                        shape = RoundedCornerShape(24.dp),
+                        onClick = {
+                            chooseImageLauncher.launch(
+                                PickVisualMediaRequest(
+                                    ActivityResultContracts.PickVisualMedia.ImageOnly
+                                )
+                            )
+                        }
                     ) {
-                        Spacer(modifier = Modifier.width(14.dp))
                         Column(
                             modifier = Modifier
-                                .fillMaxHeight()
-                                .aspectRatio(0.5f)
+                                .fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
-                            Surface(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .padding(
-                                        start = if (cameraAccessible) 0.dp else 2.dp,
-                                        bottom = if (cameraAccessible) 0.dp else 2.dp
-                                    ),
-                                color = MaterialTheme.colorScheme.surface,
-                                tonalElevation = 3.dp,
-                                shape = RoundedCornerShape(16.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .clickable {
-                                            imagePickerLauncher.launch(
-                                                PickVisualMediaRequest(
-                                                    ActivityResultContracts.PickVisualMedia.ImageOnly
-                                                )
-                                            )
-//                                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-//                                                        val maxNumPhotosAndVideos = 10
-//                                                        Intent(MediaStore.ACTION_PICK_IMAGES)
-//                                                            .apply {
-//                                                                type = "image/*"
-//                                                                putExtra(
-//                                                                    MediaStore.EXTRA_PICK_IMAGES_MAX,
-//                                                                    maxNumPhotosAndVideos
-//                                                                )
-//                                                            }
-//                                                            .also {
-//                                                                imagePickerLauncher.launch(it)
-//                                                            }
-//                                                    } else {
-//                                                        imagePickerSLauncher.launch("image/*")
-//                                                    }
-                                        },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    BadgedBox(badge = {
-                                        gallerySelected.size.let {
-                                            if (it > 0) {
-                                                Badge {
-                                                    Text(
-                                                        text = "$it",
-                                                        modifier = Modifier.semantics {
-                                                            contentDescription =
-                                                                "$it selected gallery images"
-                                                        }
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.AddPhotoAlternate,
-                                            contentDescription = "gallery add",
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-                                }
-                            }
+                            Icon(
+                                modifier = Modifier.padding(bottom = 8.dp),
+                                imageVector = Icons.Outlined.Image,
+                                contentDescription = "image",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = stringResource(R.string.gallery),
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        }
+                    }
 
-                            if (cameraAccessible) {
-                                Surface(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .padding(start = 2.dp, top = 2.dp),
-                                    color = MaterialTheme.colorScheme.surface,
-                                    tonalElevation = 3.dp,
-                                    shape = RoundedCornerShape(16.dp)
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .clickable {
-                                                cameraLauncher.launch(
-                                                    targetCameraShotUri
-                                                )
-                                            },
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        BadgedBox(badge = {
-                                            cameraSelected.size.let {
-                                                if (it > 0) {
-                                                    Badge {
-                                                        Text(
-                                                            text = "$it",
-                                                            modifier = Modifier.semantics {
-                                                                contentDescription =
-                                                                    "$it selected camera images"
-                                                            }
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        }) {
-                                            Icon(
-                                                imageVector = Icons.Outlined.AddAPhoto,
-                                                contentDescription = "camera add",
-                                                tint = MaterialTheme.colorScheme.primary
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        LazyRow(
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .weight(1f),
-                            contentPadding = PaddingValues(horizontal = 16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            items(items = gallerySelected, key = { it.toString() }) {
-                                Surface(
-                                    modifier = Modifier.animateItemPlacement(),
-                                    color = MaterialTheme.colorScheme.secondaryContainer,
-                                    tonalElevation = 3.dp,
-                                    shape = RoundedCornerShape(16.dp)
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .padding(3.dp)
-                                            .clickable { }
-                                    ) {
-                                        val imageLoader = ImageLoader.Builder(context)
-                                            .components {
-                                                if (Build.VERSION.SDK_INT >= 28) {
-                                                    add(ImageDecoderDecoder.Factory())
-                                                } else {
-                                                    add(GifDecoder.Factory())
-                                                }
-                                            }
-                                            .build()
-                                        AsyncImage(
-                                            model = ImageRequest.Builder(LocalContext.current)
-                                                .data(it)
-                                                .crossfade(true)
-                                                .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
-                                                .build(),
-                                            imageLoader = imageLoader,
-                                            contentDescription = "gallery",
-                                            contentScale = ContentScale.Crop,
-                                            modifier = Modifier
-                                                .width(144.dp)
-                                                .clip(
-                                                    RoundedCornerShape(13.dp)
-                                                )
-                                        )
-                                        FilledIconButton(
-                                            modifier = Modifier
-                                                .size(32.dp)
-                                                .padding(4.dp)
-                                                .align(Alignment.TopEnd),
-                                            onClick = { gallerySelected.remove(it) },
-//                                                    colors = IconButtonDefaults.iconButtonColors(
-//                                                        contentColor = MaterialTheme.colorScheme.primary
-//                                                    )
-                                        ) {
-                                            Icon(
-                                                modifier = Modifier.size(14.dp),
-                                                imageVector = Icons.Outlined.Clear,
-                                                contentDescription = "delete"
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                            items(items = cameraSelected, key = { it.toString() }) {
-                                Surface(
-                                    modifier = Modifier.animateItemPlacement(),
-                                    color = MaterialTheme.colorScheme.secondaryContainer,
-                                    tonalElevation = 3.dp,
-                                    shape = RoundedCornerShape(16.dp)
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .padding(3.dp)
-                                            .clickable { }) {
-                                        val imageLoader = ImageLoader.Builder(context)
-                                            .components {
-                                                if (Build.VERSION.SDK_INT >= 28) {
-                                                    add(ImageDecoderDecoder.Factory())
-                                                } else {
-                                                    add(GifDecoder.Factory())
-                                                }
-                                            }
-                                            .build()
-                                        AsyncImage(
-                                            model = ImageRequest.Builder(LocalContext.current)
-                                                .data(it)
-                                                .crossfade(true)
-                                                .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
-                                                .build(),
-                                            imageLoader = imageLoader,
-                                            contentDescription = "camera",
-                                            contentScale = ContentScale.Crop,
-                                            modifier = Modifier
-                                                .width(144.dp)
-                                                .clip(
-                                                    RoundedCornerShape(13.dp)
-                                                )
-                                        )
-                                        FilledIconButton(
-                                            modifier = Modifier
-                                                .size(32.dp)
-                                                .padding(4.dp)
-                                                .align(Alignment.TopEnd),
-                                            onClick = { cameraSelected.remove(it) },
-//                                                    colors = IconButtonDefaults.iconButtonColors(
-//                                                        contentColor = MaterialTheme.colorScheme.primary
-//                                                    )
-                                        ) {
-                                            Icon(
-                                                modifier = Modifier.size(14.dp),
-                                                imageVector = Icons.Outlined.Clear,
-                                                contentDescription = "delete"
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    Row(
+                    Surface(
                         modifier = Modifier
-                            .height(height)
-                            .fillMaxWidth()
-                            .navigationBarsPadding()
-                            .padding(start = 14.dp, end = 14.dp, bottom = 4.dp)
+                            .padding(horizontal = 2.dp)
+                            .weight(1f),
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        tonalElevation = 3.dp,
+                        shape = RoundedCornerShape(24.dp),
+                        onClick = {
+                            val fileName =
+                                buildFileName(FileUtil.EXTERNAL_FILES_DIR_CAMERA, FileUtil.DEFAULT_IMAGE_EXTENSION)
+                            val path =
+                                fileUtil.createPathOnExternalFilesDir(FileUtil.EXTERNAL_FILES_DIR_CAMERA, fileName)
+                            tempCameraUri = fileUtil.getUriForFile(path)
+                            cameraLauncher.launch(tempCameraUri)
+                        }
                     ) {
-                        Surface(
+                        Column(
                             modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .padding(horizontal = 2.dp),
-                            color = MaterialTheme.colorScheme.surface,
-                            tonalElevation = 3.dp,
-                            shape = RoundedCornerShape(16.dp)
+                                .fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clickable {
-                                        if (isBottomSheetExpand) {
-                                            imagePickerLauncher.launch(
-                                                PickVisualMediaRequest(
-                                                    ActivityResultContracts.PickVisualMedia.ImageOnly
-                                                )
-                                            )
-//                                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-//                                                        val maxNumPhotosAndVideos = 10
-//                                                        Intent(MediaStore.ACTION_PICK_IMAGES)
-//                                                            .apply {
-//                                                                type = "image/*"
-//                                                                putExtra(
-//                                                                    MediaStore.EXTRA_PICK_IMAGES_MAX,
-//                                                                    maxNumPhotosAndVideos
-//                                                                )
-//                                                            }
-//                                                            .also {
-//                                                                imagePickerLauncher.launch(it)
-//                                                            }
-//                                                    } else {
-//                                                        imagePickerSLauncher.launch("image/*")
-//                                                    }
-                                        }
-                                    },
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Icon(
-                                    modifier = Modifier.padding(bottom = 8.dp),
-                                    imageVector = Icons.Outlined.Image,
-                                    contentDescription = "image",
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    text = stringResource(R.string.gallery),
-                                    style = MaterialTheme.typography.labelLarge
-                                )
-                            }
-                        }
-                        if (cameraAccessible) {
-                            Surface(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxHeight()
-                                    .padding(horizontal = 2.dp),
-                                color = MaterialTheme.colorScheme.surface,
-                                tonalElevation = 3.dp,
-                                shape = RoundedCornerShape(16.dp)
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .clickable {
-                                            if (isBottomSheetExpand) {
-                                                cameraLauncher.launch(targetCameraShotUri)
-                                            }
-                                        },
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    Icon(
-                                        modifier = Modifier.padding(bottom = 8.dp),
-                                        imageVector = Icons.Outlined.PhotoCamera,
-                                        contentDescription = "camera",
-                                        tint = MaterialTheme.colorScheme.primary
-                                    )
-                                    Text(
-                                        text = stringResource(R.string.take_photos),
-                                        style = MaterialTheme.typography.labelLarge
-                                    )
-                                }
-                            }
-                        }
-                        Surface(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .padding(horizontal = 2.dp),
-                            color = MaterialTheme.colorScheme.surface,
-                            tonalElevation = 3.dp,
-                            shape = RoundedCornerShape(16.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clickable {
-                                        if (isBottomSheetExpand) {
-                                            filePickerLauncher.launch(arrayOf("*/*"))
-                                        }
-                                    },
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Icon(
-                                    modifier = Modifier.padding(bottom = 8.dp),
-                                    imageVector = Icons.Outlined.Folder,
-                                    contentDescription = "file",
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    text = stringResource(R.string.file),
-                                    style = MaterialTheme.typography.labelLarge
-                                )
-                            }
-                        }
-                        Surface(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .padding(horizontal = 2.dp),
-                            color = MaterialTheme.colorScheme.surface,
-                            tonalElevation = 3.dp,
-                            shape = RoundedCornerShape(16.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clickable { },
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Icon(
-                                    modifier = Modifier.padding(bottom = 8.dp),
-                                    imageVector = Icons.Outlined.Place,
-                                    contentDescription = "location",
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    text = stringResource(R.string.location),
-                                    style = MaterialTheme.typography.labelLarge
-                                )
-                            }
+                            Icon(
+                                modifier = Modifier.padding(bottom = 8.dp),
+                                imageVector = Icons.Outlined.PhotoCamera,
+                                contentDescription = "camera",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = stringResource(R.string.take_photos),
+                                style = MaterialTheme.typography.labelLarge
+                            )
                         }
                     }
+
+                    Surface(
+                        modifier = Modifier
+                            .padding(horizontal = 2.dp)
+                            .weight(1f),
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        tonalElevation = 3.dp,
+                        shape = RoundedCornerShape(24.dp),
+                        onClick = {
+                            filePickerLauncher.launch(arrayOf("*/*"))
+                        }
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                modifier = Modifier.padding(bottom = 8.dp),
+                                imageVector = Icons.Outlined.Folder,
+                                contentDescription = "file",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = stringResource(R.string.file),
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        }
+                    }
+
+                    Surface(
+                        modifier = Modifier
+                            .padding(horizontal = 2.dp)
+                            .weight(1f),
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        tonalElevation = 3.dp,
+                        shape = RoundedCornerShape(24.dp),
+                        onClick = {
+                        }
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                modifier = Modifier.padding(bottom = 8.dp),
+                                imageVector = Icons.Outlined.Place,
+                                contentDescription = "location",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = stringResource(R.string.location),
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+
                 }
             }
         }

@@ -10,6 +10,8 @@ import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.webkit.MimeTypeMap
+import androidx.core.content.FileProvider
+import com.ojhdtapp.parabox.BuildConfig
 import com.ojhdtapp.parabox.R
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.apache.commons.io.FileUtils
@@ -46,8 +48,8 @@ class FileUtil @Inject constructor(
         }
     }
 
-    fun openInputStream(file: Any): InputStream?{
-        return when(file){
+    fun openInputStream(file: Any): InputStream? {
+        return when (file) {
             is Uri -> context.contentResolver.openInputStream(file)
             is File -> FileUtils.openInputStream(file)
             else -> null
@@ -56,14 +58,20 @@ class FileUtil @Inject constructor(
 
     fun createPathOnExternalFilesDir(root: String, name: String): File {
         val path = File(context.getExternalFilesDir(root), name)
-        if (!path.exists()) {
-            path.mkdirs()
-        }
         return path
     }
 
-    fun copyFileToPath(file: Any, path: File): Boolean{
-        return when(file){
+    fun deleteFileOnExternalFilesDir(root: String, name: String): Boolean {
+        val path = File(context.getExternalFilesDir(root), name)
+        return if (path.exists()) {
+            path.delete()
+        } else {
+            false
+        }
+    }
+
+    fun copyFileToPath(file: Any, path: File): Boolean {
+        return when (file) {
             is Uri -> copyFileToPath(file, path)
             is File -> copyFileToPath(file, path)
             else -> false
@@ -82,7 +90,7 @@ class FileUtil @Inject constructor(
         }
     }
 
-   private fun copyFileToPath(file: File, path: File): Boolean {
+    private fun copyFileToPath(file: File, path: File): Boolean {
         return try {
             FileUtils.copyFile(file, path)
             true
@@ -96,10 +104,10 @@ class FileUtil @Inject constructor(
         return getFileName(file)?.substringBeforeLast('.', "*/*")
     }
 
-    fun saveImageToExternalStorage(file: Any) : Boolean{
+    fun saveImageToExternalStorage(file: Any): Boolean {
         val fileName = getFileName(file)
         val extension = getFileNameExtension(file)
-        if(fileName == null || extension == null) return false
+        if (fileName == null || extension == null) return false
         val resolver = context.contentResolver
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val contentValues = ContentValues().apply {
@@ -131,15 +139,28 @@ class FileUtil @Inject constructor(
             )
             FileUtils.openOutputStream(path).use { output ->
                 openInputStream(file).use { input ->
-                    input?.copyTo(output, DEFAULT_BUFFER_SIZE)?: return false
+                    input?.copyTo(output, DEFAULT_BUFFER_SIZE) ?: return false
                 }
             }
         }
         return true
     }
 
-    companion object{
+    fun getUriForFile(file: File): Uri? {
+        return try {
+            FileProvider.getUriForFile(
+                context,
+                BuildConfig.APPLICATION_ID + ".provider", file
+            )
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    companion object {
         const val EXTERNAL_FILES_DIR_MEME = "meme"
+        const val EXTERNAL_FILES_DIR_CAMERA = "camera"
         const val DEFAULT_IMAGE_EXTENSION = "jpg"
     }
 }

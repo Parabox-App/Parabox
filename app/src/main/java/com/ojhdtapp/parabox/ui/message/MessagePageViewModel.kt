@@ -1,9 +1,9 @@
 package com.ojhdtapp.parabox.ui.message
 
 import android.content.Context
-import android.content.Intent
-import android.util.Log
+import android.net.Uri
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.core.net.toUri
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
@@ -13,7 +13,6 @@ import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.buildFileName
 import com.ojhdtapp.parabox.core.util.getDataStoreValue
-import com.ojhdtapp.parabox.core.util.toDateAndTimeString
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.domain.use_case.GetChat
@@ -22,12 +21,7 @@ import com.ojhdtapp.parabox.domain.use_case.GetMessage
 import com.ojhdtapp.parabox.domain.use_case.UpdateChat
 import com.ojhdtapp.parabox.ui.base.BaseViewModel
 import com.ojhdtapp.parabox.ui.message.chat.AudioRecorderState
-import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Image
-import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
-import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText
-import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.QuoteReply
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAudio
-import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxFile
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxMessageElement
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxPlainText
@@ -42,6 +36,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.apache.commons.io.FileUtils
 import java.io.File
 import javax.inject.Inject
 
@@ -255,7 +250,10 @@ class MessagePageViewModel @Inject constructor(
             is MessagePageEvent.LoadMessage -> {
                 return state.copy(
                     currentChat = state.currentChat.copy(
-                        chat = event.chat
+                        chat = event.chat,
+                        editAreaState = state.currentChat.editAreaState.copy(
+                            memeList = refreshMemeList()
+                        )
                     ),
                     messagePagingDataFlow = getMessage(event.chat.subChatIds).cachedIn(viewModelScope)
                 )
@@ -277,8 +275,8 @@ class MessagePageViewModel @Inject constructor(
                         editAreaState = state.currentChat.editAreaState.copy(
                             input = event.input,
                             iconShrink = when {
-                                event.input.length > 6 -> true
-                                event.input.isEmpty() -> false
+                                event.input.text.length > 6 -> true
+                                event.input.text.isEmpty() -> false
                                 else -> state.currentChat.editAreaState.iconShrink
                             }
                         )
@@ -336,18 +334,40 @@ class MessagePageViewModel @Inject constructor(
                 )
             }
 
-            is MessagePageEvent.AddMemeUri -> {
-                val extension = fileUtil.getFileNameExtension(event.imageUri)
+            is MessagePageEvent.AddMeme -> {
+                val extension = fileUtil.getFileNameExtension(event.meme)
                 val path = fileUtil.createPathOnExternalFilesDir(
                     FileUtil.EXTERNAL_FILES_DIR_MEME,
                     buildFileName(FileUtil.EXTERNAL_FILES_DIR_MEME, extension ?: FileUtil.DEFAULT_IMAGE_EXTENSION)
                 )
-                if(fileUtil.copyFileToPath(event.imageUri, path)){
+                if(fileUtil.copyFileToPath(event.meme, path)){
                     event.onSuccess(path)
                 } else {
                     event.onFailure()
                 }
-                return state
+                return state.copy(
+                    currentChat = state.currentChat.copy(
+                        editAreaState = state.currentChat.editAreaState.copy(
+                            memeList = refreshMemeList()
+                        )
+                    )
+                )
+            }
+
+            is MessagePageEvent.RemoveMeme -> {
+                val fileName = fileUtil.getFileName(event.meme)
+                if(fileName != null && fileUtil.deleteFileOnExternalFilesDir(FileUtil.EXTERNAL_FILES_DIR_MEME, fileName)){
+                    event.onSuccess()
+                } else {
+                    event.onFailure()
+                }
+                return state.copy(
+                    currentChat = state.currentChat.copy(
+                        editAreaState = state.currentChat.editAreaState.copy(
+                            memeList = refreshMemeList()
+                        )
+                    )
+                )
             }
 
             is MessagePageEvent.SaveImageToLocal -> {
@@ -394,10 +414,9 @@ class MessagePageViewModel @Inject constructor(
                 return state.copy(
                     currentChat = state.currentChat.copy(
                         editAreaState = state.currentChat.editAreaState.copy(
-                            input = "",
+                            input = TextFieldValue(""),
                             chosenImageList = emptyList(),
                             chosenAudioUri = null,
-                            chosenFileUri = null,
                             chosenAtId = null,
                             chosenQuoteReplyMessageId = null,
                             audioRecorderState = AudioRecorderState.Ready,
@@ -405,6 +424,14 @@ class MessagePageViewModel @Inject constructor(
                         )
                     )
                 )
+            }
+
+            is MessagePageEvent.SendMemeMessage -> {
+                return state
+            }
+
+            is MessagePageEvent.SendFileMessage -> {
+                return state
             }
         }
     }
@@ -431,10 +458,19 @@ class MessagePageViewModel @Inject constructor(
         }
     }
 
+    fun refreshMemeList(): List<Uri>{
+        return FileUtils.listFiles(
+            context.getExternalFilesDir(FileUtil.EXTERNAL_FILES_DIR_MEME),
+            arrayOf("jpg", "jpeg", "png", "gif"), true
+        ).reversed().map {
+            it.toUri()
+        }
+    }
+
     fun buildParaboxSendMessage(){
         buildList<ParaboxMessageElement> {
-            if(uiState.value.currentChat.editAreaState.input.isNotEmpty()){
-                add(ParaboxPlainText(uiState.value.currentChat.editAreaState.input))
+            if(uiState.value.currentChat.editAreaState.input.text.isNotEmpty()){
+                add(ParaboxPlainText(uiState.value.currentChat.editAreaState.input.text))
             }
             uiState.value.currentChat.editAreaState.chosenImageList.forEach {
                 add(ParaboxImage(resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(it)))
@@ -442,9 +478,6 @@ class MessagePageViewModel @Inject constructor(
             if(uiState.value.currentChat.editAreaState.chosenAudioUri != null){
                 add(ParaboxAudio(resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(uiState.value.currentChat.editAreaState.chosenAudioUri!!)))
             }
-//            if(uiState.value.currentChat.editAreaState.chosenFileUri != null){
-//                add(ParaboxFile(uiState.value.currentChat.editAreaState.chosenFileUri!!.toString()))
-//            }
         }
     }
 }

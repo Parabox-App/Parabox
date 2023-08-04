@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.ui.message
 
 import android.net.Uri
+import androidx.compose.ui.text.input.TextFieldValue
 import com.ojhdtapp.parabox.data.local.entity.ChatTagsUpdate
 import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
@@ -24,18 +25,19 @@ sealed interface MessagePageEvent : UiEvent {
     data class UpdateEditingChatTags(val obj: ChatTagsUpdate?): MessagePageEvent
     data class LoadMessage(val chat: Chat): MessagePageEvent
     data class OpenEditArea(val open: Boolean): MessagePageEvent
-    data class UpdateEditAreaInput(val input: String): MessagePageEvent
+    data class UpdateEditAreaInput(val input: TextFieldValue): MessagePageEvent
     data class UpdateToolbarState(val state: ToolbarState): MessagePageEvent
     data class EnableAudioRecorder(val enable: Boolean): MessagePageEvent
     data class UpdateAudioRecorderState(val state: AudioRecorderState): MessagePageEvent
     data class ExpandImagePreviewerMenu(val expand: Boolean): MessagePageEvent
     data class ExpandImagePreviewerToolbar(val expand: Boolean): MessagePageEvent
-    data class AddMemeUri(val imageUri: Uri, val onSuccess: (path: File) -> Unit, val onFailure: () -> Unit): MessagePageEvent
-    data class RemoveMemeUri(val imageUri: Uri, val onSuccess: () -> Unit, val onFailure: () -> Unit): MessagePageEvent
+    data class AddMeme(val meme: Uri, val onSuccess: (path: File) -> Unit, val onFailure: () -> Unit): MessagePageEvent
+    data class RemoveMeme(val meme: Uri, val onSuccess: () -> Unit, val onFailure: () -> Unit): MessagePageEvent
     data class SaveImageToLocal(val image: ParaboxImage,  val onSuccess: (path: File) -> Unit, val onFailure: () -> Unit): MessagePageEvent
     data class AddImageUriToChosenList(val imageUri: Uri): MessagePageEvent
     data class ShowVoicePermissionDeniedDialog(val open: Boolean): MessagePageEvent
     data class UpdateIconShrink(val shouldShrink: Boolean): MessagePageEvent
     object SendMessage: MessagePageEvent
     data class SendMemeMessage(val imageUri: Uri): MessagePageEvent
+    data class SendFileMessage(val fileUri: Uri, val size: Long, val name: String): MessagePageEvent
 }

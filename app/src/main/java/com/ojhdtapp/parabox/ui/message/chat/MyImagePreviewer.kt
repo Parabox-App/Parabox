@@ -39,6 +39,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.window.PopupProperties
+import androidx.core.net.toFile
 import androidx.paging.compose.LazyPagingItems
 import coil.ImageLoader
 import coil.compose.rememberAsyncImagePainter
@@ -198,7 +199,7 @@ fun MyImagePreviewer(
                                                 // TODO: downloader
                                                 when(image.resourceInfo){
                                                     is ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo -> {
-                                                        onEvent(MessagePageEvent.AddMemeUri((image.resourceInfo as ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo).uri, {}, {}))
+                                                        onEvent(MessagePageEvent.AddMeme((image.resourceInfo as ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo).uri, {}, {}))
                                                     }
                                                     else -> {}
                                                 }

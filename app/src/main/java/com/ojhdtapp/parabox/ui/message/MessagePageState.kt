@@ -1,8 +1,7 @@
 package com.ojhdtapp.parabox.ui.message
 
 import android.net.Uri
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.paging.PagingData
 import com.ojhdtapp.parabox.data.local.entity.ChatTagsUpdate
 import com.ojhdtapp.parabox.domain.model.Chat
@@ -12,8 +11,8 @@ import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.ui.base.UiState
 import com.ojhdtapp.parabox.ui.message.chat.AudioRecorderState
 import com.ojhdtapp.parabox.ui.message.chat.ToolbarState
-import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Image
 import kotlinx.coroutines.flow.Flow
+import java.io.File
 
 data class MessagePageState(
     val chatPagingDataFlow: Flow<PagingData<ChatWithLatestMessage>>,
@@ -40,11 +39,10 @@ data class MessagePageState(
 
     data class EditAreaState(
         val expanded: Boolean = false,
-        val input: String = "",
-        val memePathList: List<Uri> = emptyList(),
+        val input: TextFieldValue = TextFieldValue(""),
+        val memeList: List<Uri> = emptyList(),
         val chosenImageList: List<Uri> = emptyList(),
         val chosenAudioUri: Uri? = null,
-        val chosenFileUri: Uri? = null,
         val chosenAtId: Long? = null,
         val chosenQuoteReplyMessageId: Long? = null,
         val showVoicePermissionDeniedDialog: Boolean = false,
