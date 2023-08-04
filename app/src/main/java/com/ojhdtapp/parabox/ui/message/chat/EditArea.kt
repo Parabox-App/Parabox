@@ -23,6 +23,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -49,6 +50,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldColors
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -65,6 +69,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.onSizeChanged
@@ -141,7 +146,11 @@ fun EditArea(
         shape = (RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)),
         tonalElevation = 3.dp
     ) {
-        Row(modifier = modifier.fillMaxWidth().padding(vertical = 16.dp), verticalAlignment = Alignment.Bottom) {
+        Row(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp), verticalAlignment = Alignment.Bottom
+        ) {
             val isRecording by remember {
                 derivedStateOf { state.audioRecorderState is AudioRecorderState.Ready || state.audioRecorderState is AudioRecorderState.Done }
             }
@@ -201,7 +210,7 @@ fun EditArea(
             }
             AnimatedVisibility(visible = state.audioRecorderState is AudioRecorderState.Done) {
                 Surface(
-                    modifier = Modifier.padding(end = 8.dp, bottom = 4.dp),
+                    modifier = Modifier.padding(end = 8.dp),
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.primaryContainer,
                     onClick = {
@@ -209,7 +218,7 @@ fun EditArea(
                     }
                 ) {
                     Box(
-                        modifier = Modifier.size(48.dp),
+                        modifier = Modifier.size(TextFieldDefaults.MinHeight),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -223,7 +232,7 @@ fun EditArea(
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(end = 16.dp, top = 4.dp, bottom = 4.dp),
+                    .padding(end = 16.dp),
                 contentAlignment = Alignment.CenterEnd
             ) {
                 androidx.compose.animation.AnimatedVisibility(
@@ -248,7 +257,7 @@ fun EditArea(
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
-                                    .height(48.dp)
+                                    .height(TextFieldDefaults.MinHeight)
                                     .pointerInteropFilter {
                                         val press =
                                             PressInteraction.Press(Offset(it.x, it.y))
@@ -335,68 +344,89 @@ fun EditArea(
                 Surface(
                     shape = RoundedCornerShape(24.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant,
-                    onClick = {
-                        onEvent(MessagePageEvent.OpenEditArea(false))
-                    }
                 ) {
-                    Row(
-                        horizontalArrangement = Arrangement.Start,
-                        verticalAlignment = Alignment.CenterVertically
+                    Column(
+                        modifier = Modifier.animateContentSize()
                     ) {
-                        Box(
+                        // here!!!
+                        TextField(
                             modifier = Modifier
-                                .defaultMinSize(minHeight = 48.dp)
-                                .weight(1f)
-                                .padding(12.dp),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            val focusRequester = remember { FocusRequester() }
-                            BasicTextField(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .focusRequester(focusRequester)
-                                    .clearFocusOnKeyboardDismiss(),
-                                value = state.input,
-                                onValueChange = {
-                                    onEvent(MessagePageEvent.UpdateEditAreaInput(it))
-                                },
-                                enabled = !state.enableAudioRecorder,
-                                textStyle = MaterialTheme.typography.bodyLarge.merge(
-                                    TextStyle(color = MaterialTheme.colorScheme.onSurface)
-                                ),
-                                decorationBox = { innerTextField ->
-                                    if (state.input.text.isEmpty()) {
-                                        Text(
-                                            text = stringResource(R.string.input_placeholder),
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Clip,
+                                .fillMaxWidth()
+                                .clearFocusOnKeyboardDismiss(),
+                            value = state.input,
+                            onValueChange = {
+                                onEvent(MessagePageEvent.OpenEditArea(false))
+                                onEvent(MessagePageEvent.UpdateEditAreaInput(it))
+                            },
+                            enabled = !state.enableAudioRecorder,
+                            textStyle = MaterialTheme.typography.bodyLarge.merge(
+                                TextStyle(color = MaterialTheme.colorScheme.onSurface)
+                            ),
+                            placeholder = {
+                                Text(
+                                    text = stringResource(R.string.input_placeholder),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Clip,
+                                )
+                            },
+                            shape = RoundedCornerShape(24.dp),
+                            trailingIcon = {
+                                androidx.compose.animation.AnimatedVisibility(
+                                    visible = state.input.text.isEmpty() && state.chosenImageList.isEmpty(),
+                                    enter = fadeIn(),
+                                    exit = fadeOut()
+                                ) {
+                                    IconButton(onClick = {
+                                        if (audioPermissionState.status.isGranted) {
+                                            onEvent(MessagePageEvent.EnableAudioRecorder(true))
+                                            onEvent(MessagePageEvent.OpenEditArea(false))
+                                        } else {
+                                            onEvent(MessagePageEvent.ShowVoicePermissionDeniedDialog(true))
+                                        }
+                                    }) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.KeyboardVoice,
+                                            contentDescription = "voice"
                                         )
                                     }
-                                    innerTextField()
-                                },
-                                cursorBrush = SolidColor(value = MaterialTheme.colorScheme.primary)
-                            )
-                        }
-                        AnimatedVisibility(
-                            visible = state.input.text.isEmpty() && state.chosenImageList.isEmpty(),
-                            enter = fadeIn(),
-                            exit = fadeOut()
-                        ) {
-                            IconButton(onClick = {
-                                if (audioPermissionState.status.isGranted) {
-                                    onEvent(MessagePageEvent.EnableAudioRecorder(true))
-                                    onEvent(MessagePageEvent.OpenEditArea(false))
-                                } else {
-                                    onEvent(MessagePageEvent.ShowVoicePermissionDeniedDialog(true))
                                 }
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Outlined.KeyboardVoice,
-                                    contentDescription = "voice"
-                                )
-                            }
-                        }
+                            },
+                            colors = TextFieldDefaults.colors(
+                                cursorColor = MaterialTheme.colorScheme.primary,
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
+                            )
+                        )
+//                            val focusRequester = remember { FocusRequester() }
+//                            BasicTextField(
+//                                modifier = Modifier
+//                                    .fillMaxWidth()
+//                                    .focusRequester(focusRequester)
+//                                    .clearFocusOnKeyboardDismiss(),
+//                                value = state.input,
+//                                onValueChange = {
+//                                    onEvent(MessagePageEvent.UpdateEditAreaInput(it))
+//                                },
+//                                enabled = !state.enableAudioRecorder,
+//                                textStyle = MaterialTheme.typography.bodyLarge.merge(
+//                                    TextStyle(color = MaterialTheme.colorScheme.onSurface)
+//                                ),
+//                                decorationBox = { innerTextField ->
+//                                    if (state.input.text.isEmpty()) {
+//                                        Text(
+//                                            text = stringResource(R.string.input_placeholder),
+//                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+//                                            maxLines = 1,
+//                                            overflow = TextOverflow.Clip,
+//                                        )
+//                                    }
+//                                    innerTextField()
+//                                },
+//                                cursorBrush = SolidColor(value = MaterialTheme.colorScheme.primary)
+//                            )
                     }
                 }
             }
@@ -415,7 +445,7 @@ fun EditArea(
                     ),
                     shape = CircleShape
                 ) {
-                    Icon(imageVector = Icons.Outlined.Send, contentDescription = "send")
+                    Icon(imageVector = Icons.Outlined.Send, contentDescription = "send", tint = MaterialTheme.colorScheme.primary)
                 }
             }
         }

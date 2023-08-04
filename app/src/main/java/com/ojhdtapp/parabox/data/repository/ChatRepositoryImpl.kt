@@ -30,37 +30,44 @@ class ChatRepositoryImpl @Inject constructor(
         val queryStr = buildString {
             append("SELECT chat_entity.* FROM chat_entity ")
             append("INNER JOIN message_entity ON chat_entity.latestMessageId = message_entity.messageId ")
-            if(filter.isNotEmpty()){
+            if (filter.isNotEmpty()) {
                 append("WHERE ")
             }
             filter.forEachIndexed { index, chatFilter ->
-                if(index > 0){
+                if (index > 0) {
                     append("AND ")
                 }
-                when(chatFilter){
+                when (chatFilter) {
                     is ChatFilter.Normal -> {
                         append("NOT isHidden AND NOT isArchived ")
                     }
+
                     is ChatFilter.Archived -> {
                         append("isArchived ")
                     }
+
                     is ChatFilter.Group -> {
                         append("type = 0 ")
                     }
+
                     is ChatFilter.Hidden -> {
                         append("isHidden ")
                     }
+
                     is ChatFilter.Private -> {
                         append("type = 1 ")
                     }
+
                     is ChatFilter.Read -> {
                         append("unreadMessageNum = 0 ")
                     }
+
                     is ChatFilter.Unread -> {
                         append("unreadMessageNum > 0 ")
                     }
+
                     is ChatFilter.Tag -> {
-                        append("tag LIKE '%${chatFilter.label}%' ")
+                        append("tags LIKE '%${chatFilter.label}%' ")
                     }
                 }
             }
@@ -78,7 +85,7 @@ class ChatRepositoryImpl @Inject constructor(
         return flow {
             emit(Resource.Loading())
             try {
-                if(limit == 0) {
+                if (limit == 0) {
                     emit(
                         Resource.Success(db.chatDao.queryChat(query).map { it.toChat() })
                     )
