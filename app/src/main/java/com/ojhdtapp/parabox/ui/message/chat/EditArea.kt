@@ -385,8 +385,8 @@ fun EditArea(
                         ) {
                             IconButton(onClick = {
                                 if (audioPermissionState.status.isGranted) {
-                                    onEvent(MessagePageEvent.OpenEditArea(false))
                                     onEvent(MessagePageEvent.EnableAudioRecorder(true))
+                                    onEvent(MessagePageEvent.OpenEditArea(false))
                                 } else {
                                     onEvent(MessagePageEvent.ShowVoicePermissionDeniedDialog(true))
                                 }

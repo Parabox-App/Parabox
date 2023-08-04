@@ -2,6 +2,7 @@ package com.ojhdtapp.parabox.data.repository
 
 import android.content.Context
 import androidx.paging.PagingSource
+import androidx.sqlite.db.SimpleSQLiteQuery
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.ChatArchiveUpdate
@@ -13,6 +14,7 @@ import com.ojhdtapp.parabox.data.local.entity.ChatTagsUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatUnreadMessagesNumUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatWithLatestMessageEntity
 import com.ojhdtapp.parabox.domain.model.Chat
+import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.domain.repository.ChatRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -24,8 +26,48 @@ class ChatRepositoryImpl @Inject constructor(
     val context: Context,
     private val db: AppDatabase,
 ) : ChatRepository {
-    override fun getChatPagingSource(): PagingSource<Int, ChatWithLatestMessageEntity> {
-        return db.chatDao.getChatPagingSource()
+    override fun getChatPagingSource(filter: List<ChatFilter>): PagingSource<Int, ChatWithLatestMessageEntity> {
+        val queryStr = buildString {
+            append("SELECT chat_entity.* FROM chat_entity ")
+            append("INNER JOIN message_entity ON chat_entity.latestMessageId = message_entity.messageId ")
+            if(filter.isNotEmpty()){
+                append("WHERE ")
+            }
+            filter.forEachIndexed { index, chatFilter ->
+                if(index > 0){
+                    append("AND ")
+                }
+                when(chatFilter){
+                    is ChatFilter.Normal -> {
+                        append("NOT isHidden AND NOT isArchived ")
+                    }
+                    is ChatFilter.Archived -> {
+                        append("isArchived ")
+                    }
+                    is ChatFilter.Group -> {
+                        append("type = 0 ")
+                    }
+                    is ChatFilter.Hidden -> {
+                        append("isHidden ")
+                    }
+                    is ChatFilter.Private -> {
+                        append("type = 1 ")
+                    }
+                    is ChatFilter.Read -> {
+                        append("unreadMessageNum = 0 ")
+                    }
+                    is ChatFilter.Unread -> {
+                        append("unreadMessageNum > 0 ")
+                    }
+                    is ChatFilter.Tag -> {
+                        append("tag LIKE '%${chatFilter.label}%' ")
+                    }
+                }
+            }
+            append("ORDER BY message_entity.timestamp DESC")
+        }
+        val query = SimpleSQLiteQuery(queryStr)
+        return db.chatDao.getChatPagingSource(query)
     }
 
     override fun getPinnedChatPagingSource(): PagingSource<Int, ChatEntity> {

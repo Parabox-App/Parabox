@@ -5,10 +5,11 @@ import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.local.entity.ChatEntity
 import com.ojhdtapp.parabox.data.local.entity.ChatWithLatestMessageEntity
 import com.ojhdtapp.parabox.domain.model.Chat
+import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import kotlinx.coroutines.flow.Flow
 
 interface ChatRepository {
-    fun getChatPagingSource() : PagingSource<Int, ChatWithLatestMessageEntity>
+    fun getChatPagingSource(filter: List<ChatFilter>) : PagingSource<Int, ChatWithLatestMessageEntity>
     fun getPinnedChatPagingSource() : PagingSource<Int, ChatEntity>
     fun queryChatWithLimit(query: String, limit: Int): Flow<Resource<List<Chat>>>
     fun getChatWithLimit(limit: Int): Flow<Resource<List<Chat>>>

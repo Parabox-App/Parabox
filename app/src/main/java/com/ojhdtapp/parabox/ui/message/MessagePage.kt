@@ -525,6 +525,7 @@ fun MessagePage(
                                 chatWithLatestMessage = item,
                                 contact = contact,
                                 isEditing = state.currentChat.chat?.chatId == item.chat.chatId,
+                                isExpanded = layoutType == MessageLayoutType.SPLIT,
                                 onClick = {
                                     viewModel.sendEvent(MessagePageEvent.LoadMessage(item.chat))
                                 },

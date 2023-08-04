@@ -23,14 +23,15 @@ class GetChat @Inject constructor(
                 enablePlaceholders = true,
                 initialLoadSize = 20
             )
-        ) { repository.getChatPagingSource() }
+        ) { repository.getChatPagingSource(filter) }
             .flow
             .map { pagingData ->
                 pagingData.map {
                     it.toChatWithLatestMessage()
-                }.filter { chatWithMsg ->
-                    filter.isEmpty() || filter.all { it.check(chatWithMsg.chat) }
                 }
+//                    .filter { chatWithMsg ->
+//                    filter.isEmpty() || filter.all { it.check(chatWithMsg.chat) }
+//                }
             }
     }
 

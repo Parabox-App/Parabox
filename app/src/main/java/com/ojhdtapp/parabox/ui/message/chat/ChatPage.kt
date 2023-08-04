@@ -121,26 +121,33 @@ fun NormalChatPage(
             sheetState.close()
         }
     }
-    DismissibleBottomSheet(sheetContent = {
-        Toolbar(modifier = Modifier.height(160.dp), state = state.currentChat.editAreaState, onEvent = onEvent)
-    }, sheetHeight = 160.dp, sheetState = sheetState) {
-        MyModalNavigationDrawerReverse(
-            drawerContent = {
-                Box(
-                    modifier = Modifier
-                        .width(360.dp)
-                        .fillMaxHeight()
-                        .background(Color.Green)
-                )
+    MyModalNavigationDrawerReverse(
+        drawerContent = {
+            Box(
+                modifier = Modifier
+                    .width(360.dp)
+                    .fillMaxHeight()
+                    .background(Color.Green)
+            )
+        },
+        gesturesEnabled = state.currentChat.chat != null
+                && state.currentChat.editAreaState.audioRecorderState !is AudioRecorderState.Recording,
+        drawerState = drawerState,
+        drawerWidth = 360.dp,
+    ) {
+        DismissibleBottomSheet(
+            sheetContent = {
+                Toolbar(modifier = Modifier.height(160.dp), state = state.currentChat.editAreaState, onEvent = onEvent)
             },
-            drawerState = drawerState,
-            drawerWidth = 360.dp,
+            gesturesEnabled = state.currentChat.editAreaState.audioRecorderState !is AudioRecorderState.Recording,
+            sheetHeight = 160.dp, sheetState = sheetState
         ) {
             Scaffold(
                 topBar = {},
             ) { paddingValues ->
                 val bottomPadding = animateDpAsState(
-                    targetValue = if(sheetState.isOpen) 0.dp else paddingValues.calculateBottomPadding(), label = "edit_area_bottom_padding"
+                    targetValue = if (sheetState.isOpen) 0.dp else paddingValues.calculateBottomPadding(),
+                    label = "edit_area_bottom_padding"
                 )
                 Column() {
                     val messageLazyPagingItems = state.messagePagingDataFlow.collectAsLazyPagingItems()

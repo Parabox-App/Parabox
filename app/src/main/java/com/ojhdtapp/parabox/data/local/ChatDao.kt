@@ -5,8 +5,10 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.RawQuery
 import androidx.room.Transaction
 import androidx.room.Update
+import androidx.sqlite.db.SupportSQLiteQuery
 import com.ojhdtapp.parabox.data.local.entity.ChatArchiveUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatEntity
 import com.ojhdtapp.parabox.data.local.entity.ChatHideUpdate
@@ -15,6 +17,7 @@ import com.ojhdtapp.parabox.data.local.entity.ChatLatestMessageIdUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatPinUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatTagsUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatUnreadMessagesNumUpdate
+import com.ojhdtapp.parabox.data.local.entity.MessageEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -29,6 +32,10 @@ interface ChatDao {
                 "ORDER BY message_entity.timestamp DESC"
     )
     fun getChatPagingSource(): PagingSource<Int, ChatWithLatestMessageEntity>
+
+    @RawQuery(observedEntities = [ChatEntity::class, MessageEntity::class])
+    fun getChatPagingSource(query: SupportSQLiteQuery): PagingSource<Int, ChatWithLatestMessageEntity>
+
 
     @Transaction
     @Query(
