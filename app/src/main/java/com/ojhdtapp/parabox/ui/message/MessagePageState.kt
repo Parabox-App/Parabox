@@ -12,12 +12,11 @@ import com.ojhdtapp.parabox.ui.base.UiState
 import com.ojhdtapp.parabox.ui.message.chat.AudioRecorderState
 import com.ojhdtapp.parabox.ui.message.chat.ToolbarState
 import kotlinx.coroutines.flow.Flow
-import java.io.File
 
 data class MessagePageState(
     val chatPagingDataFlow: Flow<PagingData<ChatWithLatestMessage>>,
     val pinnedChatPagingDataFlow: Flow<PagingData<Chat>>,
-    val currentChat: CurrentChat = CurrentChat(),
+    val chatDetail: ChatDetail = ChatDetail(),
     val messagePagingDataFlow: Flow<PagingData<Message>>,
     val enabledChatFilterList: List<ChatFilter> = emptyList(),
     val selectedChatFilterLists: List<ChatFilter> = listOf(ChatFilter.Normal),
@@ -29,7 +28,7 @@ data class MessagePageState(
         val enableSwipeToDismiss: Boolean = false
     )
 
-    data class CurrentChat(
+    data class ChatDetail(
         val chat: Chat? = null,
         val selectedMessageList: List<Message> = emptyList(),
         val openDeleteMessageConfirmDialog: Boolean = false,

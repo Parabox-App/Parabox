@@ -52,7 +52,7 @@ import androidx.navigation.NavHostController
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.ojhdtapp.parabox.NavGraphs
-import com.ojhdtapp.parabox.core.util.LoadState
+import com.ojhdtapp.parabox.destinations.MessageAndChatPageWrapperUIDestination
 import com.ojhdtapp.parabox.ui.MainSharedEffect
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
@@ -65,13 +65,17 @@ import com.ojhdtapp.parabox.ui.common.MyDismissibleNavigationDrawer
 import com.ojhdtapp.parabox.ui.common.MyDrawerState
 import com.ojhdtapp.parabox.ui.common.MyModalNavigationDrawer
 import com.ojhdtapp.parabox.ui.common.rememberMyDrawerState
+import com.ojhdtapp.parabox.ui.message.MessageAndChatPageWrapperUI
+import com.ojhdtapp.parabox.ui.message.MessageLayoutType
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
 import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
+import com.ramcosta.composedestinations.manualcomposablecalls.composable
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.dependency
+import com.ramcosta.composedestinations.navigation.navigate
 import com.ramcosta.composedestinations.spec.NavHostEngine
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -114,6 +118,7 @@ fun MenuPage(
     }
     MenuNavigationWrapperUI(
         navController = navController,
+        navigator = navigator,
         mainSharedViewModel = mainSharedViewModel,
         navigationType = navigationType,
         windowSize = windowSize,
@@ -128,6 +133,7 @@ fun MenuPage(
 @Composable
 private fun MenuNavigationWrapperUI(
     navController: NavController,
+    navigator: DestinationsNavigator,
     mainSharedViewModel: MainSharedViewModel,
     navigationType: MenuNavigationType,
     windowSize: WindowSizeClass,
@@ -244,9 +250,9 @@ private fun MenuNavigationWrapperUI(
     }
     LaunchedEffect(Unit) {
         if (navigationType == MenuNavigationType.PERMANENT_NAVIGATION_DRAWER) {
-            mainSharedViewModel.sendEvent(MainSharedEvent.OpenDrawer(open = true, snap = true))
+            mainSharedViewModel.sendEvent(MainSharedEvent.OpenDrawer(open = false, snap = false))
         }
-        if (navigationType == MenuNavigationType.NAVIGATION_RAIL){
+        if (navigationType == MenuNavigationType.NAVIGATION_RAIL) {
             mainSharedViewModel.sendEvent(MainSharedEvent.OpenDrawer(open = false, snap = false))
         }
         if (navigationType == MenuNavigationType.BOTTOM_NAVIGATION) {
@@ -396,14 +402,26 @@ fun MenuAppContent(
 //                            }
 //                            hiltViewModel<MessagePageViewModel>(parentEntry)
 //                        }
-                    dependency(mainSharedViewModel)
+                    dependency(mainSharedState)
                     dependency(listState)
                     dependency(drawerState)
                     dependency(bottomSheetState)
                     dependency(windowSize)
                     dependency(devicePosture)
+                    dependency(mainSharedViewModel::sendEvent)
                 }
             ) {
+//                composable(MessageAndChatPageWrapperUIDestination){
+//                    MessageAndChatPageWrapperUI(
+//                        mainNavController = navController,
+//                        mainSharedState = mainSharedState,
+//                        listState = listState,
+//                        navigationType = navigationType,
+//                        windowSize = windowSize,
+//                        devicePosture = devicePosture,
+//                        onMainSharedEvent = mainSharedViewModel::sendEvent
+//                    )
+//                }
             }
 
             AnimatedVisibility(

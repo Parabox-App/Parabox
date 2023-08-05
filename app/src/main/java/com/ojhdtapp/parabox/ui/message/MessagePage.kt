@@ -2,7 +2,6 @@
 
 package com.ojhdtapp.parabox.ui.message
 
-import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
@@ -37,7 +36,6 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.navigation.NavController
@@ -55,7 +53,7 @@ import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.core.util.AvatarUtil.getCircledBitmap
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.ui.MainSharedEvent
-import com.ojhdtapp.parabox.ui.MainSharedViewModel
+import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.common.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -69,20 +67,19 @@ import me.saket.swipe.rememberSwipeableActionsState
 @Composable
 fun MessagePage(
     modifier: Modifier = Modifier,
+    viewModel: MessagePageViewModel,
     mainNavController: NavController,
-    mainSharedViewModel: MainSharedViewModel,
+    mainSharedState: MainSharedState,
     listState: LazyListState,
     layoutType: MessageLayoutType,
     windowSize: WindowSizeClass,
-    ) {
-
-    val viewModel = hiltViewModel<MessagePageViewModel>()
+    onMainSharedEvent: (MainSharedEvent) -> Unit,
+) {
     val coroutineScope = rememberCoroutineScope()
     val lifecycleOwner = LocalLifecycleOwner.current
     val hapticFeedback = LocalHapticFeedback.current
     val snackBarHostState = remember { SnackbarHostState() }
     val state by viewModel.uiState.collectAsState()
-    val sharedState by mainSharedViewModel.uiState.collectAsState()
     var snackBarJob: Job? by remember {
         mutableStateOf(null)
     }
@@ -116,7 +113,7 @@ fun MessagePage(
     val chatLazyPagingData = state.chatPagingDataFlow.collectAsLazyPagingItems()
     val pinnedChatLazyPagingData = state.pinnedChatPagingDataFlow.collectAsLazyPagingItems()
     val searchBarPadding by animateDpAsState(
-        targetValue = if (sharedState.search.isActive) 0.dp else 16.dp,
+        targetValue = if (mainSharedState.search.isActive) 0.dp else 16.dp,
         animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
     )
     val shouldHoverSearchBar by remember {
@@ -129,7 +126,7 @@ fun MessagePage(
     )
     val menuState by remember {
         derivedStateOf {
-            sharedState.search.isActive
+            mainSharedState.search.isActive
         }
     }
     val menuPainter = rememberAnimatedVectorPainter(
@@ -174,34 +171,34 @@ fun MessagePage(
         modifier = modifier,
         snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
         topBar = {
-            if(windowSize.widthSizeClass == WindowWidthSizeClass.Expanded){
+            if (windowSize.widthSizeClass == WindowWidthSizeClass.Expanded) {
                 DockedSearchBar(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
                         .statusBarsPadding()
                         .clearFocusOnKeyboardDismiss(),
-                    query = sharedState.search.query,
+                    query = mainSharedState.search.query,
                     onQueryChange = {
-                        mainSharedViewModel.sendEvent(
+                        onMainSharedEvent(
                             MainSharedEvent.QueryInput(it)
                         )
                     },
                     onSearch = {
                         if (it.isNotBlank()) {
-                            mainSharedViewModel.sendEvent(MainSharedEvent.SearchConfirm(it))
+                            onMainSharedEvent(MainSharedEvent.SearchConfirm(it))
                         }
                     },
-                    active = sharedState.search.isActive,
-                    onActiveChange = { mainSharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(it)) },
+                    active = mainSharedState.search.isActive,
+                    onActiveChange = { onMainSharedEvent(MainSharedEvent.TriggerSearchBar(it)) },
                     placeholder = { Text(text = "搜索 Parabox") },
                     leadingIcon = {
                         IconButton(
                             onClick = {
-                                if (sharedState.search.isActive) {
-                                    mainSharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(false))
+                                if (mainSharedState.search.isActive) {
+                                    onMainSharedEvent(MainSharedEvent.TriggerSearchBar(false))
                                 } else {
-                                    mainSharedViewModel.sendEvent(MainSharedEvent.OpenDrawer(!sharedState.openDrawer.open))
+                                    onMainSharedEvent(MainSharedEvent.OpenDrawer(!mainSharedState.openDrawer.open))
                                 }
                             }
                         ) {
@@ -213,16 +210,16 @@ fun MessagePage(
                     },
                     trailingIcon = {
                         AnimatedVisibility(
-                            visible = !sharedState.search.isActive,
+                            visible = !mainSharedState.search.isActive,
                             enter = fadeIn(),
                             exit = fadeOut()
                         ) {
                             IconButton(
-                                onClick = { mainSharedViewModel.sendEvent(MainSharedEvent.SearchAvatarClicked) },
+                                onClick = { onMainSharedEvent(MainSharedEvent.SearchAvatarClicked) },
                             ) {
                                 SubcomposeAsyncImage(
                                     modifier = Modifier.size(30.dp),
-                                    model = sharedState.datastore.localAvatarUri,
+                                    model = mainSharedState.datastore.localAvatarUri,
                                     contentDescription = "user_avatar",
                                 ) {
                                     val state = painter.state
@@ -230,7 +227,7 @@ fun MessagePage(
                                         AvatarUtil.createNamedAvatarBm(
                                             backgroundColor = MaterialTheme.colorScheme.primary.toArgb(),
                                             textColor = MaterialTheme.colorScheme.onPrimary.toArgb(),
-                                            name = sharedState.datastore.localName
+                                            name = mainSharedState.datastore.localName
                                         ).getCircledBitmap().asImageBitmap()
                                     if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
                                         Image(
@@ -254,7 +251,7 @@ fun MessagePage(
                     shadowElevation = searchBarShadowElevation,
                     colors = SearchBarDefaults.colors(dividerColor = Color.Transparent)
                 ) {
-                    SearchContent(state = sharedState, onEvent = mainSharedViewModel::sendEvent)
+                    SearchContent(state = mainSharedState, onEvent = onMainSharedEvent)
                 }
             } else {
                 SearchBar(
@@ -262,27 +259,27 @@ fun MessagePage(
                         .fillMaxWidth()
                         .padding(horizontal = searchBarPadding)
                         .clearFocusOnKeyboardDismiss(),
-                    query = sharedState.search.query,
+                    query = mainSharedState.search.query,
                     onQueryChange = {
-                        mainSharedViewModel.sendEvent(
+                        onMainSharedEvent(
                             MainSharedEvent.QueryInput(it)
                         )
                     },
                     onSearch = {
                         if (it.isNotBlank()) {
-                            mainSharedViewModel.sendEvent(MainSharedEvent.SearchConfirm(it))
+                            onMainSharedEvent(MainSharedEvent.SearchConfirm(it))
                         }
                     },
-                    active = sharedState.search.isActive,
-                    onActiveChange = { mainSharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(it)) },
+                    active = mainSharedState.search.isActive,
+                    onActiveChange = { onMainSharedEvent(MainSharedEvent.TriggerSearchBar(it)) },
                     placeholder = { Text(text = "搜索 Parabox") },
                     leadingIcon = {
                         IconButton(
                             onClick = {
-                                if (sharedState.search.isActive) {
-                                    mainSharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(false))
+                                if (mainSharedState.search.isActive) {
+                                    onMainSharedEvent(MainSharedEvent.TriggerSearchBar(false))
                                 } else {
-                                    mainSharedViewModel.sendEvent(MainSharedEvent.OpenDrawer(!sharedState.openDrawer.open))
+                                    onMainSharedEvent(MainSharedEvent.OpenDrawer(!mainSharedState.openDrawer.open))
                                 }
                             }
                         ) {
@@ -294,16 +291,16 @@ fun MessagePage(
                     },
                     trailingIcon = {
                         AnimatedVisibility(
-                            visible = !sharedState.search.isActive,
+                            visible = !mainSharedState.search.isActive,
                             enter = fadeIn(),
                             exit = fadeOut()
                         ) {
                             IconButton(
-                                onClick = { mainSharedViewModel.sendEvent(MainSharedEvent.SearchAvatarClicked) },
+                                onClick = { onMainSharedEvent(MainSharedEvent.SearchAvatarClicked) },
                             ) {
                                 SubcomposeAsyncImage(
                                     modifier = Modifier.size(30.dp),
-                                    model = sharedState.datastore.localAvatarUri,
+                                    model = mainSharedState.datastore.localAvatarUri,
                                     contentDescription = "user_avatar",
                                 ) {
                                     val state = painter.state
@@ -311,7 +308,7 @@ fun MessagePage(
                                         AvatarUtil.createNamedAvatarBm(
                                             backgroundColor = MaterialTheme.colorScheme.primary.toArgb(),
                                             textColor = MaterialTheme.colorScheme.onPrimary.toArgb(),
-                                            name = sharedState.datastore.localName
+                                            name = mainSharedState.datastore.localName
                                         ).getCircledBitmap().asImageBitmap()
                                     if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
                                         Image(
@@ -335,7 +332,7 @@ fun MessagePage(
                     shadowElevation = searchBarShadowElevation,
                     colors = SearchBarDefaults.colors(dividerColor = Color.Transparent)
                 ) {
-                    SearchContent(state = sharedState, onEvent = mainSharedViewModel::sendEvent)
+                    SearchContent(state = mainSharedState, onEvent = onMainSharedEvent)
                 }
             }
 
@@ -473,10 +470,12 @@ fun MessagePage(
                 val isFirst = index == 0
                 val isLast = index == chatLazyPagingData.itemCount - 1
                 val topRadius by animateDpAsState(
-                    targetValue = if (isFirst && swipeableActionsState.offset.value == 0f) 24.dp else 3.dp, label = "top_radius"
+                    targetValue = if (isFirst && swipeableActionsState.offset.value == 0f) 24.dp else 3.dp,
+                    label = "top_radius"
                 )
                 val bottomRadius by animateDpAsState(
-                    targetValue = if (isLast && swipeableActionsState.offset.value == 0f) 24.dp else 3.dp, label = "bottom_radius"
+                    targetValue = if (isLast && swipeableActionsState.offset.value == 0f) 24.dp else 3.dp,
+                    label = "bottom_radius"
                 )
 
                 Box(
@@ -512,10 +511,22 @@ fun MessagePage(
                             startToEndIcon = Icons.Outlined.Archive,
                             endToStartIcon = Icons.Outlined.Done,
                             onDismissedToEnd = {
-                                viewModel.sendEvent(MessagePageEvent.UpdateChatArchive(item.chat.chatId, true, item.chat.isArchived))
+                                viewModel.sendEvent(
+                                    MessagePageEvent.UpdateChatArchive(
+                                        item.chat.chatId,
+                                        true,
+                                        item.chat.isArchived
+                                    )
+                                )
                             },
                             onDismissedToStart = {
-                                viewModel.sendEvent(MessagePageEvent.UpdateChatHide(item.chat.chatId, true, item.chat.isHidden))
+                                viewModel.sendEvent(
+                                    MessagePageEvent.UpdateChatHide(
+                                        item.chat.chatId,
+                                        true,
+                                        item.chat.isHidden
+                                    )
+                                )
                             }) {
                             val contact by viewModel.getLatestMessageSenderWithCache(
                                 chatLazyPagingData[index]?.message?.senderId
@@ -524,7 +535,7 @@ fun MessagePage(
                                 modifier = Modifier.padding(bottom = 2.dp),
                                 chatWithLatestMessage = item,
                                 contact = contact,
-                                isEditing = state.currentChat.chat?.chatId == item.chat.chatId,
+                                isEditing = state.chatDetail.chat?.chatId == item.chat.chatId,
                                 isExpanded = layoutType == MessageLayoutType.SPLIT,
                                 onClick = {
                                     viewModel.sendEvent(MessagePageEvent.LoadMessage(item.chat))

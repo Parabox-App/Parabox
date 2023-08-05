@@ -247,7 +247,8 @@ fun Toolbar(
                                         ) {
                                             Text(
                                                 text = stringResource(R.string.no_meme),
-                                                style = MaterialTheme.typography.labelMedium
+                                                style = MaterialTheme.typography.labelMedium,
+                                                color = MaterialTheme.colorScheme.onSurface,
                                             )
                                             TextButton(onClick = {
                                                 addMemeLauncher.launch(

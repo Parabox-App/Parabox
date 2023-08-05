@@ -37,7 +37,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.apache.commons.io.FileUtils
-import java.io.File
 import javax.inject.Inject
 
 @HiltViewModel
@@ -248,21 +247,29 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.LoadMessage -> {
-                return state.copy(
-                    currentChat = state.currentChat.copy(
-                        chat = event.chat,
-                        editAreaState = state.currentChat.editAreaState.copy(
-                            memeList = refreshMemeList()
-                        )
-                    ),
-                    messagePagingDataFlow = getMessage(event.chat.subChatIds).cachedIn(viewModelScope)
-                )
+                if(event.chat == null){
+                    return state.copy(
+                        chatDetail = MessagePageState.ChatDetail(),
+                        messagePagingDataFlow = flow { emit(PagingData.empty()) }
+                    )
+                } else {
+                    return state.copy(
+                        chatDetail = state.chatDetail.copy(
+                            chat = event.chat,
+                            editAreaState = state.chatDetail.editAreaState.copy(
+                                memeList = refreshMemeList()
+                            )
+                        ),
+                        messagePagingDataFlow = getMessage(event.chat.subChatIds).cachedIn(viewModelScope)
+                    )
+                }
+
             }
 
             is MessagePageEvent.OpenEditArea -> {
                 return state.copy(
-                    currentChat = state.currentChat.copy(
-                        editAreaState = state.currentChat.editAreaState.copy(
+                    chatDetail = state.chatDetail.copy(
+                        editAreaState = state.chatDetail.editAreaState.copy(
                             expanded = event.open
                         )
                     )
@@ -271,13 +278,13 @@ class MessagePageViewModel @Inject constructor(
 
             is MessagePageEvent.UpdateEditAreaInput -> {
                 return state.copy(
-                    currentChat = state.currentChat.copy(
-                        editAreaState = state.currentChat.editAreaState.copy(
+                    chatDetail = state.chatDetail.copy(
+                        editAreaState = state.chatDetail.editAreaState.copy(
                             input = event.input,
                             iconShrink = when {
                                 event.input.text.length > 6 -> true
                                 event.input.text.isEmpty() -> false
-                                else -> state.currentChat.editAreaState.iconShrink
+                                else -> state.chatDetail.editAreaState.iconShrink
                             }
                         )
                     )
@@ -286,8 +293,8 @@ class MessagePageViewModel @Inject constructor(
 
             is MessagePageEvent.UpdateToolbarState -> {
                 return state.copy(
-                    currentChat = state.currentChat.copy(
-                        editAreaState = state.currentChat.editAreaState.copy(
+                    chatDetail = state.chatDetail.copy(
+                        editAreaState = state.chatDetail.editAreaState.copy(
                             toolbarState = event.state
                         )
                     )
@@ -296,8 +303,8 @@ class MessagePageViewModel @Inject constructor(
 
             is MessagePageEvent.EnableAudioRecorder -> {
                 return state.copy(
-                    currentChat = state.currentChat.copy(
-                        editAreaState = state.currentChat.editAreaState.copy(
+                    chatDetail = state.chatDetail.copy(
+                        editAreaState = state.chatDetail.editAreaState.copy(
                             enableAudioRecorder = event.enable
                         )
                     )
@@ -306,8 +313,8 @@ class MessagePageViewModel @Inject constructor(
 
             is MessagePageEvent.UpdateAudioRecorderState -> {
                 return state.copy(
-                    currentChat = state.currentChat.copy(
-                        editAreaState = state.currentChat.editAreaState.copy(
+                    chatDetail = state.chatDetail.copy(
+                        editAreaState = state.chatDetail.editAreaState.copy(
                             audioRecorderState = event.state
                         )
                     )
@@ -316,8 +323,8 @@ class MessagePageViewModel @Inject constructor(
 
             is MessagePageEvent.ExpandImagePreviewerMenu -> {
                 return state.copy(
-                    currentChat = state.currentChat.copy(
-                        imagePreviewerState = state.currentChat.imagePreviewerState.copy(
+                    chatDetail = state.chatDetail.copy(
+                        imagePreviewerState = state.chatDetail.imagePreviewerState.copy(
                             expandMenu = event.expand
                         )
                     )
@@ -326,8 +333,8 @@ class MessagePageViewModel @Inject constructor(
 
             is MessagePageEvent.ExpandImagePreviewerToolbar -> {
                 return state.copy(
-                    currentChat = state.currentChat.copy(
-                        imagePreviewerState = state.currentChat.imagePreviewerState.copy(
+                    chatDetail = state.chatDetail.copy(
+                        imagePreviewerState = state.chatDetail.imagePreviewerState.copy(
                             showToolbar = event.expand
                         )
                     )
@@ -346,8 +353,8 @@ class MessagePageViewModel @Inject constructor(
                     event.onFailure()
                 }
                 return state.copy(
-                    currentChat = state.currentChat.copy(
-                        editAreaState = state.currentChat.editAreaState.copy(
+                    chatDetail = state.chatDetail.copy(
+                        editAreaState = state.chatDetail.editAreaState.copy(
                             memeList = refreshMemeList()
                         )
                     )
@@ -362,8 +369,8 @@ class MessagePageViewModel @Inject constructor(
                     event.onFailure()
                 }
                 return state.copy(
-                    currentChat = state.currentChat.copy(
-                        editAreaState = state.currentChat.editAreaState.copy(
+                    chatDetail = state.chatDetail.copy(
+                        editAreaState = state.chatDetail.editAreaState.copy(
                             memeList = refreshMemeList()
                         )
                     )
@@ -377,9 +384,9 @@ class MessagePageViewModel @Inject constructor(
 
             is MessagePageEvent.AddImageUriToChosenList -> {
                 return state.copy(
-                    currentChat = state.currentChat.copy(
-                        editAreaState = state.currentChat.editAreaState.copy(
-                            chosenImageList = state.currentChat.editAreaState.chosenImageList.toMutableList().apply {
+                    chatDetail = state.chatDetail.copy(
+                        editAreaState = state.chatDetail.editAreaState.copy(
+                            chosenImageList = state.chatDetail.editAreaState.chosenImageList.toMutableList().apply {
                                 add(event.imageUri)
                             }
                         ),
@@ -389,8 +396,8 @@ class MessagePageViewModel @Inject constructor(
 
             is MessagePageEvent.ShowVoicePermissionDeniedDialog -> {
                 return state.copy(
-                    currentChat = state.currentChat.copy(
-                        editAreaState = state.currentChat.editAreaState.copy(
+                    chatDetail = state.chatDetail.copy(
+                        editAreaState = state.chatDetail.editAreaState.copy(
                             showVoicePermissionDeniedDialog = event.open
                         )
                     )
@@ -399,8 +406,8 @@ class MessagePageViewModel @Inject constructor(
 
             is MessagePageEvent.UpdateIconShrink -> {
                 return state.copy(
-                    currentChat = state.currentChat.copy(
-                        editAreaState = state.currentChat.editAreaState.copy(
+                    chatDetail = state.chatDetail.copy(
+                        editAreaState = state.chatDetail.editAreaState.copy(
                             iconShrink = event.shouldShrink
                         )
                     )
@@ -412,8 +419,8 @@ class MessagePageViewModel @Inject constructor(
                     buildParaboxSendMessage()
                 }
                 return state.copy(
-                    currentChat = state.currentChat.copy(
-                        editAreaState = state.currentChat.editAreaState.copy(
+                    chatDetail = state.chatDetail.copy(
+                        editAreaState = state.chatDetail.editAreaState.copy(
                             input = TextFieldValue(""),
                             chosenImageList = emptyList(),
                             chosenAudioUri = null,
@@ -469,14 +476,14 @@ class MessagePageViewModel @Inject constructor(
 
     fun buildParaboxSendMessage(){
         buildList<ParaboxMessageElement> {
-            if(uiState.value.currentChat.editAreaState.input.text.isNotEmpty()){
-                add(ParaboxPlainText(uiState.value.currentChat.editAreaState.input.text))
+            if(uiState.value.chatDetail.editAreaState.input.text.isNotEmpty()){
+                add(ParaboxPlainText(uiState.value.chatDetail.editAreaState.input.text))
             }
-            uiState.value.currentChat.editAreaState.chosenImageList.forEach {
+            uiState.value.chatDetail.editAreaState.chosenImageList.forEach {
                 add(ParaboxImage(resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(it)))
             }
-            if(uiState.value.currentChat.editAreaState.chosenAudioUri != null){
-                add(ParaboxAudio(resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(uiState.value.currentChat.editAreaState.chosenAudioUri!!)))
+            if(uiState.value.chatDetail.editAreaState.chosenAudioUri != null){
+                add(ParaboxAudio(resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(uiState.value.chatDetail.editAreaState.chosenAudioUri!!)))
             }
         }
     }

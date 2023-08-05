@@ -371,27 +371,6 @@ fun EditArea(
                                 )
                             },
                             shape = RoundedCornerShape(24.dp),
-                            trailingIcon = {
-                                androidx.compose.animation.AnimatedVisibility(
-                                    visible = state.input.text.isEmpty() && state.chosenImageList.isEmpty(),
-                                    enter = fadeIn(),
-                                    exit = fadeOut()
-                                ) {
-                                    IconButton(onClick = {
-                                        if (audioPermissionState.status.isGranted) {
-                                            onEvent(MessagePageEvent.EnableAudioRecorder(true))
-                                            onEvent(MessagePageEvent.OpenEditArea(false))
-                                        } else {
-                                            onEvent(MessagePageEvent.ShowVoicePermissionDeniedDialog(true))
-                                        }
-                                    }) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.KeyboardVoice,
-                                            contentDescription = "voice"
-                                        )
-                                    }
-                                }
-                            },
                             colors = TextFieldDefaults.colors(
                                 cursorColor = MaterialTheme.colorScheme.primary,
                                 focusedContainerColor = Color.Transparent,
@@ -400,33 +379,25 @@ fun EditArea(
                                 unfocusedIndicatorColor = Color.Transparent
                             )
                         )
-//                            val focusRequester = remember { FocusRequester() }
-//                            BasicTextField(
-//                                modifier = Modifier
-//                                    .fillMaxWidth()
-//                                    .focusRequester(focusRequester)
-//                                    .clearFocusOnKeyboardDismiss(),
-//                                value = state.input,
-//                                onValueChange = {
-//                                    onEvent(MessagePageEvent.UpdateEditAreaInput(it))
-//                                },
-//                                enabled = !state.enableAudioRecorder,
-//                                textStyle = MaterialTheme.typography.bodyLarge.merge(
-//                                    TextStyle(color = MaterialTheme.colorScheme.onSurface)
-//                                ),
-//                                decorationBox = { innerTextField ->
-//                                    if (state.input.text.isEmpty()) {
-//                                        Text(
-//                                            text = stringResource(R.string.input_placeholder),
-//                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-//                                            maxLines = 1,
-//                                            overflow = TextOverflow.Clip,
-//                                        )
-//                                    }
-//                                    innerTextField()
-//                                },
-//                                cursorBrush = SolidColor(value = MaterialTheme.colorScheme.primary)
-//                            )
+                    }
+                }
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = state.input.text.isEmpty() && state.chosenImageList.isEmpty(),
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    IconButton(onClick = {
+                        if (audioPermissionState.status.isGranted) {
+                            onEvent(MessagePageEvent.EnableAudioRecorder(true))
+                            onEvent(MessagePageEvent.OpenEditArea(false))
+                        } else {
+                            onEvent(MessagePageEvent.ShowVoicePermissionDeniedDialog(true))
+                        }
+                    }) {
+                        Icon(
+                            imageVector = Icons.Outlined.KeyboardVoice,
+                            contentDescription = "voice"
+                        )
                     }
                 }
             }

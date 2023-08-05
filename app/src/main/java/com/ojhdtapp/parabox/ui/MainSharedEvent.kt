@@ -7,10 +7,12 @@ import com.ojhdtapp.parabox.domain.model.RecentQuery
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.domain.model.filter.MessageFilter
 import com.ojhdtapp.parabox.ui.base.UiEvent
+import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 
 sealed interface MainSharedEvent : UiEvent {
 
     object UpdateDataStore : MainSharedEvent
+
     data class QueryInput(val input: String) : MainSharedEvent
     data class SearchConfirm(val input: String) : MainSharedEvent
     object GetRecentQuery : MainSharedEvent

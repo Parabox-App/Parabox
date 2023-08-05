@@ -23,7 +23,7 @@ sealed interface MessagePageEvent : UiEvent {
     data class UpdateChatArchive(val chatId: Long, val value: Boolean, val oldValue: Boolean) : MessagePageEvent
     data class UpdateChatTags(val chatId: Long, val value: List<String>, val oldValue: List<String>) : MessagePageEvent
     data class UpdateEditingChatTags(val obj: ChatTagsUpdate?): MessagePageEvent
-    data class LoadMessage(val chat: Chat): MessagePageEvent
+    data class LoadMessage(val chat: Chat?): MessagePageEvent
     data class OpenEditArea(val open: Boolean): MessagePageEvent
     data class UpdateEditAreaInput(val input: TextFieldValue): MessagePageEvent
     data class UpdateToolbarState(val state: ToolbarState): MessagePageEvent

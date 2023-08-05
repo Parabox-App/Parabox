@@ -44,6 +44,7 @@ import com.google.mlkit.nl.smartreply.*
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.core.util.audio.AudioRecorder
 import com.ojhdtapp.parabox.core.util.audio.LocalAudioRecorder
+import com.ojhdtapp.parabox.destinations.MenuPageDestination
 import com.ojhdtapp.parabox.domain.service.ExtensionService
 import com.ojhdtapp.parabox.domain.service.ExtensionServiceConnection
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
@@ -53,10 +54,12 @@ import com.ojhdtapp.parabox.ui.common.FixedInsets
 import com.ojhdtapp.parabox.ui.common.LocalFixedInsets
 import com.ojhdtapp.parabox.ui.common.isBookPosture
 import com.ojhdtapp.parabox.ui.common.isSeparating
+import com.ojhdtapp.parabox.ui.menu.MenuPage
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.animations.defaults.NestedNavGraphDefaultAnimations
 import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
 import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
+import com.ramcosta.composedestinations.manualcomposablecalls.composable
 import com.ramcosta.composedestinations.navigation.dependency
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
@@ -235,7 +238,8 @@ class MainActivity : AppCompatActivity() {
                             dependency(mainSharedViewModel)
                             dependency(devicePosture)
                             dependency(sizeClass)
-                        })
+                        }){
+                    }
 
                 }
 
