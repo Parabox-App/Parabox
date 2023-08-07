@@ -2,5 +2,11 @@
 
   <string name="path_drawer" translatable="false">M 3,6 L 3,8 L 21,8 L 21,6 L 3,6 z M 3,11 L 3,13 L 21,13 L 21, 12 L 21,11 L 3,11 z M 3,18 L 3,16 L 21,16 L 21,18 L 3,18 z</string>
   <string name="path_arrow" translatable="false">M 12, 4 L 10.59,5.41 L 16.17,11 L 18.99,11 L 12,4 z M 4, 11 L 4, 13 L 18.99, 13 L 20, 12 L 18.99, 11 L 4, 11 z M 12,20 L 10.59, 18.59 L 16.17, 13 L 18.99, 13 L 12, 20z</string>
-
+  <string name="path_tick" translatable="false">M4.8,13.4 L9,17.6 M10.4,16.2 L19.6,7</string>
+<!--  <string name="path_cross_line" translatable="false">M17.6,17.6 L12,12z M12,12 L6.4,6.4z M17.6,6.4 L6.4,17.6z</string>-->
+  <string name="path_arrow_line" translatable="false">M12.5,19.5 L4.3,11.3z M4.3,12.7 L12.5,4.5z M20,12 L6.4,12z</string>
+<!--  <string name="path_arrow_line" translatable="false">M6.4,6.4 L12,12z M12,12 L17.6,17.6z M6.4,17.6 L17.6,6.4z</string>-->
+  <string name="path_cross_line" translatable="false">M12,20 L12,12z M12,12 L12,4z M20,12 L4,12z</string>
+  <integer name="stroke_width">2</integer>
+  <integer name="crosstick_duration">300</integer>
 </resources>
