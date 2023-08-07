@@ -50,49 +50,47 @@ fun MenuNavigationBar(
 ) {
 //    val currentDestination: Destination =
 //        navController.appCurrentDestinationAsState().value ?: NavGraphs.root.startAppDestination
-    Column {
-        NavigationBar(
-            modifier = modifier,
-            containerColor = MaterialTheme.colorScheme.surface,
-        ) {
-            MenuNavigationDestination.values().forEach { destination ->
-                val isCurrentDestOnBackStack =
-                    navController.appCurrentDestinationAsState().value in destination.graph.destinations
+    NavigationBar(
+        modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) {
+        MenuNavigationDestination.values().forEach { destination ->
+            val isCurrentDestOnBackStack =
+                navController.appCurrentDestinationAsState().value in destination.graph.destinations
 //                val isCurrentDestOnBackStack = navController.isRouteOnBackStack(destination.graph)
-                NavigationBarItem(
-                    selected = isCurrentDestOnBackStack,
-                    onClick = {
-                        if (isCurrentDestOnBackStack) onEvent(MenuPageEvent.OnBarItemClicked)
-                        else {
-                            navController.navigate(destination.graph.route) {
-                                popUpTo(NavGraphs.menu.route) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
+            NavigationBarItem(
+                selected = isCurrentDestOnBackStack,
+                onClick = {
+                    if (isCurrentDestOnBackStack) onEvent(MenuPageEvent.OnBarItemClicked)
+                    else {
+                        navController.navigate(destination.graph.route) {
+                            popUpTo(NavGraphs.menu.route) {
+                                saveState = true
                             }
+                            launchSingleTop = true
+                            restoreState = true
                         }
-                    },
-                    icon = {
-                        BadgedBox(badge = {
-                            if (destination.graph == NavGraphs.message && mainSharedState.datastore.messageBadgeNum != 0)
-                                Badge { Text(text = "${mainSharedState.datastore.messageBadgeNum}") }
-                        }) {
-                            Icon(
-                                imageVector = if (isCurrentDestOnBackStack) destination.iconSelected else destination.icon,
-                                contentDescription = stringResource(id = destination.labelResId)
-                            )
-                        }
-                    },
-                    label = {
-                        Text(
-                            text = stringResource(id = destination.labelResId),
-                            style = MaterialTheme.typography.labelLarge
+                    }
+                },
+                icon = {
+                    BadgedBox(badge = {
+                        if (destination.graph == NavGraphs.message && mainSharedState.datastore.messageBadgeNum != 0)
+                            Badge { Text(text = "${mainSharedState.datastore.messageBadgeNum}") }
+                    }) {
+                        Icon(
+                            imageVector = if (isCurrentDestOnBackStack) destination.iconSelected else destination.icon,
+                            contentDescription = stringResource(id = destination.labelResId)
                         )
-                    },
-                    alwaysShowLabel = false
-                )
-            }
+                    }
+                },
+                label = {
+                    Text(
+                        text = stringResource(id = destination.labelResId),
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                },
+                alwaysShowLabel = false
+            )
         }
     }
 }

@@ -382,16 +382,14 @@ fun MenuAppContent(
                 onEvent = onEvent
             )
         }
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .background(MaterialTheme.colorScheme.inverseOnSurface),
-            verticalArrangement = Arrangement.Bottom
-        ) {
+        Box(modifier = Modifier
+            .weight(1f)
+            .background(MaterialTheme.colorScheme.inverseOnSurface),
+            contentAlignment = Alignment.BottomCenter
+            ){
             DestinationsNavHost(
                 modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
+                    .fillMaxSize(),
                 navGraph = NavGraphs.menu,
                 engine = menuNavHostEngine,
                 navController = menuNavController,
@@ -423,15 +421,10 @@ fun MenuAppContent(
 //                    )
 //                }
             }
-
-            AnimatedVisibility(
+            androidx.compose.animation.AnimatedVisibility(
                 visible = navigationType == MenuNavigationType.BOTTOM_NAVIGATION && mainSharedState.showNavigationBar,
-                enter = expandVertically(
-                    expandFrom = Alignment.Top
-                ),
-                exit = shrinkVertically(
-                    shrinkTowards = Alignment.Top
-                )
+                enter = slideInVertically { it },
+                exit = slideOutVertically { it }
             ) {
                 MenuNavigationBar(
                     mainSharedState = mainSharedState,

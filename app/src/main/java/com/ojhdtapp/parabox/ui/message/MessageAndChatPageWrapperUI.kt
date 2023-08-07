@@ -4,6 +4,11 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.width
@@ -79,13 +84,15 @@ fun MessageAndChatPageWrapperUI(
     AnimatedContent(targetState = state.chatDetail.chat, label = "",
         transitionSpec = {
             if (layoutType == MessageLayoutType.NORMAL && targetState != null) {
-                (slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start)) togetherWith slideOutOfContainer(
-                    AnimatedContentTransitionScope.SlideDirection.Start
-                )
+                (fadeIn(tween(300)) + scaleIn(tween(300), 0.9f)) togetherWith (fadeOut(tween(300)) + scaleOut(tween(300), 1.1f))
+//                (slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start)) togetherWith slideOutOfContainer(
+//                    AnimatedContentTransitionScope.SlideDirection.Start
+//                )
             } else {
-                (slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End) togetherWith slideOutOfContainer(
-                    AnimatedContentTransitionScope.SlideDirection.End
-                ))
+                (fadeIn(tween(300)) + scaleIn(tween(300), 1.1f)) togetherWith (fadeOut(tween(300)) + scaleOut(tween(300), 0.9f))
+//                (slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End) togetherWith slideOutOfContainer(
+//                    AnimatedContentTransitionScope.SlideDirection.End
+//                ))
             }
         }) {
         if (layoutType == MessageLayoutType.NORMAL && it != null) {

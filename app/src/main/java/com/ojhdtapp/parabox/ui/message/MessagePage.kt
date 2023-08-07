@@ -550,6 +550,11 @@ fun MessagePage(
 
                 }
             }
+            item {
+                if(layoutType == MessageLayoutType.NORMAL){
+                    Spacer(modifier = Modifier.height(80.dp))
+                }
+            }
         }
     }
 }
