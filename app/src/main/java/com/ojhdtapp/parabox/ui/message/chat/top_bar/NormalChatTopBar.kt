@@ -31,16 +31,10 @@ fun NormalChatTopBar(
     chatDetail: MessagePageState.ChatDetail,
     onEvent: (MessagePageEvent) -> Unit,
 ) {
-    val messageSelected by remember {
-        derivedStateOf {
-            chatDetail.selectedMessageList.isNotEmpty()
-        }
-    }
-
     val navigationIconPainter = rememberAnimatedVectorPainter(
         animatedImageVector = AnimatedImageVector.animatedVectorResource(
             id = R.drawable.avd_pathmorph_drawer_arrow_to_cross
-        ), atEnd = messageSelected
+        ), atEnd = chatDetail.selectedMessageList.isNotEmpty()
     )
 
     TopAppBar(modifier = modifier,
@@ -51,7 +45,7 @@ fun NormalChatTopBar(
         },
         navigationIcon = {
             IconButton(onClick = {
-                if (messageSelected) {
+                if (chatDetail.selectedMessageList.isNotEmpty()) {
                     onEvent(MessagePageEvent.ClearSelectedMessage)
                 } else {
                     onEvent(MessagePageEvent.LoadMessage(null))

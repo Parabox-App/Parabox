@@ -125,14 +125,9 @@ fun MessagePage(
     val searchBarShadowElevation by animateDpAsState(
         targetValue = if (shouldHoverSearchBar) 3.dp else 0.dp
     )
-    val menuState by remember {
-        derivedStateOf {
-            mainSharedState.search.isActive
-        }
-    }
     val menuPainter = rememberAnimatedVectorPainter(
         animatedImageVector = AnimatedImageVector.animatedVectorResource(id = R.drawable.avd_pathmorph_drawer_hamburger_to_arrow),
-        atEnd = menuState
+        atEnd = mainSharedState.search.isActive
     )
 
     EnabledChatFilterDialog(
