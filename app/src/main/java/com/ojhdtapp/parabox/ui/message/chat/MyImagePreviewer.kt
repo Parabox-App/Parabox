@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -47,7 +48,6 @@ import coil.decode.GifDecoder
 import coil.decode.ImageDecoderDecoder
 import coil.request.ImageRequest
 import coil.size.Size
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.ui.common.RoundedCornerCascadeDropdownMenu
@@ -88,21 +88,6 @@ fun MyImagePreviewer(
     }
     val imageViewerState = rememberPreviewerState(enableVerticalDrag = true) {
         previewImageList[it].first
-    }
-    val useDarkIcons = isSystemInDarkTheme()
-    val systemUiController = rememberSystemUiController()
-    LaunchedEffect(imageViewerState.visible) {
-        if (imageViewerState.visible) {
-            systemUiController.setSystemBarsColor(
-                color = Color.Transparent,
-                darkIcons = false
-            )
-        } else {
-            systemUiController.setSystemBarsColor(
-                color = Color.Transparent,
-                darkIcons = !useDarkIcons
-            )
-        }
     }
     BackHandler(enabled = imageViewerState.visible) {
         coroutineScope.launch {

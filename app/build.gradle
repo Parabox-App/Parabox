@@ -112,7 +112,7 @@ dependencies {
     implementation "androidx.compose.material:material:$compose_version"
     implementation "androidx.compose.ui:ui-tooling-preview:$compose_version"
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.2'
-    implementation 'androidx.activity:activity-compose:1.7.2'
+    implementation 'androidx.activity:activity-compose:1.8.0-rc01'
     implementation 'androidx.test:core-ktx:1.5.0'
     implementation project(':Parabox Development Kit')
     testImplementation 'junit:junit:4.13.2'
@@ -200,7 +200,7 @@ dependencies {
 
     // Paging
     def paging_version = "3.2.1"
-    implementation "androidx.paging:paging-runtime:$paging_version"
+    implementation "androidx.paging:paging-runtime-ktx:$paging_version"
     implementation "androidx.paging:paging-compose:$paging_version"
 
     // Coil
@@ -225,14 +225,12 @@ dependencies {
     implementation "androidx.datastore:datastore-preferences:1.0.0"
 
     // Accompanist
-    def acc_version = "0.31.5-beta"
-    implementation "com.google.accompanist:accompanist-systemuicontroller:$acc_version"
+    def acc_version = "0.32.0"
     implementation "com.google.accompanist:accompanist-permissions:$acc_version"
-    implementation "com.google.accompanist:accompanist-swiperefresh:$acc_version"
     implementation "com.google.accompanist:accompanist-placeholder-material3:$acc_version"
 
     // Window
-    implementation "androidx.window:window:1.2.0-alpha03"
+    implementation "androidx.window:window:1.2.0-beta03"
 
     // M3
     implementation "androidx.compose.material3:material3:1.2.0-alpha08"
@@ -252,8 +250,8 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-process:$lifecycle_version")
 
     // Coroutine Lifecycle Scopes
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4"
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1"
 
     // Dagger - Hilt
     implementation "com.google.dagger:hilt-android:2.44"

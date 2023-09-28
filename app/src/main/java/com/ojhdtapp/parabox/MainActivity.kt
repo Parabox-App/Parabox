@@ -9,7 +9,9 @@ import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -23,6 +25,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
@@ -37,10 +40,6 @@ import androidx.window.layout.FoldingFeature
 import androidx.window.layout.WindowInfoTracker
 import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import com.google.firebase.analytics.FirebaseAnalytics
-import com.google.mlkit.nl.entityextraction.*
-import com.google.mlkit.nl.smartreply.*
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.core.util.audio.AudioRecorder
 import com.ojhdtapp.parabox.core.util.audio.LocalAudioRecorder
@@ -121,7 +120,7 @@ class MainActivity : AppCompatActivity() {
         extensionServiceConnection = ExtensionServiceConnection(baseContext)
         lifecycle.addObserver(extensionServiceConnection)
 
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        enableEdgeToEdge()
 
         // Device Posture
         val devicePostureFlow = WindowInfoTracker.getOrCreate(this).windowLayoutInfo(this)
@@ -146,13 +145,19 @@ class MainActivity : AppCompatActivity() {
             )
         setContent {
             // System Ui
-            val systemUiController = rememberSystemUiController()
-            val useDarkIcons = isSystemInDarkTheme()
-            SideEffect {
-                systemUiController.setSystemBarsColor(
-                    color = Color.Transparent,
-                    darkIcons = !useDarkIcons
+            val darkTheme = isSystemInDarkTheme()
+            DisposableEffect(darkTheme) {
+                enableEdgeToEdge(
+                    statusBarStyle = SystemBarStyle.auto(
+                        android.graphics.Color.TRANSPARENT,
+                        android.graphics.Color.TRANSPARENT,
+                    ) { darkTheme },
+                    navigationBarStyle = SystemBarStyle.auto(
+                        lightScrim,
+                        darkScrim,
+                    ) { darkTheme },
                 )
+                onDispose {}
             }
 
             // System Bars
@@ -275,15 +280,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onStart() {
-        super.onStart()
-    }
-
-    override fun onStop() {
-        super.onStop()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-    }
+    private val lightScrim = android.graphics.Color.argb(0xe6, 0xFF, 0xFF, 0xFF)
+    private val darkScrim = android.graphics.Color.argb(0x80, 0x1b, 0x1b, 0x1b)
 }
