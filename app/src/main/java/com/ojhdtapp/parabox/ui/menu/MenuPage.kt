@@ -277,12 +277,12 @@ private fun MenuNavigationWrapperUI(
                 navController = navController,
                 menuNavController = menuNavController,
                 menuNavHostEngine = menuNavHostEngine,
-                mainSharedState = mainSharedState,
                 navigationType = navigationType,
                 listState = listState,
                 drawerState = drawerState,
                 bottomSheetState = bottomSheetState,
                 mainSharedViewModel = mainSharedViewModel,
+                mainSharedState = mainSharedState,
                 windowSize = windowSize,
                 devicePosture = devicePosture,
                 onEvent = menuEventHandler,
@@ -305,12 +305,12 @@ private fun MenuNavigationWrapperUI(
                 navController = navController,
                 menuNavController = menuNavController,
                 menuNavHostEngine = menuNavHostEngine,
-                mainSharedState = mainSharedState,
                 navigationType = navigationType,
                 listState = listState,
                 drawerState = drawerState,
                 bottomSheetState = bottomSheetState,
                 mainSharedViewModel = mainSharedViewModel,
+                mainSharedState = mainSharedState,
                 windowSize = windowSize,
                 devicePosture = devicePosture,
                 onEvent = menuEventHandler
@@ -325,12 +325,12 @@ fun MenuAppContent(
     navController: NavController,
     menuNavController: NavHostController,
     menuNavHostEngine: NavHostEngine,
-    mainSharedState: MainSharedState,
     navigationType: MenuNavigationType,
     listState: LazyListState,
     drawerState: MyDrawerState,
     bottomSheetState: SheetState,
     mainSharedViewModel: MainSharedViewModel,
+    mainSharedState: MainSharedState,
     windowSize: WindowSizeClass,
     devicePosture: DevicePosture,
     onEvent: (event: MenuPageEvent) -> Unit,
@@ -400,13 +400,12 @@ fun MenuAppContent(
 //                            }
 //                            hiltViewModel<MessagePageViewModel>(parentEntry)
 //                        }
-                    dependency(mainSharedState)
+                    dependency(mainSharedViewModel)
                     dependency(listState)
                     dependency(drawerState)
                     dependency(bottomSheetState)
                     dependency(windowSize)
                     dependency(devicePosture)
-                    dependency(mainSharedViewModel::sendEvent)
                 }
             ) {
 //                composable(MessageAndChatPageWrapperUIDestination){

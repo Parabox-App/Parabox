@@ -40,14 +40,14 @@ import com.ramcosta.composedestinations.navigation.navigate
 fun MessageAndChatPageWrapperUI(
     modifier: Modifier = Modifier,
     mainNavController: NavController,
-    mainSharedState: MainSharedState,
+    mainSharedViewModel: MainSharedViewModel,
     listState: LazyListState,
     windowSize: WindowSizeClass,
     devicePosture: DevicePosture,
-    onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
     val viewModel = hiltViewModel<MessagePageViewModel>()
     val state by viewModel.uiState.collectAsState()
+    val mainSharedState by mainSharedViewModel.uiState.collectAsState()
     val layoutType: MessageLayoutType
     when (windowSize.widthSizeClass) {
         WindowWidthSizeClass.Compact -> {
@@ -75,10 +75,10 @@ fun MessageAndChatPageWrapperUI(
     }
     LaunchedEffect(state.chatDetail.chat) {
         if (layoutType == MessageLayoutType.NORMAL && state.chatDetail.chat != null) {
-            onMainSharedEvent(MainSharedEvent.ShowNavigationBar(false))
+            mainSharedViewModel.sendEvent(MainSharedEvent.ShowNavigationBar(false))
         }
         if (layoutType == MessageLayoutType.NORMAL && state.chatDetail.chat == null) {
-            onMainSharedEvent(MainSharedEvent.ShowNavigationBar(true))
+            mainSharedViewModel.sendEvent(MainSharedEvent.ShowNavigationBar(true))
         }
     }
     AnimatedContent(targetState = state.chatDetail.chat, label = "",
@@ -103,7 +103,7 @@ fun MessageAndChatPageWrapperUI(
                 layoutType = layoutType,
                 windowSize = windowSize,
                 onEvent = viewModel::sendEvent,
-                onMainSharedEvent = onMainSharedEvent
+                onMainSharedEvent = mainSharedViewModel::sendEvent
             )
         } else {
             Row() {
@@ -118,7 +118,7 @@ fun MessageAndChatPageWrapperUI(
                     listState = listState,
                     layoutType = layoutType,
                     windowSize = windowSize,
-                    onMainSharedEvent = onMainSharedEvent
+                    onMainSharedEvent = mainSharedViewModel::sendEvent
                 )
                 AnimatedVisibility(visible = layoutType == MessageLayoutType.SPLIT) {
                     ChatPage(
@@ -128,7 +128,7 @@ fun MessageAndChatPageWrapperUI(
                         layoutType = layoutType,
                         windowSize = windowSize,
                         onEvent = viewModel::sendEvent,
-                        onMainSharedEvent = onMainSharedEvent
+                        onMainSharedEvent = mainSharedViewModel::sendEvent
                     )
                 }
             }
