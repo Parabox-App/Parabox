@@ -35,7 +35,7 @@ import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.window.layout.FoldingFeature
 import androidx.window.layout.WindowInfoTracker
-import com.google.accompanist.navigation.animation.rememberAnimatedNavController
+import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.firebase.analytics.FirebaseAnalytics
@@ -164,7 +164,7 @@ class MainActivity : AppCompatActivity() {
                 )
             }
 
-            val mainNavController = rememberAnimatedNavController()
+            val mainNavController = rememberNavController()
             val mainNavHostEngine = rememberAnimatedNavHostEngine(
                 navHostContentAlignment = Alignment.TopCenter,
                 rootDefaultAnimations = RootNavGraphDefaultAnimations(

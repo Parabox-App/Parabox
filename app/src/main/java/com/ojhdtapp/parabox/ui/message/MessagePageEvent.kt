@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.compose.ui.text.input.TextFieldValue
 import com.ojhdtapp.parabox.data.local.entity.ChatTagsUpdate
 import com.ojhdtapp.parabox.domain.model.Chat
+import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.ui.base.UiEvent
 import com.ojhdtapp.parabox.ui.message.chat.AudioRecorderState
@@ -40,4 +41,7 @@ sealed interface MessagePageEvent : UiEvent {
     object SendMessage: MessagePageEvent
     data class SendMemeMessage(val imageUri: Uri): MessagePageEvent
     data class SendFileMessage(val fileUri: Uri, val size: Long, val name: String): MessagePageEvent
+    data class AddOrRemoveSelectedMessage(val msg: Message) : MessagePageEvent
+    object ClearSelectedMessage : MessagePageEvent
+
 }

@@ -247,7 +247,7 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.LoadMessage -> {
-                if(event.chat == null){
+                if (event.chat == null) {
                     return state.copy(
                         chatDetail = MessagePageState.ChatDetail(),
                         messagePagingDataFlow = flow { emit(PagingData.empty()) }
@@ -347,7 +347,7 @@ class MessagePageViewModel @Inject constructor(
                     FileUtil.EXTERNAL_FILES_DIR_MEME,
                     buildFileName(FileUtil.EXTERNAL_FILES_DIR_MEME, extension ?: FileUtil.DEFAULT_IMAGE_EXTENSION)
                 )
-                if(fileUtil.copyFileToPath(event.meme, path)){
+                if (fileUtil.copyFileToPath(event.meme, path)) {
                     event.onSuccess(path)
                 } else {
                     event.onFailure()
@@ -363,7 +363,11 @@ class MessagePageViewModel @Inject constructor(
 
             is MessagePageEvent.RemoveMeme -> {
                 val fileName = fileUtil.getFileName(event.meme)
-                if(fileName != null && fileUtil.deleteFileOnExternalFilesDir(FileUtil.EXTERNAL_FILES_DIR_MEME, fileName)){
+                if (fileName != null && fileUtil.deleteFileOnExternalFilesDir(
+                        FileUtil.EXTERNAL_FILES_DIR_MEME,
+                        fileName
+                    )
+                ) {
                     event.onSuccess()
                 } else {
                     event.onFailure()
@@ -440,6 +444,28 @@ class MessagePageViewModel @Inject constructor(
             is MessagePageEvent.SendFileMessage -> {
                 return state
             }
+
+            is MessagePageEvent.AddOrRemoveSelectedMessage -> {
+                return state.copy(
+                    chatDetail = state.chatDetail.copy(
+                        selectedMessageList = state.chatDetail.selectedMessageList.toMutableList().apply {
+                            if (contains(event.msg)) {
+                                remove(event.msg)
+                            } else {
+                                add(event.msg)
+                            }
+                        }
+                    )
+                )
+            }
+
+            is MessagePageEvent.ClearSelectedMessage -> {
+                return state.copy(
+                    chatDetail = state.chatDetail.copy(
+                        selectedMessageList = emptyList()
+                    )
+                )
+            }
         }
     }
 
@@ -465,7 +491,7 @@ class MessagePageViewModel @Inject constructor(
         }
     }
 
-    fun refreshMemeList(): List<Uri>{
+    fun refreshMemeList(): List<Uri> {
         return FileUtils.listFiles(
             context.getExternalFilesDir(FileUtil.EXTERNAL_FILES_DIR_MEME),
             arrayOf("jpg", "jpeg", "png", "gif"), true
@@ -474,15 +500,15 @@ class MessagePageViewModel @Inject constructor(
         }
     }
 
-    fun buildParaboxSendMessage(){
+    fun buildParaboxSendMessage() {
         buildList<ParaboxMessageElement> {
-            if(uiState.value.chatDetail.editAreaState.input.text.isNotEmpty()){
+            if (uiState.value.chatDetail.editAreaState.input.text.isNotEmpty()) {
                 add(ParaboxPlainText(uiState.value.chatDetail.editAreaState.input.text))
             }
             uiState.value.chatDetail.editAreaState.chosenImageList.forEach {
                 add(ParaboxImage(resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(it)))
             }
-            if(uiState.value.chatDetail.editAreaState.chosenAudioUri != null){
+            if (uiState.value.chatDetail.editAreaState.chosenAudioUri != null) {
                 add(ParaboxAudio(resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(uiState.value.chatDetail.editAreaState.chosenAudioUri!!)))
             }
         }

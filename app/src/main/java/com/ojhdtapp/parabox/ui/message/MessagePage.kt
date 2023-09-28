@@ -2,6 +2,7 @@
 
 package com.ojhdtapp.parabox.ui.message
 
+import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
@@ -83,6 +84,8 @@ fun MessagePage(
     var snackBarJob: Job? by remember {
         mutableStateOf(null)
     }
+    LaunchedEffect(key1 = mainSharedState, block = {Log.d("parabox", "shared state received: $mainSharedState")})
+    LaunchedEffect(key1 = state, block = {Log.d("parabox", "state received: $state")})
     LaunchedEffect(Unit) {
         viewModel.uiEffect.flowWithLifecycle(lifecycleOwner.lifecycle, Lifecycle.State.STARTED)
             .collectLatest {

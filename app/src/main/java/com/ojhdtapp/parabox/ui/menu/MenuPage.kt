@@ -49,7 +49,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
-import com.google.accompanist.navigation.animation.rememberAnimatedNavController
+import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.ojhdtapp.parabox.NavGraphs
 import com.ojhdtapp.parabox.destinations.MessageAndChatPageWrapperUIDestination
@@ -140,7 +140,7 @@ private fun MenuNavigationWrapperUI(
     devicePosture: DevicePosture,
 ) {
     // Destination
-    val menuNavController = rememberAnimatedNavController()
+    val menuNavController = rememberNavController()
     val menuNavHostEngine = rememberAnimatedNavHostEngine(
         navHostContentAlignment = Alignment.TopCenter,
         rootDefaultAnimations = RootNavGraphDefaultAnimations(

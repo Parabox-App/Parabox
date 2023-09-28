@@ -46,6 +46,7 @@ import com.ojhdtapp.parabox.ui.message.MessageLayoutType
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageState
 import com.ojhdtapp.parabox.ui.message.MessagePageViewModel
+import com.ojhdtapp.parabox.ui.message.chat.top_bar.NormalChatTopBar
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 
@@ -137,7 +138,9 @@ fun NormalChatPage(
             sheetHeight = 160.dp, sheetState = sheetState
         ) {
             Scaffold(
-                topBar = {},
+                topBar = {
+                         NormalChatTopBar(chatDetail = state.chatDetail, onEvent = onEvent)
+                },
             ) { paddingValues ->
                 val bottomPadding = animateDpAsState(
                     targetValue = if (sheetState.isOpen) 0.dp else paddingValues.calculateBottomPadding(),
