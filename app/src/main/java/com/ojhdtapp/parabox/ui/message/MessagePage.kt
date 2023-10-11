@@ -337,78 +337,72 @@ fun MessagePage(
             contentPadding = it,
             state = listState,
         ) {
-            item() {
-                AnimatedVisibility(
-                    visible = pinnedChatLazyPagingData.itemCount > 0,
-                    enter = expandVertically(),
-                    exit = shrinkVertically()
+            item(
+                key = "title_1",
+                contentType = "title"
+            ) {
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                    ) {
-                        Text(
-                            text = "置顶",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary
+                    Text(
+                        text = "置顶",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+            item(
+                key = "pinned_chat",
+                contentType = "pinned_chat"
+            ) {
+                LazyRow(
+                    verticalAlignment = Alignment.CenterVertically,
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    items(
+                        count = pinnedChatLazyPagingData.itemCount,
+                        key = pinnedChatLazyPagingData.itemKey { it.chatId },
+                        contentType = pinnedChatLazyPagingData.itemContentType { "pinned_chat" }
+                    ) { index ->
+                        val item = pinnedChatLazyPagingData[index]!!
+                        var isMenuVisible by rememberSaveable { mutableStateOf(false) }
+                        ChatDropdownMenu(
+                            chat = item,
+                            isMenuVisible = isMenuVisible,
+                            onEvent = viewModel::sendEvent,
+                            onDismiss = { isMenuVisible = false })
+                        PinnedChatItems(
+                            modifier = Modifier.animateItemPlacement(),
+                            chat = item,
+                            onClick = {},
+                            onLongClick = {
+                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                isMenuVisible = true
+                            },
                         )
                     }
                 }
             }
-            item() {
-                AnimatedVisibility(
-                    visible = pinnedChatLazyPagingData.itemCount > 0,
-                    enter = expandVertically(),
-                    exit = shrinkVertically()
+            item(
+                key = "title_2",
+                contentType = "title"
+            ) {
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
-                    LazyRow(
-                        verticalAlignment = Alignment.CenterVertically,
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-                    ) {
-                        items(
-                            count = pinnedChatLazyPagingData.itemCount,
-                            key = pinnedChatLazyPagingData.itemKey { it.chatId },
-                            contentType = pinnedChatLazyPagingData.itemContentType { "pinned_chat" }
-                        ) { index ->
-                            val item = pinnedChatLazyPagingData[index]!!
-                            var isMenuVisible by rememberSaveable { mutableStateOf(false) }
-                            ChatDropdownMenu(
-                                chat = item,
-                                isMenuVisible = isMenuVisible,
-                                onEvent = viewModel::sendEvent,
-                                onDismiss = { isMenuVisible = false })
-                            PinnedChatItems(
-                                modifier = Modifier.animateItemPlacement(),
-                                chat = item,
-                                onClick = {},
-                                onLongClick = {
-                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    isMenuVisible = true
-                                },
-                            )
-                        }
-                    }
+                    Text(
+                        text = stringResource(R.string.main),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
-            item() {
-                AnimatedVisibility(
-                    visible = pinnedChatLazyPagingData.itemCount > 0,
-                    enter = expandVertically(),
-                    exit = shrinkVertically()
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                    ) {
-                        Text(
-                            text = stringResource(R.string.main),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-            }
-            item() {
+            item(
+                key = "filter_list",
+                contentType = "filter_list"
+            ) {
                 LazyRow(
                     verticalAlignment = Alignment.CenterVertically,
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
@@ -449,7 +443,8 @@ fun MessagePage(
             }
             items(
                 count = chatLazyPagingData.itemCount,
-                key = chatLazyPagingData.itemKey { it.chat.chatId }
+                key = chatLazyPagingData.itemKey { it.chat.chatId },
+                contentType = chatLazyPagingData.itemContentType { it.chat.type }
             ) { index ->
                 val swipeableActionsState = rememberSwipeableActionsState()
                 val isFirst = index == 0
