@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.message
 
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Archive
 import androidx.compose.material.icons.outlined.Done
@@ -23,6 +24,7 @@ import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.data.local.entity.ChatTagsUpdate
 import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.ui.common.RoundedCornerCascadeDropdownMenu
+import me.saket.cascade.CascadeDropdownMenu
 
 @Composable
 fun ChatDropdownMenu(
@@ -32,7 +34,7 @@ fun ChatDropdownMenu(
     onEvent: (event: MessagePageEvent) -> Unit,
     onDismiss: () -> Unit,
 ){
-    RoundedCornerCascadeDropdownMenu(
+    CascadeDropdownMenu(
         expanded = isMenuVisible,
         onDismissRequest = onDismiss,
         modifier = modifier.clip(MaterialTheme.shapes.medium),
@@ -42,6 +44,7 @@ fun ChatDropdownMenu(
             dismissOnClickOutside = true,
             focusable = true
         ),
+        shape = RoundedCornerShape(8.dp),
     ) {
         if (chat.isPinned) {
             androidx.compose.material3.DropdownMenuItem(
@@ -200,6 +203,12 @@ fun ChatDropdownMenu(
         androidx.compose.material3.DropdownMenuItem(
             text = { Text(text = stringResource(R.string.dropdown_menu_info)) },
             onClick = {
+                onEvent(
+                    MessagePageEvent.ShowChatDetail(
+                        chat.chatId,
+                        chat
+                    )
+                )
                 onDismiss()
             },
             leadingIcon = {

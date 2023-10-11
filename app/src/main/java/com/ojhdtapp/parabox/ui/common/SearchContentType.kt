@@ -86,6 +86,7 @@ import com.ojhdtapp.parabox.domain.use_case.Query.Companion.SEARCH_RECENT_DATA_N
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
 import kotlinx.coroutines.launch
+import me.saket.cascade.CascadeDropdownMenu
 
 @Composable
 fun SearchContent(modifier: Modifier = Modifier, state: MainSharedState, onEvent: (e: MainSharedEvent) -> Unit) {
@@ -864,13 +865,14 @@ fun DoneSearchMessageContent(
                             }
                         }
                         if (it is MessageFilter.DateFilter) {
-                            RoundedCornerCascadeDropdownMenu(
+                            CascadeDropdownMenu(
                                 expanded = isMenuVisible, onDismissRequest = { isMenuVisible = false },
                                 properties = PopupProperties(
                                     dismissOnBackPress = true,
                                     dismissOnClickOutside = true,
                                     focusable = true
                                 ),
+                                shape = RoundedCornerShape(8.dp),
                             ) {
                                 Log.d("parabox", "list:${MessageFilter.DateFilter.allFilterList}")
                                 androidx.compose.material3.DropdownMenuItem(text = {

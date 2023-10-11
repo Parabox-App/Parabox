@@ -90,8 +90,8 @@ fun SwipeableActionsDismissBox(
         },
         background = MaterialTheme.colorScheme.primary,
         onSwipe = {
-            isDismissedToEnd = true
             coroutineScope.launch {
+                isDismissedToEnd = true
                 delay(500)
                 onDismissedToEnd()
             }
@@ -109,8 +109,8 @@ fun SwipeableActionsDismissBox(
         },
         background = MaterialTheme.colorScheme.primary,
         onSwipe = {
-            isDismissedToStart = true
             coroutineScope.launch {
+                isDismissedToStart = true
                 delay(500)
                 onDismissedToStart()
             }
@@ -126,7 +126,8 @@ fun SwipeableActionsDismissBox(
         AnimatedVisibility(
             modifier = Modifier.fillMaxWidth(),
             visible = !isDismissedToEnd,
-            exit = slideOutHorizontally { it }, enter = expandVertically()
+            exit = slideOutHorizontally { it },
+            enter = expandVertically()
         ) {
             SwipeableActionsBox(
                 state = state,
@@ -249,3 +250,4 @@ fun SwipeToDismissBox(
         }
     }
 }
+

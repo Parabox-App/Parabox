@@ -2,6 +2,7 @@ package com.ojhdtapp.parabox.ui.message
 
 import android.content.Context
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.core.net.toUri
 import androidx.lifecycle.viewModelScope
@@ -244,6 +245,11 @@ class MessagePageViewModel @Inject constructor(
                     }
                     state
                 }
+            }
+
+            is MessagePageEvent.ShowChatDetail -> {
+                Toast.makeText(context, event.detail.chatId.toString(), Toast.LENGTH_SHORT).show()
+                state
             }
 
             is MessagePageEvent.LoadMessage -> {

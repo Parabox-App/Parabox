@@ -95,10 +95,7 @@ class MainSharedViewModel @Inject constructor(
                     search = MainSharedState.Search(
                         query = event.input,
                         isActive = true,
-                        showRecent = false,
-                        message = MainSharedState.Search.MessageSearch(),
-                        contact = MainSharedState.Search.ContactSearch(),
-                        chat = MainSharedState.Search.ChatSearch()
+                        showRecent = false
                     )
                 )
             }
@@ -115,25 +112,8 @@ class MainSharedViewModel @Inject constructor(
                 Log.d("parabox", "trigger search bar:${event.isActive}")
                 return state.copy(
                     showNavigationBar = !event.isActive,
-                    search = MainSharedState.Search(
-                        query = if (event.isActive) state.search.query else "",
-                        showRecent = true,
-                        isActive = event.isActive,
-                        recentQueryState = if (event.isActive) LoadState.LOADING else state.search.recentQueryState,
-                        message = MainSharedState.Search.MessageSearch(
-                            loadState = if (event.isActive) LoadState.LOADING else state.search.message.loadState,
-                            result = if (event.isActive) emptyList() else state.search.message.result,
-                            filterResult = if (event.isActive) emptyList() else state.search.message.filterResult,
-                        ),
-                        contact = MainSharedState.Search.ContactSearch(
-                            loadState = if (event.isActive) LoadState.LOADING else state.search.contact.loadState,
-                            result = if (event.isActive) emptyList() else state.search.contact.result,
-                        ),
-                        chat = MainSharedState.Search.ChatSearch(
-                            loadState = if (event.isActive) LoadState.LOADING else state.search.chat.loadState,
-                            result = if (event.isActive) emptyList() else state.search.chat.result,
-                            filterResult = if (event.isActive) emptyList() else state.search.chat.filterResult,
-                        )
+                    search =  MainSharedState.Search(
+                        isActive = event.isActive
                     )
                 )
             }

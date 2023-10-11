@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.FavoriteBorder
@@ -39,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
 import androidx.core.net.toFile
 import androidx.paging.compose.LazyPagingItems
@@ -58,6 +60,7 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 import com.origeek.imageViewer.previewer.ImagePreviewer
 import com.origeek.imageViewer.previewer.rememberPreviewerState
 import kotlinx.coroutines.launch
+import me.saket.cascade.CascadeDropdownMenu
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -159,7 +162,7 @@ fun MyImagePreviewer(
                                         contentDescription = "more"
                                     )
                                 }
-                                RoundedCornerCascadeDropdownMenu(
+                                CascadeDropdownMenu(
                                     expanded = state.expandMenu,
                                     onDismissRequest = {
                                         onEvent(MessagePageEvent.ExpandImagePreviewerMenu(false))
@@ -170,6 +173,7 @@ fun MyImagePreviewer(
                                         dismissOnClickOutside = true,
                                         focusable = true
                                     ),
+                                    shape = RoundedCornerShape(8.dp),
                                 ) {
                                     DropdownMenuItem(
                                         text = {

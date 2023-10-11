@@ -337,7 +337,7 @@ fun MessagePage(
             contentPadding = it,
             state = listState,
         ) {
-            item(key = "pinned") {
+            item() {
                 AnimatedVisibility(
                     visible = pinnedChatLazyPagingData.itemCount > 0,
                     enter = expandVertically(),
@@ -355,7 +355,7 @@ fun MessagePage(
                     }
                 }
             }
-            item {
+            item() {
                 AnimatedVisibility(
                     visible = pinnedChatLazyPagingData.itemCount > 0,
                     enter = expandVertically(),
@@ -390,7 +390,7 @@ fun MessagePage(
                     }
                 }
             }
-            item(key = "main") {
+            item() {
                 AnimatedVisibility(
                     visible = pinnedChatLazyPagingData.itemCount > 0,
                     enter = expandVertically(),
@@ -408,7 +408,7 @@ fun MessagePage(
                     }
                 }
             }
-            item {
+            item() {
                 LazyRow(
                     verticalAlignment = Alignment.CenterVertically,
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
@@ -447,24 +447,13 @@ fun MessagePage(
                     }
                 }
             }
-//            if (chatLazyPagingData.loadState.refresh == LoadState.Loading) {
-//                items(12) {
-//                    EmptyChatItem(
-//                        modifier = Modifier
-//                            .padding(start = 16.dp, end = 16.dp),
-//                        isFirst = it == 0,
-//                        isLast = it == 11
-//                    )
-//                }
-//            }
             items(
                 count = chatLazyPagingData.itemCount,
-                key = chatLazyPagingData.itemKey { it.chat.chatId },
-                contentType = chatLazyPagingData.itemContentType { "chat" }
+                key = chatLazyPagingData.itemKey { it.chat.chatId }
             ) { index ->
                 val swipeableActionsState = rememberSwipeableActionsState()
                 val isFirst = index == 0
-                val isLast = index == chatLazyPagingData.itemCount - 1
+                val isLast = index == chatLazyPagingData.itemSnapshotList.size
                 val topRadius by animateDpAsState(
                     targetValue = if (isFirst && swipeableActionsState.offset.value == 0f) 24.dp else 3.dp,
                     label = "top_radius"
@@ -487,12 +476,12 @@ fun MessagePage(
                         )
                         .animateItemPlacement()
                 ) {
-                    if (chatLazyPagingData[index] == null) {
+                    val item = chatLazyPagingData[index]
+                    if (item == null) {
                         EmptyChatItem(
                             modifier = Modifier.padding(bottom = 2.dp),
                         )
                     } else {
-                        val item = chatLazyPagingData[index]!!
                         var isMenuVisible by rememberSaveable { mutableStateOf(false) }
                         ChatDropdownMenu(
                             chat = item.chat,

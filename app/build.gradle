@@ -132,7 +132,9 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.5.0"
 
     // DropdownMenu
-    implementation "me.saket.cascade:cascade-compose:2.2.0"
+    implementation "me.saket.cascade:cascade-compose:2.3.0"
+    implementation "me.saket.telephoto:zoomable-image-coil:0.6.2"
+
 
     // swipe
     implementation "me.saket.swipe:swipe:1.2.0"
@@ -200,22 +202,22 @@ dependencies {
     implementation 'com.ojhdt:parabox-development-kit:1.0.6'
 
     // Paging
-    def paging_version = "3.2.1"
+    def paging_version = "3.3.0-alpha02"
     implementation "androidx.paging:paging-runtime-ktx:$paging_version"
     implementation "androidx.paging:paging-compose:$paging_version"
 
     // Coil
-    implementation 'io.coil-kt:coil:2.2.2'
-    implementation 'io.coil-kt:coil-gif:2.2.0'
-    implementation 'io.coil-kt:coil-svg:2.2.0'
-    implementation 'io.coil-kt:coil-compose:2.2.2'
+    implementation 'io.coil-kt:coil:2.4.0'
+    implementation 'io.coil-kt:coil-gif:2.4.0'
+    implementation 'io.coil-kt:coil-svg:2.4.0'
+    implementation 'io.coil-kt:coil-compose:2.4.0'
 
     // Lottie
     def lottieVersion = "5.0.3"
     implementation "com.airbnb.android:lottie-compose:$lottieVersion"
 
     // Navigation Compose
-    def nav_version = "2.7.3"
+    def nav_version = "2.7.4"
     implementation "androidx.navigation:navigation-compose:$nav_version"
 
     // Compose Destinations
@@ -234,8 +236,8 @@ dependencies {
     implementation "androidx.window:window:1.2.0-beta03"
 
     // M3
-    implementation "androidx.compose.material3:material3:1.2.0-alpha08"
-    implementation "androidx.compose.material3:material3-window-size-class:1.2.0-alpha08"
+    implementation "androidx.compose.material3:material3:1.2.0-alpha09"
+    implementation "androidx.compose.material3:material3-window-size-class:1.2.0-alpha09"
 
     // Chrome Custom Tab
     implementation "androidx.browser:browser:1.5.0"

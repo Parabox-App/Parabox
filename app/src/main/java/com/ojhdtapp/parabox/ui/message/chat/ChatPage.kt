@@ -130,22 +130,22 @@ fun NormalChatPage(
         drawerState = drawerState,
         drawerWidth = 360.dp,
     ) {
-        DismissibleBottomSheet(
-            sheetContent = {
-                Toolbar(modifier = Modifier.height(160.dp), state = state.chatDetail.editAreaState, onEvent = onEvent)
+        Scaffold(
+            topBar = {
+                NormalChatTopBar(chatDetail = state.chatDetail, onEvent = onEvent)
             },
-            gesturesEnabled = state.chatDetail.editAreaState.audioRecorderState !is AudioRecorderState.Recording,
-            sheetHeight = 160.dp, sheetState = sheetState
-        ) {
-            Scaffold(
-                topBar = {
-                         NormalChatTopBar(chatDetail = state.chatDetail, onEvent = onEvent)
+        ) { paddingValues ->
+            val bottomPadding = animateDpAsState(
+                targetValue = if (sheetState.isOpen) 0.dp else paddingValues.calculateBottomPadding(),
+                label = "edit_area_bottom_padding"
+            )
+            DismissibleBottomSheet(
+                sheetContent = {
+                    Toolbar(modifier = Modifier.height(160.dp), state = state.chatDetail.editAreaState, onEvent = onEvent)
                 },
-            ) { paddingValues ->
-                val bottomPadding = animateDpAsState(
-                    targetValue = if (sheetState.isOpen) 0.dp else paddingValues.calculateBottomPadding(),
-                    label = "edit_area_bottom_padding"
-                )
+                gesturesEnabled = state.chatDetail.editAreaState.audioRecorderState !is AudioRecorderState.Recording,
+                sheetHeight = 160.dp, sheetState = sheetState
+            ) {
                 Column() {
                     val messageLazyPagingItems = state.messagePagingDataFlow.collectAsLazyPagingItems()
                     MyImagePreviewer(
@@ -166,6 +166,5 @@ fun NormalChatPage(
                 }
             }
         }
-
     }
 }
