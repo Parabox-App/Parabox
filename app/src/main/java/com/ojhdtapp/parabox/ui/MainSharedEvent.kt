@@ -11,7 +11,7 @@ import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 
 sealed interface MainSharedEvent : UiEvent {
 
-    object UpdateDataStore : MainSharedEvent
+    data class UpdateDataStore(val value: MainSharedState.DataStore) : MainSharedEvent
 
     data class QueryInput(val input: String) : MainSharedEvent
     data class SearchConfirm(val input: String) : MainSharedEvent

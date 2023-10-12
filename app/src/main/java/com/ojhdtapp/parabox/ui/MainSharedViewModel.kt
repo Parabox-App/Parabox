@@ -38,14 +38,7 @@ class MainSharedViewModel @Inject constructor(
         when (event) {
             is MainSharedEvent.UpdateDataStore -> {
                 return state.copy(
-                    datastore = state.datastore.copy(
-                        messageBadgeNum = context.getDataStoreValue(DataStoreKeys.MESSAGE_BADGE_NUM, 0),
-                        localName = context.getDataStoreValue(DataStoreKeys.USER_NAME, "User"),
-                        localAvatarUri = context.getDataStoreValue(DataStoreKeys.USER_AVATAR, "")
-                            .takeIf { it.isNotBlank() }
-                            ?.let { Uri.parse(it) }
-                            ?: Uri.EMPTY,
-                    )
+                    datastore = event.value
                 )
             }
 
@@ -642,6 +635,14 @@ class MainSharedViewModel @Inject constructor(
     }
 
     init {
+        state.datastore.copy(
+            messageBadgeNum = context.getDataStoreValue(DataStoreKeys.MESSAGE_BADGE_NUM, 0),
+            localName = context.getDataStoreValue(DataStoreKeys.USER_NAME, "User"),
+            localAvatarUri = context.getDataStoreValue(DataStoreKeys.USER_AVATAR, "")
+                .takeIf { it.isNotBlank() }
+                ?.let { Uri.parse(it) }
+                ?: Uri.EMPTY,
+        )
         sendEvent(MainSharedEvent.UpdateDataStore)
     }
 }
