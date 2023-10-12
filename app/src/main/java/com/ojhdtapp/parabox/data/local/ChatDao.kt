@@ -22,6 +22,11 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ChatDao {
+
+    @Query("SELECT chatId FROM chat_entity " +
+            "WHERE pkg = :pkg AND uid = :uid LIMIT 1")
+    fun checkChat(pkg: String, uid: String): Long?
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insertChat(chat: ChatEntity): Long
 

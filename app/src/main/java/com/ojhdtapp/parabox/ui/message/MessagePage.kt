@@ -52,6 +52,7 @@ import com.google.accompanist.placeholder.placeholder
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.core.util.AvatarUtil.getCircledBitmap
+import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
@@ -337,19 +338,21 @@ fun MessagePage(
             contentPadding = it,
             state = listState,
         ) {
-            item(
-                key = "title_1",
-                contentType = "title"
-            ) {
-                Box(
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
+            if (pinnedChatLazyPagingData.itemCount > 0) {
+                item(
+                    key = "title_1",
+                    contentType = "title"
                 ) {
-                    Text(
-                        text = "置顶",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    Box(
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = "置顶",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
             item(
@@ -448,7 +451,7 @@ fun MessagePage(
             ) { index ->
                 val swipeableActionsState = rememberSwipeableActionsState()
                 val isFirst = index == 0
-                val isLast = index == chatLazyPagingData.itemSnapshotList.size
+                val isLast = index == chatLazyPagingData.itemSnapshotList.size - 1
                 val topRadius by animateDpAsState(
                     targetValue = if (isFirst && swipeableActionsState.offset.value == 0f) 24.dp else 3.dp,
                     label = "top_radius"
@@ -471,15 +474,15 @@ fun MessagePage(
                         )
                         .animateItemPlacement()
                 ) {
-                    val item = chatLazyPagingData[index]
-                    if (item == null) {
+
+                    if (chatLazyPagingData[index] == null) {
                         EmptyChatItem(
                             modifier = Modifier.padding(bottom = 2.dp),
                         )
                     } else {
                         var isMenuVisible by rememberSaveable { mutableStateOf(false) }
                         ChatDropdownMenu(
-                            chat = item.chat,
+                            chat = chatLazyPagingData[index]!!.chat,
                             isMenuVisible = isMenuVisible,
                             onEvent = viewModel::sendEvent,
                             onDismiss = { isMenuVisible = false })
@@ -493,32 +496,39 @@ fun MessagePage(
                             onDismissedToEnd = {
                                 viewModel.sendEvent(
                                     MessagePageEvent.UpdateChatArchive(
-                                        item.chat.chatId,
+                                        chatLazyPagingData[index]!!.chat.chatId,
                                         true,
-                                        item.chat.isArchived
+                                        chatLazyPagingData[index]!!.chat.isArchived
                                     )
                                 )
                             },
                             onDismissedToStart = {
                                 viewModel.sendEvent(
                                     MessagePageEvent.UpdateChatHide(
-                                        item.chat.chatId,
+                                        chatLazyPagingData[index]!!.chat.chatId,
                                         true,
-                                        item.chat.isHidden
+                                        chatLazyPagingData[index]!!.chat.isHidden
                                     )
                                 )
                             }) {
-                            val contact by viewModel.getLatestMessageSenderWithCache(
-                                chatLazyPagingData[index]?.message?.senderId
-                            ).collectAsState(initial = Resource.Loading())
+                            var contact by remember{
+                                mutableStateOf<Resource<Contact>>(Resource.Loading())
+                            }
+                            LaunchedEffect(key1 = chatLazyPagingData[index]!!.message, block = {
+                                viewModel.getLatestMessageSenderWithCache(
+                                    chatLazyPagingData[index]!!.message?.senderId
+                                ).collectLatest {
+                                    contact = it
+                                }
+                            })
                             ChatItem(
                                 modifier = Modifier.padding(bottom = 2.dp),
-                                chatWithLatestMessage = item,
+                                chatWithLatestMessage = chatLazyPagingData[index]!!,
                                 contact = contact,
-                                isEditing = state.chatDetail.chat?.chatId == item.chat.chatId,
+                                isEditing = state.chatDetail.chat?.chatId == chatLazyPagingData[index]!!.chat.chatId,
                                 isExpanded = layoutType == MessageLayoutType.SPLIT,
                                 onClick = {
-                                    viewModel.sendEvent(MessagePageEvent.LoadMessage(item.chat))
+                                    viewModel.sendEvent(MessagePageEvent.LoadMessage(chatLazyPagingData[index]!!.chat))
                                 },
                                 onLongClick = {
                                     isMenuVisible = true

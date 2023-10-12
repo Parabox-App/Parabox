@@ -8,6 +8,9 @@ import com.ojhdtapp.parabox.data.local.entity.ContactEntity
 
 @Dao
 interface ContactDao {
+    @Query("SELECT contactId FROM contact_entity " +
+            "WHERE pkg = :pkg AND uid = :uid LIMIT 1")
+    fun checkContact(pkg: String, uid: String) : Long?
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insertContact(contact: ContactEntity): Long

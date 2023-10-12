@@ -12,6 +12,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
+@Serializable
 sealed interface ParaboxResourceInfo : Parcelable {
 
     fun getModel(): Any?
