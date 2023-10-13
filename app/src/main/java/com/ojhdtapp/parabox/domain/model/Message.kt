@@ -11,12 +11,17 @@ data class Message(
     val timestamp: Long,
     val sentByMe: Boolean,
     val verified : Boolean,
+    val pkg: String,
     val uid: String,
     val messageId: Long,
 ){
     override fun equals(other: Any?): Boolean {
         return if(other is Message){
-            uid == other.uid
+            messageId == other.messageId
         } else super.equals(other)
     }
+}
+
+fun List<Message>.contains(messageId: Long): Boolean{
+    return map { it.messageId }.contains(messageId)
 }

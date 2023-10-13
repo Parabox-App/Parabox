@@ -16,6 +16,7 @@ data class MessageEntity(
     val timestamp: Long,
     val sentByMe: Boolean,
     val verified: Boolean,
+    val pkg: String,
     val uid: String,
     @PrimaryKey(autoGenerate = true) val messageId: Long = 0,
 ) {
@@ -29,6 +30,7 @@ data class MessageEntity(
             timestamp,
             sentByMe,
             verified,
+            pkg,
             uid,
             messageId
         )

@@ -32,13 +32,13 @@ fun buildChatEntity(msg: ReceiveMessage, ext: ExtensionInfo): ChatEntity {
     )
 }
 
-fun buildMessageEntity(msg: ReceiveMessage, senderId: Long, chatId: Long): MessageEntity {
+fun buildMessageEntity(msg: ReceiveMessage, ext: ExtensionInfo, senderId: Long, chatId: Long): MessageEntity {
     val typeList = msg.contents.map { it.getType() }
     val contentTypes = buildString {
         (0 until (typeList.maxOrNull() ?: 0)).forEach {
             if (it in typeList) {
-                append(1)
-            } else append(0)
+                insert(0, 1)
+            } else insert(0, 0)
         }
     }.ifBlank { "0" }.toInt(2)
     return MessageEntity(
@@ -50,6 +50,7 @@ fun buildMessageEntity(msg: ReceiveMessage, senderId: Long, chatId: Long): Messa
         timestamp = msg.timestamp,
         sentByMe = false,
         verified = false,
+        pkg = ext.pkg,
         uid = msg.uuid,
     )
 }

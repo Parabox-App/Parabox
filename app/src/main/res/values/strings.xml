@@ -549,4 +549,5 @@
     <string name="get_chat_filter_group">Group</string>
     <string name="message_filter_sender_all">来自联系人</string>
     <string name="message_filter_chat_all">所在会话</string>
+    <string name="message_filter_type_all">类型</string>
 </resources>

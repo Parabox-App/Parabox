@@ -70,14 +70,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
-import coil.compose.AsyncImagePainter
-import coil.compose.SubcomposeAsyncImage
-import coil.compose.SubcomposeAsyncImageContent
 import com.google.accompanist.placeholder.PlaceholderHighlight
 import com.google.accompanist.placeholder.material3.fade
 import com.google.accompanist.placeholder.placeholder
 import com.ojhdtapp.parabox.R
-import com.ojhdtapp.parabox.core.util.AvatarUtil
 import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.core.util.splitKeeping
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
@@ -862,6 +858,8 @@ fun DoneSearchMessageContent(
                                 is MessageFilter.DateFilter -> {
                                     isMenuVisible = true
                                 }
+
+                                else -> {}
                             }
                         }
                         if (it is MessageFilter.DateFilter) {
@@ -1239,34 +1237,7 @@ fun SearchResultItem(
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                leadingIcon?.invoke() ?: SubcomposeAsyncImage(
-                    model = avatarModel,
-                    contentDescription = "chat_avatar",
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    val state = painter.state
-                    val namedAvatarBm =
-                        AvatarUtil.createNamedAvatarBm(
-                            backgroundColor = MaterialTheme.colorScheme.secondaryContainer.toArgb(),
-                            textColor = MaterialTheme.colorScheme.onSecondaryContainer.toArgb(),
-                            name = title.text
-                        ).asImageBitmap()
-                    if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
-                        Image(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .placeholder(
-                                    visible = state is AsyncImagePainter.State.Loading,
-                                    color = MaterialTheme.colorScheme.secondaryContainer,
-                                    highlight = PlaceholderHighlight.fade(),
-                                ),
-                            bitmap = namedAvatarBm,
-                            contentDescription = "named_avatar"
-                        )
-                    } else {
-                        SubcomposeAsyncImageContent()
-                    }
-                }
+                leadingIcon?.invoke() ?: CommonAvatar(model = avatarModel, name = title.text)
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column(
@@ -1390,34 +1361,7 @@ fun SearchResultItemVertical(
                     .background(MaterialTheme.colorScheme.primary),
                 contentAlignment = Alignment.Center
             ) {
-                SubcomposeAsyncImage(
-                    model = avatarModel,
-                    contentDescription = "chat_avatar",
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    val state = painter.state
-                    val namedAvatarBm =
-                        AvatarUtil.createNamedAvatarBm(
-                            backgroundColor = MaterialTheme.colorScheme.secondaryContainer.toArgb(),
-                            textColor = MaterialTheme.colorScheme.onSecondaryContainer.toArgb(),
-                            name = title.text
-                        ).asImageBitmap()
-                    if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
-                        Image(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .placeholder(
-                                    visible = state is AsyncImagePainter.State.Loading,
-                                    color = MaterialTheme.colorScheme.secondaryContainer,
-                                    highlight = PlaceholderHighlight.fade(),
-                                ),
-                            bitmap = namedAvatarBm,
-                            contentDescription = "named_avatar"
-                        )
-                    } else {
-                        SubcomposeAsyncImageContent()
-                    }
-                }
+                CommonAvatar(model = avatarModel, name = title.text)
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(

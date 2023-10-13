@@ -45,11 +45,14 @@ class MainRepositoryImpl @Inject constructor(
                     ?: db.contactDao.insertContact(contactEntity)
             }
             val messageEntity =
-                buildMessageEntity(msg, contactIdDeferred.await(), chatIdDeferred.await())
+                buildMessageEntity(msg, ext, contactIdDeferred.await(), chatIdDeferred.await())
             val messageIdDeferred = async {
                 db.messageDao.insertMessage(messageEntity)
             }
-            Log.d("parabox", "chatId:${chatIdDeferred.await()};contactId:${contactIdDeferred.await()};messageId:${messageIdDeferred.await()}")
+            Log.d(
+                "parabox",
+                "chatId:${chatIdDeferred.await()};contactId:${contactIdDeferred.await()};messageId:${messageIdDeferred.await()}"
+            )
             db.chatDao.updateLatestMessageId(
                 ChatLatestMessageIdUpdate(
                     chatId = chatIdDeferred.await(),

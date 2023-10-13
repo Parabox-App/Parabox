@@ -1,9 +1,12 @@
 package com.ojhdtapp.parabox.domain.model.filter
 
 import android.content.Context
+import com.google.common.math.IntMath.pow
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.toFormattedDate
 import com.ojhdtapp.parabox.domain.model.Message
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxFile
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxMessageElement
 import kotlin.math.abs
 
 sealed class MessageFilter(
@@ -114,4 +117,44 @@ sealed class MessageFilter(
             )
         }
     }
+
+    sealed class ContentTypeFilter(
+        override val labelResId: Int,
+        override val check: (message: Message) -> Boolean,
+        val andValue: Int,
+    ) : MessageFilter(labelResId = labelResId, check = check) {
+        object All : ContentTypeFilter(
+            R.string.message_filter_type_all,
+            check = { true },
+            pow(2, ParaboxMessageElement.Companion.TYPE.values().count() - 1)
+        )
+
+        // 1000000
+        object PlainText : ContentTypeFilter(
+            R.string.msg_type_plain_text,
+            check = { it.contentTypes and pow(2, ParaboxMessageElement.Companion.TYPE.PLAIN_TEXT.ordinal) > 0 },
+            pow(2, ParaboxMessageElement.Companion.TYPE.PLAIN_TEXT.ordinal)
+        )
+
+        // 10000
+        object Image : ContentTypeFilter(
+            R.string.msg_type_image,
+            check = { it.contentTypes and pow(2, ParaboxMessageElement.Companion.TYPE.IMAGE.ordinal) > 0 },
+            pow(2, ParaboxMessageElement.Companion.TYPE.IMAGE.ordinal)
+        )
+
+        // 1000
+        object File : ContentTypeFilter(
+            R.string.msg_type_file,
+            check = { it.contentTypes and pow(2, ParaboxMessageElement.Companion.TYPE.FILE.ordinal) > 0 },
+            pow(2, ParaboxMessageElement.Companion.TYPE.IMAGE.ordinal)
+        )
+    }
+
+    data class ContentFilter(
+        val queryString: String
+    ) : MessageFilter(
+        labelResId = -1,
+        check = { it.contentString.contains(queryString) }
+    )
 }

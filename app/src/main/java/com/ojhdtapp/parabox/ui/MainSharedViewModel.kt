@@ -247,6 +247,9 @@ class MainSharedViewModel @Inject constructor(
                         is MessageFilter.DateFilter -> {
                             set(2, event.filter)
                         }
+                        else -> {
+
+                        }
                     }
                 }
                 return state.copy(

@@ -5,11 +5,16 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.RawQuery
 import androidx.room.RoomWarnings
 import androidx.room.Transaction
 import androidx.room.Update
+import androidx.sqlite.db.SupportSQLiteQuery
+import com.ojhdtapp.parabox.data.local.entity.ChatEntity
+import com.ojhdtapp.parabox.data.local.entity.ContactEntity
 import com.ojhdtapp.parabox.data.local.entity.MessageEntity
 import com.ojhdtapp.parabox.data.local.entity.MessageVerifyStateUpdate
+import com.ojhdtapp.parabox.data.local.entity.MessageWithSenderEntity
 import com.ojhdtapp.parabox.data.local.entity.QueryMessageEntity
 import com.ojhdtapp.parabox.domain.model.QueryMessage
 
@@ -18,19 +23,15 @@ interface MessageDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertMessage(message: MessageEntity): Long
 
+    @RawQuery(observedEntities = [MessageEntity::class, ContactEntity::class])
+    fun getMessagePagingSource(query: SupportSQLiteQuery): PagingSource<Int, MessageWithSenderEntity>
+
     @SuppressWarnings(RoomWarnings.CURSOR_MISMATCH)
     @Query(
         "SELECT * FROM message_entity " +
                 "WHERE chatId IN (:chatIdList) " + "ORDER BY message_entity.timestamp DESC"
     )
     fun getMessagePagingSource(chatIdList: List<Long>): PagingSource<Int, MessageEntity>
-
-    @Query(
-        "SELECT * FROM message_entity " +
-                "WHERE contentTypes & 8 > 0 " +
-                "ORDER BY message_entity.timestamp DESC"
-    )
-    fun getFileMessagePagingSource(): PagingSource<Int, MessageEntity>
 
     @Query(
         "SELECT * FROM message_entity " +

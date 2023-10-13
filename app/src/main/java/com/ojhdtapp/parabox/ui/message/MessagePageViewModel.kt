@@ -2,7 +2,6 @@ package com.ojhdtapp.parabox.ui.message
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.core.net.toUri
@@ -35,7 +34,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -268,7 +266,9 @@ class MessagePageViewModel @Inject constructor(
                                 memeList = refreshMemeList()
                             )
                         ),
-                        messagePagingDataFlow = getMessage(event.chat.subChatIds).cachedIn(viewModelScope)
+                        messagePagingDataFlow = getMessage(event.chat.subChatIds.toMutableList().apply {
+                            add(event.chat.chatId)
+                        }.distinct(), emptyList()).cachedIn(viewModelScope)
                     )
                 }
 
@@ -479,7 +479,7 @@ class MessagePageViewModel @Inject constructor(
 
     private val chatLatestMessageSenderMap = mutableMapOf<Long, Resource<Contact>>()
 
-    fun getLatestMessageSenderWithCache(senderId: Long?): Flow<Resource<Contact>> {
+    fun getMessageSenderWithCache(senderId: Long?): Flow<Resource<Contact>> {
         return flow {
             if (senderId == null) {
                 emit(Resource.Error("no sender"))

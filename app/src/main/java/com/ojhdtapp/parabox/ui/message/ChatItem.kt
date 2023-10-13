@@ -29,20 +29,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import coil.compose.AsyncImagePainter
-import coil.compose.AsyncImagePainter.State.Empty.painter
-import coil.compose.SubcomposeAsyncImage
-import coil.compose.SubcomposeAsyncImageContent
-import coil.request.ImageRequest
 import com.google.accompanist.placeholder.PlaceholderHighlight
 import com.google.accompanist.placeholder.material3.fade
 import com.google.accompanist.placeholder.placeholder
@@ -53,6 +45,7 @@ import com.ojhdtapp.parabox.core.util.toTimeUntilNow
 import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.ChatWithLatestMessage
 import com.ojhdtapp.parabox.domain.model.Contact
+import com.ojhdtapp.parabox.ui.common.CommonAvatar
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -128,34 +121,10 @@ fun ChatItem(
                             tint = MaterialTheme.colorScheme.onPrimary
                         )
                     } else {
-                        icon?.invoke() ?: SubcomposeAsyncImage(
-                            model = chatWithLatestMessage.chat?.avatar?.getModel(),
-                            contentDescription = "chat_avatar",
-                            modifier = Modifier.fillMaxSize(),
-                        ) {
-                            val state = painter.state
-                            val namedAvatarBm =
-                                AvatarUtil.createNamedAvatarBm(
-                                    backgroundColor = MaterialTheme.colorScheme.secondaryContainer.toArgb(),
-                                    textColor = MaterialTheme.colorScheme.onSecondaryContainer.toArgb(),
-                                    name = chatWithLatestMessage.chat?.name ?: "name"
-                                ).asImageBitmap()
-                            if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
-                                Image(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .placeholder(
-                                            visible = state is AsyncImagePainter.State.Loading,
-                                            color = MaterialTheme.colorScheme.secondaryContainer,
-                                            highlight = PlaceholderHighlight.fade(),
-                                        ),
-                                    bitmap = namedAvatarBm,
-                                    contentDescription = "named_avatar"
-                                )
-                            } else {
-                                SubcomposeAsyncImageContent()
-                            }
-                        }
+                        icon?.invoke() ?: CommonAvatar(
+                            model = chatWithLatestMessage.chat.avatar.getModel(),
+                            name = chatWithLatestMessage.chat.name,
+                        )
                     }
                 }
             }
@@ -261,34 +230,7 @@ fun PinnedChatItems(
                         .background(avatarBackgroundColor),
                     contentAlignment = Alignment.Center
                 ) {
-                    icon?.invoke() ?: SubcomposeAsyncImage(
-                        model = chat.avatar.getModel(),
-                        contentDescription = "chat_avatar",
-                        modifier = Modifier.fillMaxSize(),
-                    ) {
-                        val state = painter.state
-                        val namedAvatarBm =
-                            AvatarUtil.createNamedAvatarBm(
-                                backgroundColor = MaterialTheme.colorScheme.secondaryContainer.toArgb(),
-                                textColor = MaterialTheme.colorScheme.onSecondaryContainer.toArgb(),
-                                name = chat.name
-                            ).asImageBitmap()
-                        if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
-                            Image(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .placeholder(
-                                        visible = state is AsyncImagePainter.State.Loading,
-                                        color = MaterialTheme.colorScheme.secondaryContainer,
-                                        highlight = PlaceholderHighlight.fade(),
-                                    ),
-                                bitmap = namedAvatarBm,
-                                contentDescription = "named_avatar"
-                            )
-                        } else {
-                            SubcomposeAsyncImageContent()
-                        }
-                    }
+                    icon?.invoke() ?: CommonAvatar(model = chat.avatar.getModel(), name = chat.name)
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
@@ -301,7 +243,9 @@ fun PinnedChatItems(
             }
             if (chat.unreadMessageNum > 0) {
                 Badge(
-                    modifier = Modifier.padding(8.dp).align(Alignment.TopEnd),
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .align(Alignment.TopEnd),
                     containerColor = MaterialTheme.colorScheme.primary
                 ) { Text(text = "${chat.unreadMessageNum}") }
             }

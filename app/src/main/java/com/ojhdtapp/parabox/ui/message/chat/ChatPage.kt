@@ -61,7 +61,7 @@ fun ChatPage(
     windowSize: WindowSizeClass,
     onEvent: (MessagePageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
-    ) {
+) {
     Crossfade(targetState = state.chatDetail.chat == null, label = "chat_empty_normal_crossfade") {
         if (it) {
             EmptyChatPage(
@@ -141,20 +141,40 @@ fun NormalChatPage(
             )
             DismissibleBottomSheet(
                 sheetContent = {
-                    Toolbar(modifier = Modifier.height(160.dp), state = state.chatDetail.editAreaState, onEvent = onEvent)
+                    Toolbar(
+                        modifier = Modifier.height(160.dp),
+                        state = state.chatDetail.editAreaState,
+                        onEvent = onEvent
+                    )
                 },
                 gesturesEnabled = state.chatDetail.editAreaState.audioRecorderState !is AudioRecorderState.Recording,
                 sheetHeight = 160.dp, sheetState = sheetState
             ) {
                 Column() {
                     val messageLazyPagingItems = state.messagePagingDataFlow.collectAsLazyPagingItems()
-                    MyImagePreviewer(
-                        messageLazyPagingItems = messageLazyPagingItems,
-                        state = state.chatDetail.imagePreviewerState,
-                        onEvent = onEvent
-                    )
-                    LazyColumn(modifier = Modifier.weight(1f)) {
+//                    MyImagePreviewer(
+//                        messageLazyPagingItems = messageLazyPagingItems,
+//                        state = state.chatDetail.imagePreviewerState,
+//                        onEvent = onEvent
+//                    )
+                    LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        state = lazyListState,
+                        reverseLayout = true,
+                    ) {
+                        items(messageLazyPagingItems.itemCount) {
+                            val item = messageLazyPagingItems[it]
+                            if (item == null) {
 
+                            } else {
+                                MessageItem(
+                                    state = state.chatDetail,
+                                    messageWithSender = item,
+                                    shouldShowUserInfo = true,
+                                    onEvent = onEvent
+                                )
+                            }
+                        }
                     }
                     EditArea(
                         modifier = Modifier

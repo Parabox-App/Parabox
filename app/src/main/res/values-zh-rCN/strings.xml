@@ -550,4 +550,5 @@
     <string name="get_chat_filter_unread">未读</string>
     <string name="get_chat_filter_private">单聊</string>
     <string name="get_chat_filter_group">群组</string>
+    <string name="message_filter_type_all">类型</string>
 </resources>

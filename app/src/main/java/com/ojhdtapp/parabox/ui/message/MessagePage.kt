@@ -2,7 +2,6 @@
 
 package com.ojhdtapp.parabox.ui.message
 
-import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
@@ -17,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
@@ -29,8 +29,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -43,15 +41,8 @@ import androidx.navigation.NavController
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
-import coil.compose.AsyncImagePainter
-import coil.compose.SubcomposeAsyncImage
-import coil.compose.SubcomposeAsyncImageContent
-import com.google.accompanist.placeholder.PlaceholderHighlight
-import com.google.accompanist.placeholder.material3.fade
-import com.google.accompanist.placeholder.placeholder
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.*
-import com.ojhdtapp.parabox.core.util.AvatarUtil.getCircledBitmap
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.ui.MainSharedEvent
@@ -214,33 +205,18 @@ fun MessagePage(
                             IconButton(
                                 onClick = { onMainSharedEvent(MainSharedEvent.SearchAvatarClicked) },
                             ) {
-                                SubcomposeAsyncImage(
-                                    modifier = Modifier.size(30.dp),
-                                    model = mainSharedState.datastore.localAvatarUri,
-                                    contentDescription = "user_avatar",
+                                Box(
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .size(30.dp),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    val state = painter.state
-                                    val namedAvatarBm =
-                                        AvatarUtil.createNamedAvatarBm(
-                                            backgroundColor = MaterialTheme.colorScheme.primary.toArgb(),
-                                            textColor = MaterialTheme.colorScheme.onPrimary.toArgb(),
-                                            name = mainSharedState.datastore.localName
-                                        ).getCircledBitmap().asImageBitmap()
-                                    if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
-                                        Image(
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .placeholder(
-                                                    visible = state is AsyncImagePainter.State.Loading,
-                                                    color = MaterialTheme.colorScheme.secondaryContainer,
-                                                    highlight = PlaceholderHighlight.fade(),
-                                                ),
-                                            bitmap = namedAvatarBm,
-                                            contentDescription = "named_avatar"
-                                        )
-                                    } else {
-                                        SubcomposeAsyncImageContent()
-                                    }
+                                    CommonAvatar(
+                                        model = mainSharedState.datastore.localAvatarUri,
+                                        name = mainSharedState.datastore.localName,
+                                        backgroundColor = MaterialTheme.colorScheme.primary,
+                                        textColor = MaterialTheme.colorScheme.onPrimary
+                                    )
                                 }
                             }
                         }
@@ -295,33 +271,18 @@ fun MessagePage(
                             IconButton(
                                 onClick = { onMainSharedEvent(MainSharedEvent.SearchAvatarClicked) },
                             ) {
-                                SubcomposeAsyncImage(
-                                    modifier = Modifier.size(30.dp),
-                                    model = mainSharedState.datastore.localAvatarUri,
-                                    contentDescription = "user_avatar",
+                                Box(
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .size(30.dp),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    val state = painter.state
-                                    val namedAvatarBm =
-                                        AvatarUtil.createNamedAvatarBm(
-                                            backgroundColor = MaterialTheme.colorScheme.primary.toArgb(),
-                                            textColor = MaterialTheme.colorScheme.onPrimary.toArgb(),
-                                            name = mainSharedState.datastore.localName
-                                        ).getCircledBitmap().asImageBitmap()
-                                    if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
-                                        Image(
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .placeholder(
-                                                    visible = state is AsyncImagePainter.State.Loading,
-                                                    color = MaterialTheme.colorScheme.secondaryContainer,
-                                                    highlight = PlaceholderHighlight.fade(),
-                                                ),
-                                            bitmap = namedAvatarBm,
-                                            contentDescription = "named_avatar"
-                                        )
-                                    } else {
-                                        SubcomposeAsyncImageContent()
-                                    }
+                                    CommonAvatar(
+                                        model = mainSharedState.datastore.localAvatarUri,
+                                        name = mainSharedState.datastore.localName,
+                                        backgroundColor = MaterialTheme.colorScheme.primary,
+                                        textColor = MaterialTheme.colorScheme.onPrimary
+                                    )
                                 }
                             }
                         }
@@ -474,15 +435,15 @@ fun MessagePage(
                         )
                         .animateItemPlacement()
                 ) {
-
-                    if (chatLazyPagingData[index] == null) {
+                    val item = chatLazyPagingData[index]
+                    if (item == null) {
                         EmptyChatItem(
                             modifier = Modifier.padding(bottom = 2.dp),
                         )
                     } else {
                         var isMenuVisible by rememberSaveable { mutableStateOf(false) }
                         ChatDropdownMenu(
-                            chat = chatLazyPagingData[index]!!.chat,
+                            chat = item.chat,
                             isMenuVisible = isMenuVisible,
                             onEvent = viewModel::sendEvent,
                             onDismiss = { isMenuVisible = false })
@@ -496,39 +457,39 @@ fun MessagePage(
                             onDismissedToEnd = {
                                 viewModel.sendEvent(
                                     MessagePageEvent.UpdateChatArchive(
-                                        chatLazyPagingData[index]!!.chat.chatId,
+                                        item.chat.chatId,
                                         true,
-                                        chatLazyPagingData[index]!!.chat.isArchived
+                                        item.chat.isArchived
                                     )
                                 )
                             },
                             onDismissedToStart = {
                                 viewModel.sendEvent(
                                     MessagePageEvent.UpdateChatHide(
-                                        chatLazyPagingData[index]!!.chat.chatId,
+                                        item.chat.chatId,
                                         true,
-                                        chatLazyPagingData[index]!!.chat.isHidden
+                                        item.chat.isHidden
                                     )
                                 )
                             }) {
                             var contact by remember{
                                 mutableStateOf<Resource<Contact>>(Resource.Loading())
                             }
-                            LaunchedEffect(key1 = chatLazyPagingData[index]!!.message, block = {
-                                viewModel.getLatestMessageSenderWithCache(
-                                    chatLazyPagingData[index]!!.message?.senderId
+                            LaunchedEffect(key1 = item.message, block = {
+                                viewModel.getMessageSenderWithCache(
+                                    item.message?.senderId
                                 ).collectLatest {
                                     contact = it
                                 }
                             })
                             ChatItem(
                                 modifier = Modifier.padding(bottom = 2.dp),
-                                chatWithLatestMessage = chatLazyPagingData[index]!!,
+                                chatWithLatestMessage = item,
                                 contact = contact,
-                                isEditing = state.chatDetail.chat?.chatId == chatLazyPagingData[index]!!.chat.chatId,
+                                isEditing = state.chatDetail.chat?.chatId == item.chat.chatId,
                                 isExpanded = layoutType == MessageLayoutType.SPLIT,
                                 onClick = {
-                                    viewModel.sendEvent(MessagePageEvent.LoadMessage(chatLazyPagingData[index]!!.chat))
+                                    viewModel.sendEvent(MessagePageEvent.LoadMessage(item.chat))
                                 },
                                 onLongClick = {
                                     isMenuVisible = true
