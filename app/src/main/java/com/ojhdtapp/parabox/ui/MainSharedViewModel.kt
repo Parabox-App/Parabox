@@ -8,6 +8,7 @@ import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.getDataStoreValue
+import com.ojhdtapp.parabox.core.util.getDataStoreValueFlow
 import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.filter.MessageFilter
@@ -635,14 +636,36 @@ class MainSharedViewModel @Inject constructor(
     }
 
     init {
-        state.datastore.copy(
-            messageBadgeNum = context.getDataStoreValue(DataStoreKeys.MESSAGE_BADGE_NUM, 0),
-            localName = context.getDataStoreValue(DataStoreKeys.USER_NAME, "User"),
-            localAvatarUri = context.getDataStoreValue(DataStoreKeys.USER_AVATAR, "")
-                .takeIf { it.isNotBlank() }
+        viewModelScope.launch {
+            context.getDataStoreValueFlow(DataStoreKeys.MESSAGE_BADGE_NUM, 0).collectLatest {
+                sendEvent(MainSharedEvent.UpdateDataStore(
+                    uiState.value.datastore.copy(
+                            messageBadgeNum = it
+                        )
+                ))
+            }
+        }
+        viewModelScope.launch {
+            context.getDataStoreValueFlow(DataStoreKeys.USER_NAME, "User").collectLatest {
+                sendEvent(MainSharedEvent.UpdateDataStore(
+                    uiState.value.datastore.copy(
+                        localName = it
+                    )
+                ))
+            }
+        }
+        viewModelScope.launch {
+            context.getDataStoreValueFlow(DataStoreKeys.USER_AVATAR, "User").map {
+                it.takeIf { it.isNotBlank() }
                 ?.let { Uri.parse(it) }
-                ?: Uri.EMPTY,
-        )
-        sendEvent(MainSharedEvent.UpdateDataStore)
+                ?: Uri.EMPTY
+            }.collectLatest {
+                sendEvent(MainSharedEvent.UpdateDataStore(
+                    uiState.value.datastore.copy(
+                        localAvatarUri = it
+                    )
+                ))
+            }
+        }
     }
 }
