@@ -31,6 +31,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.MessageWithSender
@@ -38,14 +41,24 @@ import com.ojhdtapp.parabox.domain.model.contains
 import com.ojhdtapp.parabox.ui.common.CommonAvatar
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageState
+import com.ojhdtapp.parabox.ui.message.chat.contents_layout.AudioLayout
+import com.ojhdtapp.parabox.ui.message.chat.contents_layout.FileLayout
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.ImageLayout
+import com.ojhdtapp.parabox.ui.message.chat.contents_layout.LocationLayout
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.MessageContentContainer
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.PlainTextLayout
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAnnotatedText
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAt
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAtAll
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAudio
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxFile
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxForward
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxLocation
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxMessageElement
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxPlainText
-import kotlin.math.roundToInt
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxQuoteReply
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.simplifyText
 
 @Composable
 fun MessageItem(
@@ -98,7 +111,7 @@ fun MessageItem(
             Surface(
                 modifier = Modifier.layout { measurable, constraints ->
                     val placeable = measurable.measure(constraints.copy(
-                        maxWidth = constraints.maxWidth - with(density){
+                        maxWidth = constraints.maxWidth - with(density) {
                             90.dp.roundToPx()
                         }
                     ))
@@ -115,10 +128,15 @@ fun MessageItem(
                 border = BorderStroke(3.dp, backgroundColor),
                 color = backgroundColor
             ) {
-                Column(modifier = Modifier.weight(1f)) {
+                Column {
                     SelectionContainer {
-                        MessageContentContainer(shouldBreak = ) {
-                            messageWithSender.message.contents.toLayout()
+                        val simplifyContent = messageWithSender.message.contents.simplifyText()
+                        MessageContentContainer(shouldBreak = simplifyContent.map {
+                            it is ParaboxImage || it is ParaboxQuoteReply || it is ParaboxForward || it is ParaboxAudio || it is ParaboxFile
+                        }) {
+                            simplifyContent.forEachIndexed { index, paraboxMessageElement ->
+                                paraboxMessageElement.toLayout(textColor = MaterialTheme.colorScheme.onSurface)
+                            }
                         }
                     }
                     LazyRow(
@@ -142,11 +160,46 @@ fun MessageItemSelf(
 }
 
 @Composable
-private fun List<ParaboxMessageElement>.toLayout(color: Color) : @Composable () -> Unit {
-    return this.map {
-        when(it){
-            is ParaboxPlainText -> PlainTextLayout(text = it.text, color = color)
-            is ParaboxImage -> ImageLayout(model = it.resourceInfo.getModel())
-        }
+private fun ParaboxMessageElement.toLayout(textColor: Color) {
+    when (this) {
+        is ParaboxPlainText -> PlainTextLayout(text = buildAnnotatedString {
+            withStyle(SpanStyle(color = textColor)) {
+                append(text)
+            }
+        })
+
+        is ParaboxAt, ParaboxAtAll -> PlainTextLayout(text = buildAnnotatedString {
+            withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                append(contentToString())
+            }
+        })
+
+        is ParaboxAnnotatedText -> PlainTextLayout(text = buildAnnotatedString {
+            list.forEachIndexed { index, paraboxText ->
+                when (paraboxText) {
+                    is ParaboxAt, ParaboxAtAll -> {
+                        withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                            append(paraboxText.contentToString())
+                        }
+                    }
+
+                    else -> {
+                        withStyle(SpanStyle(color = textColor)) {
+                            append(paraboxText.contentToString())
+                        }
+                    }
+                }
+                if (index != list.lastIndex) {
+                    append(" ")
+                }
+            }
+        })
+
+        is ParaboxImage -> ImageLayout(model = resourceInfo.getModel())
+        is ParaboxAudio -> AudioLayout()
+        is ParaboxFile -> FileLayout()
+        is ParaboxLocation -> LocationLayout()
+        is ParaboxQuoteReply -> {}
+        is ParaboxForward -> {}
     }
 }

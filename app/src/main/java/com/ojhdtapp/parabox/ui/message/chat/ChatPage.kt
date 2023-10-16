@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.message.chat
 
+import android.util.Log
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
@@ -158,6 +159,9 @@ fun NormalChatPage(
 //                        state = state.chatDetail.imagePreviewerState,
 //                        onEvent = onEvent
 //                    )
+                    LaunchedEffect(key1 = messageLazyPagingItems.itemCount, block ={
+                        Log.d("parabox", "msgflow size: ${messageLazyPagingItems.itemCount}")
+                    } )
                     LazyColumn(
                         modifier = Modifier.weight(1f),
                         state = lazyListState,

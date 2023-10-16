@@ -21,12 +21,12 @@ class GetMessage @Inject constructor(
     operator fun invoke(chatIdList: List<Long>, filter: List<MessageFilter>): Flow<PagingData<MessageWithSender>> {
         return Pager(
             PagingConfig(
-                pageSize = 20,
+                pageSize = 40,
+                prefetchDistance = 80,
                 enablePlaceholders = true,
-                initialLoadSize = 20
+                initialLoadSize = 40
             )
         ) {
-            Log.d("parabox", "getMessage:${chatIdList}")
             repository.getMessagePagingSource(
                 chatIdList, filter,
             )
