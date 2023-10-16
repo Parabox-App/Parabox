@@ -8,4 +8,8 @@ data class Contact(
     val pkg: String,
     val uid: String,
     val contactId: Long,
-)
+){
+    fun platformEqual(other: Contact?): Boolean{
+        return other != null && pkg == other.pkg && uid == other.uid
+    }
+}

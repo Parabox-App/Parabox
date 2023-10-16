@@ -2,7 +2,7 @@ package com.ojhdtapp.parabox.data.local.entity
 
 import androidx.room.Embedded
 import androidx.room.Relation
-import com.ojhdtapp.parabox.domain.model.MessageWithSender
+import com.ojhdtapp.parabox.ui.message.chat.contents_layout.model.ChatPageUiModel
 
 data class MessageWithSenderEntity(
     @Embedded
@@ -10,8 +10,8 @@ data class MessageWithSenderEntity(
     @Relation(parentColumn = "senderId", entityColumn = "contactId")
     val sender: ContactEntity
 ){
-    fun toMessageWithSender(): MessageWithSender {
-        return MessageWithSender(
+    fun toMessageWithSender(): ChatPageUiModel.MessageWithSender {
+        return ChatPageUiModel.MessageWithSender(
             message.toMessage(),
             sender.toContact()
         )

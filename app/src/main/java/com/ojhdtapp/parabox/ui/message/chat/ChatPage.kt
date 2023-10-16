@@ -4,8 +4,10 @@ import android.util.Log
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -48,6 +50,7 @@ import com.ojhdtapp.parabox.ui.message.MessageLayoutType
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageState
 import com.ojhdtapp.parabox.ui.message.MessagePageViewModel
+import com.ojhdtapp.parabox.ui.message.chat.contents_layout.model.ChatPageUiModel
 import com.ojhdtapp.parabox.ui.message.chat.top_bar.NormalChatTopBar
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
@@ -152,35 +155,51 @@ fun NormalChatPage(
                 gesturesEnabled = state.chatDetail.editAreaState.audioRecorderState !is AudioRecorderState.Recording,
                 sheetHeight = 160.dp, sheetState = sheetState
             ) {
-                Column() {
+                Column(modifier = Modifier.padding(top = paddingValues.calculateTopPadding())) {
                     val messageLazyPagingItems = state.messagePagingDataFlow.collectAsLazyPagingItems()
 //                    MyImagePreviewer(
 //                        messageLazyPagingItems = messageLazyPagingItems,
 //                        state = state.chatDetail.imagePreviewerState,
 //                        onEvent = onEvent
 //                    )
-                    LaunchedEffect(key1 = messageLazyPagingItems.itemCount, block ={
+                    LaunchedEffect(key1 = messageLazyPagingItems.itemCount, block = {
                         Log.d("parabox", "msgflow size: ${messageLazyPagingItems.itemCount}")
-                    } )
+                    })
                     LazyColumn(
                         modifier = Modifier.weight(1f),
                         state = lazyListState,
+                        contentPadding = PaddingValues(horizontal = 16.dp),
                         reverseLayout = true,
                     ) {
                         items(
                             count = messageLazyPagingItems.itemCount,
-                            key = messageLazyPagingItems.itemKey { it.message.messageId }
+                            key = messageLazyPagingItems.itemKey { it.id }
                         ) {
                             val item = messageLazyPagingItems[it]
-                            if (item == null) {
+                            when (item) {
+                                is ChatPageUiModel.MessageWithSender -> {
+                                    val before = messageLazyPagingItems.peek(it + 1)
+                                    val after = if (it > 0) messageLazyPagingItems.peek(it - 1) else null
+                                    MessageItem(
+                                        state = state.chatDetail,
+                                        messageWithSender = item,
+                                        isFirst = !((before as? ChatPageUiModel.MessageWithSender)?.sender?.platformEqual(
+                                            item.sender
+                                        ) ?: false),
+                                        isLast = !((after as? ChatPageUiModel.MessageWithSender)?.sender?.platformEqual(
+                                            item.sender
+                                        ) ?: false),
+                                        onEvent = onEvent
+                                    )
+                                }
 
-                            } else {
-                                MessageItem(
-                                    state = state.chatDetail,
-                                    messageWithSender = item,
-                                    shouldShowUserInfo = true,
-                                    onEvent = onEvent
-                                )
+                                is ChatPageUiModel.Divider -> {
+                                    TimeDivider(timestamp = item.timestamp)
+                                }
+
+                                else -> {
+
+                                }
                             }
                         }
                     }

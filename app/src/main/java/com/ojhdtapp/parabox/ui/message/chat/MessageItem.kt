@@ -3,7 +3,6 @@ package com.ojhdtapp.parabox.ui.message.chat
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,12 +22,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
@@ -36,7 +32,6 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.ojhdtapp.parabox.domain.model.Message
-import com.ojhdtapp.parabox.domain.model.MessageWithSender
 import com.ojhdtapp.parabox.domain.model.contains
 import com.ojhdtapp.parabox.ui.common.CommonAvatar
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
@@ -47,6 +42,7 @@ import com.ojhdtapp.parabox.ui.message.chat.contents_layout.ImageLayout
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.LocationLayout
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.MessageContentContainer
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.PlainTextLayout
+import com.ojhdtapp.parabox.ui.message.chat.contents_layout.model.ChatPageUiModel
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAnnotatedText
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAt
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAtAll
@@ -64,10 +60,9 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.message.simplifyText
 fun MessageItem(
     modifier: Modifier = Modifier,
     state: MessagePageState.ChatDetail,
-    messageWithSender: MessageWithSender,
+    messageWithSender: ChatPageUiModel.MessageWithSender,
     isFirst: Boolean = true,
     isLast: Boolean = true,
-    shouldShowUserInfo: Boolean,
     onEvent: (e: MessagePageEvent) -> Unit,
 ) {
     val context = LocalContext.current
@@ -91,7 +86,7 @@ fun MessageItem(
         horizontalArrangement = Arrangement.Start
     ) {
         Box(modifier = Modifier.size(42.dp)) {
-            if (shouldShowUserInfo) {
+            if (isFirst) {
                 CommonAvatar(
                     model = messageWithSender.sender.avatar.getModel(),
                     name = messageWithSender.sender.name
@@ -100,7 +95,7 @@ fun MessageItem(
         }
         Spacer(modifier = Modifier.width(8.dp))
         Column(modifier = Modifier.weight(1f)) {
-            if (shouldShowUserInfo) {
+            if (isFirst) {
                 Text(
                     text = messageWithSender.sender.name,
                     style = MaterialTheme.typography.labelMedium,
@@ -146,6 +141,9 @@ fun MessageItem(
 
                     }
                 }
+            }
+            if(isLast){
+                Spacer(modifier = Modifier.height(8.dp))
             }
         }
     }

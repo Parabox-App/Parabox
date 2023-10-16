@@ -7,18 +7,18 @@ import com.ojhdtapp.parabox.data.local.entity.ChatTagsUpdate
 import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.ChatWithLatestMessage
 import com.ojhdtapp.parabox.domain.model.Message
-import com.ojhdtapp.parabox.domain.model.MessageWithSender
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.ui.base.UiState
 import com.ojhdtapp.parabox.ui.message.chat.AudioRecorderState
 import com.ojhdtapp.parabox.ui.message.chat.ToolbarState
+import com.ojhdtapp.parabox.ui.message.chat.contents_layout.model.ChatPageUiModel
 import kotlinx.coroutines.flow.Flow
 
 data class MessagePageState(
     val chatPagingDataFlow: Flow<PagingData<ChatWithLatestMessage>>,
     val pinnedChatPagingDataFlow: Flow<PagingData<Chat>>,
     val chatDetail: ChatDetail = ChatDetail(),
-    val messagePagingDataFlow: Flow<PagingData<MessageWithSender>>,
+    val messagePagingDataFlow: Flow<PagingData<ChatPageUiModel>>,
     val enabledChatFilterList: List<ChatFilter> = emptyList(),
     val selectedChatFilterLists: List<ChatFilter> = listOf(ChatFilter.Normal),
     val datastore: DataStore = DataStore(),
