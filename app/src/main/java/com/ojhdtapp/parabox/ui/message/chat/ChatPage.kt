@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemKey
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
@@ -162,7 +163,10 @@ fun NormalChatPage(
                         state = lazyListState,
                         reverseLayout = true,
                     ) {
-                        items(messageLazyPagingItems.itemCount) {
+                        items(
+                            count = messageLazyPagingItems.itemCount,
+                            key = messageLazyPagingItems.itemKey { it.message.messageId }
+                        ) {
                             val item = messageLazyPagingItems[it]
                             if (item == null) {
 

@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.core.util.Resource
+import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.parabox.core.util.getDataStoreValue
 import com.ojhdtapp.parabox.core.util.getDataStoreValueFlow
 import com.ojhdtapp.parabox.domain.model.Chat
@@ -53,7 +54,7 @@ class MainSharedViewModel @Inject constructor(
                     }
                 }
                 if (event.input.isEmpty()) {
-                    viewModelScope.launch {
+                    viewModelScope.launch(Dispatchers.IO) {
                         delay(200)
                         getRecentSearch()
                     }
@@ -96,7 +97,7 @@ class MainSharedViewModel @Inject constructor(
 
             is MainSharedEvent.TriggerSearchBar -> {
                 if (event.isActive) {
-                    viewModelScope.launch {
+                    viewModelScope.launch(Dispatchers.IO) {
                         delay(200)
                         sendEvent(MainSharedEvent.GetRecentQuery)
                         getRecentQuery()
@@ -106,7 +107,7 @@ class MainSharedViewModel @Inject constructor(
                 Log.d("parabox", "trigger search bar:${event.isActive}")
                 return state.copy(
                     showNavigationBar = !event.isActive,
-                    search =  MainSharedState.Search(
+                    search = MainSharedState.Search(
                         isActive = event.isActive
                     )
                 )
@@ -247,6 +248,7 @@ class MainSharedViewModel @Inject constructor(
                         is MessageFilter.DateFilter -> {
                             set(2, event.filter)
                         }
+
                         else -> {
 
                         }
@@ -639,33 +641,15 @@ class MainSharedViewModel @Inject constructor(
     }
 
     init {
-        viewModelScope.launch {
-            context.getDataStoreValueFlow(DataStoreKeys.MESSAGE_BADGE_NUM, 0).collectLatest {
+        viewModelScope.launch(Dispatchers.IO) {
+            context.dataStore.data.collectLatest {
                 sendEvent(MainSharedEvent.UpdateDataStore(
                     uiState.value.datastore.copy(
-                            messageBadgeNum = it
-                        )
-                ))
-            }
-        }
-        viewModelScope.launch {
-            context.getDataStoreValueFlow(DataStoreKeys.USER_NAME, "User").collectLatest {
-                sendEvent(MainSharedEvent.UpdateDataStore(
-                    uiState.value.datastore.copy(
-                        localName = it
-                    )
-                ))
-            }
-        }
-        viewModelScope.launch {
-            context.getDataStoreValueFlow(DataStoreKeys.USER_AVATAR, "User").map {
-                it.takeIf { it.isNotBlank() }
-                ?.let { Uri.parse(it) }
-                ?: Uri.EMPTY
-            }.collectLatest {
-                sendEvent(MainSharedEvent.UpdateDataStore(
-                    uiState.value.datastore.copy(
-                        localAvatarUri = it
+                        messageBadgeNum = it[DataStoreKeys.MESSAGE_BADGE_NUM] ?: 0,
+                        localName = it[DataStoreKeys.USER_NAME] ?: "User",
+                        localAvatarUri = it[DataStoreKeys.USER_AVATAR]?.takeIf { it.isNotBlank() }
+                            ?.let { Uri.parse(it) }
+                            ?: Uri.EMPTY
                     )
                 ))
             }

@@ -28,6 +28,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.ojhdtapp.parabox.domain.model.Message
@@ -36,7 +38,14 @@ import com.ojhdtapp.parabox.domain.model.contains
 import com.ojhdtapp.parabox.ui.common.CommonAvatar
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageState
+import com.ojhdtapp.parabox.ui.message.chat.contents_layout.ImageLayout
+import com.ojhdtapp.parabox.ui.message.chat.contents_layout.MessageContentContainer
+import com.ojhdtapp.parabox.ui.message.chat.contents_layout.PlainTextLayout
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAt
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxMessageElement
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxPlainText
+import kotlin.math.roundToInt
 
 @Composable
 fun MessageItem(
@@ -44,7 +53,7 @@ fun MessageItem(
     state: MessagePageState.ChatDetail,
     messageWithSender: MessageWithSender,
     isFirst: Boolean = true,
-    isLast:Boolean = true,
+    isLast: Boolean = true,
     shouldShowUserInfo: Boolean,
     onEvent: (e: MessagePageEvent) -> Unit,
 ) {
@@ -87,6 +96,16 @@ fun MessageItem(
             }
             Spacer(modifier = Modifier.height(2.dp))
             Surface(
+                modifier = Modifier.layout { measurable, constraints ->
+                    val placeable = measurable.measure(constraints.copy(
+                        maxWidth = constraints.maxWidth - with(density){
+                            90.dp.roundToPx()
+                        }
+                    ))
+                    layout(placeable.width, placeable.height) {
+                        placeable.placeRelative(0, 0)
+                    }
+                },
                 shape = RoundedCornerShape(
                     topStart = topStartRadius,
                     topEnd = 24.dp,
@@ -96,13 +115,11 @@ fun MessageItem(
                 border = BorderStroke(3.dp, backgroundColor),
                 color = backgroundColor
             ) {
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     SelectionContainer {
-                        Box(modifier = Modifier
-                            .fillMaxWidth()
-                            .height(40.dp)
-                            .background(Color.Yellow))
-//                        messageWithSender.message.contents.toLayout()
+                        MessageContentContainer(shouldBreak = ) {
+                            messageWithSender.message.contents.toLayout()
+                        }
                     }
                     LazyRow(
                         contentPadding = PaddingValues(horizontal = 12.dp),
@@ -112,7 +129,6 @@ fun MessageItem(
                     }
                 }
             }
-            Spacer(modifier = Modifier.width(96.dp))
         }
     }
 }
@@ -126,6 +142,11 @@ fun MessageItemSelf(
 }
 
 @Composable
-private fun List<ParaboxMessageElement>.toLayout() {
-
+private fun List<ParaboxMessageElement>.toLayout(color: Color) : @Composable () -> Unit {
+    return this.map {
+        when(it){
+            is ParaboxPlainText -> PlainTextLayout(text = it.text, color = color)
+            is ParaboxImage -> ImageLayout(model = it.resourceInfo.getModel())
+        }
+    }
 }

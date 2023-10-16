@@ -11,12 +11,3 @@ sealed interface ParaboxMessageElement: Parcelable{
     fun contentToString(): String
     fun getType(): Int
 }
-
-//interface ParaboxRemoteMessageElement: ParaboxMessageElement{
-//    val remoteInfo: ParaboxResourceInfo.ParaboxRemoteInfo
-//}
-//
-//interface ParaboxLocalMessageElement: ParaboxMessageElement{
-//    var localInfo: ParaboxResourceInfo.ParaboxLocalInfo
-//    suspend fun upload()
-//}

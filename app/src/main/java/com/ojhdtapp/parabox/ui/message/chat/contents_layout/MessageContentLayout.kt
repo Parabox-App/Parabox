@@ -5,18 +5,18 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxMessageElement
 
 @Composable
 fun PlainTextLayout(
     modifier: Modifier = Modifier,
-    text: String,
-    color: Color
+    text: AnnotatedString
 ){
     Text(
         modifier = modifier.padding(horizontal = 9.dp, vertical = 9.dp),
-        text = text,
-        color = color
+        text = text
     )
 }
 

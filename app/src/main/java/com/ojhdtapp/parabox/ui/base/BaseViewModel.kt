@@ -36,6 +36,7 @@ abstract class BaseViewModel< S : UiState, E : UiEvent,F : UiEffect>  : ViewMode
     }
 
     fun sendEvent(event: E) {
+        Log.d("parabox", "new event: ${event}")
         viewModelScope.launch {
             _uiEvent.emit(event)
         }
