@@ -1,7 +1,10 @@
 package com.ojhdtapp.parabox.ui.message.chat
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,12 +14,17 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Quickreply
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -24,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layout
@@ -56,6 +65,9 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxMessageElement
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxPlainText
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxQuoteReply
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.simplifyText
+import me.saket.swipe.SwipeAction
+import me.saket.swipe.SwipeableActionsBox
+import me.saket.swipe.rememberSwipeableActionsState
 
 @Composable
 fun MessageItem(
@@ -82,51 +94,77 @@ fun MessageItem(
         targetValue =
         if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
     )
-    Row(
+    SwipeableActionsBox(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Start
+        state = rememberSwipeableActionsState(),
+        endActions = listOf(SwipeAction(
+            icon = {
+                Surface(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.secondaryContainer
+                ) {
+                    Box(modifier = Modifier.size(32.dp), contentAlignment = Alignment.Center) {
+                        Icon(
+                            modifier = Modifier.size(16.dp),
+                            imageVector = Icons.Outlined.Quickreply,
+                            contentDescription = "reply",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            },
+            background = Color.Transparent,
+            onSwipe = {}
+        )),
+        backgroundUntilSwipeThreshold = Color.Transparent
     ) {
-        Box(modifier = Modifier.size(42.dp)) {
-            if (isFirst) {
-                CommonAvatar(
-                    model = messageWithSender.sender.avatar.getModel(),
-                    name = messageWithSender.sender.name
-                )
-            }
-        }
-        Spacer(modifier = Modifier.width(8.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            if (isFirst) {
-                DisableSelection {
-                    Text(
-                        text = messageWithSender.sender.name,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary
+        Row(
+            modifier = modifier
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.Start
+        ) {
+            Box(modifier = Modifier.size(42.dp)) {
+                if (isFirst) {
+                    CommonAvatar(
+                        model = messageWithSender.sender.avatar.getModel(),
+                        name = messageWithSender.sender.name
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(2.dp))
-            Surface(
-                modifier = Modifier.layout { measurable, constraints ->
-                    val placeable = measurable.measure(constraints.copy(
-                        maxWidth = constraints.maxWidth - with(density) {
-                            90.dp.roundToPx()
-                        }
-                    ))
-                    layout(placeable.width, placeable.height) {
-                        placeable.placeRelative(0, 0)
+            Spacer(modifier = Modifier.width(8.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                if (isFirst) {
+                    DisableSelection {
+                        Text(
+                            text = messageWithSender.sender.name,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
-                },
-                shape = RoundedCornerShape(
-                    topStart = topStartRadius,
-                    topEnd = 24.dp,
-                    bottomStart = bottomStartRadius,
-                    bottomEnd = 24.dp
-                ),
-                border = BorderStroke(3.dp, backgroundColor),
-                color = backgroundColor
-            ) {
-                Column {
+                }
+                Spacer(modifier = Modifier.height(2.dp))
+                Surface(
+                    modifier = Modifier.layout { measurable, constraints ->
+                        val placeable = measurable.measure(constraints.copy(
+                            maxWidth = constraints.maxWidth - with(density) {
+                                90.dp.roundToPx()
+                            }
+                        ))
+                        layout(placeable.width, placeable.height) {
+                            placeable.placeRelative(0, 0)
+                        }
+                    },
+                    shape = RoundedCornerShape(
+                        topStart = topStartRadius,
+                        topEnd = 24.dp,
+                        bottomStart = bottomStartRadius,
+                        bottomEnd = 24.dp
+                    ),
+                    border = BorderStroke(3.dp, backgroundColor),
+                    color = backgroundColor
+                ) {
+                    Column {
 //                    SelectionContainer {
                         val simplifyContent = messageWithSender.message.contents.simplifyText()
                         MessageContentContainer(shouldBreak = simplifyContent.map {
@@ -137,19 +175,26 @@ fun MessageItem(
                             }
                         }
 //                    }
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
 
+                        }
                     }
                 }
-            }
-            if(isLast){
-                Spacer(modifier = Modifier.height(8.dp))
+                AnimatedVisibility(
+                    visible = isLast,
+                    enter = expandVertically(),
+                    exit = shrinkVertically()
+                ) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
             }
         }
     }
+
+
 }
 
 fun MessageItemSelf(
