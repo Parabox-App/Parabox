@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -82,7 +83,7 @@ fun MessageItem(
         if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
     )
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Start
     ) {
         Box(modifier = Modifier.size(42.dp)) {
@@ -96,11 +97,13 @@ fun MessageItem(
         Spacer(modifier = Modifier.width(8.dp))
         Column(modifier = Modifier.weight(1f)) {
             if (isFirst) {
-                Text(
-                    text = messageWithSender.sender.name,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                DisableSelection {
+                    Text(
+                        text = messageWithSender.sender.name,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(2.dp))
             Surface(
@@ -124,7 +127,7 @@ fun MessageItem(
                 color = backgroundColor
             ) {
                 Column {
-                    SelectionContainer {
+//                    SelectionContainer {
                         val simplifyContent = messageWithSender.message.contents.simplifyText()
                         MessageContentContainer(shouldBreak = simplifyContent.map {
                             it is ParaboxImage || it is ParaboxQuoteReply || it is ParaboxForward || it is ParaboxAudio || it is ParaboxFile
@@ -133,7 +136,7 @@ fun MessageItem(
                                 paraboxMessageElement.toLayout(textColor = MaterialTheme.colorScheme.onSurface)
                             }
                         }
-                    }
+//                    }
                     LazyRow(
                         contentPadding = PaddingValues(horizontal = 12.dp),
                         horizontalArrangement = Arrangement.spacedBy(4.dp)

@@ -1,21 +1,32 @@
 package com.ojhdtapp.parabox.ui.message.chat
 
 import android.util.Log
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ArrowDownward
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FabPosition
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.surfaceColorAtElevation
@@ -27,6 +38,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ClipboardManager
@@ -54,6 +66,7 @@ import com.ojhdtapp.parabox.ui.message.chat.contents_layout.model.ChatPageUiMode
 import com.ojhdtapp.parabox.ui.message.chat.top_bar.NormalChatTopBar
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -88,6 +101,7 @@ fun ChatPage(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun NormalChatPage(
     modifier: Modifier = Modifier,
@@ -157,52 +171,80 @@ fun NormalChatPage(
             ) {
                 Column(modifier = Modifier.padding(top = paddingValues.calculateTopPadding())) {
                     val messageLazyPagingItems = state.messagePagingDataFlow.collectAsLazyPagingItems()
+                    LaunchedEffect(messageLazyPagingItems.itemCount) {
+                        if (lazyListState.firstVisibleItemIndex == 1 && lazyListState.firstVisibleItemScrollOffset < 50) {
+                            lazyListState.animateScrollToItem(0)
+                        }
+                    }
 //                    MyImagePreviewer(
 //                        messageLazyPagingItems = messageLazyPagingItems,
 //                        state = state.chatDetail.imagePreviewerState,
 //                        onEvent = onEvent
 //                    )
-                    LaunchedEffect(key1 = messageLazyPagingItems.itemCount, block = {
-                        Log.d("parabox", "msgflow size: ${messageLazyPagingItems.itemCount}")
-                    })
-                    LazyColumn(
-                        modifier = Modifier.weight(1f),
-                        state = lazyListState,
-                        contentPadding = PaddingValues(horizontal = 16.dp),
-                        reverseLayout = true,
-                    ) {
-                        items(
-                            count = messageLazyPagingItems.itemCount,
-                            key = messageLazyPagingItems.itemKey { it.id }
-                        ) {
-                            val item = messageLazyPagingItems[it]
-                            when (item) {
-                                is ChatPageUiModel.MessageWithSender -> {
-                                    val before = messageLazyPagingItems.peek(it + 1)
-                                    val after = if (it > 0) messageLazyPagingItems.peek(it - 1) else null
-                                    MessageItem(
-                                        state = state.chatDetail,
-                                        messageWithSender = item,
-                                        isFirst = !((before as? ChatPageUiModel.MessageWithSender)?.sender?.platformEqual(
-                                            item.sender
-                                        ) ?: false),
-                                        isLast = !((after as? ChatPageUiModel.MessageWithSender)?.sender?.platformEqual(
-                                            item.sender
-                                        ) ?: false),
-                                        onEvent = onEvent
-                                    )
-                                }
+                    Box(modifier = Modifier.weight(1f)) {
+                        SelectionContainer(modifier = Modifier.fillMaxSize()) {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                state = lazyListState,
+                                contentPadding = PaddingValues(horizontal = 16.dp),
+                                reverseLayout = true,
+                            ) {
+                                items(
+                                    count = messageLazyPagingItems.itemCount,
+                                    key = messageLazyPagingItems.itemKey { it.id }
+                                ) {
+                                    val item = messageLazyPagingItems[it]
+                                    when (item) {
+                                        is ChatPageUiModel.MessageWithSender -> {
+                                            val before = messageLazyPagingItems.peek(it + 1)
+                                            val after = if (it > 0) messageLazyPagingItems.peek(it - 1) else null
+                                            MessageItem(
+                                                modifier = Modifier.animateItemPlacement(),
+                                                state = state.chatDetail,
+                                                messageWithSender = item,
+                                                isFirst = !((before as? ChatPageUiModel.MessageWithSender)?.sender?.platformEqual(
+                                                    item.sender
+                                                ) ?: false),
+                                                isLast = !((after as? ChatPageUiModel.MessageWithSender)?.sender?.platformEqual(
+                                                    item.sender
+                                                ) ?: false),
+                                                onEvent = onEvent
+                                            )
+                                        }
 
-                                is ChatPageUiModel.Divider -> {
-                                    TimeDivider(timestamp = item.timestamp)
-                                }
+                                        is ChatPageUiModel.Divider -> {
+                                            TimeDivider(
+                                                modifier = Modifier.animateItemPlacement(),
+                                                timestamp = item.timestamp
+                                            )
+                                        }
 
-                                else -> {
+                                        else -> {
 
+                                        }
+                                    }
                                 }
                             }
                         }
+                        androidx.compose.animation.AnimatedVisibility(
+                            modifier = Modifier.align(Alignment.BottomEnd),
+                            visible = fabExtended,
+                            enter = slideInHorizontally { it * 2 },  // slide in from the right
+                            exit = slideOutHorizontally { it * 2 } // slide out to the right
+                        ) {
+                            FloatingActionButton(
+                                modifier = Modifier.padding(end = 16.dp, bottom = 16.dp),
+                                onClick = {
+                                    coroutineScope.launch {
+                                        lazyListState.animateScrollToItem(0)
+                                    }
+                                }) {
+                                Icon(imageVector = Icons.Outlined.ArrowDownward, contentDescription = "to_latest")
+                            }
+                        }
                     }
+
+
                     EditArea(
                         modifier = Modifier
                             .padding(bottom = bottomPadding.value)
