@@ -1,16 +1,30 @@
 package com.ojhdtapp.parabox.ui.message.chat.top_bar
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
 import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
 import androidx.compose.animation.graphics.vector.AnimatedImageVector
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.with
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -24,7 +38,7 @@ import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageState
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationGraphicsApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationGraphicsApi::class, ExperimentalAnimationApi::class)
 @Composable
 fun NormalChatTopBar(
     modifier: Modifier = Modifier,
@@ -37,10 +51,31 @@ fun NormalChatTopBar(
         ), atEnd = chatDetail.selectedMessageList.isNotEmpty()
     )
 
-    TopAppBar(modifier = modifier,
+    TopAppBar(
+        modifier = modifier,
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = chatDetail.chat?.name ?: "")
+                AnimatedContent(
+                    targetState = chatDetail.selectedMessageList.size,
+                    transitionSpec = {
+                        // Compare the incoming number with the previous number.
+                        if (targetState > initialState) {
+                            // If the target number is larger, it slides up and fades in
+                            // while the initial (smaller) number slides up and fades out.
+                            (slideInVertically { height -> height } + fadeIn()).togetherWith(slideOutVertically { height -> -height } + fadeOut())
+                        } else {
+                            // If the target number is smaller, it slides down and fades in
+                            // while the initial number slides down and fades out.
+                            (slideInVertically { height -> -height } + fadeIn()).togetherWith(slideOutVertically { height -> height } + fadeOut())
+                        }.using(
+                            // Disable clipping since the faded slide-in/out should
+                            // be displayed out of bounds.
+                            SizeTransform(clip = false)
+                        )
+                    }, label = ""
+                ) { num ->
+                    Text(text = num.takeIf { it > 0 }?.toString() ?: chatDetail.chat?.name ?: "")
+                }
             }
         },
         navigationIcon = {
@@ -58,5 +93,14 @@ fun NormalChatTopBar(
                 )
             }
         },
-        actions = {})
+        actions = {
+            IconButton(onClick = { /*TODO*/ }) {
+                Icon(
+                    imageVector = Icons.Outlined.Search,
+                    contentDescription = "search"
+                )
+            }
+        },
+        scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    )
 }

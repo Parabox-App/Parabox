@@ -23,6 +23,8 @@
     <string name="save_to_clipboard">内容已复制到剪贴板</string>
     <string name="try_to_recall">尝试撤回</string>
     <string name="reply">回复</string>
+    <string name="forward">转发</string>
+    <string name="multiple_select">多选</string>
     <string name="remove_from_history">从聊天记录移除</string>
     <string name="conversation">会话</string>
     <string name="select_plugin_connection">消息发送出口</string>

@@ -21,6 +21,8 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
@@ -110,7 +112,7 @@ class MainActivity : AppCompatActivity() {
 
     @OptIn(
         ExperimentalAnimationApi::class, ExperimentalMaterialNavigationApi::class,
-        ExperimentalMaterial3WindowSizeClassApi::class
+        ExperimentalMaterial3WindowSizeClassApi::class, ExperimentalMaterial3Api::class
     )
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -233,7 +235,8 @@ class MainActivity : AppCompatActivity() {
                 CompositionLocalProvider(
                     values = arrayOf(
                         LocalFixedInsets provides fixedInsets,
-                        LocalAudioRecorder provides AudioRecorder
+                        LocalAudioRecorder provides AudioRecorder,
+                        LocalMinimumInteractiveComponentEnforcement provides false
                     )) {
                     DestinationsNavHost(
                         navGraph = NavGraphs.root,

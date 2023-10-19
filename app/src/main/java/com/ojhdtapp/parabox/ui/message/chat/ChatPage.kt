@@ -199,7 +199,6 @@ fun NormalChatPage(
                                             val before = messageLazyPagingItems.peek(it + 1)
                                             val after = if (it > 0) messageLazyPagingItems.peek(it - 1) else null
                                             MessageItem(
-                                                modifier = Modifier.animateItemPlacement(),
                                                 state = state.chatDetail,
                                                 messageWithSender = item,
                                                 isFirst = !((before as? ChatPageUiModel.MessageWithSender)?.sender?.platformEqual(
@@ -214,7 +213,6 @@ fun NormalChatPage(
 
                                         is ChatPageUiModel.Divider -> {
                                             TimeDivider(
-                                                modifier = Modifier.animateItemPlacement(),
                                                 timestamp = item.timestamp
                                             )
                                         }

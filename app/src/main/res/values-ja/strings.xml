@@ -23,6 +23,8 @@
     <string name="save_to_clipboard">テキストがクリップボードにコピーされました</string>
     <string name="try_to_recall">撤回を試みる</string>
     <string name="reply">返信</string>
+    <string name="forward">フォワード</string>
+    <string name="multiple_select">複数選択</string>
     <string name="remove_from_history">チャット履歴から削除</string>
     <string name="conversation">セッション</string>
     <string name="select_plugin_connection">メッセージ送信のエクスポート</string>

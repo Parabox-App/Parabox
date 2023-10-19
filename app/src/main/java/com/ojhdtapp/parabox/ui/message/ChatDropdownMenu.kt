@@ -37,14 +37,13 @@ fun ChatDropdownMenu(
     CascadeDropdownMenu(
         expanded = isMenuVisible,
         onDismissRequest = onDismiss,
-        modifier = modifier.clip(MaterialTheme.shapes.medium),
         offset = DpOffset(16.dp, 0.dp),
         properties = PopupProperties(
             dismissOnBackPress = true,
             dismissOnClickOutside = true,
             focusable = true
         ),
-        shape = RoundedCornerShape(8.dp),
+        shape = MaterialTheme.shapes.medium,
     ) {
         if (chat.isPinned) {
             androidx.compose.material3.DropdownMenuItem(

@@ -23,6 +23,8 @@
     <string name="save_to_clipboard">Content copied to clipboard</string>
     <string name="try_to_recall">Try to withdraw</string>
     <string name="reply">Reply</string>
+    <string name="forward">Forward</string>
+    <string name="multiple_select">Select Multiple</string>
     <string name="remove_from_history">Remove from chat history</string>
     <string name="conversation">Chat</string>
     <string name="select_plugin_connection">Message sending exit</string>
