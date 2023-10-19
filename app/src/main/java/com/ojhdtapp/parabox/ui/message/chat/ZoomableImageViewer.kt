@@ -9,3 +9,7 @@ fun ZoomableImageViewer(
 ){
 
 }
+
+enum class ZoomableImageViewerState{
+    Closing, Closed, Opening
+}

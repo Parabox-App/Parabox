@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.ui.message.chat
 
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateDpAsState
@@ -133,6 +134,16 @@ fun NormalChatPage(
             sheetState.open()
         } else {
             sheetState.close()
+        }
+    }
+    BackHandler(sheetState.isOpen) {
+        coroutineScope.launch {
+            sheetState.close()
+        }
+    }
+    BackHandler(drawerState.isOpen) {
+        coroutineScope.launch {
+            drawerState.close()
         }
     }
     MyModalNavigationDrawerReverse(

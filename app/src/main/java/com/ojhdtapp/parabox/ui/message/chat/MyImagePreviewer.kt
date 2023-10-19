@@ -98,7 +98,6 @@ fun MyImagePreviewer(
         }
     }
     ImagePreviewer(modifier = Modifier.fillMaxSize(),
-        count = previewImageList.size,
         state = imageViewerState,
         imageLoader = { index ->
             if (index < previewImageList.size) {
