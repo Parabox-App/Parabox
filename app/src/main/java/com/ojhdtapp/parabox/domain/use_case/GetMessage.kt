@@ -21,7 +21,7 @@ class GetMessage @Inject constructor(
         return Pager(
             PagingConfig(
                 pageSize = 40,
-                prefetchDistance = 80,
+                prefetchDistance = 40,
                 enablePlaceholders = true,
                 initialLoadSize = 40
             )

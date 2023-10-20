@@ -50,6 +50,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
@@ -65,6 +66,8 @@ import com.ojhdtapp.parabox.ui.message.MessagePageState
 import com.ojhdtapp.parabox.ui.message.MessagePageViewModel
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.model.ChatPageUiModel
 import com.ojhdtapp.parabox.ui.message.chat.top_bar.NormalChatTopBar
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
+import com.origeek.imageViewer.previewer.rememberPreviewerState
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import kotlinx.coroutines.launch
@@ -129,6 +132,40 @@ fun NormalChatPage(
             lazyListState.firstVisibleItemIndex > 2
         }
     }
+    val messageLazyPagingItems = state.messagePagingDataFlow.collectAsLazyPagingItems()
+    LaunchedEffect(key1 = messageLazyPagingItems.itemSnapshotList) {
+        Log.d("parabox", "message size: ${messageLazyPagingItems.itemSnapshotList.items.size}")
+    }
+    LaunchedEffect(messageLazyPagingItems.itemCount) {
+        if (lazyListState.firstVisibleItemIndex == 1 && lazyListState.firstVisibleItemScrollOffset < 50) {
+            lazyListState.animateScrollToItem(0)
+        }
+    }
+    val previewImageList by remember {
+        derivedStateOf {
+            messageLazyPagingItems.itemSnapshotList.items.filterIsInstance<ChatPageUiModel.MessageWithSender>()
+                .map { it.message }
+                .fold(initial = mutableListOf<Pair<Long, ParaboxImage>>(), operation = { acc, message ->
+                    message.contents.forEachIndexed { index, paraboxMessageElement ->
+                        if (paraboxMessageElement is ParaboxImage) {
+                            acc.add(message.contentsId[index] to paraboxMessageElement)
+                        }
+                    }
+                    acc
+                }).reversed()
+        }
+    }
+    val previewerState = rememberPreviewerState(
+        pageCount = {
+            previewImageList.size
+        },
+        getKey = {
+            previewImageList[it].first
+        }
+    )
+    LaunchedEffect(key1 = previewImageList, block = {
+        Log.d("parabox", "image size: ${previewImageList.size};image list: ${previewImageList}")
+    })
     LaunchedEffect(state.chatDetail.editAreaState.expanded) {
         if (state.chatDetail.editAreaState.expanded) {
             sheetState.open()
@@ -146,6 +183,7 @@ fun NormalChatPage(
             drawerState.close()
         }
     }
+
     MyModalNavigationDrawerReverse(
         drawerContent = {
             Box(
@@ -181,17 +219,6 @@ fun NormalChatPage(
                 sheetHeight = 160.dp, sheetState = sheetState
             ) {
                 Column(modifier = Modifier.padding(top = paddingValues.calculateTopPadding())) {
-                    val messageLazyPagingItems = state.messagePagingDataFlow.collectAsLazyPagingItems()
-                    LaunchedEffect(messageLazyPagingItems.itemCount) {
-                        if (lazyListState.firstVisibleItemIndex == 1 && lazyListState.firstVisibleItemScrollOffset < 50) {
-                            lazyListState.animateScrollToItem(0)
-                        }
-                    }
-//                    MyImagePreviewer(
-//                        messageLazyPagingItems = messageLazyPagingItems,
-//                        state = state.chatDetail.imagePreviewerState,
-//                        onEvent = onEvent
-//                    )
                     Box(modifier = Modifier.weight(1f)) {
                         SelectionContainer(modifier = Modifier.fillMaxSize()) {
                             LazyColumn(
@@ -212,6 +239,8 @@ fun NormalChatPage(
                                             MessageItem(
                                                 state = state.chatDetail,
                                                 messageWithSender = item,
+                                                previewerState = previewerState,
+                                                previewImageList = previewImageList,
                                                 isFirst = !((before as? ChatPageUiModel.MessageWithSender)?.sender?.platformEqual(
                                                     item.sender
                                                 ) ?: false),
@@ -265,4 +294,10 @@ fun NormalChatPage(
             }
         }
     }
+    MyImagePreviewer(
+        previewImageList = previewImageList,
+        previewerState = previewerState,
+        state = state.chatDetail.imagePreviewerState,
+        onEvent = onEvent
+    )
 }

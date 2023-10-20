@@ -15,6 +15,9 @@ data class Message(
     val uid: String,
     val messageId: Long,
 ){
+    val contentsId: List<Long> get() = contents.indices.map {
+        "${messageId}${it}".toLong()
+    }
     override fun equals(other: Any?): Boolean {
         return if(other is Message){
             messageId == other.messageId

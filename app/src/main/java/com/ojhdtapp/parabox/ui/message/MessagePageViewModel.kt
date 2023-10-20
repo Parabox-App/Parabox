@@ -22,6 +22,7 @@ import com.ojhdtapp.parabox.domain.use_case.GetMessage
 import com.ojhdtapp.parabox.domain.use_case.UpdateChat
 import com.ojhdtapp.parabox.ui.base.BaseViewModel
 import com.ojhdtapp.parabox.ui.message.chat.AudioRecorderState
+import com.ojhdtapp.parabox.ui.message.chat.contents_layout.model.ChatPageUiModel
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAudio
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxMessageElement
@@ -520,5 +521,9 @@ class MessagePageViewModel @Inject constructor(
                 add(ParaboxAudio(resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(uiState.value.chatDetail.editAreaState.chosenAudioUri!!)))
             }
         }
+    }
+
+    fun testFLow(): Flow<PagingData<ChatPageUiModel>> {
+        return getMessage(listOf(1L), emptyList()).cachedIn(viewModelScope)
     }
 }

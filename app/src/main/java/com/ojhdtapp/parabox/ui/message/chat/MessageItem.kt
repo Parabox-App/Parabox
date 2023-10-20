@@ -39,6 +39,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -78,6 +79,8 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxMessageElement
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxPlainText
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxQuoteReply
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.simplifyText
+import com.origeek.imageViewer.previewer.ImagePreviewerState
+import kotlinx.coroutines.launch
 import me.saket.swipe.SwipeAction
 import me.saket.swipe.SwipeableActionsBox
 import me.saket.swipe.rememberSwipeableActionsState
@@ -88,6 +91,8 @@ fun MessageItem(
     modifier: Modifier = Modifier,
     state: MessagePageState.ChatDetail,
     messageWithSender: ChatPageUiModel.MessageWithSender,
+    previewerState: ImagePreviewerState,
+    previewImageList: List<Pair<Long, ParaboxImage>>,
     isFirst: Boolean = true,
     isLast: Boolean = true,
     onEvent: (e: MessagePageEvent) -> Unit,
@@ -95,13 +100,11 @@ fun MessageItem(
     val context = LocalContext.current
     val density = LocalDensity.current
     val hapticFeedback = LocalHapticFeedback.current
+    val coroutineScope = rememberCoroutineScope()
     val isSelected by remember(state.selectedMessageList.size) {
         derivedStateOf {
             state.selectedMessageList.contains(messageWithSender.message.messageId)
         }
-    }
-    LaunchedEffect(isSelected){
-        Log.d("parabox","selected!")
     }
     val topStartRadius by animateDpAsState(targetValue = if (isFirst) 24.dp else 3.dp)
     val bottomStartRadius by animateDpAsState(targetValue = if (isLast) 24.dp else 3.dp)
@@ -190,11 +193,13 @@ fun MessageItem(
                 Spacer(modifier = Modifier.height(2.dp))
                 Surface(
                     modifier = Modifier.layout { measurable, constraints ->
-                        val placeable = measurable.measure(constraints.copy(
-                            maxWidth = constraints.maxWidth - with(density) {
-                                90.dp.roundToPx()
-                            },
-                        ))
+                        val placeable = measurable.measure(
+                            constraints.copy(
+                                maxWidth = constraints.maxWidth - with(density) {
+                                    90.dp.roundToPx()
+                                },
+                            )
+                        )
                         layout(placeable.width, placeable.height) {
                             placeable.placeRelative(0, 0)
                         }
@@ -218,11 +223,24 @@ fun MessageItem(
                 ) {
                     Column {
                         val simplifyContent = messageWithSender.message.contents.simplifyText()
-                        MessageContentContainer(shouldBreak = simplifyContent.map {
+                        MessageContentContainer(shouldBreak = simplifyContent.filterNotNull().map {
                             it is ParaboxImage || it is ParaboxQuoteReply || it is ParaboxForward || it is ParaboxAudio || it is ParaboxFile
                         }) {
                             simplifyContent.forEachIndexed { index, paraboxMessageElement ->
-                                paraboxMessageElement.toLayout(textColor = textColor)
+                                paraboxMessageElement?.toLayout(
+                                    textColor = textColor,
+                                    elementId = messageWithSender.message.contentsId[index],
+                                    previewerState = previewerState,
+                                    onClick = { elementId ->
+                                        val index = previewImageList.indexOfFirst { it.first == elementId }
+                                        if (index >= 0) {
+                                            Log.d("parabox", "opening:${elementId}, index${index}")
+                                            coroutineScope.launch {
+                                                previewerState.openTransform(index = index)
+                                            }
+                                        }
+                                    },
+                                )
                             }
                         }
                         LazyRow(
@@ -256,7 +274,12 @@ fun MessageItemSelf(
 }
 
 @Composable
-private fun ParaboxMessageElement.toLayout(textColor: Color) {
+private fun ParaboxMessageElement.toLayout(
+    textColor: Color,
+    elementId: Long,
+    previewerState: ImagePreviewerState,
+    onClick: (elementId: Long) -> Unit,
+) {
     when (this) {
         is ParaboxPlainText -> PlainTextLayout(text = buildAnnotatedString {
             withStyle(SpanStyle(color = textColor)) {
@@ -291,7 +314,13 @@ private fun ParaboxMessageElement.toLayout(textColor: Color) {
             }
         })
 
-        is ParaboxImage -> ImageLayout(model = resourceInfo.getModel())
+        is ParaboxImage -> ImageLayout(
+            model = resourceInfo.getModel(),
+            elementId = elementId,
+            previewerState = previewerState,
+            onClick = onClick
+        )
+
         is ParaboxAudio -> AudioLayout()
         is ParaboxFile -> FileLayout()
         is ParaboxLocation -> LocationLayout()

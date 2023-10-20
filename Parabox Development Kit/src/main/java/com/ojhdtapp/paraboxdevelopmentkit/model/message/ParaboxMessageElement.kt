@@ -14,9 +14,9 @@ sealed interface ParaboxMessageElement : Parcelable {
     fun getType(): Int
 }
 
-fun List<ParaboxMessageElement>.simplifyText(): List<ParaboxMessageElement> {
+fun List<ParaboxMessageElement>.simplifyText(): List<ParaboxMessageElement?> {
     val textTemp = mutableListOf<ParaboxText>()
-    val res = mutableListOf<ParaboxMessageElement>()
+    val res = mutableListOf<ParaboxMessageElement?>()
     forEach {
         when (it) {
             is ParaboxText -> {
@@ -28,16 +28,18 @@ fun List<ParaboxMessageElement>.simplifyText(): List<ParaboxMessageElement> {
             }
 
             else -> {
-                if (textTemp.isNotEmpty()) {
-                    res.add(ParaboxAnnotatedText(list = textTemp.toList()))
+                textTemp.toList().takeIf { it.isNotEmpty() }?.let {
+                    res.add(ParaboxAnnotatedText(list = it.toList()))
+                    res.addAll(List(it.size - 1){null})
                     textTemp.clear()
                 }
                 res.add(it)
             }
         }
     }
-    if (textTemp.isNotEmpty()) {
-        res.add(ParaboxAnnotatedText(list = textTemp.toList()))
+    textTemp.toList().takeIf { it.isNotEmpty() }?.let {
+        res.add(ParaboxAnnotatedText(list = it.toList()))
+        res.addAll(List(it.size - 1){null})
         textTemp.clear()
     }
     return res

@@ -41,7 +41,7 @@ class Extension : ParaboxExtension() {
                     message = ReceiveMessage(
                         contents = listOf(
                             ParaboxImage(
-                                resourceInfo = ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo(url = "https://tuapi.eees.cc/api.php?category=dongman&type=302")
+                                resourceInfo = ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo(url = "https://ojhdt.com/source/avatar.png")
                             )
                         ),
                         sender = ParaboxContact(

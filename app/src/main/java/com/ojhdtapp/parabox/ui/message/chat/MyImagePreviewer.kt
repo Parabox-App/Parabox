@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.FileDownload
@@ -44,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
 import androidx.core.net.toFile
 import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.itemContentType
 import coil.ImageLoader
 import coil.compose.rememberAsyncImagePainter
 import coil.decode.GifDecoder
@@ -55,9 +57,11 @@ import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.ui.common.RoundedCornerCascadeDropdownMenu
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageState
+import com.ojhdtapp.parabox.ui.message.chat.contents_layout.model.ChatPageUiModel
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 import com.origeek.imageViewer.previewer.ImagePreviewer
+import com.origeek.imageViewer.previewer.ImagePreviewerState
 import com.origeek.imageViewer.previewer.rememberPreviewerState
 import kotlinx.coroutines.launch
 import me.saket.cascade.CascadeDropdownMenu
@@ -66,39 +70,20 @@ import me.saket.cascade.CascadeDropdownMenu
 @Composable
 fun MyImagePreviewer(
     modifier: Modifier = Modifier,
-    messageLazyPagingItems: LazyPagingItems<Message>,
+    previewImageList: List<Pair<Long, ParaboxImage>>,
     state: MessagePageState.ImagePreviewerState,
+    previewerState: ImagePreviewerState,
     onEvent: (e: MessagePageEvent) -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
-    val previewImageList by remember {
-        derivedStateOf {
-            messageLazyPagingItems.itemSnapshotList.items.fold(mutableListOf<Pair<Long, ParaboxImage>>()) { acc, message ->
-                val imageMessageList = message.contents.filterIsInstance<ParaboxImage>()
-                val lastIndex = imageMessageList.lastIndex
-                imageMessageList.reversed().forEachIndexed { index, t ->
-                    if (t.resourceInfo.getModel() != null) {
-                        val imageId = "${message.messageId}${(lastIndex - index).coerceIn(0, lastIndex)}".toLong()
-                        acc.add(
-                            imageId to t
-                        )
-                    }
-                }
-                acc
-            }.reversed()
-        }
-    }
-    val imageViewerState = rememberPreviewerState(enableVerticalDrag = true) {
-        previewImageList[it].first
-    }
-    BackHandler(enabled = imageViewerState.visible) {
+    BackHandler(previewerState.canClose) {
         coroutineScope.launch {
-            imageViewerState.closeTransform()
+            previewerState.closeTransform()
         }
     }
-    ImagePreviewer(modifier = Modifier.fillMaxSize(),
-        state = imageViewerState,
+    ImagePreviewer(modifier = modifier.fillMaxSize(),
+        state = previewerState,
         imageLoader = { index ->
             if (index < previewImageList.size) {
                 val t = previewImageList[index].second
@@ -139,11 +124,11 @@ fun MyImagePreviewer(
                         navigationIcon = {
                             IconButton(onClick = {
                                 coroutineScope.launch {
-                                    imageViewerState.closeTransform()
+                                    previewerState.closeTransform()
                                 }
                             }) {
                                 Icon(
-                                    imageVector = Icons.Outlined.ArrowBack,
+                                    imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                                     contentDescription = "back"
                                 )
                             }
@@ -166,13 +151,12 @@ fun MyImagePreviewer(
                                     onDismissRequest = {
                                         onEvent(MessagePageEvent.ExpandImagePreviewerMenu(false))
                                     },
-                                    modifier = modifier.clip(MaterialTheme.shapes.medium),
                                     properties = PopupProperties(
                                         dismissOnBackPress = true,
                                         dismissOnClickOutside = true,
                                         focusable = true
                                     ),
-                                    shape = RoundedCornerShape(8.dp),
+                                    shape = MaterialTheme.shapes.medium
                                 ) {
                                     DropdownMenuItem(
                                         text = {
@@ -185,10 +169,16 @@ fun MyImagePreviewer(
                                                     previewImageList.getOrNull(current)?.second
                                                         ?: throw NoSuchElementException("id lost")
                                                 // TODO: downloader
-                                                when(image.resourceInfo){
+                                                when (image.resourceInfo) {
                                                     is ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo -> {
-                                                        onEvent(MessagePageEvent.AddMeme((image.resourceInfo as ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo).uri, {}, {}))
+                                                        onEvent(
+                                                            MessagePageEvent.AddMeme(
+                                                                (image.resourceInfo as ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo).uri,
+                                                                {},
+                                                                {})
+                                                        )
                                                     }
+
                                                     else -> {}
                                                 }
                                                 Toast.makeText(
