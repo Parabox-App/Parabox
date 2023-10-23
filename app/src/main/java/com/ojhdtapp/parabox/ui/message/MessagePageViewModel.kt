@@ -2,6 +2,7 @@ package com.ojhdtapp.parabox.ui.message
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.core.net.toUri
@@ -14,6 +15,8 @@ import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.buildFileName
 import com.ojhdtapp.parabox.core.util.getDataStoreValue
+import com.ojhdtapp.parabox.domain.model.Chat
+import com.ojhdtapp.parabox.domain.model.ChatWithLatestMessage
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.domain.use_case.GetChat
@@ -31,9 +34,14 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -52,33 +60,15 @@ class MessagePageViewModel @Inject constructor(
 ) : BaseViewModel<MessagePageState, MessagePageEvent, MessagePageEffect>() {
 
     override fun initialState(): MessagePageState {
-        return MessagePageState(
-            chatPagingDataFlow = getChat(listOf(ChatFilter.Normal)).cachedIn(viewModelScope),
-            pinnedChatPagingDataFlow = getChat.pinned(),
-            messagePagingDataFlow = flow { emit(PagingData.empty()) }
-        )
+        return MessagePageState()
     }
 
-    init {
-        sendEvent(MessagePageEvent.UpdateDataStore)
-    }
 
     override suspend fun handleEvent(
         event: MessagePageEvent,
         state: MessagePageState
     ): MessagePageState? {
         return when (event) {
-            is MessagePageEvent.UpdateDataStore -> {
-                state.copy(
-                    datastore = state.datastore.copy(
-                        enableSwipeToDismiss = context.getDataStoreValue(
-                            DataStoreKeys.SETTINGS_ENABLE_SWIPE_TO_DISMISS,
-                            true
-                        )
-                    )
-                )
-            }
-
             is MessagePageEvent.OpenEnabledChatFilterDialog -> {
                 state.copy(
                     openEnabledChatFilterDialog = event.open
@@ -100,7 +90,6 @@ class MessagePageViewModel @Inject constructor(
                         }
                     }
                 state.copy(
-                    chatPagingDataFlow = getChat(newList),
                     enabledChatFilterList = event.list,
                     selectedChatFilterLists = newList,
                 )
@@ -124,14 +113,7 @@ class MessagePageViewModel @Inject constructor(
                     }
                 }
                 return state.copy(
-                    chatPagingDataFlow = getChat(newList),
                     selectedChatFilterLists = newList
-                )
-            }
-
-            is MessagePageEvent.GetChatPagingDataFlow -> {
-                return state.copy(
-                    chatPagingDataFlow = getChat(state.selectedChatFilterLists)
                 )
             }
 
@@ -257,7 +239,6 @@ class MessagePageViewModel @Inject constructor(
                 if (event.chat == null) {
                     return state.copy(
                         chatDetail = MessagePageState.ChatDetail(),
-                        messagePagingDataFlow = flow { emit(PagingData.empty()) }
                     )
                 } else {
                     return state.copy(
@@ -266,10 +247,7 @@ class MessagePageViewModel @Inject constructor(
                             editAreaState = state.chatDetail.editAreaState.copy(
                                 memeList = refreshMemeList()
                             )
-                        ),
-                        messagePagingDataFlow = getMessage(event.chat.subChatIds.toMutableList().apply {
-                            add(event.chat.chatId)
-                        }.distinct(), emptyList()).cachedIn(viewModelScope)
+                        )
                     )
                 }
 
@@ -523,7 +501,17 @@ class MessagePageViewModel @Inject constructor(
         }
     }
 
-    fun testFLow(): Flow<PagingData<ChatPageUiModel>> {
-        return getMessage(listOf(1L), emptyList()).cachedIn(viewModelScope)
-    }
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val messagePagingDataFlow: Flow<PagingData<ChatPageUiModel>> =
+        uiState.distinctUntilChanged { old, new -> old.chatDetail == new.chatDetail || new.chatDetail.chat == null }
+            .flatMapLatest {
+                getMessage(buildList {
+                    add(it.chatDetail.chat!!.chatId)
+                    addAll(it.chatDetail.chat.subChatIds)
+                }.distinct(), emptyList())
+            }.cachedIn(viewModelScope)
+    val chatPagingDataFlow: Flow<PagingData<ChatWithLatestMessage>> =
+        uiState.distinctUntilChangedBy { it.selectedChatFilterLists }.flatMapLatest { getChat(it.selectedChatFilterLists) }.cachedIn(viewModelScope)
+    val pinnedChatPagingDataFlow: Flow<PagingData<Chat>> =
+        getChat.pinned().cachedIn(viewModelScope)
 }

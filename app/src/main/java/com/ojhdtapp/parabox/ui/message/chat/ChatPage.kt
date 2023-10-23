@@ -76,6 +76,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun ChatPage(
     modifier: Modifier = Modifier,
+    viewModel: MessagePageViewModel,
     state: MessagePageState,
     mainNavController: NavController,
     mainSharedState: MainSharedState,
@@ -92,6 +93,7 @@ fun ChatPage(
         } else {
             NormalChatPage(
                 modifier = modifier,
+                viewModel = viewModel,
                 state = state,
                 sharedState = mainSharedState,
                 mainNavController = mainNavController,
@@ -109,6 +111,7 @@ fun ChatPage(
 @Composable
 fun NormalChatPage(
     modifier: Modifier = Modifier,
+    viewModel: MessagePageViewModel,
     state: MessagePageState,
     sharedState: MainSharedState,
     mainNavController: NavController,
@@ -132,10 +135,7 @@ fun NormalChatPage(
             lazyListState.firstVisibleItemIndex > 2
         }
     }
-    val messageLazyPagingItems = state.messagePagingDataFlow.collectAsLazyPagingItems()
-    LaunchedEffect(key1 = messageLazyPagingItems.itemSnapshotList) {
-        Log.d("parabox", "message size: ${messageLazyPagingItems.itemSnapshotList.items.size}")
-    }
+    val messageLazyPagingItems = viewModel.messagePagingDataFlow.collectAsLazyPagingItems()
     LaunchedEffect(messageLazyPagingItems.itemCount) {
         if (lazyListState.firstVisibleItemIndex == 1 && lazyListState.firstVisibleItemScrollOffset < 50) {
             lazyListState.animateScrollToItem(0)

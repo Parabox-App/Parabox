@@ -104,8 +104,8 @@ fun MessagePage(
                 }
             }
     }
-    val chatLazyPagingData = state.chatPagingDataFlow.collectAsLazyPagingItems()
-    val pinnedChatLazyPagingData = state.pinnedChatPagingDataFlow.collectAsLazyPagingItems()
+    val chatLazyPagingData = viewModel.chatPagingDataFlow.collectAsLazyPagingItems()
+    val pinnedChatLazyPagingData = viewModel.pinnedChatPagingDataFlow.collectAsLazyPagingItems()
     val searchBarPadding by animateDpAsState(
         targetValue = if (mainSharedState.search.isActive) 0.dp else 16.dp,
         animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
@@ -449,7 +449,7 @@ fun MessagePage(
                             onEvent = viewModel::sendEvent,
                             onDismiss = { isMenuVisible = false })
                         SwipeableActionsDismissBox(
-                            enabled = state.datastore.enableSwipeToDismiss,
+                            enabled = mainSharedState.datastore.enableSwipeToDismiss,
                             state = swipeableActionsState,
                             threshold = 72.dp,
                             onReachThreshold = { hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress) },

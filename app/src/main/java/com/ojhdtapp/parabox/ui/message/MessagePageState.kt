@@ -15,10 +15,7 @@ import com.ojhdtapp.parabox.ui.message.chat.contents_layout.model.ChatPageUiMode
 import kotlinx.coroutines.flow.Flow
 
 data class MessagePageState(
-    val chatPagingDataFlow: Flow<PagingData<ChatWithLatestMessage>>,
-    val pinnedChatPagingDataFlow: Flow<PagingData<Chat>>,
     val chatDetail: ChatDetail = ChatDetail(),
-    val messagePagingDataFlow: Flow<PagingData<ChatPageUiModel>>,
     val enabledChatFilterList: List<ChatFilter> = emptyList(),
     val selectedChatFilterLists: List<ChatFilter> = listOf(ChatFilter.Normal),
     val datastore: DataStore = DataStore(),

@@ -97,6 +97,7 @@ fun MessageAndChatPageWrapperUI(
         }) {
         if (layoutType == MessageLayoutType.NORMAL && it != null) {
             ChatPage(
+                viewModel = viewModel,
                 state = state,
                 mainNavController = mainNavController,
                 mainSharedState = mainSharedState,
@@ -122,6 +123,7 @@ fun MessageAndChatPageWrapperUI(
                 )
                 AnimatedVisibility(visible = layoutType == MessageLayoutType.SPLIT) {
                     ChatPage(
+                        viewModel = viewModel,
                         state = state,
                         mainNavController = mainNavController,
                         mainSharedState = mainSharedState,

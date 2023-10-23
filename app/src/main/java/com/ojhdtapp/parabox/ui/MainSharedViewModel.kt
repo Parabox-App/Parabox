@@ -649,7 +649,8 @@ class MainSharedViewModel @Inject constructor(
                         localName = it[DataStoreKeys.USER_NAME] ?: "User",
                         localAvatarUri = it[DataStoreKeys.USER_AVATAR]?.takeIf { it.isNotBlank() }
                             ?.let { Uri.parse(it) }
-                            ?: Uri.EMPTY
+                            ?: Uri.EMPTY,
+                        enableSwipeToDismiss = it[DataStoreKeys.SETTINGS_ENABLE_SWIPE_TO_DISMISS] ?: true
                     )
                 ))
             }
