@@ -14,8 +14,54 @@ import kotlinx.coroutines.launch
 
 class Extension : ParaboxExtension() {
     override fun onInitialized() {
+        lifecycleScope!!.launch {
+            while (true) {
+                receiveMessage(
+                    message = ReceiveMessage(
+                        contents = listOf(
+                            ParaboxPlainText(text = System.currentTimeMillis().toString())
+                        ),
+                        sender = ParaboxContact(
+                            name = "StageGuard",
+                            avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
+                            uid = "sender_sg"
+                        ),
+                        chat = ParaboxChat(
+                            name = "群组会话",
+                            avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
+                            type = ParaboxChat.TYPE_GROUP,
+                            uid = "group_test_1"
+                        ),
+                        timestamp = System.currentTimeMillis(),
+                        uuid = System.currentTimeMillis().toString()
+                    ),
+                )
+                delay(1000)
+                receiveMessage(
+                    message = ReceiveMessage(
+                        contents = listOf(
+                            ParaboxPlainText(text = System.currentTimeMillis().toString())
+                        ),
+                        sender = ParaboxContact(
+                            name = "404E",
+                            avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
+                            uid = "sender_404e"
+                        ),
+                        chat = ParaboxChat(
+                            name = "群组会话",
+                            avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
+                            type = ParaboxChat.TYPE_GROUP,
+                            uid = "group_test_1"
+                        ),
+                        timestamp = System.currentTimeMillis(),
+                        uuid = System.currentTimeMillis().toString()
+                    ),
+                )
+                delay(1000)
+            }
+        }
         lifecycleScope!!.launch(Dispatchers.IO) {
-            while(true){
+            while (true) {
                 receiveMessage(
                     message = ReceiveMessage(
                         contents = listOf(

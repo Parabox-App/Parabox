@@ -143,7 +143,7 @@ fun EditArea(
         )
     }
     Surface(
-        shape = (RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)),
+        shape = (RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)),
         tonalElevation = 3.dp
     ) {
         Row(
@@ -158,7 +158,7 @@ fun EditArea(
                 targetState = state.iconShrink,
                 label = "icon_shrink",
                 modifier = Modifier
-                    .padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp)
+                    .padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp)
                     .animateContentSize()
             ) {
                 if (it) {
@@ -242,7 +242,7 @@ fun EditArea(
                     exit = shrinkHorizontally { 0 }
                 ) {
                     Surface(
-                        shape = RoundedCornerShape(24.dp),
+                        shape = RoundedCornerShape(28.dp),
                         color = MaterialTheme.colorScheme.primaryContainer
                     ) {
                         val interactionSource = remember { MutableInteractionSource() }
@@ -342,7 +342,7 @@ fun EditArea(
                     }
                 }
                 Surface(
-                    shape = RoundedCornerShape(24.dp),
+                    shape = RoundedCornerShape(28.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant,
                 ) {
                     Column(
@@ -370,7 +370,7 @@ fun EditArea(
                                     overflow = TextOverflow.Clip,
                                 )
                             },
-                            shape = RoundedCornerShape(24.dp),
+                            shape = RoundedCornerShape(28.dp),
                             colors = TextFieldDefaults.colors(
                                 cursorColor = MaterialTheme.colorScheme.primary,
                                 focusedContainerColor = Color.Transparent,
