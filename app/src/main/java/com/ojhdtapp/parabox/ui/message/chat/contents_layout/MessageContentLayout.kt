@@ -7,6 +7,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -60,7 +61,7 @@ fun ImageLayout(
         mutableStateOf(128.dp)
     }
     var boxHeight by remember {
-        mutableStateOf(0.dp)
+        mutableStateOf(128.dp)
     }
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -73,18 +74,21 @@ fun ImageLayout(
                 add(GifDecoder.Factory())
             }
         }
+        .respectCacheHeaders(false)
         .build()
     val painter = rememberAsyncImagePainter(
         model = ImageRequest.Builder(context)
             .data(model)
+            .size(coil.size.Size.ORIGINAL)
+            .crossfade(true)
+            .memoryCacheKey("$elementId")
             .build(),
         error = painterResource(id = R.drawable.image_lost),
         fallback = painterResource(id = R.drawable.image_lost),
         imageLoader = imageLoader,
-        contentScale = ContentScale.FillWidth,
+        contentScale = ContentScale.Fit,
         onSuccess = {
             coroutineScope.launch {
-                Log.d("parabox", "image size: ${it.result.request.sizeResolver.size()}")
                 val bitmap = it.result.drawable.toBitmap()
                 val originalWidthDp = with(density) {
                     bitmap.width.toDp()
@@ -94,7 +98,7 @@ fun ImageLayout(
                 }
                 if (originalWidthDp != 0.dp) {
                     boxWidth = originalWidthDp.coerceIn(128.dp, 320.dp)
-                    boxHeight = boxWidth / originalWidthDp * originalHeightDp
+                    boxHeight = (boxWidth / originalWidthDp * originalHeightDp).coerceAtMost(320.dp)
                 }
             }
         },
@@ -108,20 +112,16 @@ fun ImageLayout(
             }
         }
     )
-    Box(
-        modifier = Modifier.size(128.dp)
-    ) {
-        TransformImageView(
-            modifier = Modifier.pointerInput(Unit) {
-                detectTapGestures {
-                    onClick(elementId)
-                }
-            },
-            key = elementId,
-            painter = painter,
-            previewerState = previewerState,
-        )
-    }
+    TransformImageView(
+        modifier = modifier.size(boxWidth, boxHeight).pointerInput(Unit) {
+            detectTapGestures {
+                onClick(elementId)
+            }
+        },
+        key = elementId,
+        painter = painter,
+        previewerState = previewerState,
+    )
 }
 
 @Composable
