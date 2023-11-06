@@ -19,34 +19,13 @@ class Extension : ParaboxExtension() {
                 receiveMessage(
                     message = ReceiveMessage(
                         contents = listOf(
-                            ParaboxPlainText(text = "测试文本")
-                        ),
-                        sender = ParaboxContact(
-                            name = "Ojhdt",
-                            avatar = ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo(url = "https://ojhdt.com/source/avatar.png"),
-                            uid = "sender_ojhdt"
-                        ),
-                        chat = ParaboxChat(
-                            name = "私聊会话",
-                            avatar = ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo(url = "https://ui-avatars.com/api/?name=P"),
-                            type = ParaboxChat.TYPE_PRIVATE,
-                            uid = "private_test_1"
-                        ),
-                        timestamp = System.currentTimeMillis(),
-                        uuid = System.currentTimeMillis().toString()
-                    ),
-                )
-                delay(3000)
-                receiveMessage(
-                    message = ReceiveMessage(
-                        contents = listOf(
                             ParaboxImage(
-                                resourceInfo = ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo(url = "https://ojhdt.com/source/avatar.png")
+                                resourceInfo = ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo(url = "https://image.baidu.com/search/down?url=https://tvax3.sinaimg.cn//large/0072Vf1pgy1foxk3wgs1qj31kw0w01jo.jpg")
                             )
                         ),
                         sender = ParaboxContact(
                             name = "Ojhdt",
-                            avatar = ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo(url = "https://ojhdt.com/source/avatar.png"),
+                            avatar = ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo(url = "https://blog.ojhdt.com/avatar.png"),
                             uid = "sender_ojhdt"
                         ),
                         chat = ParaboxChat(
@@ -59,76 +38,55 @@ class Extension : ParaboxExtension() {
                         uuid = System.currentTimeMillis().toString()
                     ),
                 )
-                delay(10000)
+                delay(5000)
+                receiveMessage(
+                    message = ReceiveMessage(
+                        contents = listOf(
+                            ParaboxImage(
+                                resourceInfo = ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo(url = "https://image.baidu.com/search/down?url=https://tvax3.sinaimg.cn//large/0072Vf1pgy1foxkfhjrg5j31hc0u0nfw.jpg")
+                            )
+                        ),
+                        sender = ParaboxContact(
+                            name = "Ojhdt",
+                            avatar = ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo(url = "https://blog.ojhdt.com/avatar.png"),
+                            uid = "sender_ojhdt"
+                        ),
+                        chat = ParaboxChat(
+                            name = "私聊会话",
+                            avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
+                            type = ParaboxChat.TYPE_PRIVATE,
+                            uid = "private_test_1"
+                        ),
+                        timestamp = System.currentTimeMillis(),
+                        uuid = System.currentTimeMillis().toString()
+                    ),
+                )
+                delay(5000)
+                receiveMessage(
+                    message = ReceiveMessage(
+                        contents = listOf(
+                            ParaboxImage(
+                                resourceInfo = ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo(url = "https://image.baidu.com/search/down?url=https://tvax3.sinaimg.cn//large/0072Vf1pgy1foxk7rv2gpj31hc0u04e6.jpg")
+                            )
+                        ),
+                        sender = ParaboxContact(
+                            name = "Ojhdt",
+                            avatar = ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo(url = "https://blog.ojhdt.com/avatar.png"),
+                            uid = "sender_ojhdt"
+                        ),
+                        chat = ParaboxChat(
+                            name = "私聊会话",
+                            avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
+                            type = ParaboxChat.TYPE_PRIVATE,
+                            uid = "private_test_1"
+                        ),
+                        timestamp = System.currentTimeMillis(),
+                        uuid = System.currentTimeMillis().toString()
+                    ),
+                )
+                delay(5000)
             }
 
-        }
-        lifecycleScope!!.launch(Dispatchers.IO){
-            while(true){
-                receiveMessage(
-                    message = ReceiveMessage(
-                        contents = listOf(
-                            ParaboxPlainText(text = System.currentTimeMillis().toString())
-                        ),
-                        sender = ParaboxContact(
-                            name = "StageGuard",
-                            avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
-                            uid = "sender_sg"
-                        ),
-                        chat = ParaboxChat(
-                            name = "群组会话",
-                            avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
-                            type = ParaboxChat.TYPE_GROUP,
-                            uid = "group_test_1"
-                        ),
-                        timestamp = System.currentTimeMillis(),
-                        uuid = System.currentTimeMillis().toString()
-                    ),
-                )
-                delay(1000)
-                receiveMessage(
-                    message = ReceiveMessage(
-                        contents = listOf(
-                            ParaboxPlainText(text = System.currentTimeMillis().toString())
-                        ),
-                        sender = ParaboxContact(
-                            name = "404E",
-                            avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
-                            uid = "sender_404e"
-                        ),
-                        chat = ParaboxChat(
-                            name = "群组会话",
-                            avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
-                            type = ParaboxChat.TYPE_GROUP,
-                            uid = "group_test_1"
-                        ),
-                        timestamp = System.currentTimeMillis(),
-                        uuid = System.currentTimeMillis().toString()
-                    ),
-                )
-                delay(1000)
-                receiveMessage(
-                    message = ReceiveMessage(
-                        contents = listOf(
-                            ParaboxPlainText(text = System.currentTimeMillis().toString())
-                        ),
-                        sender = ParaboxContact(
-                            name = "LaoLittle",
-                            avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
-                            uid = "sender_llt"
-                        ),
-                        chat = ParaboxChat(
-                            name = "群组会话",
-                            avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
-                            type = ParaboxChat.TYPE_GROUP,
-                            uid = "group_test_1"
-                        ),
-                        timestamp = System.currentTimeMillis(),
-                        uuid = System.currentTimeMillis().toString()
-                    ),
-                )
-                delay(1000)
-            }
         }
     }
 

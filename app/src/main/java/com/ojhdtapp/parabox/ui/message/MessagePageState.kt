@@ -12,19 +12,17 @@ import com.ojhdtapp.parabox.ui.base.UiState
 import com.ojhdtapp.parabox.ui.message.chat.AudioRecorderState
 import com.ojhdtapp.parabox.ui.message.chat.ToolbarState
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.model.ChatPageUiModel
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
 import kotlinx.coroutines.flow.Flow
 
 data class MessagePageState(
     val chatDetail: ChatDetail = ChatDetail(),
     val enabledChatFilterList: List<ChatFilter> = emptyList(),
     val selectedChatFilterLists: List<ChatFilter> = listOf(ChatFilter.Normal),
-    val datastore: DataStore = DataStore(),
     val openEnabledChatFilterDialog: Boolean = false,
     val editingChatTags: ChatTagsUpdate? = null
 ): UiState{
-    data class DataStore(
-        val enableSwipeToDismiss: Boolean = false
-    )
+
 
     data class ChatDetail(
         val chat: Chat? = null,
@@ -52,5 +50,7 @@ data class MessagePageState(
     data class ImagePreviewerState(
         val showToolbar: Boolean = true,
         val expandMenu: Boolean = false,
+        val imageSnapshotList: List<Pair<Long, ParaboxImage>> = emptyList(),
+        val targetElementIndex: Int = -1,
     )
 }

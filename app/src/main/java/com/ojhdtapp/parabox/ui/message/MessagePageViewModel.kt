@@ -328,6 +328,17 @@ class MessagePageViewModel @Inject constructor(
                 )
             }
 
+            is MessagePageEvent.UpdateImagePreviewerSnapshotList -> {
+                return state.copy(
+                    chatDetail = state.chatDetail.copy(
+                        imagePreviewerState = state.chatDetail.imagePreviewerState.copy(
+                            imageSnapshotList = event.list,
+                            targetElementIndex = event.targetElementIndex
+                        )
+                    )
+                )
+            }
+
             is MessagePageEvent.AddMeme -> {
                 val extension = fileUtil.getFileNameExtension(event.meme)
                 val path = fileUtil.createPathOnExternalFilesDir(
@@ -503,7 +514,7 @@ class MessagePageViewModel @Inject constructor(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val messagePagingDataFlow: Flow<PagingData<ChatPageUiModel>> =
-        uiState.distinctUntilChanged { old, new -> old.chatDetail == new.chatDetail || new.chatDetail.chat == null }
+        uiState.distinctUntilChanged { old, new -> old.chatDetail.chat == new.chatDetail.chat || new.chatDetail.chat == null }
             .flatMapLatest {
                 getMessage(buildList {
                     add(it.chatDetail.chat!!.chatId)
@@ -511,7 +522,8 @@ class MessagePageViewModel @Inject constructor(
                 }.distinct(), emptyList())
             }.cachedIn(viewModelScope)
     val chatPagingDataFlow: Flow<PagingData<ChatWithLatestMessage>> =
-        uiState.distinctUntilChangedBy { it.selectedChatFilterLists }.flatMapLatest { getChat(it.selectedChatFilterLists) }.cachedIn(viewModelScope)
+        uiState.distinctUntilChangedBy { it.selectedChatFilterLists }
+            .flatMapLatest { getChat(it.selectedChatFilterLists) }.cachedIn(viewModelScope)
     val pinnedChatPagingDataFlow: Flow<PagingData<Chat>> =
         getChat.pinned().cachedIn(viewModelScope)
 }

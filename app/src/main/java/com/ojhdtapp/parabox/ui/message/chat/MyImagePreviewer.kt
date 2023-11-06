@@ -70,7 +70,6 @@ import me.saket.cascade.CascadeDropdownMenu
 @Composable
 fun MyImagePreviewer(
     modifier: Modifier = Modifier,
-    previewImageList: List<Pair<Long, ParaboxImage>>,
     state: MessagePageState.ImagePreviewerState,
     previewerState: ImagePreviewerState,
     onEvent: (e: MessagePageEvent) -> Unit,
@@ -80,13 +79,14 @@ fun MyImagePreviewer(
     BackHandler(previewerState.canClose) {
         coroutineScope.launch {
             previewerState.closeTransform()
+            onEvent(MessagePageEvent.UpdateImagePreviewerSnapshotList(emptyList(), -1))
         }
     }
     ImagePreviewer(modifier = modifier.fillMaxSize(),
         state = previewerState,
         imageLoader = { index ->
-            if (index < previewImageList.size) {
-                val t = previewImageList[index].second
+            if (index < state.imageSnapshotList.size) {
+                val t = state.imageSnapshotList[index].second
                 val imageLoader = ImageLoader.Builder(context)
                     .components {
                         if (Build.VERSION.SDK_INT >= 28) {
@@ -125,6 +125,7 @@ fun MyImagePreviewer(
                             IconButton(onClick = {
                                 coroutineScope.launch {
                                     previewerState.closeTransform()
+                                    onEvent(MessagePageEvent.UpdateImagePreviewerSnapshotList(emptyList(), -1))
                                 }
                             }) {
                                 Icon(
@@ -166,7 +167,7 @@ fun MyImagePreviewer(
                                             onEvent(MessagePageEvent.ExpandImagePreviewerMenu(false))
                                             try {
                                                 val image =
-                                                    previewImageList.getOrNull(current)?.second
+                                                    state.imageSnapshotList.getOrNull(current)?.second
                                                         ?: throw NoSuchElementException("id lost")
                                                 // TODO: downloader
                                                 when (image.resourceInfo) {
@@ -208,7 +209,7 @@ fun MyImagePreviewer(
                                             onEvent(MessagePageEvent.ExpandImagePreviewerMenu(false))
                                             try {
                                                 val image =
-                                                    previewImageList.getOrNull(current)?.second
+                                                    state.imageSnapshotList.getOrNull(current)?.second
                                                         ?: throw NoSuchElementException("id lost")
                                                 onEvent(MessagePageEvent.SaveImageToLocal(image, {}, {}))
                                                 Toast.makeText(

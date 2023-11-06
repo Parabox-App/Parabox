@@ -19,6 +19,7 @@ class GetMessage @Inject constructor(
     val repository: MessageRepository
 ) {
     operator fun invoke(chatIdList: List<Long>, filter: List<MessageFilter>): Flow<PagingData<ChatPageUiModel>> {
+        Log.d("parabox", "getMessage: ${chatIdList}")
         return Pager(
             PagingConfig(
                 pageSize = 40,

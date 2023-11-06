@@ -70,6 +70,7 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
 import com.origeek.imageViewer.previewer.rememberPreviewerState
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -141,30 +142,18 @@ fun NormalChatPage(
             lazyListState.animateScrollToItem(0)
         }
     }
-    val previewImageList by remember {
-        derivedStateOf {
-            messageLazyPagingItems.itemSnapshotList.items.filterIsInstance<ChatPageUiModel.MessageWithSender>()
-                .map { it.message }
-                .fold(initial = mutableListOf<Pair<Long, ParaboxImage>>(), operation = { acc, message ->
-                    message.contents.forEachIndexed { index, paraboxMessageElement ->
-                        if (paraboxMessageElement is ParaboxImage) {
-                            acc.add(message.contentsId[index] to paraboxMessageElement)
-                        }
-                    }
-                    acc
-                }).reversed()
-        }
-    }
     val previewerState = rememberPreviewerState(
         pageCount = {
-            previewImageList.size
+            state.chatDetail.imagePreviewerState.imageSnapshotList.size
         },
         getKey = {
-            previewImageList[it].first
+            state.chatDetail.imagePreviewerState.imageSnapshotList.getOrNull(it)?.first ?: 0L
         }
     )
-    LaunchedEffect(key1 = previewImageList, block = {
-        Log.d("parabox", "image size: ${previewImageList.size};image list: ${previewImageList}")
+    LaunchedEffect(key1 = state.chatDetail.imagePreviewerState.imageSnapshotList, block = {
+        if (state.chatDetail.imagePreviewerState.targetElementIndex > -1) {
+            previewerState.openTransform(state.chatDetail.imagePreviewerState.targetElementIndex)
+        }
     })
     LaunchedEffect(state.chatDetail.editAreaState.expanded) {
         if (state.chatDetail.editAreaState.expanded) {
@@ -240,13 +229,47 @@ fun NormalChatPage(
                                                 state = state.chatDetail,
                                                 messageWithSender = item,
                                                 previewerState = previewerState,
-                                                previewImageList = previewImageList,
                                                 isFirst = !((before as? ChatPageUiModel.MessageWithSender)?.sender?.platformEqual(
                                                     item.sender
                                                 ) ?: false),
                                                 isLast = !((after as? ChatPageUiModel.MessageWithSender)?.sender?.platformEqual(
                                                     item.sender
                                                 ) ?: false),
+                                                onImageClick = { elementId ->
+                                                    coroutineScope.launch {
+                                                        var index = -1
+                                                        val imageSnapshotList =
+                                                            messageLazyPagingItems.itemSnapshotList.items.filterIsInstance<ChatPageUiModel.MessageWithSender>()
+                                                                .map { it.message }
+                                                                .fold(
+                                                                    initial = mutableListOf<Pair<Long, ParaboxImage>>(),
+                                                                    operation = { acc, message ->
+                                                                        message.contents.forEachIndexed { mIndex, paraboxMessageElement ->
+                                                                            if (paraboxMessageElement is ParaboxImage) {
+                                                                                val mElementId =
+                                                                                    message.contentsId[mIndex]
+                                                                                if (elementId == mElementId) {
+                                                                                    index = acc.size
+                                                                                }
+                                                                                acc.add(mElementId to paraboxMessageElement)
+                                                                            }
+                                                                        }
+                                                                        acc
+                                                                    }).reversed()
+                                                        Log.d(
+                                                            "parabox",
+                                                            "image clicked;index: ${imageSnapshotList.size - index - 1}"
+                                                        )
+                                                        if (index > -1) {
+                                                            onEvent(
+                                                                MessagePageEvent.UpdateImagePreviewerSnapshotList(
+                                                                    imageSnapshotList,
+                                                                    imageSnapshotList.size - index - 1
+                                                                )
+                                                            )
+                                                        }
+                                                    }
+                                                },
                                                 onEvent = onEvent
                                             )
                                         }
@@ -295,7 +318,6 @@ fun NormalChatPage(
         }
     }
     MyImagePreviewer(
-        previewImageList = previewImageList,
         previewerState = previewerState,
         state = state.chatDetail.imagePreviewerState,
         onEvent = onEvent

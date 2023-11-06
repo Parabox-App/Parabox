@@ -31,6 +31,7 @@ sealed interface MessagePageEvent : UiEvent {
     data class UpdateAudioRecorderState(val state: AudioRecorderState): MessagePageEvent
     data class ExpandImagePreviewerMenu(val expand: Boolean): MessagePageEvent
     data class ExpandImagePreviewerToolbar(val expand: Boolean): MessagePageEvent
+    data class UpdateImagePreviewerSnapshotList(val list: List<Pair<Long, ParaboxImage>>, val targetElementIndex: Int) : MessagePageEvent
     data class AddMeme(val meme: Uri, val onSuccess: (path: File) -> Unit, val onFailure: () -> Unit): MessagePageEvent
     data class RemoveMeme(val meme: Uri, val onSuccess: () -> Unit, val onFailure: () -> Unit): MessagePageEvent
     data class SaveImageToLocal(val image: ParaboxImage,  val onSuccess: (path: File) -> Unit, val onFailure: () -> Unit): MessagePageEvent

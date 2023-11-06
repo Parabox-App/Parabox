@@ -92,9 +92,9 @@ fun MessageItem(
     state: MessagePageState.ChatDetail,
     messageWithSender: ChatPageUiModel.MessageWithSender,
     previewerState: ImagePreviewerState,
-    previewImageList: List<Pair<Long, ParaboxImage>>,
     isFirst: Boolean = true,
     isLast: Boolean = true,
+    onImageClick: (elementId: Long) -> Unit,
     onEvent: (e: MessagePageEvent) -> Unit,
 ) {
     val context = LocalContext.current
@@ -231,15 +231,7 @@ fun MessageItem(
                                     textColor = textColor,
                                     elementId = messageWithSender.message.contentsId[index],
                                     previewerState = previewerState,
-                                    onClick = { elementId ->
-                                        val index = previewImageList.indexOfFirst { it.first == elementId }
-                                        if (index >= 0) {
-                                            Log.d("parabox", "opening:${elementId}, index${index}")
-                                            coroutineScope.launch {
-                                                previewerState.openTransform(index = index)
-                                            }
-                                        }
-                                    },
+                                    onClick = onImageClick,
                                 )
                             }
                         }
