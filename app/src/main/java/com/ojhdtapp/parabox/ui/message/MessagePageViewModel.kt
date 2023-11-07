@@ -2,7 +2,6 @@ package com.ojhdtapp.parabox.ui.message
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.core.net.toUri
@@ -10,11 +9,9 @@ import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.ojhdtapp.parabox.R
-import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.buildFileName
-import com.ojhdtapp.parabox.core.util.getDataStoreValue
 import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.ChatWithLatestMessage
 import com.ojhdtapp.parabox.domain.model.Contact
@@ -40,7 +37,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onEach
@@ -384,13 +380,30 @@ class MessagePageViewModel @Inject constructor(
                 return state
             }
 
-            is MessagePageEvent.AddImageUriToChosenList -> {
+            is MessagePageEvent.ChooseImageUri -> {
+                val newList = if (state.chatDetail.editAreaState.chosenImageList.contains(event.imageUri)) {
+                    state.chatDetail.editAreaState.chosenImageList.toMutableList().apply {
+                        remove(event.imageUri)
+                    }
+                } else {
+                    state.chatDetail.editAreaState.chosenImageList.toMutableList().apply {
+                        add(event.imageUri)
+                    }
+                }
                 return state.copy(
                     chatDetail = state.chatDetail.copy(
                         editAreaState = state.chatDetail.editAreaState.copy(
-                            chosenImageList = state.chatDetail.editAreaState.chosenImageList.toMutableList().apply {
-                                add(event.imageUri)
-                            }
+                            chosenImageList = newList
+                        ),
+                    )
+                )
+            }
+
+            is MessagePageEvent.ChooseQuoteReply -> {
+                return state.copy(
+                    chatDetail = state.chatDetail.copy(
+                        editAreaState = state.chatDetail.editAreaState.copy(
+                            chosenQuoteReply = event.model
                         ),
                     )
                 )
@@ -427,7 +440,7 @@ class MessagePageViewModel @Inject constructor(
                             chosenImageList = emptyList(),
                             chosenAudioUri = null,
                             chosenAtId = null,
-                            chosenQuoteReplyMessageId = null,
+                            chosenQuoteReply = null,
                             audioRecorderState = AudioRecorderState.Ready,
                             iconShrink = false
                         )

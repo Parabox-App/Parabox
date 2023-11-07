@@ -305,7 +305,6 @@ fun NormalChatPage(
                         }
                     }
 
-
                     EditArea(
                         modifier = Modifier
                             .padding(bottom = bottomPadding.value)

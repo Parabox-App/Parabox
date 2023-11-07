@@ -153,7 +153,9 @@ fun MessageItem(
                 }
             },
             background = Color.Transparent,
-            onSwipe = {}
+            onSwipe = {
+                onEvent(MessagePageEvent.ChooseQuoteReply(messageWithSender))
+            }
         )),
         swipeThreshold = 48.dp,
         backgroundUntilSwipeThreshold = Color.Transparent

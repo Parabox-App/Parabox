@@ -1,13 +1,7 @@
 package com.ojhdtapp.parabox.ui.message.chat
 
 import android.Manifest
-import android.app.Activity
-import android.content.Intent
-import android.net.Uri
-import android.util.Log
 import android.view.MotionEvent
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
@@ -17,22 +11,22 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.background
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AddCircleOutline
 import androidx.compose.material.icons.outlined.Clear
@@ -51,48 +45,36 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInteropFilter
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import androidx.core.content.FileProvider
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
-import com.ojhdtapp.parabox.BuildConfig
 import com.ojhdtapp.parabox.R
-import com.ojhdtapp.parabox.core.util.buildFileName
 import com.ojhdtapp.parabox.core.util.launchSetting
 import com.ojhdtapp.parabox.ui.common.clearFocusOnKeyboardDismiss
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageState
-import java.io.File
+import com.ojhdtapp.parabox.ui.message.chat.contents_layout.ImageSendingLayout
+import com.ojhdtapp.parabox.ui.message.chat.contents_layout.QuoteReplySendingLayout
+import com.origeek.imageViewer.previewer.rememberPreviewerState
 
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
@@ -346,9 +328,44 @@ fun EditArea(
                     color = MaterialTheme.colorScheme.surfaceVariant,
                 ) {
                     Column(
-                        modifier = Modifier.animateContentSize()
+                        modifier = Modifier.animateContentSize(),
+                        verticalArrangement = Arrangement.Bottom
                     ) {
-                        // here!!!
+                        val previewerState = rememberPreviewerState(pageCount = {
+                            state.chosenImageList.size
+                        }, getKey = {
+                            it
+                        })
+                        // quote reply
+                        if (state.chosenQuoteReply != null) {
+                            QuoteReplySendingLayout(model = state.chosenQuoteReply, onClick = { /*TODO*/ },
+                                onCancel = {
+                                    onEvent(MessagePageEvent.ChooseQuoteReply(null))
+                                })
+                        }
+                        // image
+                        if (state.chosenImageList.isNotEmpty()) {
+                            LazyRow(
+                                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                contentPadding = PaddingValues(horizontal = 16.dp)
+                            ) {
+                                itemsIndexed(
+                                    items = state.chosenImageList,
+                                    key = { index, item -> item }) { index, item ->
+                                    ImageSendingLayout(
+                                        modifier = Modifier.animateItemPlacement(),
+                                        model = item,
+                                        previewerState = previewerState,
+                                        previewIndex = index,
+                                        onClick = { },
+                                        onCancel = {
+                                            onEvent(MessagePageEvent.ChooseImageUri(item))
+                                        }
+                                    )
+                                }
+                            }
+                        }
                         TextField(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -416,7 +433,11 @@ fun EditArea(
                     ),
                     shape = CircleShape
                 ) {
-                    Icon(imageVector = Icons.Outlined.Send, contentDescription = "send", tint = MaterialTheme.colorScheme.primary)
+                    Icon(
+                        imageVector = Icons.Outlined.Send,
+                        contentDescription = "send",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
         }

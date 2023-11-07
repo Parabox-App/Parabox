@@ -72,8 +72,6 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.getTextAfterSelection
 import androidx.compose.ui.text.input.getTextBeforeSelection
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toFile
-import androidx.core.net.toUri
 import coil.ImageLoader
 import coil.compose.AsyncImage
 import coil.decode.GifDecoder
@@ -102,7 +100,7 @@ fun Toolbar(
         rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(10)) { uris ->
             if (uris.isNotEmpty()) {
                 uris.forEach {
-                    onEvent(MessagePageEvent.AddImageUriToChosenList(it))
+                    onEvent(MessagePageEvent.ChooseImageUri(it))
                 }
             } else {
                 Log.d("PhotoPicker", "No media selected")
@@ -128,7 +126,7 @@ fun Toolbar(
     val cameraLauncher =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.TakePicture()) {
             if (it) {
-                onEvent(MessagePageEvent.AddImageUriToChosenList(tempCameraUri!!))
+                onEvent(MessagePageEvent.ChooseImageUri(tempCameraUri!!))
                 tempCameraUri = null
             }
         }

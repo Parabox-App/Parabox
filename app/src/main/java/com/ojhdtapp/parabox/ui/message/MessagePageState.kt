@@ -2,10 +2,8 @@ package com.ojhdtapp.parabox.ui.message
 
 import android.net.Uri
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.paging.PagingData
 import com.ojhdtapp.parabox.data.local.entity.ChatTagsUpdate
 import com.ojhdtapp.parabox.domain.model.Chat
-import com.ojhdtapp.parabox.domain.model.ChatWithLatestMessage
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.ui.base.UiState
@@ -13,7 +11,6 @@ import com.ojhdtapp.parabox.ui.message.chat.AudioRecorderState
 import com.ojhdtapp.parabox.ui.message.chat.ToolbarState
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.model.ChatPageUiModel
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
-import kotlinx.coroutines.flow.Flow
 
 data class MessagePageState(
     val chatDetail: ChatDetail = ChatDetail(),
@@ -39,7 +36,7 @@ data class MessagePageState(
         val chosenImageList: List<Uri> = emptyList(),
         val chosenAudioUri: Uri? = null,
         val chosenAtId: Long? = null,
-        val chosenQuoteReplyMessageId: Long? = null,
+        val chosenQuoteReply: ChatPageUiModel.MessageWithSender? = null,
         val showVoicePermissionDeniedDialog: Boolean = false,
         val enableAudioRecorder: Boolean = false,
         val audioRecorderState: AudioRecorderState = AudioRecorderState.Ready,

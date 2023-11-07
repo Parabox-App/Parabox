@@ -9,6 +9,7 @@ import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.ui.base.UiEvent
 import com.ojhdtapp.parabox.ui.message.chat.AudioRecorderState
 import com.ojhdtapp.parabox.ui.message.chat.ToolbarState
+import com.ojhdtapp.parabox.ui.message.chat.contents_layout.model.ChatPageUiModel
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
 import java.io.File
 
@@ -35,7 +36,8 @@ sealed interface MessagePageEvent : UiEvent {
     data class AddMeme(val meme: Uri, val onSuccess: (path: File) -> Unit, val onFailure: () -> Unit): MessagePageEvent
     data class RemoveMeme(val meme: Uri, val onSuccess: () -> Unit, val onFailure: () -> Unit): MessagePageEvent
     data class SaveImageToLocal(val image: ParaboxImage,  val onSuccess: (path: File) -> Unit, val onFailure: () -> Unit): MessagePageEvent
-    data class AddImageUriToChosenList(val imageUri: Uri): MessagePageEvent
+    data class ChooseImageUri(val imageUri: Uri): MessagePageEvent
+    data class ChooseQuoteReply(val model: ChatPageUiModel.MessageWithSender?): MessagePageEvent
     data class ShowVoicePermissionDeniedDialog(val open: Boolean): MessagePageEvent
     data class UpdateIconShrink(val shouldShrink: Boolean): MessagePageEvent
     object SendMessage: MessagePageEvent
