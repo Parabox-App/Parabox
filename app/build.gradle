@@ -181,7 +181,7 @@ dependencies {
     implementation 'com.google.mlkit:language-id:17.0.4'
 
     // Extended Gestures
-    implementation 'com.github.SmartToolFactory:Compose-Extended-Gestures:2.0.0'
+    implementation 'com.github.SmartToolFactory:Compose-Extended-Gestures:3.0.0'
 
     // Amplituda
     implementation 'com.github.lincollincol:amplituda:2.2.1'

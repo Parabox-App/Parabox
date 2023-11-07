@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.ui.message.chat.contents_layout
 
 import android.os.Build
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +37,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import coil.ImageLoader
+import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import coil.decode.GifDecoder
 import coil.decode.ImageDecoderDecoder
@@ -54,7 +56,6 @@ import kotlinx.coroutines.launch
 fun ImageSendingLayout(
     modifier: Modifier = Modifier,
     model: Any?,
-    previewerState: ImagePreviewerState,
     previewIndex: Int,
     onClick: () -> Unit,
     onCancel: () -> Unit,
@@ -86,22 +87,21 @@ fun ImageSendingLayout(
                 error = painterResource(id = R.drawable.image_lost),
                 fallback = painterResource(id = R.drawable.image_lost),
                 imageLoader = imageLoader,
-                contentScale = ContentScale.Fit
+                contentScale = ContentScale.Crop
             )
-            TransformImageView(
+            Image(
+                painter = painter,
                 modifier = Modifier
                     .fillMaxSize()
                     .pointerInput(Unit) {
                         detectTapGestures {
                             coroutineScope.launch {
-                                previewerState.openTransform(previewIndex)
                                 onClick()
                             }
                         }
                     },
-                key = previewIndex,
-                painter = painter,
-                previewerState = previewerState,
+                contentDescription = "image",
+                contentScale = ContentScale.Crop
             )
             FilledIconButton(
                 modifier = Modifier

@@ -331,11 +331,6 @@ fun EditArea(
                         modifier = Modifier.animateContentSize(),
                         verticalArrangement = Arrangement.Bottom
                     ) {
-                        val previewerState = rememberPreviewerState(pageCount = {
-                            state.chosenImageList.size
-                        }, getKey = {
-                            it
-                        })
                         // quote reply
                         if (state.chosenQuoteReply != null) {
                             QuoteReplySendingLayout(model = state.chosenQuoteReply, onClick = { /*TODO*/ },
@@ -356,7 +351,6 @@ fun EditArea(
                                     ImageSendingLayout(
                                         modifier = Modifier.animateItemPlacement(),
                                         model = item,
-                                        previewerState = previewerState,
                                         previewIndex = index,
                                         onClick = { },
                                         onCancel = {
@@ -399,7 +393,7 @@ fun EditArea(
                     }
                 }
                 androidx.compose.animation.AnimatedVisibility(
-                    visible = state.input.text.isEmpty() && state.chosenImageList.isEmpty(),
+                    visible = state.input.text.isEmpty() && state.chosenImageList.isEmpty() && state.chosenQuoteReply == null,
                     enter = fadeIn(),
                     exit = fadeOut()
                 ) {
