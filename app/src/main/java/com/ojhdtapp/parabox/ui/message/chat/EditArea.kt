@@ -2,15 +2,24 @@ package com.ojhdtapp.parabox.ui.message.chat
 
 import android.Manifest
 import android.view.MotionEvent
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.background
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -19,15 +28,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.outlined.AddCircleOutline
 import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.EmojiEmotions
@@ -134,7 +146,7 @@ fun EditArea(
                 .padding(vertical = 16.dp), verticalAlignment = Alignment.Bottom
         ) {
             val isRecording by remember {
-                derivedStateOf { state.audioRecorderState is AudioRecorderState.Ready || state.audioRecorderState is AudioRecorderState.Done }
+                derivedStateOf { state.enableAudioRecorder && state.audioRecorderState is AudioRecorderState.Ready || state.audioRecorderState is AudioRecorderState.Done }
             }
             Crossfade(
                 targetState = state.iconShrink,
@@ -190,9 +202,12 @@ fun EditArea(
                     }
                 }
             }
-            AnimatedVisibility(visible = state.audioRecorderState is AudioRecorderState.Done) {
+            AnimatedVisibility(visible = state.audioRecorderState is AudioRecorderState.Done,
+                enter = expandHorizontally(),
+                exit = shrinkHorizontally(),
+            ) {
                 Surface(
-                    modifier = Modifier.padding(end = 8.dp),
+                    modifier = Modifier.padding(end = 16.dp),
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.primaryContainer,
                     onClick = {
@@ -217,67 +232,74 @@ fun EditArea(
                     .padding(end = 16.dp),
                 contentAlignment = Alignment.CenterEnd
             ) {
-                androidx.compose.animation.AnimatedVisibility(
-                    modifier = Modifier.zIndex(2f),
-                    visible = state.enableAudioRecorder,
-                    enter = expandHorizontally { 0 },
-                    exit = shrinkHorizontally { 0 }
+                val inputBackground by animateColorAsState(targetValue = if (state.enableAudioRecorder) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant)
+                Surface(
+                    shape = RoundedCornerShape(28.dp),
+                    color = inputBackground,
                 ) {
-                    Surface(
-                        shape = RoundedCornerShape(28.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer
-                    ) {
-                        val interactionSource = remember { MutableInteractionSource() }
-                        Row(
-                            modifier = Modifier.indication(
-                                interactionSource,
-                                LocalIndication.current
-                            ),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(TextFieldDefaults.MinHeight)
-                                    .pointerInteropFilter {
-                                        val press =
-                                            PressInteraction.Press(Offset(it.x, it.y))
-                                        when (it.action) {
-                                            MotionEvent.ACTION_DOWN -> {
-                                                onEvent(MessagePageEvent.UpdateAudioRecorderState(AudioRecorderState.Recording))
-                                                interactionSource.tryEmit(press)
+                    AnimatedContent(
+                        modifier = Modifier.animateContentSize(),
+                        targetState = state.enableAudioRecorder, label = "audio/text",
+                        transitionSpec = {
+                            if (targetState) {
+                                (slideInHorizontally { it }).togetherWith(slideOutHorizontally { -it })
+                            } else {
+                                (slideInHorizontally { -it }).togetherWith(slideOutHorizontally { it })
+                            }
+                        }) {
+                        if (it) {
+                            // audio
+                            val interactionSource = remember { MutableInteractionSource() }
+                            Row(
+                                modifier = Modifier.indication(
+                                    interactionSource,
+                                    LocalIndication.current
+                                ),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(TextFieldDefaults.MinHeight)
+                                        .pointerInteropFilter {
+                                            val press =
+                                                PressInteraction.Press(Offset(it.x, it.y))
+                                            when (it.action) {
+                                                MotionEvent.ACTION_DOWN -> {
+                                                    onEvent(MessagePageEvent.UpdateAudioRecorderState(AudioRecorderState.Recording))
+                                                    interactionSource.tryEmit(press)
 //                                                onStartRecording()
-                                            }
+                                                }
 
-                                            MotionEvent.ACTION_MOVE -> {
-                                                if (it.y < -150) {
-                                                    if (state.audioRecorderState !is AudioRecorderState.Confirmed) {
-                                                        onEvent(
-                                                            MessagePageEvent.UpdateAudioRecorderState(
-                                                                AudioRecorderState.Confirmed
+                                                MotionEvent.ACTION_MOVE -> {
+                                                    if (it.y < -150) {
+                                                        if (state.audioRecorderState !is AudioRecorderState.Confirmed) {
+                                                            onEvent(
+                                                                MessagePageEvent.UpdateAudioRecorderState(
+                                                                    AudioRecorderState.Confirmed
+                                                                )
                                                             )
-                                                        )
-                                                    }
-                                                } else {
-                                                    if (state.audioRecorderState !is AudioRecorderState.Recording) {
-                                                        onEvent(
-                                                            MessagePageEvent.UpdateAudioRecorderState(
-                                                                AudioRecorderState.Recording
+                                                        }
+                                                    } else {
+                                                        if (state.audioRecorderState !is AudioRecorderState.Recording) {
+                                                            onEvent(
+                                                                MessagePageEvent.UpdateAudioRecorderState(
+                                                                    AudioRecorderState.Recording
+                                                                )
                                                             )
-                                                        )
+                                                        }
                                                     }
                                                 }
-                                            }
 
-                                            MotionEvent.ACTION_UP -> {
-                                                interactionSource.tryEmit(
-                                                    PressInteraction.Release(
-                                                        press
+                                                MotionEvent.ACTION_UP -> {
+                                                    interactionSource.tryEmit(
+                                                        PressInteraction.Release(
+                                                            press
+                                                        )
                                                     )
-                                                )
 //                                                onStopRecording()
-                                                if (state.audioRecorderState is AudioRecorderState.Confirmed) {
+                                                    if (state.audioRecorderState is AudioRecorderState.Confirmed) {
 //                                                    onClearRecording()
 //                                                    sendAudio(context, packageNameList) {
 //                                                        onSend(it)
@@ -285,136 +307,134 @@ fun EditArea(
 //                                                            AudioRecorderState.Ready
 //                                                        )
 //                                                    }
-                                                } else {
-                                                    onEvent(
-                                                        MessagePageEvent.UpdateAudioRecorderState(
-                                                            AudioRecorderState.Done
+                                                    } else {
+                                                        onEvent(
+                                                            MessagePageEvent.UpdateAudioRecorderState(
+                                                                AudioRecorderState.Done
+                                                            )
                                                         )
-                                                    )
+                                                    }
                                                 }
-                                            }
 
-                                            else -> false
-                                        }
-                                        true
-                                    },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = stringResource(state.audioRecorderState.textResId),
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                            AnimatedVisibility(
-                                visible = state.audioRecorderState is AudioRecorderState.Ready,
-                                enter = fadeIn() + expandHorizontally(),
-                                exit = fadeOut() + shrinkHorizontally(),
-                            ) {
-                                IconButton(onClick = {
-                                    onEvent(MessagePageEvent.EnableAudioRecorder(false))
-                                }) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Keyboard,
-                                        contentDescription = "keyboard",
-                                        tint = MaterialTheme.colorScheme.primary
+                                                else -> false
+                                            }
+                                            true
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = stringResource(state.audioRecorderState.textResId),
+                                        color = MaterialTheme.colorScheme.primary
                                     )
                                 }
                             }
-                        }
-                    }
-                }
-                Surface(
-                    shape = RoundedCornerShape(28.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                ) {
-                    Column(
-                        modifier = Modifier.animateContentSize(),
-                        verticalArrangement = Arrangement.Bottom
-                    ) {
-                        // quote reply
-                        if (state.chosenQuoteReply != null) {
-                            QuoteReplySendingLayout(model = state.chosenQuoteReply, onClick = { /*TODO*/ },
-                                onCancel = {
-                                    onEvent(MessagePageEvent.ChooseQuoteReply(null))
-                                })
-                        }
-                        // image
-                        if (state.chosenImageList.isNotEmpty()) {
-                            LazyRow(
-                                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                contentPadding = PaddingValues(horizontal = 16.dp)
-                            ) {
-                                itemsIndexed(
-                                    items = state.chosenImageList,
-                                    key = { index, item -> item }) { index, item ->
-                                    ImageSendingLayout(
-                                        modifier = Modifier.animateItemPlacement(),
-                                        model = item,
-                                        previewIndex = index,
-                                        onClick = { },
-                                        onCancel = {
-                                            onEvent(MessagePageEvent.ChooseImageUri(item))
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                        TextField(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clearFocusOnKeyboardDismiss(),
-                            value = state.input,
-                            onValueChange = {
-                                onEvent(MessagePageEvent.OpenEditArea(false))
-                                onEvent(MessagePageEvent.UpdateEditAreaInput(it))
-                            },
-                            enabled = !state.enableAudioRecorder,
-                            textStyle = MaterialTheme.typography.bodyLarge.merge(
-                                TextStyle(color = MaterialTheme.colorScheme.onSurface)
-                            ),
-                            placeholder = {
-                                Text(
-                                    text = stringResource(R.string.input_placeholder),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Clip,
-                                )
-                            },
-                            shape = RoundedCornerShape(28.dp),
-                            colors = TextFieldDefaults.colors(
-                                cursorColor = MaterialTheme.colorScheme.primary,
-                                focusedContainerColor = Color.Transparent,
-                                unfocusedContainerColor = Color.Transparent,
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent
-                            )
-                        )
-                    }
-                }
-                androidx.compose.animation.AnimatedVisibility(
-                    visible = state.input.text.isEmpty() && state.chosenImageList.isEmpty() && state.chosenQuoteReply == null,
-                    enter = fadeIn(),
-                    exit = fadeOut()
-                ) {
-                    IconButton(onClick = {
-                        if (audioPermissionState.status.isGranted) {
-                            onEvent(MessagePageEvent.EnableAudioRecorder(true))
-                            onEvent(MessagePageEvent.OpenEditArea(false))
                         } else {
-                            onEvent(MessagePageEvent.ShowVoicePermissionDeniedDialog(true))
+                            // text
+                            Column(
+                                verticalArrangement = Arrangement.Bottom
+                            ) {
+                                // quote reply
+                                if (state.chosenQuoteReply != null) {
+                                    QuoteReplySendingLayout(model = state.chosenQuoteReply, onClick = { /*TODO*/ },
+                                        onCancel = {
+                                            onEvent(MessagePageEvent.ChooseQuoteReply(null))
+                                        })
+                                }
+                                // image
+                                if (state.chosenImageList.isNotEmpty()) {
+                                    LazyRow(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = 16.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        contentPadding = PaddingValues(horizontal = 16.dp)
+                                    ) {
+                                        itemsIndexed(
+                                            items = state.chosenImageList,
+                                            key = { index, item -> item }) { index, item ->
+                                            ImageSendingLayout(
+                                                modifier = Modifier.animateItemPlacement(),
+                                                model = item,
+                                                previewIndex = index,
+                                                onClick = { },
+                                                onCancel = {
+                                                    onEvent(MessagePageEvent.ChooseImageUri(item))
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                                TextField(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clearFocusOnKeyboardDismiss(),
+                                    value = state.input,
+                                    onValueChange = {
+                                        onEvent(MessagePageEvent.OpenEditArea(false))
+                                        onEvent(MessagePageEvent.UpdateEditAreaInput(it))
+                                    },
+                                    enabled = !state.enableAudioRecorder,
+                                    textStyle = MaterialTheme.typography.bodyLarge.merge(
+                                        TextStyle(color = MaterialTheme.colorScheme.onSurface)
+                                    ),
+                                    placeholder = {
+                                        Text(
+                                            text = stringResource(R.string.input_placeholder),
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Clip,
+                                        )
+                                    },
+                                    shape = RoundedCornerShape(28.dp),
+                                    colors = TextFieldDefaults.colors(
+                                        cursorColor = MaterialTheme.colorScheme.primary,
+                                        focusedContainerColor = Color.Transparent,
+                                        unfocusedContainerColor = Color.Transparent,
+                                        disabledContainerColor = Color.Transparent,
+                                        focusedIndicatorColor = Color.Transparent,
+                                        unfocusedIndicatorColor = Color.Transparent,
+                                        disabledIndicatorColor = Color.Transparent
+                                    )
+                                )
+                            }
                         }
-                    }) {
-                        Icon(
-                            imageVector = Icons.Outlined.KeyboardVoice,
-                            contentDescription = "voice"
-                        )
+                    }
+                }
+                Crossfade(targetState = state, label = "audio/text switch btn") {
+                    if (!it.enableAudioRecorder && it.input.text.isEmpty() && it.chosenImageList.isEmpty() && it.chosenQuoteReply == null) {
+                        IconButton(onClick = {
+                            if (audioPermissionState.status.isGranted) {
+                                onEvent(MessagePageEvent.EnableAudioRecorder(true))
+                                onEvent(MessagePageEvent.OpenEditArea(false))
+                            } else {
+                                onEvent(MessagePageEvent.ShowVoicePermissionDeniedDialog(true))
+                            }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Outlined.KeyboardVoice,
+                                contentDescription = "voice"
+                            )
+                        }
+                    } else if (it.enableAudioRecorder && state.audioRecorderState is AudioRecorderState.Ready) {
+                        IconButton(onClick = {
+                            onEvent(MessagePageEvent.EnableAudioRecorder(false))
+                        }) {
+                            Icon(
+                                imageVector = Icons.Outlined.Keyboard,
+                                contentDescription = "keyboard",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 }
             }
             AnimatedVisibility(visible = ((state.input.text.isNotEmpty() || state.chosenImageList.isNotEmpty()) && !state.enableAudioRecorder) || (state.audioRecorderState is AudioRecorderState.Done && state.enableAudioRecorder),
-                enter = expandHorizontally() { width -> 0 },
-                exit = shrinkHorizontally() { width -> 0 }
+                enter = expandHorizontally(
+                    expandFrom = Alignment.Start
+                ) { width -> 0 },
+                exit = shrinkHorizontally(
+                    shrinkTowards = Alignment.Start
+                ) { width -> 0 }
             ) {
                 FloatingActionButton(
                     onClick = {
@@ -428,7 +448,7 @@ fun EditArea(
                     shape = CircleShape
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.Send,
+                        imageVector = Icons.AutoMirrored.Outlined.Send,
                         contentDescription = "send",
                         tint = MaterialTheme.colorScheme.primary
                     )
