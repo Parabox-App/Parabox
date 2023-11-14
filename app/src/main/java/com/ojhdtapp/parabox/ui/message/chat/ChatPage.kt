@@ -37,6 +37,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -196,16 +197,33 @@ fun NormalChatPage(
                 targetValue = if (sheetState.isOpen) 0.dp else paddingValues.calculateBottomPadding(),
                 label = "edit_area_bottom_padding"
             )
+            val sheetHeight by remember(state.chatDetail.editAreaState) {
+                derivedStateOf { if (state.chatDetail.editAreaState.enableLocationPicker) 320.dp else 160.dp }
+            }
             DismissibleBottomSheet(
                 sheetContent = {
-                    Toolbar(
-                        modifier = Modifier.height(160.dp),
-                        state = state.chatDetail.editAreaState,
-                        onEvent = onEvent
-                    )
+                    Crossfade(
+                        modifier = Modifier.background(MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)),
+                        targetState = state.chatDetail.editAreaState.enableLocationPicker,
+                        label = "location toolbar"
+                    ) {
+                        if (it) {
+                            LocationPicker(
+                                modifier = Modifier.height(320.dp),
+                                state = state.chatDetail.editAreaState,
+                                onEvent = onEvent
+                            )
+                        } else {
+                            Toolbar(
+                                modifier = Modifier.height(160.dp),
+                                state = state.chatDetail.editAreaState,
+                                onEvent = onEvent
+                            )
+                        }
+                    }
                 },
                 gesturesEnabled = state.chatDetail.editAreaState.audioRecorderState !is AudioRecorderState.Recording,
-                sheetHeight = 160.dp, sheetState = sheetState
+                sheetHeight = sheetHeight, sheetState = sheetState
             ) {
                 Column(modifier = Modifier.padding(top = paddingValues.calculateTopPadding())) {
                     Box(modifier = Modifier.weight(1f)) {

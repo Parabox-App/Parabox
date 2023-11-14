@@ -37,8 +37,10 @@ data class MessagePageState(
         val chosenAtId: Long? = null,
         val chosenQuoteReply: ChatPageUiModel.MessageWithSender? = null,
         val showVoicePermissionDeniedDialog: Boolean = false,
+        val showLocationPermissionDeniedDialog: Boolean = false,
         val enableAudioRecorder: Boolean = false,
         val audioRecorderState: AudioRecorderState = AudioRecorderState.Ready,
+        val enableLocationPicker: Boolean = false,
         val toolbarState: ToolbarState = ToolbarState.Tools,
         val iconShrink: Boolean = false,
     )

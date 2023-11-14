@@ -300,6 +300,16 @@ class MessagePageViewModel @Inject constructor(
                 )
             }
 
+            is MessagePageEvent.EnableLocationPicker -> {
+                return state.copy(
+                    chatDetail = state.chatDetail.copy(
+                        editAreaState = state.chatDetail.editAreaState.copy(
+                            enableLocationPicker = event.enable,
+                        )
+                    )
+                )
+            }
+
             is MessagePageEvent.UpdateAudioRecorderState -> {
                 return state.copy(
                     chatDetail = state.chatDetail.copy(

@@ -29,6 +29,7 @@ sealed interface MessagePageEvent : UiEvent {
     data class UpdateEditAreaInput(val input: TextFieldValue): MessagePageEvent
     data class UpdateToolbarState(val state: ToolbarState): MessagePageEvent
     data class EnableAudioRecorder(val enable: Boolean): MessagePageEvent
+    data class EnableLocationPicker(val enable: Boolean): MessagePageEvent
     data class UpdateAudioRecorderState(val state: AudioRecorderState): MessagePageEvent
     data class ExpandImagePreviewerMenu(val expand: Boolean): MessagePageEvent
     data class ExpandImagePreviewerToolbar(val expand: Boolean): MessagePageEvent

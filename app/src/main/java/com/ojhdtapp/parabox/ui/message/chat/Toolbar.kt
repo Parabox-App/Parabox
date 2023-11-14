@@ -141,7 +141,7 @@ fun Toolbar(
             }
         }
     AnimatedContent(
-        modifier = modifier.background(MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)),
+        modifier = modifier,
         targetState = state.toolbarState,
         transitionSpec = {
             if (targetState == ToolbarState.Emoji) {
@@ -555,6 +555,7 @@ fun Toolbar(
                         tonalElevation = 3.dp,
                         shape = RoundedCornerShape(24.dp),
                         onClick = {
+                            onEvent(MessagePageEvent.EnableLocationPicker(true))
                         }
                     ) {
                         Column(
