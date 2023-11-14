@@ -34,7 +34,6 @@ data class MessagePageState(
         val input: TextFieldValue = TextFieldValue(""),
         val memeList: List<Uri> = emptyList(),
         val chosenImageList: List<Uri> = emptyList(),
-        val chosenAudioUri: Uri? = null,
         val chosenAtId: Long? = null,
         val chosenQuoteReply: ChatPageUiModel.MessageWithSender? = null,
         val showVoicePermissionDeniedDialog: Boolean = false,

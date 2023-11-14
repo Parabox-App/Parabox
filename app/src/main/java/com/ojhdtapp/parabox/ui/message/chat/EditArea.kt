@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.ui.message.chat
 
 import android.Manifest
+import android.util.Log
 import android.view.MotionEvent
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -19,7 +20,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -39,6 +40,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.NavigateNext
 import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.outlined.AddCircleOutline
 import androidx.compose.material.icons.outlined.Clear
@@ -68,8 +70,11 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -80,6 +85,8 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.core.util.FileUtil
+import com.ojhdtapp.parabox.core.util.audio.LocalAudioRecorder
 import com.ojhdtapp.parabox.core.util.launchSetting
 import com.ojhdtapp.parabox.ui.common.clearFocusOnKeyboardDismiss
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
@@ -87,6 +94,9 @@ import com.ojhdtapp.parabox.ui.message.MessagePageState
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.ImageSendingLayout
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.QuoteReplySendingLayout
 import com.origeek.imageViewer.previewer.rememberPreviewerState
+import com.origeek.imageViewer.viewer.detectTransformGestures
+import org.apache.commons.io.FileUtils
+import java.io.File
 
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
@@ -97,6 +107,8 @@ fun EditArea(
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val hapticFeedback = LocalHapticFeedback.current
+    val audioRecorder = LocalAudioRecorder.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val audioPermissionState =
         rememberPermissionState(permission = Manifest.permission.RECORD_AUDIO)
@@ -145,8 +157,8 @@ fun EditArea(
                 .fillMaxWidth()
                 .padding(vertical = 16.dp), verticalAlignment = Alignment.Bottom
         ) {
-            val isRecording by remember {
-                derivedStateOf { state.enableAudioRecorder && state.audioRecorderState is AudioRecorderState.Ready || state.audioRecorderState is AudioRecorderState.Done }
+            val isRecording by remember(state) {
+                derivedStateOf { state.enableAudioRecorder && state.audioRecorderState is AudioRecorderState.Recording || state.audioRecorderState is AudioRecorderState.Confirmed }
             }
             Crossfade(
                 targetState = state.iconShrink,
@@ -158,14 +170,14 @@ fun EditArea(
                 if (it) {
                     IconButton(onClick = { onEvent(MessagePageEvent.UpdateIconShrink(false)) }) {
                         Icon(
-                            imageVector = Icons.Outlined.NavigateNext,
+                            imageVector = Icons.AutoMirrored.Outlined.NavigateNext,
                             contentDescription = "expand"
                         )
                     }
                 } else {
                     Row {
                         IconButton(
-                            enabled = isRecording,
+                            enabled = !isRecording,
                             onClick = {
                                 keyboardController?.hide()
                                 if (state.toolbarState == ToolbarState.Tools && state.expanded) {
@@ -182,7 +194,7 @@ fun EditArea(
                             )
                         }
                         IconButton(
-                            enabled = isRecording,
+                            enabled = !isRecording,
                             onClick = {
                                 keyboardController?.hide()
                                 if (state.toolbarState == ToolbarState.Emoji && state.expanded) {
@@ -191,7 +203,6 @@ fun EditArea(
                                     onEvent(MessagePageEvent.OpenEditArea(true))
                                 }
                                 onEvent(MessagePageEvent.UpdateToolbarState(ToolbarState.Emoji))
-
                                 onEvent(MessagePageEvent.EnableAudioRecorder(false))
                             }) {
                             Icon(
@@ -202,7 +213,8 @@ fun EditArea(
                     }
                 }
             }
-            AnimatedVisibility(visible = state.audioRecorderState is AudioRecorderState.Done,
+            AnimatedVisibility(
+                visible = state.audioRecorderState is AudioRecorderState.Done,
                 enter = expandHorizontally(),
                 exit = shrinkHorizontally(),
             ) {
@@ -262,44 +274,45 @@ fun EditArea(
                                     modifier = Modifier
                                         .weight(1f)
                                         .height(TextFieldDefaults.MinHeight)
-                                        .pointerInteropFilter {
+                                        .pointerInput(Unit) {
+                                            var targetFile: File? = null
                                             val press =
-                                                PressInteraction.Press(Offset(it.x, it.y))
-                                            when (it.action) {
-                                                MotionEvent.ACTION_DOWN -> {
-                                                    onEvent(MessagePageEvent.UpdateAudioRecorderState(AudioRecorderState.Recording))
-                                                    interactionSource.tryEmit(press)
-//                                                onStartRecording()
-                                                }
-
-                                                MotionEvent.ACTION_MOVE -> {
-                                                    if (it.y < -150) {
-                                                        if (state.audioRecorderState !is AudioRecorderState.Confirmed) {
-                                                            onEvent(
-                                                                MessagePageEvent.UpdateAudioRecorderState(
-                                                                    AudioRecorderState.Confirmed
-                                                                )
-                                                            )
-                                                        }
-                                                    } else {
-                                                        if (state.audioRecorderState !is AudioRecorderState.Recording) {
-                                                            onEvent(
-                                                                MessagePageEvent.UpdateAudioRecorderState(
-                                                                    AudioRecorderState.Recording
-                                                                )
-                                                            )
-                                                        }
-                                                    }
-                                                }
-
-                                                MotionEvent.ACTION_UP -> {
+                                                PressInteraction.Press(Offset.Zero)
+                                            var startTimestamp: Long = 0L
+                                            var currentState: AudioRecorderState = AudioRecorderState.Recording
+                                            detectTransformGestures(gestureStart = {
+                                                startTimestamp = System.currentTimeMillis()
+                                                targetFile = FileUtil.createTempFile(
+                                                    context,
+                                                    FileUtil.DEFAULT_AUDIO_NAME,
+                                                    FileUtil.DEFAULT_AUDIO_EXTENSION
+                                                )
+                                                onEvent(MessagePageEvent.UpdateAudioRecorderState(AudioRecorderState.Recording))
+                                                interactionSource.tryEmit(press)
+                                                // record start
+                                                audioRecorder.start(context, targetFile!!)
+                                            },
+                                                gestureEnd = {
+                                                    // TODO: audio fail notice
+                                                    audioRecorder.stop()
                                                     interactionSource.tryEmit(
                                                         PressInteraction.Release(
                                                             press
                                                         )
                                                     )
+
 //                                                onStopRecording()
-                                                    if (state.audioRecorderState is AudioRecorderState.Confirmed) {
+                                                    if (currentState is AudioRecorderState.Confirmed) {
+                                                        if (System.currentTimeMillis() - startTimestamp > 1000) {
+                                                            onEvent(MessagePageEvent.SendAudioMessage(audioFile = targetFile!!))
+                                                        } else {
+
+                                                        }
+                                                        onEvent(
+                                                            MessagePageEvent.UpdateAudioRecorderState(
+                                                                AudioRecorderState.Ready
+                                                            )
+                                                        )
 //                                                    onClearRecording()
 //                                                    sendAudio(context, packageNameList) {
 //                                                        onSend(it)
@@ -314,11 +327,25 @@ fun EditArea(
                                                             )
                                                         )
                                                     }
+                                                }) { centroid, pan, zoom, rotation, event ->
+                                                if (centroid.y < -150) {
+                                                    if (currentState !is AudioRecorderState.Confirmed) {
+                                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                        currentState = AudioRecorderState.Confirmed
+                                                        onEvent(
+                                                            MessagePageEvent.UpdateAudioRecorderState(currentState)
+                                                        )
+                                                    }
+                                                } else {
+                                                    if (currentState !is AudioRecorderState.Recording) {
+                                                        currentState = AudioRecorderState.Recording
+                                                        onEvent(
+                                                            MessagePageEvent.UpdateAudioRecorderState(currentState)
+                                                        )
+                                                    }
                                                 }
-
-                                                else -> false
+                                                true
                                             }
-                                            true
                                         },
                                     contentAlignment = Alignment.Center
                                 ) {

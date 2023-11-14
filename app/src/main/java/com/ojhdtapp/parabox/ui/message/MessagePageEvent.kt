@@ -41,6 +41,7 @@ sealed interface MessagePageEvent : UiEvent {
     data class ShowVoicePermissionDeniedDialog(val open: Boolean): MessagePageEvent
     data class UpdateIconShrink(val shouldShrink: Boolean): MessagePageEvent
     object SendMessage: MessagePageEvent
+    data class SendAudioMessage(val audioFile: File): MessagePageEvent
     data class SendMemeMessage(val imageUri: Uri): MessagePageEvent
     data class SendFileMessage(val fileUri: Uri, val size: Long, val name: String): MessagePageEvent
     data class AddOrRemoveSelectedMessage(val msg: Message) : MessagePageEvent

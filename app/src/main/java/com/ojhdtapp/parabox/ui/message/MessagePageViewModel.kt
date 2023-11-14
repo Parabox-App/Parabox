@@ -3,6 +3,7 @@ package com.ojhdtapp.parabox.ui.message
 import android.content.Context
 import android.net.Uri
 import android.widget.Toast
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.core.net.toUri
 import androidx.lifecycle.viewModelScope
@@ -23,7 +24,9 @@ import com.ojhdtapp.parabox.domain.use_case.UpdateChat
 import com.ojhdtapp.parabox.ui.base.BaseViewModel
 import com.ojhdtapp.parabox.ui.message.chat.AudioRecorderState
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.model.ChatPageUiModel
+import com.ojhdtapp.paraboxdevelopmentkit.model.SendMessage
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAudio
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxFile
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxMessageElement
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxPlainText
@@ -288,7 +291,8 @@ class MessagePageViewModel @Inject constructor(
                 return state.copy(
                     chatDetail = state.chatDetail.copy(
                         editAreaState = state.chatDetail.editAreaState.copy(
-                            enableAudioRecorder = event.enable
+                            enableAudioRecorder = event.enable,
+                            audioRecorderState = AudioRecorderState.Ready
                         )
                     )
                 )
@@ -438,7 +442,6 @@ class MessagePageViewModel @Inject constructor(
                         editAreaState = state.chatDetail.editAreaState.copy(
                             input = TextFieldValue(""),
                             chosenImageList = emptyList(),
-                            chosenAudioUri = null,
                             chosenAtId = null,
                             chosenQuoteReply = null,
                             audioRecorderState = AudioRecorderState.Ready,
@@ -448,11 +451,21 @@ class MessagePageViewModel @Inject constructor(
                 )
             }
 
+            is MessagePageEvent.SendAudioMessage -> {
+                // TODO: send fail notice
+                fileUtil.getUriForFile(event.audioFile)?.let {
+                    ParaboxAudio(resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(it))
+                }
+                return state
+            }
+
             is MessagePageEvent.SendMemeMessage -> {
+                ParaboxImage(resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(event.imageUri))
                 return state
             }
 
             is MessagePageEvent.SendFileMessage -> {
+                ParaboxFile(name = event.name, extension = event.name, size = event.size, lastModifiedTime = System.currentTimeMillis(), resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(event.fileUri))
                 return state
             }
 
@@ -512,17 +525,18 @@ class MessagePageViewModel @Inject constructor(
     }
 
     fun buildParaboxSendMessage() {
-        buildList<ParaboxMessageElement> {
+        val contents = buildList<ParaboxMessageElement> {
             if (uiState.value.chatDetail.editAreaState.input.text.isNotEmpty()) {
                 add(ParaboxPlainText(uiState.value.chatDetail.editAreaState.input.text))
             }
             uiState.value.chatDetail.editAreaState.chosenImageList.forEach {
                 add(ParaboxImage(resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(it)))
             }
-            if (uiState.value.chatDetail.editAreaState.chosenAudioUri != null) {
-                add(ParaboxAudio(resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(uiState.value.chatDetail.editAreaState.chosenAudioUri!!)))
-            }
         }
+//        SendMessage(
+//            contents = contents,
+//
+//        )
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

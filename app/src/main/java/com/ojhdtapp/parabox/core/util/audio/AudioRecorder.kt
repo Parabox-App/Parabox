@@ -35,10 +35,17 @@ object AudioRecorder {
         }
     }
 
-    fun stop() {
-        recorder?.stop()
-        recorder?.reset()
-        recorder = null
+    fun stop(): Boolean {
+        return try {
+            recorder?.stop()
+            recorder?.reset()
+            recorder = null
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+
     }
 }
 

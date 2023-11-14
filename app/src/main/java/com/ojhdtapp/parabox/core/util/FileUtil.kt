@@ -159,8 +159,15 @@ class FileUtil @Inject constructor(
     }
 
     companion object {
+        fun createTempFile(context: Context, type: String, extension: String): File{
+            return File.createTempFile(type, extension, context.cacheDir)
+        }
+
         const val EXTERNAL_FILES_DIR_MEME = "meme"
         const val EXTERNAL_FILES_DIR_CAMERA = "camera"
+        const val DEFAULT_IMAGE_NAME = "image"
         const val DEFAULT_IMAGE_EXTENSION = "jpg"
+        const val DEFAULT_AUDIO_NAME = "audio"
+        const val DEFAULT_AUDIO_EXTENSION = "mp3"
     }
 }
