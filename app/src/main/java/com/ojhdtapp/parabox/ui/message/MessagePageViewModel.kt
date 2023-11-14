@@ -19,6 +19,7 @@ import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.domain.use_case.GetChat
 import com.ojhdtapp.parabox.domain.use_case.GetContact
+import com.ojhdtapp.parabox.domain.use_case.GetLocation
 import com.ojhdtapp.parabox.domain.use_case.GetMessage
 import com.ojhdtapp.parabox.domain.use_case.UpdateChat
 import com.ojhdtapp.parabox.ui.base.BaseViewModel
@@ -55,6 +56,7 @@ class MessagePageViewModel @Inject constructor(
     val getMessage: GetMessage,
     val getContact: GetContact,
     val updateChat: UpdateChat,
+    val getLocation: GetLocation,
     val fileUtil: FileUtil,
 ) : BaseViewModel<MessagePageState, MessagePageEvent, MessagePageEffect>() {
 

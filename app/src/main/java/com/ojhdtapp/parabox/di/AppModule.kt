@@ -4,8 +4,11 @@ import MainRepositoryImpl
 import android.app.Application
 import android.content.Context
 import androidx.room.Room
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.ojhdtapp.parabox.core.util.LocationUtil
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.Converters
 import com.ojhdtapp.parabox.data.repository.ChatRepositoryImpl
@@ -18,6 +21,7 @@ import com.ojhdtapp.parabox.domain.repository.MessageRepository
 import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
 import com.ojhdtapp.parabox.domain.use_case.GetChat
 import com.ojhdtapp.parabox.domain.use_case.GetContact
+import com.ojhdtapp.parabox.domain.use_case.GetLocation
 import com.ojhdtapp.parabox.domain.use_case.GetMessage
 import com.ojhdtapp.parabox.domain.use_case.Query
 import com.ojhdtapp.parabox.domain.use_case.UpdateChat
@@ -65,6 +69,13 @@ object AppModule {
     fun provideExtensionManager(
         @ApplicationContext applicationContext: Context,
     ): ExtensionManager = ExtensionManager(applicationContext)
+
+    @Provides
+    @Singleton
+    fun provideLocationUtil(
+        @ApplicationContext applicationContext: Context
+    ): LocationUtil =
+        LocationUtil(applicationContext, LocationServices.getFusedLocationProviderClient(applicationContext))
 
     @Provides
     @Singleton
@@ -130,4 +141,10 @@ object AppModule {
     ): UpdateChat = UpdateChat(
         chatRepository
     )
+
+    @Provides
+    @Singleton
+    fun provideGetLocationUseCase(
+        locationUtil: LocationUtil
+    ): GetLocation = GetLocation(locationUtil)
 }
