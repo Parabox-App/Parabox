@@ -12,6 +12,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -30,6 +31,7 @@ import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -41,6 +43,12 @@ fun LocationPicker(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val cameraState = rememberCameraPositionState()
+    LaunchedEffect(key1 = state.locationPickerState.firstLocationGotten) {
+        if (state.locationPickerState.firstLocationGotten) {
+            cameraState.centerOnLocation(state.locationPickerState.currentLocation)
+            onEvent(MessagePageEvent.UpdateSelectedLocation(state.locationPickerState.currentLocation))
+        }
+    }
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -51,40 +59,28 @@ fun LocationPicker(
             shape = RoundedCornerShape(24.dp),
             color = MaterialTheme.colorScheme.surfaceVariant
         ) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                GoogleMap(
-                    modifier = Modifier.fillMaxSize(),
-                    cameraPositionState = cameraState,
-                    locationSource = object : LocationSource{
-                        override fun activate(p0: LocationSource.OnLocationChangedListener) {
-                            p0.onLocationChanged(state.locationPickerState.currentLocation.toLocation())
-                        }
-
-                        override fun deactivate() {
-                        }
-
-                    },
-                    properties = MapProperties(
-                        isBuildingEnabled = false,
-                        isIndoorEnabled = false,
-                        isMyLocationEnabled = true,
-                        mapType = MapType.NORMAL,
-                        isTrafficEnabled = false
-                    ),
-                    onMapLoaded = {
-                        coroutineScope.launch {
-                            cameraState.centerOnLocation(state.locationPickerState.currentLocation)
-                        }
+            GoogleMap(
+                modifier = Modifier.fillMaxSize(),
+                cameraPositionState = cameraState,
+                properties = MapProperties(
+                    isBuildingEnabled = false,
+                    isIndoorEnabled = false,
+                    isMyLocationEnabled = true,
+                    mapType = MapType.NORMAL,
+                    isTrafficEnabled = false
+                ),
+                onMapClick = {
+                    onEvent(MessagePageEvent.UpdateSelectedLocation(it))
+                    coroutineScope.launch {
+                        cameraState.centerOnLocation(it)
                     }
-                ) {
-                    Marker(
-                        state = MarkerState(position = state.locationPickerState.currentLocation),
-                        title = "MyPosition",
-                        snippet = "This is a description of this Marker",
-                        draggable = true,
-
-                    )
                 }
+            ) {
+                Marker(
+                    state = MarkerState(position = state.locationPickerState.selectedLocation),
+                    title = "选定的位置",
+                    draggable = true,
+                )
             }
         }
     }
@@ -100,7 +96,7 @@ private suspend fun CameraPositionState.centerOnLocation(
     durationMs = 1500
 )
 
-private fun LatLng.toLocation(): Location{
+private fun LatLng.toLocation(): Location {
     return Location("google").also {
         it.latitude = latitude
         it.longitude = longitude

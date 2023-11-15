@@ -304,7 +304,7 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.EnableLocationPicker -> {
-                if(event.enable){
+                if (event.enable) {
                     beginLocationCollection()
                 } else {
                     cancelLocationCollection()
@@ -313,6 +313,7 @@ class MessagePageViewModel @Inject constructor(
                     chatDetail = state.chatDetail.copy(
                         editAreaState = state.chatDetail.editAreaState.copy(
                             enableLocationPicker = event.enable,
+                            locationPickerState = MessagePageState.LocationPickerState()
                         )
                     )
                 )
@@ -532,7 +533,20 @@ class MessagePageViewModel @Inject constructor(
                     chatDetail = state.chatDetail.copy(
                         editAreaState = state.chatDetail.editAreaState.copy(
                             locationPickerState = state.chatDetail.editAreaState.locationPickerState.copy(
-                                currentLocation = event.location
+                                currentLocation = event.location,
+                                firstLocationGotten = true
+                            )
+                        ),
+                    )
+                )
+            }
+
+            is MessagePageEvent.UpdateSelectedLocation -> {
+                return state.copy(
+                    chatDetail = state.chatDetail.copy(
+                        editAreaState = state.chatDetail.editAreaState.copy(
+                            locationPickerState = state.chatDetail.editAreaState.locationPickerState.copy(
+                                selectedLocation = event.location
                             )
                         ),
                     )

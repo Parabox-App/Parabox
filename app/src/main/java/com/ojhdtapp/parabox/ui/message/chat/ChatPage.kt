@@ -168,6 +168,9 @@ fun NormalChatPage(
             sheetState.close()
         }
     }
+    BackHandler(state.chatDetail.editAreaState.enableLocationPicker) {
+        onEvent(MessagePageEvent.EnableLocationPicker(false))
+    }
     BackHandler(drawerState.isOpen) {
         coroutineScope.launch {
             drawerState.close()

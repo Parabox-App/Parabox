@@ -57,5 +57,6 @@ data class MessagePageState(
     data class LocationPickerState(
         val currentLocation: LatLng = LatLng(0.0, 0.0),
         val selectedLocation: LatLng = LatLng(0.0, 0.0),
+        val firstLocationGotten: Boolean = false,
     )
 }

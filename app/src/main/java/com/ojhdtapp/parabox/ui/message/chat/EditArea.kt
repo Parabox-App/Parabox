@@ -455,7 +455,7 @@ fun EditArea(
                     }
                 }
             }
-            AnimatedVisibility(visible = ((state.input.text.isNotEmpty() || state.chosenImageList.isNotEmpty()) && !state.enableAudioRecorder) || (state.audioRecorderState is AudioRecorderState.Done && state.enableAudioRecorder),
+            AnimatedVisibility(visible = ((state.input.text.isNotEmpty() || state.chosenImageList.isNotEmpty()) && !state.enableAudioRecorder) || (state.audioRecorderState is AudioRecorderState.Done && state.enableAudioRecorder) || state.enableLocationPicker,
                 enter = expandHorizontally(
                     expandFrom = Alignment.Start
                 ) { width -> 0 },

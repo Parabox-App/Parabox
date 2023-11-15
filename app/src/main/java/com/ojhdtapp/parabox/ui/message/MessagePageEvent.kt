@@ -50,5 +50,5 @@ sealed interface MessagePageEvent : UiEvent {
     data class AddOrRemoveSelectedMessage(val msg: Message) : MessagePageEvent
     object ClearSelectedMessage : MessagePageEvent
     data class UpdateLocation(val location: LatLng): MessagePageEvent
-
+    data class UpdateSelectedLocation(val location: LatLng): MessagePageEvent
 }
