@@ -435,6 +435,16 @@ class MessagePageViewModel @Inject constructor(
                 )
             }
 
+            is MessagePageEvent.ShowLocationPermissionDeniedDialog -> {
+                return state.copy(
+                    chatDetail = state.chatDetail.copy(
+                        editAreaState = state.chatDetail.editAreaState.copy(
+                            showLocationPermissionDeniedDialog = event.open
+                        )
+                    )
+                )
+            }
+
             is MessagePageEvent.UpdateIconShrink -> {
                 return state.copy(
                     chatDetail = state.chatDetail.copy(

@@ -117,6 +117,7 @@
     <string name="delete_contact_subtitle">High-risk operation! Please handle with care</string>
     <string name="request_permission">Permission Request</string>
     <string name="audio_permission_text">To send voice messages, you need to authorize the app to use your device\'s microphone.\nYou can also go to the settings page to authorize manually.</string>
+    <string name="location_permission_text">To send location information, you need to authorize the app to obtain your exact current location. \nYou can also go to the settings page to authorize manually.</string>
     <string name="try_request_permission">Try to authorize</string>
     <string name="redirect_to_setting">Go to settings</string>
     <string name="input_placeholder">Say something…</string>

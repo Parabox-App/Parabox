@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.message.chat
 
+import android.Manifest
 import android.net.Uri
 import android.os.Build
 import android.util.Log
@@ -44,8 +45,11 @@ import androidx.compose.material.icons.outlined.Face
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.KeyboardVoice
+import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.Place
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
@@ -78,13 +82,18 @@ import coil.decode.GifDecoder
 import coil.decode.ImageDecoderDecoder
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.google.accompanist.permissions.rememberPermissionState
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.buildFileName
+import com.ojhdtapp.parabox.core.util.launchLocationSetting
+import com.ojhdtapp.parabox.core.util.launchSetting
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageState
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalAnimationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalAnimationApi::class, ExperimentalPermissionsApi::class)
 @Composable
 fun Toolbar(
     modifier: Modifier = Modifier,
@@ -140,6 +149,49 @@ fun Toolbar(
                 onEvent(MessagePageEvent.SendFileMessage(fileUri = it, size = size, name = name))
             }
         }
+    val locationPermissionState =
+        rememberMultiplePermissionsState(
+            permissions = listOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        )
+    if (state.showLocationPermissionDeniedDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                onEvent(MessagePageEvent.ShowLocationPermissionDeniedDialog(false))
+            },
+            icon = { Icon(Icons.Outlined.LocationOn, contentDescription = null) },
+            title = {
+                Text(text = stringResource(R.string.request_permission))
+            },
+            text = {
+                Text(
+                    stringResource(id = R.string.location_permission_text)
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onEvent(MessagePageEvent.ShowLocationPermissionDeniedDialog(false))
+                        locationPermissionState.launchMultiplePermissionRequest()
+                    }
+                ) {
+                    Text(stringResource(R.string.try_request_permission))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        onEvent(MessagePageEvent.ShowLocationPermissionDeniedDialog(false))
+                        context.launchLocationSetting()
+                    }
+                ) {
+                    Text(stringResource(R.string.redirect_to_setting))
+                }
+            }
+        )
+    }
     AnimatedContent(
         modifier = modifier,
         targetState = state.toolbarState,
@@ -555,7 +607,11 @@ fun Toolbar(
                         tonalElevation = 3.dp,
                         shape = RoundedCornerShape(24.dp),
                         onClick = {
-                            onEvent(MessagePageEvent.EnableLocationPicker(true))
+                            if (locationPermissionState.allPermissionsGranted) {
+                                onEvent(MessagePageEvent.EnableLocationPicker(true))
+                            } else {
+                                onEvent(MessagePageEvent.ShowLocationPermissionDeniedDialog(true))
+                            }
                         }
                     ) {
                         Column(

@@ -40,6 +40,7 @@ sealed interface MessagePageEvent : UiEvent {
     data class ChooseImageUri(val imageUri: Uri): MessagePageEvent
     data class ChooseQuoteReply(val model: ChatPageUiModel.MessageWithSender?): MessagePageEvent
     data class ShowVoicePermissionDeniedDialog(val open: Boolean): MessagePageEvent
+    data class ShowLocationPermissionDeniedDialog(val open: Boolean): MessagePageEvent
     data class UpdateIconShrink(val shouldShrink: Boolean): MessagePageEvent
     object SendMessage: MessagePageEvent
     data class SendAudioMessage(val audioFile: File): MessagePageEvent

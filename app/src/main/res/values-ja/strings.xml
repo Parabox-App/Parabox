@@ -116,8 +116,8 @@
     <string name="delete_contact_title">このグループを削除する</string>
     <string name="delete_contact_subtitle">危な動作！注意して進めてください</string>
     <string name="request_permission">アクセス権限が必要</string>
-    <string name="audio_permission_text">音声メッセージを送信するには、デバイスマイクの使用を許可する必要があります。\n
-設定からも手動で認証してください。</string>
+    <string name="audio_permission_text">音声メッセージを送信するには、デバイスマイクの使用を許可する必要があります。\n設定からも手動で認証してください。</string>
+    <string name="location_permission_text">位置情報を送信するには、アプリが正確な現在位置を取得することを承認する必要があります。 \n設定ページに移動して手動で認証することもできます。</string>
     <string name="try_request_permission">認証を試みています</string>
     <string name="redirect_to_setting">設定へ</string>
     <string name="input_placeholder">備考を入力</string>

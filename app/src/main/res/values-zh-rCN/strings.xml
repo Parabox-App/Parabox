@@ -116,8 +116,8 @@
     <string name="delete_contact_title">移除该群聊</string>
     <string name="delete_contact_subtitle">高危操作！请谨慎处理</string>
     <string name="request_permission">权限申请</string>
-    <string name="audio_permission_text">要发送语音消息，您需要授权本应用使用设备麦克风。\n
-您亦可前往设置页面手动授权。</string>
+    <string name="audio_permission_text">要发送语音消息，您需要授权本应用使用设备麦克风。\n您亦可前往设置页面手动授权。</string>
+    <string name="location_permission_text">要发送位置信息，您需要授权本应用获取当前确切位置。\n您亦可前往设置页面手动授权。</string>
     <string name="try_request_permission">尝试授权</string>
     <string name="redirect_to_setting">转到设置</string>
     <string name="input_placeholder">输入内容</string>
@@ -157,8 +157,7 @@
     <string name="contact_hidden">会话已暂时隐藏</string>
     <string name="archived_contact">已归档会话</string>
     <string name="contact_empty">暂无可显示的会话</string>
-    <string name="notification_permission_des">在 Android 13 (Tiramisu) 及更高版本上，通知发送需要额外运行时权限。该权限对于即时通讯应用是必要的。
-您亦可前往设置页面手动授权。</string>
+    <string name="notification_permission_des">在 Android 13 (Tiramisu) 及更高版本上，通知发送需要额外运行时权限。该权限对于即时通讯应用是必要的。您亦可前往设置页面手动授权。</string>
     <string name="delete_contact_confirm_text">该编组将从会话列表移除，但不会影响任何已关联会话及聊天记录。</string>
     <string name="contact_search_bar_placeholder">搜索会话</string>
     <string name="new_contact">发起会话</string>

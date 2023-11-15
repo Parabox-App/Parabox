@@ -25,7 +25,6 @@ fun LocationPicker(
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-
     Box(
         modifier = modifier
             .fillMaxWidth()
