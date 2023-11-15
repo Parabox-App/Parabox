@@ -3,6 +3,7 @@ package com.ojhdtapp.parabox.ui.message
 import android.net.Uri
 import androidx.compose.ui.text.input.TextFieldValue
 import com.google.android.gms.maps.model.LatLng
+import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.data.local.entity.ChatTagsUpdate
 import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.Message
@@ -58,5 +59,7 @@ data class MessagePageState(
         val currentLocation: LatLng = LatLng(0.0, 0.0),
         val selectedLocation: LatLng = LatLng(0.0, 0.0),
         val firstLocationGotten: Boolean = false,
+        val selectedLocationAddress: String = "",
+        val selectedLocationAddressLoadState: LoadState = LoadState.LOADING,
     )
 }

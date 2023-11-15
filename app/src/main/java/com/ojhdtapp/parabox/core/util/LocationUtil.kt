@@ -4,6 +4,10 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
+import android.location.Address
+import android.location.Geocoder
+import android.location.Geocoder.GeocodeListener
+import android.os.Build
 import android.os.Looper
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -24,9 +28,9 @@ class LocationUtil @Inject constructor(
     private val locationClient: FusedLocationProviderClient
 ) {
     @SuppressLint("MissingPermission")
-    fun requestLocationUpdates(): Flow<LatLng?> = callbackFlow {
+    fun requestLocationUpdates(): Flow<Resource<LatLng>> = callbackFlow {
         if (!hasLocationPermission(context)) {
-            trySend(null)
+            trySend(Resource.Error("no permission"))
             return@callbackFlow
         }
 
@@ -38,7 +42,7 @@ class LocationUtil @Inject constructor(
         val locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 locationResult.locations.lastOrNull()?.let {
-                    trySend(LatLng(it.latitude, it.longitude))
+                    trySend(Resource.Success(LatLng(it.latitude, it.longitude)))
                 }
             }
         }
@@ -52,6 +56,30 @@ class LocationUtil @Inject constructor(
         }
     }
 
+    fun getAddressFromLatLng(location: LatLng): Flow<Resource<String>> = callbackFlow {
+        val geoCoder = Geocoder(context)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            geoCoder.getFromLocation(
+                location.latitude, location.longitude, 1
+            ) {
+                if (it.isNotEmpty()) {
+                    trySend(Resource.Success(it.first().getAddress()))
+                } else {
+                    trySend(Resource.Error("no result"))
+                }
+            }
+        } else {
+            val res = geoCoder.getFromLocation(location.latitude, location.longitude, 1)
+            if (!res.isNullOrEmpty()) {
+                trySend(Resource.Success(res.first().getAddress()))
+            } else {
+                trySend(Resource.Error("no result"))
+            }
+        }
+
+        awaitClose {}
+    }
+
     private fun hasLocationPermission(context: Context): Boolean {
         return ContextCompat.checkSelfPermission(
             context,
@@ -60,5 +88,21 @@ class LocationUtil @Inject constructor(
             context,
             Manifest.permission.ACCESS_COARSE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
+    }
+}
+
+private fun Address.getAddress(): String {
+    return buildString {
+        append(getAddressLine(0))
+        append(", ")
+        getAddressLine(1)?.let {
+            append(it)
+            append(", ")
+        }
+        append(locality)
+        append(", ")
+        append(adminArea)
+        append(", ")
+        append(countryName)
     }
 }

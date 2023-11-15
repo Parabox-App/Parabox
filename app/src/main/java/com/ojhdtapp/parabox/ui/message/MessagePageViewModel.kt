@@ -12,6 +12,8 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.FileUtil
+import com.ojhdtapp.parabox.core.util.LoadState
+import com.ojhdtapp.parabox.core.util.LocationUtil
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.buildFileName
 import com.ojhdtapp.parabox.domain.model.Chat
@@ -23,6 +25,7 @@ import com.ojhdtapp.parabox.domain.use_case.GetContact
 import com.ojhdtapp.parabox.domain.use_case.GetLocation
 import com.ojhdtapp.parabox.domain.use_case.GetMessage
 import com.ojhdtapp.parabox.domain.use_case.UpdateChat
+import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.base.BaseViewModel
 import com.ojhdtapp.parabox.ui.message.chat.AudioRecorderState
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.model.ChatPageUiModel
@@ -59,7 +62,7 @@ class MessagePageViewModel @Inject constructor(
     val getMessage: GetMessage,
     val getContact: GetContact,
     val updateChat: UpdateChat,
-    val getLocation: GetLocation,
+    val locationUtil: LocationUtil,
     val fileUtil: FileUtil,
 ) : BaseViewModel<MessagePageState, MessagePageEvent, MessagePageEffect>() {
 
@@ -542,11 +545,27 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.UpdateSelectedLocation -> {
+                queryAddressOfSelectedLocation()
                 return state.copy(
                     chatDetail = state.chatDetail.copy(
                         editAreaState = state.chatDetail.editAreaState.copy(
                             locationPickerState = state.chatDetail.editAreaState.locationPickerState.copy(
-                                selectedLocation = event.location
+                                selectedLocation = event.location,
+                                selectedLocationAddress = "",
+                                selectedLocationAddressLoadState = LoadState.LOADING
+                            )
+                        ),
+                    )
+                )
+            }
+
+            is MessagePageEvent.UpdateSelectedLocationAddress -> {
+                return state.copy(
+                    chatDetail = state.chatDetail.copy(
+                        editAreaState = state.chatDetail.editAreaState.copy(
+                            locationPickerState = state.chatDetail.editAreaState.locationPickerState.copy(
+                                selectedLocationAddress = event.address,
+                                selectedLocationAddressLoadState = event.loadState
                             )
                         ),
                     )
@@ -558,9 +577,9 @@ class MessagePageViewModel @Inject constructor(
     private var locationCollectionJob: Job? = null
     private fun beginLocationCollection() {
         locationCollectionJob = viewModelScope.launch(Dispatchers.IO) {
-            getLocation().collectLatest {
-                if (it != null) {
-                    sendEvent(MessagePageEvent.UpdateLocation(it))
+            locationUtil.requestLocationUpdates().collectLatest {
+                if (it is Resource.Success) {
+                    sendEvent(MessagePageEvent.UpdateLocation(it.data!!))
                 }
             }
         }
@@ -568,6 +587,19 @@ class MessagePageViewModel @Inject constructor(
 
     private fun cancelLocationCollection() {
         locationCollectionJob?.cancel()
+    }
+
+    private fun queryAddressOfSelectedLocation() {
+        viewModelScope.launch(Dispatchers.IO) {
+            locationUtil.getAddressFromLatLng(uiState.value.chatDetail.editAreaState.locationPickerState.selectedLocation)
+                .collectLatest {
+                    if(it is Resource.Success){
+                        sendEvent(MessagePageEvent.UpdateSelectedLocationAddress(it.data ?: "", LoadState.SUCCESS))
+                    } else {
+                        sendEvent(MessagePageEvent.UpdateSelectedLocationAddress("", LoadState.ERROR))
+                    }
+                }
+        }
     }
 
     private val chatLatestMessageSenderMap = mutableMapOf<Long, Resource<Contact>>()

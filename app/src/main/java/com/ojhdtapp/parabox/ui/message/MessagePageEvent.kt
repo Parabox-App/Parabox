@@ -3,6 +3,7 @@ package com.ojhdtapp.parabox.ui.message
 import android.net.Uri
 import androidx.compose.ui.text.input.TextFieldValue
 import com.google.android.gms.maps.model.LatLng
+import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.data.local.entity.ChatTagsUpdate
 import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.Message
@@ -51,4 +52,5 @@ sealed interface MessagePageEvent : UiEvent {
     object ClearSelectedMessage : MessagePageEvent
     data class UpdateLocation(val location: LatLng): MessagePageEvent
     data class UpdateSelectedLocation(val location: LatLng): MessagePageEvent
+    data class UpdateSelectedLocationAddress(val address: String, val loadState: LoadState): MessagePageEvent
 }
