@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.core.net.toUri
+import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
@@ -36,8 +37,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.emitAll
@@ -301,6 +304,11 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.EnableLocationPicker -> {
+                if(event.enable){
+                    beginLocationCollection()
+                } else {
+                    cancelLocationCollection()
+                }
                 return state.copy(
                     chatDetail = state.chatDetail.copy(
                         editAreaState = state.chatDetail.editAreaState.copy(
@@ -487,7 +495,13 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.SendFileMessage -> {
-                ParaboxFile(name = event.name, extension = event.name, size = event.size, lastModifiedTime = System.currentTimeMillis(), resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(event.fileUri))
+                ParaboxFile(
+                    name = event.name,
+                    extension = event.name,
+                    size = event.size,
+                    lastModifiedTime = System.currentTimeMillis(),
+                    resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(event.fileUri)
+                )
                 return state
             }
 
@@ -512,7 +526,34 @@ class MessagePageViewModel @Inject constructor(
                     )
                 )
             }
+
+            is MessagePageEvent.UpdateLocation -> {
+                return state.copy(
+                    chatDetail = state.chatDetail.copy(
+                        editAreaState = state.chatDetail.editAreaState.copy(
+                            locationPickerState = state.chatDetail.editAreaState.locationPickerState.copy(
+                                currentLocation = event.location
+                            )
+                        ),
+                    )
+                )
+            }
         }
+    }
+
+    private var locationCollectionJob: Job? = null
+    private fun beginLocationCollection() {
+        locationCollectionJob = viewModelScope.launch(Dispatchers.IO) {
+            getLocation().collectLatest {
+                if (it != null) {
+                    sendEvent(MessagePageEvent.UpdateLocation(it))
+                }
+            }
+        }
+    }
+
+    private fun cancelLocationCollection() {
+        locationCollectionJob?.cancel()
     }
 
     private val chatLatestMessageSenderMap = mutableMapOf<Long, Resource<Contact>>()
@@ -570,6 +611,8 @@ class MessagePageViewModel @Inject constructor(
                     addAll(it.chatDetail.chat.subChatIds)
                 }.distinct(), emptyList())
             }.cachedIn(viewModelScope)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
     val chatPagingDataFlow: Flow<PagingData<ChatWithLatestMessage>> =
         uiState.distinctUntilChangedBy { it.selectedChatFilterLists }
             .flatMapLatest { getChat(it.selectedChatFilterLists) }.cachedIn(viewModelScope)

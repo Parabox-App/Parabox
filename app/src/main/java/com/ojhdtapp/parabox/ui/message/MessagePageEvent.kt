@@ -2,6 +2,7 @@ package com.ojhdtapp.parabox.ui.message
 
 import android.net.Uri
 import androidx.compose.ui.text.input.TextFieldValue
+import com.google.android.gms.maps.model.LatLng
 import com.ojhdtapp.parabox.data.local.entity.ChatTagsUpdate
 import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.Message
@@ -48,5 +49,6 @@ sealed interface MessagePageEvent : UiEvent {
     data class SendFileMessage(val fileUri: Uri, val size: Long, val name: String): MessagePageEvent
     data class AddOrRemoveSelectedMessage(val msg: Message) : MessagePageEvent
     object ClearSelectedMessage : MessagePageEvent
+    data class UpdateLocation(val location: LatLng): MessagePageEvent
 
 }

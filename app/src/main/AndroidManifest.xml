@@ -43,6 +43,9 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_stat_name" />
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="${MAPS_API_KEY}" />
 
         <!--        <activity-->
         <!--            android:name=".ui.bubble.BubbleActivity"-->
@@ -125,10 +128,5 @@
             android:authorities="${applicationId}.androidx-startup"
             tools:node="remove" />
     </application>
-
-    <meta-data
-        android:name="com.google.android.geo.API_KEY"
-        android:value="${MAPS_API_KEY}" />
-
 
 </manifest>

@@ -2,6 +2,7 @@ package com.ojhdtapp.parabox.ui.message
 
 import android.net.Uri
 import androidx.compose.ui.text.input.TextFieldValue
+import com.google.android.gms.maps.model.LatLng
 import com.ojhdtapp.parabox.data.local.entity.ChatTagsUpdate
 import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.Message
@@ -41,6 +42,7 @@ data class MessagePageState(
         val enableAudioRecorder: Boolean = false,
         val audioRecorderState: AudioRecorderState = AudioRecorderState.Ready,
         val enableLocationPicker: Boolean = false,
+        val locationPickerState: LocationPickerState = LocationPickerState(),
         val toolbarState: ToolbarState = ToolbarState.Tools,
         val iconShrink: Boolean = false,
     )
@@ -50,5 +52,10 @@ data class MessagePageState(
         val expandMenu: Boolean = false,
         val imageSnapshotList: List<Pair<Long, ParaboxImage>> = emptyList(),
         val targetElementIndex: Int = -1,
+    )
+
+    data class LocationPickerState(
+        val currentLocation: LatLng = LatLng(0.0, 0.0),
+        val selectedLocation: LatLng = LatLng(0.0, 0.0),
     )
 }
