@@ -43,6 +43,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.NavigateNext
 import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.outlined.AddCircleOutline
+import androidx.compose.material.icons.outlined.Cancel
 import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.EmojiEmotions
 import androidx.compose.material.icons.outlined.Keyboard
@@ -161,57 +162,67 @@ fun EditArea(
                 derivedStateOf { state.enableAudioRecorder && state.audioRecorderState is AudioRecorderState.Recording || state.audioRecorderState is AudioRecorderState.Confirmed }
             }
             Crossfade(
-                targetState = state.iconShrink,
+                targetState = state,
                 label = "icon_shrink",
                 modifier = Modifier
                     .padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp)
                     .animateContentSize()
             ) {
-                if (it) {
-                    IconButton(onClick = { onEvent(MessagePageEvent.UpdateIconShrink(false)) }) {
+                if (it.enableLocationPicker) {
+                    IconButton(onClick = { onEvent(MessagePageEvent.EnableLocationPicker(false)) }) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.NavigateNext,
-                            contentDescription = "expand"
+                            imageVector = Icons.Outlined.Cancel,
+                            contentDescription = "cancel"
                         )
                     }
                 } else {
-                    Row {
-                        IconButton(
-                            enabled = !isRecording,
-                            onClick = {
-                                keyboardController?.hide()
-                                if (state.toolbarState == ToolbarState.Tools && state.expanded) {
-                                    onEvent(MessagePageEvent.OpenEditArea(false))
-                                } else {
-                                    onEvent(MessagePageEvent.OpenEditArea(true))
-                                }
-                                onEvent(MessagePageEvent.UpdateToolbarState(ToolbarState.Tools))
-                                onEvent(MessagePageEvent.EnableAudioRecorder(false))
-                            }) {
+                    if (it.iconShrink) {
+                        IconButton(onClick = { onEvent(MessagePageEvent.UpdateIconShrink(false)) }) {
                             Icon(
-                                imageVector = Icons.Outlined.AddCircleOutline,
-                                contentDescription = "more"
+                                imageVector = Icons.AutoMirrored.Outlined.NavigateNext,
+                                contentDescription = "expand"
                             )
                         }
-                        IconButton(
-                            enabled = !isRecording,
-                            onClick = {
-                                keyboardController?.hide()
-                                if (state.toolbarState == ToolbarState.Emoji && state.expanded) {
-                                    onEvent(MessagePageEvent.OpenEditArea(false))
-                                } else {
-                                    onEvent(MessagePageEvent.OpenEditArea(true))
-                                }
-                                onEvent(MessagePageEvent.UpdateToolbarState(ToolbarState.Emoji))
-                                onEvent(MessagePageEvent.EnableAudioRecorder(false))
-                            }) {
-                            Icon(
-                                imageVector = Icons.Outlined.EmojiEmotions,
-                                contentDescription = "emoji"
-                            )
+                    } else {
+                        Row {
+                            IconButton(
+                                enabled = !isRecording,
+                                onClick = {
+                                    keyboardController?.hide()
+                                    if (state.toolbarState == ToolbarState.Tools && state.expanded) {
+                                        onEvent(MessagePageEvent.OpenEditArea(false))
+                                    } else {
+                                        onEvent(MessagePageEvent.OpenEditArea(true))
+                                    }
+                                    onEvent(MessagePageEvent.UpdateToolbarState(ToolbarState.Tools))
+                                    onEvent(MessagePageEvent.EnableAudioRecorder(false))
+                                }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.AddCircleOutline,
+                                    contentDescription = "more"
+                                )
+                            }
+                            IconButton(
+                                enabled = !isRecording,
+                                onClick = {
+                                    keyboardController?.hide()
+                                    if (state.toolbarState == ToolbarState.Emoji && state.expanded) {
+                                        onEvent(MessagePageEvent.OpenEditArea(false))
+                                    } else {
+                                        onEvent(MessagePageEvent.OpenEditArea(true))
+                                    }
+                                    onEvent(MessagePageEvent.UpdateToolbarState(ToolbarState.Emoji))
+                                    onEvent(MessagePageEvent.EnableAudioRecorder(false))
+                                }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.EmojiEmotions,
+                                    contentDescription = "emoji"
+                                )
+                            }
                         }
                     }
                 }
+
             }
             AnimatedVisibility(
                 visible = state.audioRecorderState is AudioRecorderState.Done,
@@ -428,7 +439,7 @@ fun EditArea(
                     }
                 }
                 Crossfade(targetState = state, label = "audio/text switch btn") {
-                    if (!it.enableAudioRecorder && it.input.text.isEmpty() && it.chosenImageList.isEmpty() && it.chosenQuoteReply == null) {
+                    if (!it.enableAudioRecorder && it.input.text.isEmpty() && it.chosenImageList.isEmpty() && it.chosenQuoteReply == null && !it.enableLocationPicker) {
                         IconButton(onClick = {
                             if (audioPermissionState.status.isGranted) {
                                 onEvent(MessagePageEvent.EnableAudioRecorder(true))
