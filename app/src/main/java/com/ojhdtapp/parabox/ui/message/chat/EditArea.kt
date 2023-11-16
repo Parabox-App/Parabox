@@ -287,7 +287,7 @@ fun EditArea(
                     color = inputBackground,
                 ) {
                     AnimatedContent(
-                        modifier = Modifier.animateContentSize(),
+                        modifier = Modifier.fillMaxWidth().animateContentSize(),
                         targetState = state.mode, label = "audio/text",
                         transitionSpec = {
                             when {
@@ -308,7 +308,6 @@ fun EditArea(
                             EditAreaMode.LOCATION_PICKER -> {
                                 Box(
                                     modifier = Modifier
-                                        .fillMaxWidth()
                                         .defaultMinSize(minHeight = TextFieldDefaults.MinHeight)
                                         .padding(horizontal = 16.dp, vertical = 8.dp),
                                     contentAlignment = Alignment.CenterStart
@@ -458,7 +457,6 @@ fun EditArea(
                                     if (state.chosenImageList.isNotEmpty()) {
                                         LazyRow(
                                             modifier = Modifier
-                                                .fillMaxWidth()
                                                 .padding(top = 16.dp),
                                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                                             contentPadding = PaddingValues(horizontal = 16.dp)
@@ -480,7 +478,6 @@ fun EditArea(
                                     }
                                     TextField(
                                         modifier = Modifier
-                                            .fillMaxWidth()
                                             .clearFocusOnKeyboardDismiss(),
                                         value = state.input,
                                         onValueChange = {
