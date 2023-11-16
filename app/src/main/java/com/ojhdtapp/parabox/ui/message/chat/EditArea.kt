@@ -49,6 +49,7 @@ import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.EmojiEmotions
 import androidx.compose.material.icons.outlined.Keyboard
 import androidx.compose.material.icons.outlined.KeyboardVoice
+import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.NavigateNext
 import androidx.compose.material.icons.outlined.Send
 import androidx.compose.material3.AlertDialog
@@ -209,28 +210,44 @@ fun EditArea(
 
             }
             AnimatedVisibility(
-                visible = state.mode != EditAreaMode.LOCATION_PICKER && !state.iconShrink,
+                modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
+                visible = !state.iconShrink,
                 enter = expandHorizontally(),
                 exit = shrinkHorizontally(),
             ) {
-                IconButton(
-                    modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
-                    enabled = !isRecording,
-                    onClick = {
-                        keyboardController?.hide()
-                        if (state.toolbarState == ToolbarState.Emoji && state.expanded) {
-                            onEvent(MessagePageEvent.OpenEditArea(false))
-                        } else {
-                            onEvent(MessagePageEvent.OpenEditArea(true))
+                Crossfade(
+                    targetState = state.mode == EditAreaMode.LOCATION_PICKER
+                ) {
+                    if (it) {
+                        Box(modifier = Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Outlined.LocationOn,
+                                contentDescription = "location",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
                         }
-                        onEvent(MessagePageEvent.UpdateToolbarState(ToolbarState.Emoji))
-                        onEvent(MessagePageEvent.UpdateEditAreaMode(EditAreaMode.NORMAL))
-                    }) {
-                    Icon(
-                        imageVector = Icons.Outlined.EmojiEmotions,
-                        contentDescription = "emoji"
-                    )
+
+                    } else {
+                        IconButton(
+                            enabled = !isRecording,
+                            onClick = {
+                                keyboardController?.hide()
+                                if (state.toolbarState == ToolbarState.Emoji && state.expanded) {
+                                    onEvent(MessagePageEvent.OpenEditArea(false))
+                                } else {
+                                    onEvent(MessagePageEvent.OpenEditArea(true))
+                                }
+                                onEvent(MessagePageEvent.UpdateToolbarState(ToolbarState.Emoji))
+                                onEvent(MessagePageEvent.UpdateEditAreaMode(EditAreaMode.NORMAL))
+                            }) {
+                            Icon(
+                                imageVector = Icons.Outlined.EmojiEmotions,
+                                contentDescription = "emoji"
+                            )
+                        }
+                    }
                 }
+
             }
             Spacer(modifier = Modifier.width(8.dp))
             AnimatedVisibility(
@@ -287,10 +304,11 @@ fun EditArea(
                                 }
                             }
                         }) {
-                        when(it) {
+                        when (it) {
                             EditAreaMode.LOCATION_PICKER -> {
                                 Box(
                                     modifier = Modifier
+                                        .fillMaxWidth()
                                         .defaultMinSize(minHeight = TextFieldDefaults.MinHeight)
                                         .padding(horizontal = 16.dp, vertical = 8.dp),
                                     contentAlignment = Alignment.CenterStart
@@ -466,7 +484,6 @@ fun EditArea(
                                             .clearFocusOnKeyboardDismiss(),
                                         value = state.input,
                                         onValueChange = {
-                                            onEvent(MessagePageEvent.OpenEditArea(false))
                                             onEvent(MessagePageEvent.UpdateEditAreaInput(it))
                                         },
                                         textStyle = MaterialTheme.typography.bodyLarge.merge(
@@ -524,7 +541,7 @@ fun EditArea(
                     }
                 }
             }
-            AnimatedVisibility(visible = ((state.input.text.isNotEmpty() || state.chosenImageList.isNotEmpty()) && state.mode == EditAreaMode.NORMAL) || (state.audioRecorderState is AudioRecorderState.Done && state.mode == EditAreaMode.AUDIO_RECORDER) || state.mode == EditAreaMode.LOCATION_PICKER,
+            AnimatedVisibility(((state.input.text.isNotEmpty() || state.chosenImageList.isNotEmpty()) && state.mode == EditAreaMode.NORMAL) || (state.audioRecorderState is AudioRecorderState.Done && state.mode == EditAreaMode.AUDIO_RECORDER) || state.mode == EditAreaMode.LOCATION_PICKER,
                 enter = expandHorizontally(
                     expandFrom = Alignment.Start
                 ) { width -> 0 },

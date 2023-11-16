@@ -491,7 +491,8 @@ class MessagePageViewModel @Inject constructor(
                             chosenAtId = null,
                             chosenQuoteReply = null,
                             audioRecorderState = AudioRecorderState.Ready,
-                            iconShrink = false
+                            iconShrink = false,
+                            mode = state.chatDetail.editAreaState.mode.takeUnless { it == EditAreaMode.LOCATION_PICKER } ?: EditAreaMode.NORMAL
                         )
                     )
                 )
