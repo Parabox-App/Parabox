@@ -95,7 +95,7 @@ private fun Address.getAddress(): String {
     return buildString {
         append(getAddressLine(0))
         append(", ")
-        getAddressLine(1)?.let {
+        getAddressLine(1)?.takeIf { !it.contains("null") }?.let {
             append(it)
             append(", ")
         }

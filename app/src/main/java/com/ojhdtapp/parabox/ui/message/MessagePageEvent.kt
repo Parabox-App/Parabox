@@ -10,6 +10,7 @@ import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.ui.base.UiEvent
 import com.ojhdtapp.parabox.ui.message.chat.AudioRecorderState
+import com.ojhdtapp.parabox.ui.message.chat.EditAreaMode
 import com.ojhdtapp.parabox.ui.message.chat.ToolbarState
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.model.ChatPageUiModel
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
@@ -30,8 +31,7 @@ sealed interface MessagePageEvent : UiEvent {
     data class OpenEditArea(val open: Boolean): MessagePageEvent
     data class UpdateEditAreaInput(val input: TextFieldValue): MessagePageEvent
     data class UpdateToolbarState(val state: ToolbarState): MessagePageEvent
-    data class EnableAudioRecorder(val enable: Boolean): MessagePageEvent
-    data class EnableLocationPicker(val enable: Boolean): MessagePageEvent
+    data class UpdateEditAreaMode(val mode: EditAreaMode): MessagePageEvent
     data class UpdateAudioRecorderState(val state: AudioRecorderState): MessagePageEvent
     data class ExpandImagePreviewerMenu(val expand: Boolean): MessagePageEvent
     data class ExpandImagePreviewerToolbar(val expand: Boolean): MessagePageEvent

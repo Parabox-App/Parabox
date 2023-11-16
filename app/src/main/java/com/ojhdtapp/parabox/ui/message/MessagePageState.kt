@@ -10,6 +10,7 @@ import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.ui.base.UiState
 import com.ojhdtapp.parabox.ui.message.chat.AudioRecorderState
+import com.ojhdtapp.parabox.ui.message.chat.EditAreaMode
 import com.ojhdtapp.parabox.ui.message.chat.ToolbarState
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.model.ChatPageUiModel
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
@@ -40,12 +41,11 @@ data class MessagePageState(
         val chosenQuoteReply: ChatPageUiModel.MessageWithSender? = null,
         val showVoicePermissionDeniedDialog: Boolean = false,
         val showLocationPermissionDeniedDialog: Boolean = false,
-        val enableAudioRecorder: Boolean = false,
         val audioRecorderState: AudioRecorderState = AudioRecorderState.Ready,
-        val enableLocationPicker: Boolean = false,
         val locationPickerState: LocationPickerState = LocationPickerState(),
         val toolbarState: ToolbarState = ToolbarState.Tools,
         val iconShrink: Boolean = false,
+        val mode: EditAreaMode = EditAreaMode.NORMAL
     )
 
     data class ImagePreviewerState(

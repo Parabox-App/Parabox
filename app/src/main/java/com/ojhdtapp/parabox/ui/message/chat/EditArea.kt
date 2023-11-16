@@ -161,31 +161,31 @@ fun EditArea(
                 .padding(vertical = 16.dp), verticalAlignment = Alignment.Bottom
         ) {
             val isRecording by remember(state) {
-                derivedStateOf { state.enableAudioRecorder && state.audioRecorderState is AudioRecorderState.Recording || state.audioRecorderState is AudioRecorderState.Confirmed }
+                derivedStateOf { state.mode == EditAreaMode.AUDIO_RECORDER && state.audioRecorderState is AudioRecorderState.Recording || state.audioRecorderState is AudioRecorderState.Confirmed }
             }
             Crossfade(
-                targetState = state,
-                label = "icon_shrink",
+                targetState = state.mode,
+                label = "mode",
                 modifier = Modifier
-                    .padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+                    .padding(start = 16.dp, top = 8.dp, bottom = 8.dp),
             ) {
-                if (it.enableLocationPicker) {
-                    IconButton(onClick = { onEvent(MessagePageEvent.EnableLocationPicker(false)) }) {
+                if (it == EditAreaMode.LOCATION_PICKER) {
+                    IconButton(onClick = { onEvent(MessagePageEvent.UpdateEditAreaMode(EditAreaMode.NORMAL)) }) {
                         Icon(
                             imageVector = Icons.Outlined.Cancel,
                             contentDescription = "cancel"
                         )
                     }
                 } else {
-                    if (it.iconShrink) {
-                        IconButton(onClick = { onEvent(MessagePageEvent.UpdateIconShrink(false)) }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Outlined.NavigateNext,
-                                contentDescription = "expand"
-                            )
-                        }
-                    } else {
-                        Row {
+                    Crossfade(targetState = state.iconShrink, label = "icon_shrink") {
+                        if (it) {
+                            IconButton(onClick = { onEvent(MessagePageEvent.UpdateIconShrink(false)) }) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Outlined.NavigateNext,
+                                    contentDescription = "expand"
+                                )
+                            }
+                        } else {
                             IconButton(
                                 enabled = !isRecording,
                                 onClick = {
@@ -196,28 +196,11 @@ fun EditArea(
                                         onEvent(MessagePageEvent.OpenEditArea(true))
                                     }
                                     onEvent(MessagePageEvent.UpdateToolbarState(ToolbarState.Tools))
-                                    onEvent(MessagePageEvent.EnableAudioRecorder(false))
+                                    onEvent(MessagePageEvent.UpdateEditAreaMode(EditAreaMode.NORMAL))
                                 }) {
                                 Icon(
                                     imageVector = Icons.Outlined.AddCircleOutline,
                                     contentDescription = "more"
-                                )
-                            }
-                            IconButton(
-                                enabled = !isRecording,
-                                onClick = {
-                                    keyboardController?.hide()
-                                    if (state.toolbarState == ToolbarState.Emoji && state.expanded) {
-                                        onEvent(MessagePageEvent.OpenEditArea(false))
-                                    } else {
-                                        onEvent(MessagePageEvent.OpenEditArea(true))
-                                    }
-                                    onEvent(MessagePageEvent.UpdateToolbarState(ToolbarState.Emoji))
-                                    onEvent(MessagePageEvent.EnableAudioRecorder(false))
-                                }) {
-                                Icon(
-                                    imageVector = Icons.Outlined.EmojiEmotions,
-                                    contentDescription = "emoji"
                                 )
                             }
                         }
@@ -225,6 +208,31 @@ fun EditArea(
                 }
 
             }
+            AnimatedVisibility(
+                visible = state.mode != EditAreaMode.LOCATION_PICKER && !state.iconShrink,
+                enter = expandHorizontally(),
+                exit = shrinkHorizontally(),
+            ) {
+                IconButton(
+                    modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
+                    enabled = !isRecording,
+                    onClick = {
+                        keyboardController?.hide()
+                        if (state.toolbarState == ToolbarState.Emoji && state.expanded) {
+                            onEvent(MessagePageEvent.OpenEditArea(false))
+                        } else {
+                            onEvent(MessagePageEvent.OpenEditArea(true))
+                        }
+                        onEvent(MessagePageEvent.UpdateToolbarState(ToolbarState.Emoji))
+                        onEvent(MessagePageEvent.UpdateEditAreaMode(EditAreaMode.NORMAL))
+                    }) {
+                    Icon(
+                        imageVector = Icons.Outlined.EmojiEmotions,
+                        contentDescription = "emoji"
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.width(8.dp))
             AnimatedVisibility(
                 visible = state.audioRecorderState is AudioRecorderState.Done,
                 enter = expandHorizontally(),
@@ -256,47 +264,45 @@ fun EditArea(
                     .padding(end = 16.dp),
                 contentAlignment = Alignment.CenterEnd
             ) {
-                val inputBackground by animateColorAsState(targetValue = if (state.enableAudioRecorder) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant)
+                val inputBackground by animateColorAsState(targetValue = if (state.mode == EditAreaMode.AUDIO_RECORDER) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant)
                 Surface(
                     shape = RoundedCornerShape(28.dp),
                     color = inputBackground,
                 ) {
                     AnimatedContent(
                         modifier = Modifier.animateContentSize(),
-                        targetState = state, label = "audio/text",
+                        targetState = state.mode, label = "audio/text",
                         transitionSpec = {
                             when {
-                                !initialState.enableAudioRecorder && targetState.enableAudioRecorder -> {
+                                initialState == EditAreaMode.NORMAL && targetState == EditAreaMode.AUDIO_RECORDER -> {
                                     (slideInHorizontally { it }).togetherWith(slideOutHorizontally { -it })
                                 }
 
-                                initialState.enableAudioRecorder && !targetState.enableAudioRecorder -> {
+                                initialState == EditAreaMode.AUDIO_RECORDER && targetState == EditAreaMode.NORMAL -> {
                                     (slideInHorizontally { -it }).togetherWith(slideOutHorizontally { it })
                                 }
-                                initialState.enableLocationPicker != targetState.enableLocationPicker -> {
-                                    fadeIn().togetherWith(fadeOut())
-                                }
+
                                 else -> {
-                                    EnterTransition.None togetherWith ExitTransition.None
+                                    fadeIn().togetherWith(fadeOut())
                                 }
                             }
                         }) {
-                        when {
-                            it.enableLocationPicker -> {
+                        when(it) {
+                            EditAreaMode.LOCATION_PICKER -> {
                                 Box(
                                     modifier = Modifier
-                                        .fillMaxWidth()
                                         .defaultMinSize(minHeight = TextFieldDefaults.MinHeight)
                                         .padding(horizontal = 16.dp, vertical = 8.dp),
                                     contentAlignment = Alignment.CenterStart
                                 ) {
-                                    when(state.locationPickerState.selectedLocationAddressLoadState){
+                                    when (state.locationPickerState.selectedLocationAddressLoadState) {
                                         LoadState.SUCCESS -> {
                                             Text(
                                                 text = state.locationPickerState.selectedLocationAddress,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             )
                                         }
+
                                         LoadState.LOADING -> {
                                             Text(
                                                 text = "正在加载位置信息……",
@@ -305,6 +311,7 @@ fun EditArea(
                                                 overflow = TextOverflow.Ellipsis
                                             )
                                         }
+
                                         LoadState.ERROR -> {
                                             Text(
                                                 text = "无结果",
@@ -317,7 +324,7 @@ fun EditArea(
                                 }
                             }
 
-                            it.enableAudioRecorder -> {
+                            EditAreaMode.AUDIO_RECORDER -> {
                                 val interactionSource = remember { MutableInteractionSource() }
                                 Row(
                                     modifier = Modifier.indication(
@@ -418,7 +425,7 @@ fun EditArea(
                                 }
                             }
 
-                            else -> {
+                            EditAreaMode.NORMAL -> {
                                 Column(
                                     verticalArrangement = Arrangement.Bottom
                                 ) {
@@ -462,7 +469,6 @@ fun EditArea(
                                             onEvent(MessagePageEvent.OpenEditArea(false))
                                             onEvent(MessagePageEvent.UpdateEditAreaInput(it))
                                         },
-                                        enabled = !state.enableAudioRecorder,
                                         textStyle = MaterialTheme.typography.bodyLarge.merge(
                                             TextStyle(color = MaterialTheme.colorScheme.onSurface)
                                         ),
@@ -491,10 +497,10 @@ fun EditArea(
                     }
                 }
                 Crossfade(targetState = state, label = "audio/text switch btn") {
-                    if (!it.enableAudioRecorder && it.input.text.isEmpty() && it.chosenImageList.isEmpty() && it.chosenQuoteReply == null && !it.enableLocationPicker) {
+                    if (it.mode == EditAreaMode.NORMAL && it.input.text.isEmpty() && it.chosenImageList.isEmpty() && it.chosenQuoteReply == null) {
                         IconButton(onClick = {
                             if (audioPermissionState.status.isGranted) {
-                                onEvent(MessagePageEvent.EnableAudioRecorder(true))
+                                onEvent(MessagePageEvent.UpdateEditAreaMode(EditAreaMode.AUDIO_RECORDER))
                                 onEvent(MessagePageEvent.OpenEditArea(false))
                             } else {
                                 onEvent(MessagePageEvent.ShowVoicePermissionDeniedDialog(true))
@@ -505,9 +511,9 @@ fun EditArea(
                                 contentDescription = "voice"
                             )
                         }
-                    } else if (it.enableAudioRecorder && state.audioRecorderState is AudioRecorderState.Ready) {
+                    } else if (it.mode == EditAreaMode.AUDIO_RECORDER && state.audioRecorderState is AudioRecorderState.Ready) {
                         IconButton(onClick = {
-                            onEvent(MessagePageEvent.EnableAudioRecorder(false))
+                            onEvent(MessagePageEvent.UpdateEditAreaMode(EditAreaMode.NORMAL))
                         }) {
                             Icon(
                                 imageVector = Icons.Outlined.Keyboard,
@@ -518,7 +524,7 @@ fun EditArea(
                     }
                 }
             }
-            AnimatedVisibility(visible = ((state.input.text.isNotEmpty() || state.chosenImageList.isNotEmpty()) && !state.enableAudioRecorder) || (state.audioRecorderState is AudioRecorderState.Done && state.enableAudioRecorder) || state.enableLocationPicker,
+            AnimatedVisibility(visible = ((state.input.text.isNotEmpty() || state.chosenImageList.isNotEmpty()) && state.mode == EditAreaMode.NORMAL) || (state.audioRecorderState is AudioRecorderState.Done && state.mode == EditAreaMode.AUDIO_RECORDER) || state.mode == EditAreaMode.LOCATION_PICKER,
                 enter = expandHorizontally(
                     expandFrom = Alignment.Start
                 ) { width -> 0 },

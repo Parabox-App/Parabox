@@ -168,8 +168,8 @@ fun NormalChatPage(
             sheetState.close()
         }
     }
-    BackHandler(state.chatDetail.editAreaState.enableLocationPicker) {
-        onEvent(MessagePageEvent.EnableLocationPicker(false))
+    BackHandler(state.chatDetail.editAreaState.mode != EditAreaMode.NORMAL) {
+        onEvent(MessagePageEvent.UpdateEditAreaMode(EditAreaMode.NORMAL))
     }
     BackHandler(drawerState.isOpen) {
         coroutineScope.launch {
@@ -201,13 +201,13 @@ fun NormalChatPage(
                 label = "edit_area_bottom_padding"
             )
             val sheetHeight by remember(state.chatDetail.editAreaState) {
-                derivedStateOf { if (state.chatDetail.editAreaState.enableLocationPicker) 320.dp else 160.dp }
+                derivedStateOf { if (state.chatDetail.editAreaState.mode == EditAreaMode.LOCATION_PICKER) 320.dp else 160.dp }
             }
             DismissibleBottomSheet(
                 sheetContent = {
                     Crossfade(
                         modifier = Modifier.background(MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)),
-                        targetState = state.chatDetail.editAreaState.enableLocationPicker,
+                        targetState = state.chatDetail.editAreaState.mode == EditAreaMode.LOCATION_PICKER,
                         label = "location toolbar"
                     ) {
                         if (it) {

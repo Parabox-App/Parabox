@@ -608,7 +608,7 @@ fun Toolbar(
                         shape = RoundedCornerShape(24.dp),
                         onClick = {
                             if (locationPermissionState.allPermissionsGranted) {
-                                onEvent(MessagePageEvent.EnableLocationPicker(true))
+                                onEvent(MessagePageEvent.UpdateEditAreaMode(EditAreaMode.LOCATION_PICKER))
                             } else {
                                 onEvent(MessagePageEvent.ShowLocationPermissionDeniedDialog(true))
                             }

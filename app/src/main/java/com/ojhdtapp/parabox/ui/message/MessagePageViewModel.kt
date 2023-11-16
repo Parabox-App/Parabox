@@ -10,6 +10,7 @@ import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
+import com.google.android.gms.maps.model.LatLng
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.LoadState
@@ -28,6 +29,7 @@ import com.ojhdtapp.parabox.domain.use_case.UpdateChat
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.base.BaseViewModel
 import com.ojhdtapp.parabox.ui.message.chat.AudioRecorderState
+import com.ojhdtapp.parabox.ui.message.chat.EditAreaMode
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.model.ChatPageUiModel
 import com.ojhdtapp.paraboxdevelopmentkit.model.SendMessage
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAudio
@@ -295,31 +297,41 @@ class MessagePageViewModel @Inject constructor(
                 )
             }
 
-            is MessagePageEvent.EnableAudioRecorder -> {
-                return state.copy(
-                    chatDetail = state.chatDetail.copy(
-                        editAreaState = state.chatDetail.editAreaState.copy(
-                            enableAudioRecorder = event.enable,
-                            audioRecorderState = AudioRecorderState.Ready
+            is MessagePageEvent.UpdateEditAreaMode -> {
+                return when(event.mode){
+                    EditAreaMode.NORMAL -> {
+                        cancelLocationCollection()
+                        state.copy(
+                            chatDetail = state.chatDetail.copy(
+                                editAreaState = state.chatDetail.editAreaState.copy(
+                                    mode = event.mode,
+                                )
+                            )
                         )
-                    )
-                )
-            }
-
-            is MessagePageEvent.EnableLocationPicker -> {
-                if (event.enable) {
-                    beginLocationCollection()
-                } else {
-                    cancelLocationCollection()
+                    }
+                    EditAreaMode.AUDIO_RECORDER -> {
+                        cancelLocationCollection()
+                        state.copy(
+                            chatDetail = state.chatDetail.copy(
+                                editAreaState = state.chatDetail.editAreaState.copy(
+                                    mode = event.mode,
+                                    audioRecorderState = AudioRecorderState.Ready
+                                )
+                            )
+                        )
+                    }
+                    EditAreaMode.LOCATION_PICKER -> {
+                        beginLocationCollection()
+                        state.copy(
+                            chatDetail = state.chatDetail.copy(
+                                editAreaState = state.chatDetail.editAreaState.copy(
+                                    mode = event.mode,
+                                    locationPickerState = MessagePageState.LocationPickerState()
+                                )
+                            )
+                        )
+                    }
                 }
-                return state.copy(
-                    chatDetail = state.chatDetail.copy(
-                        editAreaState = state.chatDetail.editAreaState.copy(
-                            enableLocationPicker = event.enable,
-                            locationPickerState = MessagePageState.LocationPickerState()
-                        )
-                    )
-                )
             }
 
             is MessagePageEvent.UpdateAudioRecorderState -> {
@@ -545,7 +557,7 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.UpdateSelectedLocation -> {
-                queryAddressOfSelectedLocation()
+                queryAddressOfSelectedLocation(event.location)
                 return state.copy(
                     chatDetail = state.chatDetail.copy(
                         editAreaState = state.chatDetail.editAreaState.copy(
@@ -589,9 +601,9 @@ class MessagePageViewModel @Inject constructor(
         locationCollectionJob?.cancel()
     }
 
-    private fun queryAddressOfSelectedLocation() {
+    private fun queryAddressOfSelectedLocation(location: LatLng) {
         viewModelScope.launch(Dispatchers.IO) {
-            locationUtil.getAddressFromLatLng(uiState.value.chatDetail.editAreaState.locationPickerState.selectedLocation)
+            locationUtil.getAddressFromLatLng(location)
                 .collectLatest {
                     if(it is Resource.Success){
                         sendEvent(MessagePageEvent.UpdateSelectedLocationAddress(it.data ?: "", LoadState.SUCCESS))
