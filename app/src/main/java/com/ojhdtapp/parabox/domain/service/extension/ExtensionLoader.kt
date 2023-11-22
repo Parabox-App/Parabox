@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.domain.service.extension
 
+import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
@@ -68,13 +69,18 @@ object ExtensionLoader {
                 val clazz = Class.forName(fullExtClass, false, classLoader)
                 clazz.newInstance()
             } as ParaboxExtension
+            val activityFullClass = pkgInfo.packageName + ".MainActivity"
+            val activityClazz = Class.forName(activityFullClass, false, classLoader)
+            val activity = (activityClazz.newInstance() as Activity)
+            Log.d("aaa", "activity: $activity")
             LoadResult.Success(
                 Extension(
                     name = extName,
                     pkgName = pkgName,
                     versionName = versionName,
                     versionCode = versionCode,
-                    ext = ext
+                    ext = ext,
+                    act = activity
                 )
             )
         } catch (e: ClassCastException) {

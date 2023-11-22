@@ -123,6 +123,9 @@ dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0'
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.5.0"
 
+    // Pine
+    implementation 'top.canyie.pine:core:0.2.7'
+
     // Map & Location
     implementation 'com.google.android.gms:play-services-location:21.0.1'
     implementation 'com.google.maps.android:maps-compose:2.11.4'

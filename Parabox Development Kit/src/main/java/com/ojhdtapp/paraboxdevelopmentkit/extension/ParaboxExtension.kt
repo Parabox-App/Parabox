@@ -2,9 +2,7 @@ package com.ojhdtapp.paraboxdevelopmentkit.extension
 
 import android.content.Context
 import androidx.lifecycle.DefaultLifecycleObserver
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.lifecycleScope
 import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
@@ -12,14 +10,14 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.SendMessage
 import kotlinx.coroutines.flow.MutableStateFlow
 
 abstract class ParaboxExtension: DefaultLifecycleObserver {
-    private var mContext: Context? = null
+    var context: Context? = null
     private var mBridge: ParaboxBridge? = null
     private var lifecycleOwner: LifecycleOwner? = null
     val lifecycleScope get() = lifecycleOwner?.lifecycleScope
     var isLoaded: MutableStateFlow<Boolean> = MutableStateFlow(false)
         private set
     fun init(context: Context, bridge: ParaboxBridge) {
-        mContext = context
+        this.context = context
         mBridge = bridge
         isLoaded.value = true
         onInitialized()

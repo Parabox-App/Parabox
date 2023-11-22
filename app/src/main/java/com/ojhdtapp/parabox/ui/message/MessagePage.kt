@@ -2,6 +2,7 @@
 
 package com.ojhdtapp.parabox.ui.message
 
+import android.content.Intent
 import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -32,6 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
@@ -42,7 +44,9 @@ import androidx.navigation.NavController
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
+import com.ojhdtapp.parabox.MainActivity
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.SubActivity
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
@@ -69,6 +73,7 @@ fun MessagePage(
     windowSize: WindowSizeClass,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
+    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val lifecycleOwner = LocalLifecycleOwner.current
     val hapticFeedback = LocalHapticFeedback.current
@@ -270,7 +275,9 @@ fun MessagePage(
                             exit = fadeOut()
                         ) {
                             IconButton(
-                                onClick = { onMainSharedEvent(MainSharedEvent.SearchAvatarClicked) },
+                                onClick = {
+                                    (context as MainActivity).launchExtensionActivity()
+                                    onMainSharedEvent(MainSharedEvent.SearchAvatarClicked) },
                             ) {
                                 Box(
                                     modifier = Modifier

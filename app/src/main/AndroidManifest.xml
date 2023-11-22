@@ -80,6 +80,13 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".SubActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.Parabox">
+        </activity>
+
         <!--Intent filter to capture authorization code response from the default browser on the device calling back to our app after interactive sign in -->
         <activity
             android:name="com.microsoft.identity.client.BrowserTabActivity"

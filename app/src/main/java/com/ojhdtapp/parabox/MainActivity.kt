@@ -1,10 +1,14 @@
 package com.ojhdtapp.parabox
 
+import android.app.Activity
+import android.app.Application
+import android.app.Instrumentation
 import android.app.UiModeManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.pm.ActivityInfo
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
@@ -48,6 +52,7 @@ import com.ojhdtapp.parabox.core.util.audio.LocalAudioRecorder
 import com.ojhdtapp.parabox.destinations.MenuPageDestination
 import com.ojhdtapp.parabox.domain.service.ExtensionService
 import com.ojhdtapp.parabox.domain.service.ExtensionServiceConnection
+import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.common.DevicePosture
 import com.ojhdtapp.parabox.ui.theme.AppTheme
@@ -65,17 +70,58 @@ import com.ramcosta.composedestinations.navigation.dependency
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import top.canyie.pine.Pine
+import top.canyie.pine.callback.MethodHook
+import javax.inject.Inject
 
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var extensionServiceConnection : ExtensionServiceConnection
+    private lateinit var extensionServiceConnection: ExtensionServiceConnection
+    @Inject
+    lateinit var extensionManager: ExtensionManager
+    fun launchExtensionActivity() {
+        extensionManager.installedExtensionsFlow.value.firstOrNull()?.also {
+            val realIntent = it.act.intent
+            Pine.hook(
+                Instrumentation::class.java.getDeclaredMethod(
+                    "execStartActivity",
+                    Context::class.java,
+                    IBinder::class.java,
+                    IBinder::class.java,
+                    String::class.java,
+                    Intent::class.java,
+                    Int::class.java,
+                    Bundle::class.java
+                ), object : MethodHook() {
+                    override fun beforeCall(callFrame: Pine.CallFrame?) {
+                        Log.d("aaa", "before: ${callFrame!!.thisObject}")
+                        callFrame!!.args.set(5, (callFrame!!.args.get(5) as Intent).apply {
+                            putExtra("extra_intent", realIntent)
+                        })
+                    }
+                })
+            Pine.hook(
+                Instrumentation::class.java.getDeclaredMethod(
+                    "newActivity",
+                    Class::class.java, Context::class.java,
+                    IBinder::class.java, Application::class.java, Intent::class.java, ActivityInfo::class.java,
+                    CharSequence::class.java, Activity::class.java, String::class.java, Any::class.java
+                ), object : MethodHook() {
+                    override fun beforeCall(callFrame: Pine.CallFrame?) {
+                        callFrame!!.args.set(5, (callFrame!!.args.get(5) as Intent).getParcelableExtra("extra_intent"))
+                    }
+                })
+            startActivity(it.act.intent)
+        }
+    }
+
     private fun collectDarkModeFlow() {
         lifecycleScope.launch {
             dataStore.data.collectLatest {
                 val darkMode = it[DataStoreKeys.SETTINGS_DARK_MODE]
-                if (BuildConfig.VERSION_CODE >= Build.VERSION_CODES.S) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     val manager = getSystemService(Context.UI_MODE_SERVICE) as UiModeManager
                     when (darkMode) {
                         DataStoreKeys.DARK_MODE.YES.ordinal -> {
@@ -237,7 +283,8 @@ class MainActivity : AppCompatActivity() {
                         LocalFixedInsets provides fixedInsets,
                         LocalAudioRecorder provides AudioRecorder,
                         LocalMinimumInteractiveComponentEnforcement provides false
-                    )) {
+                    )
+                ) {
                     DestinationsNavHost(
                         navGraph = NavGraphs.root,
                         engine = mainNavHostEngine,
@@ -246,7 +293,7 @@ class MainActivity : AppCompatActivity() {
                             dependency(mainSharedViewModel)
                             dependency(devicePosture)
                             dependency(sizeClass)
-                        }){
+                        }) {
                     }
 
                 }
