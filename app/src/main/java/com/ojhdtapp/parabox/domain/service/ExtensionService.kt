@@ -20,22 +20,24 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class ExtensionService : LifecycleService() {
-    @Inject lateinit var extensionManager: ExtensionManager
-    @Inject lateinit var mainRepository: MainRepository
+    @Inject
+    lateinit var extensionManager: ExtensionManager
+    @Inject
+    lateinit var mainRepository: MainRepository
 
     private var bridge: ExtensionServiceBridge? = null
 
     val isConnected = MutableStateFlow<Boolean>(false)
 
-    fun setBridge(mBridge: ExtensionServiceBridge){
+    fun setBridge(mBridge: ExtensionServiceBridge) {
         bridge = mBridge
     }
 
-    fun attachLifecycleToExtensions(){
+    fun attachLifecycleToExtensions() {
         lifecycleScope.launch {
             extensionManager.installedExtensionsFlow.collectLatest {
                 it.forEach {
-                    val bridge = object: ParaboxBridge {
+                    val bridge = object : ParaboxBridge {
                         override suspend fun receiveMessage(message: ReceiveMessage): ParaboxResult {
                             return mainRepository.receiveMessage(msg = message, ext = it.toExtensionInfo())
                         }
@@ -45,8 +47,12 @@ class ExtensionService : LifecycleService() {
                         }
 
                     }
-                    lifecycle.addObserver(it.ext)
-                    it.ext.init(baseContext, bridge)
+                    try {
+                        lifecycle.addObserver(it.ext)
+                        it.ext.init(baseContext, bridge)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
                 }
             }
         }

@@ -27,11 +27,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '17'
     }
     buildFeatures {
         compose true
@@ -43,7 +43,11 @@ android {
 
 dependencies {
     implementation project(path: ':Parabox Development Kit')
+    compileOnly 'org.projectlombok:lombok:1.18.24'
+    compileOnly 'com.google.code.gson:gson:2.8.9'
     implementation 'androidx.core:core-ktx:1.10.1'
+    implementation 'cn.evole.bot:OneBot-SDK:0.2.5'
+    implementation 'org.java-websocket:Java-WebSocket:1.5.3'
     implementation platform('org.jetbrains.kotlin:kotlin-bom:1.8.0')
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.2'
     implementation 'androidx.activity:activity-compose:1.7.2'

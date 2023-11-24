@@ -1,139 +1,65 @@
 package com.ojhdt.parabox.extension.demo
 
+import android.util.Log
+import androidx.lifecycle.LifecycleOwner
+import cn.evolvefield.onebot.client.connection.ConnectFactory
+import cn.evolvefield.onebot.client.core.Bot
+import cn.evolvefield.onebot.client.handler.EventBus
+import cn.evolvefield.onebot.client.listener.SimpleEventListener
+import cn.evolvefield.onebot.client.listener.impl.GroupMessageEventListener
+import cn.evole.onebot.sdk.event.message.PrivateMessageEvent
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxExtension
-import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
 import com.ojhdtapp.paraboxdevelopmentkit.model.SendMessage
-import com.ojhdtapp.paraboxdevelopmentkit.model.chat.ParaboxChat
-import com.ojhdtapp.paraboxdevelopmentkit.model.contact.ParaboxContact
-import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
-import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxPlainText
-import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import java.util.concurrent.LinkedBlockingQueue
+
 
 class Extension : ParaboxExtension() {
-    override fun onInitialized() {
-        lifecycleScope!!.launch {
-            while (true) {
-                receiveMessage(
-                    message = ReceiveMessage(
-                        contents = listOf(
-                            ParaboxPlainText(text = System.currentTimeMillis().toString())
-                        ),
-                        sender = ParaboxContact(
-                            name = "StageGuard",
-                            avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
-                            uid = "sender_sg"
-                        ),
-                        chat = ParaboxChat(
-                            name = "群组会话",
-                            avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
-                            type = ParaboxChat.TYPE_GROUP,
-                            uid = "group_test_1"
-                        ),
-                        timestamp = System.currentTimeMillis(),
-                        uuid = System.currentTimeMillis().toString()
-                    ),
-                )
-                delay(1000)
-                receiveMessage(
-                    message = ReceiveMessage(
-                        contents = listOf(
-                            ParaboxPlainText(text = System.currentTimeMillis().toString())
-                        ),
-                        sender = ParaboxContact(
-                            name = "404E",
-                            avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
-                            uid = "sender_404e"
-                        ),
-                        chat = ParaboxChat(
-                            name = "群组会话",
-                            avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
-                            type = ParaboxChat.TYPE_GROUP,
-                            uid = "group_test_1"
-                        ),
-                        timestamp = System.currentTimeMillis(),
-                        uuid = System.currentTimeMillis().toString()
-                    ),
-                )
-                delay(1000)
-            }
-        }
-        lifecycleScope!!.launch(Dispatchers.IO) {
-            while (true) {
-                receiveMessage(
-                    message = ReceiveMessage(
-                        contents = listOf(
-                            ParaboxImage(
-                                resourceInfo = ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo(url = "https://image.baidu.com/search/down?url=https://tvax3.sinaimg.cn//large/0072Vf1pgy1foxk3wgs1qj31kw0w01jo.jpg")
-                            )
-                        ),
-                        sender = ParaboxContact(
-                            name = "Ojhdt",
-                            avatar = ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo(url = "https://blog.ojhdt.com/avatar.png"),
-                            uid = "sender_ojhdt"
-                        ),
-                        chat = ParaboxChat(
-                            name = "私聊会话",
-                            avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
-                            type = ParaboxChat.TYPE_PRIVATE,
-                            uid = "private_test_1"
-                        ),
-                        timestamp = System.currentTimeMillis(),
-                        uuid = System.currentTimeMillis().toString()
-                    ),
-                )
-                delay(5000)
-                receiveMessage(
-                    message = ReceiveMessage(
-                        contents = listOf(
-                            ParaboxImage(
-                                resourceInfo = ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo(url = "https://image.baidu.com/search/down?url=https://tvax3.sinaimg.cn//large/0072Vf1pgy1foxkfhjrg5j31hc0u0nfw.jpg")
-                            )
-                        ),
-                        sender = ParaboxContact(
-                            name = "Ojhdt",
-                            avatar = ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo(url = "https://blog.ojhdt.com/avatar.png"),
-                            uid = "sender_ojhdt"
-                        ),
-                        chat = ParaboxChat(
-                            name = "私聊会话",
-                            avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
-                            type = ParaboxChat.TYPE_PRIVATE,
-                            uid = "private_test_1"
-                        ),
-                        timestamp = System.currentTimeMillis(),
-                        uuid = System.currentTimeMillis().toString()
-                    ),
-                )
-                delay(5000)
-                receiveMessage(
-                    message = ReceiveMessage(
-                        contents = listOf(
-                            ParaboxImage(
-                                resourceInfo = ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo(url = "https://image.baidu.com/search/down?url=https://tvax3.sinaimg.cn//large/0072Vf1pgy1foxk7rv2gpj31hc0u04e6.jpg")
-                            )
-                        ),
-                        sender = ParaboxContact(
-                            name = "Ojhdt",
-                            avatar = ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo(url = "https://blog.ojhdt.com/avatar.png"),
-                            uid = "sender_ojhdt"
-                        ),
-                        chat = ParaboxChat(
-                            name = "私聊会话",
-                            avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
-                            type = ParaboxChat.TYPE_PRIVATE,
-                            uid = "private_test_1"
-                        ),
-                        timestamp = System.currentTimeMillis(),
-                        uuid = System.currentTimeMillis().toString()
-                    ),
-                )
-                delay(5000)
-            }
+    private var service: ConnectFactory? = null
+    private var dispatchJob: Job? = null
+    private var dispatcher: EventBus? = null
+    private var bot: Bot? = null
 
+    override fun onCreate(owner: LifecycleOwner) {
+        super.onCreate(owner)
+    }
+    override fun onInitialized() {
+        Log.d("demo", "onInitialized")
+        val blockingQueue = LinkedBlockingQueue<String>() //使用队列传输数据
+        service = ConnectFactory(blockingQueue)
+        bot = service?.ws?.createBot()
+        dispatcher = EventBus(blockingQueue)
+
+        val groupMessageListener = GroupMessageEventListener() //自定义监听规则\
+        groupMessageListener.addHandler("aa") { groupMessage ->
+            bot?.sendGroupMsg(484641769, groupMessage.message, false);
+            Log.d("ojhdt", groupMessage.toString())
+
+        } //匹配关键字监听
+        dispatcher?.addListener(groupMessageListener)
+        dispatcher?.addListener(object : SimpleEventListener<PrivateMessageEvent?>() {
+            override fun onMessage(privateMessage: PrivateMessageEvent?) {
+                Log.d("ojhdt", privateMessage.toString())
+            }
+        })
+        lifecycleScope?.launch(Dispatchers.IO){
+            try {
+                while (dispatcher?.close != true) {
+                    dispatcher?.runTask()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
+    }
+
+    override fun onDestroy(owner: LifecycleOwner) {
+        service?.stop()
+        dispatcher?.stop()
+        dispatchJob?.cancel()
+        super.onDestroy(owner)
     }
 
     override fun onSendMessage(message: SendMessage) {
