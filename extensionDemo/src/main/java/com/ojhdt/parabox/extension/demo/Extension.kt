@@ -37,6 +37,7 @@ class Extension : ParaboxExtension() {
                 Log.d("ojhdt", "event:$p0;raw:${p0?.rawMessage};arrayMsg:${p0?.arrayMsg}")
             }
         })
+
 //
 //        val service = ConnectFactory(
 //            BotConfig("ws://127.0.0.1:5800"), blockingQueue

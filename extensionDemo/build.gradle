@@ -43,7 +43,7 @@ android {
 
 dependencies {
     implementation project(path: ':Parabox Development Kit')
-    implementation('cn.evole.bot:OneBot-Client:0.3.7') {
+    implementation('cn.evole.bot:OneBot-Client:0.3.8') {
         exclude group: 'cn.evole.bot', module: 'OneBot-SDK'
     }
 
@@ -54,7 +54,7 @@ dependencies {
 //    implementation 'cn.evole.bot:OneBot-SDK:0.2.5'
     implementation 'org.java-websocket:Java-WebSocket:1.5.3'
 //
-    annotationProcessor 'org.java-websocket:Java-WebSocket:1.5.3'
+//    annotationProcessor 'org.java-websocket:Java-WebSocket:1.5.3'
 //    annotationProcessor 'org.projectlombok:lombok:1.18.24'
 //    testAnnotationProcessor 'org.projectlombok:lombok:1.18.24'
 

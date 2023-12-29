@@ -11,10 +11,11 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Parabox">
+        android:theme="@style/Theme.Parabox"
+        android:usesCleartextTraffic="true"  >
         <meta-data
             android:name="parabox.extension.class"
-            android:value=".Extension"
+            android:value=".ExtensionB"
             />
         <activity
             android:name=".MainActivity"
@@ -30,6 +31,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
     </application>
 
 </manifest>
