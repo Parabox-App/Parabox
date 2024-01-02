@@ -6,9 +6,12 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.lifecycleScope
+import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxBasicInfo
 import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
 import com.ojhdtapp.paraboxdevelopmentkit.model.SendMessage
+import com.ojhdtapp.paraboxdevelopmentkit.model.chat.ParaboxChat
+import com.ojhdtapp.paraboxdevelopmentkit.model.contact.ParaboxContact
 import kotlinx.coroutines.flow.MutableStateFlow
 
 abstract class ParaboxExtension: DefaultLifecycleObserver {
@@ -52,7 +55,8 @@ abstract class ParaboxExtension: DefaultLifecycleObserver {
     abstract fun onGetContacts()
     abstract fun onGetChats()
     abstract fun onQueryMessageHistory(uuid: String)
-
+    abstract fun onGetGroupBasicInfo(groupId: String): ParaboxBasicInfo?
+    abstract fun onGetUserBasicInfo(userId: String) : ParaboxBasicInfo?
     override fun onCreate(owner: LifecycleOwner) {
         lifecycleOwner = owner
         super.onCreate(owner)

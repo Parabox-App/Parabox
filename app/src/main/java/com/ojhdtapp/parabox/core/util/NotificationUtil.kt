@@ -548,7 +548,7 @@ class NotificationUtil(
             )
         }
         val notification: Notification =
-            Notification.Builder(context, SERVICE_STATE_CHANNEL_ID)
+            NotificationCompat.Builder(context, SERVICE_STATE_CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_stat_name)
                 .setContentTitle(title)
 //                .setContentText(text)

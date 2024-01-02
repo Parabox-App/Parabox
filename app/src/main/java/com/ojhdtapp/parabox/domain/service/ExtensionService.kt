@@ -41,7 +41,7 @@ class ExtensionService : LifecycleService() {
                 it.forEach {
                     val bridge = object: ParaboxBridge {
                         override suspend fun receiveMessage(message: ReceiveMessage): ParaboxResult {
-                            return mainRepository.receiveMessage(msg = message, ext = it.toExtensionInfo())
+                            return mainRepository.receiveMessage(msg = message, ext = it)
                         }
 
                         override suspend fun recallMessage(uuid: String): ParaboxResult {

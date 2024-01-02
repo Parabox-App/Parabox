@@ -3,7 +3,6 @@ package com.ojhdtapp.parabox.domain.model
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 
 data class Chat (
-    val name: String,
     val avatar: ParaboxResourceInfo,
     val latestMessageId: Long?,
     val unreadMessageNum: Int = 0,
@@ -17,4 +16,25 @@ data class Chat (
     val pkg: String,
     val uid: String,
     val chatId: Long,
-)
+) {
+    var name: String = ""
+        get() = field.ifBlank { uid }
+    constructor(
+        name: String?,
+        avatar: ParaboxResourceInfo,
+        latestMessageId: Long?,
+        unreadMessageNum: Int = 0,
+        isHidden: Boolean = false,
+        isPinned : Boolean = false,
+        isArchived: Boolean = false,
+        isNotificationEnabled : Boolean = true,
+        tags: List<String>,
+        subChatIds: List<Long>,
+        type: Int,
+        pkg: String,
+        uid: String,
+        chatId: Long,
+    ) : this(avatar, latestMessageId, unreadMessageNum, isHidden, isPinned, isArchived, isNotificationEnabled, tags, subChatIds, type, pkg, uid, chatId) {
+        this.name = name ?: ""
+    }
+}

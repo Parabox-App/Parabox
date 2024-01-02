@@ -10,6 +10,7 @@ import androidx.room.Transaction
 import androidx.room.Update
 import androidx.sqlite.db.SupportSQLiteQuery
 import com.ojhdtapp.parabox.data.local.entity.ChatArchiveUpdate
+import com.ojhdtapp.parabox.data.local.entity.ChatBasicInfoUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatEntity
 import com.ojhdtapp.parabox.data.local.entity.ChatHideUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatWithLatestMessageEntity
@@ -83,6 +84,9 @@ interface ChatDao {
                 "LIMIT :limit"
     )
     fun getChatWithLimit(limit: Int): List<ChatEntity>
+
+    @Update(entity = ChatEntity::class)
+    fun updateBasicInfo(obj: ChatBasicInfoUpdate): Int
 
     @Update(entity = ChatEntity::class)
     fun updateLatestMessageId(obj: ChatLatestMessageIdUpdate): Int

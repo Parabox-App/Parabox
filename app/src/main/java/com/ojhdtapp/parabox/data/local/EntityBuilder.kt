@@ -8,8 +8,8 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxMessageElement
 
 fun buildContactEntity(msg: ReceiveMessage, ext: ExtensionInfo): ContactEntity {
     return ContactEntity(
-        name = msg.sender.name,
-        avatar = msg.sender.avatar,
+        name = msg.sender.basicInfo.name,
+        avatar = msg.sender.basicInfo.avatar,
         pkg = ext.pkg,
         uid = msg.sender.uid,
     )
@@ -17,8 +17,8 @@ fun buildContactEntity(msg: ReceiveMessage, ext: ExtensionInfo): ContactEntity {
 
 fun buildChatEntity(msg: ReceiveMessage, ext: ExtensionInfo): ChatEntity {
     return ChatEntity(
-        name = msg.chat.name,
-        avatar = msg.chat.avatar,
+        name = msg.chat.basicInfo.name,
+        avatar = msg.chat.basicInfo.avatar,
         latestMessageId = null,
         isHidden = false,
         isPinned = false,

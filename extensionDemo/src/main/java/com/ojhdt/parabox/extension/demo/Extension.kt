@@ -3,6 +3,7 @@ package com.ojhdt.parabox.extension.demo
 import android.util.Log
 import cn.evole.onebot.client.config.BotConfig
 import cn.evole.onebot.client.connection.WSClient
+import cn.evole.onebot.client.core.Bot
 import cn.evole.onebot.client.handler.ActionHandler
 import cn.evole.onebot.client.handler.EventBus
 import cn.evole.onebot.client.listener.SimpleEventListener
@@ -14,6 +15,7 @@ import cn.evole.onebot.sdk.util.BotUtils
 import cn.evole.onebot.sdk.util.json.GsonUtil
 import com.ojhdt.parabox.extension.demo.util.toParaboxMessageElement
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxExtension
+import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxBasicInfo
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
 import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
 import com.ojhdtapp.paraboxdevelopmentkit.model.SendMessage
@@ -26,6 +28,7 @@ import java.net.URI
 import java.util.concurrent.LinkedBlockingQueue
 
 class Extension : ParaboxExtension() {
+    private var bot: Bot? = null
 
     override fun onInitialized() {
         super.onInitialized()
@@ -36,7 +39,7 @@ class Extension : ParaboxExtension() {
         val blockingQueue = LinkedBlockingQueue<String>() //使用队列传输数据
         val actionHandler = ActionHandler(botConfig)
         val client = WSClient(URI.create("ws://127.0.0.1:8081"), blockingQueue, actionHandler)
-        val bot = client.createBot()
+        bot = client.createBot()
 
         val dispatchers = EventBus(blockingQueue)
         dispatchers.addListener(object : SimpleEventListener<GroupMessageEvent>() {
@@ -91,17 +94,44 @@ class Extension : ParaboxExtension() {
         TODO("Not yet implemented")
     }
 
+    override fun onGetGroupBasicInfo(groupId: String): ParaboxBasicInfo? {
+        return groupId?.toLongOrNull()?.let {
+            val groupInfo = bot?.getGroupInfo(it, false)
+            val avatar = BotUtils.getGroupAvatar(it, 100)
+            ParaboxBasicInfo(
+                name = groupInfo?.data?.groupName,
+                avatar = ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo(avatar)
+            )
+        }
+    }
+
+    override fun onGetUserBasicInfo(userId: String): ParaboxBasicInfo? {
+        return userId.toLongOrNull()?.let {
+            val avatar = BotUtils.getUserAvatar(it, 100)
+            ParaboxBasicInfo(
+                name = null,
+                avatar = ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo(avatar)
+            )
+        }
+
+    }
+
+
     suspend fun receiveGroupMessage(msg: GroupMessageEvent): ParaboxResult {
         val obj = ReceiveMessage(
             contents = msg.arrayMsg.mapNotNull { it.toParaboxMessageElement() },
             sender = ParaboxContact(
-                name = msg.sender.nickname,
-                avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
+                basicInfo = ParaboxBasicInfo(
+                    name = msg.sender.nickname,
+                    avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
+                ),
                 uid = msg.sender.userId
             ),
             chat = ParaboxChat(
-                name = msg.groupId.toString(),
-                avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
+                basicInfo = ParaboxBasicInfo(
+                    name = null,
+                    avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
+                ),
                 type = ParaboxChat.TYPE_GROUP,
                 uid = msg.groupId.toString()
             ),
@@ -115,13 +145,17 @@ class Extension : ParaboxExtension() {
         val obj = ReceiveMessage(
             contents = msg.arrayMsg.mapNotNull { it.toParaboxMessageElement() },
             sender = ParaboxContact(
-                name = msg.privateSender.nickname,
-                avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
+                basicInfo = ParaboxBasicInfo(
+                    name = msg.privateSender.nickname,
+                    avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
+                ),
                 uid = msg.privateSender.userId.toString()
             ),
             chat = ParaboxChat(
-                name = msg.privateSender.nickname,
-                avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
+                basicInfo = ParaboxBasicInfo(
+                    name = msg.privateSender.nickname,
+                    avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
+                ),
                 type = ParaboxChat.TYPE_PRIVATE,
                 uid = msg.privateSender.userId.toString()
             ),

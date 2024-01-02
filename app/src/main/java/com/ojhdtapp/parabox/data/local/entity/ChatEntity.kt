@@ -8,7 +8,7 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 
 @Entity(tableName = "chat_entity")
 data class ChatEntity(
-    val name: String,
+    val name: String?,
     val avatar: ParaboxResourceInfo,
     val latestMessageId: Long?,
     val unreadMessageNum: Int = 0,
@@ -42,6 +42,16 @@ data class ChatEntity(
         )
     }
 }
+
+@Entity
+data class ChatBasicInfoUpdate(
+    @ColumnInfo(name = "chatId")
+    val chatId: Long,
+    @ColumnInfo(name = "name")
+    val name: String?,
+    @ColumnInfo(name = "avatar")
+    val avatar: ParaboxResourceInfo,
+)
 
 @Entity
 data class ChatLatestMessageIdUpdate(

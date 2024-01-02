@@ -2,6 +2,7 @@ package com.ojhdtapp.paraboxdevelopmentkit.model.contact
 
 import android.net.Uri
 import android.os.Parcelable
+import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxBasicInfo
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.Serializable
@@ -9,8 +10,7 @@ import kotlinx.serialization.Serializable
 @Parcelize
 @Serializable
 data class ParaboxContact(
-    val name: String?,
-    val avatar: ParaboxResourceInfo,
+    val basicInfo: ParaboxBasicInfo,
     val uid: String,
 ) : Parcelable{
     companion object{

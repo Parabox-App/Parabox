@@ -25,7 +25,7 @@ sealed interface ParaboxText: ParaboxMessageElement
 @Serializable
 data class ParaboxAt(val target: ParaboxContact) : ParaboxText {
     override fun contentToString(): String {
-        return "@${target.name}"
+        return "@${target.basicInfo.name ?: target.uid}"
     }
 
     override fun getType(): Int {

@@ -2,6 +2,7 @@ package com.ojhdt.parabox.extension.demo.util
 
 import cn.evole.onebot.sdk.entity.ArrayMsg
 import cn.evole.onebot.sdk.enums.MsgTypeEnum
+import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxBasicInfo
 import com.ojhdtapp.paraboxdevelopmentkit.model.contact.ParaboxContact
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAt
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
@@ -15,8 +16,10 @@ fun ArrayMsg.toParaboxMessageElement(): ParaboxMessageElement? {
         when (type) {
             MsgTypeEnum.at -> ParaboxAt(
                 target = ParaboxContact(
-                    name = null,
-                    avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
+                    basicInfo = ParaboxBasicInfo(
+                        name = null,
+                        avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
+                    ),
                     uid = data["qq"]!!
                 )
             )
@@ -30,8 +33,8 @@ fun ArrayMsg.toParaboxMessageElement(): ParaboxMessageElement? {
 
             MsgTypeEnum.reply -> ParaboxQuoteReply(
                 belong = ParaboxContact(
-                    name = null,
-                    avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
+                    basicInfo = ParaboxBasicInfo(name = null,
+                        avatar = ParaboxResourceInfo.ParaboxEmptyInfo),
                     uid = ""
                 ), messageUUID = data.get("id")!!
             )

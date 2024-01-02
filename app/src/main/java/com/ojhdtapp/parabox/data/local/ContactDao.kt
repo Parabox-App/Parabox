@@ -4,6 +4,8 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
+import com.ojhdtapp.parabox.data.local.entity.ContactBasicInfoUpdate
 import com.ojhdtapp.parabox.data.local.entity.ContactEntity
 
 @Dao
@@ -33,4 +35,7 @@ interface ContactDao {
                 "LIMIT :limit"
     )
     fun getContactWithLimit(limit: Int): List<ContactEntity>
+
+    @Update(entity = ContactEntity::class)
+    fun updateBasicInfo(obj: ContactBasicInfoUpdate): Int
 }

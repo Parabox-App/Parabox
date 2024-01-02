@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.data.local.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.ojhdtapp.parabox.domain.model.Contact
@@ -19,3 +20,13 @@ data class ContactEntity(
         )
     }
 }
+
+@Entity
+data class ContactBasicInfoUpdate(
+    @ColumnInfo(name = "contactId")
+    val contactId: Long,
+    @ColumnInfo(name = "name")
+    val name: String?,
+    @ColumnInfo(name = "avatar")
+    val avatar: ParaboxResourceInfo,
+)
