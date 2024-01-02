@@ -8,6 +8,8 @@ import cn.evole.onebot.client.handler.EventBus
 import cn.evole.onebot.client.listener.SimpleEventListener
 import cn.evole.onebot.sdk.entity.ArrayMsg
 import cn.evole.onebot.sdk.event.message.GroupMessageEvent
+import cn.evole.onebot.sdk.event.message.MessageEvent
+import cn.evole.onebot.sdk.event.message.PrivateMessageEvent
 import cn.evole.onebot.sdk.util.BotUtils
 import cn.evole.onebot.sdk.util.json.GsonUtil
 import com.ojhdt.parabox.extension.demo.util.toParaboxMessageElement
@@ -49,6 +51,19 @@ class Extension : ParaboxExtension() {
                 }
             }
         })
+        dispatchers.addListener(object : SimpleEventListener<PrivateMessageEvent>() {
+            override fun onMessage(event: PrivateMessageEvent?) {
+                if (event != null) {
+                    event.arrayMsg = BotUtils.rawToJson(event.rawMessage).map {
+                        GsonUtil.fromJson<ArrayMsg>(it.toString(), ArrayMsg::class.java)
+                    }
+                    lifecycleScope?.launch(Dispatchers.IO) {
+                        receivePrivateMessage(event)
+                    }
+                }
+            }
+
+        })
         lifecycleScope?.launch(Dispatchers.IO) {
             client.connect()
             dispatchers.run()
@@ -89,6 +104,26 @@ class Extension : ParaboxExtension() {
                 avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
                 type = ParaboxChat.TYPE_GROUP,
                 uid = msg.groupId.toString()
+            ),
+            timestamp = msg.time * 1000,
+            uuid = msg.messageId.toString()
+        )
+        return receiveMessage(obj)
+    }
+
+    suspend fun receivePrivateMessage(msg: PrivateMessageEvent) : ParaboxResult {
+        val obj = ReceiveMessage(
+            contents = msg.arrayMsg.mapNotNull { it.toParaboxMessageElement() },
+            sender = ParaboxContact(
+                name = msg.privateSender.nickname,
+                avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
+                uid = msg.privateSender.userId.toString()
+            ),
+            chat = ParaboxChat(
+                name = msg.privateSender.nickname,
+                avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
+                type = ParaboxChat.TYPE_PRIVATE,
+                uid = msg.privateSender.userId.toString()
             ),
             timestamp = msg.time * 1000,
             uuid = msg.messageId.toString()

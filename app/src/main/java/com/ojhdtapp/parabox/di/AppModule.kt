@@ -9,6 +9,7 @@ import com.google.android.gms.location.LocationServices
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.ojhdtapp.parabox.core.util.LocationUtil
+import com.ojhdtapp.parabox.core.util.NotificationUtil
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.Converters
 import com.ojhdtapp.parabox.data.repository.ChatRepositoryImpl
@@ -76,6 +77,14 @@ object AppModule {
         @ApplicationContext applicationContext: Context
     ): LocationUtil =
         LocationUtil(applicationContext, LocationServices.getFusedLocationProviderClient(applicationContext))
+
+    @Provides
+    @Singleton
+    fun provideNotificationUtil(
+        @ApplicationContext applicationContext: Context,
+        database: AppDatabase
+    ): NotificationUtil
+        = NotificationUtil(applicationContext, database)
 
     @Provides
     @Singleton

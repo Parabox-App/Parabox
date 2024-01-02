@@ -3,9 +3,12 @@ package com.ojhdtapp.parabox.domain.service
 import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
+import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.lifecycleScope
+import com.ojhdtapp.parabox.core.util.NotificationUtil
 import com.ojhdtapp.parabox.data.local.ExtensionInfo
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
@@ -22,6 +25,7 @@ import javax.inject.Inject
 class ExtensionService : LifecycleService() {
     @Inject lateinit var extensionManager: ExtensionManager
     @Inject lateinit var mainRepository: MainRepository
+    @Inject lateinit var notificationUtil: NotificationUtil
 
     private var bridge: ExtensionServiceBridge? = null
 
@@ -67,6 +71,7 @@ class ExtensionService : LifecycleService() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
+        notificationUtil.startForegroundService(this)
         attachLifecycleToExtensions()
         return START_STICKY
     }
