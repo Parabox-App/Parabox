@@ -48,7 +48,7 @@ dependencies {
     }
 
 //    compileOnly 'org.projectlombok:lombok:1.18.24'
-//    compileOnly 'com.google.code.gson:gson:2.8.9'
+    compileOnly 'com.google.code.gson:gson:2.8.9'
 //    testRuntimeOnly 'com.google.code.gson:gson:2.8.9'
 //    testRuntimeOnly 'org.slf4j:slf4j-simple:2.0.1'
 //    implementation 'cn.evole.bot:OneBot-SDK:0.2.5'

@@ -15,7 +15,7 @@
         android:usesCleartextTraffic="true"  >
         <meta-data
             android:name="parabox.extension.class"
-            android:value=".ExtensionB"
+            android:value=".Extension"
             />
         <activity
             android:name=".MainActivity"

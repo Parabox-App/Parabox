@@ -7,7 +7,7 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 
 @Entity(tableName = "contact_entity")
 data class ContactEntity(
-    val name: String,
+    val name: String?,
     val avatar: ParaboxResourceInfo,
     val pkg: String,
     val uid: String,

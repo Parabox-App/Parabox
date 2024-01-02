@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
 @Parcelize
 @Serializable
 data class ParaboxContact(
-    val name: String,
+    val name: String?,
     val avatar: ParaboxResourceInfo,
     val uid: String,
 ) : Parcelable{
