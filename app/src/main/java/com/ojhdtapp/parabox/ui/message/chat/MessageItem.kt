@@ -78,6 +78,7 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxLocation
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxMessageElement
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxPlainText
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxQuoteReply
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxUnsupported
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.simplifyText
 import com.origeek.imageViewer.previewer.ImagePreviewerState
 import kotlinx.coroutines.launch
@@ -320,5 +321,6 @@ private fun ParaboxMessageElement.toLayout(
         is ParaboxLocation -> LocationLayout()
         is ParaboxQuoteReply -> {}
         is ParaboxForward -> {}
+        is ParaboxUnsupported -> {}
     }
 }

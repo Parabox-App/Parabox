@@ -412,8 +412,12 @@ fun MessagePage(
                 contentType = chatLazyPagingData.itemContentType { it.chat.type }
             ) { index ->
                 val swipeableActionsState = rememberSwipeableActionsState()
-                val isFirst = index == 0
-                val isLast = index == chatLazyPagingData.itemSnapshotList.size - 1
+                val isFirst by remember {
+                    derivedStateOf { index == 0 }
+                }
+                val isLast by remember {
+                    derivedStateOf { index == chatLazyPagingData.itemSnapshotList.size - 1 }
+                }
                 val topRadius by animateDpAsState(
                     targetValue = if (isFirst && swipeableActionsState.offset.value == 0f) 24.dp else 3.dp,
                     label = "top_radius"
@@ -422,7 +426,6 @@ fun MessagePage(
                     targetValue = if (isLast && swipeableActionsState.offset.value == 0f) 24.dp else 3.dp,
                     label = "bottom_radius"
                 )
-
                 Box(
                     modifier = Modifier
                         .padding(horizontal = 16.dp)
@@ -473,7 +476,7 @@ fun MessagePage(
                                     )
                                 )
                             }) {
-                            var contact by remember{
+                            var contact by remember {
                                 mutableStateOf<Resource<Contact>>(Resource.Loading())
                             }
                             LaunchedEffect(key1 = item.message, block = {
@@ -499,7 +502,6 @@ fun MessagePage(
                             )
                         }
                     }
-
                 }
             }
             item {

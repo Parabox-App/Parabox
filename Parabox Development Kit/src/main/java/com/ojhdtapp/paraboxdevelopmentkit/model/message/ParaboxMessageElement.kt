@@ -6,7 +6,7 @@ import android.util.Log
 sealed interface ParaboxMessageElement : Parcelable {
     companion object {
         enum class TYPE {
-            AT, AT_ALL, AUDIO, FILE, IMAGE, LOCATION, PLAIN_TEXT, QUOTE_REPLY, FORWARD, ANNOTATED_TEXT
+            AT, AT_ALL, AUDIO, FILE, IMAGE, LOCATION, PLAIN_TEXT, QUOTE_REPLY, FORWARD, ANNOTATED_TEXT, UNSUPPORTED
         }
     }
 

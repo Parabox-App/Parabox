@@ -163,3 +163,15 @@ data class ParaboxForward(
         return ParaboxMessageElement.Companion.TYPE.FORWARD.ordinal
     }
 }
+
+@Serializable
+@Parcelize
+object ParaboxUnsupported : ParaboxMessageElement {
+    override fun contentToString(): String {
+        return "[不支持的类型]"
+    }
+
+    override fun getType(): Int {
+        return ParaboxMessageElement.Companion.TYPE.UNSUPPORTED.ordinal
+    }
+}

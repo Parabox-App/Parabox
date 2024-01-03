@@ -100,7 +100,7 @@ fun EnabledChatFilterDialog(
                     modifier = modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         ChatFilter.allFilterList.forEach {
                             MyFilterChip(
                                 selected = it in selectedList,

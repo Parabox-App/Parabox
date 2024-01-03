@@ -14,6 +14,7 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxLocation
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxMessageElement
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxPlainText
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxQuoteReply
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxUnsupported
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromHexString
@@ -97,6 +98,7 @@ class Converters(
                     subclass(ParaboxPlainText::class, ParaboxPlainText.serializer())
                     subclass(ParaboxQuoteReply::class, ParaboxQuoteReply.serializer())
                     subclass(ParaboxForward::class, ParaboxForward.serializer())
+                    subclass(ParaboxUnsupported::class, ParaboxUnsupported.serializer())
                 }
             }
         }
