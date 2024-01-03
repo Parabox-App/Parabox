@@ -19,7 +19,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SwipeToDismiss
-import androidx.compose.material3.rememberDismissState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -142,112 +141,112 @@ fun SwipeableActionsDismissBox(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SwipeToDismissBox(
-    modifier: Modifier = Modifier,
-    enabled: Boolean,
-    startToEndIcon: ImageVector? = null,
-    endToStartIcon: ImageVector? = null,
-    onDismissedToEnd: () -> Boolean,
-    onDismissedToStart: () -> Boolean,
-    onVibrate: () -> Unit,
-    content: @Composable () -> Unit
-) {
-    val dismissState = rememberDismissState(
-        confirmValueChange = {
-            when (it) {
-                DismissValue.DismissedToEnd -> {
-                    onDismissedToEnd()
-                }
-
-                DismissValue.DismissedToStart -> {
-                    onDismissedToStart()
-                }
-
-                else -> false
-            }
-        },
-        positionalThreshold = { distance -> distance * .2f }
-    )
-    LaunchedEffect(key1 = dismissState.targetValue == DismissValue.Default) {
-        if (dismissState.progress != 0f && dismissState.progress != 1f)
-            onVibrate()
-    }
-    LaunchedEffect(key1 = Unit) {
-        dismissState.reset()
-    }
-    val isDismissed = dismissState.isDismissed(DismissDirection.EndToStart)
-            || dismissState.isDismissed(DismissDirection.StartToEnd)
-    val isDismissedToStart = dismissState.isDismissed(DismissDirection.EndToStart)
-    val isDismissedToEnd = dismissState.isDismissed(DismissDirection.StartToEnd)
-
-    AnimatedVisibility(
-        modifier = modifier.fillMaxWidth(),
-        visible = !isDismissedToStart,
-        exit = slideOutHorizontally { -it },
-        enter = expandVertically()
-    ) {
-        AnimatedVisibility(
-            modifier = Modifier.fillMaxWidth(),
-            visible = !isDismissedToEnd,
-            exit = slideOutHorizontally { it }, enter = expandVertically()
-        ) {
-            SwipeToDismiss(
-                state = dismissState,
-                background = {
-                    val direction = dismissState.dismissDirection ?: return@SwipeToDismiss
-                    val color by animateColorAsState(
-                        when (dismissState.targetValue) {
-                            DismissValue.Default -> MaterialTheme.colorScheme.secondary
-                            DismissValue.DismissedToEnd -> MaterialTheme.colorScheme.primary
-                            DismissValue.DismissedToStart -> MaterialTheme.colorScheme.primary
-                        }
-                    )
-                    val textColor by animateColorAsState(
-                        when (dismissState.targetValue) {
-                            DismissValue.Default -> MaterialTheme.colorScheme.onSecondary
-                            DismissValue.DismissedToEnd -> MaterialTheme.colorScheme.onPrimary
-                            DismissValue.DismissedToStart -> MaterialTheme.colorScheme.onPrimary
-                        }
-                    )
-                    val alignment = when (direction) {
-                        DismissDirection.StartToEnd -> Alignment.CenterStart
-                        DismissDirection.EndToStart -> Alignment.CenterEnd
-                    }
-                    val icon = when (direction) {
-                        DismissDirection.StartToEnd -> startToEndIcon ?: Icons.Outlined.Done
-                        DismissDirection.EndToStart -> endToStartIcon ?: Icons.Outlined.Done
-                    }
-                    val scale by animateFloatAsState(
-                        if (dismissState.targetValue == DismissValue.Default)
-                            0.75f else 1f
-                    )
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .background(color)
-                            .padding(horizontal = 20.dp),
-                        contentAlignment = alignment
-                    ) {
-                        Icon(
-                            icon,
-                            contentDescription = "Localized description",
-                            modifier = Modifier.scale(scale),
-                            tint = textColor
-                        )
-                    }
-                },
-                directions = buildSet {
-                    if (!enabled) return@buildSet
-                    if (startToEndIcon != null) add(DismissDirection.StartToEnd)
-                    if (endToStartIcon != null) add(DismissDirection.EndToStart)
-                },
-                dismissContent = {
-                    content()
-                }
-            )
-        }
-    }
-}
-
+//@OptIn(ExperimentalMaterial3Api::class)
+//@Composable
+//fun SwipeToDismissBox(
+//    modifier: Modifier = Modifier,
+//    enabled: Boolean,
+//    startToEndIcon: ImageVector? = null,
+//    endToStartIcon: ImageVector? = null,
+//    onDismissedToEnd: () -> Boolean,
+//    onDismissedToStart: () -> Boolean,
+//    onVibrate: () -> Unit,
+//    content: @Composable () -> Unit
+//) {
+//    val dismissState = rememberDismissState(
+//        confirmValueChange = {
+//            when (it) {
+//                DismissValue.DismissedToEnd -> {
+//                    onDismissedToEnd()
+//                }
+//
+//                DismissValue.DismissedToStart -> {
+//                    onDismissedToStart()
+//                }
+//
+//                else -> false
+//            }
+//        },
+//        positionalThreshold = { distance -> distance * .2f }
+//    )
+//    LaunchedEffect(key1 = dismissState.targetValue == DismissValue.Default) {
+//        if (dismissState.progress != 0f && dismissState.progress != 1f)
+//            onVibrate()
+//    }
+//    LaunchedEffect(key1 = Unit) {
+//        dismissState.reset()
+//    }
+//    val isDismissed = dismissState.isDismissed(DismissDirection.EndToStart)
+//            || dismissState.isDismissed(DismissDirection.StartToEnd)
+//    val isDismissedToStart = dismissState.isDismissed(DismissDirection.EndToStart)
+//    val isDismissedToEnd = dismissState.isDismissed(DismissDirection.StartToEnd)
+//
+//    AnimatedVisibility(
+//        modifier = modifier.fillMaxWidth(),
+//        visible = !isDismissedToStart,
+//        exit = slideOutHorizontally { -it },
+//        enter = expandVertically()
+//    ) {
+//        AnimatedVisibility(
+//            modifier = Modifier.fillMaxWidth(),
+//            visible = !isDismissedToEnd,
+//            exit = slideOutHorizontally { it }, enter = expandVertically()
+//        ) {
+//            SwipeToDismiss(
+//                state = dismissState,
+//                background = {
+//                    val direction = dismissState.dismissDirection ?: return@SwipeToDismiss
+//                    val color by animateColorAsState(
+//                        when (dismissState.targetValue) {
+//                            DismissValue.Default -> MaterialTheme.colorScheme.secondary
+//                            DismissValue.DismissedToEnd -> MaterialTheme.colorScheme.primary
+//                            DismissValue.DismissedToStart -> MaterialTheme.colorScheme.primary
+//                        }
+//                    )
+//                    val textColor by animateColorAsState(
+//                        when (dismissState.targetValue) {
+//                            DismissValue.Default -> MaterialTheme.colorScheme.onSecondary
+//                            DismissValue.DismissedToEnd -> MaterialTheme.colorScheme.onPrimary
+//                            DismissValue.DismissedToStart -> MaterialTheme.colorScheme.onPrimary
+//                        }
+//                    )
+//                    val alignment = when (direction) {
+//                        DismissDirection.StartToEnd -> Alignment.CenterStart
+//                        DismissDirection.EndToStart -> Alignment.CenterEnd
+//                    }
+//                    val icon = when (direction) {
+//                        DismissDirection.StartToEnd -> startToEndIcon ?: Icons.Outlined.Done
+//                        DismissDirection.EndToStart -> endToStartIcon ?: Icons.Outlined.Done
+//                    }
+//                    val scale by animateFloatAsState(
+//                        if (dismissState.targetValue == DismissValue.Default)
+//                            0.75f else 1f
+//                    )
+//                    Box(
+//                        Modifier
+//                            .fillMaxSize()
+//                            .background(color)
+//                            .padding(horizontal = 20.dp),
+//                        contentAlignment = alignment
+//                    ) {
+//                        Icon(
+//                            icon,
+//                            contentDescription = "Localized description",
+//                            modifier = Modifier.scale(scale),
+//                            tint = textColor
+//                        )
+//                    }
+//                },
+//                directions = buildSet {
+//                    if (!enabled) return@buildSet
+//                    if (startToEndIcon != null) add(DismissDirection.StartToEnd)
+//                    if (endToStartIcon != null) add(DismissDirection.EndToStart)
+//                },
+//                dismissContent = {
+//                    content()
+//                }
+//            )
+//        }
+//    }
+//}
+//

@@ -24,6 +24,14 @@ android {
         vectorDrawables {
             useSupportLibrary true
         }
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments += [
+                        "room.schemaLocation":"$projectDir/schemas".toString(),
+                        "room.incremental":"true"
+                ]
+            }
+        }
     }
 
     buildTypes {
@@ -43,7 +51,7 @@ android {
         compose true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion "1.4.4"
+        kotlinCompilerExtensionVersion "1.5.7"
     }
     lintOptions {
         abortOnError false
@@ -112,7 +120,7 @@ dependencies {
     androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_version"
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.2'
-    implementation 'androidx.activity:activity-compose:1.8.0-rc01'
+    implementation 'androidx.activity:activity-compose:1.9.0-alpha01'
     implementation 'androidx.test:core-ktx:1.5.0'
     implementation project(':Parabox Development Kit')
     testImplementation 'junit:junit:4.13.2'
@@ -122,7 +130,7 @@ dependencies {
 
     runtimeOnly 'com.celeral:log4j2-android:1.0.0'
 
-    implementation "org.jetbrains.kotlin:kotlin-serialization:1.8.10"
+    implementation "org.jetbrains.kotlin:kotlin-serialization:1.9.21"
     implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0'
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.5.0"
 
@@ -156,9 +164,9 @@ dependencies {
     implementation 'com.google.firebase:firebase-appcheck-playintegrity'
 
     // WorkManager
-    implementation "androidx.work:work-runtime-ktx:2.8.1"
-    implementation 'androidx.hilt:hilt-work:1.0.0'
-    kapt 'androidx.hilt:hilt-compiler:1.0.0'
+    implementation "androidx.work:work-runtime-ktx:2.9.0"
+    implementation 'androidx.hilt:hilt-work:1.1.0'
+    kapt 'androidx.hilt:hilt-compiler:1.1.0'
 
     // AppCompact
     def appcompat_version = "1.7.0-alpha03"
@@ -217,12 +225,12 @@ dependencies {
     implementation "com.airbnb.android:lottie-compose:$lottieVersion"
 
     // Navigation Compose
-    def nav_version = "2.7.4"
+    def nav_version = "2.7.6"
     implementation "androidx.navigation:navigation-compose:$nav_version"
 
     // Compose Destinations
-    implementation 'io.github.raamcosta.compose-destinations:animations-core:1.9.53'
-    ksp 'io.github.raamcosta.compose-destinations:ksp:1.9.53'
+    implementation 'io.github.raamcosta.compose-destinations:animations-core:1.9.56'
+    ksp 'io.github.raamcosta.compose-destinations:ksp:1.9.56'
 
     // DataStore
     implementation "androidx.datastore:datastore-preferences:1.0.0"
@@ -236,14 +244,16 @@ dependencies {
     implementation "androidx.window:window:1.2.0-beta03"
 
     // M3
-    implementation "androidx.compose.material3:material3:1.2.0-alpha09"
-    implementation "androidx.compose.material3:material3-window-size-class:1.2.0-alpha09"
+    implementation "androidx.compose.material3:material3-adaptive-android:1.0.0-alpha03"
+    implementation "androidx.compose.material3:material3-adaptive-navigation-suite-android:1.0.0-alpha02"
+    implementation "androidx.compose.material3:material3:1.2.0-beta01"
+    implementation "androidx.compose.material3:material3-window-size-class:1.2.0-beta01"
 
     // Chrome Custom Tab
     implementation "androidx.browser:browser:1.5.0"
 
     // ViewModel
-    def lifecycle_version = "2.6.1"
+    def lifecycle_version = "2.6.2"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
     // ViewModel utilities for Compose
     implementation "androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycle_version"
@@ -257,12 +267,12 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1"
 
     // Dagger - Hilt
-    implementation "com.google.dagger:hilt-android:2.44"
-    kapt "com.google.dagger:hilt-compiler:2.44"
+    implementation "com.google.dagger:hilt-android:2.48.1"
+    kapt "com.google.dagger:hilt-compiler:2.48.1"
 //    implementation 'com.google.dagger:hilt-android:2.42'
 //    kapt 'com.google.dagger:hilt-android-compiler:2.42'
 //    kapt 'androidx.hilt:hilt-compiler:1.0.0'
-    implementation 'androidx.hilt:hilt-navigation-compose:1.0.0'
+    implementation 'androidx.hilt:hilt-navigation-compose:1.1.0'
 
     // Retrofit
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'
@@ -270,7 +280,7 @@ dependencies {
     implementation 'com.squareup.okhttp3:logging-interceptor:4.10.0'
 
     // Room
-    def room_version = "2.5.2"
+    def room_version = "2.6.1"
     implementation "androidx.room:room-runtime:$room_version"
     ksp "androidx.room:room-compiler:$room_version"
     implementation "androidx.room:room-ktx:$room_version"

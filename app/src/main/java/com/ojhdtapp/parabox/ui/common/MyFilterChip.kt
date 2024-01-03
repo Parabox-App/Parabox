@@ -54,6 +54,6 @@ fun MyFilterChip(
             selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
             selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
         ),
-        border = FilterChipDefaults.filterChipBorder(borderColor = Color.Transparent)
+        border = FilterChipDefaults.filterChipBorder(enabled = false, selected = false, borderColor = Color.Transparent)
     )
 }

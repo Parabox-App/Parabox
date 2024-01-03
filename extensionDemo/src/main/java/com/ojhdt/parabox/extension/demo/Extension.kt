@@ -95,7 +95,7 @@ class Extension : ParaboxExtension() {
     }
 
     override fun onGetGroupBasicInfo(groupId: String): ParaboxBasicInfo? {
-        return groupId?.toLongOrNull()?.let {
+        return groupId.toLongOrNull()?.let {
             val groupInfo = bot?.getGroupInfo(it, false)
             val avatar = BotUtils.getGroupAvatar(it, 100)
             ParaboxBasicInfo(

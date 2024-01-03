@@ -546,8 +546,11 @@ fun Toolbar(
                                 buildFileName(FileUtil.EXTERNAL_FILES_DIR_CAMERA, FileUtil.DEFAULT_IMAGE_EXTENSION)
                             val path =
                                 fileUtil.createPathOnExternalFilesDir(FileUtil.EXTERNAL_FILES_DIR_CAMERA, fileName)
-                            tempCameraUri = fileUtil.getUriForFile(path)
-                            cameraLauncher.launch(tempCameraUri)
+                            fileUtil.getUriForFile(path)?.let {
+                                cameraLauncher.launch(it)
+                            } ?: kotlin.run {
+                                Log.d("parabox", "tempCameraUri is null")
+                            }
                         }
                     ) {
                         Column(
