@@ -113,7 +113,6 @@ class Extension : ParaboxExtension() {
                 avatar = ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo(avatar)
             )
         }
-
     }
 
 

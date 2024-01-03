@@ -1,5 +1,3 @@
-@file:Suppress("OPT_IN_IS_NOT_ENABLED")
-
 package com.ojhdtapp.parabox.ui.message
 
 import android.util.Log
@@ -307,7 +305,7 @@ fun MessagePage(
                 ) {
                     Box(
                         modifier = Modifier
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
                     ) {
                         Text(
                             text = "置顶",
@@ -323,7 +321,7 @@ fun MessagePage(
             ) {
                 LazyRow(
                     verticalAlignment = Alignment.CenterVertically,
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                    contentPadding = PaddingValues(horizontal = 16.dp)
                 ) {
                     items(
                         count = pinnedChatLazyPagingData.itemCount,
@@ -340,7 +338,9 @@ fun MessagePage(
                         PinnedChatItems(
                             modifier = Modifier.animateItemPlacement(),
                             chat = item,
-                            onClick = {},
+                            onClick = {
+                                viewModel.sendEvent(MessagePageEvent.LoadMessage(item))
+                            },
                             onLongClick = {
                                 hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                 isMenuVisible = true
@@ -355,7 +355,7 @@ fun MessagePage(
             ) {
                 Box(
                     modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
                 ) {
                     Text(
                         text = stringResource(R.string.main),
@@ -370,7 +370,7 @@ fun MessagePage(
             ) {
                 LazyRow(
                     verticalAlignment = Alignment.CenterVertically,
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp)
                 ) {
                     item {
                         MyFilterChip(

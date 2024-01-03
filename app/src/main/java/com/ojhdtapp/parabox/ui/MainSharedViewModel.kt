@@ -96,6 +96,7 @@ class MainSharedViewModel @Inject constructor(
             }
 
             is MainSharedEvent.TriggerSearchBar -> {
+                Log.d("parabox", "trigger search bar to:${event.isActive}")
                 if (event.isActive) {
                     viewModelScope.launch(Dispatchers.IO) {
                         delay(200)
@@ -103,14 +104,21 @@ class MainSharedViewModel @Inject constructor(
                         getRecentQuery()
                         getRecentSearch()
                     }
-                }
-                Log.d("parabox", "trigger search bar:${event.isActive}")
-                return state.copy(
-                    showNavigationBar = !event.isActive,
-                    search = MainSharedState.Search(
-                        isActive = event.isActive
+                    return state.copy(
+                        showNavigationBar = false,
+                        search = MainSharedState.Search(
+                            isActive = true
+                        )
                     )
-                )
+                } else {
+                    return state.copy(
+                        showNavigationBar = true,
+                        search = state.search.copy(
+                            query = "",
+                            isActive = false
+                        )
+                    )
+                }
             }
 
             is MainSharedEvent.GetRecentQuery -> {

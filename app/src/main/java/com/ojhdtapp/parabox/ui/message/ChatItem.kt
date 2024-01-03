@@ -202,7 +202,7 @@ fun PinnedChatItems(
     val textColor = MaterialTheme.colorScheme.onSurface
     val avatarBackgroundColor = MaterialTheme.colorScheme.primary
     Surface(
-        modifier = modifier.combinedClickable(
+        modifier = modifier.clip(RoundedCornerShape(16.dp)).combinedClickable(
             interactionSource = remember {
                 MutableInteractionSource()
             },
@@ -212,8 +212,7 @@ fun PinnedChatItems(
             onClick = onClick
         ),
         color = backgroundColor,
-        tonalElevation = 3.dp,
-        shape = RoundedCornerShape(16.dp)
+        tonalElevation = 3.dp
     ) {
         Box() {
             Column(

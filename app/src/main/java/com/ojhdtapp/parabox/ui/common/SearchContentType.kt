@@ -1020,6 +1020,9 @@ fun DoneSearchContactContent(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(3.dp)
     ) {
+        item {
+            Spacer(modifier = Modifier.height(8.dp))
+        }
         if (state.contact.loadState == LoadState.LOADING) {
             itemsIndexed(items = listOf(1, 2, 3)) { index, res ->
                 val topRadius = if (index == 0) 24.dp else 0.dp
