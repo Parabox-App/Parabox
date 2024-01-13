@@ -163,10 +163,11 @@ fun SwipeableActionsDismissBox(
 @Composable
 fun SwipeToDismissBox(
     modifier: Modifier = Modifier,
+    enabled: Boolean,
     startToEndIcon: ImageVector? = null,
     endToStartIcon: ImageVector? = null,
-    onDismissedToEnd: () -> Boolean,
-    onDismissedToStart: () -> Boolean,
+    onDismissedToEnd: () -> Unit,
+    onDismissedToStart: () -> Unit,
     onVibrate: () -> Unit,
     content: @Composable () -> Unit
 ) {
@@ -180,6 +181,7 @@ fun SwipeToDismissBox(
             when (it) {
                 SwipeToDismissBoxValue.StartToEnd -> {
                     coroutineScope.launch {
+                        delay(200)
                         shouldShrinkVertically = true
                         delay(200)
                         onDismissedToEnd()
@@ -189,6 +191,7 @@ fun SwipeToDismissBox(
 
                 SwipeToDismissBoxValue.EndToStart -> {
                     coroutineScope.launch {
+                        delay(200)
                         shouldShrinkVertically = true
                         delay(200)
                         onDismissedToStart()
@@ -258,8 +261,8 @@ fun SwipeToDismissBox(
                     )
                 }
             },
-            enableDismissFromStartToEnd = startToEndIcon != null,
-            enableDismissFromEndToStart = endToStartIcon != null,
+            enableDismissFromStartToEnd = enabled,
+            enableDismissFromEndToStart = enabled,
             content = {
                 content()
             })

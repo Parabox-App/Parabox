@@ -297,6 +297,7 @@ fun MessagePage(
         LazyColumn(
             contentPadding = it,
             state = listState,
+            verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             if (pinnedChatLazyPagingData.itemCount > 0) {
                 item(
@@ -441,9 +442,7 @@ fun MessagePage(
                 ) {
                     val item = chatLazyPagingData[index]
                     if (item == null) {
-                        EmptyChatItem(
-                            modifier = Modifier.padding(bottom = 2.dp),
-                        )
+                        EmptyChatItem()
                     } else {
                         var isMenuVisible by rememberSaveable { mutableStateOf(false) }
                         ChatDropdownMenu(
@@ -451,11 +450,9 @@ fun MessagePage(
                             isMenuVisible = isMenuVisible,
                             onEvent = viewModel::sendEvent,
                             onDismiss = { isMenuVisible = false })
-                        SwipeableActionsDismissBox(
+                        SwipeToDismissBox(
                             enabled = mainSharedState.datastore.enableSwipeToDismiss,
-                            state = swipeableActionsState,
-                            threshold = 72.dp,
-                            onReachThreshold = { hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress) },
+                            onVibrate = { hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress) },
                             startToEndIcon = Icons.Outlined.Archive,
                             endToStartIcon = Icons.Outlined.Done,
                             onDismissedToEnd = {
@@ -487,7 +484,6 @@ fun MessagePage(
                                 }
                             })
                             ChatItem(
-                                modifier = Modifier.padding(bottom = 2.dp),
                                 chatWithLatestMessage = item,
                                 contact = contact,
                                 isEditing = state.chatDetail.chat?.chatId == item.chat.chatId,
