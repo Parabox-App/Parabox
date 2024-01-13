@@ -412,10 +412,10 @@ fun MessagePage(
                 contentType = chatLazyPagingData.itemContentType { it.chat.type }
             ) { index ->
                 val swipeableActionsState = rememberSwipeableActionsState()
-                val isFirst by remember {
+                val isFirst by remember(index) {
                     derivedStateOf { index == 0 }
                 }
-                val isLast by remember {
+                val isLast by remember(index) {
                     derivedStateOf { index == chatLazyPagingData.itemSnapshotList.size - 1 }
                 }
                 val topRadius by animateDpAsState(
@@ -429,6 +429,7 @@ fun MessagePage(
                 Box(
                     modifier = Modifier
                         .padding(horizontal = 16.dp)
+//                        .animateItemPlacement()
                         .clip(
                             RoundedCornerShape(
                                 topStart = topRadius,
@@ -437,7 +438,6 @@ fun MessagePage(
                                 bottomStart = bottomRadius
                             )
                         )
-                        .animateItemPlacement()
                 ) {
                     val item = chatLazyPagingData[index]
                     if (item == null) {
