@@ -25,17 +25,29 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.DismissibleNavigationDrawer
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Text
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.navigation.suite.ExperimentalMaterial3AdaptiveNavigationSuiteApi
+import androidx.compose.material3.adaptive.navigation.suite.NavigationSuiteScaffold
+import androidx.compose.material3.adaptive.navigation.suite.NavigationSuiteScaffoldDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
@@ -45,6 +57,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
@@ -53,6 +66,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.ojhdtapp.parabox.NavGraphs
+import com.ojhdtapp.parabox.appCurrentDestinationAsState
 import com.ojhdtapp.parabox.destinations.MessageAndChatPageWrapperUIDestination
 import com.ojhdtapp.parabox.ui.MainSharedEffect
 import com.ojhdtapp.parabox.ui.MainSharedEvent
@@ -80,10 +94,12 @@ import com.ramcosta.composedestinations.navigation.navigate
 import com.ramcosta.composedestinations.spec.NavHostEngine
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import androidx.compose.material3.adaptive.navigation.suite.NavigationSuiteScaffoldLayout as NavigationSuiteScaffoldLayout
 
 @OptIn(
     ExperimentalAnimationApi::class, ExperimentalMaterialNavigationApi::class,
-    ExperimentalMaterial3Api::class,
+    ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveNavigationSuiteApi::class,
+    ExperimentalMaterial3AdaptiveApi::class,
 )
 @Destination
 @RootNavGraph(start = true)
@@ -125,6 +141,75 @@ fun MenuPage(
         windowSize = windowSize,
         devicePosture = devicePosture,
     )
+    // ** NavigationSuiteScaffold impl **
+
+//    val mainSharedState by mainSharedViewModel.uiState.collectAsState()
+//    val navSuiteType =
+//        NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(currentWindowAdaptiveInfo())
+//    val menuNavController = rememberNavController()
+//    val menuNavHostEngine = rememberAnimatedNavHostEngine(
+//        navHostContentAlignment = Alignment.TopCenter,
+//        rootDefaultAnimations = RootNavGraphDefaultAnimations(
+//            enterTransition = { fadeIn(tween(300)) + slideInVertically { 80 } },
+//            exitTransition = { fadeOut() },
+//        ),
+//        defaultAnimationsForNestedNavGraph = emptyMap()
+//    )
+//    val appCurrentDestinationState by menuNavController.appCurrentDestinationAsState()
+//    NavigationSuiteScaffold(
+//        navigationSuiteItems = {
+//            MenuNavigationDestination.values().forEach { destination ->
+//                val selected = appCurrentDestinationState in destination.graph.destinations
+//                item(
+//                    selected = selected,
+//                    onClick = {
+//                        menuNavController.navigate(destination.graph.route) {
+//                            popUpTo(NavGraphs.menu.route) {
+//                                saveState = true
+//                            }
+//                            launchSingleTop = true
+//                            restoreState = true
+//                        }
+//                    },
+//                    label = {
+//                        Text(
+//                            text = stringResource(id = destination.labelResId),
+//                            style = MaterialTheme.typography.labelLarge
+//                        )
+//                    },
+//                    icon = {
+//                            Icon(
+//                                imageVector = if (selected) destination.iconSelected else destination.icon,
+//                                contentDescription = stringResource(id = destination.labelResId)
+//                            )
+//                    },
+//                    badge = {
+//                        if (destination.graph == NavGraphs.message && mainSharedState.datastore.messageBadgeNum != 0)
+//                            Badge { Text(text = "${mainSharedState.datastore.messageBadgeNum}") }
+//                    },
+//                    alwaysShowLabel = false
+//                )
+//            }
+//        },
+//        layoutType = navSuiteType,
+//    ) {
+//        val listState = rememberLazyListState()
+//        DestinationsNavHost(
+//            modifier = Modifier
+//                .fillMaxSize(),
+//            navGraph = NavGraphs.menu,
+//            engine = menuNavHostEngine,
+//            navController = menuNavController,
+//            dependenciesContainerBuilder = {
+//                dependency(mainSharedViewModel)
+//                dependency(listState)
+//                dependency(windowSize)
+//                dependency(devicePosture)
+//            }
+//        ) {
+//
+//        }
+//    }
 }
 
 @OptIn(
@@ -230,21 +315,6 @@ private fun MenuNavigationWrapperUI(
         mainSharedViewModel.uiEffect.flowWithLifecycle(lifecycleOwner.lifecycle, Lifecycle.State.STARTED)
             .collectLatest {
                 when (it) {
-                    is MainSharedEffect.ShowSnackBar -> {
-                        coroutineScope.launch {
-                            snackBarHostState.showSnackbar(it.message, it.label).also { result ->
-                                when (result) {
-                                    SnackbarResult.ActionPerformed -> {
-                                        it.callback?.invoke()
-                                    }
-
-                                    SnackbarResult.Dismissed -> {}
-                                    else -> {}
-                                }
-                            }
-                        }
-                    }
-
                     else -> {}
                 }
             }
@@ -383,11 +453,12 @@ fun MenuAppContent(
                 onEvent = onEvent
             )
         }
-        Box(modifier = Modifier
-            .weight(1f)
-            .background(MaterialTheme.colorScheme.inverseOnSurface),
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .background(MaterialTheme.colorScheme.inverseOnSurface),
             contentAlignment = Alignment.BottomCenter
-            ){
+        ) {
             DestinationsNavHost(
                 modifier = Modifier
                     .fillMaxSize(),

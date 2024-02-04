@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -151,9 +153,9 @@ fun RecentSearchContent(
         }
         item {
             AnimatedVisibility(
-                visible = state.recentQueryState == LoadState.LOADING || state.recentQuery.isNotEmpty(),
-                enter = expandVertically(),
-                exit = shrinkVertically()
+                visible = state.recentQuery.isNotEmpty(),
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
             ) {
                 Box(
                     modifier = Modifier
@@ -174,7 +176,7 @@ fun RecentSearchContent(
                     .clip(MaterialTheme.shapes.extraLarge),
                 verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
-                if (state.chat.loadState == LoadState.LOADING) {
+                if (state.chat.loadState == LoadState.LOADING && state.query.isNotBlank()) {
                     repeat(3) {
                         EmptySearchResultItem()
                     }
@@ -237,9 +239,9 @@ fun RecentSearchContent(
 //        }
         item {
             AnimatedVisibility(
-                visible = state.chat.loadState == LoadState.LOADING || state.chat.result.isNotEmpty(),
-                enter = expandVertically(),
-                exit = shrinkVertically()
+                visible = state.chat.result.isNotEmpty(),
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
             ) {
                 Box(
                     modifier = Modifier
@@ -260,7 +262,7 @@ fun RecentSearchContent(
                     .clip(MaterialTheme.shapes.extraLarge),
                 verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
-                if (state.chat.loadState == LoadState.LOADING) {
+                if (state.chat.loadState == LoadState.LOADING && state.query.isNotBlank()) {
                     repeat(3) {
                         EmptySearchResultItem()
                     }
@@ -301,16 +303,22 @@ fun RecentSearchContent(
             }
         }
         item {
-            if (state.contact.result.isNotEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
-                ) {
-                    Text(
-                        text = "近期联系人",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+            AnimatedVisibility(
+                visible = state.contact.result.isNotEmpty(),
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                if (state.contact.result.isNotEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
+                    ) {
+                        Text(
+                            text = "近期联系人",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
         }
@@ -352,9 +360,9 @@ fun RecentSearchContent(
         }
         item {
             AnimatedVisibility(
-                visible = state.message.loadState == LoadState.LOADING || state.message.result.isNotEmpty(),
-                enter = expandVertically(),
-                exit = shrinkVertically()
+                visible = state.message.result.isNotEmpty(),
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
             ) {
                 Box(
                     modifier = Modifier
@@ -375,7 +383,7 @@ fun RecentSearchContent(
                     .clip(MaterialTheme.shapes.extraLarge),
                 verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
-                if (state.message.loadState == LoadState.LOADING) {
+                if (state.message.loadState == LoadState.LOADING && state.query.isNotBlank()) {
                     repeat(3) {
                         EmptySearchResultItem()
                     }
@@ -517,7 +525,7 @@ fun TypingSearchContent(
                     .clip(MaterialTheme.shapes.extraLarge),
                 verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
-                if (state.chat.loadState == LoadState.LOADING) {
+                if (state.chat.loadState == LoadState.LOADING && state.query.isNotBlank()) {
                     repeat(3) {
                         EmptySearchResultItem()
                     }
@@ -653,7 +661,7 @@ fun TypingSearchContent(
                     .clip(MaterialTheme.shapes.extraLarge),
                 verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
-                if (state.message.loadState == LoadState.LOADING) {
+                if (state.message.loadState == LoadState.LOADING && state.query.isNotBlank()) {
                     repeat(3) {
                         EmptySearchResultItem()
                     }

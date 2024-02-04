@@ -175,34 +175,37 @@ fun SwipeToDismissBox(
     var shouldShrinkVertically by remember {
         mutableStateOf(false)
     }
+    var currentFraction by remember { mutableStateOf(0f) }
     val dismissState = rememberSwipeToDismissBoxState(
         initialValue = SwipeToDismissBoxValue.Settled,
         confirmValueChange = {
-            when (it) {
-                SwipeToDismissBoxValue.StartToEnd -> {
-                    coroutineScope.launch {
-                        delay(200)
-                        shouldShrinkVertically = true
-                        delay(200)
-                        onDismissedToEnd()
+            if (currentFraction >= .3f && currentFraction < 1.0f) {
+                when (it) {
+                    SwipeToDismissBoxValue.StartToEnd -> {
+                        coroutineScope.launch {
+                            delay(200)
+                            shouldShrinkVertically = true
+                            delay(200)
+                            onDismissedToEnd()
+                        }
+                        true
                     }
-                    true
-                }
 
-                SwipeToDismissBoxValue.EndToStart -> {
-                    coroutineScope.launch {
-                        delay(200)
-                        shouldShrinkVertically = true
-                        delay(200)
-                        onDismissedToStart()
+                    SwipeToDismissBoxValue.EndToStart -> {
+                        coroutineScope.launch {
+                            delay(200)
+                            shouldShrinkVertically = true
+                            delay(200)
+                            onDismissedToStart()
+                        }
+                        true
                     }
-                    true
-                }
 
-                else -> false
-            }
+                    else -> false
+                }
+            } else false
         },
-        positionalThreshold = { distance -> distance * .2f }
+        positionalThreshold = { distance -> distance * .3f }
     )
     LaunchedEffect(key1 = dismissState.targetValue == SwipeToDismissBoxValue.Settled) {
         if (dismissState.progress != 0f && dismissState.progress != 1f)
@@ -219,6 +222,7 @@ fun SwipeToDismissBox(
     ) {
         SwipeToDismissBox(state = dismissState,
             backgroundContent = {
+                currentFraction = dismissState.progress
                 val direction = dismissState.dismissDirection
                 val color by animateColorAsState(
                     when (dismissState.targetValue) {

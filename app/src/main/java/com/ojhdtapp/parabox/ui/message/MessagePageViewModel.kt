@@ -637,7 +637,7 @@ class MessagePageViewModel @Inject constructor(
         }
     }
 
-    fun refreshMemeList(): List<Uri> {
+    private fun refreshMemeList(): List<Uri> {
         return FileUtils.listFiles(
             context.getExternalFilesDir(FileUtil.EXTERNAL_FILES_DIR_MEME),
             arrayOf("jpg", "jpeg", "png", "gif"), true
