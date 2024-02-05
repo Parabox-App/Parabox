@@ -104,6 +104,7 @@ fun MessagePage(
                             }
                         }
                     }
+                    else -> {}
                 }
             }
     }

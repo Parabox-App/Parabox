@@ -54,6 +54,7 @@ abstract class BaseViewModel< S : UiState, E : UiEvent,F : UiEffect>  : ViewMode
     val uiEffect: Flow<F> = _uiEffect
 
     protected fun sendEffect(effect: F) {
+        Log.d("parabox", "new effect: ${effect}")
         viewModelScope.launch { _uiEffect.emit(effect) }
     }
 }

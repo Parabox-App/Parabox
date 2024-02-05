@@ -52,6 +52,7 @@ data class MessagePageState(
         val showToolbar: Boolean = true,
         val expandMenu: Boolean = false,
         val imageSnapshotList: List<Pair<Long, ParaboxImage>> = emptyList(),
+        @Deprecated("use effect instead")
         val targetElementIndex: Int = -1,
     )
 

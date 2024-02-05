@@ -365,6 +365,7 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.UpdateImagePreviewerSnapshotList -> {
+                sendEffect(MessagePageEffect.ImagePreviewerOpenTransform(event.targetElementIndex))
                 return state.copy(
                     chatDetail = state.chatDetail.copy(
                         imagePreviewerState = state.chatDetail.imagePreviewerState.copy(

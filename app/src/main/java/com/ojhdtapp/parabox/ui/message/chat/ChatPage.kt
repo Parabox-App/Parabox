@@ -54,6 +54,8 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.flowWithLifecycle
 import androidx.navigation.NavController
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
@@ -64,16 +66,19 @@ import com.ojhdtapp.parabox.ui.common.DismissibleBottomSheet
 import com.ojhdtapp.parabox.ui.common.MyModalNavigationDrawerReverse
 import com.ojhdtapp.parabox.ui.common.rememberMyDrawerState
 import com.ojhdtapp.parabox.ui.message.MessageLayoutType
+import com.ojhdtapp.parabox.ui.message.MessagePageEffect
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageState
 import com.ojhdtapp.parabox.ui.message.MessagePageViewModel
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.model.ChatPageUiModel
 import com.ojhdtapp.parabox.ui.message.chat.top_bar.NormalChatTopBar
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
+import com.origeek.imageViewer.previewer.VerticalDragType
 import com.origeek.imageViewer.previewer.rememberPreviewerState
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -144,6 +149,7 @@ fun NormalChatPage(
         }
     }
     val previewerState = rememberPreviewerState(
+        verticalDragType = VerticalDragType.UpAndDown,
         pageCount = {
             state.chatDetail.imagePreviewerState.imageSnapshotList.size
         },
@@ -151,11 +157,23 @@ fun NormalChatPage(
             state.chatDetail.imagePreviewerState.imageSnapshotList.getOrNull(it)?.first ?: 0L
         }
     )
-    LaunchedEffect(key1 = state.chatDetail.imagePreviewerState.imageSnapshotList, block = {
-        if (state.chatDetail.imagePreviewerState.targetElementIndex > -1) {
-            previewerState.openTransform(state.chatDetail.imagePreviewerState.targetElementIndex)
+    LaunchedEffect(Unit) {
+        viewModel.uiEffect.flowWithLifecycle(lifecycleOwner.lifecycle, Lifecycle.State.STARTED).collectLatest {
+            when (it) {
+                is MessagePageEffect.ImagePreviewerOpenTransform -> {
+                    if (previewerState.canOpen && it.index > -1) {
+                        previewerState.openTransform(it.index)
+                    }
+                }
+                else -> {}
+            }
         }
-    })
+    }
+//    LaunchedEffect(key1 = state.chatDetail.imagePreviewerState.targetElementIndex, block = {
+//        if (previewerState.canOpen && state.chatDetail.imagePreviewerState.targetElementIndex > -1) {
+//            previewerState.openTransform(state.chatDetail.imagePreviewerState.targetElementIndex)
+//        }
+//    })
     LaunchedEffect(state.chatDetail.editAreaState.expanded) {
         if (state.chatDetail.editAreaState.expanded) {
             sheetState.open()

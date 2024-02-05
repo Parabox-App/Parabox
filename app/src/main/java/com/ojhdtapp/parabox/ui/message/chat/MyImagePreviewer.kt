@@ -80,7 +80,7 @@ fun MyImagePreviewer(
     BackHandler(previewerState.canClose) {
         coroutineScope.launch {
             previewerState.closeTransform()
-            onEvent(MessagePageEvent.UpdateImagePreviewerSnapshotList(emptyList(), -1))
+//            onEvent(MessagePageEvent.UpdateImagePreviewerSnapshotList(emptyList(), -1))
         }
     }
     ImagePreviewer(modifier = modifier.fillMaxSize(),
@@ -126,7 +126,7 @@ fun MyImagePreviewer(
                             IconButton(onClick = {
                                 coroutineScope.launch {
                                     previewerState.closeTransform()
-                                    onEvent(MessagePageEvent.UpdateImagePreviewerSnapshotList(emptyList(), -1))
+//                                    onEvent(MessagePageEvent.UpdateImagePreviewerSnapshotList(emptyList(), -1))
                                 }
                             }) {
                                 Icon(
