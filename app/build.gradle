@@ -232,8 +232,8 @@ dependencies {
     implementation "androidx.navigation:navigation-compose:$nav_version"
 
     // Compose Destinations
-    implementation 'io.github.raamcosta.compose-destinations:animations-core:1.10.0'
-    ksp 'io.github.raamcosta.compose-destinations:ksp:1.10.0'
+    implementation 'io.github.raamcosta.compose-destinations:animations-core:1.9.56'
+    ksp 'io.github.raamcosta.compose-destinations:ksp:1.9.56'
 
     // DataStore
     implementation "androidx.datastore:datastore-preferences:1.0.0"

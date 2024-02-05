@@ -415,7 +415,6 @@ fun MessagePage(
                 Box(
                     modifier = Modifier
                         .padding(horizontal = horizontalPadding)
-//                        .animateItemPlacement()
                         .clip(
                             RoundedCornerShape(
                                 topStart = topRadius,
@@ -425,10 +424,10 @@ fun MessagePage(
                             )
                         )
                 ) {
-                    val item = chatLazyPagingData[index]!!
-//                    if (item == null) {
-//                        EmptyChatItem()
-//                    } else {
+                    val item = chatLazyPagingData[index]
+                    if (item == null) {
+                        EmptyChatItem()
+                    } else {
                         var isMenuVisible by rememberSaveable { mutableStateOf(false) }
                         ChatDropdownMenu(
                             chat = item.chat,
@@ -482,7 +481,7 @@ fun MessagePage(
                                 }
                             )
                         }
-//                    }
+                    }
                 }
             }
             item {
