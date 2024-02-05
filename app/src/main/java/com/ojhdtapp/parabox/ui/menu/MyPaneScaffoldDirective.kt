@@ -22,33 +22,33 @@ fun calculateMyPaneScaffoldDirective(
     val maxHorizontalPartitions: Int
     val contentPadding: PaddingValues
     val verticalSpacerSize: Dp
+    val maxVerticalPartitions: Int
+    val horizontalSpacerSize: Dp
     when (windowAdaptiveInfo.windowSizeClass.widthSizeClass) {
         WindowWidthSizeClass.Compact -> {
             maxHorizontalPartitions = 1
             contentPadding = PaddingValues(0.dp)
             verticalSpacerSize = 0.dp
+            horizontalSpacerSize = 0.dp
         }
         WindowWidthSizeClass.Medium -> {
             maxHorizontalPartitions = 1
-            contentPadding = PaddingValues(24.dp)
+            contentPadding = PaddingValues(0.dp)
             verticalSpacerSize = 0.dp
+            horizontalSpacerSize = 0.dp
         }
         else -> {
             maxHorizontalPartitions = 2
-            contentPadding = PaddingValues(24.dp)
-            verticalSpacerSize = 0.dp
+            contentPadding = PaddingValues(horizontal = 24.dp)
+            verticalSpacerSize = 24.dp
+            horizontalSpacerSize = 24.dp
         }
     }
-    val maxVerticalPartitions: Int
-    val horizontalSpacerSize: Dp
-
     // TODO(conradchen): Confirm the table top mode settings
     if (windowAdaptiveInfo.windowPosture.isTabletop) {
         maxVerticalPartitions = 2
-        horizontalSpacerSize = 24.dp
     } else {
         maxVerticalPartitions = 1
-        horizontalSpacerSize = 0.dp
     }
 
     return PaneScaffoldDirective(

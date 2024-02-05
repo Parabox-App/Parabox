@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.adaptive.AnimatedPane
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.ListDetailPaneScaffold
+import androidx.compose.material3.adaptive.ThreePaneScaffoldRole
 import androidx.compose.material3.adaptive.ThreePaneScaffoldValue
 import androidx.compose.material3.adaptive.calculateDensePaneScaffoldDirective
 import androidx.compose.material3.adaptive.calculatePosture
@@ -61,32 +62,19 @@ fun MessageAndChatPageWrapperUI(
     mainSharedViewModel: MainSharedViewModel,
     listState: LazyListState,
     windowSize: WindowSizeClass,
-    devicePosture: DevicePosture,
 ) {
     val viewModel = hiltViewModel<MessagePageViewModel>()
     val state by viewModel.uiState.collectAsState()
     val mainSharedState by mainSharedViewModel.uiState.collectAsState()
-    val layoutType: MessageLayoutType
-    when (windowSize.widthSizeClass) {
-        WindowWidthSizeClass.Compact -> {
-            layoutType = MessageLayoutType.NORMAL
-        }
-
-        WindowWidthSizeClass.Medium -> {
-            layoutType = MessageLayoutType.NORMAL
-        }
-
-        WindowWidthSizeClass.Expanded -> {
-            layoutType = if (devicePosture is DevicePosture.BookPosture) {
-                MessageLayoutType.NORMAL
-            } else {
-                MessageLayoutType.SPLIT
-            }
-        }
-
-        else -> {
-            layoutType = MessageLayoutType.NORMAL
-        }
+    val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator(
+        scaffoldDirective = calculateMyPaneScaffoldDirective(
+            windowAdaptiveInfo = currentWindowAdaptiveInfo()
+        )
+    )
+    val layoutType = if (scaffoldNavigator.scaffoldState.scaffoldDirective.maxHorizontalPartitions == 1) {
+        MessageLayoutType.NORMAL
+    } else {
+        MessageLayoutType.SPLIT
     }
 
     BackHandler(state.chatDetail.chat != null) {
@@ -94,78 +82,32 @@ fun MessageAndChatPageWrapperUI(
     }
     LaunchedEffect(state.chatDetail.chat) {
         if (layoutType == MessageLayoutType.NORMAL && state.chatDetail.chat != null) {
+            scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary)
             mainSharedViewModel.sendEvent(MainSharedEvent.ShowNavigationBar(false))
         }
         if (layoutType == MessageLayoutType.NORMAL && state.chatDetail.chat == null) {
+            scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Secondary)
             mainSharedViewModel.sendEvent(MainSharedEvent.ShowNavigationBar(true))
         }
     }
 
-    val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator(
-        scaffoldDirective = calculateMyPaneScaffoldDirective(
-            windowAdaptiveInfo = currentWindowAdaptiveInfo()
-        )
-    )
+
     ListDetailPaneScaffold(
         modifier = modifier,
         scaffoldState = scaffoldNavigator.scaffoldState,
         windowInsets = WindowInsets(0.dp),
         listPane = {
-            AnimatedPane(modifier = Modifier.preferredWidth(400.dp)) {
-//                AnimatedContent(targetState = state.chatDetail.chat, label = "",
-//                    transitionSpec = {
-//                        if (targetState != null) {
-//                            (fadeIn(tween(300)) + scaleIn(
-//                                tween(300),
-//                                0.9f
-//                            )) togetherWith (fadeOut(tween(300)) + scaleOut(
-//                                tween(300),
-//                                1.1f
-//                            ))
-//                        } else {
-//                            (fadeIn(tween(300)) + scaleIn(
-//                                tween(300),
-//                                1.1f
-//                            )) togetherWith (fadeOut(tween(300)) + scaleOut(
-//                                tween(300),
-//                                0.9f
-//                            ))
-//                        }
-//                    }) {
-//                    if (it != null) {
-//                        ChatPage(
-//                            viewModel = viewModel,
-//                            state = state,
-//                            mainNavController = mainNavController,
-//                            mainSharedState = mainSharedState,
-//                            layoutType = layoutType,
-//                            windowSize = windowSize,
-//                            onEvent = viewModel::sendEvent,
-//                            onMainSharedEvent = mainSharedViewModel::sendEvent
-//                        )
-//                    } else {
-//                        MessagePage(
-//                            viewModel = viewModel,
-//                            mainNavController = mainNavController,
-//                            mainSharedState = mainSharedState,
-//                            listState = listState,
-//                            layoutType = layoutType,
-//                            windowSize = windowSize,
-//                            onMainSharedEvent = mainSharedViewModel::sendEvent
-//                        )
-//                    }
-//                }
+            AnimatedPane(modifier = Modifier.preferredWidth(352.dp)) {
                 MessagePage(
-                            viewModel = viewModel,
-                            mainNavController = mainNavController,
-                            mainSharedState = mainSharedState,
-                            listState = listState,
-                            layoutType = layoutType,
-                            windowSize = windowSize,
-                            onMainSharedEvent = {
-                                mainSharedViewModel.sendEvent(it)
-                            }
-                        )
+                    viewModel = viewModel,
+                    mainNavController = mainNavController,
+                    mainSharedState = mainSharedState,
+                    listState = listState,
+                    layoutType = layoutType,
+                    onMainSharedEvent = {
+                        mainSharedViewModel.sendEvent(it)
+                    }
+                )
             }
         }
     ) {
@@ -176,7 +118,6 @@ fun MessageAndChatPageWrapperUI(
                 mainNavController = mainNavController,
                 mainSharedState = mainSharedState,
                 layoutType = layoutType,
-                windowSize = windowSize,
                 onEvent = viewModel::sendEvent,
                 onMainSharedEvent = mainSharedViewModel::sendEvent
             )

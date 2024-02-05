@@ -59,6 +59,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.navigation.NavController
@@ -337,7 +338,9 @@ private fun MenuNavigationWrapperUI(
         mainSharedViewModel.sendEvent(MainSharedEvent.OpenBottomSheet(false))
     }
     if (navigationType == MenuNavigationType.PERMANENT_NAVIGATION_DRAWER) {
-        MyDismissibleNavigationDrawer(drawerContent = {
+        MyDismissibleNavigationDrawer(
+            modifier = Modifier.background(MaterialTheme.colorScheme.surface),
+            drawerContent = {
             MenuNavigationDrawerContent(
                 navController = menuNavController,
                 messageBadge = mainSharedState.datastore.messageBadgeNum,
@@ -361,6 +364,7 @@ private fun MenuNavigationWrapperUI(
         }
     } else {
         MyModalNavigationDrawer(
+            modifier = Modifier.background(MaterialTheme.colorScheme.surface),
             drawerContent = {
                 MenuNavigationDrawerContent(
                     navController = menuNavController,
@@ -393,6 +397,7 @@ private fun MenuNavigationWrapperUI(
 @OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun MenuAppContent(
+    modifier: Modifier = Modifier,
     navController: NavController,
     menuNavController: NavHostController,
     menuNavHostEngine: NavHostEngine,
@@ -442,11 +447,11 @@ fun MenuAppContent(
         mainSharedViewModel.sendEvent(MainSharedEvent.PickDateRangeDone(null))
     })
 
-    Row(modifier = Modifier.fillMaxWidth()) {
+    Row(modifier = modifier.fillMaxWidth()) {
         AnimatedVisibility(
             visible = navigationType == MenuNavigationType.NAVIGATION_RAIL,
-            enter = slideInHorizontally(),
-            exit = slideOutHorizontally()
+            enter = slideInHorizontally { it },
+            exit = slideOutHorizontally { it }
         ) {
             MenuNavigationRail(
                 navController = menuNavController,
@@ -455,8 +460,7 @@ fun MenuAppContent(
         }
         Box(
             modifier = Modifier
-                .weight(1f)
-                .background(MaterialTheme.colorScheme.inverseOnSurface),
+                .weight(1f),
             contentAlignment = Alignment.BottomCenter
         ) {
             DestinationsNavHost(

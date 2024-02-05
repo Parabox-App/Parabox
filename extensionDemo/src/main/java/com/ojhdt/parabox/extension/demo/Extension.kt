@@ -34,11 +34,11 @@ class Extension : ParaboxExtension() {
         super.onInitialized()
         Log.d("ojhdt", "on Initialize")
         val botConfig = BotConfig().apply {
-            url = "ws://127.0.0.1:8080"
+            url = "ws://10.71.184.27:8080"
         }
         val blockingQueue = LinkedBlockingQueue<String>() //使用队列传输数据
         val actionHandler = ActionHandler(botConfig)
-        val client = WSClient(URI.create("ws://127.0.0.1:8081"), blockingQueue, actionHandler)
+        val client = WSClient(URI.create("ws://10.71.184.27:8081"), blockingQueue, actionHandler)
         bot = client.createBot()
 
         val dispatchers = EventBus(blockingQueue)

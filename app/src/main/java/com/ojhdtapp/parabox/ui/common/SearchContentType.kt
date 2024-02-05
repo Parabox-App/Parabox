@@ -391,9 +391,9 @@ fun RecentSearchContent(
                     state.message.result.forEach {
                         SearchResultItem(
                             modifier = Modifier.fillMaxWidth(),
-                            avatarModel = it.chat!!.avatar.getModel(),
-                            title = buildAnnotatedString {
-                                it.chat.name.splitKeeping(state.query).forEach {
+                            avatarModel = it.contact?.avatar?.getModel(),
+                            subTitle = buildAnnotatedString {
+                                it.chat!!.name.splitKeeping(state.query).forEach {
                                     if (it == state.query) {
                                         withStyle(
                                             style = SpanStyle(
@@ -408,7 +408,7 @@ fun RecentSearchContent(
                                     }
                                 }
                             },
-                            subTitle = buildAnnotatedString {
+                            title = buildAnnotatedString {
                                 append(it.contact!!.name)
                                 append(": ")
                                 it.message.contentString.splitKeeping(state.query).forEach {
@@ -433,6 +433,9 @@ fun RecentSearchContent(
                 }
 
             }
+        }
+        item {
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -954,9 +957,9 @@ fun DoneSearchMessageContent(
                             bottomEnd = bottomRadius
                         )
                     ),
-                avatarModel = res.chat!!.avatar.getModel(),
-                title = buildAnnotatedString {
-                    res.chat.name.splitKeeping(state.query).forEach {
+                avatarModel = res.contact?.avatar?.getModel(),
+                subTitle = buildAnnotatedString {
+                    res.chat!!.name.splitKeeping(state.query).forEach {
                         if (it == state.query) {
                             withStyle(
                                 style = SpanStyle(
@@ -971,7 +974,7 @@ fun DoneSearchMessageContent(
                         }
                     }
                 },
-                subTitle = buildAnnotatedString {
+                title = buildAnnotatedString {
                     append(res.contact!!.name)
                     append(": ")
                     res.message.contentString.splitKeeping(state.query).forEach {

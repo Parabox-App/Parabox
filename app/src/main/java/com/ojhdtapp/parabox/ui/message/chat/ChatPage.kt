@@ -85,7 +85,6 @@ fun ChatPage(
     mainNavController: NavController,
     mainSharedState: MainSharedState,
     layoutType: MessageLayoutType,
-    windowSize: WindowSizeClass,
     onEvent: (MessagePageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
@@ -93,6 +92,7 @@ fun ChatPage(
         if (it) {
             EmptyChatPage(
                 modifier = modifier,
+                layoutType = layoutType,
             )
         } else {
             NormalChatPage(
@@ -102,7 +102,6 @@ fun ChatPage(
                 sharedState = mainSharedState,
                 mainNavController = mainNavController,
                 layoutType = layoutType,
-                windowSize = windowSize,
                 onEvent = onEvent,
                 onMainSharedEvent = onMainSharedEvent,
             )
@@ -120,7 +119,6 @@ fun NormalChatPage(
     sharedState: MainSharedState,
     mainNavController: NavController,
     layoutType: MessageLayoutType,
-    windowSize: WindowSizeClass,
     onEvent: (e: MessagePageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
@@ -199,6 +197,7 @@ fun NormalChatPage(
             topBar = {
                 NormalChatTopBar(chatDetail = state.chatDetail, scrollBehavior = scrollBehavior, onEvent = onEvent)
             },
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         ) { paddingValues ->
             val bottomPadding = animateDpAsState(
                 targetValue = if (sheetState.isOpen) 0.dp else paddingValues.calculateBottomPadding(),

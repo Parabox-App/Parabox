@@ -64,7 +64,6 @@ fun MessagePage(
     mainSharedState: MainSharedState,
     listState: LazyListState,
     layoutType: MessageLayoutType,
-    windowSize: WindowSizeClass,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -75,6 +74,12 @@ fun MessagePage(
     var snackBarJob: Job? by remember {
         mutableStateOf(null)
     }
+    val horizontalPadding by animateDpAsState(targetValue = when(layoutType) {
+                MessageLayoutType.NORMAL -> 16.dp
+                MessageLayoutType.SPLIT -> 0.dp
+            },
+        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+        )
     LaunchedEffect(Unit) {
         viewModel.uiEffect.flowWithLifecycle(lifecycleOwner.lifecycle, Lifecycle.State.STARTED)
             .collectLatest {
@@ -105,7 +110,7 @@ fun MessagePage(
     val chatLazyPagingData = viewModel.chatPagingDataFlow.collectAsLazyPagingItems()
     val pinnedChatLazyPagingData = viewModel.pinnedChatPagingDataFlow.collectAsLazyPagingItems()
     val searchBarPadding by animateDpAsState(
-        targetValue = if (mainSharedState.search.isActive) 0.dp else 16.dp,
+        targetValue = if (mainSharedState.search.isActive || layoutType == MessageLayoutType.SPLIT) 0.dp else 16.dp,
         animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
     )
     val shouldHoverSearchBar by remember {
@@ -157,12 +162,13 @@ fun MessagePage(
     Scaffold(
         modifier = modifier,
         snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
+        containerColor = Color.Transparent,
         topBar = {
-            if (windowSize.widthSizeClass == WindowWidthSizeClass.Expanded) {
+            if (layoutType == MessageLayoutType.SPLIT) {
                 DockedSearchBar(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
+                        .padding(horizontal = horizontalPadding)
                         .statusBarsPadding()
                         .clearFocusOnKeyboardDismiss(),
                     query = mainSharedState.search.query,
@@ -306,7 +312,7 @@ fun MessagePage(
                 ) {
                     Box(
                         modifier = Modifier
-                            .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
+                            .padding(start = horizontalPadding, end = horizontalPadding, top = 16.dp, bottom = 8.dp)
                     ) {
                         Text(
                             text = "置顶",
@@ -322,7 +328,7 @@ fun MessagePage(
             ) {
                 LazyRow(
                     verticalAlignment = Alignment.CenterVertically,
-                    contentPadding = PaddingValues(horizontal = 16.dp)
+                    contentPadding = PaddingValues(horizontal = horizontalPadding)
                 ) {
                     items(
                         count = pinnedChatLazyPagingData.itemCount,
@@ -356,7 +362,7 @@ fun MessagePage(
             ) {
                 Box(
                     modifier = Modifier
-                        .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
+                        .padding(start = horizontalPadding, end = horizontalPadding, top = 16.dp, bottom = 8.dp)
                 ) {
                     Text(
                         text = stringResource(R.string.main),
@@ -371,7 +377,7 @@ fun MessagePage(
             ) {
                 LazyRow(
                     verticalAlignment = Alignment.CenterVertically,
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp)
+                    contentPadding = PaddingValues(start = horizontalPadding, end = horizontalPadding, bottom = 16.dp)
                 ) {
                     item {
                         MyFilterChip(
@@ -429,7 +435,7 @@ fun MessagePage(
                 )
                 Box(
                     modifier = Modifier
-                        .padding(horizontal = 16.dp)
+                        .padding(horizontal = horizontalPadding)
 //                        .animateItemPlacement()
                         .clip(
                             RoundedCornerShape(

@@ -32,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.domain.model.Chat
@@ -75,7 +76,9 @@ fun NormalChatTopBar(
                         )
                     }, label = ""
                 ) { num ->
-                    Text(text = num.takeIf { it > 0 }?.toString() ?: chatDetail.chat?.name ?: "")
+                    Text(text = num.takeIf { it > 0 }?.toString() ?: chatDetail.chat?.name ?: "",
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis)
                 }
             }
         },

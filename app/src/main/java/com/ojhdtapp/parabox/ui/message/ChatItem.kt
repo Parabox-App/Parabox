@@ -68,7 +68,7 @@ fun ChatItem(
         targetValue = if (isEditing && isExpanded) {
             MaterialTheme.colorScheme.secondaryContainer
         } else {
-            MaterialTheme.colorScheme.surface
+            MaterialTheme.colorScheme.surfaceContainer
         }
     )
     val textColor by animateColorAsState(
@@ -94,8 +94,7 @@ fun ChatItem(
                 onClick = onClick
             ),
 
-        color = backgroundColor,
-        tonalElevation = 3.dp
+        color = backgroundColor
     ) {
         Row(
             modifier = Modifier

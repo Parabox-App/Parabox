@@ -3,6 +3,7 @@ package com.ojhdtapp.parabox.ui.message.chat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -12,12 +13,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.ui.message.MessageLayoutType
 
 @Composable
 fun EmptyChatPage(
     modifier: Modifier = Modifier,
+    layoutType: MessageLayoutType,
 ){
-    Surface(color = MaterialTheme.colorScheme.surface, tonalElevation = 1.dp) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+    ) {
         Column(
             modifier = modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
