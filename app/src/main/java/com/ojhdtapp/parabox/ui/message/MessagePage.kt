@@ -74,12 +74,13 @@ fun MessagePage(
     var snackBarJob: Job? by remember {
         mutableStateOf(null)
     }
-    val horizontalPadding by animateDpAsState(targetValue = when(layoutType) {
-                MessageLayoutType.NORMAL -> 16.dp
-                MessageLayoutType.SPLIT -> 0.dp
-            },
+    val horizontalPadding by animateDpAsState(
+        targetValue = when (layoutType) {
+            MessageLayoutType.NORMAL -> 16.dp
+            MessageLayoutType.SPLIT -> 0.dp
+        },
         animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
-        )
+    )
     LaunchedEffect(Unit) {
         viewModel.uiEffect.flowWithLifecycle(lifecycleOwner.lifecycle, Lifecycle.State.STARTED)
             .collectLatest {
@@ -104,6 +105,7 @@ fun MessagePage(
                             }
                         }
                     }
+
                     else -> {}
                 }
             }
@@ -306,110 +308,100 @@ fun MessagePage(
             state = listState,
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            if (pinnedChatLazyPagingData.itemCount > 0) {
-                item(
-                    key = "title_1",
-                    contentType = "title"
-                ) {
+            item(
+                contentType = Unit
+            ) {
+                Column {
+                    if (pinnedChatLazyPagingData.itemCount > 0) {
+                        Box(
+                            modifier = Modifier
+                                .padding(start = horizontalPadding, end = horizontalPadding, top = 16.dp, bottom = 8.dp)
+                        ) {
+                            Text(
+                                text = "置顶",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        LazyRow(
+                            verticalAlignment = Alignment.CenterVertically,
+                            contentPadding = PaddingValues(horizontal = horizontalPadding)
+                        ) {
+                            items(
+                                count = pinnedChatLazyPagingData.itemCount,
+                                key = pinnedChatLazyPagingData.itemKey { it.chatId },
+                                contentType = pinnedChatLazyPagingData.itemContentType { "pinned_chat" }
+                            ) { index ->
+                                val item = pinnedChatLazyPagingData[index]!!
+                                var isMenuVisible by rememberSaveable { mutableStateOf(false) }
+                                ChatDropdownMenu(
+                                    chat = item,
+                                    isMenuVisible = isMenuVisible,
+                                    onEvent = viewModel::sendEvent,
+                                    onDismiss = { isMenuVisible = false })
+                                PinnedChatItems(
+                                    modifier = Modifier.animateItemPlacement(),
+                                    chat = item,
+                                    onClick = {
+                                        viewModel.sendEvent(MessagePageEvent.LoadMessage(item))
+                                    },
+                                    onLongClick = {
+                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        isMenuVisible = true
+                                    },
+                                )
+                            }
+                        }
+                    }
                     Box(
                         modifier = Modifier
                             .padding(start = horizontalPadding, end = horizontalPadding, top = 16.dp, bottom = 8.dp)
                     ) {
                         Text(
-                            text = "置顶",
+                            text = stringResource(R.string.main),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
-                }
-                item(
-                    key = "pinned_chat",
-                    contentType = "pinned_chat"
-                ) {
                     LazyRow(
                         verticalAlignment = Alignment.CenterVertically,
-                        contentPadding = PaddingValues(horizontal = horizontalPadding)
+                        contentPadding = PaddingValues(
+                            start = horizontalPadding,
+                            end = horizontalPadding,
+                            bottom = 16.dp
+                        )
                     ) {
-                        items(
-                            count = pinnedChatLazyPagingData.itemCount,
-                            key = pinnedChatLazyPagingData.itemKey { it.chatId },
-                            contentType = pinnedChatLazyPagingData.itemContentType { "pinned_chat" }
-                        ) { index ->
-                            val item = pinnedChatLazyPagingData[index]!!
-                            var isMenuVisible by rememberSaveable { mutableStateOf(false) }
-                            ChatDropdownMenu(
-                                chat = item,
-                                isMenuVisible = isMenuVisible,
-                                onEvent = viewModel::sendEvent,
-                                onDismiss = { isMenuVisible = false })
-                            PinnedChatItems(
-                                modifier = Modifier.animateItemPlacement(),
-                                chat = item,
-                                onClick = {
-                                    viewModel.sendEvent(MessagePageEvent.LoadMessage(item))
-                                },
-                                onLongClick = {
-                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    isMenuVisible = true
-                                },
-                            )
-                        }
-                    }
-                }
-            }
-            item(
-                key = "title_2",
-                contentType = "title"
-            ) {
-                Box(
-                    modifier = Modifier
-                        .padding(start = horizontalPadding, end = horizontalPadding, top = 16.dp, bottom = 8.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.main),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-            item(
-                key = "filter_list",
-                contentType = "filter_list"
-            ) {
-                LazyRow(
-                    verticalAlignment = Alignment.CenterVertically,
-                    contentPadding = PaddingValues(start = horizontalPadding, end = horizontalPadding, bottom = 16.dp)
-                ) {
-                    item {
-                        MyFilterChip(
-                            modifier = Modifier.padding(end = 8.dp),
-                            selected = false, label = {
-                                Icon(
-                                    imageVector = Icons.Outlined.FilterList,
-                                    contentDescription = "filter"
-                                )
-                            }) {
-                            viewModel.sendEvent(MessagePageEvent.OpenEnabledChatFilterDialog(true))
-                        }
-                    }
-                    item {
-                        if (state.selectedChatFilterLists.contains(ChatFilter.Normal)) {
+                        item {
                             MyFilterChip(
                                 modifier = Modifier.padding(end = 8.dp),
-                                selected = false,
-                                label = { Text(text = stringResource(id = R.string.get_chat_filter_normal)) }) {
+                                selected = false, label = {
+                                    Icon(
+                                        imageVector = Icons.Outlined.FilterList,
+                                        contentDescription = "filter"
+                                    )
+                                }) {
+                                viewModel.sendEvent(MessagePageEvent.OpenEnabledChatFilterDialog(true))
                             }
                         }
-                    }
-                    items(items = state.enabledChatFilterList) {
-                        MyFilterChip(selected = it in state.selectedChatFilterLists,
-                            modifier = Modifier.padding(end = 8.dp),
-                            label = { Text(text = it.label ?: stringResource(id = it.labelResId)) }) {
-                            viewModel.sendEvent(
-                                MessagePageEvent.AddOrRemoveSelectedChatFilter(
-                                    it
+                        item {
+                            if (state.selectedChatFilterLists.contains(ChatFilter.Normal)) {
+                                MyFilterChip(
+                                    modifier = Modifier.padding(end = 8.dp),
+                                    selected = false,
+                                    label = { Text(text = stringResource(id = R.string.get_chat_filter_normal)) }) {
+                                }
+                            }
+                        }
+                        items(items = state.enabledChatFilterList) {
+                            MyFilterChip(selected = it in state.selectedChatFilterLists,
+                                modifier = Modifier.padding(end = 8.dp),
+                                label = { Text(text = it.label ?: stringResource(id = it.labelResId)) }) {
+                                viewModel.sendEvent(
+                                    MessagePageEvent.AddOrRemoveSelectedChatFilter(
+                                        it
+                                    )
                                 )
-                            )
+                            }
                         }
                     }
                 }
@@ -417,40 +409,26 @@ fun MessagePage(
             items(
                 count = chatLazyPagingData.itemCount,
                 key = chatLazyPagingData.itemKey { it.chat.chatId },
-                contentType = chatLazyPagingData.itemContentType { it.chat.type }
             ) { index ->
-                val swipeableActionsState = rememberSwipeableActionsState()
-//                val isFirst by remember(index) {
-//                    derivedStateOf { index == 0 }
-//                }
-//                val isLast by remember(index) {
-//                    derivedStateOf { index == chatLazyPagingData.itemSnapshotList.size - 1 }
-//                }
-//                val topRadius by animateDpAsState(
-//                    targetValue = if (isFirst && swipeableActionsState.offset.value == 0f) 24.dp else 3.dp,
-//                    label = "top_radius"
-//                )
-//                val bottomRadius by animateDpAsState(
-//                    targetValue = if (isLast && swipeableActionsState.offset.value == 0f) 24.dp else 3.dp,
-//                    label = "bottom_radius"
-//                )
+                val topRadius = if (index == 0) 24.dp else 3.dp
+                val bottomRadius = if (index == chatLazyPagingData.itemSnapshotList.size - 1) 24.dp else 3.dp
                 Box(
                     modifier = Modifier
                         .padding(horizontal = horizontalPadding)
-                        .animateItemPlacement(tween(500))
-//                        .clip(
-//                            RoundedCornerShape(
-//                                topStart = topRadius,
-//                                topEnd = topRadius,
-//                                bottomEnd = bottomRadius,
-//                                bottomStart = bottomRadius
-//                            )
-//                        )
+//                        .animateItemPlacement()
+                        .clip(
+                            RoundedCornerShape(
+                                topStart = topRadius,
+                                topEnd = topRadius,
+                                bottomEnd = bottomRadius,
+                                bottomStart = bottomRadius
+                            )
+                        )
                 ) {
-                    val item = chatLazyPagingData[index]
-                    if (item == null) {
-                        EmptyChatItem()
-                    } else {
+                    val item = chatLazyPagingData[index]!!
+//                    if (item == null) {
+//                        EmptyChatItem()
+//                    } else {
                         var isMenuVisible by rememberSaveable { mutableStateOf(false) }
                         ChatDropdownMenu(
                             chat = item.chat,
@@ -504,7 +482,7 @@ fun MessagePage(
                                 }
                             )
                         }
-                    }
+//                    }
                 }
             }
             item {
