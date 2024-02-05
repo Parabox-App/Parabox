@@ -322,38 +322,38 @@ fun MessagePage(
                         )
                     }
                 }
-            }
-            item(
-                key = "pinned_chat",
-                contentType = "pinned_chat"
-            ) {
-                LazyRow(
-                    verticalAlignment = Alignment.CenterVertically,
-                    contentPadding = PaddingValues(horizontal = horizontalPadding)
+                item(
+                    key = "pinned_chat",
+                    contentType = "pinned_chat"
                 ) {
-                    items(
-                        count = pinnedChatLazyPagingData.itemCount,
-                        key = pinnedChatLazyPagingData.itemKey { it.chatId },
-                        contentType = pinnedChatLazyPagingData.itemContentType { "pinned_chat" }
-                    ) { index ->
-                        val item = pinnedChatLazyPagingData[index]!!
-                        var isMenuVisible by rememberSaveable { mutableStateOf(false) }
-                        ChatDropdownMenu(
-                            chat = item,
-                            isMenuVisible = isMenuVisible,
-                            onEvent = viewModel::sendEvent,
-                            onDismiss = { isMenuVisible = false })
-                        PinnedChatItems(
-                            modifier = Modifier.animateItemPlacement(),
-                            chat = item,
-                            onClick = {
-                                viewModel.sendEvent(MessagePageEvent.LoadMessage(item))
-                            },
-                            onLongClick = {
-                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                                isMenuVisible = true
-                            },
-                        )
+                    LazyRow(
+                        verticalAlignment = Alignment.CenterVertically,
+                        contentPadding = PaddingValues(horizontal = horizontalPadding)
+                    ) {
+                        items(
+                            count = pinnedChatLazyPagingData.itemCount,
+                            key = pinnedChatLazyPagingData.itemKey { it.chatId },
+                            contentType = pinnedChatLazyPagingData.itemContentType { "pinned_chat" }
+                        ) { index ->
+                            val item = pinnedChatLazyPagingData[index]!!
+                            var isMenuVisible by rememberSaveable { mutableStateOf(false) }
+                            ChatDropdownMenu(
+                                chat = item,
+                                isMenuVisible = isMenuVisible,
+                                onEvent = viewModel::sendEvent,
+                                onDismiss = { isMenuVisible = false })
+                            PinnedChatItems(
+                                modifier = Modifier.animateItemPlacement(),
+                                chat = item,
+                                onClick = {
+                                    viewModel.sendEvent(MessagePageEvent.LoadMessage(item))
+                                },
+                                onLongClick = {
+                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    isMenuVisible = true
+                                },
+                            )
+                        }
                     }
                 }
             }
@@ -420,32 +420,32 @@ fun MessagePage(
                 contentType = chatLazyPagingData.itemContentType { it.chat.type }
             ) { index ->
                 val swipeableActionsState = rememberSwipeableActionsState()
-                val isFirst by remember(index) {
-                    derivedStateOf { index == 0 }
-                }
-                val isLast by remember(index) {
-                    derivedStateOf { index == chatLazyPagingData.itemSnapshotList.size - 1 }
-                }
-                val topRadius by animateDpAsState(
-                    targetValue = if (isFirst && swipeableActionsState.offset.value == 0f) 24.dp else 3.dp,
-                    label = "top_radius"
-                )
-                val bottomRadius by animateDpAsState(
-                    targetValue = if (isLast && swipeableActionsState.offset.value == 0f) 24.dp else 3.dp,
-                    label = "bottom_radius"
-                )
+//                val isFirst by remember(index) {
+//                    derivedStateOf { index == 0 }
+//                }
+//                val isLast by remember(index) {
+//                    derivedStateOf { index == chatLazyPagingData.itemSnapshotList.size - 1 }
+//                }
+//                val topRadius by animateDpAsState(
+//                    targetValue = if (isFirst && swipeableActionsState.offset.value == 0f) 24.dp else 3.dp,
+//                    label = "top_radius"
+//                )
+//                val bottomRadius by animateDpAsState(
+//                    targetValue = if (isLast && swipeableActionsState.offset.value == 0f) 24.dp else 3.dp,
+//                    label = "bottom_radius"
+//                )
                 Box(
                     modifier = Modifier
                         .padding(horizontal = horizontalPadding)
-//                        .animateItemPlacement()
-                        .clip(
-                            RoundedCornerShape(
-                                topStart = topRadius,
-                                topEnd = topRadius,
-                                bottomEnd = bottomRadius,
-                                bottomStart = bottomRadius
-                            )
-                        )
+                        .animateItemPlacement(tween(500))
+//                        .clip(
+//                            RoundedCornerShape(
+//                                topStart = topRadius,
+//                                topEnd = topRadius,
+//                                bottomEnd = bottomRadius,
+//                                bottomStart = bottomRadius
+//                            )
+//                        )
                 ) {
                     val item = chatLazyPagingData[index]
                     if (item == null) {

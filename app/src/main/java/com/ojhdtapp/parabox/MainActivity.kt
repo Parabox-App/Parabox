@@ -254,7 +254,6 @@ class MainActivity : AppCompatActivity() {
                             dependency(sizeClass)
                         }){
                     }
-
                 }
 
 //                MessagePage(
