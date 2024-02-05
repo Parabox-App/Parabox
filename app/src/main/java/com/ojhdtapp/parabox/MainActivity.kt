@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
+import android.view.WindowManager
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -122,8 +123,12 @@ class MainActivity : AppCompatActivity() {
         // Bind Extension Service
         extensionServiceConnection = ExtensionServiceConnection(baseContext)
         lifecycle.addObserver(extensionServiceConnection)
-
-        enableEdgeToEdge()
+        // Edge to Edge
+        if (DeviceUtil.isMIUI(this)) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+            window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+            window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
+        }
 
         // Device Posture
         val devicePostureFlow = WindowInfoTracker.getOrCreate(this).windowLayoutInfo(this)
