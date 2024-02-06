@@ -51,7 +51,7 @@ android {
         compose true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion "1.5.7"
+        kotlinCompilerExtensionVersion "1.5.8"
     }
     lintOptions {
         abortOnError false
@@ -130,7 +130,7 @@ dependencies {
 
     runtimeOnly 'com.celeral:log4j2-android:1.0.0'
 
-    implementation "org.jetbrains.kotlin:kotlin-serialization:1.9.21"
+    implementation "org.jetbrains.kotlin:kotlin-serialization:1.9.22"
     implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0'
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.5.0"
 
@@ -218,10 +218,11 @@ dependencies {
     implementation "androidx.paging:paging-compose:$paging_version"
 
     // Coil
-    implementation 'io.coil-kt:coil:2.4.0'
-    implementation 'io.coil-kt:coil-gif:2.4.0'
-    implementation 'io.coil-kt:coil-svg:2.4.0'
-    implementation 'io.coil-kt:coil-compose:2.4.0'
+    def coil_version = "2.5.0"
+    implementation "io.coil-kt.coil3:coil:3.0.0-alpha01"
+    implementation "io.coil-kt:coil-gif:$coil_version"
+    implementation "io.coil-kt:coil-svg:$coil_version"
+    implementation "io.coil-kt:coil-compose:$coil_version"
 
     // Lottie
     def lottieVersion = "5.0.3"
@@ -232,8 +233,8 @@ dependencies {
     implementation "androidx.navigation:navigation-compose:$nav_version"
 
     // Compose Destinations
-    implementation 'io.github.raamcosta.compose-destinations:animations-core:1.9.56'
-    ksp 'io.github.raamcosta.compose-destinations:ksp:1.9.56'
+    implementation 'io.github.raamcosta.compose-destinations:animations-core:1.10.0'
+    ksp 'io.github.raamcosta.compose-destinations:ksp:1.10.0'
 
     // DataStore
     implementation "androidx.datastore:datastore-preferences:1.0.0"

@@ -7,7 +7,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.toArgb
+import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
@@ -23,32 +25,44 @@ fun CommonAvatar(
     name: String? = null,
     backgroundColor: Color = MaterialTheme.colorScheme.secondaryContainer,
     textColor: Color = MaterialTheme.colorScheme.onSecondaryContainer
-) =
-    SubcomposeAsyncImage(
+){
+    val namePainter = BitmapPainter(AvatarUtil.createNamedAvatarBm(
+        backgroundColor = backgroundColor.toArgb(),
+        textColor = textColor.toArgb(),
+        name = name ?: "name"
+    ).asImageBitmap())
+    AsyncImage(
         model = model,
-        contentDescription = "chat_avatar",
-        modifier = modifier.fillMaxSize(),
-    ) {
-        val state = painter.state
-        val namedAvatarBm =
-            AvatarUtil.createNamedAvatarBm(
-                backgroundColor = backgroundColor.toArgb(),
-                textColor = textColor.toArgb(),
-                name = name ?: "name"
-            ).asImageBitmap()
-        if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
-            Image(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .placeholder(
-                        visible = state is AsyncImagePainter.State.Loading,
-                        color = backgroundColor,
-                        highlight = PlaceholderHighlight.fade(),
-                    ),
-                bitmap = namedAvatarBm,
-                contentDescription = "named_avatar"
-            )
-        } else {
-            SubcomposeAsyncImageContent()
-        }
-    }
+        contentDescription = "avatar",
+        placeholder = namePainter,
+        error = namePainter
+    )
+}
+//    SubcomposeAsyncImage(
+//        model = model,
+//        contentDescription = "chat_avatar",
+//        modifier = modifier.fillMaxSize(),
+//    ) {
+//        val state = painter.state
+//        if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
+//            val namedAvatarBm =
+//                AvatarUtil.createNamedAvatarBm(
+//                    backgroundColor = backgroundColor.toArgb(),
+//                    textColor = textColor.toArgb(),
+//                    name = name ?: "name"
+//                ).asImageBitmap()
+//            Image(
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .placeholder(
+//                        visible = state is AsyncImagePainter.State.Loading,
+//                        color = backgroundColor,
+//                        highlight = PlaceholderHighlight.fade(),
+//                    ),
+//                bitmap = namedAvatarBm,
+//                contentDescription = "named_avatar"
+//            )
+//        } else {
+//            SubcomposeAsyncImageContent()
+//        }
+//    }

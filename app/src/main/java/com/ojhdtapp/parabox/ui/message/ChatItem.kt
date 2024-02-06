@@ -98,7 +98,6 @@ fun ChatItem(
     ) {
         Row(
             modifier = Modifier
-//            .background(backgroundColor)
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -120,10 +119,14 @@ fun ChatItem(
                             tint = MaterialTheme.colorScheme.onPrimary
                         )
                     } else {
-                        icon?.invoke() ?: CommonAvatar(
-                            model = chatWithLatestMessage.chat.avatar.getModel(),
-                            name = chatWithLatestMessage.chat.name,
-                        )
+                        if (icon != null) {
+                            icon()
+                        } else {
+                            CommonAvatar(
+                                model = chatWithLatestMessage.chat.avatar.getModel(),
+                                name = chatWithLatestMessage.chat.name,
+                            )
+                        }
                     }
                 }
             }
