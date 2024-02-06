@@ -323,25 +323,13 @@ fun Toolbar(
                                                 modifier = Modifier
                                                     .padding(3.dp)
                                             ) {
-                                                val imageLoader =
-                                                    ImageLoader.Builder(context)
-                                                        .components {
-                                                            if (Build.VERSION.SDK_INT >= 28) {
-                                                                add(ImageDecoderDecoder.Factory())
-                                                            } else {
-                                                                add(GifDecoder.Factory())
-                                                            }
-                                                        }
-                                                        .build()
                                                 AsyncImage(
                                                     model = ImageRequest.Builder(
                                                         LocalContext.current
                                                     )
                                                         .data(it)
                                                         .crossfade(true)
-                                                        .diskCachePolicy(CachePolicy.ENABLED)// it's the same even removing comments
                                                         .build(),
-                                                    imageLoader = imageLoader,
                                                     contentDescription = "meme",
                                                     contentScale = ContentScale.FillHeight,
                                                     modifier = Modifier

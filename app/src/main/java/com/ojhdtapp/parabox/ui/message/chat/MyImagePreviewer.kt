@@ -88,21 +88,11 @@ fun MyImagePreviewer(
         imageLoader = { index ->
             if (index < state.imageSnapshotList.size) {
                 val t = state.imageSnapshotList[index].second
-                val imageLoader = ImageLoader.Builder(context)
-                    .components {
-                        if (Build.VERSION.SDK_INT >= 28) {
-                            add(ImageDecoderDecoder.Factory())
-                        } else {
-                            add(GifDecoder.Factory())
-                        }
-                    }
-                    .build()
                 rememberAsyncImagePainter(
                     model = ImageRequest.Builder(context)
                         .data(t.resourceInfo.getModel())
                         .size(Size.ORIGINAL)
                         .build(),
-                    imageLoader = imageLoader,
                     error = painterResource(id = R.drawable.image_lost),
                     fallback = painterResource(id = R.drawable.image_lost),
                 )

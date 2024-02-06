@@ -68,25 +68,14 @@ fun ImageSendingLayout(
         onClick = onClick
     ) {
         Box(modifier = Modifier.size(80.dp)) {
-            val imageLoader = ImageLoader.Builder(context)
-                .components {
-                    if (Build.VERSION.SDK_INT >= 28) {
-                        add(ImageDecoderDecoder.Factory())
-                    } else {
-                        add(GifDecoder.Factory())
-                    }
-                }
-                .build()
             val painter = rememberAsyncImagePainter(
                 model = ImageRequest.Builder(context)
                     .data(model)
                     .size(Size.ORIGINAL)
-                    .diskCachePolicy(CachePolicy.ENABLED)
                     .crossfade(true)
                     .build(),
                 error = painterResource(id = R.drawable.image_lost),
                 fallback = painterResource(id = R.drawable.image_lost),
-                imageLoader = imageLoader,
                 contentScale = ContentScale.Crop
             )
             Image(

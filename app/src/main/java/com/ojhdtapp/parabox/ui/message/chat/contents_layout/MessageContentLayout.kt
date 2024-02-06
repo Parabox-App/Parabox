@@ -66,16 +66,6 @@ fun ImageLayout(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
-    val imageLoader = ImageLoader.Builder(context)
-        .components {
-            if (SDK_INT >= 28) {
-                add(ImageDecoderDecoder.Factory())
-            } else {
-                add(GifDecoder.Factory())
-            }
-        }
-        .respectCacheHeaders(false)
-        .build()
     val painter = rememberAsyncImagePainter(
         model = ImageRequest.Builder(context)
             .data(model)
@@ -85,7 +75,6 @@ fun ImageLayout(
             .build(),
         error = painterResource(id = R.drawable.image_lost),
         fallback = painterResource(id = R.drawable.image_lost),
-        imageLoader = imageLoader,
         contentScale = ContentScale.Fit,
         onSuccess = {
             coroutineScope.launch {
