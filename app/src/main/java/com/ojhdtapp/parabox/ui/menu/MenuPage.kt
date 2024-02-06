@@ -52,6 +52,7 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -109,11 +110,9 @@ fun MenuPage(
     navigator: DestinationsNavigator,
     navController: NavController,
     mainSharedViewModel: MainSharedViewModel,
-    windowSize: WindowSizeClass,
-    devicePosture: DevicePosture,
 ) {
     val navigationType: MenuNavigationType
-    when (windowSize.widthSizeClass) {
+    when (currentWindowAdaptiveInfo().windowSizeClass.widthSizeClass) {
         WindowWidthSizeClass.Compact -> {
             navigationType = MenuNavigationType.BOTTOM_NAVIGATION
         }
@@ -123,7 +122,7 @@ fun MenuPage(
         }
 
         WindowWidthSizeClass.Expanded -> {
-            navigationType = if (devicePosture is DevicePosture.BookPosture) {
+            navigationType = if (currentWindowAdaptiveInfo().windowPosture.isTabletop) {
                 MenuNavigationType.NAVIGATION_RAIL
             } else {
                 MenuNavigationType.PERMANENT_NAVIGATION_DRAWER
@@ -139,8 +138,6 @@ fun MenuPage(
         navigator = navigator,
         mainSharedViewModel = mainSharedViewModel,
         navigationType = navigationType,
-        windowSize = windowSize,
-        devicePosture = devicePosture,
     )
     // ** NavigationSuiteScaffold impl **
 
@@ -223,8 +220,6 @@ private fun MenuNavigationWrapperUI(
     navigator: DestinationsNavigator,
     mainSharedViewModel: MainSharedViewModel,
     navigationType: MenuNavigationType,
-    windowSize: WindowSizeClass,
-    devicePosture: DevicePosture,
 ) {
     // Destination
     val menuNavController = rememberNavController()
@@ -357,8 +352,6 @@ private fun MenuNavigationWrapperUI(
                 bottomSheetState = bottomSheetState,
                 mainSharedViewModel = mainSharedViewModel,
                 mainSharedState = mainSharedState,
-                windowSize = windowSize,
-                devicePosture = devicePosture,
                 onEvent = menuEventHandler,
             )
         }
@@ -386,8 +379,6 @@ private fun MenuNavigationWrapperUI(
                 bottomSheetState = bottomSheetState,
                 mainSharedViewModel = mainSharedViewModel,
                 mainSharedState = mainSharedState,
-                windowSize = windowSize,
-                devicePosture = devicePosture,
                 onEvent = menuEventHandler
             )
         }
@@ -407,8 +398,6 @@ fun MenuAppContent(
     bottomSheetState: SheetState,
     mainSharedViewModel: MainSharedViewModel,
     mainSharedState: MainSharedState,
-    windowSize: WindowSizeClass,
-    devicePosture: DevicePosture,
     onEvent: (event: MenuPageEvent) -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -480,8 +469,6 @@ fun MenuAppContent(
                     dependency(listState)
                     dependency(drawerState)
                     dependency(bottomSheetState)
-                    dependency(windowSize)
-                    dependency(devicePosture)
                 }
             ) {
 //                composable(MessageAndChatPageWrapperUIDestination){

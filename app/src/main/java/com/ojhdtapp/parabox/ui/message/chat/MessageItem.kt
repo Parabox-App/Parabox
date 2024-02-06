@@ -45,6 +45,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -191,7 +192,11 @@ fun MessageItem(
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.Start
         ) {
-            Box(modifier = Modifier.size(42.dp)) {
+            Box(
+                modifier = Modifier.size(42.dp)
+                    .clip(CircleShape)
+                    .clickable {  }
+            ) {
                 if (isFirst) {
                     CommonAvatar(
                         model = messageWithSender.sender.avatar.getModel(),

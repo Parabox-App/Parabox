@@ -61,7 +61,6 @@ fun MessageAndChatPageWrapperUI(
     mainNavController: NavController,
     mainSharedViewModel: MainSharedViewModel,
     listState: LazyListState,
-    windowSize: WindowSizeClass,
 ) {
     val viewModel = hiltViewModel<MessagePageViewModel>()
     val state by viewModel.uiState.collectAsState()

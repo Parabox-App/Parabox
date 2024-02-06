@@ -210,11 +210,6 @@ class MainActivity : AppCompatActivity() {
             // Shared ViewModel
             val mainSharedViewModel = hiltViewModel<MainSharedViewModel>(this)
 
-            // Screen Sizes
-            val sizeClass = calculateWindowSizeClass(activity = this)
-            val devicePosture = devicePostureFlow.collectAsState().value
-
-
 //            val shouldShowNav = menuNavController.appCurrentDestinationAsState().value in listOf(
 //                MessagePageDestination,
 //                FilePageDestination,
@@ -250,8 +245,6 @@ class MainActivity : AppCompatActivity() {
                         navController = mainNavController,
                         dependenciesContainerBuilder = {
                             dependency(mainSharedViewModel)
-                            dependency(devicePosture)
-                            dependency(sizeClass)
                         }){
                     }
                 }
