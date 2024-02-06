@@ -5,6 +5,8 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.splineBasedDecay
@@ -217,8 +219,8 @@ fun SwipeToDismissBox(
     AnimatedVisibility(
         modifier = modifier,
         visible = !shouldShrinkVertically,
-        enter = expandVertically(),
-        exit = shrinkVertically()
+        enter = expandVertically() + fadeIn(),
+        exit = shrinkVertically() + fadeOut()
     ) {
         SwipeToDismissBox(state = dismissState,
             backgroundContent = {

@@ -27,6 +27,7 @@ import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Reply
+import androidx.compose.material.icons.outlined.Checklist
 import androidx.compose.material.icons.outlined.Quickreply
 import androidx.compose.material.icons.outlined.Reply
 import androidx.compose.material3.Icon
@@ -134,6 +135,30 @@ fun MessageItem(
     SwipeableActionsBox(
         modifier = modifier.fillMaxWidth(),
         state = swipeableActionsState,
+        startActions = listOf(SwipeAction(
+            icon = {
+                Surface(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .scale(scale),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.secondaryContainer
+                ) {
+                    Box(modifier = Modifier.size(32.dp), contentAlignment = Alignment.Center) {
+                        Icon(
+                            modifier = Modifier.size(16.dp),
+                            imageVector = Icons.Outlined.Checklist,
+                            contentDescription = "select or not",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            },
+            background = Color.Transparent,
+            onSwipe = {
+                onEvent(MessagePageEvent.AddOrRemoveSelectedMessage(messageWithSender.message))
+            }
+        )),
         endActions = listOf(SwipeAction(
             icon = {
                 Surface(

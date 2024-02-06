@@ -437,13 +437,13 @@ fun MessagePage(
                         SwipeToDismissBox(
                             enabled = mainSharedState.datastore.enableSwipeToDismiss,
                             onVibrate = { hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress) },
-                            startToEndIcon = Icons.Outlined.Archive,
+                            startToEndIcon = if (item.chat.isArchived) Icons.Outlined.Unarchive else Icons.Outlined.Archive,
                             endToStartIcon = Icons.Outlined.Done,
                             onDismissedToEnd = {
                                 viewModel.sendEvent(
                                     MessagePageEvent.UpdateChatArchive(
                                         item.chat.chatId,
-                                        true,
+                                        !item.chat.isArchived,
                                         item.chat.isArchived
                                     )
                                 )

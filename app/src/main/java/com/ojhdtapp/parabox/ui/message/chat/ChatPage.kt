@@ -165,6 +165,7 @@ fun NormalChatPage(
                         previewerState.openTransform(it.index)
                     }
                 }
+
                 else -> {}
             }
         }
@@ -193,6 +194,9 @@ fun NormalChatPage(
         coroutineScope.launch {
             drawerState.close()
         }
+    }
+    BackHandler(state.chatDetail.selectedMessageList.isNotEmpty()) {
+        onEvent(MessagePageEvent.ClearSelectedMessage)
     }
 
     MyModalNavigationDrawerReverse(

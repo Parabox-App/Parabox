@@ -44,6 +44,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -365,7 +366,10 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.UpdateImagePreviewerSnapshotList -> {
-                sendEffect(MessagePageEffect.ImagePreviewerOpenTransform(event.targetElementIndex))
+                viewModelScope.launch {
+                    delay(50)
+                    sendEffect(MessagePageEffect.ImagePreviewerOpenTransform(event.targetElementIndex))
+                }
                 return state.copy(
                     chatDetail = state.chatDetail.copy(
                         imagePreviewerState = state.chatDetail.imagePreviewerState.copy(
