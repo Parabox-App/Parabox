@@ -1,6 +1,5 @@
 package com.ojhdtapp.parabox.ui.message.chat
 
-import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
@@ -24,12 +23,9 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.DisableSelection
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Reply
 import androidx.compose.material.icons.outlined.Checklist
-import androidx.compose.material.icons.outlined.Quickreply
-import androidx.compose.material.icons.outlined.Reply
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -83,7 +79,6 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxQuoteReply
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxUnsupported
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.simplifyText
 import com.origeek.imageViewer.previewer.ImagePreviewerState
-import kotlinx.coroutines.launch
 import me.saket.swipe.SwipeAction
 import me.saket.swipe.SwipeableActionsBox
 import me.saket.swipe.rememberSwipeableActionsState
@@ -264,7 +259,7 @@ fun MessageItem(
                                     textColor = textColor,
                                     elementId = messageWithSender.message.contentsId[index],
                                     previewerState = previewerState,
-                                    onClick = onImageClick,
+                                    onImageClick = onImageClick,
                                 )
                             }
                         }
@@ -303,7 +298,7 @@ private fun ParaboxMessageElement.toLayout(
     textColor: Color,
     elementId: Long,
     previewerState: ImagePreviewerState,
-    onClick: (elementId: Long) -> Unit,
+    onImageClick: (elementId: Long) -> Unit,
 ) {
     when (this) {
         is ParaboxPlainText -> PlainTextLayout(text = buildAnnotatedString {
@@ -311,8 +306,15 @@ private fun ParaboxMessageElement.toLayout(
                 append(text)
             }
         })
-
-        is ParaboxAt, ParaboxAtAll -> PlainTextLayout(text = buildAnnotatedString {
+        is ParaboxAt -> {
+            val targetName = target.basicInfo.name ?: target.uid ?: contentToString()
+            PlainTextLayout(text = buildAnnotatedString {
+                withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                    append(targetName)
+                }
+            })
+        }
+        is ParaboxAtAll -> PlainTextLayout(text = buildAnnotatedString {
             withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
                 append(contentToString())
             }
@@ -343,7 +345,7 @@ private fun ParaboxMessageElement.toLayout(
             model = resourceInfo.getModel(),
             elementId = elementId,
             previewerState = previewerState,
-            onClick = onClick
+            onClick = onImageClick
         )
 
         is ParaboxAudio -> AudioLayout()

@@ -8,4 +8,5 @@ interface ContactRepository {
     fun queryContactWithLimit(query: String, limit: Int): Flow<Resource<List<Contact>>>
     fun getContactWithLimit(limit: Int): Flow<Resource<List<Contact>>>
     fun getContactById(contactId: Long): Flow<Resource<Contact>>
+    fun getContactByPlatformInfo(pkg: String, uid: String): Flow<Resource<Contact>>
 }

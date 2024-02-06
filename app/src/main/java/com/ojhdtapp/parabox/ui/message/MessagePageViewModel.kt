@@ -25,6 +25,7 @@ import com.ojhdtapp.parabox.domain.use_case.GetChat
 import com.ojhdtapp.parabox.domain.use_case.GetContact
 import com.ojhdtapp.parabox.domain.use_case.GetLocation
 import com.ojhdtapp.parabox.domain.use_case.GetMessage
+import com.ojhdtapp.parabox.domain.use_case.QueryContact
 import com.ojhdtapp.parabox.domain.use_case.UpdateChat
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.base.BaseViewModel
@@ -67,6 +68,7 @@ class MessagePageViewModel @Inject constructor(
     val updateChat: UpdateChat,
     val locationUtil: LocationUtil,
     val fileUtil: FileUtil,
+    val queryContact: QueryContact,
 ) : BaseViewModel<MessagePageState, MessagePageEvent, MessagePageEffect>() {
 
     override fun initialState(): MessagePageState {

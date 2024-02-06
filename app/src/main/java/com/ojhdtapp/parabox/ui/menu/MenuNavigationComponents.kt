@@ -74,8 +74,11 @@ fun MenuNavigationBar(
                 },
                 icon = {
                     BadgedBox(badge = {
-                        if (destination.graph == NavGraphs.message && mainSharedState.datastore.messageBadgeNum != 0)
-                            Badge { Text(text = "${mainSharedState.datastore.messageBadgeNum}") }
+                        if (destination.graph == NavGraphs.message && mainSharedState.datastore.messageBadgeNum > 0)
+                            Badge(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                            ) { Text(text = "${mainSharedState.datastore.messageBadgeNum}") }
                     }) {
                         Icon(
                             imageVector = if (isCurrentDestOnBackStack) destination.iconSelected else destination.icon,
@@ -159,7 +162,7 @@ fun MenuNavigationDrawerContent(
                     )
                 },
                 badge = {
-                    if (destination.graph == NavGraphs.message && messageBadge != 0)
+                    if (destination.graph == NavGraphs.message && messageBadge > 0)
                         Badge(
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -210,8 +213,8 @@ fun MenuNavigationDrawerContent(
 @Composable
 fun MenuNavigationRail(
     modifier: Modifier = Modifier,
+    mainSharedState: MainSharedState,
     navController: NavController,
-    messageBadge: Int = 0,
     onEvent: (event: MenuPageEvent) -> Unit,
 ) {
     NavigationRail(
@@ -254,8 +257,11 @@ fun MenuNavigationRail(
                 icon = {
                     BadgedBox(
                         badge = {
-                            if (destination.graph == NavGraphs.message && messageBadge != 0)
-                                Badge { Text(text = "${if (messageBadge > 99) "99+" else messageBadge}") }
+                            if (destination.graph == NavGraphs.message && mainSharedState.datastore.messageBadgeNum > 0)
+                                Badge(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                                ) { Text(text = "${mainSharedState.datastore.messageBadgeNum.takeIf { it < 99 } ?: "99+"}") }
                         }) {
                         Icon(
                             imageVector = if (isCurrentDestOnBackStack) destination.iconSelected else destination.icon,

@@ -66,4 +66,22 @@ class ContactRepositoryImpl @Inject constructor(
             }
         }
     }
+
+    override fun getContactByPlatformInfo(pkg: String, uid: String): Flow<Resource<Contact>> {
+        return flow {
+            emit(Resource.Loading())
+            try {
+                emit(
+                    withContext(Dispatchers.IO) {
+                        db.contactDao.getContactByPlatformInfo(pkg, uid)?.toContact()?.let {
+                            Resource.Success(it)
+                        }
+                    } ?: Resource.Error("not found")
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+                emit(Resource.Error("unknown error"))
+            }
+        }
+    }
 }

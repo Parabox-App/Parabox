@@ -25,6 +25,7 @@ import com.ojhdtapp.parabox.domain.use_case.GetContact
 import com.ojhdtapp.parabox.domain.use_case.GetLocation
 import com.ojhdtapp.parabox.domain.use_case.GetMessage
 import com.ojhdtapp.parabox.domain.use_case.Query
+import com.ojhdtapp.parabox.domain.use_case.QueryContact
 import com.ojhdtapp.parabox.domain.use_case.UpdateChat
 import com.ojhdtapp.parabox.domain.util.GsonParser
 import dagger.Module
@@ -156,4 +157,10 @@ object AppModule {
     fun provideGetLocationUseCase(
         locationUtil: LocationUtil
     ): GetLocation = GetLocation(locationUtil)
+
+    @Provides
+    @Singleton
+    fun provideQueryContactUseCase(
+        contactRepository: ContactRepository
+    ): QueryContact = QueryContact(contactRepository)
 }

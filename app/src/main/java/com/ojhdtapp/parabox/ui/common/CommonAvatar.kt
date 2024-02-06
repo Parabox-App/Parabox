@@ -32,6 +32,7 @@ fun CommonAvatar(
         name = name ?: "name"
     ).asImageBitmap())
     AsyncImage(
+        modifier = modifier.fillMaxSize(),
         model = model,
         contentDescription = "avatar",
         placeholder = namePainter,

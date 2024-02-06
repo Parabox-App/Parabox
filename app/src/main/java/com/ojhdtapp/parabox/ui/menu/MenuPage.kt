@@ -60,6 +60,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.navigation.NavController
@@ -437,11 +438,14 @@ fun MenuAppContent(
 
     Row(modifier = modifier.fillMaxWidth()) {
         AnimatedVisibility(
+            modifier = Modifier.zIndex(1f),
             visible = navigationType == MenuNavigationType.NAVIGATION_RAIL,
             enter = slideInHorizontally { it },
             exit = slideOutHorizontally { it }
         ) {
             MenuNavigationRail(
+                modifier = Modifier.zIndex(-1f),
+                mainSharedState = mainSharedState,
                 navController = menuNavController,
                 onEvent = onEvent
             )

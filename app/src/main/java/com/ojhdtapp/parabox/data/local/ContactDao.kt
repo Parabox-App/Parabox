@@ -14,6 +14,10 @@ interface ContactDao {
             "WHERE pkg = :pkg AND uid = :uid LIMIT 1")
     fun checkContact(pkg: String, uid: String) : Long?
 
+    @Query("SELECT * FROM contact_entity " +
+            "WHERE pkg = :pkg AND uid = :uid LIMIT 1")
+    fun getContactByPlatformInfo(pkg: String, uid: String) : ContactEntity?
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insertContact(contact: ContactEntity): Long
 
