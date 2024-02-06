@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
 
 abstract class BaseViewModel< S : UiState, E : UiEvent,F : UiEffect>  : ViewModel() {
     private val initialState: S by lazy { initialState() }
@@ -16,12 +17,18 @@ abstract class BaseViewModel< S : UiState, E : UiEvent,F : UiEffect>  : ViewMode
     private val _uiState: MutableStateFlow<S> by lazy { MutableStateFlow(initialState) }
     val uiState: StateFlow<S> by lazy { _uiState }
 
-    private fun sendState(newState: S.() -> S) {
+    private fun sendState(event: E, newState: S.() -> S) {
         Log.d("parabox", "new state: ${uiState.value.newState()}")
         _uiState.value = uiState.value.newState()
+        if (event.lock) {
+            mutex.unlock()
+            Log.d("parabox", "unlock for event:${event}")
+        }
     }
 
     private val _uiEvent: MutableSharedFlow<E> = MutableSharedFlow()
+
+    private val mutex = Mutex()
 
     init {
         subscribeEvents()
@@ -30,6 +37,10 @@ abstract class BaseViewModel< S : UiState, E : UiEvent,F : UiEffect>  : ViewMode
     private fun subscribeEvents() {
         viewModelScope.launch {
             _uiEvent.collect {
+                if (it.lock) {
+                    mutex.lock()
+                    Log.d("parabox", "lock for event:${it}")
+                }
                 reduceEvent(_uiState.value, it)
             }
         }
@@ -44,7 +55,7 @@ abstract class BaseViewModel< S : UiState, E : UiEvent,F : UiEffect>  : ViewMode
 
     private fun reduceEvent(state: S, event: E) {
         viewModelScope.launch {
-            handleEvent(event, state)?.let { newState -> sendState { newState } }
+            handleEvent(event, state)?.let { newState -> sendState(event) { newState } }
         }
     }
 
@@ -61,6 +72,9 @@ abstract class BaseViewModel< S : UiState, E : UiEvent,F : UiEffect>  : ViewMode
 
 interface UiState
 
-interface UiEvent
+interface UiEvent {
+    val lock: Boolean
+        get() = false
+}
 
 interface UiEffect

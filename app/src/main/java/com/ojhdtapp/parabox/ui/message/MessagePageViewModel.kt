@@ -2,6 +2,7 @@ package com.ojhdtapp.parabox.ui.message
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.text.input.TextFieldValue
@@ -53,11 +54,15 @@ import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import org.apache.commons.io.FileUtils
 import javax.inject.Inject
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 @HiltViewModel
 class MessagePageViewModel @Inject constructor(
@@ -130,7 +135,7 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.UpdateChatUnreadMessagesNum -> {
-                return coroutineScope {
+                coroutineScope {
                     val res = withContext(Dispatchers.IO) {
                         updateChat.unreadMessagesNum(event.chatId, event.value)
                     }
@@ -151,7 +156,7 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.UpdateChatPin -> {
-                return coroutineScope {
+                coroutineScope {
                     val res = withContext(Dispatchers.IO) {
                         updateChat.pin(event.chatId, event.value)
                     }
@@ -174,7 +179,7 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.UpdateChatHide -> {
-                return coroutineScope {
+                coroutineScope {
                     val res = withContext(Dispatchers.IO) {
                         updateChat.hide(event.chatId, event.value)
                     }
@@ -197,7 +202,7 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.UpdateChatArchive -> {
-                return coroutineScope {
+                coroutineScope {
                     val res = withContext(Dispatchers.IO) {
                         updateChat.archive(event.chatId, event.value)
                     }
@@ -220,7 +225,7 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.UpdateChatTags -> {
-                return coroutineScope {
+                coroutineScope {
                     val res = withContext(Dispatchers.IO) {
                         updateChat.tags(event.chatId, event.value)
                     }
@@ -266,7 +271,7 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.OpenEditArea -> {
-                return state.copy(
+                state.copy(
                     chatDetail = state.chatDetail.copy(
                         editAreaState = state.chatDetail.editAreaState.copy(
                             expanded = event.open
@@ -276,7 +281,7 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.UpdateEditAreaInput -> {
-                return state.copy(
+                state.copy(
                     chatDetail = state.chatDetail.copy(
                         editAreaState = state.chatDetail.editAreaState.copy(
                             input = event.input,
@@ -291,7 +296,7 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.UpdateToolbarState -> {
-                return state.copy(
+                state.copy(
                     chatDetail = state.chatDetail.copy(
                         editAreaState = state.chatDetail.editAreaState.copy(
                             toolbarState = event.state
@@ -301,7 +306,7 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.UpdateEditAreaMode -> {
-                return when(event.mode){
+                when(event.mode){
                     EditAreaMode.NORMAL -> {
                         cancelLocationCollection()
                         state.copy(
@@ -338,7 +343,7 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.UpdateAudioRecorderState -> {
-                return state.copy(
+                state.copy(
                     chatDetail = state.chatDetail.copy(
                         editAreaState = state.chatDetail.editAreaState.copy(
                             audioRecorderState = event.state
@@ -348,7 +353,7 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.ExpandImagePreviewerMenu -> {
-                return state.copy(
+                state.copy(
                     chatDetail = state.chatDetail.copy(
                         imagePreviewerState = state.chatDetail.imagePreviewerState.copy(
                             expandMenu = event.expand
@@ -358,7 +363,7 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.ExpandImagePreviewerToolbar -> {
-                return state.copy(
+                state.copy(
                     chatDetail = state.chatDetail.copy(
                         imagePreviewerState = state.chatDetail.imagePreviewerState.copy(
                             showToolbar = event.expand
@@ -372,7 +377,7 @@ class MessagePageViewModel @Inject constructor(
                     delay(50)
                     sendEffect(MessagePageEffect.ImagePreviewerOpenTransform(event.targetElementIndex))
                 }
-                return state.copy(
+                state.copy(
                     chatDetail = state.chatDetail.copy(
                         imagePreviewerState = state.chatDetail.imagePreviewerState.copy(
                             imageSnapshotList = event.list,
@@ -393,7 +398,7 @@ class MessagePageViewModel @Inject constructor(
                 } else {
                     event.onFailure()
                 }
-                return state.copy(
+                state.copy(
                     chatDetail = state.chatDetail.copy(
                         editAreaState = state.chatDetail.editAreaState.copy(
                             memeList = refreshMemeList()
@@ -413,7 +418,7 @@ class MessagePageViewModel @Inject constructor(
                 } else {
                     event.onFailure()
                 }
-                return state.copy(
+                state.copy(
                     chatDetail = state.chatDetail.copy(
                         editAreaState = state.chatDetail.editAreaState.copy(
                             memeList = refreshMemeList()
@@ -424,7 +429,7 @@ class MessagePageViewModel @Inject constructor(
 
             is MessagePageEvent.SaveImageToLocal -> {
 //                fileUtil.saveImageToExternalStorage(event.image.resourceInfo.getModel())
-                return state
+                state
             }
 
             is MessagePageEvent.ChooseImageUri -> {
@@ -437,7 +442,7 @@ class MessagePageViewModel @Inject constructor(
                         add(event.imageUri)
                     }
                 }
-                return state.copy(
+                state.copy(
                     chatDetail = state.chatDetail.copy(
                         editAreaState = state.chatDetail.editAreaState.copy(
                             chosenImageList = newList
@@ -447,7 +452,7 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.ChooseQuoteReply -> {
-                return state.copy(
+                state.copy(
                     chatDetail = state.chatDetail.copy(
                         editAreaState = state.chatDetail.editAreaState.copy(
                             chosenQuoteReply = event.model
@@ -457,7 +462,7 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.ShowVoicePermissionDeniedDialog -> {
-                return state.copy(
+                state.copy(
                     chatDetail = state.chatDetail.copy(
                         editAreaState = state.chatDetail.editAreaState.copy(
                             showVoicePermissionDeniedDialog = event.open
@@ -467,7 +472,7 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.ShowLocationPermissionDeniedDialog -> {
-                return state.copy(
+                state.copy(
                     chatDetail = state.chatDetail.copy(
                         editAreaState = state.chatDetail.editAreaState.copy(
                             showLocationPermissionDeniedDialog = event.open
@@ -477,7 +482,7 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.UpdateIconShrink -> {
-                return state.copy(
+                state.copy(
                     chatDetail = state.chatDetail.copy(
                         editAreaState = state.chatDetail.editAreaState.copy(
                             iconShrink = event.shouldShrink
@@ -490,7 +495,7 @@ class MessagePageViewModel @Inject constructor(
                 viewModelScope.launch {
                     buildParaboxSendMessage()
                 }
-                return state.copy(
+                state.copy(
                     chatDetail = state.chatDetail.copy(
                         editAreaState = state.chatDetail.editAreaState.copy(
                             input = TextFieldValue(""),
@@ -510,12 +515,12 @@ class MessagePageViewModel @Inject constructor(
                 fileUtil.getUriForFile(event.audioFile)?.let {
                     ParaboxAudio(resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(it))
                 }
-                return state
+                state
             }
 
             is MessagePageEvent.SendMemeMessage -> {
                 ParaboxImage(resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(event.imageUri))
-                return state
+                state
             }
 
             is MessagePageEvent.SendFileMessage -> {
@@ -526,11 +531,11 @@ class MessagePageViewModel @Inject constructor(
                     lastModifiedTime = System.currentTimeMillis(),
                     resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(event.fileUri)
                 )
-                return state
+                state
             }
 
             is MessagePageEvent.AddOrRemoveSelectedMessage -> {
-                return state.copy(
+                state.copy(
                     chatDetail = state.chatDetail.copy(
                         selectedMessageList = state.chatDetail.selectedMessageList.toMutableList().apply {
                             if (contains(event.msg)) {
@@ -544,7 +549,7 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.ClearSelectedMessage -> {
-                return state.copy(
+                state.copy(
                     chatDetail = state.chatDetail.copy(
                         selectedMessageList = emptyList()
                     )
@@ -552,7 +557,7 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.UpdateLocation -> {
-                return state.copy(
+                state.copy(
                     chatDetail = state.chatDetail.copy(
                         editAreaState = state.chatDetail.editAreaState.copy(
                             locationPickerState = state.chatDetail.editAreaState.locationPickerState.copy(
@@ -580,7 +585,7 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.UpdateSelectedLocationAddress -> {
-                return state.copy(
+                state.copy(
                     chatDetail = state.chatDetail.copy(
                         editAreaState = state.chatDetail.editAreaState.copy(
                             locationPickerState = state.chatDetail.editAreaState.locationPickerState.copy(
@@ -590,6 +595,33 @@ class MessagePageViewModel @Inject constructor(
                         ),
                     )
                 )
+            }
+
+            is MessagePageEvent.QueryLatestMessageSenderOfChatWithCache -> {
+                coroutineScope {
+                    withContext(Dispatchers.IO) {
+                        val res =
+                            try {
+                                withTimeout(500) {
+                                    suspendCoroutine<Resource<Contact>> { cot ->
+                                        getContact.byId(event.senderId).onEach {
+                                            if (it is Resource.Success || it is Resource.Error) {
+                                                cot.resume(it)
+                                            }
+                                        }.launchIn(this@coroutineScope)
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                Resource.Error("time out")
+                            }
+                        val newMap = state.chatLatestMessageSenderCache.toMutableMap().apply {
+                            put(event.senderId, res)
+                        }
+                        state.copy(
+                            chatLatestMessageSenderCache = newMap
+                        )
+                    }
+                }
             }
         }
     }
@@ -621,29 +653,7 @@ class MessagePageViewModel @Inject constructor(
                 }
         }
     }
-
-    private val chatLatestMessageSenderMap = mutableMapOf<Long, Resource<Contact>>()
-
-    fun getMessageSenderWithCache(senderId: Long?): Flow<Resource<Contact>> {
-        return flow {
-            if (senderId == null) {
-                emit(Resource.Error("no sender"))
-            } else {
-                if (chatLatestMessageSenderMap[senderId] != null) {
-                    emit(chatLatestMessageSenderMap[senderId]!!)
-                } else {
-                    emitAll(
-                        getContact.byId(senderId).onEach {
-                            if (it is Resource.Success) {
-                                chatLatestMessageSenderMap[senderId] = it
-                            }
-                        }
-                    )
-                }
-            }
-        }
-    }
-
+    
     private fun refreshMemeList(): List<Uri> {
         return FileUtils.listFiles(
             context.getExternalFilesDir(FileUtil.EXTERNAL_FILES_DIR_MEME),

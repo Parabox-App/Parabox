@@ -17,6 +17,7 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
 import java.io.File
 
 sealed interface MessagePageEvent : UiEvent {
+
     data class OpenEnabledChatFilterDialog(val open: Boolean) : MessagePageEvent
     data class UpdateEnabledChatFilterList(val list: List<ChatFilter>) : MessagePageEvent
     data class AddOrRemoveSelectedChatFilter(val filter: ChatFilter) : MessagePageEvent
@@ -53,4 +54,8 @@ sealed interface MessagePageEvent : UiEvent {
     data class UpdateLocation(val location: LatLng): MessagePageEvent
     data class UpdateSelectedLocation(val location: LatLng): MessagePageEvent
     data class UpdateSelectedLocationAddress(val address: String, val loadState: LoadState): MessagePageEvent
+    data class QueryLatestMessageSenderOfChatWithCache(val senderId: Long): MessagePageEvent {
+        override val lock: Boolean
+            get() = true
+    }
 }

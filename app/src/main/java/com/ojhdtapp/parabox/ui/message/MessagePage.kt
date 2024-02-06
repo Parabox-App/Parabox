@@ -457,19 +457,17 @@ fun MessagePage(
                                     )
                                 )
                             }) {
-                            var contact by remember {
-                                mutableStateOf<Resource<Contact>>(Resource.Loading())
-                            }
                             LaunchedEffect(key1 = item.message, block = {
-                                viewModel.getMessageSenderWithCache(
-                                    item.message?.senderId
-                                ).collectLatest {
-                                    contact = it
+                                if (item.message?.senderId?.let {
+                                        !state.chatLatestMessageSenderCache.containsKey(it)
+                                    } == true) {
+                                    viewModel.sendEvent(MessagePageEvent.QueryLatestMessageSenderOfChatWithCache(item.message.senderId))
                                 }
                             })
                             ChatItem(
                                 chatWithLatestMessage = item,
-                                contact = contact,
+                                contact = state.chatLatestMessageSenderCache[item.message?.senderId]
+                                    ?: Resource.Loading(),
                                 isEditing = state.chatDetail.chat?.chatId == item.chat.chatId,
                                 isExpanded = layoutType == MessageLayoutType.SPLIT,
                                 onClick = {
