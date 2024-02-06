@@ -4,7 +4,6 @@ import MainRepositoryImpl
 import android.app.Application
 import android.content.Context
 import androidx.room.Room
-import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -25,7 +24,6 @@ import com.ojhdtapp.parabox.domain.use_case.GetContact
 import com.ojhdtapp.parabox.domain.use_case.GetLocation
 import com.ojhdtapp.parabox.domain.use_case.GetMessage
 import com.ojhdtapp.parabox.domain.use_case.Query
-import com.ojhdtapp.parabox.domain.use_case.QueryContact
 import com.ojhdtapp.parabox.domain.use_case.UpdateChat
 import com.ojhdtapp.parabox.domain.util.GsonParser
 import dagger.Module
@@ -33,8 +31,6 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
@@ -157,10 +153,4 @@ object AppModule {
     fun provideGetLocationUseCase(
         locationUtil: LocationUtil
     ): GetLocation = GetLocation(locationUtil)
-
-    @Provides
-    @Singleton
-    fun provideQueryContactUseCase(
-        contactRepository: ContactRepository
-    ): QueryContact = QueryContact(contactRepository)
 }

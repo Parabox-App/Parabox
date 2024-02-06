@@ -58,4 +58,8 @@ sealed interface MessagePageEvent : UiEvent {
         override val lock: Boolean
             get() = true
     }
+    data class QueryAtTargetWithCache(val pkg: String, val uid: String) : MessagePageEvent {
+        override val lock: Boolean
+            get() = true
+    }
 }

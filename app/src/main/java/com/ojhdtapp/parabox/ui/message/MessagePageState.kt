@@ -34,6 +34,7 @@ data class MessagePageState(
         val openDeleteMessageConfirmDialog: Boolean = false,
         val imagePreviewerState: ImagePreviewerState = ImagePreviewerState(),
         val editAreaState: EditAreaState = EditAreaState(),
+        val atCache: Map<String, Resource<Contact>> = emptyMap(),
     )
 
     data class EditAreaState(

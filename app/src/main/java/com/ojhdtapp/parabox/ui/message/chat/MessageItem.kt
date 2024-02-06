@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.message.chat
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
@@ -53,6 +54,8 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import com.ojhdtapp.parabox.core.util.Resource
+import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.contains
 import com.ojhdtapp.parabox.ui.common.CommonAvatar
@@ -188,9 +191,10 @@ fun MessageItem(
             horizontalArrangement = Arrangement.Start
         ) {
             Box(
-                modifier = Modifier.size(42.dp)
+                modifier = Modifier
+                    .size(42.dp)
                     .clip(CircleShape)
-                    .clickable {  }
+                    .clickable { }
             ) {
                 if (isFirst) {
                     CommonAvatar(
@@ -250,6 +254,18 @@ fun MessageItem(
                     }
                 ) {
                     Column {
+                        LaunchedEffect(Unit) {
+                            messageWithSender.message.contents.filterIsInstance<ParaboxAt>().forEach {
+                                if (!state.atCache.containsKey("${messageWithSender.sender.pkg}${it.target.uid}")) {
+                                    onEvent(
+                                        MessagePageEvent.QueryAtTargetWithCache(
+                                            messageWithSender.sender.pkg,
+                                            it.target.uid
+                                        )
+                                    )
+                                }
+                            }
+                        }
                         val simplifyContent = messageWithSender.message.contents.simplifyText()
                         MessageContentContainer(shouldBreak = simplifyContent.filterNotNull().map {
                             it is ParaboxImage || it is ParaboxQuoteReply || it is ParaboxForward || it is ParaboxAudio || it is ParaboxFile
@@ -258,6 +274,8 @@ fun MessageItem(
                                 paraboxMessageElement?.toLayout(
                                     textColor = textColor,
                                     elementId = messageWithSender.message.contentsId[index],
+                                    pkg = messageWithSender.message.pkg,
+                                    atCache = state.atCache,
                                     previewerState = previewerState,
                                     onImageClick = onImageClick,
                                 )
@@ -297,7 +315,9 @@ fun MessageItemSelf(
 private fun ParaboxMessageElement.toLayout(
     textColor: Color,
     elementId: Long,
+    pkg: String,
     previewerState: ImagePreviewerState,
+    atCache: Map<String, Resource<Contact>>,
     onImageClick: (elementId: Long) -> Unit,
 ) {
     when (this) {
@@ -306,40 +326,46 @@ private fun ParaboxMessageElement.toLayout(
                 append(text)
             }
         })
-        is ParaboxAt -> {
-            val targetName = target.basicInfo.name ?: target.uid ?: contentToString()
-            PlainTextLayout(text = buildAnnotatedString {
-                withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                    append(targetName)
-                }
-            })
-        }
-        is ParaboxAtAll -> PlainTextLayout(text = buildAnnotatedString {
+
+        // Annotated
+        is ParaboxAt, ParaboxAtAll -> PlainTextLayout(text = buildAnnotatedString {
             withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
                 append(contentToString())
             }
         })
 
-        is ParaboxAnnotatedText -> PlainTextLayout(text = buildAnnotatedString {
-            list.forEachIndexed { index, paraboxText ->
-                when (paraboxText) {
-                    is ParaboxAt, ParaboxAtAll -> {
-                        withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                            append(paraboxText.contentToString())
-                        }
-                    }
+        is ParaboxAnnotatedText -> {
+            val primary = MaterialTheme.colorScheme.primary
+            val text =
+                buildAnnotatedString {
+                    forEachIndexed { index, paraboxText ->
+                        when (paraboxText) {
+                            is ParaboxAt -> {
+                                val targetName = paraboxText.target.basicInfo.name?.let { "@$it" }
+                                    ?: atCache["${pkg}${paraboxText.target.uid}"].takeIf { it is Resource.Success }?.data?.name?.let { "@$it" }
+                                    ?: paraboxText.contentToString()
+                                withStyle(SpanStyle(color = primary)) {
+                                    append(targetName)
+                                }
+                            }
 
-                    else -> {
-                        withStyle(SpanStyle(color = textColor)) {
-                            append(paraboxText.contentToString())
+                            is ParaboxAtAll -> {
+                                withStyle(SpanStyle(color = primary)) {
+                                    append(paraboxText.contentToString())
+                                }
+                            }
+
+                            else -> {
+                                withStyle(SpanStyle(color = textColor)) {
+                                    append(paraboxText.contentToString())
+                                }
+                            }
                         }
                     }
                 }
-                if (index != list.lastIndex) {
-                    append(" ")
-                }
-            }
-        })
+            PlainTextLayout(text = text)
+        }
+
 
         is ParaboxImage -> ImageLayout(
             model = resourceInfo.getModel(),

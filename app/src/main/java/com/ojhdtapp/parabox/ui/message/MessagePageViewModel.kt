@@ -4,10 +4,8 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.core.net.toUri
-import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
@@ -24,16 +22,12 @@ import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.domain.use_case.GetChat
 import com.ojhdtapp.parabox.domain.use_case.GetContact
-import com.ojhdtapp.parabox.domain.use_case.GetLocation
 import com.ojhdtapp.parabox.domain.use_case.GetMessage
-import com.ojhdtapp.parabox.domain.use_case.QueryContact
 import com.ojhdtapp.parabox.domain.use_case.UpdateChat
-import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.base.BaseViewModel
 import com.ojhdtapp.parabox.ui.message.chat.AudioRecorderState
 import com.ojhdtapp.parabox.ui.message.chat.EditAreaMode
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.model.ChatPageUiModel
-import com.ojhdtapp.paraboxdevelopmentkit.model.SendMessage
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAudio
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxFile
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
@@ -51,9 +45,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.distinctUntilChangedBy
-import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -72,8 +64,7 @@ class MessagePageViewModel @Inject constructor(
     val getContact: GetContact,
     val updateChat: UpdateChat,
     val locationUtil: LocationUtil,
-    val fileUtil: FileUtil,
-    val queryContact: QueryContact,
+    val fileUtil: FileUtil
 ) : BaseViewModel<MessagePageState, MessagePageEvent, MessagePageEffect>() {
 
     override fun initialState(): MessagePageState {
@@ -614,11 +605,39 @@ class MessagePageViewModel @Inject constructor(
                             } catch (e: Exception) {
                                 Resource.Error("time out")
                             }
-                        val newMap = state.chatLatestMessageSenderCache.toMutableMap().apply {
-                            put(event.senderId, res)
-                        }
                         state.copy(
-                            chatLatestMessageSenderCache = newMap
+                            chatLatestMessageSenderCache = state.chatLatestMessageSenderCache.toMutableMap().apply {
+                                put(event.senderId, res)
+                            }
+                        )
+                    }
+                }
+            }
+
+            is MessagePageEvent.QueryAtTargetWithCache -> {
+                coroutineScope {
+                    withContext(Dispatchers.IO) {
+                        val res =
+                            try {
+                                withTimeout(500) {
+                                    suspendCoroutine<Resource<Contact>> { cot ->
+                                        getContact.byPlatformInfo(event.pkg, event.uid).onEach {
+                                            if (it is Resource.Success || it is Resource.Error) {
+                                                cot.resume(it)
+                                            }
+                                        }.launchIn(this@coroutineScope)
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                Resource.Error("time out")
+                            }
+                        Log.d("parabox", "query at res=$res,name = ${res.data?.name}")
+                        state.copy(
+                            chatDetail = state.chatDetail.copy(
+                                atCache = state.chatDetail.atCache.toMutableMap().apply {
+                                    put("${event.pkg}${event.uid}", res)
+                                }
+                            )
                         )
                     }
                 }
@@ -653,7 +672,7 @@ class MessagePageViewModel @Inject constructor(
                 }
         }
     }
-    
+
     private fun refreshMemeList(): List<Uri> {
         return FileUtils.listFiles(
             context.getExternalFilesDir(FileUtil.EXTERNAL_FILES_DIR_MEME),

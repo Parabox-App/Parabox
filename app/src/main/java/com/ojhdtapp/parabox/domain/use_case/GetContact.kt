@@ -12,4 +12,8 @@ class GetContact @Inject constructor(
     fun byId(contactId: Long): Flow<Resource<Contact>> {
         return repository.getContactById(contactId)
     }
+
+    fun byPlatformInfo(pkg: String, uid: String): Flow<Resource<Contact>> {
+        return repository.getContactByPlatformInfo(pkg, uid)
+    }
 }

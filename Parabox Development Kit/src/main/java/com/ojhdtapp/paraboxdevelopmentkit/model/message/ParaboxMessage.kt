@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
 
 @Parcelize
 @Serializable
-data class ParaboxAnnotatedText(val list: List<ParaboxText>) : ParaboxMessageElement {
+data class ParaboxAnnotatedText(val list: List<ParaboxText>, override val size: Int = list.size) : ParaboxMessageElement, AbstractList<ParaboxText>() {
     override fun contentToString(): String {
         return list.joinToString(" ")
     }
@@ -17,6 +17,9 @@ data class ParaboxAnnotatedText(val list: List<ParaboxText>) : ParaboxMessageEle
         return ParaboxMessageElement.Companion.TYPE.ANNOTATED_TEXT.ordinal
     }
 
+    override fun get(index: Int): ParaboxText {
+        return list[index]
+    }
 }
 
 sealed interface ParaboxText: ParaboxMessageElement
@@ -25,7 +28,7 @@ sealed interface ParaboxText: ParaboxMessageElement
 @Serializable
 data class ParaboxAt(val target: ParaboxContact) : ParaboxText {
     override fun contentToString(): String {
-        return "@${target.basicInfo.name ?: target.uid}"
+        return "[@${target.basicInfo.name ?: target.uid}]"
     }
 
     override fun getType(): Int {
@@ -37,7 +40,7 @@ data class ParaboxAt(val target: ParaboxContact) : ParaboxText {
 @Serializable
 object ParaboxAtAll : ParaboxText {
     override fun contentToString(): String {
-        return "@全体成员"
+        return "[@全体成员]"
     }
 
     override fun getType(): Int {
