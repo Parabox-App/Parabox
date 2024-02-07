@@ -1,8 +1,13 @@
 package com.ojhdtapp.parabox.data.local
 
-data class ExtensionInfo(
-    val pkg: String,
-    val name: String,
-    val version: String,
-    val versionCode: Long,
+import android.os.Bundle
+
+open class ExtensionInfo(
+    open val alias: String,
+    open val pkg: String,
+    open val name: String,
+    open val version: String,
+    open val versionCode: Long,
+    open val extra: String,
+    open val extensionId: Long,
 )

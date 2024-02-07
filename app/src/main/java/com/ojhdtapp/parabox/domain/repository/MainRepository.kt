@@ -9,7 +9,7 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
 import kotlinx.coroutines.flow.Flow
 
 interface MainRepository {
-    suspend fun receiveMessage(msg: ReceiveMessage, ext: Extension): ParaboxResult
+    suspend fun receiveMessage(msg: ReceiveMessage, ext: Extension.ExtensionSuccess): ParaboxResult
 
     fun getRecentQuery(): Flow<Resource<List<RecentQuery>>>
 

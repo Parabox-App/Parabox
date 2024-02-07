@@ -33,16 +33,15 @@ class ExtensionServiceConnection(val context: Context) : ServiceConnection, Defa
 
     override fun onStart(owner: LifecycleOwner) {
         super.onStart(owner)
-        Log.d("parabox", "service connected")
+        Log.d("parabox", "activity-service connected")
         context.bindService(intent, this,
             AppCompatActivity.BIND_AUTO_CREATE
         )
-
     }
 
     override fun onStop(owner: LifecycleOwner) {
         super.onStop(owner)
-        Log.d("parabox", "service disconnected")
+        Log.d("parabox", "activity-service disconnected")
         context.unbindService(this)
     }
 }

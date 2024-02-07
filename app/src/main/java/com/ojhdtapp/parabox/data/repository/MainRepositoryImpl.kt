@@ -32,7 +32,7 @@ class MainRepositoryImpl @Inject constructor(
     val context: Context,
     private val db: AppDatabase,
 ) : MainRepository {
-    override suspend fun receiveMessage(msg: ReceiveMessage, ext: Extension): ParaboxResult {
+    override suspend fun receiveMessage(msg: ReceiveMessage, ext: Extension.ExtensionSuccess): ParaboxResult {
         Log.d("parabox", "receiving msg from ${ext.name}")
         coroutineScope {
             val info = ext.toExtensionInfo()

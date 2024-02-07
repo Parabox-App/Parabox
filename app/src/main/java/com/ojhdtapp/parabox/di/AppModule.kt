@@ -13,9 +13,11 @@ import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.Converters
 import com.ojhdtapp.parabox.data.repository.ChatRepositoryImpl
 import com.ojhdtapp.parabox.data.repository.ContactRepositoryImpl
+import com.ojhdtapp.parabox.data.repository.ExtensionInfoRepositoryImpl
 import com.ojhdtapp.parabox.data.repository.MessageRepositoryImpl
 import com.ojhdtapp.parabox.domain.repository.ChatRepository
 import com.ojhdtapp.parabox.domain.repository.ContactRepository
+import com.ojhdtapp.parabox.domain.repository.ExtensionInfoRepository
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import com.ojhdtapp.parabox.domain.repository.MessageRepository
 import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
@@ -66,7 +68,8 @@ object AppModule {
     @Singleton
     fun provideExtensionManager(
         @ApplicationContext applicationContext: Context,
-    ): ExtensionManager = ExtensionManager(applicationContext)
+        extensionInfoRepository: ExtensionInfoRepository
+    ): ExtensionManager = ExtensionManager(applicationContext, extensionInfoRepository)
 
     @Provides
     @Singleton
@@ -110,6 +113,13 @@ object AppModule {
         @ApplicationContext applicationContext: Context,
         database: AppDatabase
     ): MessageRepository = MessageRepositoryImpl(context = applicationContext, db = database)
+
+    @Provides
+    @Singleton
+    fun provideExtensionInfoRepository(
+        @ApplicationContext applicationContext: Context,
+        database: AppDatabase
+    ): ExtensionInfoRepository = ExtensionInfoRepositoryImpl(context =  applicationContext, db = database)
 
     @Provides
     @Singleton

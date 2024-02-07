@@ -673,7 +673,7 @@ fun TypingSearchContent(
                         SearchResultItem(
                             modifier = Modifier.fillMaxWidth(),
                             avatarModel = it.chat!!.avatar.getModel(),
-                            title = buildAnnotatedString {
+                            subTitle = buildAnnotatedString {
                                 it.chat.name.splitKeeping(state.query).forEach {
                                     if (it == state.query) {
                                         withStyle(
@@ -689,7 +689,7 @@ fun TypingSearchContent(
                                     }
                                 }
                             },
-                            subTitle = buildAnnotatedString {
+                            title = buildAnnotatedString {
                                 append(it.contact!!.name)
                                 append(": ")
                                 it.message.contentString.splitKeeping(state.query).forEach {
