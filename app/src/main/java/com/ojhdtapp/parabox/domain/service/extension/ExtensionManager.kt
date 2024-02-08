@@ -78,7 +78,6 @@ class ExtensionManager(
     }
 
     fun refreshExtensionPkg() {
-        Log.d("bbb", "refreshExtensionPkg")
         _extensionPkgFlow.value = ExtensionLoader.getExtensionPkgInfo(context)
     }
 }

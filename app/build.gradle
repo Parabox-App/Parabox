@@ -51,7 +51,7 @@ android {
         compose true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion "1.5.8"
+        kotlinCompilerExtensionVersion "1.5.9"
     }
     lintOptions {
         abortOnError false
@@ -109,6 +109,8 @@ configurations {
 }
 
 dependencies {
+    implementation fileTree(dir: "libs", include: ["*.aar"])
+
     implementation 'androidx.core:core-ktx:1.12.0'
     implementation 'androidx.core:core-google-shortcuts:1.1.0'
     implementation "androidx.compose.ui:ui:$compose_version"
@@ -192,7 +194,7 @@ dependencies {
     implementation 'com.github.Gurupreet:FontAwesomeCompose:1.1.0'
 
     // Image Previewer
-    implementation 'com.github.jvziyaoyao:ImageViewer:1.0.2-alpha.8'
+//    implementation 'com.github.jvziyaoyao:ImageViewer:1.0.2-alpha.8'
 
     // ML-Kit
     implementation 'com.google.mlkit:entity-extraction:16.0.0-beta4'
@@ -229,7 +231,7 @@ dependencies {
     implementation "com.airbnb.android:lottie-compose:$lottieVersion"
 
     // Navigation Compose
-    def nav_version = "2.7.6"
+    def nav_version = "2.8.0-alpha02"
     implementation "androidx.navigation:navigation-compose:$nav_version"
 
     // Compose Destinations
@@ -248,10 +250,10 @@ dependencies {
     implementation "androidx.window:window:1.2.0-beta03"
 
     // M3
-    implementation "androidx.compose.material3:material3-adaptive-android:1.0.0-alpha05"
-    implementation "androidx.compose.material3:material3-adaptive-navigation-suite-android:1.0.0-alpha02"
-    implementation "androidx.compose.material3:material3:1.2.0-rc01"
-    implementation "androidx.compose.material3:material3-window-size-class:1.2.0-rc01"
+    implementation "androidx.compose.material3:material3-adaptive-android:1.0.0-alpha06"
+    implementation "androidx.compose.material3:material3-adaptive-navigation-suite-android:1.0.0-alpha03"
+    implementation "androidx.compose.material3:material3:1.2.0"
+    implementation "androidx.compose.material3:material3-window-size-class:1.2.0"
 
     // Chrome Custom Tab
     implementation "androidx.browser:browser:1.5.0"

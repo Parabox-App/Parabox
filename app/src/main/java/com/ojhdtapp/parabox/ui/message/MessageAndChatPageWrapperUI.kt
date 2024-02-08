@@ -25,9 +25,9 @@ import androidx.compose.material3.adaptive.calculateDensePaneScaffoldDirective
 import androidx.compose.material3.adaptive.calculatePosture
 import androidx.compose.material3.adaptive.calculateStandardPaneScaffoldDirective
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
-import androidx.compose.material3.adaptive.navigation.suite.ExperimentalMaterial3AdaptiveNavigationSuiteApi
-import androidx.compose.material3.adaptive.navigation.suite.NavigationSuiteScaffold
-import androidx.compose.material3.adaptive.navigation.suite.NavigationSuiteScaffoldDefaults
+import androidx.compose.material3.adaptive.navigationsuite.ExperimentalMaterial3AdaptiveNavigationSuiteApi
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
 import androidx.compose.material3.adaptive.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
@@ -65,7 +65,7 @@ fun MessageAndChatPageWrapperUI(
     val viewModel = hiltViewModel<MessagePageViewModel>()
     val state by viewModel.uiState.collectAsState()
     val mainSharedState by mainSharedViewModel.uiState.collectAsState()
-    val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator(
+    val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<Nothing>(
         scaffoldDirective = calculateMyPaneScaffoldDirective(
             windowAdaptiveInfo = currentWindowAdaptiveInfo()
         )

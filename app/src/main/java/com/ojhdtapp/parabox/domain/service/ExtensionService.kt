@@ -53,9 +53,8 @@ class ExtensionService : LifecycleService() {
     private fun manageLifecycleOfExtensions() {
         extensionInfoRepository.getExtensionInfoList().filter { it is Resource.Success && it.data != null }.map { it.data }
             .combine(extensionManager.extensionFlow) { pendingList, runningList ->
-                Log.d("bbb", "pending=${pendingList};running=${runningList}")
+                Log.d("parabox", "pending=${pendingList};running=${runningList}")
                 runningList.filterIsInstance<Extension.ExtensionPending>().map { Extension.ExtensionSuccess(it) }.forEach {
-                    Log.d("bbb", "real init for ${it}")
                     val bridge = object : ParaboxBridge {
                         override suspend fun receiveMessage(message: ReceiveMessage): ParaboxResult {
                             return mainRepository.receiveMessage(msg = message, ext = it)
@@ -73,12 +72,10 @@ class ExtensionService : LifecycleService() {
                 // add
                 val appendReferenceIds = runningList.map { it.extensionId }.toSet()
                 pendingList?.filterNot { it.extensionId in appendReferenceIds }?.forEach {
-                    Log.d("bbb", "add pending extension=$it")
                     extensionManager.createAndTryAppendExtension(it)
                 }
                 val removeReferenceIds = pendingList?.map { it.extensionId }?.toSet() ?: emptySet()
                 runningList.filterNot { it.extensionId in removeReferenceIds }.forEach {
-                    Log.d("bbb", "remove deleted extension=$it")
                     (it as? Extension.ExtensionSuccess)?.onDestroy(this@ExtensionService)
                 }
             }.launchIn(lifecycleScope)
