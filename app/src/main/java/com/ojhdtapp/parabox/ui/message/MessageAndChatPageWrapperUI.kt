@@ -76,15 +76,15 @@ fun MessageAndChatPageWrapperUI(
         MessageLayoutType.SPLIT
     }
 
-    BackHandler(state.chatDetail.chat != null) {
+    BackHandler(state.chatDetail.shouldDisplay) {
         viewModel.sendEvent(MessagePageEvent.LoadMessage(null))
     }
-    LaunchedEffect(state.chatDetail.chat) {
-        if (layoutType == MessageLayoutType.NORMAL && state.chatDetail.chat != null) {
+    LaunchedEffect(state.chatDetail.shouldDisplay) {
+        if (layoutType == MessageLayoutType.NORMAL && state.chatDetail.shouldDisplay) {
             scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary)
             mainSharedViewModel.sendEvent(MainSharedEvent.ShowNavigationBar(false))
         }
-        if (layoutType == MessageLayoutType.NORMAL && state.chatDetail.chat == null) {
+        if (layoutType == MessageLayoutType.NORMAL && !state.chatDetail.shouldDisplay) {
             scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Secondary)
             mainSharedViewModel.sendEvent(MainSharedEvent.ShowNavigationBar(true))
         }

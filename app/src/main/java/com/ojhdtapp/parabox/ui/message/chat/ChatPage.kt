@@ -92,7 +92,10 @@ fun ChatPage(
     onEvent: (MessagePageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
-    Crossfade(targetState = state.chatDetail.chat == null, label = "chat_empty_normal_crossfade") {
+    Crossfade(
+        targetState = layoutType == MessageLayoutType.SPLIT && !state.chatDetail.shouldDisplay,
+        label = "chat_empty_normal_crossfade"
+    ) {
         if (it) {
             EmptyChatPage(
                 modifier = modifier,
@@ -207,7 +210,7 @@ fun NormalChatPage(
                     .background(Color.Green)
             )
         },
-        gesturesEnabled = state.chatDetail.chat != null
+        gesturesEnabled = state.chatDetail.shouldDisplay
                 && state.chatDetail.editAreaState.audioRecorderState !is AudioRecorderState.Recording,
         drawerState = drawerState,
         drawerWidth = 360.dp,

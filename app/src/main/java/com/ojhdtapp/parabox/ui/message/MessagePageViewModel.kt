@@ -45,6 +45,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.distinctUntilChangedBy
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -246,11 +247,14 @@ class MessagePageViewModel @Inject constructor(
             is MessagePageEvent.LoadMessage -> {
                 if (event.chat == null) {
                     return state.copy(
-                        chatDetail = MessagePageState.ChatDetail(),
+                        chatDetail = state.chatDetail.copy(
+                            shouldDisplay = false
+                        ),
                     )
                 } else {
                     return state.copy(
                         chatDetail = state.chatDetail.copy(
+                            shouldDisplay = true,
                             chat = event.chat,
                             editAreaState = state.chatDetail.editAreaState.copy(
                                 memeList = refreshMemeList()
@@ -297,7 +301,7 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.UpdateEditAreaMode -> {
-                when(event.mode){
+                when (event.mode) {
                     EditAreaMode.NORMAL -> {
                         cancelLocationCollection()
                         state.copy(
@@ -308,6 +312,7 @@ class MessagePageViewModel @Inject constructor(
                             )
                         )
                     }
+
                     EditAreaMode.AUDIO_RECORDER -> {
                         cancelLocationCollection()
                         state.copy(
@@ -319,6 +324,7 @@ class MessagePageViewModel @Inject constructor(
                             )
                         )
                     }
+
                     EditAreaMode.LOCATION_PICKER -> {
                         beginLocationCollection()
                         state.copy(
@@ -495,7 +501,8 @@ class MessagePageViewModel @Inject constructor(
                             chosenQuoteReply = null,
                             audioRecorderState = AudioRecorderState.Ready,
                             iconShrink = false,
-                            mode = state.chatDetail.editAreaState.mode.takeUnless { it == EditAreaMode.LOCATION_PICKER } ?: EditAreaMode.NORMAL
+                            mode = state.chatDetail.editAreaState.mode.takeUnless { it == EditAreaMode.LOCATION_PICKER }
+                                ?: EditAreaMode.NORMAL
                         )
                     )
                 )
@@ -664,7 +671,7 @@ class MessagePageViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             locationUtil.getAddressFromLatLng(location)
                 .collectLatest {
-                    if(it is Resource.Success){
+                    if (it is Resource.Success) {
                         sendEvent(MessagePageEvent.UpdateSelectedLocationAddress(it.data ?: "", LoadState.SUCCESS))
                     } else {
                         sendEvent(MessagePageEvent.UpdateSelectedLocationAddress("", LoadState.ERROR))
@@ -701,10 +708,12 @@ class MessagePageViewModel @Inject constructor(
     val messagePagingDataFlow: Flow<PagingData<ChatPageUiModel>> =
         uiState.distinctUntilChanged { old, new -> old.chatDetail.chat == new.chatDetail.chat || new.chatDetail.chat == null }
             .flatMapLatest {
-                getMessage(buildList {
-                    add(it.chatDetail.chat!!.chatId)
-                    addAll(it.chatDetail.chat.subChatIds)
-                }.distinct(), emptyList())
+                it.chatDetail.chat?.let {
+                    getMessage(buildList {
+                        add(it.chatId)
+                        addAll(it.subChatIds)
+                    }.distinct(), emptyList())
+                } ?: emptyFlow()
             }.cachedIn(viewModelScope)
 
     @OptIn(ExperimentalCoroutinesApi::class)

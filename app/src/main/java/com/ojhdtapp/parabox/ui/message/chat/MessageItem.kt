@@ -183,6 +183,7 @@ fun MessageItem(
             }
         )),
         swipeThreshold = 48.dp,
+        swipeLogarithmicEaseStart = 10.dp,
         backgroundUntilSwipeThreshold = Color.Transparent
     ) {
         Row(
