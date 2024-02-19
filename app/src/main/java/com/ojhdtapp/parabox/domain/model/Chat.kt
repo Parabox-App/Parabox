@@ -15,6 +15,7 @@ data class Chat (
     val type: Int,
     val pkg: String,
     val uid: String,
+    val extensionId: Long?,
     val chatId: Long,
 ) {
     var name: String = ""
@@ -33,8 +34,9 @@ data class Chat (
         type: Int,
         pkg: String,
         uid: String,
+        extensionId: Long?,
         chatId: Long,
-    ) : this(avatar, latestMessageId, unreadMessageNum, isHidden, isPinned, isArchived, isNotificationEnabled, tags, subChatIds, type, pkg, uid, chatId) {
+    ) : this(avatar, latestMessageId, unreadMessageNum, isHidden, isPinned, isArchived, isNotificationEnabled, tags, subChatIds, type, pkg, uid, extensionId, chatId) {
         this.name = name ?: ""
     }
 }

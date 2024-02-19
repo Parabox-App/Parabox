@@ -5,7 +5,9 @@ import androidx.paging.PagingSource
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.ContactEntity
+import com.ojhdtapp.parabox.data.local.entity.ContactWithExtensionInfoEntity
 import com.ojhdtapp.parabox.domain.model.Contact
+import com.ojhdtapp.parabox.domain.model.ContactWithExtensionInfo
 import com.ojhdtapp.parabox.domain.repository.ContactRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -89,5 +91,9 @@ class ContactRepositoryImpl @Inject constructor(
 
     override fun getContactPagingSource(): PagingSource<Int, ContactEntity> {
         return db.contactDao.getContactPagingSource()
+    }
+
+    override fun getContactWithExtensionInfoPagingSource(): PagingSource<Int, ContactWithExtensionInfoEntity> {
+        return db.contactDao.getContactWithExtensionInfoPagingSource()
     }
 }

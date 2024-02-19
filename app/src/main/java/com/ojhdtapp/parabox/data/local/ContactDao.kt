@@ -5,9 +5,11 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import com.ojhdtapp.parabox.data.local.entity.ContactBasicInfoUpdate
 import com.ojhdtapp.parabox.data.local.entity.ContactEntity
+import com.ojhdtapp.parabox.data.local.entity.ContactWithExtensionInfoEntity
 
 @Dao
 interface ContactDao {
@@ -47,4 +49,9 @@ interface ContactDao {
     @Query("SELECT * FROM contact_entity " +
             "ORDER BY name")
     fun getContactPagingSource(): PagingSource<Int, ContactEntity>
+
+    @Transaction
+    @Query("SELECT * FROM contact_entity " +
+            "ORDER BY name")
+    fun getContactWithExtensionInfoPagingSource(): PagingSource<Int, ContactWithExtensionInfoEntity>
 }

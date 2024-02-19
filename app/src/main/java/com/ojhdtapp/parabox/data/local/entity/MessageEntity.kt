@@ -18,6 +18,7 @@ data class MessageEntity(
     val verified: Boolean,
     val pkg: String,
     val uid: String,
+    val extensionId: Long,
     @PrimaryKey(autoGenerate = true) val messageId: Long = 0,
 ) {
     fun toMessage(): Message {
@@ -32,6 +33,7 @@ data class MessageEntity(
             verified,
             pkg,
             uid,
+            extensionId,
             messageId
         )
     }

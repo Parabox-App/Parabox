@@ -6,6 +6,7 @@ import androidx.paging.PagingData
 import androidx.paging.map
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.domain.model.Contact
+import com.ojhdtapp.parabox.domain.model.ContactWithExtensionInfo
 import com.ojhdtapp.parabox.domain.repository.ContactRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -22,18 +23,18 @@ class GetContact @Inject constructor(
         return repository.getContactByPlatformInfo(pkg, uid)
     }
 
-    fun pagingSource(): Flow<PagingData<Contact>>{
+    fun pagingSource(): Flow<PagingData<ContactWithExtensionInfo>>{
         return Pager(
             PagingConfig(
                 pageSize = 20,
                 enablePlaceholders = true,
                 initialLoadSize = 20
             )
-        ){ repository.getContactPagingSource() }
+        ){ repository.getContactWithExtensionInfoPagingSource() }
             .flow
             .map { pagingData ->
                 pagingData.map {
-                    it.toContact()
+                    it.toContactWithExtensionInfo()
                 }
             }
     }

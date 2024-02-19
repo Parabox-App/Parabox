@@ -12,6 +12,7 @@ fun buildContactEntity(msg: ReceiveMessage, ext: ExtensionInfo): ContactEntity {
         avatar = msg.sender.basicInfo.avatar,
         pkg = ext.pkg,
         uid = msg.sender.uid,
+        extensionId = ext.extensionId
     )
 }
 
@@ -28,7 +29,8 @@ fun buildChatEntity(msg: ReceiveMessage, ext: ExtensionInfo): ChatEntity {
         subChatIds = emptyList(),
         type = msg.chat.type,
         pkg = ext.pkg,
-        uid = msg.chat.uid
+        uid = msg.chat.uid,
+        extensionId = ext.extensionId
     )
 }
 
@@ -52,5 +54,6 @@ fun buildMessageEntity(msg: ReceiveMessage, ext: ExtensionInfo, senderId: Long, 
         verified = false,
         pkg = ext.pkg,
         uid = msg.uuid,
+        extensionId = ext.extensionId
     )
 }

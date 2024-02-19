@@ -13,6 +13,7 @@ data class Message(
     val verified : Boolean,
     val pkg: String,
     val uid: String,
+    val extensionId: Long,
     val messageId: Long,
 ){
     val contentsId: List<Long> get() = contents.indices.map {

@@ -21,6 +21,7 @@ data class ChatEntity(
     val type: Int,
     val pkg: String,
     val uid: String,
+    val extensionId: Long?,
     @PrimaryKey(autoGenerate = true) val chatId: Long = 0,
 ) {
     fun toChat(): Chat {
@@ -38,6 +39,7 @@ data class ChatEntity(
             type,
             pkg,
             uid,
+            extensionId,
             chatId
         )
     }

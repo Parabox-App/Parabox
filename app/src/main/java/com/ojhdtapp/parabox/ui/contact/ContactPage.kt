@@ -231,15 +231,15 @@ fun ContactPage(
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             items(count = contactPagingData.itemCount,
-                key = contactPagingData.itemKey { it.contactId }) { index ->
+                key = contactPagingData.itemKey { it.contact.contactId }) { index ->
                 val item = contactPagingData[index]
                 if (item == null) {
                     EmptyContactItem()
                 } else {
                     ContactItem(
-                        name = item.name,
-                        avatarModel = item.avatar.getModel(),
-                        extName = item.pkg,
+                        name = item.contact.name,
+                        avatarModel = item.contact.avatar.getModel(),
+                        extName = item.extensionInfo.alias,
                         onClick = {})
                 }
             }

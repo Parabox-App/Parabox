@@ -6,6 +6,7 @@ data class Contact(
     val avatar: ParaboxResourceInfo,
     val pkg: String,
     val uid: String,
+    val extensionId: Long,
     val contactId: Long,
 ) {
     var name: String = ""
@@ -16,8 +17,9 @@ data class Contact(
         avatar: ParaboxResourceInfo,
         pkg: String,
         uid: String,
+        extensionId: Long,
         contactId: Long
-    ) : this(avatar, pkg, uid, contactId) {
+    ) : this(avatar, pkg, uid, extensionId, contactId) {
         this.name = name ?: ""
     }
 
