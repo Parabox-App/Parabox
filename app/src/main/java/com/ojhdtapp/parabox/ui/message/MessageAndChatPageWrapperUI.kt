@@ -34,7 +34,9 @@ import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -70,10 +72,14 @@ fun MessageAndChatPageWrapperUI(
             windowAdaptiveInfo = currentWindowAdaptiveInfo()
         )
     )
-    val layoutType = if (scaffoldNavigator.scaffoldState.scaffoldDirective.maxHorizontalPartitions == 1) {
-        MessageLayoutType.NORMAL
-    } else {
-        MessageLayoutType.SPLIT
+    val layoutType by remember{
+        derivedStateOf {
+            if (scaffoldNavigator.scaffoldState.scaffoldDirective.maxHorizontalPartitions == 1) {
+                MessageLayoutType.NORMAL
+            } else {
+                MessageLayoutType.SPLIT
+            }
+        }
     }
 
     BackHandler(state.chatDetail.shouldDisplay) {

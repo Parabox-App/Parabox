@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.data.local
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -42,4 +43,8 @@ interface ContactDao {
 
     @Update(entity = ContactEntity::class)
     fun updateBasicInfo(obj: ContactBasicInfoUpdate): Int
+
+    @Query("SELECT * FROM contact_entity " +
+            "ORDER BY name")
+    fun getContactPagingSource(): PagingSource<Int, ContactEntity>
 }

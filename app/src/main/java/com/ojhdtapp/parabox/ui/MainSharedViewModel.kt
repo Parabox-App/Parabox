@@ -13,6 +13,7 @@ import com.ojhdtapp.parabox.core.util.getDataStoreValueFlow
 import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.filter.MessageFilter
+import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
 import com.ojhdtapp.parabox.domain.use_case.Query
 import com.ojhdtapp.parabox.ui.base.BaseViewModel
 import com.ojhdtapp.parabox.ui.base.UiEffect
@@ -27,6 +28,7 @@ import javax.inject.Inject
 class MainSharedViewModel @Inject constructor(
     @ApplicationContext val context: Context,
     val query: Query,
+    val extensionManager: ExtensionManager,
 ) : BaseViewModel<MainSharedState, MainSharedEvent, UiEffect>() {
 
     override fun initialState(): MainSharedState {

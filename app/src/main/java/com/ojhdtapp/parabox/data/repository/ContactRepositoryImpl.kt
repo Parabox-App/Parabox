@@ -1,8 +1,10 @@
 package com.ojhdtapp.parabox.data.repository
 
 import android.content.Context
+import androidx.paging.PagingSource
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.local.AppDatabase
+import com.ojhdtapp.parabox.data.local.entity.ContactEntity
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.repository.ContactRepository
 import kotlinx.coroutines.Dispatchers
@@ -83,5 +85,9 @@ class ContactRepositoryImpl @Inject constructor(
                 emit(Resource.Error("unknown error"))
             }
         }
+    }
+
+    override fun getContactPagingSource(): PagingSource<Int, ContactEntity> {
+        return db.contactDao.getContactPagingSource()
     }
 }

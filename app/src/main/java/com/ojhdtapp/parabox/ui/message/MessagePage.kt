@@ -302,7 +302,7 @@ fun MessagePage(
                 }
             }
 
-        }) { it ->
+        }) {
         LazyColumn(
             contentPadding = it,
             state = listState,
