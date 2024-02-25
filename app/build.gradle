@@ -252,7 +252,7 @@ dependencies {
     // M3
     implementation "androidx.compose.material3:material3-adaptive-android:1.0.0-alpha06"
     implementation "androidx.compose.material3:material3-adaptive-navigation-suite-android:1.0.0-alpha03"
-    implementation "androidx.compose.material3:material3:1.2.0"
+    implementation "androidx.compose.material3:material3:1.3.0-alpha01"
     implementation "androidx.compose.material3:material3-window-size-class:1.2.0"
 
     // Chrome Custom Tab

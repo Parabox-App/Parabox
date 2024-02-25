@@ -13,7 +13,9 @@ import androidx.compose.animation.graphics.vector.AnimatedImageVector
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -93,7 +95,6 @@ fun ContactPage(
                 DockedSearchBar(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
                         .statusBarsPadding()
                         .clearFocusOnKeyboardDismiss(),
                     query = mainSharedState.search.query,
@@ -228,7 +229,7 @@ fun ContactPage(
         LazyColumn(
             contentPadding = it,
             state = listState,
-            verticalArrangement = Arrangement.spacedBy(2.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(count = contactPagingData.itemCount,
                 key = contactPagingData.itemKey { it.contact.contactId }) { index ->
@@ -237,10 +238,16 @@ fun ContactPage(
                     EmptyContactItem()
                 } else {
                     ContactItem(
+                        modifier = Modifier.padding(horizontal = 16.dp),
                         name = item.contact.name,
                         avatarModel = item.contact.avatar.getModel(),
                         extName = item.extensionInfo.alias,
                         onClick = {})
+                }
+            }
+            item {
+                if (layoutType == ContactLayoutType.NORMAL) {
+                    Spacer(modifier = Modifier.height(80.dp))
                 }
             }
         }
