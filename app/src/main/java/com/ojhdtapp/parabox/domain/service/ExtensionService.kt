@@ -54,20 +54,21 @@ class ExtensionService : LifecycleService() {
         extensionInfoRepository.getExtensionInfoList().filter { it is Resource.Success && it.data != null }.map { it.data }
             .combine(extensionManager.extensionFlow) { pendingList, runningList ->
                 Log.d("parabox", "pending=${pendingList};running=${runningList}")
-                runningList.filterIsInstance<Extension.ExtensionPending>().map { Extension.ExtensionSuccess(it) }.forEach {
-                    val bridge = object : ParaboxBridge {
-                        override suspend fun receiveMessage(message: ReceiveMessage): ParaboxResult {
-                            return mainRepository.receiveMessage(msg = message, ext = it)
+                runningList.filterIsInstance<Extension.ExtensionPending>().map {
+                    Extension.ExtensionSuccess(it).also{
+                        val bridge = object : ParaboxBridge {
+                            override suspend fun receiveMessage(message: ReceiveMessage): ParaboxResult {
+                                return mainRepository.receiveMessage(msg = message, ext = it)
+                            }
+                            override suspend fun recallMessage(uuid: String): ParaboxResult {
+                                TODO("Not yet implemented")
+                            }
                         }
-
-                        override suspend fun recallMessage(uuid: String): ParaboxResult {
-                            TODO("Not yet implemented")
-                        }
-
+                        lifecycle.addObserver(it)
+                        it.init(baseContext, bridge)
                     }
-                    lifecycle.addObserver(it)
-                    it.init(baseContext, bridge)
-                    extensionManager.updateExtension(it)
+                }.also {
+                    extensionManager.updateExtensions(it)
                 }
                 // add
                 val appendReferenceIds = runningList.map { it.extensionId }.toSet()
@@ -101,14 +102,22 @@ class ExtensionService : LifecycleService() {
         manageLifecycleOfExtensions()
         extensionManager.refreshExtensionPkg()
 
+        lifecycleScope.launch {
+            extensionManager.extensionFlow.collectLatest {
+                Log.d("parabox", "extensionFlow=${it}")
+            }
+        }
 
-//        lifecycleScope.launch(Dispatchers.IO) {
-//            delay(5000)
-//            extensionManager.extensionPkgFlow.value.firstOrNull()?.let{
-//                Log.d("bbb", "add pkgInfo")
-//                extensionManager.addPendingExtension("hahaha", it, "")
-//            }
-//        }
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            delay(5000)
+            extensionManager.extensionPkgFlow.value.firstOrNull()?.let{
+                if (extensionManager.extensionFlow.value.isEmpty()) {
+                    Log.d("bbb", "add pkgInfo")
+                    extensionManager.addPendingExtension("test", it, "")
+                }
+            }
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

@@ -56,22 +56,19 @@ class ExtensionManager(
         return extensionInfoRepository.deleteExtensionInfoById(extensionId) > -1
     }
 
-    fun createAndTryAppendExtension(extensionInfo: ExtensionInfo): Extension {
+    fun createAndTryAppendExtension(extensionInfo: ExtensionInfo) {
         val extension = ExtensionLoader.createExtension(context, extensionInfo)
         _extensionFlow.update {
             it + extension
         }
-        return extension
+        Log.d("parabox", "append extension=${_extensionFlow.value}")
     }
 
-    fun updateExtension(newExtension: Extension) {
+    fun updateExtensions(newExtensionList: List<Extension>) {
         _extensionFlow.update {
             it.toMutableList().apply {
-                val index = indexOfFirst { it.extensionId == newExtension.extensionId }
-                if (index > -1) {
-                    set(index, newExtension)
-                } else {
-                    Log.e("parabox", "extension state update error")
+                replaceAll {
+                    newExtensionList.find { newExtension -> it.extensionId == newExtension.extensionId } ?: it
                 }
             }
         }

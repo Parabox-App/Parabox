@@ -17,12 +17,6 @@ sealed class Extension private constructor(
     override val extensionId: Long,
 ) : ExtensionInfo(alias, pkg, name, version, versionCode, extra, extensionId) {
 
-    override fun equals(other: Any?): Boolean {
-        if (other is Extension) {
-            return extensionId == other.extensionId
-        }
-        return super.equals(other)
-    }
     class ExtensionPending(
         alias: String,
         name: String,
