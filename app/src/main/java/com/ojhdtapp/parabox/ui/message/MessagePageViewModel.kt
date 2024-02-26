@@ -4,6 +4,10 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.delete
+import androidx.compose.foundation.text.input.insert
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.core.net.toUri
 import androidx.lifecycle.viewModelScope
@@ -73,6 +77,7 @@ class MessagePageViewModel @Inject constructor(
     }
 
 
+    @OptIn(ExperimentalFoundationApi::class)
     override suspend fun handleEvent(
         event: MessagePageEvent,
         state: MessagePageState
@@ -275,14 +280,34 @@ class MessagePageViewModel @Inject constructor(
                 )
             }
 
-            is MessagePageEvent.UpdateEditAreaInput -> {
+            is MessagePageEvent.AppendEditAreaInput -> {
+                state.chatDetail.editAreaState.input.edit {
+                    insert(this.selectionInChars.end, event.input)
+                }
                 state.copy(
                     chatDetail = state.chatDetail.copy(
                         editAreaState = state.chatDetail.editAreaState.copy(
-                            input = event.input,
                             iconShrink = when {
-                                event.input.text.length > 6 -> true
-                                event.input.text.isEmpty() -> false
+                                state.chatDetail.editAreaState.input.text.length > 6 -> true
+                                state.chatDetail.editAreaState.input.text.isEmpty() -> false
+                                else -> state.chatDetail.editAreaState.iconShrink
+                            }
+                        )
+                    )
+                )
+            }
+
+            is MessagePageEvent.UpdateEditAreaInput -> {
+                state.chatDetail.editAreaState.input.edit {
+                    delete(0, length)
+                    insert(0, event.input)
+                }
+                state.copy(
+                    chatDetail = state.chatDetail.copy(
+                        editAreaState = state.chatDetail.editAreaState.copy(
+                            iconShrink = when {
+                                event.input.length > 6 -> true
+                                event.input.isEmpty() -> false
                                 else -> state.chatDetail.editAreaState.iconShrink
                             }
                         )
@@ -489,13 +514,15 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.SendMessage -> {
+                state.chatDetail.editAreaState.input.edit {
+                    delete(0, length)
+                }
                 viewModelScope.launch {
                     buildParaboxSendMessage()
                 }
                 state.copy(
                     chatDetail = state.chatDetail.copy(
                         editAreaState = state.chatDetail.editAreaState.copy(
-                            input = TextFieldValue(""),
                             chosenImageList = emptyList(),
                             chosenAtId = null,
                             chosenQuoteReply = null,
@@ -689,10 +716,11 @@ class MessagePageViewModel @Inject constructor(
         }
     }
 
+    @OptIn(ExperimentalFoundationApi::class)
     fun buildParaboxSendMessage() {
         val contents = buildList<ParaboxMessageElement> {
             if (uiState.value.chatDetail.editAreaState.input.text.isNotEmpty()) {
-                add(ParaboxPlainText(uiState.value.chatDetail.editAreaState.input.text))
+                add(ParaboxPlainText(uiState.value.chatDetail.editAreaState.input.toString()))
             }
             uiState.value.chatDetail.editAreaState.chosenImageList.forEach {
                 add(ParaboxImage(resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(it)))

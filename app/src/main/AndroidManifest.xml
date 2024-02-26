@@ -70,6 +70,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
+            android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.Parabox">
             <meta-data
                 android:name="android.app.shortcuts"

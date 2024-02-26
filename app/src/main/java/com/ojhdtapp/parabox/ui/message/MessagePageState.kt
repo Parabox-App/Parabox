@@ -1,6 +1,8 @@
 package com.ojhdtapp.parabox.ui.message
 
 import android.net.Uri
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.ui.text.input.TextFieldValue
 import com.google.android.gms.maps.model.LatLng
 import com.ojhdtapp.parabox.core.util.LoadState
@@ -38,9 +40,9 @@ data class MessagePageState(
         val atCache: Map<String, Resource<Contact>> = emptyMap(),
     )
 
-    data class EditAreaState(
+    data class EditAreaState @OptIn(ExperimentalFoundationApi::class) constructor(
         val expanded: Boolean = false,
-        val input: TextFieldValue = TextFieldValue(""),
+        val input: TextFieldState = TextFieldState(""),
         val memeList: List<Uri> = emptyList(),
         val chosenImageList: List<Uri> = emptyList(),
         val chosenAtId: Long? = null,

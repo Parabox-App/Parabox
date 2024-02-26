@@ -112,7 +112,7 @@ fun ImageSendingLayout(
 @Composable
 fun QuoteReplySendingLayout(
     modifier: Modifier = Modifier,
-    model: ChatPageUiModel.MessageWithSender,
+    model: ChatPageUiModel.MessageWithSender?,
     onClick: () -> Unit,
     onCancel: () -> Unit
 ) {
@@ -134,14 +134,14 @@ fun QuoteReplySendingLayout(
                                 color = MaterialTheme.colorScheme.primary
                             )
                         ) {
-                            append(model.sender.name)
+                            append(model?.sender?.name?:"")
                         }
                     },
                     style = MaterialTheme.typography.titleSmall,
                     maxLines = 1, overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = model.message.contentString,
+                    text = model?.message?.contentString ?: "",
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.bodyMedium,

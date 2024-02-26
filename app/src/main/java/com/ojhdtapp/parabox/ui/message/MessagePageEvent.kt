@@ -30,7 +30,9 @@ sealed interface MessagePageEvent : UiEvent {
     data class UpdateEditingChatTags(val obj: ChatTagsUpdate?): MessagePageEvent
     data class LoadMessage(val chat: Chat?): MessagePageEvent
     data class OpenEditArea(val open: Boolean): MessagePageEvent
-    data class UpdateEditAreaInput(val input: TextFieldValue): MessagePageEvent
+    data class AppendEditAreaInput(val input: String): MessagePageEvent
+    @Deprecated("Use AppendEditAreaInput instead")
+    data class UpdateEditAreaInput(val input: String): MessagePageEvent
     data class UpdateToolbarState(val state: ToolbarState): MessagePageEvent
     data class UpdateEditAreaMode(val mode: EditAreaMode): MessagePageEvent
     data class UpdateAudioRecorderState(val state: AudioRecorderState): MessagePageEvent

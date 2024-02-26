@@ -12,14 +12,19 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.content.MediaType
+import androidx.compose.foundation.content.consumeEach
+import androidx.compose.foundation.content.receiveContent
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -33,6 +38,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -40,6 +46,12 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.BasicTextField2
+import androidx.compose.foundation.text.input.TextFieldDecorator
+import androidx.compose.foundation.text.input.forEachTextValue
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.textAsFlow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.NavigateNext
 import androidx.compose.material.icons.automirrored.outlined.Send
@@ -53,6 +65,7 @@ import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.NavigateNext
 import androidx.compose.material.icons.outlined.Send
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
@@ -64,6 +77,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -73,6 +87,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.pointerInteropFilter
@@ -80,7 +95,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -98,10 +117,14 @@ import com.ojhdtapp.parabox.ui.message.chat.contents_layout.ImageSendingLayout
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.QuoteReplySendingLayout
 import com.origeek.imageViewer.previewer.rememberPreviewerState
 import com.origeek.imageViewer.viewer.detectTransformGestures
+import kotlinx.coroutines.flow.collectLatest
 import org.apache.commons.io.FileUtils
 import java.io.File
 
-@OptIn(ExperimentalPermissionsApi::class, ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
+@OptIn(
+    ExperimentalPermissionsApi::class, ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class,
+    ExperimentalMaterial3Api::class
+)
 @Composable
 fun EditArea(
     modifier: Modifier = Modifier,
@@ -286,7 +309,9 @@ fun EditArea(
                     color = inputBackground,
                 ) {
                     AnimatedContent(
-                        modifier = Modifier.fillMaxWidth().animateContentSize(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .animateContentSize(),
                         targetState = state.mode, label = "audio/text",
                         transitionSpec = {
                             when {
@@ -446,14 +471,20 @@ fun EditArea(
                                     verticalArrangement = Arrangement.Bottom
                                 ) {
                                     // quote reply
-                                    if (state.chosenQuoteReply != null) {
+                                    AnimatedVisibility(visible = state.chosenQuoteReply != null,
+                                        enter = expandVertically(),
+                                        exit = shrinkVertically()
+                                    ) {
                                         QuoteReplySendingLayout(model = state.chosenQuoteReply, onClick = { /*TODO*/ },
                                             onCancel = {
                                                 onEvent(MessagePageEvent.ChooseQuoteReply(null))
                                             })
                                     }
                                     // image
-                                    if (state.chosenImageList.isNotEmpty()) {
+                                    AnimatedVisibility(visible = state.chosenImageList.isNotEmpty(),
+                                        enter = expandVertically(),
+                                        exit = shrinkVertically()
+                                    ) {
                                         LazyRow(
                                             modifier = Modifier
                                                 .padding(top = 16.dp),
@@ -475,34 +506,85 @@ fun EditArea(
                                             }
                                         }
                                     }
-                                    TextField(
+                                    val interactionSource = remember { MutableInteractionSource() }
+                                    LaunchedEffect(Unit) {
+                                        state.input.textAsFlow().collectLatest {
+
+                                        }
+                                        state.input.forEachTextValue {
+                                            when {
+                                                // can be optimized
+                                                it.length > 6 -> {
+                                                    if (!state.iconShrink) {
+                                                        onEvent(MessagePageEvent.UpdateIconShrink(true))
+                                                    }
+                                                }
+
+                                                it.isEmpty() -> {
+                                                    onEvent(MessagePageEvent.UpdateIconShrink(false))
+                                                }
+                                            }
+                                        }
+                                    }
+                                    BasicTextField2(
                                         modifier = Modifier
-                                            .clearFocusOnKeyboardDismiss(),
-                                        value = state.input,
-                                        onValueChange = {
-                                            onEvent(MessagePageEvent.UpdateEditAreaInput(it))
-                                        },
+                                            .defaultMinSize(
+                                                minWidth = TextFieldDefaults.MinWidth,
+                                                minHeight = TextFieldDefaults.MinHeight
+                                            )
+                                            .receiveContent(setOf(MediaType.All)) { content ->
+                                                content.consumeEach {
+                                                    it.uri?.let {
+                                                        onEvent(MessagePageEvent.ChooseImageUri(it))
+                                                        true
+                                                    } ?: false
+                                                }
+                                            },
+                                        state = state.input,
                                         textStyle = MaterialTheme.typography.bodyLarge.merge(
                                             TextStyle(color = MaterialTheme.colorScheme.onSurface)
                                         ),
-                                        placeholder = {
-                                            Text(
-                                                text = stringResource(R.string.input_placeholder),
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Clip,
-                                            )
-                                        },
-                                        shape = RoundedCornerShape(28.dp),
-                                        colors = TextFieldDefaults.colors(
-                                            cursorColor = MaterialTheme.colorScheme.primary,
-                                            focusedContainerColor = Color.Transparent,
-                                            unfocusedContainerColor = Color.Transparent,
-                                            disabledContainerColor = Color.Transparent,
-                                            focusedIndicatorColor = Color.Transparent,
-                                            unfocusedIndicatorColor = Color.Transparent,
-                                            disabledIndicatorColor = Color.Transparent
-                                        )
+                                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                                        decorator = object : TextFieldDecorator {
+                                            @Composable
+                                            override fun Decoration(innerTextField: @Composable () -> Unit) {
+                                                TextFieldDefaults.DecorationBox(
+                                                    value = state.input.text.toString(),
+                                                    innerTextField = innerTextField,
+                                                    enabled = true,
+                                                    interactionSource = interactionSource,
+                                                    singleLine = false,
+                                                    visualTransformation = object : VisualTransformation {
+                                                        override fun filter(text: AnnotatedString): TransformedText {
+                                                            return TransformedText(text, object : OffsetMapping {
+                                                                override fun originalToTransformed(offset: Int): Int =
+                                                                    offset.coerceAtMost(text.length - 1)
+
+                                                                override fun transformedToOriginal(offset: Int): Int =
+                                                                    offset.coerceAtMost(text.length - 1)
+                                                            })
+                                                        }
+                                                    },
+                                                    placeholder = {
+                                                        Text(
+                                                            text = stringResource(R.string.input_placeholder),
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                            maxLines = 1,
+                                                            overflow = TextOverflow.Clip,
+                                                        )
+                                                    },
+                                                    colors = TextFieldDefaults.colors(
+                                                        cursorColor = MaterialTheme.colorScheme.primary,
+                                                        focusedContainerColor = Color.Transparent,
+                                                        unfocusedContainerColor = Color.Transparent,
+                                                        disabledContainerColor = Color.Transparent,
+                                                        focusedIndicatorColor = Color.Transparent,
+                                                        unfocusedIndicatorColor = Color.Transparent,
+                                                        disabledIndicatorColor = Color.Transparent
+                                                    )
+                                                )
+                                            }
+                                        }
                                     )
                                 }
                             }

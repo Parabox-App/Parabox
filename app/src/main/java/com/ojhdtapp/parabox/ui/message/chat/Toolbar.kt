@@ -456,16 +456,17 @@ fun Toolbar(
                                                 .fillMaxSize()
                                                 .clickable {
                                                     onEvent(
-                                                        MessagePageEvent.UpdateEditAreaInput(
-                                                            state.input.copy(
-                                                                text = buildString {
-                                                                    append(state.input.getTextBeforeSelection(500))
-                                                                    append(emoji)
-                                                                    append(state.input.getTextAfterSelection(500))
-                                                                },
-                                                                selection = TextRange(state.input.selection.end + emoji.length)
-                                                            )
-                                                        )
+//                                                        MessagePageEvent.UpdateEditAreaInput(
+//                                                            state.input.copy(
+//                                                                text = buildString {
+//                                                                    append(state.input.getTextBeforeSelection(500))
+//                                                                    append(emoji)
+//                                                                    append(state.input.getTextAfterSelection(500))
+//                                                                },
+//                                                                selection = TextRange(state.input.selection.end + emoji.length)
+//                                                            )
+//                                                        )
+                                                        MessagePageEvent.AppendEditAreaInput(emoji)
                                                     )
                                                 },
                                             contentAlignment = Alignment.Center

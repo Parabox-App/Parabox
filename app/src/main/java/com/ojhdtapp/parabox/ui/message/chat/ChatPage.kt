@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imeNestedScroll
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.isImeVisible
@@ -46,6 +47,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -189,6 +191,15 @@ fun NormalChatPage(
             sheetState.close()
         }
     }
+    // close edit area each time ime is visible
+    val imeVisible = WindowInsets.isImeVisible
+    LaunchedEffect(WindowInsets.isImeVisible) {
+        if (imeVisible) {
+            onEvent(MessagePageEvent.OpenEditArea(false))
+        }
+    }
+
+
     BackHandler(sheetState.isOpen) {
         coroutineScope.launch {
             sheetState.close()
@@ -229,13 +240,14 @@ fun NormalChatPage(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         ) { paddingValues ->
             val bottomPadding = animateDpAsState(
-                targetValue = if (sheetState.isOpen) 0.dp else paddingValues.calculateBottomPadding(),
+                targetValue = if (sheetState.isOpen || WindowInsets.isImeVisible) 0.dp else paddingValues.calculateBottomPadding(),
                 label = "edit_area_bottom_padding"
             )
             val sheetHeight by remember(state.chatDetail.editAreaState) {
                 derivedStateOf { if (state.chatDetail.editAreaState.mode == EditAreaMode.LOCATION_PICKER) 320.dp else 160.dp }
             }
             DismissibleBottomSheet(
+                modifier = Modifier.imePadding(),
                 sheetContent = {
                     Crossfade(
                         modifier = Modifier.background(MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)),
@@ -257,7 +269,7 @@ fun NormalChatPage(
                         }
                     }
                 },
-                gesturesEnabled = state.chatDetail.editAreaState.audioRecorderState !is AudioRecorderState.Recording,
+                gesturesEnabled = state.chatDetail.editAreaState.audioRecorderState !is AudioRecorderState.Recording && !WindowInsets.isImeVisible,
                 sheetHeight = sheetHeight, sheetState = sheetState
             ) {
                 Column(modifier = Modifier.padding(top = paddingValues.calculateTopPadding())) {
