@@ -11,6 +11,8 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.TextUnit
+import net.sourceforge.pinyin4j.PinyinHelper
+import java.util.Locale
 
 object FormUtil {
     fun splitPerSpaceOrNewLine(str: String): List<String> = str.split("\\s|([\\r\\n]+)".toRegex())
@@ -18,6 +20,19 @@ object FormUtil {
     fun splitNewLine(str: String): List<String> = str.split("[\\r\\n]+".toRegex())
     fun checkTagMinimumCharacter(str: String): Boolean = str.length >= 2
     fun checkTagMaximumCharacter(str: String): Boolean = str.length < 50
+    fun getFirstLetter(name: String?): String {
+        if (name == null) return "#"
+        val firstLetter = name.firstOrNull()?.toString() ?: "#"
+        return if (firstLetter.matches(Regex("[a-zA-Z]"))) {
+            firstLetter.uppercase(Locale.ROOT)
+        } else if (firstLetter.matches(Regex("[\\u4E00-\\u9FA5]"))) {
+            val char = firstLetter.toCharArray()
+            val pinyinArray = PinyinHelper.toHanyuPinyinStringArray(char[0])
+            pinyinArray?.get(0)?.substring(0, 1)?.uppercase(Locale.ROOT) ?: "#"
+        } else {
+            "#"
+        }
+    }
 }
 
 fun String.splitKeeping(str: String): List<String> {
@@ -61,7 +76,7 @@ fun HyperlinkText(
             start = 0,
             end = fullText.length
         )
-        for((key, value) in hyperLinks){
+        for ((key, value) in hyperLinks) {
 
             val startIndex = fullText.indexOf(key)
             val endIndex = startIndex + key.length

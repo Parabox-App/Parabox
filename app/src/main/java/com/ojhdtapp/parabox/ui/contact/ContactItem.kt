@@ -24,14 +24,18 @@ import androidx.compose.ui.unit.dp
 import com.google.accompanist.placeholder.PlaceholderHighlight
 import com.google.accompanist.placeholder.material3.fade
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.core.util.FormUtil
 import com.ojhdtapp.parabox.ui.common.CommonAvatar
 import com.ojhdtapp.parabox.ui.common.CommonAvatarModel
 import com.ojhdtapp.parabox.ui.common.placeholder
+import net.sourceforge.pinyin4j.PinyinHelper
+import java.util.Locale
 
 @Composable
 fun ContactItem(
     modifier: Modifier = Modifier,
     name: String,
+    lastName: String?,
     avatarModel: Any?,
     extName: String,
     onClick: () -> Unit
@@ -42,10 +46,23 @@ fun ContactItem(
         onClick = onClick
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+            modifier = Modifier.padding(vertical = 12.dp),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Box(modifier = Modifier.size(36.dp)) {
+                val firstLetter = FormUtil.getFirstLetter(name)
+                val lastNameFirstLetter = lastName?.let { FormUtil.getFirstLetter(it) }
+                if (lastName == null || firstLetter != lastNameFirstLetter) {
+                    Text(
+                        text = firstLetter,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.width(16.dp))
             Box(
                 modifier = Modifier
                     .clip(CircleShape)
@@ -68,6 +85,7 @@ fun ContactItem(
                 color = MaterialTheme.colorScheme.primary,
                 maxLines = 1
             )
+            Spacer(modifier = Modifier.width(8.dp))
         }
     }
 }
@@ -82,10 +100,12 @@ fun EmptyContactItem(
         shape = RoundedCornerShape(8.dp)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+            modifier = Modifier.padding(vertical = 12.dp),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Box(modifier = Modifier.size(36.dp))
+            Spacer(modifier = Modifier.width(16.dp))
             Box(
                 modifier = Modifier
                     .clip(CircleShape)
@@ -95,8 +115,7 @@ fun EmptyContactItem(
             Spacer(modifier = Modifier.width(16.dp))
             Text(
                 modifier = Modifier.placeholder(
-                    isLoading = true,
-                    MaterialTheme.colorScheme.secondaryContainer,
+                    isLoading = true
                 ),
                 text = context.getString(R.string.contact_name),
                 maxLines = 1
@@ -104,14 +123,14 @@ fun EmptyContactItem(
             Spacer(modifier = Modifier.weight(1f))
             Text(
                 modifier = Modifier.placeholder(
-                    isLoading = true,
-                    MaterialTheme.colorScheme.secondaryContainer,
+                    isLoading = true
                 ),
                 text = context.getString(R.string.contact_name),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
                 maxLines = 1
             )
+            Spacer(modifier = Modifier.width(8.dp))
         }
     }
 }

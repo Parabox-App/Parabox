@@ -11,6 +11,7 @@ import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
 import androidx.compose.animation.graphics.vector.AnimatedImageVector
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
@@ -22,6 +23,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DockedSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
@@ -48,6 +50,7 @@ import androidx.navigation.NavController
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.core.util.FormUtil
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.common.CommonAvatar
@@ -55,6 +58,9 @@ import com.ojhdtapp.parabox.ui.common.CommonAvatarModel
 import com.ojhdtapp.parabox.ui.common.SearchContent
 import com.ojhdtapp.parabox.ui.common.clearFocusOnKeyboardDismiss
 import com.ojhdtapp.parabox.ui.message.MessageLayoutType
+import my.nanihadesuka.compose.InternalLazyColumnScrollbar
+import my.nanihadesuka.compose.LazyColumnScrollbar
+import my.nanihadesuka.compose.ScrollbarSelectionMode
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationGraphicsApi::class)
 @Composable
@@ -231,30 +237,62 @@ fun ContactPage(
             }
         }
     ) {
-        LazyColumn(
-            contentPadding = it,
-            state = listState,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(count = contactPagingData.itemCount,
-                key = contactPagingData.itemKey { it.contact.contactId }) { index ->
-                val item = contactPagingData[index]
-                if (item == null) {
-                    EmptyContactItem()
-                } else {
-                    ContactItem(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        name = item.contact.name,
-                        avatarModel = item.contact.avatar.getModel(),
-                        extName = item.extensionInfo.alias,
-                        onClick = {})
+        Box {
+            LazyColumn(
+                contentPadding = it,
+                state = listState,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(count = contactPagingData.itemCount,
+                    key = contactPagingData.itemKey { it.contact.contactId }) { index ->
+                    val item = contactPagingData[index]
+                    if (item == null) {
+                        EmptyContactItem()
+                    } else {
+                        ContactItem(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            name = item.contact.name,
+                            lastName = (index - 1).takeIf { it >= 0 }
+                                ?.let { contactPagingData.peek(it) }?.contact?.name,
+                            avatarModel = item.contact.avatar.getModel(),
+                            extName = item.extensionInfo.alias,
+                            onClick = {})
+                    }
+                }
+                item {
+                    if (layoutType == ContactLayoutType.NORMAL) {
+                        Spacer(modifier = Modifier.height(80.dp))
+                    }
                 }
             }
-            item {
-                if (layoutType == ContactLayoutType.NORMAL) {
-                    Spacer(modifier = Modifier.height(80.dp))
+            InternalLazyColumnScrollbar(
+                listState = listState,
+                modifier = Modifier.padding(top = 144.dp, bottom = 112.dp),
+                selectionMode = ScrollbarSelectionMode.Full,
+                thumbColor = MaterialTheme.colorScheme.secondary,
+                thumbSelectedColor = MaterialTheme.colorScheme.primary,
+                indicatorContent = { index: Int, isThumbSelected: Boolean ->
+                    AnimatedVisibility(visible = isThumbSelected, enter = fadeIn(), exit = fadeOut()) {
+                        Box(
+                            modifier = Modifier
+                                .padding(end = 8.dp, bottom = 48.dp)
+                                .size(80.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.secondary,
+                                    RoundedCornerShape(40.dp, 40.dp, 8.dp, 40.dp)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = FormUtil.getFirstLetter(contactPagingData.peek(index)?.contact?.name),
+                                color = MaterialTheme.colorScheme.onSecondary,
+                                style = MaterialTheme.typography.headlineMedium
+                            )
+                        }
+                    }
                 }
-            }
+            )
         }
+
     }
 }
