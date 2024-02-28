@@ -48,7 +48,7 @@ fun PickerItem(
                     .background(MaterialTheme.colorScheme.primary),
                 contentAlignment = Alignment.Center
             ) {
-                CommonAvatar(model = avatarModel, name = title)
+                CommonAvatar(model = CommonAvatarModel(model = avatarModel, name = title))
             }
             Spacer(modifier = Modifier.width(16.dp))
             Text(

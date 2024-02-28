@@ -1251,7 +1251,7 @@ fun SearchResultItem(
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                leadingIcon?.invoke() ?: CommonAvatar(model = avatarModel, name = title.text)
+                leadingIcon?.invoke() ?: CommonAvatar(model = CommonAvatarModel(model = avatarModel, name = title.text))
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column(
@@ -1375,7 +1375,7 @@ fun SearchResultItemVertical(
                     .background(MaterialTheme.colorScheme.primary),
                 contentAlignment = Alignment.Center
             ) {
-                CommonAvatar(model = avatarModel, name = title.text)
+                CommonAvatar(model = CommonAvatarModel(model = avatarModel, name = title.text) )
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(

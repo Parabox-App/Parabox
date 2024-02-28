@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.ojhdtapp.parabox.NavGraph
 import com.ojhdtapp.parabox.NavGraphs
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.appCurrentDestinationAsState
@@ -57,43 +58,76 @@ fun MenuNavigationBar(
         MenuNavigationDestination.values().forEach { destination ->
             val isCurrentDestOnBackStack =
                 navController.appCurrentDestinationAsState().value in destination.graph.destinations
-//                val isCurrentDestOnBackStack = navController.isRouteOnBackStack(destination.graph)
-            NavigationBarItem(
-                selected = isCurrentDestOnBackStack,
-                onClick = {
-                    if (isCurrentDestOnBackStack) onEvent(MenuPageEvent.OnBarItemClicked)
-                    else {
-                        navController.navigate(destination.graph.route) {
-                            popUpTo(NavGraphs.menu.route) {
-                                saveState = true
+            when(destination.graph) {
+                NavGraphs.message -> {
+                    NavigationBarItem(
+                        selected = isCurrentDestOnBackStack,
+                        onClick = {
+                            if (isCurrentDestOnBackStack) onEvent(MenuPageEvent.OnBarItemClicked)
+                            else {
+                                navController.navigate(destination.graph.route) {
+                                    popUpTo(NavGraphs.menu.route) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
                             }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    }
-                },
-                icon = {
-                    BadgedBox(badge = {
-                        if (destination.graph == NavGraphs.message && mainSharedState.datastore.messageBadgeNum > 0)
-                            Badge(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary,
-                            ) { Text(text = "${mainSharedState.datastore.messageBadgeNum}") }
-                    }) {
-                        Icon(
-                            imageVector = if (isCurrentDestOnBackStack) destination.iconSelected else destination.icon,
-                            contentDescription = stringResource(id = destination.labelResId)
-                        )
-                    }
-                },
-                label = {
-                    Text(
-                        text = stringResource(id = destination.labelResId),
-                        style = MaterialTheme.typography.labelLarge
+                        },
+                        icon = {
+                            BadgedBox(badge = {
+                                if (mainSharedState.datastore.messageBadgeNum > 0)
+                                    Badge(
+                                        containerColor = MaterialTheme.colorScheme.primary,
+                                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                                    ) { Text(text = "${mainSharedState.datastore.messageBadgeNum}") }
+                            }) {
+                                Icon(
+                                    imageVector = if (isCurrentDestOnBackStack) destination.iconSelected else destination.icon,
+                                    contentDescription = stringResource(id = destination.labelResId)
+                                )
+                            }
+                        },
+                        label = {
+                            Text(
+                                text = stringResource(id = destination.labelResId),
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        },
+                        alwaysShowLabel = false
                     )
-                },
-                alwaysShowLabel = false
-            )
+                }
+                else -> {
+                    NavigationBarItem(
+                        selected = isCurrentDestOnBackStack,
+                        onClick = {
+                            if (isCurrentDestOnBackStack) onEvent(MenuPageEvent.OnBarItemClicked)
+                            else {
+                                navController.navigate(destination.graph.route) {
+                                    popUpTo(NavGraphs.menu.route) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                        },
+                        icon = {
+                            Icon(
+                                imageVector = if (isCurrentDestOnBackStack) destination.iconSelected else destination.icon,
+                                contentDescription = stringResource(id = destination.labelResId)
+                            )
+                        },
+                        label = {
+                            Text(
+                                text = stringResource(id = destination.labelResId),
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        },
+                        alwaysShowLabel = false
+                    )
+                }
+            }
         }
     }
 }

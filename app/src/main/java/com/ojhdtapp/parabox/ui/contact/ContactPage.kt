@@ -51,6 +51,7 @@ import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.common.CommonAvatar
+import com.ojhdtapp.parabox.ui.common.CommonAvatarModel
 import com.ojhdtapp.parabox.ui.common.SearchContent
 import com.ojhdtapp.parabox.ui.common.clearFocusOnKeyboardDismiss
 import com.ojhdtapp.parabox.ui.message.MessageLayoutType
@@ -143,8 +144,10 @@ fun ContactPage(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     CommonAvatar(
-                                        model = mainSharedState.datastore.localAvatarUri,
-                                        name = mainSharedState.datastore.localName,
+                                        model = CommonAvatarModel(
+                                            model = mainSharedState.datastore.localAvatarUri,
+                                            name = mainSharedState.datastore.localName
+                                        ),
                                         backgroundColor = MaterialTheme.colorScheme.primary,
                                         textColor = MaterialTheme.colorScheme.onPrimary
                                     )
@@ -209,8 +212,10 @@ fun ContactPage(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     CommonAvatar(
-                                        model = mainSharedState.datastore.localAvatarUri,
-                                        name = mainSharedState.datastore.localName,
+                                        model = CommonAvatarModel(
+                                            model = mainSharedState.datastore.localAvatarUri,
+                                            name = mainSharedState.datastore.localName
+                                        ),
                                         backgroundColor = MaterialTheme.colorScheme.primary,
                                         textColor = MaterialTheme.colorScheme.onPrimary
                                     )

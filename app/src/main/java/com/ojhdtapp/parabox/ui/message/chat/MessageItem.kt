@@ -59,6 +59,7 @@ import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.contains
 import com.ojhdtapp.parabox.ui.common.CommonAvatar
+import com.ojhdtapp.parabox.ui.common.CommonAvatarModel
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageState
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.AudioLayout
@@ -199,8 +200,10 @@ fun MessageItem(
             ) {
                 if (isFirst) {
                     CommonAvatar(
-                        model = messageWithSender.sender.avatar.getModel(),
-                        name = messageWithSender.sender.name
+                        model = CommonAvatarModel(
+                            model = messageWithSender.sender.avatar.getModel(),
+                            name = messageWithSender.sender.name
+                        )
                     )
                 }
             }

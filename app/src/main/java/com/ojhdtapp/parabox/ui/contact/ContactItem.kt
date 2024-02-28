@@ -23,9 +23,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.placeholder.PlaceholderHighlight
 import com.google.accompanist.placeholder.material3.fade
-import com.google.accompanist.placeholder.placeholder
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.ui.common.CommonAvatar
+import com.ojhdtapp.parabox.ui.common.CommonAvatarModel
+import com.ojhdtapp.parabox.ui.common.placeholder
 
 @Composable
 fun ContactItem(
@@ -51,7 +52,7 @@ fun ContactItem(
                     .size(36.dp),
                 contentAlignment = Alignment.Center
             ) {
-                CommonAvatar(model = avatarModel, name = name)
+                CommonAvatar(model = CommonAvatarModel(model = avatarModel, name = name))
             }
             Spacer(modifier = Modifier.width(16.dp))
             Text(
@@ -94,9 +95,8 @@ fun EmptyContactItem(
             Spacer(modifier = Modifier.width(16.dp))
             Text(
                 modifier = Modifier.placeholder(
-                    visible = true,
+                    isLoading = true,
                     MaterialTheme.colorScheme.secondaryContainer,
-                    highlight = PlaceholderHighlight.fade(),
                 ),
                 text = context.getString(R.string.contact_name),
                 maxLines = 1
@@ -104,9 +104,8 @@ fun EmptyContactItem(
             Spacer(modifier = Modifier.weight(1f))
             Text(
                 modifier = Modifier.placeholder(
-                    visible = true,
+                    isLoading = true,
                     MaterialTheme.colorScheme.secondaryContainer,
-                    highlight = PlaceholderHighlight.fade(),
                 ),
                 text = context.getString(R.string.contact_name),
                 style = MaterialTheme.typography.labelMedium,

@@ -220,8 +220,10 @@ fun MessagePage(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     CommonAvatar(
-                                        model = mainSharedState.datastore.localAvatarUri,
-                                        name = mainSharedState.datastore.localName,
+                                        model = CommonAvatarModel(
+                                            model = mainSharedState.datastore.localAvatarUri,
+                                            name = mainSharedState.datastore.localName,
+                                        ),
                                         backgroundColor = MaterialTheme.colorScheme.primary,
                                         textColor = MaterialTheme.colorScheme.onPrimary
                                     )
@@ -286,8 +288,10 @@ fun MessagePage(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     CommonAvatar(
-                                        model = mainSharedState.datastore.localAvatarUri,
-                                        name = mainSharedState.datastore.localName,
+                                        model = CommonAvatarModel(
+                                            model = mainSharedState.datastore.localAvatarUri,
+                                            name = mainSharedState.datastore.localName,
+                                        ),
                                         backgroundColor = MaterialTheme.colorScheme.primary,
                                         textColor = MaterialTheme.colorScheme.onPrimary
                                     )
@@ -409,6 +413,7 @@ fun MessagePage(
             items(
                 count = chatLazyPagingData.itemCount,
                 key = chatLazyPagingData.itemKey { it.chat.chatId },
+                contentType = chatLazyPagingData.itemContentType { "chat" }
             ) { index ->
                 val topRadius = if (index == 0) 24.dp else 3.dp
                 val bottomRadius = if (index == chatLazyPagingData.itemSnapshotList.size - 1) 24.dp else 3.dp

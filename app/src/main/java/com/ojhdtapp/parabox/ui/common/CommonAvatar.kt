@@ -4,6 +4,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -21,19 +23,20 @@ import com.ojhdtapp.parabox.core.util.AvatarUtil
 @Composable
 fun CommonAvatar(
     modifier: Modifier = Modifier,
-    model: Any?,
-    name: String? = null,
+    model: CommonAvatarModel,
     backgroundColor: Color = MaterialTheme.colorScheme.secondaryContainer,
     textColor: Color = MaterialTheme.colorScheme.onSecondaryContainer
 ){
-    val namePainter = BitmapPainter(AvatarUtil.createNamedAvatarBm(
-        backgroundColor = backgroundColor.toArgb(),
-        textColor = textColor.toArgb(),
-        name = name ?: "name"
-    ).asImageBitmap())
+    val namePainter = remember {
+        BitmapPainter(AvatarUtil.createNamedAvatarBm(
+            backgroundColor = backgroundColor.toArgb(),
+            textColor = textColor.toArgb(),
+            name = model.name ?: "name"
+        ).asImageBitmap())
+    }
     AsyncImage(
         modifier = modifier.fillMaxSize(),
-        model = model,
+        model = model.model,
         contentDescription = "avatar",
         placeholder = namePainter,
         error = namePainter
@@ -67,3 +70,9 @@ fun CommonAvatar(
 //            SubcomposeAsyncImageContent()
 //        }
 //    }
+
+@Stable
+data class CommonAvatarModel(
+    val model: Any?,
+    val name: String?
+)

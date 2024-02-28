@@ -91,9 +91,6 @@ androidComponents {
     onVariants(selector().withBuildType("release")) {
         it.packaging.resources.excludes.add("META-INF/**")
     }
-    onVariants(selector().withBuildType("debug")) {
-        it.packaging.resources.excludes.add("META-INF/**")
-    }
 }
 
 kapt {

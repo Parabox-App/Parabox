@@ -23,6 +23,7 @@ import androidx.compose.material.icons.outlined.Done
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -46,6 +47,8 @@ import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.ChatWithLatestMessage
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.ui.common.CommonAvatar
+import com.ojhdtapp.parabox.ui.common.CommonAvatarModel
+import com.ojhdtapp.parabox.ui.common.placeholder
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -71,6 +74,7 @@ fun ChatItem(
             MaterialTheme.colorScheme.surfaceContainer
         }
     )
+    val primaryColor = MaterialTheme.colorScheme.primary
     val textColor by animateColorAsState(
         targetValue = if (isEditing && isExpanded) {
             MaterialTheme.colorScheme.onSecondaryContainer
@@ -123,8 +127,10 @@ fun ChatItem(
                             icon()
                         } else {
                             CommonAvatar(
-                                model = chatWithLatestMessage.chat.avatar.getModel(),
-                                name = chatWithLatestMessage.chat.name,
+                                model = CommonAvatarModel(
+                                    model = chatWithLatestMessage.chat.avatar.getModel(),
+                                    name = chatWithLatestMessage.chat.name,
+                                )
                             )
                         }
                     }
@@ -144,16 +150,12 @@ fun ChatItem(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    modifier = Modifier.placeholder(
-                        visible = contact !is Resource.Success,
-                        color = MaterialTheme.colorScheme.secondaryContainer,
-                        highlight = PlaceholderHighlight.fade(),
-                    ),
+                    modifier = Modifier.placeholder(isLoading = contact is Resource.Loading, backgroundColor = MaterialTheme.colorScheme.secondaryContainer),
                     text = buildAnnotatedString {
                         chatWithLatestMessage.message?.also { message ->
                             message.contentString
                         }
-                        withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                        withStyle(style = SpanStyle(color = primaryColor)) {
                             if (chatWithLatestMessage.message?.sentByMe == true) {
                                 append(username)
                             } else {
@@ -231,7 +233,7 @@ fun PinnedChatItems(
                         .background(avatarBackgroundColor),
                     contentAlignment = Alignment.Center
                 ) {
-                    icon?.invoke() ?: CommonAvatar(model = chat.avatar.getModel(), name = chat.name)
+                    icon?.invoke() ?: CommonAvatar(model = CommonAvatarModel(model = chat.avatar.getModel(), name = chat.name))
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
@@ -278,8 +280,7 @@ fun EmptyChatItem(
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.secondary)
                     .placeholder(
-                        true, MaterialTheme.colorScheme.secondaryContainer,
-                        highlight = PlaceholderHighlight.fade(),
+                        true, MaterialTheme.colorScheme.secondaryContainer
                     ),
                 contentAlignment = Alignment.Center
             ) {
