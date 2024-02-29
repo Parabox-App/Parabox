@@ -220,8 +220,8 @@ dependencies {
     implementation "androidx.paging:paging-compose:$paging_version"
 
     // Coil
-    def coil_version = "2.5.0"
-    implementation "io.coil-kt.coil3:coil:3.0.0-alpha01"
+    def coil_version = "2.6.0"
+    implementation "io.coil-kt.coil3:coil:3.0.0-alpha05"
     implementation "io.coil-kt:coil-gif:$coil_version"
     implementation "io.coil-kt:coil-svg:$coil_version"
     implementation "io.coil-kt:coil-compose:$coil_version"

@@ -508,9 +508,6 @@ fun EditArea(
                                     }
                                     val interactionSource = remember { MutableInteractionSource() }
                                     LaunchedEffect(Unit) {
-                                        state.input.textAsFlow().collectLatest {
-
-                                        }
                                         state.input.forEachTextValue {
                                             when {
                                                 // can be optimized

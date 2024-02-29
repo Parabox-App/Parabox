@@ -14,12 +14,17 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -44,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -103,6 +109,7 @@ fun ContactPage(
                     modifier = Modifier
                         .fillMaxWidth()
                         .statusBarsPadding()
+                        .padding(horizontal = 2.dp)
                         .clearFocusOnKeyboardDismiss(),
                     query = mainSharedState.search.query,
                     onQueryChange = {
@@ -250,7 +257,7 @@ fun ContactPage(
                         EmptyContactItem()
                     } else {
                         ContactItem(
-                            modifier = Modifier.padding(horizontal = 16.dp),
+                            modifier = Modifier.padding(horizontal = if (layoutType == ContactLayoutType.SPLIT) 0.dp else 16.dp),
                             name = item.contact.name,
                             lastName = (index - 1).takeIf { it >= 0 }
                                 ?.let { contactPagingData.peek(it) }?.contact?.name,
@@ -265,9 +272,18 @@ fun ContactPage(
                     }
                 }
             }
+            val paddingValues = if (layoutType == ContactLayoutType.SPLIT) {
+                it
+            } else {
+                PaddingValues(
+                    top = it.calculateTopPadding(),
+                    bottom = it.calculateBottomPadding() + 80.dp
+                )
+            }
             InternalLazyColumnScrollbar(
                 listState = listState,
-                modifier = Modifier.padding(top = 144.dp, bottom = 112.dp),
+//                modifier = Modifier.padding(top = 144.dp, bottom = 112.dp),
+                modifier = Modifier.padding(paddingValues),
                 selectionMode = ScrollbarSelectionMode.Full,
                 thumbColor = MaterialTheme.colorScheme.secondary,
                 thumbSelectedColor = MaterialTheme.colorScheme.primary,
