@@ -21,7 +21,9 @@ import com.ojhdtapp.parabox.NavGraph
 import com.ojhdtapp.parabox.NavGraphs
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.appCurrentDestinationAsState
+import com.ojhdtapp.parabox.destinations.SettingPageWrapperUiDestination
 import com.ojhdtapp.parabox.ui.MainSharedState
+import com.ramcosta.composedestinations.navigation.navigate
 import kotlinx.coroutines.launch
 
 enum class MenuNavigationDestination(
@@ -136,6 +138,7 @@ fun MenuNavigationBar(
 @Composable
 fun MenuNavigationDrawerContent(
     navController: NavController,
+    rootNavController: NavController,
     messageBadge: Int = 0,
     onEvent: (event: MenuPageEvent) -> Unit,
 ) =
@@ -219,6 +222,34 @@ fun MenuNavigationDrawerContent(
                     }
                 })
         }
+        Spacer(modifier = Modifier.height(16.dp))
+        HorizontalDivider()
+        Spacer(modifier = Modifier.height(16.dp))
+        NavigationDrawerItem(
+            modifier = Modifier
+                .padding(horizontal = 12.dp)
+                .padding(bottom = 6.dp)
+                .height(48.dp),
+            icon = {
+                Icon(
+                    imageVector = Icons.Outlined.Settings,
+                    contentDescription = stringResource(id = R.string.settings)
+                )
+            },
+            label = {
+                Text(
+                    text = stringResource(id = R.string.settings)
+                )
+            },
+            selected = false,
+            onClick = {
+                    coroutineScope.launch {
+                        onEvent(MenuPageEvent.OnDrawerItemClicked(false))
+                        rootNavController.navigate(SettingPageWrapperUiDestination) {
+                            restoreState = true
+                        }
+                    }
+            })
 //                NavigationDrawerItem(
 //                    modifier = Modifier
 //                        .height(48.dp)

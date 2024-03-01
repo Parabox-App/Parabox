@@ -1,7 +1,6 @@
 package com.ojhdtapp.parabox.ui.contact
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -21,15 +20,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.google.accompanist.placeholder.PlaceholderHighlight
-import com.google.accompanist.placeholder.material3.fade
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.FormUtil
 import com.ojhdtapp.parabox.ui.common.CommonAvatar
 import com.ojhdtapp.parabox.ui.common.CommonAvatarModel
 import com.ojhdtapp.parabox.ui.common.placeholder
-import net.sourceforge.pinyin4j.PinyinHelper
-import java.util.Locale
 
 @Composable
 fun ContactItem(
@@ -88,6 +83,28 @@ fun ContactItem(
             Spacer(modifier = Modifier.width(8.dp))
         }
     }
+}
+
+@Composable
+fun ContactStickyHeader(
+    modifier: Modifier = Modifier,
+    character: String
+) {
+    Row(
+        modifier = Modifier.padding(vertical = 12.dp),
+        horizontalArrangement = Arrangement.Start,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(modifier = Modifier.size(36.dp)) {
+            Text(
+                text = character,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.align(Alignment.Center)
+            )
+        }
+    }
+
 }
 
 @Composable

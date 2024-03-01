@@ -1,64 +1,38 @@
 package com.ojhdtapp.parabox.ui.menu
 
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.animateScrollBy
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
-import androidx.compose.material3.DismissibleNavigationDrawer
-import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.FloatingActionButtonDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.SheetState
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.navigationsuite.ExperimentalMaterial3AdaptiveNavigationSuiteApi
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
-import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
-import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.Lifecycle
@@ -68,35 +42,26 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.ojhdtapp.parabox.NavGraphs
-import com.ojhdtapp.parabox.appCurrentDestinationAsState
-import com.ojhdtapp.parabox.destinations.MessageAndChatPageWrapperUIDestination
-import com.ojhdtapp.parabox.ui.MainSharedEffect
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.common.ChatPickerDialog
 import com.ojhdtapp.parabox.ui.common.ContactPickerDialog
 import com.ojhdtapp.parabox.ui.common.DateRangePickerDialog
-import com.ojhdtapp.parabox.ui.common.DevicePosture
 import com.ojhdtapp.parabox.ui.common.MyDismissibleNavigationDrawer
 import com.ojhdtapp.parabox.ui.common.MyDrawerState
 import com.ojhdtapp.parabox.ui.common.MyModalNavigationDrawer
 import com.ojhdtapp.parabox.ui.common.rememberMyDrawerState
-import com.ojhdtapp.parabox.ui.message.MessageAndChatPageWrapperUI
-import com.ojhdtapp.parabox.ui.message.MessageLayoutType
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
 import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
-import com.ramcosta.composedestinations.manualcomposablecalls.composable
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.dependency
-import com.ramcosta.composedestinations.navigation.navigate
 import com.ramcosta.composedestinations.spec.NavHostEngine
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldLayout as NavigationSuiteScaffoldLayout
 
 @OptIn(
     ExperimentalAnimationApi::class, ExperimentalMaterialNavigationApi::class,
@@ -338,12 +303,13 @@ private fun MenuNavigationWrapperUI(
             drawerContent = {
             MenuNavigationDrawerContent(
                 navController = menuNavController,
+                rootNavController = navController,
                 messageBadge = mainSharedState.datastore.messageBadgeNum,
                 onEvent = menuEventHandler
             )
         }, drawerState = drawerState, drawerWidth = 304.dp) {
             MenuAppContent(
-                navController = navController,
+                rootNavController = navController,
                 menuNavController = menuNavController,
                 menuNavHostEngine = menuNavHostEngine,
                 navigationType = navigationType,
@@ -361,6 +327,7 @@ private fun MenuNavigationWrapperUI(
             drawerContent = {
                 MenuNavigationDrawerContent(
                     navController = menuNavController,
+                    rootNavController = navController,
                     messageBadge = mainSharedState.datastore.messageBadgeNum,
                     onEvent = menuEventHandler,
                 )
@@ -370,7 +337,7 @@ private fun MenuNavigationWrapperUI(
             drawerWidth = 304.dp
         ) {
             MenuAppContent(
-                navController = navController,
+                rootNavController = navController,
                 menuNavController = menuNavController,
                 menuNavHostEngine = menuNavHostEngine,
                 navigationType = navigationType,
@@ -389,7 +356,7 @@ private fun MenuNavigationWrapperUI(
 @Composable
 fun MenuAppContent(
     modifier: Modifier = Modifier,
-    navController: NavController,
+    rootNavController: NavController,
     menuNavController: NavHostController,
     menuNavHostEngine: NavHostEngine,
     navigationType: MenuNavigationType,

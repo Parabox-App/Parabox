@@ -10,6 +10,7 @@ import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
 import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
 import androidx.compose.animation.graphics.vector.AnimatedImageVector
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -68,7 +69,7 @@ import my.nanihadesuka.compose.InternalLazyColumnScrollbar
 import my.nanihadesuka.compose.LazyColumnScrollbar
 import my.nanihadesuka.compose.ScrollbarSelectionMode
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationGraphicsApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationGraphicsApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun ContactPage(
     modifier: Modifier = Modifier,
@@ -250,12 +251,42 @@ fun ContactPage(
                 state = listState,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+//                for (index in 0 until contactPagingData.itemCount) {
+//                    val peekItem = contactPagingData.peek(index)
+//                    val nameFirstLetter = peekItem?.contact?.name?.let { FormUtil.getFirstLetter(it) }
+//                    val lastNameFirstLetter = (index - 1).takeIf { it >= 0 }
+//                        ?.let { contactPagingData.peek(it) }?.contact?.name?.let { FormUtil.getFirstLetter(it) }
+//                    if (lastNameFirstLetter == null || lastNameFirstLetter != nameFirstLetter) {
+//                        stickyHeader {
+//                            ContactStickyHeader(character = nameFirstLetter ?: "#")
+//                        }
+//                    }
+//                    item(key = peekItem?.contact?.contactId ?: index) {
+//                        val item = contactPagingData[index]
+//                        if (item == null) {
+//                            EmptyContactItem()
+//                        } else {
+//
+//                            ContactItem(
+//                                modifier = Modifier.padding(horizontal = if (layoutType == ContactLayoutType.SPLIT) 0.dp else 16.dp),
+//                                name = item.contact.name,
+//                                character = nameFirstLetter,
+//                                avatarModel = item.contact.avatar.getModel(),
+//                                extName = item.extensionInfo.alias,
+//                                onClick = {})
+//                        }
+//                    }
+//                }
                 items(count = contactPagingData.itemCount,
                     key = contactPagingData.itemKey { it.contact.contactId }) { index ->
                     val item = contactPagingData[index]
                     if (item == null) {
                         EmptyContactItem()
                     } else {
+
                         ContactItem(
                             modifier = Modifier.padding(horizontal = if (layoutType == ContactLayoutType.SPLIT) 0.dp else 16.dp),
                             name = item.contact.name,
