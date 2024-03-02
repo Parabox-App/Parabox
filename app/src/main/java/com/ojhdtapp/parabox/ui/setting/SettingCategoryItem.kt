@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.ojhdtapp.parabox.ui.theme.fontSize
 
 @Composable
 fun SettingCategoryItem(
@@ -34,7 +35,7 @@ fun SettingCategoryItem(
             Spacer(modifier = Modifier.width(24.dp))
             Icon(imageVector = icon, contentDescription = title)
             Spacer(modifier = Modifier.width(24.dp))
-            Text(text = title)
+            Text(text = title, fontSize = MaterialTheme.fontSize.title)
         }
     }
 }

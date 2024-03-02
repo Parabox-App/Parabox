@@ -142,6 +142,10 @@ fun ChatItem(
                     .weight(1f), verticalArrangement = Arrangement.Center
             ) {
                 Text(
+                    modifier = Modifier.basicMarquee(
+                        delayMillis = 5000,
+                        initialDelayMillis = 2000
+                    ),
                     text = chatWithLatestMessage.chat.name
                         ?: context.getString(R.string.contact_name),
                     style = MaterialTheme.typography.titleMedium,

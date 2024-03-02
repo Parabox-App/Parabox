@@ -96,7 +96,6 @@ fun MessageAndChatPageWrapperUI(
         }
     }
 
-
     ListDetailPaneScaffold(
         modifier = modifier,
         scaffoldState = scaffoldNavigator.scaffoldState,
