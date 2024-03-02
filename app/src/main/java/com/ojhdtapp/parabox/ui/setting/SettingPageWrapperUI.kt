@@ -69,7 +69,32 @@ fun SettingPageWrapperUi(
         }
     ) {
         AnimatedPane(modifier = Modifier) {
+            when(state.selected) {
+                Setting.GENERAL -> {
 
+                }
+                Setting.ADDONS -> {
+
+                }
+                Setting.LABELS -> {
+
+                }
+                Setting.APPEARANCE -> {
+
+                }
+                Setting.NOTIFICATION -> {
+
+                }
+                Setting.STORAGE -> {
+
+                }
+                Setting.EXPERIMENTAL -> {
+
+                }
+                Setting.HELP -> {
+                    
+                }
+            }
         }
     }
 }
