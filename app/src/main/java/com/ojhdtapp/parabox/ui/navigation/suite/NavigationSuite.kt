@@ -1,11 +1,7 @@
-package com.ojhdtapp.parabox.ui.menu
+package com.ojhdtapp.parabox.ui.navigation.suite
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
@@ -23,24 +19,27 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetState
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
-import androidx.compose.material3.adaptive.navigationsuite.ExperimentalMaterial3AdaptiveNavigationSuiteApi
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
-import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
+import com.arkivanov.decompose.router.stack.ChildStack
+import com.arkivanov.decompose.router.stack.StackNavigation
 import com.ojhdtapp.parabox.NavGraphs
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
@@ -52,30 +51,28 @@ import com.ojhdtapp.parabox.ui.common.MyDismissibleNavigationDrawer
 import com.ojhdtapp.parabox.ui.common.MyDrawerState
 import com.ojhdtapp.parabox.ui.common.MyModalNavigationDrawer
 import com.ojhdtapp.parabox.ui.common.rememberMyDrawerState
+import com.ojhdtapp.parabox.ui.menu.MenuNavigationType
+import com.ojhdtapp.parabox.ui.menu.MenuPageEvent
+import com.ojhdtapp.parabox.ui.navigation.DefaultRootComponent
+import com.ojhdtapp.parabox.ui.navigation.RootComponent
 import com.ramcosta.composedestinations.DestinationsNavHost
-import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
-import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
-import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.RootNavGraph
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.navigation.dependency
 import com.ramcosta.composedestinations.spec.NavHostEngine
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
-@OptIn(
-    ExperimentalAnimationApi::class, ExperimentalMaterialNavigationApi::class,
-    ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveNavigationSuiteApi::class,
-    ExperimentalMaterial3AdaptiveApi::class,
-)
-@Destination
-@RootNavGraph(start = true)
+@OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun MenuPage(
-    navigator: DestinationsNavigator,
-    navController: NavController,
-    mainSharedViewModel: MainSharedViewModel,
+fun NavigationSuite(
+    modifier: Modifier = Modifier,
+    navigation: StackNavigation<DefaultRootComponent.Config>,
+    stackState: ChildStack<*, RootComponent.Child>,
+    content: @Composable () -> Unit
 ) {
+    val mainSharedViewModel = hiltViewModel<MainSharedViewModel>()
+    val coroutineScope = rememberCoroutineScope()
+    val lifecycleOwner = LocalLifecycleOwner.current
+
     val navigationType: MenuNavigationType
     when (currentWindowAdaptiveInfo().windowSizeClass.widthSizeClass) {
         WindowWidthSizeClass.Compact -> {
@@ -98,120 +95,13 @@ fun MenuPage(
             navigationType = MenuNavigationType.BOTTOM_NAVIGATION
         }
     }
-    MenuNavigationWrapperUI(
-        navController = navController,
-        navigator = navigator,
-        mainSharedViewModel = mainSharedViewModel,
-        navigationType = navigationType,
-    )
-    // ** NavigationSuiteScaffold impl **
 
-//    val mainSharedState by mainSharedViewModel.uiState.collectAsState()
-//    val navSuiteType =
-//        NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(currentWindowAdaptiveInfo())
-//    val menuNavController = rememberNavController()
-//    val menuNavHostEngine = rememberAnimatedNavHostEngine(
-//        navHostContentAlignment = Alignment.TopCenter,
-//        rootDefaultAnimations = RootNavGraphDefaultAnimations(
-//            enterTransition = { fadeIn(tween(300)) + slideInVertically { 80 } },
-//            exitTransition = { fadeOut() },
-//        ),
-//        defaultAnimationsForNestedNavGraph = emptyMap()
-//    )
-//    val appCurrentDestinationState by menuNavController.appCurrentDestinationAsState()
-//    NavigationSuiteScaffold(
-//        navigationSuiteItems = {
-//            MenuNavigationDestination.values().forEach { destination ->
-//                val selected = appCurrentDestinationState in destination.graph.destinations
-//                item(
-//                    selected = selected,
-//                    onClick = {
-//                        menuNavController.navigate(destination.graph.route) {
-//                            popUpTo(NavGraphs.menu.route) {
-//                                saveState = true
-//                            }
-//                            launchSingleTop = true
-//                            restoreState = true
-//                        }
-//                    },
-//                    label = {
-//                        Text(
-//                            text = stringResource(id = destination.labelResId),
-//                            style = MaterialTheme.typography.labelLarge
-//                        )
-//                    },
-//                    icon = {
-//                            Icon(
-//                                imageVector = if (selected) destination.iconSelected else destination.icon,
-//                                contentDescription = stringResource(id = destination.labelResId)
-//                            )
-//                    },
-//                    badge = {
-//                        if (destination.graph == NavGraphs.message && mainSharedState.datastore.messageBadgeNum != 0)
-//                            Badge { Text(text = "${mainSharedState.datastore.messageBadgeNum}") }
-//                    },
-//                    alwaysShowLabel = false
-//                )
-//            }
-//        },
-//        layoutType = navSuiteType,
-//    ) {
-//        val listState = rememberLazyListState()
-//        DestinationsNavHost(
-//            modifier = Modifier
-//                .fillMaxSize(),
-//            navGraph = NavGraphs.menu,
-//            engine = menuNavHostEngine,
-//            navController = menuNavController,
-//            dependenciesContainerBuilder = {
-//                dependency(mainSharedViewModel)
-//                dependency(listState)
-//                dependency(windowSize)
-//                dependency(devicePosture)
-//            }
-//        ) {
-//
-//        }
-//    }
-}
-
-@OptIn(
-    ExperimentalAnimationApi::class, ExperimentalMaterialNavigationApi::class,
-    ExperimentalMaterial3Api::class
-)
-@Composable
-private fun MenuNavigationWrapperUI(
-    navController: NavController,
-    navigator: DestinationsNavigator,
-    mainSharedViewModel: MainSharedViewModel,
-    navigationType: MenuNavigationType,
-) {
-    // Destination
-    val menuNavController = rememberNavController()
-    val menuNavHostEngine = rememberAnimatedNavHostEngine(
-        navHostContentAlignment = Alignment.TopCenter,
-        rootDefaultAnimations = RootNavGraphDefaultAnimations(
-            enterTransition = { fadeIn(tween(300)) + slideInVertically { 80 } },
-            exitTransition = { fadeOut() },
-        ),
-        defaultAnimationsForNestedNavGraph = emptyMap()
-//        mapOf(
-//                    NavGraphs.message to NestedNavGraphDefaultAnimations(
-//                        enterTransition = { scaleIn(tween(200), 0.9f) + fadeIn(tween(200)) },
-//                        exitTransition = { scaleOut(tween(200), 1.1f) + fadeOut(tween(200)) },
-//                        popEnterTransition = {scaleIn(tween(200), 1.1f) + fadeIn(tween(200))},
-//                        popExitTransition = {scaleOut(tween(200), 0.9f) + fadeOut(tween(200))}
-//                    )
-//        )
-    )
-    val coroutineScope = rememberCoroutineScope()
-    val lifecycleOwner = LocalLifecycleOwner.current
-    val snackBarHostState = remember { SnackbarHostState() }
     // List
     val listState = rememberLazyListState()
     // Drawer
     val drawerState = rememberMyDrawerState(initialValue = DrawerValue.Closed)
     val bottomSheetState = rememberModalBottomSheetState()
+
     // Main State
     val mainSharedState by mainSharedViewModel.uiState.collectAsState()
 
@@ -302,17 +192,16 @@ private fun MenuNavigationWrapperUI(
         MyDismissibleNavigationDrawer(
             modifier = Modifier.background(MaterialTheme.colorScheme.surface),
             drawerContent = {
-            MenuNavigationDrawerContent(
-                navController = menuNavController,
-                rootNavController = navController,
-                messageBadge = mainSharedState.datastore.messageBadgeNum,
-                onEvent = menuEventHandler
-            )
-        }, drawerState = drawerState, drawerWidth = 304.dp) {
+                MenuNavigationDrawerContent(
+                    navigation = navigation,
+                    stackState = stackState,
+                    mainSharedState = mainSharedState,
+                    onEvent = menuEventHandler
+                )
+            }, drawerState = drawerState, drawerWidth = 304.dp) {
             MenuAppContent(
-                rootNavController = navController,
-                menuNavController = menuNavController,
-                menuNavHostEngine = menuNavHostEngine,
+                navigation = navigation,
+                stackState = stackState,
                 navigationType = navigationType,
                 listState = listState,
                 drawerState = drawerState,
@@ -320,6 +209,7 @@ private fun MenuNavigationWrapperUI(
                 mainSharedViewModel = mainSharedViewModel,
                 mainSharedState = mainSharedState,
                 onEvent = menuEventHandler,
+                content = content
             )
         }
     } else {
@@ -327,10 +217,10 @@ private fun MenuNavigationWrapperUI(
             modifier = Modifier.background(MaterialTheme.colorScheme.surface),
             drawerContent = {
                 MenuNavigationDrawerContent(
-                    navController = menuNavController,
-                    rootNavController = navController,
-                    messageBadge = mainSharedState.datastore.messageBadgeNum,
-                    onEvent = menuEventHandler,
+                    navigation = navigation,
+                    stackState = stackState,
+                    mainSharedState = mainSharedState,
+                    onEvent = menuEventHandler
                 )
             },
             drawerState = drawerState,
@@ -338,28 +228,27 @@ private fun MenuNavigationWrapperUI(
             drawerWidth = 304.dp
         ) {
             MenuAppContent(
-                rootNavController = navController,
-                menuNavController = menuNavController,
-                menuNavHostEngine = menuNavHostEngine,
+                navigation = navigation,
+                stackState = stackState,
                 navigationType = navigationType,
                 listState = listState,
                 drawerState = drawerState,
                 bottomSheetState = bottomSheetState,
                 mainSharedViewModel = mainSharedViewModel,
                 mainSharedState = mainSharedState,
-                onEvent = menuEventHandler
+                onEvent = menuEventHandler,
+                content = content
             )
         }
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MenuAppContent(
     modifier: Modifier = Modifier,
-    rootNavController: NavController,
-    menuNavController: NavHostController,
-    menuNavHostEngine: NavHostEngine,
+    navigation: StackNavigation<DefaultRootComponent.Config>,
+    stackState: ChildStack<*, RootComponent.Child>,
     navigationType: MenuNavigationType,
     listState: LazyListState,
     drawerState: MyDrawerState,
@@ -367,6 +256,7 @@ fun MenuAppContent(
     mainSharedViewModel: MainSharedViewModel,
     mainSharedState: MainSharedState,
     onEvent: (event: MenuPageEvent) -> Unit,
+    content: @Composable () -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
     ChatPickerDialog(
@@ -413,8 +303,9 @@ fun MenuAppContent(
         ) {
             MenuNavigationRail(
                 modifier = Modifier.zIndex(-1f),
+                navigation = navigation,
+                stackState = stackState,
                 mainSharedState = mainSharedState,
-                navController = menuNavController,
                 onEvent = onEvent
             )
         }
@@ -423,45 +314,15 @@ fun MenuAppContent(
                 .weight(1f),
             contentAlignment = Alignment.BottomCenter
         ) {
-            DestinationsNavHost(
-                modifier = Modifier
-                    .fillMaxSize(),
-                navGraph = NavGraphs.menu,
-                engine = menuNavHostEngine,
-                navController = menuNavController,
-                dependenciesContainerBuilder = {
-//                        dependency(NavGraphs.message) {
-//                            val parentEntry = remember(navBackStackEntry) {
-//                                menuNavController.getBackStackEntry(NavGraphs.message.route)
-//                            }
-//                            hiltViewModel<MessagePageViewModel>(parentEntry)
-//                        }
-                    dependency(mainSharedViewModel)
-                    dependency(listState)
-                    dependency(drawerState)
-                    dependency(bottomSheetState)
-                }
-            ) {
-//                composable(MessageAndChatPageWrapperUIDestination){
-//                    MessageAndChatPageWrapperUI(
-//                        mainNavController = navController,
-//                        mainSharedState = mainSharedState,
-//                        listState = listState,
-//                        navigationType = navigationType,
-//                        windowSize = windowSize,
-//                        devicePosture = devicePosture,
-//                        onMainSharedEvent = mainSharedViewModel::sendEvent
-//                    )
-//                }
-            }
+            content()
             androidx.compose.animation.AnimatedVisibility(
                 visible = navigationType == MenuNavigationType.BOTTOM_NAVIGATION && mainSharedState.showNavigationBar,
                 enter = slideInVertically { it },
                 exit = slideOutVertically { it }
-            ) {
-                MenuNavigationBar(
+            ) { MenuNavigationBar(
+                navigation = navigation,
+                stackState = stackState,
                     mainSharedState = mainSharedState,
-                    navController = menuNavController,
                     onEvent = onEvent,
                 )
             }

@@ -134,6 +134,11 @@ dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0'
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.5.0"
 
+    // Decompose
+    def decompose_version = "3.0.0-alpha08"
+    implementation "com.arkivanov.decompose:decompose:$decompose_version"
+    implementation "com.arkivanov.decompose:extensions-compose:$decompose_version"
+
     // LazyColumnScrollbar
     implementation 'com.github.nanihadesuka:LazyColumnScrollbar:1.9.0'
 

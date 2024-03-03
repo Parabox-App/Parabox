@@ -17,6 +17,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.WindowInsets
@@ -31,6 +32,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,6 +44,14 @@ import androidx.lifecycle.lifecycleScope
 import androidx.window.layout.FoldingFeature
 import androidx.window.layout.WindowInfoTracker
 import androidx.navigation.compose.rememberNavController
+import com.arkivanov.decompose.ExperimentalDecomposeApi
+import com.arkivanov.decompose.FaultyDecomposeApi
+import com.arkivanov.decompose.defaultComponentContext
+import com.arkivanov.decompose.extensions.compose.stack.Children
+import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimation
+import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimator
+import com.arkivanov.decompose.extensions.compose.subscribeAsState
+import com.arkivanov.decompose.retainedComponent
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.core.util.audio.AudioRecorder
@@ -57,6 +67,11 @@ import com.ojhdtapp.parabox.ui.common.LocalFixedInsets
 import com.ojhdtapp.parabox.ui.common.isBookPosture
 import com.ojhdtapp.parabox.ui.common.isSeparating
 import com.ojhdtapp.parabox.ui.menu.MenuPage
+import com.ojhdtapp.parabox.ui.message.MessagePageViewModel
+import com.ojhdtapp.parabox.ui.navigation.DefaultRootComponent
+import com.ojhdtapp.parabox.ui.navigation.RootComponent
+import com.ojhdtapp.parabox.ui.navigation.suite.NavigationSuite
+import com.ojhdtapp.parabox.ui.navigation.viewModelStoreOwner
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.animations.defaults.NestedNavGraphDefaultAnimations
 import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
@@ -71,7 +86,7 @@ import kotlinx.coroutines.flow.*
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var extensionServiceConnection : ExtensionServiceConnection
+    private lateinit var extensionServiceConnection: ExtensionServiceConnection
     private fun collectDarkModeFlow() {
         lifecycleScope.launch {
             dataStore.data.collectLatest {
@@ -112,8 +127,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     @OptIn(
-        ExperimentalAnimationApi::class, ExperimentalMaterialNavigationApi::class,
-        ExperimentalMaterial3WindowSizeClassApi::class, ExperimentalMaterial3Api::class
+        ExperimentalAnimationApi::class,
+        ExperimentalMaterialNavigationApi::class,
+        ExperimentalMaterial3WindowSizeClassApi::class,
+        ExperimentalMaterial3Api::class,
+        ExperimentalDecomposeApi::class,
+        FaultyDecomposeApi::class
     )
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -155,6 +174,12 @@ class MainActivity : AppCompatActivity() {
                 started = SharingStarted.Eagerly,
                 initialValue = DevicePosture.NormalPosture
             )
+        val root = retainedComponent {
+            DefaultRootComponent(
+                componentContext = it,
+            )
+        }
+
         setContent {
             // System Ui
             val darkTheme = isSystemInDarkTheme()
@@ -242,14 +267,30 @@ class MainActivity : AppCompatActivity() {
                         LocalFixedInsets provides fixedInsets,
                         LocalAudioRecorder provides AudioRecorder,
                         LocalMinimumInteractiveComponentEnforcement provides false
-                    )) {
-                    DestinationsNavHost(
-                        navGraph = NavGraphs.root,
-                        engine = mainNavHostEngine,
-                        navController = mainNavController,
-                        dependenciesContainerBuilder = {
-                            dependency(mainSharedViewModel)
-                        }){
+                    )
+                ) {
+                    val menuStackState by root.menuStack.subscribeAsState()
+                    NavigationSuite(navigation = root.menuNav, stackState = menuStackState) {
+                        Children(
+                            stack = root.menuStack,
+                            animation = stackAnimation { child, otherChild, direction ->
+                                stackAnimator(animationSpec = tween(100)) { _, _, content -> content(Modifier) }
+                            }
+                        ) { child ->
+                            when (val instance = child.instance) {
+                                is RootComponent.Child.Message -> {
+                                }
+
+                                is RootComponent.Child.File -> {
+
+                                }
+
+                                is RootComponent.Child.Contact -> {
+
+                                }
+                            }
+
+                        }
                     }
                 }
 
