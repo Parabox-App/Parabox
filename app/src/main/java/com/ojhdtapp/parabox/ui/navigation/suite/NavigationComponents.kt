@@ -1,41 +1,61 @@
 package com.ojhdtapp.parabox.ui.navigation.suite
 
-import com.ojhdtapp.parabox.ui.menu.MenuPageEvent
-
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.outlined.Chat
-import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.Work
-import androidx.compose.material.icons.filled.WorkOutline
-import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Contacts
+import androidx.compose.material.icons.outlined.Menu
+import androidx.compose.material.icons.outlined.MenuOpen
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.WorkOutline
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.navigation.NavController
-import androidx.compose.material3.*
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.bringToFront
-import com.arkivanov.decompose.router.stack.popWhile
+import com.arkivanov.decompose.router.stack.push
+import com.arkivanov.decompose.router.stack.pushNew
 import com.arkivanov.decompose.router.stack.replaceAll
-import com.ojhdtapp.parabox.NavGraph
-import com.ojhdtapp.parabox.NavGraphs
 import com.ojhdtapp.parabox.R
-import com.ojhdtapp.parabox.appCurrentDestinationAsState
-import com.ojhdtapp.parabox.destinations.SettingPageWrapperUiDestination
 import com.ojhdtapp.parabox.ui.MainSharedState
+import com.ojhdtapp.parabox.ui.menu.MenuPageEvent
 import com.ojhdtapp.parabox.ui.navigation.DefaultRootComponent
 import com.ojhdtapp.parabox.ui.navigation.RootComponent
-import com.ramcosta.composedestinations.navigation.navigate
 import kotlinx.coroutines.launch
 
 @Composable
@@ -116,7 +136,7 @@ fun MenuNavigationBar(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalDecomposeApi::class)
 @Composable
 fun MenuNavigationDrawerContent(
     modifier: Modifier = Modifier,
@@ -268,7 +288,7 @@ fun MenuNavigationDrawerContent(
             onClick = {
                 coroutineScope.launch {
                     onEvent(MenuPageEvent.OnDrawerItemClicked(false))
-                    // TODO: navigate to settings
+                    navigation.pushNew(DefaultRootComponent.Config.Setting)
                 }
             })
     }

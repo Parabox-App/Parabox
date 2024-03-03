@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox
 
+import FilePage
 import android.app.UiModeManager
 import android.content.ComponentName
 import android.content.Context
@@ -22,6 +23,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
@@ -41,6 +43,7 @@ import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.window.layout.FoldingFeature
 import androidx.window.layout.WindowInfoTracker
 import androidx.navigation.compose.rememberNavController
@@ -56,7 +59,6 @@ import com.google.accompanist.navigation.material.ExperimentalMaterialNavigation
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.core.util.audio.AudioRecorder
 import com.ojhdtapp.parabox.core.util.audio.LocalAudioRecorder
-import com.ojhdtapp.parabox.destinations.MenuPageDestination
 import com.ojhdtapp.parabox.domain.service.ExtensionService
 import com.ojhdtapp.parabox.domain.service.ExtensionServiceConnection
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
@@ -66,12 +68,17 @@ import com.ojhdtapp.parabox.ui.common.FixedInsets
 import com.ojhdtapp.parabox.ui.common.LocalFixedInsets
 import com.ojhdtapp.parabox.ui.common.isBookPosture
 import com.ojhdtapp.parabox.ui.common.isSeparating
-import com.ojhdtapp.parabox.ui.menu.MenuPage
+import com.ojhdtapp.parabox.ui.contact.ContactPageViewModel
+import com.ojhdtapp.parabox.ui.contact.ContactPageWrapperUI
+import com.ojhdtapp.parabox.ui.file.FilePageViewModel
+import com.ojhdtapp.parabox.ui.message.MessageAndChatPageWrapperUI
 import com.ojhdtapp.parabox.ui.message.MessagePageViewModel
 import com.ojhdtapp.parabox.ui.navigation.DefaultRootComponent
 import com.ojhdtapp.parabox.ui.navigation.RootComponent
 import com.ojhdtapp.parabox.ui.navigation.suite.NavigationSuite
 import com.ojhdtapp.parabox.ui.navigation.viewModelStoreOwner
+import com.ojhdtapp.parabox.ui.setting.SettingPageViewModel
+import com.ojhdtapp.parabox.ui.setting.SettingPageWrapperUi
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.animations.defaults.NestedNavGraphDefaultAnimations
 import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
@@ -205,11 +212,16 @@ class MainActivity : AppCompatActivity() {
                     navigationBarHeight = systemBarsPadding.calculateBottomPadding()
                 )
             }
+            val mainSharedViewModel = hiltViewModel<MainSharedViewModel>()
+            val messagePageViewModel = hiltViewModel<MessagePageViewModel>()
+            val filePageViewModel = hiltViewModel<FilePageViewModel>()
+            val contactPageViewModel = hiltViewModel<ContactPageViewModel>()
+            val settingPageViewModel = hiltViewModel<SettingPageViewModel>()
 
-            val mainNavController = rememberNavController()
-            val mainNavHostEngine = rememberAnimatedNavHostEngine(
-                navHostContentAlignment = Alignment.TopCenter,
-                rootDefaultAnimations = RootNavGraphDefaultAnimations(
+//            val mainNavController = rememberNavController()
+//            val mainNavHostEngine = rememberAnimatedNavHostEngine(
+//                navHostContentAlignment = Alignment.TopCenter,
+//                rootDefaultAnimations = RootNavGraphDefaultAnimations(
 //                    enterTransition = { slideInHorizontally { it }},
 //                    exitTransition = { slideOutHorizontally { -it }},
 //                    popEnterTransition = { slideInHorizontally { -it }},
@@ -218,26 +230,24 @@ class MainActivity : AppCompatActivity() {
 //                    exitTransition = { fadeOut(tween(300)) + scaleOut(tween(300), 1.1f) },
 //                    popEnterTransition = { fadeIn(tween(300)) + scaleIn(tween(300), 1.1f) },
 //                    popExitTransition = { fadeOut(tween(300)) + scaleOut(tween(300), 0.9f) }
-                    enterTransition = { slideInHorizontally { 100 } + fadeIn() },
-                    exitTransition = { slideOutHorizontally { -100 } + fadeOut() },
-                    popEnterTransition = { slideInHorizontally { -100 } + fadeIn() },
-                    popExitTransition = { slideOutHorizontally { 100 } + fadeOut() }
-                ),
-                defaultAnimationsForNestedNavGraph = mapOf(
-                    NavGraphs.guide to NestedNavGraphDefaultAnimations(
-                        enterTransition = { slideInHorizontally { it } },
-                        exitTransition = { slideOutHorizontally { -it } },
-                        popEnterTransition = { slideInHorizontally { -it } },
-                        popExitTransition = { slideOutHorizontally { it } },
+//                    enterTransition = { slideInHorizontally { 100 } + fadeIn() },
+//                    exitTransition = { slideOutHorizontally { -100 } + fadeOut() },
+//                    popEnterTransition = { slideInHorizontally { -100 } + fadeIn() },
+//                    popExitTransition = { slideOutHorizontally { 100 } + fadeOut() }
+//                ),
+//                defaultAnimationsForNestedNavGraph = mapOf(
+//                    NavGraphs.guide to NestedNavGraphDefaultAnimations(
+//                        enterTransition = { slideInHorizontally { it } },
+//                        exitTransition = { slideOutHorizontally { -it } },
+//                        popEnterTransition = { slideInHorizontally { -it } },
+//                        popExitTransition = { slideOutHorizontally { it } },
 //                        enterTransition = { slideInHorizontally { 100 } + fadeIn() },
 //                        exitTransition = { slideOutHorizontally { -100 } + fadeOut() },
 //                        popEnterTransition = { slideInHorizontally { -100 } + fadeIn() },
 //                        popExitTransition = { slideOutHorizontally { 100 } + fadeOut() }
-                    )
-                )
-            )
-            // Shared ViewModel
-            val mainSharedViewModel = hiltViewModel<MainSharedViewModel>(this)
+//                    )
+//                )
+//            )
 
 //            val shouldShowNav = menuNavController.appCurrentDestinationAsState().value in listOf(
 //                MessagePageDestination,
@@ -273,20 +283,43 @@ class MainActivity : AppCompatActivity() {
                     NavigationSuite(navigation = root.menuNav, stackState = menuStackState) {
                         Children(
                             stack = root.menuStack,
-                            animation = stackAnimation { child, otherChild, direction ->
-                                stackAnimator(animationSpec = tween(100)) { _, _, content -> content(Modifier) }
-                            }
+//                            animation = stackAnimation { child, otherChild, direction ->
+//                                stackAnimator(animationSpec = tween(100)) { _, _, content -> content(Modifier) }
+//                            }
                         ) { child ->
+
                             when (val instance = child.instance) {
                                 is RootComponent.Child.Message -> {
+                                    MessageAndChatPageWrapperUI(
+                                        modifier = Modifier.fillMaxSize(),
+                                        mainSharedViewModel = mainSharedViewModel,
+                                        viewModel = messagePageViewModel,
+                                        navigation = root.menuNav,
+                                        stackState = menuStackState
+                                    )
                                 }
 
                                 is RootComponent.Child.File -> {
-
+                                    FilePage(modifier = Modifier.fillMaxSize())
                                 }
 
                                 is RootComponent.Child.Contact -> {
-
+                                    ContactPageWrapperUI(
+                                        modifier = Modifier.fillMaxSize(),
+                                        mainSharedViewModel = mainSharedViewModel,
+                                        viewModel = contactPageViewModel,
+                                        navigation = root.menuNav,
+                                        stackState = menuStackState
+                                    )
+                                }
+                                is RootComponent.Child.Setting -> {
+                                    SettingPageWrapperUi(
+                                        modifier = Modifier.fillMaxSize(),
+                                        mainSharedViewModel = mainSharedViewModel,
+                                        viewModel = settingPageViewModel,
+                                        navigation = root.menuNav,
+                                        stackState = menuStackState
+                                    )
                                 }
                             }
 

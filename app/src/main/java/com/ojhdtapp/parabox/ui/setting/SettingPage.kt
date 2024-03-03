@@ -41,25 +41,31 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.arkivanov.decompose.router.stack.ChildStack
+import com.arkivanov.decompose.router.stack.StackNavigation
+import com.arkivanov.decompose.router.stack.pop
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
+import com.ojhdtapp.parabox.ui.navigation.DefaultRootComponent
+import com.ojhdtapp.parabox.ui.navigation.RootComponent
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun SettingPage(
     modifier: Modifier = Modifier,
     viewModel: SettingPageViewModel,
-    mainNavController: NavController,
     mainSharedState: MainSharedState,
     layoutType: SettingLayoutType,
     scaffoldNavigator: ThreePaneScaffoldNavigator<Setting>,
+    navigation: StackNavigation<DefaultRootComponent.Config>,
+    stackState: ChildStack<*, RootComponent.Child>,
     onMainSharedEvent: (MainSharedEvent) -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     BackHandler {
-        mainNavController.navigateUp()
+        navigation.pop()
     }
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -73,7 +79,7 @@ fun SettingPage(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { mainNavController.navigateUp() }) {
+                    IconButton(onClick = { navigation.pop() }) {
                         Icon(imageVector = Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "back")
                     }
                 },

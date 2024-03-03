@@ -389,6 +389,12 @@ class MainSharedViewModel @Inject constructor(
                     openDateRangePicker = false
                 )
             }
+            is MainSharedEvent.PageListScrollBy -> {
+                viewModelScope.launch {
+                    sendEffect(MainSharedEffect.PageListScrollBy)
+                }
+                return state
+            }
         }
     }
 

@@ -8,7 +8,6 @@ import com.ojhdtapp.parabox.ui.MainSharedState
 @Composable
 fun ContactDetailPage(
     viewModel: ContactPageViewModel,
-    mainNavController: NavController,
     mainSharedState: MainSharedState,
     layoutType: ContactLayoutType,
     onMainSharedEvent: (MainSharedEvent) -> Unit

@@ -38,9 +38,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
-import com.ojhdtapp.parabox.NavGraphs
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
@@ -53,6 +53,7 @@ import com.ojhdtapp.parabox.ui.common.MyModalNavigationDrawer
 import com.ojhdtapp.parabox.ui.common.rememberMyDrawerState
 import com.ojhdtapp.parabox.ui.menu.MenuNavigationType
 import com.ojhdtapp.parabox.ui.menu.MenuPageEvent
+import com.ojhdtapp.parabox.ui.message.MessagePageViewModel
 import com.ojhdtapp.parabox.ui.navigation.DefaultRootComponent
 import com.ojhdtapp.parabox.ui.navigation.RootComponent
 import com.ramcosta.composedestinations.DestinationsNavHost
@@ -126,13 +127,9 @@ fun NavigationSuite(
             }
 
             is MenuPageEvent.OnBarItemClicked -> {
-                coroutineScope.launch {
-                    if (!listState.canScrollForward) {
-                        listState.animateScrollToItem(0)
-                    } else {
-                        listState.animateScrollBy(1000f)
-                    }
-                }
+                mainSharedViewModel.sendEvent(
+                    MainSharedEvent.PageListScrollBy
+                )
             }
         }
     }
@@ -190,7 +187,7 @@ fun NavigationSuite(
     }
     if (navigationType == MenuNavigationType.PERMANENT_NAVIGATION_DRAWER) {
         MyDismissibleNavigationDrawer(
-            modifier = Modifier.background(MaterialTheme.colorScheme.surface),
+            modifier = modifier.background(MaterialTheme.colorScheme.surface),
             drawerContent = {
                 MenuNavigationDrawerContent(
                     navigation = navigation,
@@ -203,7 +200,6 @@ fun NavigationSuite(
                 navigation = navigation,
                 stackState = stackState,
                 navigationType = navigationType,
-                listState = listState,
                 drawerState = drawerState,
                 bottomSheetState = bottomSheetState,
                 mainSharedViewModel = mainSharedViewModel,
@@ -214,7 +210,7 @@ fun NavigationSuite(
         }
     } else {
         MyModalNavigationDrawer(
-            modifier = Modifier.background(MaterialTheme.colorScheme.surface),
+            modifier = modifier.background(MaterialTheme.colorScheme.surface),
             drawerContent = {
                 MenuNavigationDrawerContent(
                     navigation = navigation,
@@ -231,7 +227,6 @@ fun NavigationSuite(
                 navigation = navigation,
                 stackState = stackState,
                 navigationType = navigationType,
-                listState = listState,
                 drawerState = drawerState,
                 bottomSheetState = bottomSheetState,
                 mainSharedViewModel = mainSharedViewModel,
@@ -250,7 +245,6 @@ fun MenuAppContent(
     navigation: StackNavigation<DefaultRootComponent.Config>,
     stackState: ChildStack<*, RootComponent.Child>,
     navigationType: MenuNavigationType,
-    listState: LazyListState,
     drawerState: MyDrawerState,
     bottomSheetState: SheetState,
     mainSharedViewModel: MainSharedViewModel,

@@ -10,11 +10,13 @@ import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
 import androidx.compose.animation.graphics.vector.AnimatedImageVector
 import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -44,8 +46,10 @@ import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
+import com.ojhdtapp.parabox.ui.MainSharedEffect
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
+import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.common.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -60,20 +64,19 @@ import me.saket.swipe.rememberSwipeableActionsState
 fun MessagePage(
     modifier: Modifier = Modifier,
     viewModel: MessagePageViewModel,
-    mainNavController: NavController,
-    mainSharedState: MainSharedState,
-    listState: LazyListState,
+    mainSharedViewModel: MainSharedViewModel,
     layoutType: MessageLayoutType,
-    onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
     val lifecycleOwner = LocalLifecycleOwner.current
     val hapticFeedback = LocalHapticFeedback.current
     val snackBarHostState = remember { SnackbarHostState() }
     val state by viewModel.uiState.collectAsState()
+    val mainSharedState by mainSharedViewModel.uiState.collectAsState()
     var snackBarJob: Job? by remember {
         mutableStateOf(null)
     }
+    val listState = rememberLazyListState()
     val horizontalPadding by animateDpAsState(
         targetValue = when (layoutType) {
             MessageLayoutType.NORMAL -> 16.dp
@@ -102,6 +105,24 @@ fun MessagePage(
 
                                 SnackbarResult.Dismissed -> {}
                                 else -> {}
+                            }
+                        }
+                    }
+
+                    else -> {}
+                }
+            }
+    }
+    LaunchedEffect(Unit) {
+        mainSharedViewModel.uiEffect.flowWithLifecycle(lifecycleOwner.lifecycle, Lifecycle.State.STARTED)
+            .collectLatest {
+                when (it) {
+                    is MainSharedEffect.PageListScrollBy -> {
+                        coroutineScope.launch {
+                            if (!listState.canScrollForward) {
+                                listState.animateScrollToItem(0)
+                            } else {
+                                listState.animateScrollBy(1000f)
                             }
                         }
                     }
@@ -164,7 +185,7 @@ fun MessagePage(
 
     Scaffold(
         modifier = modifier,
-        snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
+        snackbarHost = { SnackbarHost(modifier = Modifier.offset(y = 80.dp), hostState = snackBarHostState) },
         containerColor = Color.Transparent,
         topBar = {
             if (layoutType == MessageLayoutType.SPLIT) {
@@ -176,25 +197,25 @@ fun MessagePage(
                         .clearFocusOnKeyboardDismiss(),
                     query = mainSharedState.search.query,
                     onQueryChange = {
-                        onMainSharedEvent(
+                        mainSharedViewModel.sendEvent(
                             MainSharedEvent.QueryInput(it)
                         )
                     },
                     onSearch = {
                         if (it.isNotBlank()) {
-                            onMainSharedEvent(MainSharedEvent.SearchConfirm(it))
+                            mainSharedViewModel.sendEvent(MainSharedEvent.SearchConfirm(it))
                         }
                     },
                     active = mainSharedState.search.isActive,
-                    onActiveChange = { onMainSharedEvent(MainSharedEvent.TriggerSearchBar(it)) },
+                    onActiveChange = { mainSharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(it)) },
                     placeholder = { Text(text = "搜索 Parabox") },
                     leadingIcon = {
                         IconButton(
                             onClick = {
                                 if (mainSharedState.search.isActive) {
-                                    onMainSharedEvent(MainSharedEvent.TriggerSearchBar(false))
+                                    mainSharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(false))
                                 } else {
-                                    onMainSharedEvent(MainSharedEvent.OpenDrawer(!mainSharedState.openDrawer.open))
+                                    mainSharedViewModel.sendEvent(MainSharedEvent.OpenDrawer(!mainSharedState.openDrawer.open))
                                 }
                             }
                         ) {
@@ -211,7 +232,7 @@ fun MessagePage(
                             exit = fadeOut()
                         ) {
                             IconButton(
-                                onClick = { onMainSharedEvent(MainSharedEvent.SearchAvatarClicked) },
+                                onClick = { mainSharedViewModel.sendEvent(MainSharedEvent.SearchAvatarClicked) },
                             ) {
                                 Box(
                                     modifier = Modifier
@@ -234,7 +255,7 @@ fun MessagePage(
                     shadowElevation = searchBarShadowElevation,
                     colors = SearchBarDefaults.colors(dividerColor = Color.Transparent)
                 ) {
-                    SearchContent(state = mainSharedState, onEvent = onMainSharedEvent)
+                    SearchContent(state = mainSharedState, onEvent = mainSharedViewModel::sendEvent)
                 }
             } else {
                 SearchBar(
@@ -244,25 +265,25 @@ fun MessagePage(
                         .clearFocusOnKeyboardDismiss(),
                     query = mainSharedState.search.query,
                     onQueryChange = {
-                        onMainSharedEvent(
+                        mainSharedViewModel.sendEvent(
                             MainSharedEvent.QueryInput(it)
                         )
                     },
                     onSearch = {
                         if (it.isNotBlank()) {
-                            onMainSharedEvent(MainSharedEvent.SearchConfirm(it))
+                            mainSharedViewModel.sendEvent(MainSharedEvent.SearchConfirm(it))
                         }
                     },
                     active = mainSharedState.search.isActive,
-                    onActiveChange = { onMainSharedEvent(MainSharedEvent.TriggerSearchBar(it)) },
+                    onActiveChange = { mainSharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(it)) },
                     placeholder = { Text(text = "搜索 Parabox") },
                     leadingIcon = {
                         IconButton(
                             onClick = {
                                 if (mainSharedState.search.isActive) {
-                                    onMainSharedEvent(MainSharedEvent.TriggerSearchBar(false))
+                                    mainSharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(false))
                                 } else {
-                                    onMainSharedEvent(MainSharedEvent.OpenDrawer(!mainSharedState.openDrawer.open))
+                                    mainSharedViewModel.sendEvent(MainSharedEvent.OpenDrawer(!mainSharedState.openDrawer.open))
                                 }
                             }
                         ) {
@@ -279,7 +300,7 @@ fun MessagePage(
                             exit = fadeOut()
                         ) {
                             IconButton(
-                                onClick = { onMainSharedEvent(MainSharedEvent.SearchAvatarClicked) },
+                                onClick = { mainSharedViewModel.sendEvent(MainSharedEvent.SearchAvatarClicked) },
                             ) {
                                 Box(
                                     modifier = Modifier
@@ -302,7 +323,7 @@ fun MessagePage(
                     shadowElevation = searchBarShadowElevation,
                     colors = SearchBarDefaults.colors(dividerColor = Color.Transparent)
                 ) {
-                    SearchContent(state = mainSharedState, onEvent = onMainSharedEvent)
+                    SearchContent(state = mainSharedState, onEvent = mainSharedViewModel::sendEvent)
                 }
             }
 

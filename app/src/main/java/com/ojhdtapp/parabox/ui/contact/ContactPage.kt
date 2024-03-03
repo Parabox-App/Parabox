@@ -74,7 +74,6 @@ import my.nanihadesuka.compose.ScrollbarSelectionMode
 fun ContactPage(
     modifier: Modifier = Modifier,
     viewModel: ContactPageViewModel,
-    mainNavController: NavController,
     mainSharedState: MainSharedState,
     layoutType: ContactLayoutType,
     onMainSharedEvent: (MainSharedEvent) -> Unit

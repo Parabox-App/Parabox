@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.ui.navigation
 
 import android.os.Parcelable
+import androidx.lifecycle.ViewModelStoreOwner
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.slot.ChildSlot
 import com.arkivanov.decompose.router.slot.SlotNavigation
@@ -21,6 +22,7 @@ interface RootComponent {
         class Message(val component: MessageComponent) : Child()
         class File(val component: FileComponent) : Child()
         class Contact(val component: ContactComponent) : Child()
+        class Setting(val component: SettingComponent) : Child()
     }
 }
 
@@ -40,6 +42,7 @@ class DefaultRootComponent(componentContext: ComponentContext) : RootComponent, 
                     Config.Message -> RootComponent.Child.Message(MessageComponent(childComponentContext))
                     Config.File -> RootComponent.Child.File(FileComponent(childComponentContext))
                     Config.Contact -> RootComponent.Child.Contact(ContactComponent(childComponentContext))
+                    Config.Setting -> RootComponent.Child.Setting(SettingComponent(childComponentContext))
                 }
             }
         )
@@ -58,5 +61,9 @@ class DefaultRootComponent(componentContext: ComponentContext) : RootComponent, 
         @Parcelize
         @Serializable
         data object Contact : Config
+
+        @Parcelize
+        @Serializable
+        data object Setting : Config
     }
 }
