@@ -2,24 +2,18 @@ package com.ojhdtapp.parabox
 
 import FilePage
 import android.app.UiModeManager
-import android.content.ComponentName
 import android.content.Context
-import android.content.Intent
-import android.content.ServiceConnection
 import android.os.Build
 import android.os.Bundle
-import android.os.IBinder
-import android.util.Log
 import android.view.WindowManager
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -27,39 +21,34 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
-import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.window.layout.FoldingFeature
 import androidx.window.layout.WindowInfoTracker
-import androidx.navigation.compose.rememberNavController
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.FaultyDecomposeApi
-import com.arkivanov.decompose.defaultComponentContext
 import com.arkivanov.decompose.extensions.compose.stack.Children
+import com.arkivanov.decompose.extensions.compose.stack.animation.fade
+import com.arkivanov.decompose.extensions.compose.stack.animation.plus
+import com.arkivanov.decompose.extensions.compose.stack.animation.predictiveback.androidPredictiveBackAnimatable
+import com.arkivanov.decompose.extensions.compose.stack.animation.predictiveback.predictiveBackAnimation
+import com.arkivanov.decompose.extensions.compose.stack.animation.scale
+import com.arkivanov.decompose.extensions.compose.stack.animation.slide
 import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimation
-import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimator
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.arkivanov.decompose.retainedComponent
+import com.arkivanov.decompose.router.stack.pop
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.core.util.audio.AudioRecorder
 import com.ojhdtapp.parabox.core.util.audio.LocalAudioRecorder
-import com.ojhdtapp.parabox.domain.service.ExtensionService
 import com.ojhdtapp.parabox.domain.service.ExtensionServiceConnection
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.common.DevicePosture
@@ -74,17 +63,12 @@ import com.ojhdtapp.parabox.ui.file.FilePageViewModel
 import com.ojhdtapp.parabox.ui.message.MessageAndChatPageWrapperUI
 import com.ojhdtapp.parabox.ui.message.MessagePageViewModel
 import com.ojhdtapp.parabox.ui.navigation.DefaultRootComponent
+import com.ojhdtapp.parabox.ui.navigation.MenuComponent
 import com.ojhdtapp.parabox.ui.navigation.RootComponent
+import com.ojhdtapp.parabox.ui.navigation.slideWithOffset
 import com.ojhdtapp.parabox.ui.navigation.suite.NavigationSuite
-import com.ojhdtapp.parabox.ui.navigation.viewModelStoreOwner
 import com.ojhdtapp.parabox.ui.setting.SettingPageViewModel
 import com.ojhdtapp.parabox.ui.setting.SettingPageWrapperUi
-import com.ramcosta.composedestinations.DestinationsNavHost
-import com.ramcosta.composedestinations.animations.defaults.NestedNavGraphDefaultAnimations
-import com.ramcosta.composedestinations.animations.defaults.RootNavGraphDefaultAnimations
-import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
-import com.ramcosta.composedestinations.manualcomposablecalls.composable
-import com.ramcosta.composedestinations.navigation.dependency
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -279,51 +263,71 @@ class MainActivity : AppCompatActivity() {
                         LocalMinimumInteractiveComponentEnforcement provides false
                     )
                 ) {
-                    val menuStackState by root.menuStack.subscribeAsState()
-                    NavigationSuite(navigation = root.menuNav, stackState = menuStackState) {
-                        Children(
-                            stack = root.menuStack,
-//                            animation = stackAnimation { child, otherChild, direction ->
-//                                stackAnimator(animationSpec = tween(100)) { _, _, content -> content(Modifier) }
-//                            }
-                        ) { child ->
+                    val rootStackState by root.rootStack.subscribeAsState()
+                    Children(
+                        stack = root.rootStack,
+                        animation = predictiveBackAnimation(
+                            backHandler = root.backHandler,
+                            fallbackAnimation = stackAnimation(fade() + slideWithOffset(tween(), Orientation.Horizontal, 300f)),
+                            selector = { backEvent, _, _ -> androidPredictiveBackAnimatable(backEvent) },
+                            onBack = {
+                                root.rootNav.pop()
+                            },
+                        ),
+                    ) { child ->
+                        when (val instance = child.instance) {
+                            is RootComponent.RootChild.Menu -> {
+                                val menuStackState by instance.component.menuStack.subscribeAsState()
+                                NavigationSuite(
+                                    rootNavigation = root.rootNav,
+                                    rootStackState = rootStackState,
+                                    menuNavigation = instance.component.menuNav,
+                                    menuStackState = menuStackState
+                                ) {
+                                    Children(
+                                        stack = instance.component.menuStack,
+                                        animation = stackAnimation(animator = fade() + slideWithOffset( tween(), Orientation.Vertical, 80f)),
+                                    ) { child ->
+                                        when (child.instance) {
+                                            is MenuComponent.MenuChild.Message -> {
+                                                MessageAndChatPageWrapperUI(
+                                                    modifier = Modifier.fillMaxSize(),
+                                                    mainSharedViewModel = mainSharedViewModel,
+                                                    viewModel = messagePageViewModel,
+                                                    navigation = instance.component.menuNav,
+                                                    stackState = menuStackState
+                                                )
+                                            }
 
-                            when (val instance = child.instance) {
-                                is RootComponent.Child.Message -> {
-                                    MessageAndChatPageWrapperUI(
-                                        modifier = Modifier.fillMaxSize(),
-                                        mainSharedViewModel = mainSharedViewModel,
-                                        viewModel = messagePageViewModel,
-                                        navigation = root.menuNav,
-                                        stackState = menuStackState
-                                    )
-                                }
+                                            is MenuComponent.MenuChild.File -> {
+                                                FilePage(modifier = Modifier.fillMaxSize())
+                                            }
 
-                                is RootComponent.Child.File -> {
-                                    FilePage(modifier = Modifier.fillMaxSize())
-                                }
-
-                                is RootComponent.Child.Contact -> {
-                                    ContactPageWrapperUI(
-                                        modifier = Modifier.fillMaxSize(),
-                                        mainSharedViewModel = mainSharedViewModel,
-                                        viewModel = contactPageViewModel,
-                                        navigation = root.menuNav,
-                                        stackState = menuStackState
-                                    )
-                                }
-                                is RootComponent.Child.Setting -> {
-                                    SettingPageWrapperUi(
-                                        modifier = Modifier.fillMaxSize(),
-                                        mainSharedViewModel = mainSharedViewModel,
-                                        viewModel = settingPageViewModel,
-                                        navigation = root.menuNav,
-                                        stackState = menuStackState
-                                    )
+                                            is MenuComponent.MenuChild.Contact -> {
+                                                ContactPageWrapperUI(
+                                                    modifier = Modifier.fillMaxSize(),
+                                                    mainSharedViewModel = mainSharedViewModel,
+                                                    viewModel = contactPageViewModel,
+                                                    navigation = instance.component.menuNav,
+                                                    stackState = menuStackState
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
 
+                            is RootComponent.RootChild.Setting -> {
+                                SettingPageWrapperUi(
+                                    modifier = Modifier.fillMaxSize(),
+                                    mainSharedViewModel = mainSharedViewModel,
+                                    viewModel = settingPageViewModel,
+                                    navigation = root.rootNav,
+                                    stackState = rootStackState
+                                )
+                            }
                         }
+
                     }
                 }
 

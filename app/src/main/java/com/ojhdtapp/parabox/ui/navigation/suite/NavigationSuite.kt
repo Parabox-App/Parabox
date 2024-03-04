@@ -7,14 +7,10 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -36,9 +32,6 @@ import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
-import androidx.navigation.NavController
-import androidx.navigation.NavHostController
-import androidx.paging.compose.collectAsLazyPagingItems
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.ojhdtapp.parabox.ui.MainSharedEvent
@@ -53,12 +46,10 @@ import com.ojhdtapp.parabox.ui.common.MyModalNavigationDrawer
 import com.ojhdtapp.parabox.ui.common.rememberMyDrawerState
 import com.ojhdtapp.parabox.ui.menu.MenuNavigationType
 import com.ojhdtapp.parabox.ui.menu.MenuPageEvent
-import com.ojhdtapp.parabox.ui.message.MessagePageViewModel
+import com.ojhdtapp.parabox.ui.navigation.DefaultMenuComponent
 import com.ojhdtapp.parabox.ui.navigation.DefaultRootComponent
+import com.ojhdtapp.parabox.ui.navigation.MenuComponent
 import com.ojhdtapp.parabox.ui.navigation.RootComponent
-import com.ramcosta.composedestinations.DestinationsNavHost
-import com.ramcosta.composedestinations.navigation.dependency
-import com.ramcosta.composedestinations.spec.NavHostEngine
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -66,8 +57,10 @@ import kotlinx.coroutines.launch
 @Composable
 fun NavigationSuite(
     modifier: Modifier = Modifier,
-    navigation: StackNavigation<DefaultRootComponent.Config>,
-    stackState: ChildStack<*, RootComponent.Child>,
+    rootNavigation: StackNavigation<DefaultRootComponent.RootConfig>,
+    rootStackState: ChildStack<*, RootComponent.RootChild>,
+    menuNavigation: StackNavigation<DefaultMenuComponent.MenuConfig>,
+    menuStackState: ChildStack<*, MenuComponent.MenuChild>,
     content: @Composable () -> Unit
 ) {
     val mainSharedViewModel = hiltViewModel<MainSharedViewModel>()
@@ -190,15 +183,16 @@ fun NavigationSuite(
             modifier = modifier.background(MaterialTheme.colorScheme.surface),
             drawerContent = {
                 MenuNavigationDrawerContent(
-                    navigation = navigation,
-                    stackState = stackState,
+                    navigation = menuNavigation,
+                    stackState = menuStackState,
+                    rootNavigation = rootNavigation,
                     mainSharedState = mainSharedState,
                     onEvent = menuEventHandler
                 )
             }, drawerState = drawerState, drawerWidth = 304.dp) {
             MenuAppContent(
-                navigation = navigation,
-                stackState = stackState,
+                navigation = menuNavigation,
+                stackState = menuStackState,
                 navigationType = navigationType,
                 drawerState = drawerState,
                 bottomSheetState = bottomSheetState,
@@ -213,8 +207,9 @@ fun NavigationSuite(
             modifier = modifier.background(MaterialTheme.colorScheme.surface),
             drawerContent = {
                 MenuNavigationDrawerContent(
-                    navigation = navigation,
-                    stackState = stackState,
+                    navigation = menuNavigation,
+                    stackState = menuStackState,
+                    rootNavigation = rootNavigation,
                     mainSharedState = mainSharedState,
                     onEvent = menuEventHandler
                 )
@@ -224,8 +219,8 @@ fun NavigationSuite(
             drawerWidth = 304.dp
         ) {
             MenuAppContent(
-                navigation = navigation,
-                stackState = stackState,
+                navigation = menuNavigation,
+                stackState = menuStackState,
                 navigationType = navigationType,
                 drawerState = drawerState,
                 bottomSheetState = bottomSheetState,
@@ -242,8 +237,8 @@ fun NavigationSuite(
 @Composable
 fun MenuAppContent(
     modifier: Modifier = Modifier,
-    navigation: StackNavigation<DefaultRootComponent.Config>,
-    stackState: ChildStack<*, RootComponent.Child>,
+    navigation: StackNavigation<DefaultMenuComponent.MenuConfig>,
+    stackState: ChildStack<*, MenuComponent.MenuChild>,
     navigationType: MenuNavigationType,
     drawerState: MyDrawerState,
     bottomSheetState: SheetState,

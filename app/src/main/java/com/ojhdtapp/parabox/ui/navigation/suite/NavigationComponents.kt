@@ -48,21 +48,22 @@ import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.bringToFront
-import com.arkivanov.decompose.router.stack.push
 import com.arkivanov.decompose.router.stack.pushNew
 import com.arkivanov.decompose.router.stack.replaceAll
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.menu.MenuPageEvent
+import com.ojhdtapp.parabox.ui.navigation.DefaultMenuComponent
 import com.ojhdtapp.parabox.ui.navigation.DefaultRootComponent
+import com.ojhdtapp.parabox.ui.navigation.MenuComponent
 import com.ojhdtapp.parabox.ui.navigation.RootComponent
 import kotlinx.coroutines.launch
 
 @Composable
 fun MenuNavigationBar(
     modifier: Modifier = Modifier,
-    navigation: StackNavigation<DefaultRootComponent.Config>,
-    stackState: ChildStack<*, RootComponent.Child>,
+    navigation: StackNavigation<DefaultMenuComponent.MenuConfig>,
+    stackState: ChildStack<*, MenuComponent.MenuChild>,
     mainSharedState: MainSharedState,
     onEvent: (event: MenuPageEvent) -> Unit,
 ) {
@@ -70,9 +71,9 @@ fun MenuNavigationBar(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.surface,
     ) {
-        NavigationBarItem(selected = stackState.active.instance is RootComponent.Child.Message, onClick = {
-            navigation.bringToFront(DefaultRootComponent.Config.Message) {
-                navigation.replaceAll(DefaultRootComponent.Config.Message)
+        NavigationBarItem(selected = stackState.active.instance is MenuComponent.MenuChild.Message, onClick = {
+            navigation.bringToFront(DefaultMenuComponent.MenuConfig.Message) {
+                navigation.replaceAll(DefaultMenuComponent.MenuConfig.Message)
             }
         }, icon = {
             BadgedBox(badge = {
@@ -83,7 +84,7 @@ fun MenuNavigationBar(
                     ) { Text(text = "${mainSharedState.datastore.messageBadgeNum}") }
             }) {
                 Icon(
-                    imageVector = if (stackState.active.instance is RootComponent.Child.Message) Icons.AutoMirrored.Default.Chat else Icons.AutoMirrored.Outlined.Chat,
+                    imageVector = if (stackState.active.instance is MenuComponent.MenuChild.Message) Icons.AutoMirrored.Default.Chat else Icons.AutoMirrored.Outlined.Chat,
                     contentDescription = stringResource(id = R.string.conversation)
                 )
             }
@@ -97,13 +98,13 @@ fun MenuNavigationBar(
             alwaysShowLabel = false
         )
 
-        NavigationBarItem(selected = stackState.active.instance is RootComponent.Child.File, onClick = {
-            navigation.bringToFront(DefaultRootComponent.Config.File) {
-                navigation.replaceAll(DefaultRootComponent.Config.Message, DefaultRootComponent.Config.File)
+        NavigationBarItem(selected = stackState.active.instance is MenuComponent.MenuChild.File, onClick = {
+            navigation.bringToFront(DefaultMenuComponent.MenuConfig.File) {
+                navigation.replaceAll(DefaultMenuComponent.MenuConfig.File)
             }
         }, icon = {
             Icon(
-                imageVector = if (stackState.active.instance is RootComponent.Child.File) Icons.Default.Work else Icons.Outlined.WorkOutline,
+                imageVector = if (stackState.active.instance is MenuComponent.MenuChild.File) Icons.Default.Work else Icons.Outlined.WorkOutline,
                 contentDescription = stringResource(id = R.string.work)
             )
         },
@@ -115,13 +116,13 @@ fun MenuNavigationBar(
             },
             alwaysShowLabel = false
         )
-        NavigationBarItem(selected = stackState.active.instance is RootComponent.Child.Contact, onClick = {
-            navigation.bringToFront(DefaultRootComponent.Config.Contact) {
-                navigation.replaceAll(DefaultRootComponent.Config.Message, DefaultRootComponent.Config.Contact)
+        NavigationBarItem(selected = stackState.active.instance is MenuComponent.MenuChild.Contact, onClick = {
+            navigation.bringToFront(DefaultMenuComponent.MenuConfig.Contact) {
+                navigation.replaceAll(DefaultMenuComponent.MenuConfig.Contact)
             }
         }, icon = {
             Icon(
-                imageVector = if (stackState.active.instance is RootComponent.Child.Contact) Icons.Default.Contacts else Icons.Outlined.Contacts,
+                imageVector = if (stackState.active.instance is MenuComponent.MenuChild.Contact) Icons.Default.Contacts else Icons.Outlined.Contacts,
                 contentDescription = stringResource(id = R.string.contact_person)
             )
         },
@@ -140,8 +141,9 @@ fun MenuNavigationBar(
 @Composable
 fun MenuNavigationDrawerContent(
     modifier: Modifier = Modifier,
-    navigation: StackNavigation<DefaultRootComponent.Config>,
-    stackState: ChildStack<*, RootComponent.Child>,
+    navigation: StackNavigation<DefaultMenuComponent.MenuConfig>,
+    rootNavigation: StackNavigation<DefaultRootComponent.RootConfig>,
+    stackState: ChildStack<*, MenuComponent.MenuChild>,
     mainSharedState: MainSharedState,
     onEvent: (event: MenuPageEvent) -> Unit,
 ) =
@@ -186,15 +188,15 @@ fun MenuNavigationDrawerContent(
             modifier = Modifier
                 .padding(12.dp, 0.dp, 12.dp, 6.dp)
                 .height(48.dp),
-            selected = stackState.active.instance is RootComponent.Child.Message, onClick = {
-                navigation.bringToFront(DefaultRootComponent.Config.Message) {
-                    navigation.replaceAll(DefaultRootComponent.Config.Message)
+            selected = stackState.active.instance is MenuComponent.MenuChild.Message, onClick = {
+                navigation.bringToFront(DefaultMenuComponent.MenuConfig.Message) {
+                    navigation.replaceAll(DefaultMenuComponent.MenuConfig.Message)
                 }
                 onEvent(MenuPageEvent.OnDrawerItemClicked(false))
 
             }, icon = {
                 Icon(
-                    imageVector = if (stackState.active.instance is RootComponent.Child.Message) Icons.AutoMirrored.Default.Chat else Icons.AutoMirrored.Outlined.Chat,
+                    imageVector = if (stackState.active.instance is MenuComponent.MenuChild.Message) Icons.AutoMirrored.Default.Chat else Icons.AutoMirrored.Outlined.Chat,
                     contentDescription = stringResource(id = R.string.conversation)
                 )
             },
@@ -220,17 +222,17 @@ fun MenuNavigationDrawerContent(
             modifier = Modifier
                 .padding(12.dp, 0.dp, 12.dp, 6.dp)
                 .height(48.dp),
-            selected = stackState.active.instance is RootComponent.Child.File,
+            selected = stackState.active.instance is MenuComponent.MenuChild.File,
             onClick = {
-                navigation.bringToFront(DefaultRootComponent.Config.File) {
-                    navigation.replaceAll(DefaultRootComponent.Config.Message, DefaultRootComponent.Config.File)
+                navigation.bringToFront(DefaultMenuComponent.MenuConfig.File) {
+                    navigation.replaceAll(DefaultMenuComponent.MenuConfig.File)
                 }
                 onEvent(MenuPageEvent.OnDrawerItemClicked(false))
 
             },
             icon = {
                 Icon(
-                    imageVector = if (stackState.active.instance is RootComponent.Child.File) Icons.Default.Work else Icons.Outlined.WorkOutline,
+                    imageVector = if (stackState.active.instance is MenuComponent.MenuChild.File) Icons.Default.Work else Icons.Outlined.WorkOutline,
                     contentDescription = stringResource(id = R.string.work)
                 )
             },
@@ -245,17 +247,17 @@ fun MenuNavigationDrawerContent(
             modifier = Modifier
                 .padding(12.dp, 0.dp, 12.dp, 6.dp)
                 .height(48.dp),
-            selected = stackState.active.instance is RootComponent.Child.Contact,
+            selected = stackState.active.instance is MenuComponent.MenuChild.Contact,
             onClick = {
-                navigation.bringToFront(DefaultRootComponent.Config.Contact) {
-                    navigation.replaceAll(DefaultRootComponent.Config.Message, DefaultRootComponent.Config.Contact)
+                navigation.bringToFront(DefaultMenuComponent.MenuConfig.Contact) {
+                    navigation.replaceAll(DefaultMenuComponent.MenuConfig.Contact)
                 }
                 onEvent(MenuPageEvent.OnDrawerItemClicked(false))
 
             },
             icon = {
                 Icon(
-                    imageVector = if (stackState.active.instance is RootComponent.Child.Contact) Icons.Default.Contacts else Icons.Outlined.Contacts,
+                    imageVector = if (stackState.active.instance is MenuComponent.MenuChild.Contact) Icons.Default.Contacts else Icons.Outlined.Contacts,
                     contentDescription = stringResource(id = R.string.contact_person)
                 )
             },
@@ -288,7 +290,7 @@ fun MenuNavigationDrawerContent(
             onClick = {
                 coroutineScope.launch {
                     onEvent(MenuPageEvent.OnDrawerItemClicked(false))
-                    navigation.pushNew(DefaultRootComponent.Config.Setting)
+                    rootNavigation.pushNew(DefaultRootComponent.RootConfig.Setting)
                 }
             })
     }
@@ -298,8 +300,8 @@ fun MenuNavigationDrawerContent(
 @Composable
 fun MenuNavigationRail(
     modifier: Modifier = Modifier,
-    navigation: StackNavigation<DefaultRootComponent.Config>,
-    stackState: ChildStack<*, RootComponent.Child>,
+    navigation: StackNavigation<DefaultMenuComponent.MenuConfig>,
+    stackState: ChildStack<*, MenuComponent.MenuChild>,
     mainSharedState: MainSharedState,
     onEvent: (event: MenuPageEvent) -> Unit,
 ) {
@@ -323,9 +325,9 @@ fun MenuNavigationRail(
         }
     ) {
         Spacer(modifier = Modifier.height(32.dp))
-        NavigationRailItem(selected = stackState.active.instance is RootComponent.Child.Message, onClick = {
-            navigation.bringToFront(DefaultRootComponent.Config.Message) {
-                navigation.replaceAll(DefaultRootComponent.Config.Message)
+        NavigationRailItem(selected = stackState.active.instance is MenuComponent.MenuChild.Message, onClick = {
+            navigation.bringToFront(DefaultMenuComponent.MenuConfig.Message) {
+                navigation.replaceAll(DefaultMenuComponent.MenuConfig.Message)
             }
         }, icon = {
             BadgedBox(badge = {
@@ -336,7 +338,7 @@ fun MenuNavigationRail(
                     ) { Text(text = "${mainSharedState.datastore.messageBadgeNum.takeIf { it < 99 } ?: "99+"}") }
             }) {
                 Icon(
-                    imageVector = if (stackState.active.instance is RootComponent.Child.Message) Icons.AutoMirrored.Default.Chat else Icons.AutoMirrored.Outlined.Chat,
+                    imageVector = if (stackState.active.instance is MenuComponent.MenuChild.Message) Icons.AutoMirrored.Default.Chat else Icons.AutoMirrored.Outlined.Chat,
                     contentDescription = stringResource(id = R.string.conversation)
                 )
             }
@@ -344,13 +346,13 @@ fun MenuNavigationRail(
             label = null
         )
 
-        NavigationRailItem(selected = stackState.active.instance is RootComponent.Child.File, onClick = {
-            navigation.bringToFront(DefaultRootComponent.Config.File) {
-                navigation.replaceAll(DefaultRootComponent.Config.Message, DefaultRootComponent.Config.File)
+        NavigationRailItem(selected = stackState.active.instance is MenuComponent.MenuChild.File, onClick = {
+            navigation.bringToFront(DefaultMenuComponent.MenuConfig.File) {
+                navigation.replaceAll(DefaultMenuComponent.MenuConfig.File)
             }
         }, icon = {
             Icon(
-                imageVector = if (stackState.active.instance is RootComponent.Child.File) Icons.Default.Work else Icons.Outlined.WorkOutline,
+                imageVector = if (stackState.active.instance is MenuComponent.MenuChild.File) Icons.Default.Work else Icons.Outlined.WorkOutline,
                 contentDescription = stringResource(id = R.string.work)
             )
         },
@@ -358,14 +360,14 @@ fun MenuNavigationRail(
         )
 
         NavigationRailItem(
-            selected = stackState.active.instance is RootComponent.Child.Contact,
+            selected = stackState.active.instance is MenuComponent.MenuChild.Contact,
             onClick = {
-                navigation.bringToFront(DefaultRootComponent.Config.Contact) {
-                    navigation.replaceAll(DefaultRootComponent.Config.Message, DefaultRootComponent.Config.Contact)
+                navigation.bringToFront(DefaultMenuComponent.MenuConfig.Contact) {
+                    navigation.replaceAll(DefaultMenuComponent.MenuConfig.Contact)
                 }
             }, icon = {
                 Icon(
-                    imageVector = if (stackState.active.instance is RootComponent.Child.Contact) Icons.Default.Contacts else Icons.Outlined.Contacts,
+                    imageVector = if (stackState.active.instance is MenuComponent.MenuChild.Contact) Icons.Default.Contacts else Icons.Outlined.Contacts,
                     contentDescription = stringResource(id = R.string.contact_person)
                 )
             },

@@ -1,43 +1,33 @@
 package com.ojhdtapp.parabox.ui.setting
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.adaptive.AnimatedPane
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.ListDetailPaneScaffold
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
-import com.ojhdtapp.parabox.ui.contact.ContactPageViewModel
 import com.ojhdtapp.parabox.ui.menu.calculateMyPaneScaffoldDirective
-import com.ojhdtapp.parabox.ui.message.MessageLayoutType
-import com.ojhdtapp.parabox.ui.message.MessagePageViewModel
 import com.ojhdtapp.parabox.ui.navigation.DefaultRootComponent
 import com.ojhdtapp.parabox.ui.navigation.RootComponent
-import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.RootNavGraph
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun SettingPageWrapperUi(
     modifier: Modifier = Modifier,
     mainSharedViewModel: MainSharedViewModel,
     viewModel: SettingPageViewModel,
-    navigation: StackNavigation<DefaultRootComponent.Config>,
-    stackState: ChildStack<*, RootComponent.Child>
+    navigation: StackNavigation<DefaultRootComponent.RootConfig>,
+    stackState: ChildStack<*, RootComponent.RootChild>
 ) {
 //    val viewModel = hiltViewModel<SettingPageViewModel>()
     val state by viewModel.uiState.collectAsState()
