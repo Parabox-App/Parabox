@@ -120,9 +120,11 @@ fun NavigationSuite(
             }
 
             is MenuPageEvent.OnBarItemClicked -> {
-                mainSharedViewModel.sendEvent(
-                    MainSharedEvent.PageListScrollBy
-                )
+                if (it.selfClicked) {
+                    mainSharedViewModel.sendEvent(
+                        MainSharedEvent.PageListScrollBy
+                    )
+                }
             }
         }
     }
@@ -189,7 +191,8 @@ fun NavigationSuite(
                     mainSharedState = mainSharedState,
                     onEvent = menuEventHandler
                 )
-            }, drawerState = drawerState, drawerWidth = 304.dp) {
+            }, drawerState = drawerState, drawerWidth = 304.dp
+        ) {
             MenuAppContent(
                 navigation = menuNavigation,
                 stackState = menuStackState,
@@ -308,9 +311,10 @@ fun MenuAppContent(
                 visible = navigationType == MenuNavigationType.BOTTOM_NAVIGATION && mainSharedState.showNavigationBar,
                 enter = slideInVertically { it },
                 exit = slideOutVertically { it }
-            ) { MenuNavigationBar(
-                navigation = navigation,
-                stackState = stackState,
+            ) {
+                MenuNavigationBar(
+                    navigation = navigation,
+                    stackState = stackState,
                     mainSharedState = mainSharedState,
                     onEvent = onEvent,
                 )

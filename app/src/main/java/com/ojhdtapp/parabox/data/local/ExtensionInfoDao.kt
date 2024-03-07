@@ -16,6 +16,6 @@ interface ExtensionInfoDao {
     @Query("DELETE FROM extension_info_entity WHERE extensionId = :extensionId")
     fun deleteExtensionInfoById(extensionId: Long): Int
 
-    @Query("SELECT * FROM extension_info_entity")
+    @Query("SELECT * FROM extension_info_entity LIMIT 1")
     fun getExtensionInfoList() : Flow<List<ExtensionInfoEntity>>
 }

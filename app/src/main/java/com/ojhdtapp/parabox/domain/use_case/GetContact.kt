@@ -23,14 +23,14 @@ class GetContact @Inject constructor(
         return repository.getContactByPlatformInfo(pkg, uid)
     }
 
-    fun pagingSource(): Flow<PagingData<ContactWithExtensionInfo>>{
+    fun pagingSource(friendOnly: Boolean): Flow<PagingData<ContactWithExtensionInfo>>{
         return Pager(
             PagingConfig(
                 pageSize = 20,
                 enablePlaceholders = true,
                 initialLoadSize = 20
             )
-        ){ repository.getContactWithExtensionInfoPagingSource() }
+        ){ repository.getContactWithExtensionInfoPagingSource(friendOnly) }
             .flow
             .map { pagingData ->
                 pagingData.map {

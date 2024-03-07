@@ -68,6 +68,7 @@ import com.ojhdtapp.parabox.ui.message.chat.contents_layout.ImageLayout
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.LocationLayout
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.MessageContentContainer
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.PlainTextLayout
+import com.ojhdtapp.parabox.ui.message.chat.contents_layout.UnsupportedLayout
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.model.ChatPageUiModel
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAnnotatedText
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAt
@@ -383,6 +384,6 @@ private fun ParaboxMessageElement.toLayout(
         is ParaboxLocation -> LocationLayout()
         is ParaboxQuoteReply -> {}
         is ParaboxForward -> {}
-        is ParaboxUnsupported -> {}
+        is ParaboxUnsupported -> UnsupportedLayout()
     }
 }

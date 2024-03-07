@@ -5,6 +5,7 @@ import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.filter
 import androidx.paging.map
+import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.ChatWithLatestMessage
 import com.ojhdtapp.parabox.domain.repository.ChatRepository
@@ -49,5 +50,9 @@ class GetChat @Inject constructor(
                     it.toChat()
                 }
             }
+    }
+
+    fun containsContact(contactId: Long) : Flow<Resource<List<Chat>>> {
+        return repository.containsContact(contactId)
     }
 }

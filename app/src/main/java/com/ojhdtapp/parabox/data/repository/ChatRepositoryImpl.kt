@@ -136,4 +136,22 @@ class ChatRepositoryImpl @Inject constructor(
     override fun updateTags(chatId: Long, value: List<String>): Boolean {
         return db.chatDao.updateTags(ChatTagsUpdate(chatId, value)) == 1
     }
+
+    override fun containsContact(contactId: Long): Flow<Resource<List<Chat>>> {
+        return flow {
+            emit(Resource.Loading())
+            try {
+                emit(
+                    withContext(Dispatchers.IO) {
+                        db.contactChatCrossRefDao.getChatsByContactId(contactId).let { chatIds ->
+                            Resource.Success(db.chatDao.getChatsByIds(chatIds).map { it.toChat() })
+                        }
+                    }
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+                emit(Resource.Error("unknown error" + e.message))
+            }
+        }
+    }
 }

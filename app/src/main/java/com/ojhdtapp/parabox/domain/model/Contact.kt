@@ -7,6 +7,7 @@ data class Contact(
     val pkg: String,
     val uid: String,
     val extensionId: Long,
+    val isFriend: Boolean,
     val contactId: Long,
 ) {
     var name: String = ""
@@ -18,8 +19,9 @@ data class Contact(
         pkg: String,
         uid: String,
         extensionId: Long,
+        isFriend: Boolean,
         contactId: Long
-    ) : this(avatar, pkg, uid, extensionId, contactId) {
+    ) : this(avatar, pkg, uid, extensionId, isFriend, contactId) {
         this.name = name ?: ""
     }
 

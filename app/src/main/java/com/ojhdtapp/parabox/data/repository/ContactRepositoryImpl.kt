@@ -93,7 +93,11 @@ class ContactRepositoryImpl @Inject constructor(
         return db.contactDao.getContactPagingSource()
     }
 
-    override fun getContactWithExtensionInfoPagingSource(): PagingSource<Int, ContactWithExtensionInfoEntity> {
-        return db.contactDao.getContactWithExtensionInfoPagingSource()
+    override fun getContactWithExtensionInfoPagingSource(friendOnly: Boolean): PagingSource<Int, ContactWithExtensionInfoEntity> {
+        return if (friendOnly) {
+            db.contactDao.getFriendWithExtensionInfoPagingSource()
+        } else {
+            db.contactDao.getContactWithExtensionInfoPagingSource()
+        }
     }
 }

@@ -1,13 +1,10 @@
 package com.ojhdtapp.parabox.ui.message.chat.contents_layout
 
 import android.graphics.BitmapFactory
-import android.os.Build.VERSION.SDK_INT
-import android.util.Log
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -16,8 +13,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -27,13 +22,9 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
 import androidx.core.graphics.drawable.toBitmap
-import coil.ImageLoader
 import coil.compose.rememberAsyncImagePainter
-import coil.decode.GifDecoder
-import coil.decode.ImageDecoderDecoder
 import coil.request.ImageRequest
 import com.ojhdtapp.parabox.R
-import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxMessageElement
 import com.origeek.imageViewer.previewer.ImagePreviewerState
 import com.origeek.imageViewer.previewer.TransformImageView
 import kotlinx.coroutines.launch
@@ -132,4 +123,15 @@ fun LocationLayout(
     modifier: Modifier = Modifier
 ) {
 
+}
+
+@Composable
+fun UnsupportedLayout(
+    modifier: Modifier = Modifier
+) {
+    Text(
+        modifier = modifier.padding(horizontal = 9.dp, vertical = 9.dp),
+        text = "不支持的消息类型",
+        color = MaterialTheme.colorScheme.primary
+    )
 }

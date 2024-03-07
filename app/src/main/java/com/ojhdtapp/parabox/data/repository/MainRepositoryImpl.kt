@@ -14,6 +14,7 @@ import com.ojhdtapp.parabox.data.local.entity.ChatBasicInfoUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatLatestMessageIdUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatUnreadMessagesNumUpdate
 import com.ojhdtapp.parabox.data.local.entity.ContactBasicInfoUpdate
+import com.ojhdtapp.parabox.data.local.entity.ContactChatCrossRef
 import com.ojhdtapp.parabox.data.local.entity.RecentQueryEntity
 import com.ojhdtapp.parabox.data.local.entity.RecentQueryTimestampUpdate
 import com.ojhdtapp.parabox.domain.model.Extension
@@ -50,6 +51,14 @@ class MainRepositoryImpl @Inject constructor(
                 db.contactDao.checkContact(contactEntity.pkg, contactEntity.uid)
                     ?: db.contactDao.insertContact(contactEntity)
             }
+            // crossRef contact and chat
+            db.contactChatCrossRefDao.insertContactChatCrossRef(
+                ContactChatCrossRef(
+                    contactIdDeferred.await(),
+                    chatIdDeferred.await()
+                )
+            )
+
             val messageEntity =
                 buildMessageEntity(msg, info, contactIdDeferred.await(), chatIdDeferred.await())
             val messageIdDeferred = async {

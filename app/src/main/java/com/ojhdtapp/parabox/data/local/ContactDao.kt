@@ -54,4 +54,9 @@ interface ContactDao {
     @Query("SELECT * FROM contact_entity " +
             "ORDER BY name collate localized")
     fun getContactWithExtensionInfoPagingSource(): PagingSource<Int, ContactWithExtensionInfoEntity>
+
+    @Transaction
+    @Query("SELECT * FROM contact_entity WHERE isFriend " +
+            "ORDER BY name collate localized")
+    fun getFriendWithExtensionInfoPagingSource(): PagingSource<Int, ContactWithExtensionInfoEntity>
 }

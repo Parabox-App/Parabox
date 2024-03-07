@@ -90,11 +90,7 @@ fun NormalChatTopBar(
                     onEvent(MessagePageEvent.LoadMessage(null))
                 }
             }) {
-                Image(
-                    modifier = Modifier.size(24.dp),
-                    painter = navigationIconPainter, contentDescription = "navigation_icon",
-                    contentScale = ContentScale.FillBounds
-                )
+                Icon(modifier = Modifier.size(24.dp), painter = navigationIconPainter, contentDescription = "navigation_icon")
             }
         },
         actions = {

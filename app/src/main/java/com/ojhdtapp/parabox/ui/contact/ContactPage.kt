@@ -32,6 +32,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DockedSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -82,6 +83,7 @@ fun ContactPage(
     val snackBarHostState = remember { SnackbarHostState() }
     val state by viewModel.uiState.collectAsState()
     val contactPagingData = viewModel.contactPagingDataFlow.collectAsLazyPagingItems()
+    val friendPagingData = viewModel.friendPagingDataFlow.collectAsLazyPagingItems()
     val menuPainter = rememberAnimatedVectorPainter(
         animatedImageVector = AnimatedImageVector.animatedVectorResource(id = R.drawable.avd_pathmorph_drawer_hamburger_to_arrow),
         atEnd = mainSharedState.search.isActive
@@ -135,10 +137,7 @@ fun ContactPage(
                                 }
                             }
                         ) {
-                            Image(
-                                painter = menuPainter, contentDescription = "drawer",
-                                contentScale = ContentScale.FillBounds
-                            )
+                            Icon(painter = menuPainter, contentDescription = "drawer")
                         }
                     },
                     trailingIcon = {
@@ -279,21 +278,43 @@ fun ContactPage(
 //                        }
 //                    }
 //                }
-                items(count = contactPagingData.itemCount,
-                    key = contactPagingData.itemKey { it.contact.contactId }) { index ->
-                    val item = contactPagingData[index]
-                    if (item == null) {
-                        EmptyContactItem()
-                    } else {
-
-                        ContactItem(
-                            modifier = Modifier.padding(horizontal = if (layoutType == ContactLayoutType.SPLIT) 0.dp else 16.dp),
-                            name = item.contact.name,
-                            lastName = (index - 1).takeIf { it >= 0 }
-                                ?.let { contactPagingData.peek(it) }?.contact?.name,
-                            avatarModel = item.contact.avatar.getModel(),
-                            extName = item.extensionInfo.alias,
-                            onClick = {})
+                if (state.friendOnly) {
+                    items(count = friendPagingData.itemCount,
+                        key = friendPagingData.itemKey { it.contact.contactId }) { index ->
+                        val item = friendPagingData[index]
+                        if (item == null) {
+                            EmptyContactItem()
+                        } else {
+                            ContactItem(
+                                modifier = Modifier.padding(horizontal = if (layoutType == ContactLayoutType.SPLIT) 0.dp else 16.dp),
+                                name = item.contact.name,
+                                lastName = (index - 1).takeIf { it >= 0 }
+                                    ?.let { friendPagingData.peek(it) }?.contact?.name,
+                                avatarModel = item.contact.avatar.getModel(),
+                                extName = item.extensionInfo.alias,
+                                onClick = {
+                                    viewModel.sendEvent(ContactPageEvent.LoadContactDetail(item))
+                                })
+                        }
+                    }
+                } else {
+                    items(count = contactPagingData.itemCount,
+                        key = contactPagingData.itemKey { it.contact.contactId }) { index ->
+                        val item = contactPagingData[index]
+                        if (item == null) {
+                            EmptyContactItem()
+                        } else {
+                            ContactItem(
+                                modifier = Modifier.padding(horizontal = if (layoutType == ContactLayoutType.SPLIT) 0.dp else 16.dp),
+                                name = item.contact.name,
+                                lastName = (index - 1).takeIf { it >= 0 }
+                                    ?.let { contactPagingData.peek(it) }?.contact?.name,
+                                avatarModel = item.contact.avatar.getModel(),
+                                extName = item.extensionInfo.alias,
+                                onClick = {
+                                    viewModel.sendEvent(ContactPageEvent.LoadContactDetail(item))
+                                })
+                        }
                     }
                 }
                 item {

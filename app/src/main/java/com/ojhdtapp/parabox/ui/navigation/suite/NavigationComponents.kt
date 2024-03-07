@@ -72,6 +72,7 @@ fun MenuNavigationBar(
         containerColor = MaterialTheme.colorScheme.surface,
     ) {
         NavigationBarItem(selected = stackState.active.instance is MenuComponent.MenuChild.Message, onClick = {
+            onEvent(MenuPageEvent.OnBarItemClicked(stackState.active.instance is MenuComponent.MenuChild.Message))
             navigation.bringToFront(DefaultMenuComponent.MenuConfig.Message) {
                 navigation.replaceAll(DefaultMenuComponent.MenuConfig.Message)
             }
@@ -99,6 +100,7 @@ fun MenuNavigationBar(
         )
 
         NavigationBarItem(selected = stackState.active.instance is MenuComponent.MenuChild.File, onClick = {
+            onEvent(MenuPageEvent.OnBarItemClicked(stackState.active.instance is MenuComponent.MenuChild.File))
             navigation.bringToFront(DefaultMenuComponent.MenuConfig.File) {
                 navigation.replaceAll(DefaultMenuComponent.MenuConfig.File)
             }
@@ -117,6 +119,7 @@ fun MenuNavigationBar(
             alwaysShowLabel = false
         )
         NavigationBarItem(selected = stackState.active.instance is MenuComponent.MenuChild.Contact, onClick = {
+            onEvent(MenuPageEvent.OnBarItemClicked(stackState.active.instance is MenuComponent.MenuChild.Contact))
             navigation.bringToFront(DefaultMenuComponent.MenuConfig.Contact) {
                 navigation.replaceAll(DefaultMenuComponent.MenuConfig.Contact)
             }

@@ -7,6 +7,7 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.ContactWithExtensionInfo
+import com.ojhdtapp.parabox.domain.use_case.GetChat
 import com.ojhdtapp.parabox.domain.use_case.GetContact
 import com.ojhdtapp.parabox.ui.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,6 +19,7 @@ import javax.inject.Inject
 class ContactPageViewModel @Inject constructor(
     @ApplicationContext val context: Context,
     val getContact: GetContact,
+    val getChat: GetChat,
 ) : BaseViewModel<ContactPageState, ContactPageEvent, ContactPageEffect>() {
     override fun initialState(): ContactPageState {
         return ContactPageState()
@@ -25,10 +27,31 @@ class ContactPageViewModel @Inject constructor(
 
     override suspend fun handleEvent(event: ContactPageEvent, state: ContactPageState): ContactPageState? {
         return when(event){
-            else -> state
+            is ContactPageEvent.LoadContactDetail -> {
+                state.copy(
+                    contactDetail = state.contactDetail.copy(
+                        contactWithExtensionInfo = event.contactWithExtensionInfo
+                    )
+                )
+            }
+
+            is ContactPageEvent.UpdateContactDetailDisplay -> {
+                state.copy(
+                    contactDetail = state.contactDetail.copy(
+                        shouldDisplay = event.shouldDisplay
+                    )
+                )
+            }
+            is ContactPageEvent.TriggerFriendOnly -> {
+                state.copy(
+                    friendOnly = !state.friendOnly
+                )
+            }
         }
     }
 
     val contactPagingDataFlow: Flow<PagingData<ContactWithExtensionInfo>> =
-        getContact.pagingSource().cachedIn(viewModelScope)
+        getContact.pagingSource(false).cachedIn(viewModelScope)
+    val friendPagingDataFlow: Flow<PagingData<ContactWithExtensionInfo>> =
+        getContact.pagingSource(true).cachedIn(viewModelScope)
 }

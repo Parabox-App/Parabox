@@ -74,12 +74,15 @@ fun ContactItem(
                 overflow = TextOverflow.Ellipsis
             )
             Spacer(modifier = Modifier.width(16.dp))
-            Text(
-                text = extName,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-                maxLines = 1
-            )
+            Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = CircleShape) {
+                Text(
+                    text = extName,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1
+                )
+            }
+
             Spacer(modifier = Modifier.width(8.dp))
         }
     }
