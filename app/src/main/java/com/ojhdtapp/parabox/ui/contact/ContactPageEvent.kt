@@ -6,5 +6,5 @@ import com.ojhdtapp.parabox.ui.base.UiEvent
 sealed interface ContactPageEvent : UiEvent {
     data class LoadContactDetail(val contactWithExtensionInfo: ContactWithExtensionInfo) : ContactPageEvent
     data class UpdateContactDetailDisplay(val shouldDisplay: Boolean) : ContactPageEvent
-    data object TriggerFriendOnly : ContactPageEvent
+    data object ToggleFriendOnly : ContactPageEvent
 }

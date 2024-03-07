@@ -1,6 +1,8 @@
 package com.ojhdtapp.parabox.ui.setting
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.adaptive.AnimatedPane
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.ListDetailPaneScaffold
@@ -19,6 +21,7 @@ import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.menu.calculateMyPaneScaffoldDirective
 import com.ojhdtapp.parabox.ui.navigation.DefaultRootComponent
 import com.ojhdtapp.parabox.ui.navigation.RootComponent
+import com.ojhdtapp.parabox.ui.setting.detail.GeneralSettingPage
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
@@ -37,7 +40,7 @@ fun SettingPageWrapperUi(
             windowAdaptiveInfo = currentWindowAdaptiveInfo()
         )
     )
-    val layoutType by remember{
+    val layoutType by remember {
         derivedStateOf {
             if (scaffoldNavigator.scaffoldState.scaffoldDirective.maxHorizontalPartitions == 1) {
                 SettingLayoutType.NORMAL
@@ -48,7 +51,7 @@ fun SettingPageWrapperUi(
     }
 
     ListDetailPaneScaffold(
-        modifier = modifier,
+        modifier = modifier.background(MaterialTheme.colorScheme.surfaceContainer),
         scaffoldState = scaffoldNavigator.scaffoldState,
         windowInsets = WindowInsets(0.dp),
         listPane = {
@@ -66,30 +69,77 @@ fun SettingPageWrapperUi(
         }
     ) {
         AnimatedPane(modifier = Modifier) {
-            when(state.selected) {
+            when (state.selected) {
                 Setting.GENERAL -> {
-
+                    GeneralSettingPage(
+                        state = state,
+                        layoutType = layoutType,
+                        scaffoldNavigator = scaffoldNavigator,
+                        onEvent = viewModel::sendEvent
+                    )
                 }
+
                 Setting.ADDONS -> {
-
+                    GeneralSettingPage(
+                        state = state,
+                        layoutType = layoutType,
+                        scaffoldNavigator = scaffoldNavigator,
+                        onEvent = viewModel::sendEvent
+                    )
                 }
+
                 Setting.LABELS -> {
-
+                    GeneralSettingPage(
+                        state = state,
+                        layoutType = layoutType,
+                        scaffoldNavigator = scaffoldNavigator,
+                        onEvent = viewModel::sendEvent
+                    )
                 }
+
                 Setting.APPEARANCE -> {
-
+                    GeneralSettingPage(
+                        state = state,
+                        layoutType = layoutType,
+                        scaffoldNavigator = scaffoldNavigator,
+                        onEvent = viewModel::sendEvent
+                    )
                 }
+
                 Setting.NOTIFICATION -> {
-
+                    GeneralSettingPage(
+                        state = state,
+                        layoutType = layoutType,
+                        scaffoldNavigator = scaffoldNavigator,
+                        onEvent = viewModel::sendEvent
+                    )
                 }
+
                 Setting.STORAGE -> {
-
+                    GeneralSettingPage(
+                        state = state,
+                        layoutType = layoutType,
+                        scaffoldNavigator = scaffoldNavigator,
+                        onEvent = viewModel::sendEvent
+                    )
                 }
+
                 Setting.EXPERIMENTAL -> {
-
+                    GeneralSettingPage(
+                        state = state,
+                        layoutType = layoutType,
+                        scaffoldNavigator = scaffoldNavigator,
+                        onEvent = viewModel::sendEvent
+                    )
                 }
-                Setting.HELP -> {
 
+                Setting.HELP -> {
+                    GeneralSettingPage(
+                        state = state,
+                        layoutType = layoutType,
+                        scaffoldNavigator = scaffoldNavigator,
+                        onEvent = viewModel::sendEvent
+                    )
                 }
             }
         }

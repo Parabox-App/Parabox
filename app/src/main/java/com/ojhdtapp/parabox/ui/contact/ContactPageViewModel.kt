@@ -1,11 +1,9 @@
 package com.ojhdtapp.parabox.ui.contact
 
 import android.content.Context
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
-import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.ContactWithExtensionInfo
 import com.ojhdtapp.parabox.domain.use_case.GetChat
 import com.ojhdtapp.parabox.domain.use_case.GetContact
@@ -42,7 +40,7 @@ class ContactPageViewModel @Inject constructor(
                     )
                 )
             }
-            is ContactPageEvent.TriggerFriendOnly -> {
+            is ContactPageEvent.ToggleFriendOnly -> {
                 state.copy(
                     friendOnly = !state.friendOnly
                 )

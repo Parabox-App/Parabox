@@ -29,8 +29,6 @@ object FormUtil {
             val char = firstLetter.toCharArray()
             val pinyinArray = PinyinHelper.toHanyuPinyinStringArray(char[0])
             pinyinArray?.get(0)?.substring(0, 1)?.uppercase(Locale.ROOT) ?: "#"
-        } else if (firstLetter.matches(Regex("[0-9]"))) {
-            "0"
         } else {
             "#"
         }

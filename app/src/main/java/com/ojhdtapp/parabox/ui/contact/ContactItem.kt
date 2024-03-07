@@ -76,6 +76,7 @@ fun ContactItem(
             Spacer(modifier = Modifier.width(16.dp))
             Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = CircleShape) {
                 Text(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                     text = extName,
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
