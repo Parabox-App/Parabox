@@ -8,7 +8,6 @@ import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.layout.AnimatedPane
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
-import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldRole
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
@@ -21,17 +20,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import calculateMyPaneScaffoldDirective
+import calculateMyStandardPaneScaffoldDirective
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
-import com.ojhdtapp.parabox.MainActivity
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.message.chat.ChatPage
 import com.ojhdtapp.parabox.ui.navigation.DefaultMenuComponent
-import com.ojhdtapp.parabox.ui.navigation.DefaultRootComponent
 import com.ojhdtapp.parabox.ui.navigation.MenuComponent
-import com.ojhdtapp.parabox.ui.navigation.RootComponent
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
@@ -46,7 +42,7 @@ fun MessageAndChatPageWrapperUI(
     val state by viewModel.uiState.collectAsState()
     val mainSharedState by mainSharedViewModel.uiState.collectAsState()
     val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<Nothing>(
-        scaffoldDirective = calculateMyPaneScaffoldDirective(
+        scaffoldDirective = calculateMyStandardPaneScaffoldDirective(
             windowSizeClass = calculateWindowSizeClass(activity = LocalContext.current as Activity),
             windowAdaptiveInfo = currentWindowAdaptiveInfo()
         )
@@ -61,15 +57,15 @@ fun MessageAndChatPageWrapperUI(
         }
     }
 
-    BackHandler(state.chatDetail.shouldDisplay) {
+    BackHandler(state.chatDetail.shouldDisplay == true) {
         viewModel.sendEvent(MessagePageEvent.LoadMessage(null))
     }
     LaunchedEffect(state.chatDetail.shouldDisplay) {
-        if (layoutType == MessageLayoutType.NORMAL && state.chatDetail.shouldDisplay) {
+        if (layoutType == MessageLayoutType.NORMAL && state.chatDetail.shouldDisplay == true) {
             scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
             mainSharedViewModel.sendEvent(MainSharedEvent.ShowNavigationBar(false))
         }
-        if (layoutType == MessageLayoutType.NORMAL && !state.chatDetail.shouldDisplay) {
+        if (layoutType == MessageLayoutType.NORMAL && state.chatDetail.shouldDisplay == false) {
             scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.List)
             mainSharedViewModel.sendEvent(MainSharedEvent.ShowNavigationBar(true))
         }

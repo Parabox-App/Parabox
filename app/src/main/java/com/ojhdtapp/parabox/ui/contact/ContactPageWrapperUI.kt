@@ -17,14 +17,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import calculateMyPaneScaffoldDirective
+import calculateMyStandardPaneScaffoldDirective
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.navigation.DefaultMenuComponent
-import com.ojhdtapp.parabox.ui.navigation.DefaultRootComponent
 import com.ojhdtapp.parabox.ui.navigation.MenuComponent
-import com.ojhdtapp.parabox.ui.navigation.RootComponent
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
@@ -38,7 +36,7 @@ fun ContactPageWrapperUI(
 //    val viewModel = hiltViewModel<ContactPageViewModel>()
     val mainSharedState by mainSharedViewModel.uiState.collectAsState()
     val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<Nothing>(
-        scaffoldDirective = calculateMyPaneScaffoldDirective(
+        scaffoldDirective = calculateMyStandardPaneScaffoldDirective(
             windowSizeClass = calculateWindowSizeClass(activity = LocalContext.current as Activity),
             windowAdaptiveInfo = currentWindowAdaptiveInfo()
         )

@@ -19,7 +19,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import calculateMyPaneScaffoldDirective
+import calculateMyDensePaneScaffoldDirective
+import calculateMyStandardPaneScaffoldDirective
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
@@ -40,7 +41,7 @@ fun SettingPageWrapperUi(
     val state by viewModel.uiState.collectAsState()
     val mainSharedState by mainSharedViewModel.uiState.collectAsState()
     val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<Setting>(
-        scaffoldDirective = calculateMyPaneScaffoldDirective(
+        scaffoldDirective = calculateMyDensePaneScaffoldDirective(
             windowSizeClass = calculateWindowSizeClass(activity = LocalContext.current as Activity),
             windowAdaptiveInfo = currentWindowAdaptiveInfo()
         )

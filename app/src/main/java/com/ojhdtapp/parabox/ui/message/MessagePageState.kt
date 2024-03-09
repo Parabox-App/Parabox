@@ -31,7 +31,7 @@ data class MessagePageState(
 
 
     data class ChatDetail(
-        val shouldDisplay: Boolean = false,
+        val shouldDisplay: Boolean? = null,
         val chat: Chat? = null,
         val selectedMessageList: List<Message> = emptyList(),
         val openDeleteMessageConfirmDialog: Boolean = false,

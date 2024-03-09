@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowDownward
 import androidx.compose.material3.DrawerValue
@@ -36,6 +37,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
@@ -60,6 +62,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.times
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.navigation.NavController
@@ -70,6 +73,7 @@ import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.common.DismissibleBottomSheet
 import com.ojhdtapp.parabox.ui.common.MyModalNavigationDrawerReverse
+import com.ojhdtapp.parabox.ui.common.imeVisibleAsState
 import com.ojhdtapp.parabox.ui.common.rememberMyDrawerState
 import com.ojhdtapp.parabox.ui.message.MessageLayoutType
 import com.ojhdtapp.parabox.ui.message.MessagePageEffect
@@ -97,7 +101,7 @@ fun ChatPage(
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
     Crossfade(
-        targetState = layoutType == MessageLayoutType.SPLIT && !state.chatDetail.shouldDisplay,
+        targetState = layoutType == MessageLayoutType.SPLIT && state.chatDetail.shouldDisplay != true,
         label = "chat_empty_normal_crossfade"
     ) {
         if (it) {
@@ -120,7 +124,9 @@ fun ChatPage(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class,
+    ExperimentalMaterialApi::class
+)
 @Composable
 fun NormalChatPage(
     modifier: Modifier = Modifier,
@@ -179,7 +185,7 @@ fun NormalChatPage(
 //            previewerState.openTransform(state.chatDetail.imagePreviewerState.targetElementIndex)
 //        }
 //    })
-    LaunchedEffect(state.chatDetail.editAreaState.expanded) {
+    LaunchedEffect(state.chatDetail.editAreaState) {
         if (state.chatDetail.editAreaState.expanded) {
             sheetState.open()
         } else {
@@ -187,8 +193,8 @@ fun NormalChatPage(
         }
     }
     // close edit area each time ime is visible
-    val imeVisible = WindowInsets.isImeVisible
-    LaunchedEffect(WindowInsets.isImeVisible) {
+    val imeVisible by imeVisibleAsState()
+    LaunchedEffect(imeVisible) {
         if (imeVisible) {
             onEvent(MessagePageEvent.OpenEditArea(false))
         }
@@ -211,7 +217,6 @@ fun NormalChatPage(
     BackHandler(state.chatDetail.selectedMessageList.isNotEmpty()) {
         onEvent(MessagePageEvent.ClearSelectedMessage)
     }
-
     MyModalNavigationDrawerReverse(
         drawerContent = {
             Box(
@@ -221,28 +226,45 @@ fun NormalChatPage(
                     .background(Color.Green)
             )
         },
-        gesturesEnabled = state.chatDetail.shouldDisplay
+        gesturesEnabled = state.chatDetail.shouldDisplay == true
                 && state.chatDetail.editAreaState.audioRecorderState !is AudioRecorderState.Recording,
         drawerState = drawerState,
         drawerWidth = 360.dp,
     ) {
-        val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
         Scaffold(
-            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
             topBar = {
-                NormalChatTopBar(chatDetail = state.chatDetail, scrollBehavior = scrollBehavior, onEvent = onEvent)
+                NormalChatTopBar(chatDetail = state.chatDetail, onEvent = onEvent)
             },
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         ) { paddingValues ->
-            val bottomPadding = animateDpAsState(
-                targetValue = if (sheetState.isOpen || WindowInsets.isImeVisible) 0.dp else paddingValues.calculateBottomPadding(),
-                label = "edit_area_bottom_padding"
-            )
+            val bottomPadding by remember {
+                derivedStateOf {
+                    val bottomPaddingValues = paddingValues.calculateBottomPadding()
+                    when (sheetState.swipeableState.direction) {
+                        1F ->  {
+                            sheetState.swipeableState.progress.fraction * bottomPaddingValues
+                        }
+                        -1F -> {
+                            bottomPaddingValues * (1 - sheetState.swipeableState.progress.fraction)
+                        }
+                        else -> {
+                            if (sheetState.isOpen || imeVisible) {
+                                0.dp
+                            } else {
+                                bottomPaddingValues
+                            }
+                        }
+                    }
+                }
+            }
+//            val bottomPadding = animateDpAsState(
+//                targetValue = if (sheetState.isOpen || WindowInsets.isImeVisible) 0.dp else paddingValues.calculateBottomPadding(),
+//                label = "edit_area_bottom_padding"
+//            )
             val sheetHeight by remember(state.chatDetail.editAreaState) {
                 derivedStateOf { if (state.chatDetail.editAreaState.mode == EditAreaMode.LOCATION_PICKER) 320.dp else 160.dp }
             }
             DismissibleBottomSheet(
-                modifier = Modifier.imePadding(),
                 sheetContent = {
                     Crossfade(
                         modifier = Modifier.background(MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)),
@@ -367,7 +389,8 @@ fun NormalChatPage(
 
                     EditArea(
                         modifier = Modifier
-                            .padding(bottom = bottomPadding.value)
+                            .padding(bottom = bottomPadding)
+                            .imePadding()
                             .background(MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)),
                         state = state.chatDetail.editAreaState,
                         onEvent = onEvent

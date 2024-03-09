@@ -44,7 +44,6 @@ import com.ojhdtapp.parabox.ui.message.MessagePageState
 fun NormalChatTopBar(
     modifier: Modifier = Modifier,
     chatDetail: MessagePageState.ChatDetail,
-    scrollBehavior: TopAppBarScrollBehavior,
     onEvent: (MessagePageEvent) -> Unit,
 ) {
     val navigationIconPainter = rememberAnimatedVectorPainter(
@@ -100,7 +99,6 @@ fun NormalChatTopBar(
                     contentDescription = "search"
                 )
             }
-        },
-        scrollBehavior = scrollBehavior
+        }
     )
 }
