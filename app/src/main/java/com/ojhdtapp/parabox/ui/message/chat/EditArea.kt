@@ -47,7 +47,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.BasicTextField2
 import androidx.compose.foundation.text.input.TextFieldDecorator
 import androidx.compose.foundation.text.input.forEachTextValue
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -62,8 +61,6 @@ import androidx.compose.material.icons.outlined.EmojiEmotions
 import androidx.compose.material.icons.outlined.Keyboard
 import androidx.compose.material.icons.outlined.KeyboardVoice
 import androidx.compose.material.icons.outlined.LocationOn
-import androidx.compose.material.icons.outlined.NavigateNext
-import androidx.compose.material.icons.outlined.Send
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -523,7 +520,7 @@ fun EditArea(
                                             }
                                         }
                                     }
-                                    BasicTextField2(
+                                    BasicTextField(
                                         modifier = Modifier
                                             .defaultMinSize(
                                                 minWidth = TextFieldDefaults.MinWidth,

@@ -81,8 +81,6 @@ import com.ojhdtapp.parabox.ui.message.chat.top_bar.NormalChatTopBar
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
 import com.origeek.imageViewer.previewer.VerticalDragType
 import com.origeek.imageViewer.previewer.rememberPreviewerState
-import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.RootNavGraph
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch

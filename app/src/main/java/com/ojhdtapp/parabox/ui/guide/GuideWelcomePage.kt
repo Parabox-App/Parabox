@@ -29,7 +29,6 @@ import androidx.navigation.NavController
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.common.NormalPreference
-import com.ramcosta.composedestinations.annotation.Destination
 import java.lang.Math.*
 import kotlin.math.pow
 

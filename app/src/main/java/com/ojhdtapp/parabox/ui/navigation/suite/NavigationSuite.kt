@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.navigation.suite
 
+import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInHorizontally
@@ -18,7 +19,9 @@ import androidx.compose.material3.SheetState
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -26,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -53,7 +57,10 @@ import com.ojhdtapp.parabox.ui.navigation.RootComponent
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3Api::class)
+@OptIn(
+    ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3Api::class,
+    ExperimentalMaterial3WindowSizeClassApi::class
+)
 @Composable
 fun NavigationSuite(
     modifier: Modifier = Modifier,
@@ -68,7 +75,8 @@ fun NavigationSuite(
     val lifecycleOwner = LocalLifecycleOwner.current
 
     val navigationType: MenuNavigationType
-    when (currentWindowAdaptiveInfo().windowSizeClass.widthSizeClass) {
+    val windowSizeClass = calculateWindowSizeClass(LocalContext.current as Activity)
+    when (windowSizeClass.widthSizeClass) {
         WindowWidthSizeClass.Compact -> {
             navigationType = MenuNavigationType.BOTTOM_NAVIGATION
         }
