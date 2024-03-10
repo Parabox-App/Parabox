@@ -27,9 +27,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Message
 import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Groups
+import androidx.compose.material.icons.outlined.LibraryAdd
 import androidx.compose.material.icons.outlined.Message
 import androidx.compose.material.icons.outlined.PersonAddAlt
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -62,6 +65,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
@@ -73,12 +77,14 @@ import coil3.request.transformations
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.ImageUtil
 import com.ojhdtapp.parabox.core.util.LoadState
+import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.common.BlurTransformation
 import com.ojhdtapp.parabox.ui.common.CommonAvatar
 import com.ojhdtapp.parabox.ui.common.CommonAvatarModel
 import com.ojhdtapp.parabox.ui.common.LocalSystemUiController
+import com.ojhdtapp.parabox.ui.common.placeholder
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -106,15 +112,16 @@ fun ContactDetailPage(
                     TopAppBar(
                         title = {},
                         navigationIcon = {
-                            if(layoutType == ContactLayoutType.NORMAL) {
+                            if (layoutType == ContactLayoutType.NORMAL) {
                                 IconButton(onClick = {
                                     scaffoldNavigator.navigateBack()
                                     systemUiController.reset()
                                     onMainSharedEvent(MainSharedEvent.ShowNavigationBar(true))
                                 }) {
                                     Icon(
-                                        imageVector = Icons.Outlined.ArrowBack, contentDescription = "back",
-                                        tint = if (isBackgroundLight) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.inverseOnSurface
+                                        imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                                        contentDescription = "back",
+                                        tint = if (!isBackgroundLight) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.inverseOnSurface
                                     )
                                 }
                             }
@@ -234,33 +241,90 @@ fun ContactDetailPage(
                                 }
                             }
                         }
+                        Spacer(modifier = Modifier.height(24.dp))
+
                         Card(
-                            modifier = Modifier.padding(24.dp),
-                            shape = RoundedCornerShape(24.dp)
+                            onClick = {},
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
                         ) {
-                            Text(text = "信息")
-                            Row {
-                                Text(text = state.contactDetail.contactWithExtensionInfo?.extensionInfo?.name ?: "")
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    modifier = Modifier.padding(16.dp),
+                                    imageVector = Icons.Outlined.LibraryAdd,
+                                    contentDescription = "extension source"
+                                )
+                                Text(text = "源信息", style = MaterialTheme.typography.titleMedium)
+                            }
+                            Row(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(
+                                        text = state.contactDetail.contactWithExtensionInfo?.extensionInfo?.name ?: "",
+                                        maxLines = 1
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = state.contactDetail.contactWithExtensionInfo?.extensionInfo?.pkg ?: "",
+                                        maxLines = 1,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Spacer(modifier = Modifier.weight(1f))
+                                Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = CircleShape) {
+                                    Text(
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        text = state.contactDetail.contactWithExtensionInfo?.extensionInfo?.alias ?: "",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        maxLines = 1
+                                    )
+                                }
                             }
                         }
+                        Spacer(modifier = Modifier.height(8.dp))
                         Card(
-                            modifier = Modifier.padding(24.dp),
-                            shape = RoundedCornerShape(24.dp)
+                            onClick = {},
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
                         ) {
-                            Text(text = "加入的群组")
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    modifier = Modifier.padding(16.dp),
+                                    imageVector = Icons.Outlined.Groups,
+                                    contentDescription = "extension source"
+                                )
+                                Text(text = "加入的群组", style = MaterialTheme.typography.titleMedium)
+                            }
+
                             when (state.contactDetail.relativeChatState.loadState) {
                                 LoadState.LOADING -> {
-
+                                    repeat(2) {
+                                        EmptyChatItem()
+                                    }
                                 }
 
                                 LoadState.ERROR -> {
-                                    Text(text = "加载出错，请稍后再试")
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(48.dp), contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(text = "加载出错，请稍后再试")
+                                    }
                                 }
 
                                 LoadState.SUCCESS -> {
                                     Column {
                                         state.contactDetail.relativeChatState.chatList.forEach {
-                                            Text(text = it.name)
+                                            ChatItem(chat = it) {
+
+                                            }
                                         }
                                     }
                                 }
@@ -286,6 +350,65 @@ fun ContactDetailPage(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun EmptyChatItem(modifier: Modifier = Modifier) {
+    Surface(color = MaterialTheme.colorScheme.surfaceContainerHighest) {
+        Row(
+            modifier = modifier.padding(vertical = 16.dp),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .size(24.dp)
+                    .background(MaterialTheme.colorScheme.secondary),
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                modifier = Modifier.placeholder(
+                    isLoading = true
+                ),
+                text = "chat_name",
+                maxLines = 1
+            )
+        }
+    }
+}
+
+@Composable
+private fun ChatItem(modifier: Modifier = Modifier, chat: Chat, onClick: () -> Unit) {
+    Surface(modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.surfaceContainerHighest, onClick = onClick) {
+        Row(
+            modifier = modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .size(24.dp)
+                    .background(MaterialTheme.colorScheme.secondary),
+            ) {
+                CommonAvatar(
+                    model = CommonAvatarModel(
+                        model = chat.avatar.getModel(),
+                        name = chat.name
+                    )
+                )
+
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = chat.name,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(modifier = Modifier.width(16.dp))
         }
     }
 }
