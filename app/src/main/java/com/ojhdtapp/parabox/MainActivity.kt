@@ -27,6 +27,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -54,6 +55,8 @@ import com.ojhdtapp.parabox.ui.common.DevicePosture
 import com.ojhdtapp.parabox.ui.theme.AppTheme
 import com.ojhdtapp.parabox.ui.common.FixedInsets
 import com.ojhdtapp.parabox.ui.common.LocalFixedInsets
+import com.ojhdtapp.parabox.ui.common.LocalSystemUiController
+import com.ojhdtapp.parabox.ui.common.SystemUiController
 import com.ojhdtapp.parabox.ui.common.isBookPosture
 import com.ojhdtapp.parabox.ui.common.isSeparating
 import com.ojhdtapp.parabox.ui.contact.ContactPageViewModel
@@ -255,6 +258,7 @@ class MainActivity : AppCompatActivity() {
                     values = arrayOf(
                         LocalFixedInsets provides fixedInsets,
                         LocalAudioRecorder provides AudioRecorder,
+                        LocalSystemUiController provides SystemUiController(LocalContext.current as MainActivity),
                         LocalMinimumInteractiveComponentEnforcement provides false
                     )
                 ) {

@@ -55,6 +55,7 @@ import coil.request.ImageRequest
 import coil.size.Size
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.domain.model.Message
+import com.ojhdtapp.parabox.ui.common.LocalSystemUiController
 import com.ojhdtapp.parabox.ui.common.RoundedCornerCascadeDropdownMenu
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageState
@@ -77,9 +78,11 @@ fun MyImagePreviewer(
 ) {
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
+    val systemUiController = LocalSystemUiController.current
     BackHandler(previewerState.canClose) {
         coroutineScope.launch {
             previewerState.closeTransform()
+            systemUiController.reset()
 //            onEvent(MessagePageEvent.UpdateImagePreviewerSnapshotList(emptyList(), -1))
         }
     }
@@ -116,6 +119,7 @@ fun MyImagePreviewer(
                             IconButton(onClick = {
                                 coroutineScope.launch {
                                     previewerState.closeTransform()
+                                    systemUiController.reset()
 //                                    onEvent(MessagePageEvent.UpdateImagePreviewerSnapshotList(emptyList(), -1))
                                 }
                             }) {
@@ -240,6 +244,9 @@ fun MyImagePreviewer(
             onTap = {
                 onEvent(MessagePageEvent.ExpandImagePreviewerToolbar(!state.showToolbar))
             }
+        },
+        onCLoseWithDrag = {
+            systemUiController.reset()
         }
     )
 }

@@ -72,6 +72,7 @@ import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.common.DismissibleBottomSheet
+import com.ojhdtapp.parabox.ui.common.LocalSystemUiController
 import com.ojhdtapp.parabox.ui.common.MyModalNavigationDrawerReverse
 import com.ojhdtapp.parabox.ui.common.imeVisibleAsState
 import com.ojhdtapp.parabox.ui.common.rememberMyDrawerState
@@ -144,6 +145,7 @@ fun NormalChatPage(
     val hapticFeedback = LocalHapticFeedback.current
     val clipboardManager: ClipboardManager = LocalClipboardManager.current
     val focusManager = LocalFocusManager.current
+    val systemUiController = LocalSystemUiController.current
     val sheetState = rememberMyDrawerState(initialValue = DrawerValue.Closed)
     val drawerState = rememberMyDrawerState(initialValue = DrawerValue.Closed)
     val lazyListState = rememberLazyListState()
@@ -173,6 +175,7 @@ fun NormalChatPage(
                 is MessagePageEffect.ImagePreviewerOpenTransform -> {
                     if (previewerState.canOpen && it.index > -1) {
                         previewerState.openTransform(it.index)
+                        systemUiController.setStatusBarColor(false)
                     }
                 }
 
@@ -180,11 +183,6 @@ fun NormalChatPage(
             }
         }
     }
-//    LaunchedEffect(key1 = state.chatDetail.imagePreviewerState.targetElementIndex, block = {
-//        if (previewerState.canOpen && state.chatDetail.imagePreviewerState.targetElementIndex > -1) {
-//            previewerState.openTransform(state.chatDetail.imagePreviewerState.targetElementIndex)
-//        }
-//    })
     LaunchedEffect(state.chatDetail.editAreaState) {
         if (state.chatDetail.editAreaState.expanded) {
             sheetState.open()

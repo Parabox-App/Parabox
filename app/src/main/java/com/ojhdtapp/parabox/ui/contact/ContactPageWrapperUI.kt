@@ -6,10 +6,12 @@ import androidx.compose.material3.adaptive.layout.AnimatedPane
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -20,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import calculateMyStandardPaneScaffoldDirective
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
+import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.navigation.DefaultMenuComponent
 import com.ojhdtapp.parabox.ui.navigation.MenuComponent
@@ -34,6 +37,7 @@ fun ContactPageWrapperUI(
     stackState: ChildStack<*, MenuComponent.MenuChild>
 ){
 //    val viewModel = hiltViewModel<ContactPageViewModel>()
+    val state by viewModel.uiState.collectAsState()
     val mainSharedState by mainSharedViewModel.uiState.collectAsState()
     val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<Nothing>(
         scaffoldDirective = calculateMyStandardPaneScaffoldDirective(
@@ -48,6 +52,16 @@ fun ContactPageWrapperUI(
             } else {
                 ContactLayoutType.SPLIT
             }
+        }
+    }
+
+    LaunchedEffect(state.contactDetail.shouldDisplay) {
+        if(layoutType == ContactLayoutType.NORMAL && state.contactDetail.shouldDisplay == true) {
+            scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
+            mainSharedViewModel.sendEvent(MainSharedEvent.ShowNavigationBar(false))
+        } else if (layoutType == ContactLayoutType.NORMAL && state.contactDetail.shouldDisplay == false) {
+            scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.List)
+            mainSharedViewModel.sendEvent(MainSharedEvent.ShowNavigationBar(true))
         }
     }
 
