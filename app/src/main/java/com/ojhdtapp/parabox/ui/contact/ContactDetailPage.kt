@@ -21,8 +21,10 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Message
@@ -132,204 +134,209 @@ fun ContactDetailPage(
                 containerColor = MaterialTheme.colorScheme.surfaceContainer
             )
             { innerPadding ->
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Box(
+                Box(modifier = Modifier.fillMaxSize()) {
+                    AsyncImage(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(240.dp), contentAlignment = Alignment.BottomCenter
-                    ) {
-                        AsyncImage(
-                            modifier = Modifier.fillMaxSize(),
-                            model = ImageRequest.Builder(LocalContext.current)
-                                .data(state.contactDetail.contactWithExtensionInfo?.contact?.avatar?.getModel())
-                                .transformations(BlurTransformation(LocalContext.current))
-                                .build(),
-                            contentDescription = "avatar_bg", contentScale = ContentScale.Crop,
-                            onSuccess = {
-                                (it.result.drawable as? BitmapDrawable)?.bitmap?.also { bitmap ->
-                                    isBackgroundLight = ImageUtil.checkBitmapLight(bitmap)
-                                    systemUiController.setStatusBarColor(isBackgroundLight)
-                                }
+                            .height(240.dp),
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(state.contactDetail.contactWithExtensionInfo?.contact?.avatar?.getModel())
+                            .transformations(BlurTransformation(LocalContext.current))
+                            .build(),
+                        contentDescription = "avatar_bg", contentScale = ContentScale.Crop,
+                        onSuccess = {
+                            (it.result.drawable as? BitmapDrawable)?.bitmap?.also { bitmap ->
+                                isBackgroundLight = ImageUtil.checkBitmapLight(bitmap)
+                                systemUiController.setStatusBarColor(isBackgroundLight)
                             }
-                        )
-                        Surface(
-                            shape = RoundedCornerShape(
-                                topStart = 28.dp,
-                                topEnd = 28.dp,
-                                bottomStart = 0.dp,
-                                bottomEnd = 0.dp
-                            )
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(49.dp)
-                            )
                         }
+                    )
+                    Column(modifier = Modifier.verticalScroll(rememberScrollState()),
+                        horizontalAlignment = Alignment.CenterHorizontally) {
                         Box(
                             modifier = Modifier
-                                .clip(CircleShape)
-                                .size(96.dp)
-                                .border(2.dp, MaterialTheme.colorScheme.primaryContainer, CircleShape),
-                            contentAlignment = Alignment.Center
+                                .fillMaxWidth()
+                                .height(240.dp), contentAlignment = Alignment.BottomCenter
                         ) {
-                            CommonAvatar(
-                                model = CommonAvatarModel(
-                                    model = state.contactDetail.contactWithExtensionInfo?.contact?.avatar?.getModel(),
-                                    name = state.contactDetail.contactWithExtensionInfo?.contact?.name ?: "null"
+                            Surface(
+                                shape = RoundedCornerShape(
+                                    topStart = 28.dp,
+                                    topEnd = 28.dp,
+                                    bottomStart = 0.dp,
+                                    bottomEnd = 0.dp
                                 )
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(49.dp)
+                                )
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .size(96.dp)
+                                    .border(2.dp, MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CommonAvatar(
+                                    model = CommonAvatarModel(
+                                        model = state.contactDetail.contactWithExtensionInfo?.contact?.avatar?.getModel(),
+                                        name = state.contactDetail.contactWithExtensionInfo?.contact?.name ?: "null"
+                                    )
+                                )
+                            }
+                        }
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.surface),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                modifier = Modifier.padding(16.dp),
+                                text = state.contactDetail.contactWithExtensionInfo?.contact?.name ?: "null",
+                                style = MaterialTheme.typography.titleLarge,
+                                maxLines = 1
                             )
-                        }
-                    }
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .background(MaterialTheme.colorScheme.surface),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            modifier = Modifier.padding(16.dp),
-                            text = state.contactDetail.contactWithExtensionInfo?.contact?.name ?: "null",
-                            style = MaterialTheme.typography.titleLarge,
-                            maxLines = 1
-                        )
-                        Row {
-                            TooltipBox(
-                                positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                                tooltip = {
-                                    PlainTooltip {
-                                        Text("发起会话")
-                                    }
-                                },
-                                state = rememberTooltipState()
-                            ) {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.secondaryContainer,
-                                    onClick = {}
+                            Row {
+                                TooltipBox(
+                                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                                    tooltip = {
+                                        PlainTooltip {
+                                            Text("发起会话")
+                                        }
+                                    },
+                                    state = rememberTooltipState()
                                 ) {
-                                    Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
-                                        Icon(
-                                            imageVector = Icons.AutoMirrored.Outlined.Message,
-                                            contentDescription = "message"
-                                        )
-                                    }
-                                }
-                            }
-                            Spacer(modifier = Modifier.width(16.dp))
-                            TooltipBox(
-                                positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                                tooltip = {
-                                    PlainTooltip {
-                                        Text("添加至联系人")
-                                    }
-                                },
-                                state = rememberTooltipState()
-                            ) {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.secondaryContainer,
-                                    onClick = {}
-                                ) {
-                                    Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.PersonAddAlt,
-                                            contentDescription = "add_contact"
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        Card(
-                            onClick = {},
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp)
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    modifier = Modifier.padding(16.dp),
-                                    imageVector = Icons.Outlined.LibraryAdd,
-                                    contentDescription = "extension source"
-                                )
-                                Text(text = "源信息", style = MaterialTheme.typography.titleMedium)
-                            }
-                            Row(
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column {
-                                    Text(
-                                        text = state.contactDetail.contactWithExtensionInfo?.extensionInfo?.name ?: "",
-                                        maxLines = 1
-                                    )
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        text = state.contactDetail.contactWithExtensionInfo?.extensionInfo?.pkg ?: "",
-                                        maxLines = 1,
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                                Spacer(modifier = Modifier.weight(1f))
-                                Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = CircleShape) {
-                                    Text(
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                        text = state.contactDetail.contactWithExtensionInfo?.extensionInfo?.alias ?: "",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        maxLines = 1
-                                    )
-                                }
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Card(
-                            onClick = {},
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp)
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    modifier = Modifier.padding(16.dp),
-                                    imageVector = Icons.Outlined.Groups,
-                                    contentDescription = "extension source"
-                                )
-                                Text(text = "加入的群组", style = MaterialTheme.typography.titleMedium)
-                            }
-
-                            when (state.contactDetail.relativeChatState.loadState) {
-                                LoadState.LOADING -> {
-                                    repeat(2) {
-                                        EmptyChatItem()
-                                    }
-                                }
-
-                                LoadState.ERROR -> {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(48.dp), contentAlignment = Alignment.Center
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = MaterialTheme.colorScheme.secondaryContainer,
+                                        onClick = {}
                                     ) {
-                                        Text(text = "加载出错，请稍后再试")
+                                        Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                                            Icon(
+                                                imageVector = Icons.AutoMirrored.Outlined.Message,
+                                                contentDescription = "message"
+                                            )
+                                        }
                                     }
                                 }
-
-                                LoadState.SUCCESS -> {
-                                    Column {
-                                        state.contactDetail.relativeChatState.chatList.forEach {
-                                            ChatItem(chat = it) {
-
-                                            }
+                                Spacer(modifier = Modifier.width(16.dp))
+                                TooltipBox(
+                                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                                    tooltip = {
+                                        PlainTooltip {
+                                            Text("添加至联系人")
+                                        }
+                                    },
+                                    state = rememberTooltipState()
+                                ) {
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = MaterialTheme.colorScheme.secondaryContainer,
+                                        onClick = {}
+                                    ) {
+                                        Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                                            Icon(
+                                                imageVector = Icons.Outlined.PersonAddAlt,
+                                                contentDescription = "add_contact"
+                                            )
                                         }
                                     }
                                 }
                             }
+                            Spacer(modifier = Modifier.height(24.dp))
 
+                            Card(
+                                onClick = {},
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        modifier = Modifier.padding(16.dp),
+                                        imageVector = Icons.Outlined.LibraryAdd,
+                                        contentDescription = "extension source"
+                                    )
+                                    Text(text = "源信息", style = MaterialTheme.typography.titleMedium)
+                                }
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column {
+                                        Text(
+                                            text = state.contactDetail.contactWithExtensionInfo?.extensionInfo?.name ?: "",
+                                            maxLines = 1
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = state.contactDetail.contactWithExtensionInfo?.extensionInfo?.pkg ?: "",
+                                            maxLines = 1,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.weight(1f))
+                                    Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = CircleShape) {
+                                        Text(
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                            text = state.contactDetail.contactWithExtensionInfo?.extensionInfo?.alias ?: "",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            maxLines = 1
+                                        )
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Card(
+                                onClick = {},
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        modifier = Modifier.padding(16.dp),
+                                        imageVector = Icons.Outlined.Groups,
+                                        contentDescription = "extension source"
+                                    )
+                                    Text(text = "加入的群组", style = MaterialTheme.typography.titleMedium)
+                                }
+
+                                when (state.contactDetail.relativeChatState.loadState) {
+                                    LoadState.LOADING -> {
+                                        repeat(2) {
+                                            EmptyChatItem()
+                                        }
+                                    }
+
+                                    LoadState.ERROR -> {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(48.dp), contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(text = "加载出错，请稍后再试")
+                                        }
+                                    }
+
+                                    LoadState.SUCCESS -> {
+                                        Column {
+                                            state.contactDetail.relativeChatState.chatList.forEach {
+                                                ChatItem(chat = it) {
+
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                            }
+                            Spacer(modifier = Modifier.height(800.dp))
                         }
                     }
                 }
