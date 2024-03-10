@@ -57,20 +57,6 @@ fun MessageAndChatPageWrapperUI(
         }
     }
 
-    BackHandler(state.chatDetail.shouldDisplay == true) {
-        viewModel.sendEvent(MessagePageEvent.LoadMessage(null))
-    }
-    LaunchedEffect(state.chatDetail.shouldDisplay) {
-        if (layoutType == MessageLayoutType.NORMAL && state.chatDetail.shouldDisplay == true) {
-            scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
-            mainSharedViewModel.sendEvent(MainSharedEvent.ShowNavigationBar(false))
-        }
-        if (layoutType == MessageLayoutType.NORMAL && state.chatDetail.shouldDisplay == false) {
-            scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.List)
-            mainSharedViewModel.sendEvent(MainSharedEvent.ShowNavigationBar(true))
-        }
-    }
-
     ListDetailPaneScaffold(
         directive = scaffoldNavigator.scaffoldDirective,
         value = scaffoldNavigator.scaffoldValue,
@@ -81,6 +67,7 @@ fun MessageAndChatPageWrapperUI(
                 MessagePage(
                     viewModel = viewModel,
                     mainSharedViewModel = mainSharedViewModel,
+                    scaffoldNavigator = scaffoldNavigator,
                     layoutType = layoutType,
                 )
             }
@@ -91,6 +78,7 @@ fun MessageAndChatPageWrapperUI(
                 viewModel = viewModel,
                 state = state,
                 mainSharedState = mainSharedState,
+                scaffoldNavigator = scaffoldNavigator,
                 layoutType = layoutType,
                 onEvent = viewModel::sendEvent,
                 onMainSharedEvent = mainSharedViewModel::sendEvent

@@ -11,7 +11,6 @@ data class ContactPageState(
     val contactDetail: ContactDetail = ContactDetail()
 ) : UiState {
     data class ContactDetail(
-        val shouldDisplay: Boolean? = null,
         val contactWithExtensionInfo: ContactWithExtensionInfo? = null,
         val relativeChatState: ChatState = ChatState()
     )

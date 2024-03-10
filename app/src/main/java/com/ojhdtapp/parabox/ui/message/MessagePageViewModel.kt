@@ -250,24 +250,14 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.LoadMessage -> {
-                if (event.chat == null) {
-                    return state.copy(
-                        chatDetail = state.chatDetail.copy(
-                            shouldDisplay = false
-                        ),
-                    )
-                } else {
-                    return state.copy(
-                        chatDetail = state.chatDetail.copy(
-                            shouldDisplay = true,
-                            chat = event.chat,
-                            editAreaState = state.chatDetail.editAreaState.copy(
-                                memeList = refreshMemeList()
-                            )
+                return state.copy(
+                    chatDetail = state.chatDetail.copy(
+                        chat = event.chat,
+                        editAreaState = state.chatDetail.editAreaState.copy(
+                            memeList = refreshMemeList()
                         )
                     )
-                }
-
+                )
             }
 
             is MessagePageEvent.OpenEditArea -> {

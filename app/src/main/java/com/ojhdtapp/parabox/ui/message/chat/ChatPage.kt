@@ -39,6 +39,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
+import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.runtime.Composable
@@ -90,19 +93,20 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun ChatPage(
     modifier: Modifier = Modifier,
     viewModel: MessagePageViewModel,
     state: MessagePageState,
     mainSharedState: MainSharedState,
+    scaffoldNavigator: ThreePaneScaffoldNavigator<Nothing>,
     layoutType: MessageLayoutType,
     onEvent: (MessagePageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
     Crossfade(
-        targetState = layoutType == MessageLayoutType.SPLIT && state.chatDetail.shouldDisplay != true,
+        targetState = state.chatDetail.chat == null,
         label = "chat_empty_normal_crossfade"
     ) {
         if (it) {
@@ -116,6 +120,7 @@ fun ChatPage(
                 viewModel = viewModel,
                 state = state,
                 mainSharedState = mainSharedState,
+                scaffoldNavigator = scaffoldNavigator,
                 layoutType = layoutType,
                 onEvent = onEvent,
                 onMainSharedEvent = onMainSharedEvent,
@@ -125,8 +130,9 @@ fun ChatPage(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class,
-    ExperimentalMaterialApi::class
+@OptIn(
+    ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class,
+    ExperimentalMaterialApi::class, ExperimentalMaterial3AdaptiveApi::class
 )
 @Composable
 fun NormalChatPage(
@@ -134,6 +140,7 @@ fun NormalChatPage(
     viewModel: MessagePageViewModel,
     state: MessagePageState,
     mainSharedState: MainSharedState,
+    scaffoldNavigator: ThreePaneScaffoldNavigator<Nothing>,
     layoutType: MessageLayoutType,
     onEvent: (e: MessagePageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
@@ -197,8 +204,10 @@ fun NormalChatPage(
             onEvent(MessagePageEvent.OpenEditArea(false))
         }
     }
-
-
+    BackHandler(layoutType == MessageLayoutType.NORMAL) {
+        scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.List)
+        onMainSharedEvent(MainSharedEvent.ShowNavigationBar(true))
+    }
     BackHandler(sheetState.isOpen) {
         coroutineScope.launch {
             sheetState.close()
@@ -224,14 +233,20 @@ fun NormalChatPage(
                     .background(Color.Green)
             )
         },
-        gesturesEnabled = state.chatDetail.shouldDisplay == true
-                && state.chatDetail.editAreaState.audioRecorderState !is AudioRecorderState.Recording,
+        gesturesEnabled = state.chatDetail.editAreaState.audioRecorderState !is AudioRecorderState.Recording,
         drawerState = drawerState,
         drawerWidth = 360.dp,
     ) {
         Scaffold(
             topBar = {
-                NormalChatTopBar(chatDetail = state.chatDetail, onEvent = onEvent)
+                NormalChatTopBar(chatDetail = state.chatDetail, layoutType = layoutType, onNavigateBack = {
+                    if (state.chatDetail.selectedMessageList.isNotEmpty()) {
+                        onEvent(MessagePageEvent.ClearSelectedMessage)
+                    } else {
+                        scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.List)
+                        onMainSharedEvent(MainSharedEvent.ShowNavigationBar(true))
+                    }
+                }, onEvent = onEvent)
             },
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         ) { paddingValues ->
@@ -239,12 +254,14 @@ fun NormalChatPage(
                 derivedStateOf {
                     val bottomPaddingValues = paddingValues.calculateBottomPadding()
                     when (sheetState.swipeableState.direction) {
-                        1F ->  {
+                        1F -> {
                             sheetState.swipeableState.progress.fraction * bottomPaddingValues
                         }
+
                         -1F -> {
                             bottomPaddingValues * (1 - sheetState.swipeableState.progress.fraction)
                         }
+
                         else -> {
                             if (sheetState.isOpen || imeVisible) {
                                 0.dp

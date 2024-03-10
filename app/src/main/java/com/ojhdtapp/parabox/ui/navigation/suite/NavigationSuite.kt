@@ -226,7 +226,7 @@ fun NavigationSuite(
                 )
             },
             drawerState = drawerState,
-            gesturesEnabled = !mainSharedState.search.isActive,
+            gesturesEnabled = !mainSharedState.search.isActive && mainSharedState.showNavigationBar,
             drawerWidth = 304.dp
         ) {
             MenuAppContent(

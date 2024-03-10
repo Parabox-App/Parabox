@@ -30,23 +30,14 @@ class ContactPageViewModel @Inject constructor(
     }
 
     override suspend fun handleEvent(event: ContactPageEvent, state: ContactPageState): ContactPageState {
-        return when(event){
+        return when (event) {
             is ContactPageEvent.LoadContactDetail -> {
-                    if (event.contactWithExtensionInfo == null) {
-                        state.copy(
-                            contactDetail = state.contactDetail.copy(
-                                shouldDisplay = false
-                            )
-                        )
-                    } else {
-                        loadRelativeChatList(event.contactWithExtensionInfo.contact.contactId)
-                        state.copy(
-                            contactDetail = ContactPageState.ContactDetail(
-                                shouldDisplay = true,
-                                contactWithExtensionInfo = event.contactWithExtensionInfo
-                            )
-                        )
-                }
+                loadRelativeChatList(event.contactWithExtensionInfo.contact.contactId)
+                state.copy(
+                    contactDetail = ContactPageState.ContactDetail(
+                        contactWithExtensionInfo = event.contactWithExtensionInfo
+                    )
+                )
             }
 
 //            is ContactPageEvent.UpdateContactDetailDisplay -> {
@@ -80,7 +71,7 @@ class ContactPageViewModel @Inject constructor(
             getChat.containsContact(contactId).collectLatest {
                 if (it is Resource.Success) {
                     sendEvent(ContactPageEvent.UpdateContactRelativeChatList(it.data ?: emptyList(), LoadState.SUCCESS))
-                } else if(it is Resource.Error) {
+                } else if (it is Resource.Error) {
                     sendEvent(ContactPageEvent.UpdateContactRelativeChatList(emptyList(), LoadState.ERROR))
                 }
             }

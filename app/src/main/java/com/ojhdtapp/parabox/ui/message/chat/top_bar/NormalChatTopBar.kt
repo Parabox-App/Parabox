@@ -36,6 +36,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.domain.model.Chat
+import com.ojhdtapp.parabox.ui.message.MessageLayoutType
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageState
 
@@ -44,6 +45,8 @@ import com.ojhdtapp.parabox.ui.message.MessagePageState
 fun NormalChatTopBar(
     modifier: Modifier = Modifier,
     chatDetail: MessagePageState.ChatDetail,
+    layoutType: MessageLayoutType,
+    onNavigateBack: () -> Unit,
     onEvent: (MessagePageEvent) -> Unit,
 ) {
     val navigationIconPainter = rememberAnimatedVectorPainter(
@@ -82,14 +85,10 @@ fun NormalChatTopBar(
             }
         },
         navigationIcon = {
-            IconButton(onClick = {
-                if (chatDetail.selectedMessageList.isNotEmpty()) {
-                    onEvent(MessagePageEvent.ClearSelectedMessage)
-                } else {
-                    onEvent(MessagePageEvent.LoadMessage(null))
+            if( layoutType == MessageLayoutType.NORMAL) {
+                IconButton(onClick = onNavigateBack) {
+                    Icon(modifier = Modifier.size(24.dp), painter = navigationIconPainter, contentDescription = "navigation_icon")
                 }
-            }) {
-                Icon(modifier = Modifier.size(24.dp), painter = navigationIconPainter, contentDescription = "navigation_icon")
             }
         },
         actions = {

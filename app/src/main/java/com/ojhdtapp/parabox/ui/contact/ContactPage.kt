@@ -47,6 +47,9 @@ import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
+import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -81,11 +84,14 @@ import my.nanihadesuka.compose.InternalLazyColumnScrollbar
 import my.nanihadesuka.compose.LazyColumnScrollbar
 import my.nanihadesuka.compose.ScrollbarSelectionMode
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationGraphicsApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationGraphicsApi::class, ExperimentalFoundationApi::class,
+    ExperimentalMaterial3AdaptiveApi::class
+)
 @Composable
 fun ContactPage(
     modifier: Modifier = Modifier,
     viewModel: ContactPageViewModel,
+    scaffoldNavigator: ThreePaneScaffoldNavigator<Nothing>,
     mainSharedState: MainSharedState,
     layoutType: ContactLayoutType,
     onMainSharedEvent: (MainSharedEvent) -> Unit
@@ -385,6 +391,8 @@ fun ContactPage(
                                 extName = item.extensionInfo.alias,
                                 onClick = {
                                     viewModel.sendEvent(ContactPageEvent.LoadContactDetail(item))
+                                    scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
+                                    onMainSharedEvent(MainSharedEvent.ShowNavigationBar(false))
                                 })
                         }
                     }
@@ -404,6 +412,8 @@ fun ContactPage(
                                 extName = item.extensionInfo.alias,
                                 onClick = {
                                     viewModel.sendEvent(ContactPageEvent.LoadContactDetail(item))
+                                    scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
+                                    onMainSharedEvent(MainSharedEvent.ShowNavigationBar(false))
                                 })
                         }
                     }

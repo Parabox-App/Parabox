@@ -28,7 +28,7 @@ sealed interface MessagePageEvent : UiEvent {
     data class UpdateChatTags(val chatId: Long, val value: List<String>, val oldValue: List<String>) : MessagePageEvent
     data class ShowChatDetail(val chatId: Long, val detail: Chat): MessagePageEvent
     data class UpdateEditingChatTags(val obj: ChatTagsUpdate?): MessagePageEvent
-    data class LoadMessage(val chat: Chat?): MessagePageEvent
+    data class LoadMessage(val chat: Chat): MessagePageEvent
     data class OpenEditArea(val open: Boolean): MessagePageEvent
     data class AppendEditAreaInput(val input: String): MessagePageEvent
     @Deprecated("Use AppendEditAreaInput instead")

@@ -54,17 +54,6 @@ fun ContactPageWrapperUI(
             }
         }
     }
-
-    LaunchedEffect(state.contactDetail.shouldDisplay) {
-        if(layoutType == ContactLayoutType.NORMAL && state.contactDetail.shouldDisplay == true) {
-            scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
-            mainSharedViewModel.sendEvent(MainSharedEvent.ShowNavigationBar(false))
-        } else if (layoutType == ContactLayoutType.NORMAL && state.contactDetail.shouldDisplay == false) {
-            scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.List)
-            mainSharedViewModel.sendEvent(MainSharedEvent.ShowNavigationBar(true))
-        }
-    }
-
     ListDetailPaneScaffold(
         modifier = modifier,
         directive = scaffoldNavigator.scaffoldDirective,
@@ -74,6 +63,7 @@ fun ContactPageWrapperUI(
             AnimatedPane(modifier = Modifier.preferredWidth(352.dp)) {
                 ContactPage(
                     viewModel = viewModel,
+                    scaffoldNavigator = scaffoldNavigator,
                     mainSharedState = mainSharedState,
                     layoutType = layoutType,
                     onMainSharedEvent = mainSharedViewModel::sendEvent
@@ -84,6 +74,7 @@ fun ContactPageWrapperUI(
         AnimatedPane(modifier = Modifier) {
             ContactDetailPage(
                 viewModel = viewModel,
+                scaffoldNavigator = scaffoldNavigator,
                 mainSharedState = mainSharedState,
                 layoutType = layoutType,
                 onMainSharedEvent = mainSharedViewModel::sendEvent

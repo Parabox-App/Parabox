@@ -22,6 +22,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
+import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
@@ -59,12 +62,15 @@ import kotlinx.coroutines.launch
 import me.saket.swipe.rememberSwipeableActionsState
 
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalAnimationGraphicsApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalAnimationGraphicsApi::class,
+    ExperimentalMaterial3AdaptiveApi::class
+)
 @Composable
 fun MessagePage(
     modifier: Modifier = Modifier,
     viewModel: MessagePageViewModel,
     mainSharedViewModel: MainSharedViewModel,
+    scaffoldNavigator: ThreePaneScaffoldNavigator<Nothing>,
     layoutType: MessageLayoutType,
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -498,6 +504,8 @@ fun MessagePage(
                                 isExpanded = layoutType == MessageLayoutType.SPLIT,
                                 onClick = {
                                     viewModel.sendEvent(MessagePageEvent.LoadMessage(item.chat))
+                                    scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
+                                    mainSharedViewModel.sendEvent(MainSharedEvent.ShowNavigationBar(false))
                                 },
                                 onLongClick = {
                                     isMenuVisible = true

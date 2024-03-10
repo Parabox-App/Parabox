@@ -43,6 +43,9 @@ import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarColors
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
+import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -77,38 +80,43 @@ import com.ojhdtapp.parabox.ui.common.CommonAvatar
 import com.ojhdtapp.parabox.ui.common.CommonAvatarModel
 import com.ojhdtapp.parabox.ui.common.LocalSystemUiController
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun ContactDetailPage(
     modifier: Modifier = Modifier,
     viewModel: ContactPageViewModel,
+    scaffoldNavigator: ThreePaneScaffoldNavigator<Nothing>,
     mainSharedState: MainSharedState,
     layoutType: ContactLayoutType,
     onMainSharedEvent: (MainSharedEvent) -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
     val systemUiController = LocalSystemUiController.current
-    Crossfade(targetState = state.contactDetail.shouldDisplay, label = "") {
-        if (it == true) {
+    Crossfade(targetState = state.contactDetail.contactWithExtensionInfo != null, label = "") {
+        if (it) {
             var isBackgroundLight by remember { mutableStateOf(true) }
             BackHandler(layoutType == ContactLayoutType.NORMAL) {
-                viewModel.sendEvent(ContactPageEvent.LoadContactDetail(null))
+                scaffoldNavigator.navigateBack()
                 systemUiController.reset()
+                onMainSharedEvent(MainSharedEvent.ShowNavigationBar(true))
             }
             Scaffold(
                 topBar = {
                     TopAppBar(
                         title = {},
                         navigationIcon = {
-                            IconButton(onClick = {
-                                viewModel.sendEvent(ContactPageEvent.LoadContactDetail(null))
-                                systemUiController.reset()
-                            }) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "back",
-                                    tint = if (isBackgroundLight) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.inverseOnSurface
-                                )
+                            if(layoutType == ContactLayoutType.NORMAL) {
+                                IconButton(onClick = {
+                                    scaffoldNavigator.navigateBack()
+                                    systemUiController.reset()
+                                    onMainSharedEvent(MainSharedEvent.ShowNavigationBar(true))
+                                }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.ArrowBack, contentDescription = "back",
+                                        tint = if (isBackgroundLight) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.inverseOnSurface
+                                    )
+                                }
                             }
                         },
                         colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
