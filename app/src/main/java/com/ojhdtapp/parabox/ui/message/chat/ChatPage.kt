@@ -23,9 +23,11 @@ import androidx.compose.foundation.layout.imeNestedScroll
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
@@ -105,28 +107,49 @@ fun ChatPage(
     onEvent: (MessagePageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
-    Crossfade(
-        targetState = state.chatDetail.chat == null,
-        label = "chat_empty_normal_crossfade"
-    ) {
-        if (it) {
-            EmptyChatPage(
-                modifier = modifier,
-                layoutType = layoutType,
-            )
-        } else {
-            NormalChatPage(
-                modifier = modifier,
-                viewModel = viewModel,
-                state = state,
-                mainSharedState = mainSharedState,
-                scaffoldNavigator = scaffoldNavigator,
-                layoutType = layoutType,
-                onEvent = onEvent,
-                onMainSharedEvent = onMainSharedEvent,
-            )
-        }
+    if (layoutType == MessageLayoutType.SPLIT) {
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding(),
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        ) {
+            Crossfade(
+                targetState = state.chatDetail.chat == null,
+                label = "chat_empty_normal_crossfade"
+            ) {
+                if (it) {
+                    EmptyChatPage(
+                        modifier = modifier,
+                        layoutType = layoutType,
+                    )
+                } else {
+                    NormalChatPage(
+                        modifier = modifier,
+                        viewModel = viewModel,
+                        state = state,
+                        mainSharedState = mainSharedState,
+                        scaffoldNavigator = scaffoldNavigator,
+                        layoutType = layoutType,
+                        onEvent = onEvent,
+                        onMainSharedEvent = onMainSharedEvent,
+                    )
+                }
 
+            }
+        }
+    } else {
+        NormalChatPage(
+            modifier = modifier,
+            viewModel = viewModel,
+            state = state,
+            mainSharedState = mainSharedState,
+            scaffoldNavigator = scaffoldNavigator,
+            layoutType = layoutType,
+            onEvent = onEvent,
+            onMainSharedEvent = onMainSharedEvent,
+        )
     }
 }
 
@@ -182,7 +205,9 @@ fun NormalChatPage(
                 is MessagePageEffect.ImagePreviewerOpenTransform -> {
                     if (previewerState.canOpen && it.index > -1) {
                         previewerState.openTransform(it.index)
-                        systemUiController.setStatusBarColor(false)
+                        if (layoutType == MessageLayoutType.NORMAL) {
+                            systemUiController.setStatusBarColor(false)
+                        }
                     }
                 }
 
@@ -417,6 +442,7 @@ fun NormalChatPage(
     MyImagePreviewer(
         previewerState = previewerState,
         state = state.chatDetail.imagePreviewerState,
+        layoutType = layoutType,
         onEvent = onEvent
     )
 }

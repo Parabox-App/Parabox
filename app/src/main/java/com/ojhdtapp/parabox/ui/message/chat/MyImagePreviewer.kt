@@ -57,6 +57,7 @@ import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.ui.common.LocalSystemUiController
 import com.ojhdtapp.parabox.ui.common.RoundedCornerCascadeDropdownMenu
+import com.ojhdtapp.parabox.ui.message.MessageLayoutType
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageState
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.model.ChatPageUiModel
@@ -73,6 +74,7 @@ import me.saket.cascade.CascadeDropdownMenu
 fun MyImagePreviewer(
     modifier: Modifier = Modifier,
     state: MessagePageState.ImagePreviewerState,
+    layoutType: MessageLayoutType,
     previewerState: ImagePreviewerState,
     onEvent: (e: MessagePageEvent) -> Unit,
 ) {
@@ -82,7 +84,9 @@ fun MyImagePreviewer(
     BackHandler(previewerState.canClose) {
         coroutineScope.launch {
             previewerState.closeTransform()
-            systemUiController.reset()
+            if (layoutType == MessageLayoutType.NORMAL) {
+                systemUiController.reset()
+            }
 //            onEvent(MessagePageEvent.UpdateImagePreviewerSnapshotList(emptyList(), -1))
         }
     }

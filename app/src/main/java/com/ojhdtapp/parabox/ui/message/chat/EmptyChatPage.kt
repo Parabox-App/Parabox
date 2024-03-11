@@ -19,20 +19,16 @@ import com.ojhdtapp.parabox.ui.message.MessageLayoutType
 fun EmptyChatPage(
     modifier: Modifier = Modifier,
     layoutType: MessageLayoutType,
-){
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+) {
+    Column(
+        modifier = modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        Column(
-            modifier = modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = stringResource(R.string.select_conversation),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
+        Text(
+            text = stringResource(R.string.select_conversation),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }

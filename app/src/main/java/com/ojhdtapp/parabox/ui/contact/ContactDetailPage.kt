@@ -120,7 +120,7 @@ fun ContactDetailPage(
                         verticalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            text = stringResource(R.string.select_conversation),
+                            text = "选择联系人",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurface
                         )
