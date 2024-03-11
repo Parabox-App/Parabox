@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -86,6 +88,7 @@ import com.ojhdtapp.parabox.ui.common.BlurTransformation
 import com.ojhdtapp.parabox.ui.common.CommonAvatar
 import com.ojhdtapp.parabox.ui.common.CommonAvatarModel
 import com.ojhdtapp.parabox.ui.common.LocalSystemUiController
+import com.ojhdtapp.parabox.ui.common.SystemUiController
 import com.ojhdtapp.parabox.ui.common.placeholder
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
@@ -101,260 +104,303 @@ fun ContactDetailPage(
 ) {
     val state by viewModel.uiState.collectAsState()
     val systemUiController = LocalSystemUiController.current
-    Crossfade(targetState = state.contactDetail.contactWithExtensionInfo != null, label = "") {
-        if (it) {
-            var isBackgroundLight by remember { mutableStateOf(true) }
-            BackHandler(layoutType == ContactLayoutType.NORMAL) {
-                scaffoldNavigator.navigateBack()
-                systemUiController.reset()
-                onMainSharedEvent(MainSharedEvent.ShowNavigationBar(true))
+    if (layoutType == ContactLayoutType.SPLIT) {
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding(),
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        ) {
+            Crossfade(targetState = state.contactDetail.contactWithExtensionInfo == null, label = "") {
+                if (it) {
+                    Column(
+                        modifier = modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = stringResource(R.string.select_conversation),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                } else {
+                    ContactDetailPageContent(
+                        state = state,
+                        scaffoldNavigator = scaffoldNavigator,
+                        systemUiController = systemUiController,
+                        mainSharedState = mainSharedState,
+                        layoutType = layoutType,
+                        onMainSharedEvent = onMainSharedEvent
+                    )
+                }
             }
-            Scaffold(
-                topBar = {
-                    TopAppBar(
-                        title = {},
-                        navigationIcon = {
-                            if (layoutType == ContactLayoutType.NORMAL) {
-                                IconButton(onClick = {
-                                    scaffoldNavigator.navigateBack()
-                                    systemUiController.reset()
-                                    onMainSharedEvent(MainSharedEvent.ShowNavigationBar(true))
-                                }) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                                        contentDescription = "back",
-                                        tint = if (!isBackgroundLight) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.inverseOnSurface
-                                    )
-                                }
-                            }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
-                    )
-                },
-                containerColor = MaterialTheme.colorScheme.surfaceContainer
-            )
-            { innerPadding ->
-                Box(modifier = Modifier.fillMaxSize()) {
-                    AsyncImage(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(240.dp),
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(state.contactDetail.contactWithExtensionInfo?.contact?.avatar?.getModel())
-                            .transformations(BlurTransformation(LocalContext.current))
-                            .build(),
-                        contentDescription = "avatar_bg", contentScale = ContentScale.Crop,
-                        onSuccess = {
-                            (it.result.drawable as? BitmapDrawable)?.bitmap?.also { bitmap ->
-                                isBackgroundLight = ImageUtil.checkBitmapLight(bitmap)
-                                systemUiController.setStatusBarColor(isBackgroundLight)
-                            }
-                        }
-                    )
-                    Column(modifier = Modifier.verticalScroll(rememberScrollState()),
-                        horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(240.dp), contentAlignment = Alignment.BottomCenter
-                        ) {
-                            Surface(
-                                shape = RoundedCornerShape(
-                                    topStart = 28.dp,
-                                    topEnd = 28.dp,
-                                    bottomStart = 0.dp,
-                                    bottomEnd = 0.dp
-                                )
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(49.dp)
-                                )
-                            }
-                            Box(
-                                modifier = Modifier
-                                    .clip(CircleShape)
-                                    .size(96.dp)
-                                    .border(2.dp, MaterialTheme.colorScheme.primaryContainer, CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CommonAvatar(
-                                    model = CommonAvatarModel(
-                                        model = state.contactDetail.contactWithExtensionInfo?.contact?.avatar?.getModel(),
-                                        name = state.contactDetail.contactWithExtensionInfo?.contact?.name ?: "null"
-                                    )
-                                )
-                            }
-                        }
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.surface),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                modifier = Modifier.padding(16.dp),
-                                text = state.contactDetail.contactWithExtensionInfo?.contact?.name ?: "null",
-                                style = MaterialTheme.typography.titleLarge,
-                                maxLines = 1
+        }
+    } else {
+        ContactDetailPageContent(
+            state = state,
+            scaffoldNavigator = scaffoldNavigator,
+            systemUiController = systemUiController,
+            mainSharedState = mainSharedState,
+            layoutType = layoutType,
+            onMainSharedEvent = onMainSharedEvent
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3Api::class)
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+@Composable
+private fun ContactDetailPageContent(
+    modifier: Modifier = Modifier,
+    state: ContactPageState,
+    scaffoldNavigator: ThreePaneScaffoldNavigator<Nothing>,
+    systemUiController: SystemUiController,
+    mainSharedState: MainSharedState,
+    layoutType: ContactLayoutType,
+    onMainSharedEvent: (MainSharedEvent) -> Unit
+) {
+    var isBackgroundLight by remember { mutableStateOf(true) }
+    BackHandler(layoutType == ContactLayoutType.NORMAL) {
+        scaffoldNavigator.navigateBack()
+        systemUiController.reset()
+        onMainSharedEvent(MainSharedEvent.ShowNavigationBar(true))
+    }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {},
+                navigationIcon = {
+                    if (layoutType == ContactLayoutType.NORMAL) {
+                        IconButton(onClick = {
+                            scaffoldNavigator.navigateBack()
+                            systemUiController.reset()
+                            onMainSharedEvent(MainSharedEvent.ShowNavigationBar(true))
+                        }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                                contentDescription = "back",
+                                tint = if (isBackgroundLight) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.inverseOnSurface
                             )
-                            Row {
-                                TooltipBox(
-                                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                                    tooltip = {
-                                        PlainTooltip {
-                                            Text("发起会话")
-                                        }
-                                    },
-                                    state = rememberTooltipState()
-                                ) {
-                                    Surface(
-                                        shape = CircleShape,
-                                        color = MaterialTheme.colorScheme.secondaryContainer,
-                                        onClick = {}
-                                    ) {
-                                        Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
-                                            Icon(
-                                                imageVector = Icons.AutoMirrored.Outlined.Message,
-                                                contentDescription = "message"
-                                            )
-                                        }
-                                    }
-                                }
-                                Spacer(modifier = Modifier.width(16.dp))
-                                TooltipBox(
-                                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                                    tooltip = {
-                                        PlainTooltip {
-                                            Text("添加至联系人")
-                                        }
-                                    },
-                                    state = rememberTooltipState()
-                                ) {
-                                    Surface(
-                                        shape = CircleShape,
-                                        color = MaterialTheme.colorScheme.secondaryContainer,
-                                        onClick = {}
-                                    ) {
-                                        Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
-                                            Icon(
-                                                imageVector = Icons.Outlined.PersonAddAlt,
-                                                contentDescription = "add_contact"
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(24.dp))
-
-                            Card(
-                                onClick = {},
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp)
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        modifier = Modifier.padding(16.dp),
-                                        imageVector = Icons.Outlined.LibraryAdd,
-                                        contentDescription = "extension source"
-                                    )
-                                    Text(text = "源信息", style = MaterialTheme.typography.titleMedium)
-                                }
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column {
-                                        Text(
-                                            text = state.contactDetail.contactWithExtensionInfo?.extensionInfo?.name ?: "",
-                                            maxLines = 1
-                                        )
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                        Text(
-                                            text = state.contactDetail.contactWithExtensionInfo?.extensionInfo?.pkg ?: "",
-                                            maxLines = 1,
-                                            style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.weight(1f))
-                                    Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = CircleShape) {
-                                        Text(
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                            text = state.contactDetail.contactWithExtensionInfo?.extensionInfo?.alias ?: "",
-                                            style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.primary,
-                                            maxLines = 1
-                                        )
-                                    }
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Card(
-                                onClick = {},
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp)
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        modifier = Modifier.padding(16.dp),
-                                        imageVector = Icons.Outlined.Groups,
-                                        contentDescription = "extension source"
-                                    )
-                                    Text(text = "加入的群组", style = MaterialTheme.typography.titleMedium)
-                                }
-
-                                when (state.contactDetail.relativeChatState.loadState) {
-                                    LoadState.LOADING -> {
-                                        repeat(2) {
-                                            EmptyChatItem()
-                                        }
-                                    }
-
-                                    LoadState.ERROR -> {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(48.dp), contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(text = "加载出错，请稍后再试")
-                                        }
-                                    }
-
-                                    LoadState.SUCCESS -> {
-                                        Column {
-                                            state.contactDetail.relativeChatState.chatList.forEach {
-                                                ChatItem(chat = it) {
-
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                            }
-                            Spacer(modifier = Modifier.height(800.dp))
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.surfaceContainer
+    ) {  innerPadding ->
+        Box(modifier = Modifier.fillMaxSize()) {
+            AsyncImage(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(240.dp),
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(state.contactDetail.contactWithExtensionInfo?.contact?.avatar?.getModel())
+                    .transformations(BlurTransformation(LocalContext.current))
+                    .build(),
+                contentDescription = "avatar_bg", contentScale = ContentScale.Crop,
+                onSuccess = {
+                    if(layoutType == ContactLayoutType.NORMAL) {
+                        (it.result.drawable as? BitmapDrawable)?.bitmap?.also { bitmap ->
+                            isBackgroundLight = ImageUtil.checkBitmapLight(bitmap)
+                            systemUiController.setStatusBarColor(isBackgroundLight)
                         }
                     }
                 }
-            }
-        } else {
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
+            )
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(240.dp), contentAlignment = Alignment.BottomCenter
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(
+                            topStart = 28.dp,
+                            topEnd = 28.dp,
+                            bottomStart = 0.dp,
+                            bottomEnd = 0.dp
+                        ),
+                        color = if (layoutType == ContactLayoutType.NORMAL) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceContainer,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(49.dp)
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .size(96.dp)
+                            .border(2.dp, MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CommonAvatar(
+                            model = CommonAvatarModel(
+                                model = state.contactDetail.contactWithExtensionInfo?.contact?.avatar?.getModel(),
+                                name = state.contactDetail.contactWithExtensionInfo?.contact?.name ?: "null"
+                            )
+                        )
+                    }
+                }
                 Column(
-                    modifier = modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            if (layoutType == ContactLayoutType.NORMAL) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceContainer,
+                        ),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = stringResource(R.string.select_conversation),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface
+                        modifier = Modifier.padding(16.dp),
+                        text = state.contactDetail.contactWithExtensionInfo?.contact?.name ?: "null",
+                        style = MaterialTheme.typography.titleLarge,
+                        maxLines = 1
                     )
+                    Row {
+                        TooltipBox(
+                            positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                            tooltip = {
+                                PlainTooltip {
+                                    Text("发起会话")
+                                }
+                            },
+                            state = rememberTooltipState()
+                        ) {
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                onClick = {}
+                            ) {
+                                Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Outlined.Message,
+                                        contentDescription = "message"
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        TooltipBox(
+                            positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                            tooltip = {
+                                PlainTooltip {
+                                    Text("添加至联系人")
+                                }
+                            },
+                            state = rememberTooltipState()
+                        ) {
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                onClick = {}
+                            ) {
+                                Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.PersonAddAlt,
+                                        contentDescription = "add_contact"
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Card(
+                        onClick = {},
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                modifier = Modifier.padding(16.dp),
+                                imageVector = Icons.Outlined.LibraryAdd,
+                                contentDescription = "extension source"
+                            )
+                            Text(text = "源信息", style = MaterialTheme.typography.titleMedium)
+                        }
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = state.contactDetail.contactWithExtensionInfo?.extensionInfo?.name ?: "",
+                                    maxLines = 1
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = state.contactDetail.contactWithExtensionInfo?.extensionInfo?.pkg ?: "",
+                                    maxLines = 1,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Spacer(modifier = Modifier.weight(1f))
+                            Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = CircleShape) {
+                                Text(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    text = state.contactDetail.contactWithExtensionInfo?.extensionInfo?.alias ?: "",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    maxLines = 1
+                                )
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Card(
+                        onClick = {},
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                modifier = Modifier.padding(16.dp),
+                                imageVector = Icons.Outlined.Groups,
+                                contentDescription = "extension source"
+                            )
+                            Text(text = "加入的群组", style = MaterialTheme.typography.titleMedium)
+                        }
+
+                        when (state.contactDetail.relativeChatState.loadState) {
+                            LoadState.LOADING -> {
+                                repeat(2) {
+                                    EmptyChatItem()
+                                }
+                            }
+
+                            LoadState.ERROR -> {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(48.dp), contentAlignment = Alignment.Center
+                                ) {
+                                    Text(text = "加载出错，请稍后再试")
+                                }
+                            }
+
+                            LoadState.SUCCESS -> {
+                                Column {
+                                    state.contactDetail.relativeChatState.chatList.forEach {
+                                        ChatItem(chat = it) {
+
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                    }
+                    Spacer(modifier = Modifier.height(560.dp))
                 }
             }
         }
@@ -389,7 +435,11 @@ private fun EmptyChatItem(modifier: Modifier = Modifier) {
 
 @Composable
 private fun ChatItem(modifier: Modifier = Modifier, chat: Chat, onClick: () -> Unit) {
-    Surface(modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.surfaceContainerHighest, onClick = onClick) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        onClick = onClick
+    ) {
         Row(
             modifier = modifier.padding(16.dp),
             horizontalArrangement = Arrangement.Start,
