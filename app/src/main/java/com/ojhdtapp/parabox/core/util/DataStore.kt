@@ -32,6 +32,13 @@ object DataStoreKeys {
     val USER_AVATAR = stringPreferencesKey("user_avatar")
     val IS_FIRST_LAUNCH = booleanPreferencesKey("is_first_launch")
 
+    val SETTINGS_ENABLE_MARQUEE_EFFECT_ON_CHAT_NAME = booleanPreferencesKey("settings_enable_marquee_effect_on_chat_name")
+    val SETTINGS_ENABLE_SWIPE_TO_DISMISS = booleanPreferencesKey("settings_enable_swipe_to_dismiss")
+    val SETTINGS_DISPLAY_AVATAR_ON_TOP_APPBAR = booleanPreferencesKey("settings_display_avatar_on_top_appbar")
+    val SETTINGS_ENABLE_INNER_BROWSER = booleanPreferencesKey("settings_enable_inner_browser")
+    val SETTINGS_SEND_VIA_ENTER = booleanPreferencesKey("settings_send_via_enter")
+
+
     val SETTINGS_WORKING_MODE = intPreferencesKey("settings_working_mode")
     val SETTINGS_CLOUD_SERVICE = intPreferencesKey("settings_cloud_service")
     val SETTINGS_AUTO_BACKUP = booleanPreferencesKey("settings_auto_backup")
@@ -62,7 +69,6 @@ object DataStoreKeys {
     val SETTINGS_ALLOW_FOREGROUND_NOTIFICATION =
         booleanPreferencesKey("settings_allow_foreground_notification")
 
-    val SETTINGS_ENABLE_SWIPE_TO_DISMISS = booleanPreferencesKey("settings_enable_swipe_to_dismiss")
 
     val GOOGLE_MAIL = stringPreferencesKey("google_mail")
     val GOOGLE_NAME = stringPreferencesKey("google_name")

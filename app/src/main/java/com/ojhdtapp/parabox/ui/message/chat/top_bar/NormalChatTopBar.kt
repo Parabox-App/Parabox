@@ -14,8 +14,12 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.with
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,11 +36,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.domain.model.Chat
+import com.ojhdtapp.parabox.ui.common.CommonAvatar
+import com.ojhdtapp.parabox.ui.common.CommonAvatarModel
 import com.ojhdtapp.parabox.ui.message.MessageLayoutType
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageState
@@ -46,6 +53,7 @@ import com.ojhdtapp.parabox.ui.message.MessagePageState
 fun NormalChatTopBar(
     modifier: Modifier = Modifier,
     chatDetail: MessagePageState.ChatDetail,
+    shouldDisplayAvatar: Boolean,
     layoutType: MessageLayoutType,
     onNavigateBack: () -> Unit,
     onEvent: (MessagePageEvent) -> Unit,
@@ -59,36 +67,63 @@ fun NormalChatTopBar(
     TopAppBar(
         modifier = modifier,
         title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                AnimatedContent(
-                    targetState = chatDetail.selectedMessageList.size,
-                    transitionSpec = {
-                        // Compare the incoming number with the previous number.
-                        if (targetState > initialState) {
-                            // If the target number is larger, it slides up and fades in
-                            // while the initial (smaller) number slides up and fades out.
-                            (slideInVertically { height -> height } + fadeIn()).togetherWith(slideOutVertically { height -> -height } + fadeOut())
-                        } else {
-                            // If the target number is smaller, it slides down and fades in
-                            // while the initial number slides down and fades out.
-                            (slideInVertically { height -> -height } + fadeIn()).togetherWith(slideOutVertically { height -> height } + fadeOut())
-                        }.using(
-                            // Disable clipping since the faded slide-in/out should
-                            // be displayed out of bounds.
-                            SizeTransform(clip = false)
+            AnimatedContent(
+                modifier = Modifier.padding(start = 8.dp),
+                targetState = chatDetail.selectedMessageList.size,
+                transitionSpec = {
+                    // Compare the incoming number with the previous number.
+                    if (targetState > initialState) {
+                        // If the target number is larger, it slides up and fades in
+                        // while the initial (smaller) number slides up and fades out.
+                        (slideInVertically { height -> height } + fadeIn()).togetherWith(slideOutVertically { height -> -height } + fadeOut())
+                    } else {
+                        // If the target number is smaller, it slides down and fades in
+                        // while the initial number slides down and fades out.
+                        (slideInVertically { height -> -height } + fadeIn()).togetherWith(slideOutVertically { height -> height } + fadeOut())
+                    }.using(
+                        // Disable clipping since the faded slide-in/out should
+                        // be displayed out of bounds.
+                        SizeTransform(clip = false)
+                    )
+                }, label = ""
+            ) { num ->
+                if (num > 0) {
+                    Text(text = num.toString(), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                } else {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (shouldDisplayAvatar) {
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CommonAvatar(
+                                    model = CommonAvatarModel(
+                                        model = chatDetail.chat?.avatar?.getModel(),
+                                        name = chatDetail.chat?.name ?: ""
+                                    )
+                                )
+                            }
+                            Spacer(modifier = Modifier.size(8.dp))
+                        }
+                        Text(
+                            text = chatDetail.chat?.name ?: "",
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
                         )
-                    }, label = ""
-                ) { num ->
-                    Text(text = num.takeIf { it > 0 }?.toString() ?: chatDetail.chat?.name ?: "",
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis)
+                    }
                 }
             }
         },
         navigationIcon = {
-            if( layoutType == MessageLayoutType.NORMAL) {
+            if (layoutType == MessageLayoutType.NORMAL) {
                 IconButton(onClick = onNavigateBack) {
-                    Icon(modifier = Modifier.size(24.dp), painter = navigationIconPainter, contentDescription = "navigation_icon")
+                    Icon(
+                        modifier = Modifier.size(24.dp),
+                        painter = navigationIconPainter,
+                        contentDescription = "navigation_icon"
+                    )
                 }
             }
         },

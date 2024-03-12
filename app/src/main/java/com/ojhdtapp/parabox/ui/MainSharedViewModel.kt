@@ -10,8 +10,6 @@ import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.dataStore
-import com.ojhdtapp.parabox.core.util.getDataStoreValue
-import com.ojhdtapp.parabox.core.util.getDataStoreValueFlow
 import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
@@ -20,7 +18,6 @@ import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
 import com.ojhdtapp.parabox.domain.use_case.Query
 import com.ojhdtapp.parabox.ui.base.BaseViewModel
 import com.ojhdtapp.parabox.ui.base.UiEffect
-import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -408,6 +405,11 @@ class MainSharedViewModel @Inject constructor(
                 )
                 return state
             }
+
+            is MainSharedEvent.UpdateSettingSwitch -> {
+                editDataStore(event.key, event.value)
+                return state
+            }
         }
     }
 
@@ -687,8 +689,12 @@ class MainSharedViewModel @Inject constructor(
                         localAvatarUri = it[DataStoreKeys.USER_AVATAR]?.takeIf { it.isNotBlank() }
                             ?.let { Uri.parse(it) }
                             ?: Uri.EMPTY,
+                        enabledChatFilterList = it[DataStoreKeys.CHAT_FILTERS]?.map { ChatFilter.fromKey(it) }?.filterNotNull() ?: emptyList(),
+                        enableMarqueeEffectOnChatName = it[DataStoreKeys.SETTINGS_ENABLE_MARQUEE_EFFECT_ON_CHAT_NAME] ?: true,
                         enableSwipeToDismiss = it[DataStoreKeys.SETTINGS_ENABLE_SWIPE_TO_DISMISS] ?: true,
-                        enabledChatFilterList = it[DataStoreKeys.CHAT_FILTERS]?.map { ChatFilter.fromKey(it) }?.filterNotNull() ?: emptyList()
+                        displayAvatarOnTopAppBar = it[DataStoreKeys.SETTINGS_DISPLAY_AVATAR_ON_TOP_APPBAR] ?: true,
+                        enableInnerBrowser = it[DataStoreKeys.SETTINGS_ENABLE_INNER_BROWSER] ?: true,
+                        sendViaEnter = it[DataStoreKeys.SETTINGS_SEND_VIA_ENTER] ?: false,
                     )
                 ))
             }

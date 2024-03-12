@@ -80,72 +80,88 @@ fun SettingPageWrapperUi(
                 Setting.GENERAL -> {
                     GeneralSettingPage(
                         state = state,
+                        mainSharedState = mainSharedState,
                         layoutType = layoutType,
                         scaffoldNavigator = scaffoldNavigator,
-                        onEvent = viewModel::sendEvent
+                        onEvent = viewModel::sendEvent,
+                        onMainSharedEvent = mainSharedViewModel::sendEvent
                     )
                 }
 
                 Setting.ADDONS -> {
                     GeneralSettingPage(
                         state = state,
+                        mainSharedState = mainSharedState,
                         layoutType = layoutType,
                         scaffoldNavigator = scaffoldNavigator,
-                        onEvent = viewModel::sendEvent
+                        onEvent = viewModel::sendEvent,
+                        onMainSharedEvent = mainSharedViewModel::sendEvent
                     )
                 }
 
                 Setting.LABELS -> {
                     GeneralSettingPage(
                         state = state,
+                        mainSharedState = mainSharedState,
                         layoutType = layoutType,
                         scaffoldNavigator = scaffoldNavigator,
-                        onEvent = viewModel::sendEvent
+                        onEvent = viewModel::sendEvent,
+                        onMainSharedEvent = mainSharedViewModel::sendEvent
                     )
                 }
 
                 Setting.APPEARANCE -> {
                     GeneralSettingPage(
                         state = state,
+                        mainSharedState = mainSharedState,
                         layoutType = layoutType,
                         scaffoldNavigator = scaffoldNavigator,
-                        onEvent = viewModel::sendEvent
+                        onEvent = viewModel::sendEvent,
+                        onMainSharedEvent = mainSharedViewModel::sendEvent
                     )
                 }
 
                 Setting.NOTIFICATION -> {
                     GeneralSettingPage(
                         state = state,
+                        mainSharedState = mainSharedState,
                         layoutType = layoutType,
                         scaffoldNavigator = scaffoldNavigator,
-                        onEvent = viewModel::sendEvent
+                        onEvent = viewModel::sendEvent,
+                        onMainSharedEvent = mainSharedViewModel::sendEvent
                     )
                 }
 
                 Setting.STORAGE -> {
                     GeneralSettingPage(
                         state = state,
+                        mainSharedState = mainSharedState,
                         layoutType = layoutType,
                         scaffoldNavigator = scaffoldNavigator,
-                        onEvent = viewModel::sendEvent
+                        onEvent = viewModel::sendEvent,
+                        onMainSharedEvent = mainSharedViewModel::sendEvent
                     )
                 }
 
                 Setting.EXPERIMENTAL -> {
                     GeneralSettingPage(
                         state = state,
+                        mainSharedState = mainSharedState,
                         layoutType = layoutType,
                         scaffoldNavigator = scaffoldNavigator,
-                        onEvent = viewModel::sendEvent
+                        onEvent = viewModel::sendEvent,
+                        onMainSharedEvent = mainSharedViewModel::sendEvent
                     )
                 }
 
                 Setting.HELP -> {
                     GeneralSettingPage(
                         state = state,
+                        mainSharedState = mainSharedState,
                         layoutType = layoutType,
                         scaffoldNavigator = scaffoldNavigator,
-                        onEvent = viewModel::sendEvent
+                        onEvent = viewModel::sendEvent,
+                        onMainSharedEvent = mainSharedViewModel::sendEvent
                     )
                 }
             }

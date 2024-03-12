@@ -20,7 +20,7 @@ object AvatarUtil {
         textColor: Int,
         name: String?
     ): Bitmap {
-        val shortName = name?.substring(0, 1)
+        val shortName = name?.takeIf { it.isNotEmpty() }?.substring(0, 1)
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val rect = Rect(0, 0, width, height)
         val canvas = Canvas(bitmap)

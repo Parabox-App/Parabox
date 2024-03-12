@@ -25,8 +25,13 @@ data class MainSharedState(
         val messageBadgeNum: Int = 0,
         val localName: String = "User",
         val localAvatarUri: Uri = Uri.EMPTY,
-        val enableSwipeToDismiss: Boolean = false,
         val enabledChatFilterList: List<ChatFilter> = emptyList(),
+
+        val enableMarqueeEffectOnChatName: Boolean = true,
+        val enableSwipeToDismiss: Boolean = true,
+        val displayAvatarOnTopAppBar: Boolean = true,
+        val enableInnerBrowser: Boolean = true,
+        val sendViaEnter: Boolean = false,
     )
     data class Search(
         val query: String = "",

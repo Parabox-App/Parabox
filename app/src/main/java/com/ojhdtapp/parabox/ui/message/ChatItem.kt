@@ -60,6 +60,7 @@ fun ChatItem(
     isSelected: Boolean = false,
     isEditing: Boolean = false,
     isExpanded: Boolean = false,
+    enableMarqueeEffectOnChatName: Boolean = true,
     username: String = "",
     onClick: () -> Unit = {},
     onLongClick: () -> Unit = {},
@@ -142,10 +143,12 @@ fun ChatItem(
                     .weight(1f), verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    modifier = Modifier.basicMarquee(
-                        delayMillis = 5000,
-                        initialDelayMillis = 2000
-                    ),
+                    modifier = if (enableMarqueeEffectOnChatName) {
+                        Modifier.basicMarquee(
+                            delayMillis = 5000,
+                            initialDelayMillis = 2000
+                        )
+                    } else Modifier,
                     text = chatWithLatestMessage.chat.name
                         ?: context.getString(R.string.contact_name),
                     style = MaterialTheme.typography.titleMedium,
@@ -154,7 +157,10 @@ fun ChatItem(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    modifier = Modifier.placeholder(isLoading = contact is Resource.Loading, backgroundColor = MaterialTheme.colorScheme.secondaryContainer),
+                    modifier = Modifier.placeholder(
+                        isLoading = contact is Resource.Loading,
+                        backgroundColor = MaterialTheme.colorScheme.secondaryContainer
+                    ),
                     text = buildAnnotatedString {
                         chatWithLatestMessage.message?.also { message ->
                             message.contentString
@@ -210,15 +216,17 @@ fun PinnedChatItems(
     val textColor = MaterialTheme.colorScheme.onSurface
     val avatarBackgroundColor = MaterialTheme.colorScheme.primary
     Surface(
-        modifier = modifier.clip(RoundedCornerShape(16.dp)).combinedClickable(
-            interactionSource = remember {
-                MutableInteractionSource()
-            },
-            indication = LocalIndication.current,
-            enabled = true,
-            onLongClick = onLongClick,
-            onClick = onClick
-        ),
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .combinedClickable(
+                interactionSource = remember {
+                    MutableInteractionSource()
+                },
+                indication = LocalIndication.current,
+                enabled = true,
+                onLongClick = onLongClick,
+                onClick = onClick
+            ),
         color = backgroundColor,
         tonalElevation = 3.dp
     ) {
@@ -237,7 +245,12 @@ fun PinnedChatItems(
                         .background(avatarBackgroundColor),
                     contentAlignment = Alignment.Center
                 ) {
-                    icon?.invoke() ?: CommonAvatar(model = CommonAvatarModel(model = chat.avatar.getModel(), name = chat.name))
+                    icon?.invoke() ?: CommonAvatar(
+                        model = CommonAvatarModel(
+                            model = chat.avatar.getModel(),
+                            name = chat.name
+                        )
+                    )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(

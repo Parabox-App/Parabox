@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui
 
+import androidx.datastore.preferences.core.Preferences
 import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.QueryMessage
@@ -7,7 +8,6 @@ import com.ojhdtapp.parabox.domain.model.RecentQuery
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.domain.model.filter.MessageFilter
 import com.ojhdtapp.parabox.ui.base.UiEvent
-import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 
 sealed interface MainSharedEvent : UiEvent {
 
@@ -41,4 +41,5 @@ sealed interface MainSharedEvent : UiEvent {
     data class PickDateRangeDone(val res: Pair<Long, Long>?) : MainSharedEvent
     object PageListScrollBy : MainSharedEvent
     data class UpdateEnabledChatFilterList(val list: List<ChatFilter>) : MainSharedEvent
+    data class UpdateSettingSwitch(val key: Preferences.Key<Boolean>, val value: Boolean) : MainSharedEvent
 }

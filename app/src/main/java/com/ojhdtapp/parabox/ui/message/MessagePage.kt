@@ -502,6 +502,7 @@ fun MessagePage(
                                     ?: Resource.Loading(),
                                 isEditing = state.chatDetail.chat?.chatId == item.chat.chatId,
                                 isExpanded = layoutType == MessageLayoutType.SPLIT,
+                                enableMarqueeEffectOnChatName = mainSharedState.datastore.enableMarqueeEffectOnChatName,
                                 onClick = {
                                     viewModel.sendEvent(MessagePageEvent.LoadMessage(item.chat))
                                     scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.Detail)

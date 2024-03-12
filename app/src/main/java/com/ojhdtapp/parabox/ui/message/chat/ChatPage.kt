@@ -264,7 +264,11 @@ fun NormalChatPage(
     ) {
         Scaffold(
             topBar = {
-                NormalChatTopBar(chatDetail = state.chatDetail, layoutType = layoutType, onNavigateBack = {
+                NormalChatTopBar(
+                    chatDetail = state.chatDetail,
+                    layoutType = layoutType,
+                    shouldDisplayAvatar = mainSharedState.datastore.displayAvatarOnTopAppBar,
+                    onNavigateBack = {
                     if (state.chatDetail.selectedMessageList.isNotEmpty()) {
                         onEvent(MessagePageEvent.ClearSelectedMessage)
                     } else {
