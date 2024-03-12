@@ -7,10 +7,12 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.chat.ParaboxChat
 sealed class ChatFilter(
     open val label: String? = null,
     val labelResId: Int,
+    val key: String,
     val check: (chat: Chat) -> Boolean
 ) {
     object Normal : ChatFilter(
         labelResId = R.string.get_chat_filter_normal,
+        key = "_#parabox_chat_filter_normal",
         check = {
             !it.isHidden && !it.isPinned && !it.isArchived
         }
@@ -18,6 +20,7 @@ sealed class ChatFilter(
 
     object Archived : ChatFilter(
         labelResId = R.string.get_chat_filter_archived,
+        key = "_#parabox_chat_filter_archived",
         check = {
             it.isArchived
         }
@@ -25,6 +28,7 @@ sealed class ChatFilter(
 
     object Hidden : ChatFilter(
         labelResId = R.string.get_chat_filter_hidden,
+        key = "_#parabox_chat_filter_hidden",
         check = {
             it.isHidden
         }
@@ -32,6 +36,7 @@ sealed class ChatFilter(
 
     object Read : ChatFilter(
         labelResId = R.string.get_chat_filter_read,
+        key = "_#parabox_chat_filter_read",
         check = {
             it.unreadMessageNum == 0
         }
@@ -39,6 +44,7 @@ sealed class ChatFilter(
 
     object Unread : ChatFilter(
         labelResId = R.string.get_chat_filter_unread,
+        key = "_#parabox_chat_filter_unread",
         check = {
             it.unreadMessageNum > 0
         }
@@ -46,6 +52,7 @@ sealed class ChatFilter(
 
     object Private : ChatFilter(
         labelResId = R.string.get_chat_filter_private,
+        key = "_#parabox_chat_filter_private",
         check = {
             it.type == ParaboxChat.TYPE_PRIVATE
         }
@@ -53,6 +60,7 @@ sealed class ChatFilter(
 
     object Group : ChatFilter(
         labelResId = R.string.get_chat_filter_group,
+        key = "_#parabox_chat_filter_group",
         check = {
             it.type == ParaboxChat.TYPE_GROUP
         }
@@ -60,17 +68,23 @@ sealed class ChatFilter(
 
     class Tag(override val label: String) : ChatFilter(
         labelResId = -1,
+        key = label,
         check = {
             it.tags.contains(label)
         }
     )
 
-
-
     override fun equals(other: Any?): Boolean {
         return labelResId == (other as? ChatFilter)?.labelResId
     }
     companion object{
+        fun fromKey(key: String): ChatFilter? {
+            return if (key.startsWith("_#parabox_chat_filter_")) {
+                allFilterList.find { it.key == key }
+            } else {
+                Tag(key)
+            }
+        }
         val allFilterList = listOf<ChatFilter>(
             Archived, Hidden, Read, Unread, Private, Group
         )

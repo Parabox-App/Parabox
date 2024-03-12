@@ -96,6 +96,8 @@ object DataStoreKeys {
 
     const val DEFAULT_USER_NAME = "Me"
 
+    val CHAT_FILTERS = stringSetPreferencesKey("chat_filters")
+
     enum class DARK_MODE {
         NO,
         YES,

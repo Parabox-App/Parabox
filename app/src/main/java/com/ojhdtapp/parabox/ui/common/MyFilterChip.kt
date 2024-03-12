@@ -23,7 +23,7 @@ fun MyFilterChip(
     label: @Composable () -> Unit,
     enabled: Boolean = true,
     trailingIcon: @Composable () -> Unit = {},
-    containerColor: Color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
     withoutLeadingIcon: Boolean = false,
     onClick: () -> Unit
 ){
@@ -54,6 +54,6 @@ fun MyFilterChip(
             selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
             selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
         ),
-        border = FilterChipDefaults.filterChipBorder(enabled = false, selected = false, borderColor = Color.Transparent)
+        border = null
     )
 }

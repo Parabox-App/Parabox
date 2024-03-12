@@ -12,7 +12,6 @@ import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 sealed interface MainSharedEvent : UiEvent {
 
     data class UpdateDataStore(val value: MainSharedState.DataStore) : MainSharedEvent
-
     data class QueryInput(val input: String) : MainSharedEvent
     data class SearchConfirm(val input: String) : MainSharedEvent
     object GetRecentQuery : MainSharedEvent
@@ -41,4 +40,5 @@ sealed interface MainSharedEvent : UiEvent {
     data class PickDateRange(val onDone: (Pair<Long, Long>?) -> Unit) : MainSharedEvent
     data class PickDateRangeDone(val res: Pair<Long, Long>?) : MainSharedEvent
     object PageListScrollBy : MainSharedEvent
+    data class UpdateEnabledChatFilterList(val list: List<ChatFilter>) : MainSharedEvent
 }

@@ -22,11 +22,10 @@ import java.util.concurrent.ConcurrentHashMap
 
 data class MessagePageState(
     val chatDetail: ChatDetail = ChatDetail(),
-    val enabledChatFilterList: List<ChatFilter> = emptyList(),
-    val selectedChatFilterLists: List<ChatFilter> = listOf(ChatFilter.Normal),
     val openEnabledChatFilterDialog: Boolean = false,
     val editingChatTags: ChatTagsUpdate? = null,
-    val chatLatestMessageSenderCache: Map<Long, Resource<Contact>> = emptyMap()
+    val chatLatestMessageSenderCache: Map<Long, Resource<Contact>> = emptyMap(),
+    val selectedChatFilterLists: List<ChatFilter> = listOf(ChatFilter.Normal),
 ): UiState{
 
 

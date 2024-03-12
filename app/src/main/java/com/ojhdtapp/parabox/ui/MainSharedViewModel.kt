@@ -3,6 +3,8 @@ package com.ojhdtapp.parabox.ui
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.viewModelScope
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.LoadState
@@ -12,11 +14,13 @@ import com.ojhdtapp.parabox.core.util.getDataStoreValue
 import com.ojhdtapp.parabox.core.util.getDataStoreValueFlow
 import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.Contact
+import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.domain.model.filter.MessageFilter
 import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
 import com.ojhdtapp.parabox.domain.use_case.Query
 import com.ojhdtapp.parabox.ui.base.BaseViewModel
 import com.ojhdtapp.parabox.ui.base.UiEffect
+import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -389,10 +393,19 @@ class MainSharedViewModel @Inject constructor(
                     openDateRangePicker = false
                 )
             }
+
             is MainSharedEvent.PageListScrollBy -> {
                 viewModelScope.launch {
                     sendEffect(MainSharedEffect.PageListScrollBy)
                 }
+                return state
+            }
+
+            is MainSharedEvent.UpdateEnabledChatFilterList -> {
+                editDataStore(
+                    DataStoreKeys.CHAT_FILTERS,
+                    event.list.map{it.key}.toSet()
+                )
                 return state
             }
         }
@@ -656,6 +669,14 @@ class MainSharedViewModel @Inject constructor(
         }
     }
 
+    fun <T> editDataStore(key: Preferences.Key<T>, value: T) {
+        viewModelScope.launch(Dispatchers.IO) {
+            context.dataStore.edit {
+                it[key] = value
+            }
+        }
+    }
+
     init {
         viewModelScope.launch(Dispatchers.IO) {
             context.dataStore.data.collectLatest {
@@ -666,7 +687,8 @@ class MainSharedViewModel @Inject constructor(
                         localAvatarUri = it[DataStoreKeys.USER_AVATAR]?.takeIf { it.isNotBlank() }
                             ?.let { Uri.parse(it) }
                             ?: Uri.EMPTY,
-                        enableSwipeToDismiss = it[DataStoreKeys.SETTINGS_ENABLE_SWIPE_TO_DISMISS] ?: true
+                        enableSwipeToDismiss = it[DataStoreKeys.SETTINGS_ENABLE_SWIPE_TO_DISMISS] ?: true,
+                        enabledChatFilterList = it[DataStoreKeys.CHAT_FILTERS]?.map { ChatFilter.fromKey(it) }?.filterNotNull() ?: emptyList()
                     )
                 ))
             }

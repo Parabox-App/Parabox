@@ -62,7 +62,8 @@ import kotlinx.coroutines.launch
 import me.saket.swipe.rememberSwipeableActionsState
 
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalAnimationGraphicsApi::class,
+@OptIn(
+    ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalAnimationGraphicsApi::class,
     ExperimentalMaterial3AdaptiveApi::class
 )
 @Composable
@@ -158,9 +159,17 @@ fun MessagePage(
 
     EnabledChatFilterDialog(
         openDialog = state.openEnabledChatFilterDialog,
-        enabledList = state.enabledChatFilterList,
+        enabledList = mainSharedState.datastore.enabledChatFilterList,
         onConfirm = {
-            viewModel.sendEvent(MessagePageEvent.UpdateEnabledChatFilterList(it))
+            mainSharedViewModel.sendEvent(MainSharedEvent.UpdateEnabledChatFilterList(it))
+            viewModel.sendEvent(MessagePageEvent.UpdateSelectedChatFilter(
+                state.selectedChatFilterLists.toMutableList().apply {
+                    retainAll(it)
+                    if (isEmpty()) {
+                        add(ChatFilter.Normal)
+                    }
+                }
+            ))
             viewModel.sendEvent(MessagePageEvent.OpenEnabledChatFilterDialog(false))
         },
         onDismiss = {
@@ -414,16 +423,7 @@ fun MessagePage(
                                 viewModel.sendEvent(MessagePageEvent.OpenEnabledChatFilterDialog(true))
                             }
                         }
-                        item {
-                            if (state.selectedChatFilterLists.contains(ChatFilter.Normal)) {
-                                MyFilterChip(
-                                    modifier = Modifier.padding(end = 8.dp),
-                                    selected = false,
-                                    label = { Text(text = stringResource(id = R.string.get_chat_filter_normal)) }) {
-                                }
-                            }
-                        }
-                        items(items = state.enabledChatFilterList) {
+                        items(items = mainSharedState.datastore.enabledChatFilterList) {
                             MyFilterChip(selected = it in state.selectedChatFilterLists,
                                 modifier = Modifier.padding(end = 8.dp),
                                 label = { Text(text = it.label ?: stringResource(id = it.labelResId)) }) {

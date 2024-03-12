@@ -95,20 +95,6 @@ class MessagePageViewModel @Inject constructor(
                 )
             }
 
-            is MessagePageEvent.UpdateEnabledChatFilterList -> {
-                val newList = state.selectedChatFilterLists.toMutableList()
-                    .apply {
-                        retainAll(event.list)
-                        if (isEmpty()) {
-                            add(ChatFilter.Normal)
-                        }
-                    }
-                state.copy(
-                    enabledChatFilterList = event.list,
-                    selectedChatFilterLists = newList,
-                )
-            }
-
             is MessagePageEvent.AddOrRemoveSelectedChatFilter -> {
                 if (event.filter is ChatFilter.Normal) return state
                 val newList = if (state.selectedChatFilterLists.contains(event.filter)) {
@@ -128,6 +114,12 @@ class MessagePageViewModel @Inject constructor(
                 }
                 return state.copy(
                     selectedChatFilterLists = newList
+                )
+            }
+
+            is MessagePageEvent.UpdateSelectedChatFilter -> {
+                state.copy(
+                    selectedChatFilterLists = event.list
                 )
             }
 
@@ -250,15 +242,16 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.LoadMessage -> {
-                return state.copy(
-                    chatDetail = state.chatDetail.copy(
-                        chat = event.chat,
-                        editAreaState = state.chatDetail.editAreaState.copy(
-                            memeList = refreshMemeList()
+                    return state.copy(
+                        chatDetail = state.chatDetail.copy(
+                            chat = event.chat,
+                            editAreaState = state.chatDetail.editAreaState.copy(
+                                memeList = refreshMemeList()
+                            )
                         )
                     )
-                )
-            }
+                }
+
 
             is MessagePageEvent.OpenEditArea -> {
                 state.copy(
