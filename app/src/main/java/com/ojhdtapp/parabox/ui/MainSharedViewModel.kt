@@ -421,6 +421,18 @@ class MainSharedViewModel @Inject constructor(
                 return state
             }
 
+            is MainSharedEvent.OnChatFilterRemoved -> {
+                val newFilterList = state.datastore.enabledChatFilterList.toMutableList().apply {
+                    remove(event.filter)
+                }
+                val jsonString = gson.toJson(newFilterList.map { it.key })
+                editDataStore(
+                    DataStoreKeys.CHAT_FILTERS,
+                    jsonString
+                )
+                return state
+            }
+
             is MainSharedEvent.OnChatFilterListReordered -> {
                 val newList = state.datastore.enabledChatFilterList.toMutableList().apply {
                     val item = removeAt(event.fromIndex)

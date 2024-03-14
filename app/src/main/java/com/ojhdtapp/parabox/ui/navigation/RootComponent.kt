@@ -35,7 +35,7 @@ class DefaultRootComponent(componentContext: ComponentContext) : RootComponent, 
             childFactory = { config, childComponentContext ->
                 when (config) {
                     RootConfig.Menu -> RootComponent.RootChild.Menu(DefaultMenuComponent(childComponentContext))
-                    RootConfig.Setting -> RootComponent.RootChild.Setting(SettingComponent(childComponentContext))
+                    RootConfig.Setting -> RootComponent.RootChild.Setting(DefaultSettingComponent(childComponentContext))
                 }
             }
         )

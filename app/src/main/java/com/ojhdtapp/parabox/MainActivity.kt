@@ -319,6 +319,7 @@ class MainActivity : AppCompatActivity() {
                             is RootComponent.RootChild.Setting -> {
                                 SettingPageWrapperUi(
                                     modifier = Modifier.fillMaxSize(),
+                                    component = instance.component,
                                     mainSharedViewModel = mainSharedViewModel,
                                     viewModel = settingPageViewModel,
                                     navigation = root.rootNav,

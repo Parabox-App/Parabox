@@ -42,6 +42,7 @@ sealed interface MainSharedEvent : UiEvent {
     object PageListScrollBy : MainSharedEvent
     data class UpdateEnabledChatFilterList(val list: List<ChatFilter>) : MainSharedEvent
     data class OnChatFilterAdded(val filter: ChatFilter) : MainSharedEvent
+    data class OnChatFilterRemoved(val filter: ChatFilter) : MainSharedEvent
     data class OnChatFilterListReordered(val fromIndex: Int, val toIndex: Int) : MainSharedEvent
     data class UpdateSettingSwitch(val key: Preferences.Key<Boolean>, val value: Boolean) : MainSharedEvent
 }

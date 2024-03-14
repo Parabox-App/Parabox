@@ -6,6 +6,7 @@ import com.ojhdtapp.parabox.domain.model.Extension
 import com.ojhdtapp.parabox.ui.base.UiEvent
 
 sealed interface SettingPageEvent : UiEvent{
+    @Deprecated("using decompose")
     data class SelectSetting(val setting: Setting) : SettingPageEvent
     data class UpdatePackageInfo(val list: List<PackageInfo>): SettingPageEvent
     data class UpdateExtension(val list: List<Extension>): SettingPageEvent

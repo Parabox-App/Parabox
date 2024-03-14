@@ -10,8 +10,6 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.outlined.EditNotifications
-import androidx.compose.material.icons.outlined.HelpOutline
-import androidx.compose.material.icons.outlined.Label
 import androidx.compose.material.icons.outlined.LibraryAdd
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Science
@@ -39,12 +37,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
+import com.arkivanov.decompose.router.stack.bringToFront
 import com.arkivanov.decompose.router.stack.pop
+import com.arkivanov.decompose.router.stack.replaceAll
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.navigation.DefaultRootComponent
+import com.ojhdtapp.parabox.ui.navigation.DefaultSettingComponent
 import com.ojhdtapp.parabox.ui.navigation.RootComponent
+import com.ojhdtapp.parabox.ui.navigation.SettingComponent
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
 @Composable
@@ -54,8 +56,10 @@ fun SettingPage(
     mainSharedState: MainSharedState,
     layoutType: SettingLayoutType,
     scaffoldNavigator: ThreePaneScaffoldNavigator<Setting>,
-    navigation: StackNavigation<DefaultRootComponent.RootConfig>,
-    stackState: ChildStack<*, RootComponent.RootChild>,
+    navigation: StackNavigation<DefaultSettingComponent.SettingConfig>,
+    stackState: ChildStack<*, SettingComponent.SettingChild>,
+    rootNavigation: StackNavigation<DefaultRootComponent.RootConfig>,
+    rootStackState: ChildStack<*, RootComponent.RootChild>,
     onMainSharedEvent: (MainSharedEvent) -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -79,7 +83,7 @@ fun SettingPage(
                         )
                     },
                     navigationIcon = {
-                        IconButton(onClick = { navigation.pop() }) {
+                        IconButton(onClick = { rootNavigation.pop() }) {
                             Icon(imageVector = Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "back")
                         }
                     },
@@ -105,10 +109,13 @@ fun SettingPage(
                     leadingIcon = {
                         Icon(imageVector = Icons.Outlined.Settings, contentDescription = "general settings", tint = MaterialTheme.colorScheme.onSurface)
                     },
-                    selected = layoutType == SettingLayoutType.SPLIT && state.selected == Setting.GENERAL,
+                    selected = layoutType == SettingLayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.GeneralSetting,
                     layoutType = layoutType
                 ) {
-                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.GENERAL))
+//                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.GENERAL))
+                    navigation.bringToFront(DefaultSettingComponent.SettingConfig.GeneralSetting) {
+                        navigation.replaceAll(DefaultSettingComponent.SettingConfig.GeneralSetting)
+                    }
                     scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.GENERAL)
                 }
             }
@@ -118,10 +125,13 @@ fun SettingPage(
                     leadingIcon = {
                         Icon(imageVector = Icons.Outlined.LibraryAdd, contentDescription = "extension settings", tint = MaterialTheme.colorScheme.onSurface)
                     },
-                    selected = layoutType == SettingLayoutType.SPLIT && state.selected == Setting.ADDONS,
+                    selected = layoutType == SettingLayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.ExtensionSetting,
                     layoutType = layoutType
                 ) {
-                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.ADDONS))
+//                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.ADDONS))
+                    navigation.bringToFront(DefaultSettingComponent.SettingConfig.ExtensionSetting) {
+                        navigation.replaceAll(DefaultSettingComponent.SettingConfig.ExtensionSetting)
+                    }
                     scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.ADDONS)
                 }
             }
@@ -131,10 +141,13 @@ fun SettingPage(
                     leadingIcon = {
                         Icon(imageVector = Icons.AutoMirrored.Outlined.Label, contentDescription = "label settings", tint = MaterialTheme.colorScheme.onSurface)
                     },
-                    selected = layoutType == SettingLayoutType.SPLIT && state.selected == Setting.LABELS,
+                    selected = layoutType == SettingLayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.LabelSetting,
                     layoutType = layoutType
                 ) {
-                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.LABELS))
+//                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.LABELS))
+                    navigation.bringToFront(DefaultSettingComponent.SettingConfig.LabelSetting) {
+                        navigation.replaceAll(DefaultSettingComponent.SettingConfig.LabelSetting)
+                    }
                     scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.LABELS)
                 }
             }
@@ -144,10 +157,13 @@ fun SettingPage(
                     leadingIcon = {
                         Icon(imageVector = Icons.Outlined.Palette, contentDescription = "interface settings", tint = MaterialTheme.colorScheme.onSurface)
                     },
-                    selected = layoutType == SettingLayoutType.SPLIT && state.selected == Setting.APPEARANCE,
+                    selected = layoutType == SettingLayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.AppearanceSetting,
                     layoutType = layoutType
                 ) {
-                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.APPEARANCE))
+//                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.APPEARANCE))
+                    navigation.bringToFront(DefaultSettingComponent.SettingConfig.AppearanceSetting) {
+                        navigation.replaceAll(DefaultSettingComponent.SettingConfig.AppearanceSetting)
+                    }
                     scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.APPEARANCE)
                 }
             }
@@ -157,10 +173,13 @@ fun SettingPage(
                     leadingIcon = {
                         Icon(imageVector = Icons.Outlined.EditNotifications, contentDescription = "notification settings", tint = MaterialTheme.colorScheme.onSurface)
                     },
-                    selected = layoutType == SettingLayoutType.SPLIT && state.selected == Setting.NOTIFICATION,
+                    selected = layoutType == SettingLayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.NotificationSetting,
                     layoutType = layoutType
                 ) {
-                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.NOTIFICATION))
+//                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.NOTIFICATION))
+                    navigation.bringToFront(DefaultSettingComponent.SettingConfig.NotificationSetting) {
+                        navigation.replaceAll(DefaultSettingComponent.SettingConfig.NotificationSetting)
+                    }
                     scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.NOTIFICATION)
                 }
             }
@@ -170,10 +189,13 @@ fun SettingPage(
                     leadingIcon = {
                         Icon(imageVector = Icons.Outlined.Storage, contentDescription = "storage settings", tint = MaterialTheme.colorScheme.onSurface)
                     },
-                    selected = layoutType == SettingLayoutType.SPLIT && state.selected == Setting.STORAGE,
+                    selected = layoutType == SettingLayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.StorageSetting,
                     layoutType = layoutType
                 ) {
-                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.STORAGE))
+//                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.STORAGE))
+                    navigation.bringToFront(DefaultSettingComponent.SettingConfig.StorageSetting) {
+                        navigation.replaceAll(DefaultSettingComponent.SettingConfig.StorageSetting)
+                    }
                     scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.STORAGE)
                 }
             }
@@ -183,10 +205,13 @@ fun SettingPage(
                     leadingIcon = {
                         Icon(imageVector = Icons.Outlined.Science, contentDescription = "experimental settings", tint = MaterialTheme.colorScheme.onSurface)
                     },
-                    selected = layoutType == SettingLayoutType.SPLIT && state.selected == Setting.EXPERIMENTAL,
+                    selected = layoutType == SettingLayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.ExperimentalSetting,
                     layoutType = layoutType
                 ) {
-                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.EXPERIMENTAL))
+//                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.EXPERIMENTAL))
+                    navigation.bringToFront(DefaultSettingComponent.SettingConfig.ExperimentalSetting) {
+                        navigation.replaceAll(DefaultSettingComponent.SettingConfig.ExperimentalSetting)
+                    }
                     scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.EXPERIMENTAL)
                 }
             }
@@ -196,10 +221,13 @@ fun SettingPage(
                     leadingIcon = {
                         Icon(imageVector = Icons.AutoMirrored.Outlined.HelpOutline, contentDescription = "support settings", tint = MaterialTheme.colorScheme.onSurface)
                     },
-                    selected = layoutType == SettingLayoutType.SPLIT && state.selected == Setting.HELP,
+                    selected = layoutType == SettingLayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.HelpAndSupportSetting,
                     layoutType = layoutType
                 ) {
-                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.HELP))
+//                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.HELP))
+                    navigation.bringToFront(DefaultSettingComponent.SettingConfig.HelpAndSupportSetting) {
+                        navigation.replaceAll(DefaultSettingComponent.SettingConfig.HelpAndSupportSetting)
+                    }
                     scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.HELP)
                 }
             }

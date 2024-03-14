@@ -33,6 +33,7 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.DragHandle
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Extension
+import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.NewLabel
 import androidx.compose.material.icons.outlined.Pending
 import androidx.compose.material.icons.outlined.RestartAlt
@@ -182,7 +183,11 @@ private fun Content(
     var overscrollJob by remember { mutableStateOf<Job?>(null) }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
-    val dragDropState = rememberDragDropState(listState, 1, mainSharedState.datastore.enabledChatFilterList.size) { fromIndex, toIndex ->
+    val dragDropState = rememberDragDropState(
+        listState,
+        1,
+        mainSharedState.datastore.enabledChatFilterList.size
+    ) { fromIndex, toIndex ->
         onMainSharedEvent(MainSharedEvent.OnChatFilterListReordered(fromIndex, toIndex))
     }
     var openCustomTagFilterDialog by remember {
@@ -203,73 +208,121 @@ private fun Content(
     )
     LazyColumn(
         modifier = modifier
-        .pointerInput(dragDropState) {
-            detectDragGesturesAfterLongPress(
-                onDrag = { change, offset ->
-                    change.consume()
-                    dragDropState.onDrag(offset = offset)
+            .pointerInput(dragDropState) {
+                detectDragGesturesAfterLongPress(
+                    onDrag = { change, offset ->
+                        change.consume()
+                        dragDropState.onDrag(offset = offset)
 
-                    if (overscrollJob?.isActive == true)
-                        return@detectDragGesturesAfterLongPress
+                        if (overscrollJob?.isActive == true)
+                            return@detectDragGesturesAfterLongPress
 
-                    dragDropState
-                        .checkForOverScroll()
-                        .takeIf { it != 0f }
-                        ?.let {
-                            overscrollJob =
-                                scope.launch {
-                                    dragDropState.state.animateScrollBy(
-                                        it, tween(easing = FastOutLinearInEasing)
-                                    )
-                                }
-                        }
-                        ?: run { overscrollJob?.cancel() }
-                },
-                onDragStart = { offset -> dragDropState.onDragStart(offset) },
-                onDragEnd = {
-                    dragDropState.onDragInterrupted()
-                    overscrollJob?.cancel()
-                },
-                onDragCancel = {
-                    dragDropState.onDragInterrupted()
-                    overscrollJob?.cancel()
-                }
-            )
-        },
-        state = listState) {
+                        dragDropState
+                            .checkForOverScroll()
+                            .takeIf { it != 0f }
+                            ?.let {
+                                overscrollJob =
+                                    scope.launch {
+                                        dragDropState.state.animateScrollBy(
+                                            it, tween(easing = FastOutLinearInEasing)
+                                        )
+                                    }
+                            }
+                            ?: run { overscrollJob?.cancel() }
+                    },
+                    onDragStart = { offset -> dragDropState.onDragStart(offset) },
+                    onDragEnd = {
+                        dragDropState.onDragInterrupted()
+                        overscrollJob?.cancel()
+                    },
+                    onDragCancel = {
+                        dragDropState.onDragInterrupted()
+                        overscrollJob?.cancel()
+                    }
+                )
+            },
+        state = listState
+    ) {
         item {
             SettingHeader(
                 text = "已添加",
             )
         }
-       itemsIndexed(items = mainSharedState.datastore.enabledChatFilterList) { index: Int, item: ChatFilter ->
-           DraggableItem(
-               dragDropState = dragDropState,
-               index = index + 1
-           ) { isDragging ->
-               SettingItem(
-                   title = item.label ?: stringResource(id = item.labelResId),
-                   leadingIcon = {
-                       Icon(imageVector = Icons.Outlined.DragHandle, contentDescription = "drag", tint = MaterialTheme.colorScheme.onSurface)
-                   },
-                   selected = isDragging,
-                   layoutType = layoutType,
-                   clickableOnly = true) {
+        itemsIndexed(items = mainSharedState.datastore.enabledChatFilterList) { index: Int, item: ChatFilter ->
+            DraggableItem(
+                dragDropState = dragDropState,
+                index = index + 1
+            ) { isDragging ->
+                Box {
+                    var isMenuVisible by remember {
+                        mutableStateOf(false)
+                    }
+                    CascadeDropdownMenu(
+                        expanded = isMenuVisible,
+                        onDismissRequest = { isMenuVisible = false },
+                        offset = DpOffset(16.dp, 0.dp),
+                        properties = PopupProperties(
+                            dismissOnBackPress = true,
+                            dismissOnClickOutside = true,
+                            focusable = true
+                        ),
+                        shape = MaterialTheme.shapes.medium,
+                    ) {
+                        androidx.compose.material3.DropdownMenuItem(
+                            text = { Text("删除") },
+                            onClick = {
+                                onMainSharedEvent(MainSharedEvent.OnChatFilterRemoved(item))
+                                isMenuVisible = false
+                            },
+                            leadingIcon = {
+                                Icon(imageVector = Icons.Outlined.Delete, contentDescription = "delete label")
+                            }
+                        )
+                    }
+                    SettingItem(
+                        title = item.label ?: stringResource(id = item.labelResId),
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Outlined.DragHandle,
+                                contentDescription = "drag",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        },
+                        trailingIcon = {
+                            IconButton(onClick = {
+                                isMenuVisible = true
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.MoreVert,
+                                    contentDescription = "more",
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        },
+                        selected = isDragging,
+                        layoutType = layoutType,
+                        clickableOnly = true
+                    ) {
 
-               }
-           }
-       }
+                    }
+                }
+            }
+        }
         item {
             SettingItem(
                 title = "新增标签", selected = false, layoutType = layoutType,
                 leadingIcon = {
-                    Icon(imageVector = Icons.Outlined.NewLabel, contentDescription = "add label", tint = MaterialTheme.colorScheme.onSurface)
+                    Icon(
+                        imageVector = Icons.Outlined.NewLabel,
+                        contentDescription = "add label",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
                 }
-                ) {
+            ) {
                 openCustomTagFilterDialog = true
             }
         }
-        if(suggestChatLabelList.isNotEmpty()) {
+        if (suggestChatLabelList.isNotEmpty()) {
             item {
                 SettingHeader(
                     text = "建议添加",

@@ -5,6 +5,7 @@ import com.ojhdtapp.parabox.domain.model.Extension
 import com.ojhdtapp.parabox.ui.base.UiState
 
 data class SettingPageState(
+    @Deprecated("using decompose")
     val selected: Setting = Setting.GENERAL,
     val packageInfo: List<PackageInfo> = emptyList(),
     val extension: List<Extension> = emptyList()
