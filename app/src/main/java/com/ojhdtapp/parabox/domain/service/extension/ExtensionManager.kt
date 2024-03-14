@@ -10,14 +10,18 @@ import com.ojhdtapp.parabox.data.local.ExtensionInfo
 import com.ojhdtapp.parabox.data.local.entity.ExtensionInfoEntity
 import com.ojhdtapp.parabox.domain.model.Extension
 import com.ojhdtapp.parabox.domain.repository.ExtensionInfoRepository
+import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxExtensionStatus
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.concurrent.CancellationException
 
 class ExtensionManager(
     val context: Context,
@@ -64,6 +68,7 @@ class ExtensionManager(
         Log.d("parabox", "append extension=${_extensionFlow.value}")
     }
 
+    // replace the old extension with the new one if the extensionId is the same
     fun updateExtensions(newExtensionList: List<Extension>) {
         _extensionFlow.update {
             it.toMutableList().apply {
@@ -74,7 +79,32 @@ class ExtensionManager(
         }
     }
 
+    fun removeExtension(extensionId: Long) {
+        _extensionFlow.update {
+            it.filter { it.extensionId != extensionId }
+        }
+    }
+
     fun refreshExtensionPkg() {
         _extensionPkgFlow.value = ExtensionLoader.getExtensionPkgInfo(context)
+    }
+
+    // Only ExtensionSuccess, no Context and bridge changed
+    fun restartExtension(extensionId: Long) {
+        _extensionFlow.value.find { it.extensionId == extensionId }?.also {
+            if (it is Extension.ExtensionSuccess) {
+                try {
+                    it.ext.updateStatus(ParaboxExtensionStatus.Pending)
+                    it.job.cancel(CancellationException("restart"))
+                    it.ext.onPause()
+                    it.ext.onStop()
+                    it.ext.onDestroy()
+                    updateExtensions(listOf(Extension.ExtensionPending(it)))
+                } catch (e: Exception) {
+                    it.ext.updateStatus(ParaboxExtensionStatus.Error(e.message ?: "restart error"))
+                    Log.e("parabox", "restartExtension error", e)
+                }
+            }
+        }
     }
 }

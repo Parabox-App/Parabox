@@ -93,8 +93,8 @@ fun calculateMyDensePaneScaffoldDirective(
         }
         WindowWidthSizeClass.Medium -> {
             maxHorizontalPartitions = 2
-            contentPadding = PaddingValues(0.dp)
-            verticalSpacerSize = 0.dp
+            contentPadding = PaddingValues(horizontal = 16.dp)
+            verticalSpacerSize = 16.dp
         }
         else -> {
             maxHorizontalPartitions = 2

@@ -26,6 +26,7 @@ import com.arkivanov.decompose.router.stack.StackNavigation
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.navigation.DefaultRootComponent
 import com.ojhdtapp.parabox.ui.navigation.RootComponent
+import com.ojhdtapp.parabox.ui.setting.detail.ExtensionSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.GeneralSettingPage
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3WindowSizeClassApi::class)
@@ -89,7 +90,7 @@ fun SettingPageWrapperUi(
                 }
 
                 Setting.ADDONS -> {
-                    GeneralSettingPage(
+                    ExtensionSettingPage(
                         state = state,
                         mainSharedState = mainSharedState,
                         layoutType = layoutType,

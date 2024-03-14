@@ -1,5 +1,7 @@
 package com.ojhdtapp.parabox.ui.setting
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,20 +20,26 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.ojhdtapp.parabox.ui.theme.fontSize
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SettingItem(
     title: String,
     subTitle: String? = null,
-    leadingIcon: ImageVector? = null,
-    trailingIcon: (@Composable () -> Unit)? = {},
+    leadingIcon: (@Composable () -> Unit)? = null,
+    trailingIcon: (@Composable () -> Unit)? = null,
     selected: Boolean,
     layoutType: SettingLayoutType,
+    onLongClick: () -> Unit = {},
     onClick: () -> Unit,
 ) {
     Surface(
+        modifier = Modifier.combinedClickable(
+            onLongClick = onLongClick,
+            onClick = onClick
+        ),
         shape = if (layoutType == SettingLayoutType.SPLIT) RoundedCornerShape(32.dp) else RectangleShape,
         color = if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
-        onClick = onClick
+//        onClick = onClick
     ) {
         Row(
             modifier = Modifier
@@ -41,7 +49,7 @@ fun SettingItem(
         ) {
             Spacer(modifier = Modifier.width(24.dp))
             if (leadingIcon != null) {
-                Icon(imageVector = leadingIcon, contentDescription = title, tint = MaterialTheme.colorScheme.onSurface)
+                leadingIcon()
                 Spacer(modifier = Modifier.width(24.dp))
             }
             Column(modifier = Modifier.weight(1f)) {

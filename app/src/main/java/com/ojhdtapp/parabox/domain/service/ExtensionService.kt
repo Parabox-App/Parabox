@@ -14,10 +14,15 @@ import com.ojhdtapp.parabox.domain.repository.ExtensionInfoRepository
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxBridge
+import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxExtensionStatus
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
 import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -28,16 +33,21 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.newCoroutineContext
+import java.util.concurrent.CancellationException
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class ExtensionService : LifecycleService() {
     @Inject
     lateinit var extensionManager: ExtensionManager
+
     @Inject
     lateinit var mainRepository: MainRepository
+
     @Inject
     lateinit var notificationUtil: NotificationUtil
+
     @Inject
     lateinit var extensionInfoRepository: ExtensionInfoRepository
 
@@ -51,21 +61,33 @@ class ExtensionService : LifecycleService() {
 
 
     private fun manageLifecycleOfExtensions() {
-        extensionInfoRepository.getExtensionInfoList().filter { it is Resource.Success && it.data != null }.map { it.data }
+        extensionInfoRepository.getExtensionInfoList().filter { it is Resource.Success && it.data != null }
+            .map { it.data }
             .combine(extensionManager.extensionFlow) { pendingList, runningList ->
                 Log.d("parabox", "pending=${pendingList};running=${runningList}")
                 runningList.filterIsInstance<Extension.ExtensionPending>().map {
-                    Extension.ExtensionSuccess(it).also{
-                        val bridge = object : ParaboxBridge {
-                            override suspend fun receiveMessage(message: ReceiveMessage): ParaboxResult {
-                                return mainRepository.receiveMessage(msg = message, ext = it)
+                    try {
+                        val job = SupervisorJob()
+                        Extension.ExtensionSuccess(it, job).also {
+                            val bridge = object : ParaboxBridge {
+                                override suspend fun receiveMessage(message: ReceiveMessage): ParaboxResult {
+                                    return mainRepository.receiveMessage(msg = message, ext = it)
+                                }
+
+                                override suspend fun recallMessage(uuid: String): ParaboxResult {
+                                    TODO("Not yet implemented")
+                                }
                             }
-                            override suspend fun recallMessage(uuid: String): ParaboxResult {
-                                TODO("Not yet implemented")
+                            lifecycle.addObserver(it)
+                            lifecycleScope.launch(context = CoroutineName("${it.pkg}:${it.alias}:${it.extensionId}") + CoroutineExceptionHandler { context, th ->
+                                Log.e("parabox", "extension ${it} error", th)
+                                it.updateStatus(ParaboxExtensionStatus.Error(th.message ?: "unknown error"))
+                            } + job) {
+                                it.init(baseContext, bridge)
                             }
                         }
-                        lifecycle.addObserver(it)
-                        it.init(baseContext, bridge)
+                    } catch (e: Exception) {
+                        Extension.ExtensionFail(it)
                     }
                 }.also {
                     extensionManager.updateExtensions(it)
@@ -77,7 +99,13 @@ class ExtensionService : LifecycleService() {
                 }
                 val removeReferenceIds = pendingList?.map { it.extensionId }?.toSet() ?: emptySet()
                 runningList.filterNot { it.extensionId in removeReferenceIds }.forEach {
-                    (it as? Extension.ExtensionSuccess)?.onDestroy(this@ExtensionService)
+                    (it as? Extension.ExtensionSuccess)?.run {
+                        job.cancel(CancellationException("destroy"))
+                        ext.onPause()
+                        ext.onStop()
+                        ext.onDestroy()
+                    }
+                    extensionManager.removeExtension(it.extensionId)
                 }
             }.launchIn(lifecycleScope)
     }
@@ -111,7 +139,7 @@ class ExtensionService : LifecycleService() {
 
         lifecycleScope.launch(Dispatchers.IO) {
             delay(5000)
-            extensionManager.extensionPkgFlow.value.firstOrNull()?.let{
+            extensionManager.extensionPkgFlow.value.firstOrNull()?.let {
                 if (extensionManager.extensionFlow.value.isEmpty()) {
                     Log.d("bbb", "add pkgInfo")
                     extensionManager.addPendingExtension("test", it, "")

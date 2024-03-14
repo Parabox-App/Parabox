@@ -6,6 +6,10 @@ import androidx.lifecycle.LifecycleOwner
 import com.ojhdtapp.parabox.data.local.ExtensionInfo
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxBridge
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxExtension
+import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxExtensionStatus
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 
 sealed class Extension private constructor(
     override val alias: String,
@@ -37,6 +41,15 @@ sealed class Extension private constructor(
             ext,
             extensionInfo.extensionId
         )
+        constructor(extensionSuccess: ExtensionSuccess) : this(
+            extensionSuccess.alias,
+            extensionSuccess.name,
+            extensionSuccess.pkg,
+            extensionSuccess.version,
+            extensionSuccess.versionCode,
+            extensionSuccess.extra,
+            extensionSuccess.ext,
+            extensionSuccess.extensionId)
     }
 
     class ExtensionFail(
@@ -59,7 +72,7 @@ sealed class Extension private constructor(
         )
     }
 
-    class ExtensionSuccess private constructor(
+    open class ExtensionSuccess private constructor(
         alias: String,
         name: String,
         pkgName: String,
@@ -67,9 +80,10 @@ sealed class Extension private constructor(
         versionCode: Long,
         extra: String,
         val ext: ParaboxExtension,
+        val job: Job,
         extensionId: Long
     ) : DefaultLifecycleObserver, Extension(alias, name, pkgName, versionName, versionCode, extra, extensionId) {
-        constructor(extensionInfo: ExtensionInfo, ext: ParaboxExtension) : this(
+        constructor(extensionInfo: ExtensionInfo, ext: ParaboxExtension, job: Job) : this(
             extensionInfo.alias,
             extensionInfo.name,
             extensionInfo.pkg,
@@ -77,10 +91,11 @@ sealed class Extension private constructor(
             extensionInfo.versionCode,
             extensionInfo.extra,
             ext,
+            job,
             extensionInfo.extensionId
         )
 
-        constructor(extensionPending: ExtensionPending) : this(
+        constructor(extensionPending: ExtensionPending, job: Job) : this(
             extensionPending.alias,
             extensionPending.name,
             extensionPending.pkg,
@@ -88,6 +103,7 @@ sealed class Extension private constructor(
             extensionPending.versionCode,
             extensionPending.extra,
             extensionPending.ext,
+            job,
             extensionPending.extensionId
         )
 
@@ -103,36 +119,40 @@ sealed class Extension private constructor(
             )
         }
 
-        fun init(context: Context, bridge: ParaboxBridge) {
+        suspend fun init(context: Context, bridge: ParaboxBridge) {
             ext.init(context, bridge)
         }
 
-        fun isLoaded(): Boolean {
-            return ext.isLoaded.value
+        fun getStatus(): StateFlow<ParaboxExtensionStatus> {
+            return ext.status
+        }
+
+        fun updateStatus(status: ParaboxExtensionStatus) {
+            ext.updateStatus(status)
         }
 
         override fun onCreate(owner: LifecycleOwner) {
-            ext.onCreate(owner)
+            ext.onCreate()
         }
 
         override fun onStart(owner: LifecycleOwner) {
-            ext.onStart(owner)
+            ext.onStart()
         }
 
         override fun onResume(owner: LifecycleOwner) {
-            ext.onResume(owner)
+            ext.onResume()
         }
 
         override fun onPause(owner: LifecycleOwner) {
-            ext.onPause(owner)
+            ext.onPause()
         }
 
         override fun onStop(owner: LifecycleOwner) {
-            ext.onStop(owner)
+            ext.onStop()
         }
 
         override fun onDestroy(owner: LifecycleOwner) {
-            ext.onDestroy(owner)
+            ext.onDestroy()
         }
     }
 }

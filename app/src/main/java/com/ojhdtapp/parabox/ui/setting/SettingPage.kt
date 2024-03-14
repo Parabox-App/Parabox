@@ -10,6 +10,8 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.outlined.EditNotifications
+import androidx.compose.material.icons.outlined.HelpOutline
+import androidx.compose.material.icons.outlined.Label
 import androidx.compose.material.icons.outlined.LibraryAdd
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Science
@@ -100,7 +102,9 @@ fun SettingPage(
             item {
                 SettingItem(
                     title = "通用",
-                    leadingIcon = Icons.Outlined.Settings,
+                    leadingIcon = {
+                        Icon(imageVector = Icons.Outlined.Settings, contentDescription = "general settings", tint = MaterialTheme.colorScheme.onSurface)
+                    },
                     selected = layoutType == SettingLayoutType.SPLIT && state.selected == Setting.GENERAL,
                     layoutType = layoutType
                 ) {
@@ -111,7 +115,9 @@ fun SettingPage(
             item {
                 SettingItem(
                     title = "扩展",
-                    leadingIcon = Icons.Outlined.LibraryAdd,
+                    leadingIcon = {
+                        Icon(imageVector = Icons.Outlined.LibraryAdd, contentDescription = "extension settings", tint = MaterialTheme.colorScheme.onSurface)
+                    },
                     selected = layoutType == SettingLayoutType.SPLIT && state.selected == Setting.ADDONS,
                     layoutType = layoutType
                 ) {
@@ -122,7 +128,9 @@ fun SettingPage(
             item {
                 SettingItem(
                     title = "标签",
-                    leadingIcon = Icons.AutoMirrored.Outlined.Label,
+                    leadingIcon = {
+                        Icon(imageVector = Icons.AutoMirrored.Outlined.Label, contentDescription = "label settings", tint = MaterialTheme.colorScheme.onSurface)
+                    },
                     selected = layoutType == SettingLayoutType.SPLIT && state.selected == Setting.LABELS,
                     layoutType = layoutType
                 ) {
@@ -133,7 +141,9 @@ fun SettingPage(
             item {
                 SettingItem(
                     title = "界面",
-                    leadingIcon = Icons.Outlined.Palette,
+                    leadingIcon = {
+                        Icon(imageVector = Icons.Outlined.Palette, contentDescription = "interface settings", tint = MaterialTheme.colorScheme.onSurface)
+                    },
                     selected = layoutType == SettingLayoutType.SPLIT && state.selected == Setting.APPEARANCE,
                     layoutType = layoutType
                 ) {
@@ -144,7 +154,9 @@ fun SettingPage(
             item {
                 SettingItem(
                     title = "通知",
-                    leadingIcon = Icons.Outlined.EditNotifications,
+                    leadingIcon = {
+                        Icon(imageVector = Icons.Outlined.EditNotifications, contentDescription = "notification settings", tint = MaterialTheme.colorScheme.onSurface)
+                    },
                     selected = layoutType == SettingLayoutType.SPLIT && state.selected == Setting.NOTIFICATION,
                     layoutType = layoutType
                 ) {
@@ -155,7 +167,9 @@ fun SettingPage(
             item {
                 SettingItem(
                     title = "存储空间",
-                    leadingIcon = Icons.Outlined.Storage,
+                    leadingIcon = {
+                        Icon(imageVector = Icons.Outlined.Storage, contentDescription = "storage settings", tint = MaterialTheme.colorScheme.onSurface)
+                    },
                     selected = layoutType == SettingLayoutType.SPLIT && state.selected == Setting.STORAGE,
                     layoutType = layoutType
                 ) {
@@ -166,7 +180,9 @@ fun SettingPage(
             item {
                 SettingItem(
                     title = "试验性",
-                    leadingIcon = Icons.Outlined.Science,
+                    leadingIcon = {
+                        Icon(imageVector = Icons.Outlined.Science, contentDescription = "experimental settings", tint = MaterialTheme.colorScheme.onSurface)
+                    },
                     selected = layoutType == SettingLayoutType.SPLIT && state.selected == Setting.EXPERIMENTAL,
                     layoutType = layoutType
                 ) {
@@ -177,7 +193,9 @@ fun SettingPage(
             item {
                 SettingItem(
                     title = "帮助与支持",
-                    leadingIcon = Icons.AutoMirrored.Outlined.HelpOutline,
+                    leadingIcon = {
+                        Icon(imageVector = Icons.AutoMirrored.Outlined.HelpOutline, contentDescription = "support settings", tint = MaterialTheme.colorScheme.onSurface)
+                    },
                     selected = layoutType == SettingLayoutType.SPLIT && state.selected == Setting.HELP,
                     layoutType = layoutType
                 ) {

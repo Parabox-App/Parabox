@@ -1,6 +1,7 @@
 package com.ojhdt.parabox.extension.demo
 
 import android.util.Log
+import androidx.lifecycle.LifecycleOwner
 import cn.evole.onebot.client.config.BotConfig
 import cn.evole.onebot.client.connection.WSClient
 import cn.evole.onebot.client.core.Bot
@@ -15,6 +16,7 @@ import cn.evole.onebot.sdk.util.BotUtils
 import cn.evole.onebot.sdk.util.json.GsonUtil
 import com.ojhdt.parabox.extension.demo.util.toParaboxMessageElement
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxExtension
+import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxExtensionStatus
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxBasicInfo
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
 import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
@@ -28,27 +30,27 @@ import java.net.URI
 import java.util.concurrent.LinkedBlockingQueue
 
 class Extension : ParaboxExtension() {
-    private var bot: Bot? = null
+    private lateinit var bot: Bot
+    private lateinit var client: WSClient
+    private lateinit var dispatchers: EventBus
 
-    override fun onInitialized() {
-        super.onInitialized()
-        Log.d("ojhdt", "on Initialize")
+    override suspend fun onInitialize(): Boolean {
         val botConfig = BotConfig().apply {
-            url = "ws://10.71.184.27:8080"
+            url = "ws://127.0.0.1:8080"
         }
         val blockingQueue = LinkedBlockingQueue<String>() //使用队列传输数据
         val actionHandler = ActionHandler(botConfig)
-        val client = WSClient(URI.create("ws://10.71.184.27:8081"), blockingQueue, actionHandler)
+        client = WSClient(URI.create("ws://127.0.0.1:8081"), blockingQueue, actionHandler)
         bot = client.createBot()
 
-        val dispatchers = EventBus(blockingQueue)
+        dispatchers = EventBus(blockingQueue)
         dispatchers.addListener(object : SimpleEventListener<GroupMessageEvent>() {
             override fun onMessage(event: GroupMessageEvent?) {
                 if (event != null) {
                     event.arrayMsg = BotUtils.rawToJson(event.rawMessage).map {
                         GsonUtil.fromJson<ArrayMsg>(it.toString(), ArrayMsg::class.java)
                     }
-                    lifecycleScope?.launch(Dispatchers.IO) {
+                    coroutineScope?.launch(Dispatchers.IO) {
                         receiveGroupMessage(event)
                     }
                 }
@@ -60,18 +62,26 @@ class Extension : ParaboxExtension() {
                     event.arrayMsg = BotUtils.rawToJson(event.rawMessage).map {
                         GsonUtil.fromJson<ArrayMsg>(it.toString(), ArrayMsg::class.java)
                     }
-                    lifecycleScope?.launch(Dispatchers.IO) {
+                    coroutineScope?.launch(Dispatchers.IO) {
                         receivePrivateMessage(event)
                     }
                 }
             }
 
         })
-        lifecycleScope?.launch(Dispatchers.IO) {
+        coroutineScope?.launch(Dispatchers.IO) {
             client.connect()
+            updateStatus(ParaboxExtensionStatus.Active)
             dispatchers.run()
             dispatchers.stop()
         }
+        return true
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        client.close()
+        dispatchers.stop()
     }
 
     override fun onSendMessage(message: SendMessage) {
