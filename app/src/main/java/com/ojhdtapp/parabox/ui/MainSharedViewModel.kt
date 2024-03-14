@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.viewModelScope
+import com.google.gson.Gson
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.core.util.Resource
@@ -30,6 +31,7 @@ class MainSharedViewModel @Inject constructor(
     @ApplicationContext val context: Context,
     val query: Query,
     val extensionManager: ExtensionManager,
+    val gson: Gson,
 ) : BaseViewModel<MainSharedState, MainSharedEvent, UiEffect>() {
 
     override fun initialState(): MainSharedState {
@@ -399,9 +401,35 @@ class MainSharedViewModel @Inject constructor(
             }
 
             is MainSharedEvent.UpdateEnabledChatFilterList -> {
+                val jsonString = gson.toJson(event.list.map { it.key })
                 editDataStore(
                     DataStoreKeys.CHAT_FILTERS,
-                    event.list.map{it.key}.toSet()
+                    jsonString
+                )
+                return state
+            }
+
+            is MainSharedEvent.OnChatFilterAdded -> {
+                val newFilterList = state.datastore.enabledChatFilterList.toMutableList().apply {
+                    add(event.filter)
+                }
+                val jsonString = gson.toJson(newFilterList.map { it.key })
+                editDataStore(
+                    DataStoreKeys.CHAT_FILTERS,
+                    jsonString
+                )
+                return state
+            }
+
+            is MainSharedEvent.OnChatFilterListReordered -> {
+                val newList = state.datastore.enabledChatFilterList.toMutableList().apply {
+                    val item = removeAt(event.fromIndex)
+                    add(event.toIndex, item)
+                }
+                val jsonString = gson.toJson(newList.map { it.key })
+                editDataStore(
+                    DataStoreKeys.CHAT_FILTERS,
+                    jsonString
                 )
                 return state
             }
@@ -689,7 +717,8 @@ class MainSharedViewModel @Inject constructor(
                         localAvatarUri = it[DataStoreKeys.USER_AVATAR]?.takeIf { it.isNotBlank() }
                             ?.let { Uri.parse(it) }
                             ?: Uri.EMPTY,
-                        enabledChatFilterList = it[DataStoreKeys.CHAT_FILTERS]?.map { ChatFilter.fromKey(it) }?.filterNotNull() ?: emptyList(),
+                        enabledChatFilterList = gson.fromJson(it[DataStoreKeys.CHAT_FILTERS], Array<String>::class.java)
+                            ?.map { key -> ChatFilter.fromKey(key) }?.filterNotNull() ?: emptyList(),
                         enableMarqueeEffectOnChatName = it[DataStoreKeys.SETTINGS_ENABLE_MARQUEE_EFFECT_ON_CHAT_NAME] ?: true,
                         enableSwipeToDismiss = it[DataStoreKeys.SETTINGS_ENABLE_SWIPE_TO_DISMISS] ?: true,
                         displayAvatarOnTopAppBar = it[DataStoreKeys.SETTINGS_DISPLAY_AVATAR_ON_TOP_APPBAR] ?: true,

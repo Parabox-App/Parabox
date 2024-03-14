@@ -545,11 +545,17 @@
 
     <string name="get_chat_filter_normal">Message</string>
     <string name="get_chat_filter_archived">Archived</string>
+    <string name="get_chat_filter_archived_des">Archived</string>
     <string name="get_chat_filter_hidden">Hidden</string>
+    <string name="get_chat_filter_hidden_des">Hidden</string>
     <string name="get_chat_filter_read">Read</string>
+    <string name="get_chat_filter_read_des">Read</string>
     <string name="get_chat_filter_unread">Unread</string>
+    <string name="get_chat_filter_unread_des">Unread</string>
     <string name="get_chat_filter_private">Private</string>
+    <string name="get_chat_filter_private_des">Private</string>
     <string name="get_chat_filter_group">Group</string>
+    <string name="get_chat_filter_group_des">Group</string>
     <string name="message_filter_sender_all">来自联系人</string>
     <string name="message_filter_chat_all">所在会话</string>
     <string name="message_filter_type_all">类型</string>

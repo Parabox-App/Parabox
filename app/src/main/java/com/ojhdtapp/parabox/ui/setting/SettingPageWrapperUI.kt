@@ -28,6 +28,7 @@ import com.ojhdtapp.parabox.ui.navigation.DefaultRootComponent
 import com.ojhdtapp.parabox.ui.navigation.RootComponent
 import com.ojhdtapp.parabox.ui.setting.detail.ExtensionSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.GeneralSettingPage
+import com.ojhdtapp.parabox.ui.setting.detail.LabelSettingPage
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
@@ -101,7 +102,7 @@ fun SettingPageWrapperUi(
                 }
 
                 Setting.LABELS -> {
-                    GeneralSettingPage(
+                    LabelSettingPage(
                         state = state,
                         mainSharedState = mainSharedState,
                         layoutType = layoutType,

@@ -4,7 +4,14 @@ import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,6 +21,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Surface
@@ -21,10 +30,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.DragHandle
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Extension
+import androidx.compose.material.icons.outlined.NewLabel
 import androidx.compose.material.icons.outlined.Pending
 import androidx.compose.material.icons.outlined.RestartAlt
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,12 +56,15 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
@@ -56,8 +72,12 @@ import androidx.compose.ui.window.PopupProperties
 import androidx.core.graphics.drawable.toBitmapOrNull
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.domain.model.Extension
+import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
+import com.ojhdtapp.parabox.ui.common.drag_drop.DraggableItem
+import com.ojhdtapp.parabox.ui.common.drag_drop.rememberDragDropState
+import com.ojhdtapp.parabox.ui.message.NewChatFilterDialog
 import com.ojhdtapp.parabox.ui.setting.Setting
 import com.ojhdtapp.parabox.ui.setting.SettingHeader
 import com.ojhdtapp.parabox.ui.setting.SettingItem
@@ -65,12 +85,14 @@ import com.ojhdtapp.parabox.ui.setting.SettingLayoutType
 import com.ojhdtapp.parabox.ui.setting.SettingPageEvent
 import com.ojhdtapp.parabox.ui.setting.SettingPageState
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxExtensionStatus
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import me.saket.cascade.CascadeDropdownMenu
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
 @Composable
-fun ExtensionSettingPage(
+fun LabelSettingPage(
     modifier: Modifier = Modifier,
     state: SettingPageState,
     mainSharedState: MainSharedState,
@@ -98,7 +120,7 @@ fun ExtensionSettingPage(
                     Text(
                         modifier = Modifier.padding(horizontal = 24.dp, vertical = 32.dp),
                         color = MaterialTheme.colorScheme.onSurface,
-                        text = "扩展",
+                        text = "标签",
                         style = MaterialTheme.typography.headlineMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -121,7 +143,7 @@ fun ExtensionSettingPage(
                     title = {
                         Text(
                             modifier = Modifier.padding(start = 8.dp),
-                            text = "扩展",
+                            text = "标签",
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -146,6 +168,7 @@ fun ExtensionSettingPage(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun Content(
     modifier: Modifier = Modifier,
@@ -156,154 +179,112 @@ private fun Content(
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
     val context = LocalContext.current
-    LazyColumn(modifier = modifier) {
-        item {
-            SettingHeader(text = "建立新连接")
+    var overscrollJob by remember { mutableStateOf<Job?>(null) }
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+    val dragDropState = rememberDragDropState(listState, 1, mainSharedState.datastore.enabledChatFilterList.size) { fromIndex, toIndex ->
+        onMainSharedEvent(MainSharedEvent.OnChatFilterListReordered(fromIndex, toIndex))
+    }
+    var openCustomTagFilterDialog by remember {
+        mutableStateOf(false)
+    }
+    val suggestChatLabelList by remember(mainSharedState.datastore.enabledChatFilterList) {
+        derivedStateOf {
+            ChatFilter.allFilterList.filter { it !in mainSharedState.datastore.enabledChatFilterList }
         }
-        items(state.packageInfo, key = { it.packageName }) {
-            val label = remember {
-                it.applicationInfo.loadLabel(context.packageManager).toString()
-            }
-            val iconBm = remember {
-                it.applicationInfo.loadIcon(context.packageManager).toBitmapOrNull()?.asImageBitmap()
-            }
-            val subTitle = remember {
-                buildString {
-                    append("版本: ${it.versionName}")
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                        append("(${it.longVersionCode})")
-                    } else {
-                        append("(${it.versionCode})")
-                    }
-                }
-            }
-            SettingItem(
-                title = label,
-                subTitle = subTitle,
-                leadingIcon = {
-                    if (iconBm == null) {
-                        Icon(imageVector = Icons.Outlined.Extension, contentDescription = "icon")
-                    } else {
-                        Image(
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clip(CircleShape), bitmap = iconBm, contentDescription = "icon"
-                        )
-                    }
+    }
+    NewChatFilterDialog(
+        openDialog = openCustomTagFilterDialog,
+        onConfirm = {
+            onMainSharedEvent(MainSharedEvent.OnChatFilterAdded(ChatFilter.Tag(it.trim())))
+            openCustomTagFilterDialog = false
+        },
+        onDismiss = { openCustomTagFilterDialog = false }
+    )
+    LazyColumn(
+        modifier = modifier
+        .pointerInput(dragDropState) {
+            detectDragGesturesAfterLongPress(
+                onDrag = { change, offset ->
+                    change.consume()
+                    dragDropState.onDrag(offset = offset)
+
+                    if (overscrollJob?.isActive == true)
+                        return@detectDragGesturesAfterLongPress
+
+                    dragDropState
+                        .checkForOverScroll()
+                        .takeIf { it != 0f }
+                        ?.let {
+                            overscrollJob =
+                                scope.launch {
+                                    dragDropState.state.animateScrollBy(
+                                        it, tween(easing = FastOutLinearInEasing)
+                                    )
+                                }
+                        }
+                        ?: run { overscrollJob?.cancel() }
                 },
+                onDragStart = { offset -> dragDropState.onDragStart(offset) },
+                onDragEnd = {
+                    dragDropState.onDragInterrupted()
+                    overscrollJob?.cancel()
+                },
+                onDragCancel = {
+                    dragDropState.onDragInterrupted()
+                    overscrollJob?.cancel()
+                }
+            )
+        },
+        state = listState) {
+        item {
+            SettingHeader(
+                text = "已添加",
+            )
+        }
+       itemsIndexed(items = mainSharedState.datastore.enabledChatFilterList) { index: Int, item: ChatFilter ->
+           DraggableItem(
+               dragDropState = dragDropState,
+               index = index + 1
+           ) { isDragging ->
+               SettingItem(
+                   title = item.label ?: stringResource(id = item.labelResId),
+                   leadingIcon = {
+                       Icon(imageVector = Icons.Outlined.DragHandle, contentDescription = "drag", tint = MaterialTheme.colorScheme.onSurface)
+                   },
+                   selected = isDragging,
+                   layoutType = layoutType,
+                   clickableOnly = true) {
+
+               }
+           }
+       }
+        item {
+            SettingItem(
+                title = "新增标签", selected = false, layoutType = layoutType,
+                leadingIcon = {
+                    Icon(imageVector = Icons.Outlined.NewLabel, contentDescription = "add label", tint = MaterialTheme.colorScheme.onSurface)
+                }
+                ) {
+                openCustomTagFilterDialog = true
+            }
+        }
+        if(suggestChatLabelList.isNotEmpty()) {
+            item {
+                SettingHeader(
+                    text = "建议添加",
+                )
+            }
+        }
+        items(suggestChatLabelList) {
+            SettingItem(
+                title = stringResource(id = it.labelResId),
+                subTitle = stringResource(id = it.descriptionResId),
                 selected = false,
                 layoutType = layoutType
             ) {
+                onMainSharedEvent(MainSharedEvent.OnChatFilterAdded(it))
             }
-        }
-        item {
-            SettingHeader(text = "已建立的连接")
-        }
-        items(state.extension, key = { it.extensionId }) {
-            Box {
-                var isMenuVisible by remember {
-                    mutableStateOf(false)
-                }
-                var status by remember {
-                    mutableStateOf("")
-                }
-                var statusIcon by remember {
-                    mutableStateOf(
-                        Icons.Outlined.Pending
-                    )
-                }
-                CascadeDropdownMenu(
-                    expanded = isMenuVisible,
-                    onDismissRequest = { isMenuVisible = false },
-                    offset = DpOffset(16.dp, 0.dp),
-                    properties = PopupProperties(
-                        dismissOnBackPress = true,
-                        dismissOnClickOutside = true,
-                        focusable = true
-                    ),
-                    shape = MaterialTheme.shapes.medium,
-                ) {
-                    if (it is Extension.ExtensionSuccess) {
-                        androidx.compose.material3.DropdownMenuItem(
-                            text = { Text("重新启动") },
-                            onClick = {
-                                onEvent(SettingPageEvent.RestartExtensionConnection(it.extensionId))
-                                isMenuVisible = false
-                            },
-                            leadingIcon = {
-                                Icon(imageVector = Icons.Outlined.RestartAlt, contentDescription = "restart connection")
-                            }
-                        )
-                    }
-                    androidx.compose.material3.DropdownMenuItem(
-                        text = { Text("删除") },
-                        onClick = {
-                            onEvent(SettingPageEvent.DeleteExtensionInfo(it.extensionId))
-                            isMenuVisible = false
-                        },
-                        leadingIcon = {
-                            Icon(imageVector = Icons.Outlined.Delete, contentDescription = "delete connection")
-                        }
-                    )
-                }
-                LaunchedEffect(Unit) {
-                    when (it) {
-                        is Extension.ExtensionPending -> {
-                            status = "等待实例化"
-                            statusIcon = Icons.Outlined.Pending
-                        }
-
-                        is Extension.ExtensionFail -> {
-                            status = "实例化失败"
-                            statusIcon = Icons.Outlined.ErrorOutline
-                        }
-
-                        is Extension.ExtensionSuccess -> {
-                            it.getStatus().collectLatest {
-                                when (it) {
-                                    is ParaboxExtensionStatus.Pending -> {
-                                        status = "等待初始化"
-                                        statusIcon = Icons.Outlined.Pending
-                                    }
-
-                                    is ParaboxExtensionStatus.Initializing -> {
-                                        status = "正在初始化"
-                                        statusIcon = Icons.Outlined.Pending
-                                    }
-
-                                    is ParaboxExtensionStatus.Active -> {
-                                        status = "运行中"
-                                        statusIcon = Icons.Outlined.CheckCircle
-                                    }
-
-                                    is ParaboxExtensionStatus.Error -> {
-                                        status = "错误（${it.message}）"
-                                        statusIcon = Icons.Outlined.ErrorOutline
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                SettingItem(
-                    title = it.alias,
-                    subTitle = status,
-                    trailingIcon = {
-                        Icon(
-                            imageVector = statusIcon,
-                            contentDescription = "status_icon",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    },
-                    selected = false,
-                    layoutType = layoutType,
-                    onLongClick = {
-                        isMenuVisible = true
-                    }
-                ) {
-                }
-            }
-
         }
     }
 }

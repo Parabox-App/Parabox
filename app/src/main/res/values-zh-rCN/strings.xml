@@ -546,10 +546,16 @@
     <string name="contact_person">联系人</string>
     <string name="get_chat_filter_normal">消息</string>
     <string name="get_chat_filter_archived">归档</string>
+    <string name="get_chat_filter_archived_des">已收入归档的会话</string>
     <string name="get_chat_filter_hidden">已完成</string>
+    <string name="get_chat_filter_hidden_des">标记已处理的会话</string>
     <string name="get_chat_filter_read">已读</string>
+    <string name="get_chat_filter_read_des">暂无新消息的会话</string>
     <string name="get_chat_filter_unread">未读</string>
+    <string name="get_chat_filter_unread_des">存在未读消息的会话</string>
     <string name="get_chat_filter_private">单聊</string>
+    <string name="get_chat_filter_private_des">仅来自私聊会话</string>
     <string name="get_chat_filter_group">群组</string>
+    <string name="get_chat_filter_group_des">仅来自群组</string>
     <string name="message_filter_type_all">类型</string>
 </resources>

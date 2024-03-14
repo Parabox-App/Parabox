@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.setting
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
@@ -23,23 +24,24 @@ import com.ojhdtapp.parabox.ui.theme.fontSize
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SettingItem(
+    modifier: Modifier = Modifier,
     title: String,
     subTitle: String? = null,
     leadingIcon: (@Composable () -> Unit)? = null,
     trailingIcon: (@Composable () -> Unit)? = null,
     selected: Boolean,
     layoutType: SettingLayoutType,
+    clickableOnly: Boolean = false,
     onLongClick: () -> Unit = {},
     onClick: () -> Unit,
 ) {
     Surface(
-        modifier = Modifier.combinedClickable(
-            onLongClick = onLongClick,
-            onClick = onClick
+        modifier = modifier.combinedClickable(
+            onClick = onClick,
+            onLongClick = if (!clickableOnly) onLongClick else null
         ),
         shape = if (layoutType == SettingLayoutType.SPLIT) RoundedCornerShape(32.dp) else RectangleShape,
         color = if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
-//        onClick = onClick
     ) {
         Row(
             modifier = Modifier

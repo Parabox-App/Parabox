@@ -27,8 +27,8 @@ sealed interface MainSharedEvent : UiEvent {
     data class OpenBottomSheet(val open: Boolean, val snap: Boolean = false) : MainSharedEvent
     object SearchAvatarClicked : MainSharedEvent
     data class ShowNavigationBar(val show: Boolean) : MainSharedEvent
-    data class UpdateSearchDoneChatFilter(val filter: ChatFilter): MainSharedEvent
-    data class UpdateSearchDoneMessageFilter(val filter: MessageFilter): MainSharedEvent
+    data class UpdateSearchDoneChatFilter(val filter: ChatFilter) : MainSharedEvent
+    data class UpdateSearchDoneMessageFilter(val filter: MessageFilter) : MainSharedEvent
     data class PickChat(val onDone: (Chat?) -> Unit) : MainSharedEvent
     data class PickChatDone(val res: Chat?) : MainSharedEvent
     data class PickChatQueryInput(val input: String) : MainSharedEvent
@@ -41,5 +41,7 @@ sealed interface MainSharedEvent : UiEvent {
     data class PickDateRangeDone(val res: Pair<Long, Long>?) : MainSharedEvent
     object PageListScrollBy : MainSharedEvent
     data class UpdateEnabledChatFilterList(val list: List<ChatFilter>) : MainSharedEvent
+    data class OnChatFilterAdded(val filter: ChatFilter) : MainSharedEvent
+    data class OnChatFilterListReordered(val fromIndex: Int, val toIndex: Int) : MainSharedEvent
     data class UpdateSettingSwitch(val key: Preferences.Key<Boolean>, val value: Boolean) : MainSharedEvent
 }

@@ -89,6 +89,7 @@ fun GeneralSettingPage(
                 TopAppBar(
                     title = {
                         Text(
+                            modifier = Modifier.padding(start = 8.dp),
                             text = "通用",
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
