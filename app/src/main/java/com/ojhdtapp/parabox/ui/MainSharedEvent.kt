@@ -45,4 +45,5 @@ sealed interface MainSharedEvent : UiEvent {
     data class OnChatFilterRemoved(val filter: ChatFilter) : MainSharedEvent
     data class OnChatFilterListReordered(val fromIndex: Int, val toIndex: Int) : MainSharedEvent
     data class UpdateSettingSwitch(val key: Preferences.Key<Boolean>, val value: Boolean) : MainSharedEvent
+    data class UpdateSettingMenu(val key: Preferences.Key<Int>, val value: Int) : MainSharedEvent
 }

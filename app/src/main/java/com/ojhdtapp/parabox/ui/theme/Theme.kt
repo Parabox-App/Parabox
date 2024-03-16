@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.ui.theme
 
 import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -9,21 +10,31 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.dataStore
+import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import java.io.IOException
 
-object Theme {
-    const val WILLOW = 0
-    const val SAKURA = 1
-    const val GARDENIA = 2
-    const val WATER = 3
-    const val PURPLE = 4
+enum class Theme(val nameResId: Int, val primaryColor: Color) {
+    WILLOW(R.string.color_willow, willow_theme_light_primary),
+    SAKURA(R.string.color_sakura, sakura_theme_light_primary),
+    GARDENIA(R.string.color_gardenia, gardenia_theme_light_primary),
+    WATER(R.string.color_water, water_theme_light_primary),
+    PURPLE(R.string.color_purple, md_theme_light_primary),;
+    companion object {
+        fun fromOrdinal(ordinal: Int): Theme {
+            return entries.first { it.ordinal == ordinal }
+        }
+    }
 }
 private val WillowLightThemeColors = lightColorScheme(
     primary = willow_theme_light_primary,
@@ -318,62 +329,34 @@ fun AppTheme(
     content: @Composable() () -> Unit
 ) {
     val context = LocalContext.current
-    val enableDynamicColorFlow = remember {
-        context.dataStore.data
-            .catch { exception ->
-                if (exception is IOException) {
-                    emit(emptyPreferences())
-                } else {
-                    throw exception
-                }
-            }
-            .map { settings ->
-                settings[DataStoreKeys.SETTINGS_ENABLE_DYNAMIC_COLOR]
-                    ?: (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
-            }
-    }
-    val enableDynamicColor = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-            enableDynamicColorFlow.collectAsState(initial = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S).value
-    val themeFlow = remember {
-        context.dataStore.data
-            .catch { exception ->
-                if (exception is IOException) {
-                    emit(emptyPreferences())
-                } else {
-                    throw exception
-                }
-            }
-            .map { settings ->
-                settings[DataStoreKeys.SETTINGS_THEME]
-                    ?: Theme.WILLOW
-            }
-    }
-    val theme = themeFlow.collectAsState(initial = Theme.WILLOW).value
+    val mainSharedViewModel = hiltViewModel<MainSharedViewModel>()
+    val mainSharedState by mainSharedViewModel.uiState.collectAsState()
     val colors = when {
-        enableDynamicColor && !useDarkTheme -> dynamicLightColorScheme(LocalContext.current)
-        enableDynamicColor && useDarkTheme -> dynamicDarkColorScheme(LocalContext.current)
-        useDarkTheme -> when (theme) {
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                && mainSharedState.datastore.enableDynamicColor
+                && !useDarkTheme -> dynamicLightColorScheme(LocalContext.current)
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                && mainSharedState.datastore.enableDynamicColor
+                && useDarkTheme -> dynamicDarkColorScheme(LocalContext.current)
+        useDarkTheme -> when (mainSharedState.datastore.theme) {
+            Theme.WILLOW -> WillowDarkThemeColors
             Theme.PURPLE -> PurpleDarkThemeColors
             Theme.SAKURA -> SakuraDarkThemeColors
             Theme.GARDENIA -> GardeniaDarkThemeColors
             Theme.WATER -> WaterDarkThemeColors
-            else -> WillowDarkThemeColors
         }
 
-        else -> when (theme) {
+        else -> when (mainSharedState.datastore.theme) {
+            Theme.WILLOW -> WillowLightThemeColors
             Theme.PURPLE -> PurpleLightThemeColors
             Theme.SAKURA -> SakuraLightThemeColors
             Theme.GARDENIA -> GardeniaLightThemeColors
             Theme.WATER -> WaterLightThemeColors
-            else -> WillowLightThemeColors
         }
     }
-
-    CompositionLocalProvider(LocalFontSize provides FontSize()) {
-        androidx.compose.material3.MaterialTheme(
-            colorScheme = colors,
-            typography = AppTypography,
-            content = content
-        )
-    }
+    androidx.compose.material3.MaterialTheme(
+        colorScheme = colors,
+        typography = AppTypography,
+        content = content
+    )
 }

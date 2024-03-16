@@ -83,6 +83,6 @@ fun SettingHeader(
         text = text,
         color = MaterialTheme.colorScheme.primary,
         style = MaterialTheme.typography.labelLarge,
-        modifier = modifier.padding(start = 24.dp, top = 24.dp, end = 24.dp, bottom = 16.dp)
+        modifier = modifier.padding(start = 24.dp, top = 24.dp, end = 24.dp, bottom = 8.dp)
     )
 }

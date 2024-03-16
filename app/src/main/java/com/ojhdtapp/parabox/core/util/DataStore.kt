@@ -4,13 +4,10 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
-import kotlinx.coroutines.Dispatchers
+import com.ojhdtapp.parabox.R
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.withContext
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
@@ -104,9 +101,12 @@ object DataStoreKeys {
 
     val CHAT_FILTERS = stringPreferencesKey("chat_filters")
 
-    enum class DARK_MODE {
-        NO,
-        YES,
-        FOLLOW_SYSTEM
+    enum class DarkMode(val nameResId: Int) {
+        NO(R.string.darkmode_night_no),
+        YES(R.string.darkmode_night_yes),
+        FOLLOW_SYSTEM(R.string.darkmode_follow_system);
+        companion object {
+            fun fromOrdinal(ordinal: Int) = entries.first { it.ordinal == ordinal }
+        }
     }
 }

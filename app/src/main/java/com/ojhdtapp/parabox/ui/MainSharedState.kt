@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.ui
 
 import android.net.Uri
+import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.Contact
@@ -9,6 +10,7 @@ import com.ojhdtapp.parabox.domain.model.RecentQuery
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.domain.model.filter.MessageFilter
 import com.ojhdtapp.parabox.ui.base.UiState
+import com.ojhdtapp.parabox.ui.theme.Theme
 
 data class MainSharedState(
     val datastore: DataStore = DataStore(),
@@ -32,6 +34,9 @@ data class MainSharedState(
         val displayAvatarOnTopAppBar: Boolean = true,
         val enableInnerBrowser: Boolean = true,
         val sendViaEnter: Boolean = false,
+        val enableDynamicColor: Boolean = true,
+        val theme: Theme = Theme.WILLOW,
+        val darkMode: DataStoreKeys.DarkMode = DataStoreKeys.DarkMode.FOLLOW_SYSTEM,
     )
     data class Search(
         val query: String = "",

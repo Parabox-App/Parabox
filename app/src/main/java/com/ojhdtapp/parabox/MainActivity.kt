@@ -11,7 +11,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -21,9 +20,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
-import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -35,14 +34,11 @@ import androidx.lifecycle.lifecycleScope
 import androidx.window.layout.FoldingFeature
 import androidx.window.layout.WindowInfoTracker
 import com.arkivanov.decompose.ExperimentalDecomposeApi
-import com.arkivanov.decompose.FaultyDecomposeApi
 import com.arkivanov.decompose.extensions.compose.stack.Children
 import com.arkivanov.decompose.extensions.compose.stack.animation.fade
 import com.arkivanov.decompose.extensions.compose.stack.animation.plus
 import com.arkivanov.decompose.extensions.compose.stack.animation.predictiveback.androidPredictiveBackAnimatable
 import com.arkivanov.decompose.extensions.compose.stack.animation.predictiveback.predictiveBackAnimation
-import com.arkivanov.decompose.extensions.compose.stack.animation.scale
-import com.arkivanov.decompose.extensions.compose.stack.animation.slide
 import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimation
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.arkivanov.decompose.retainedComponent
@@ -76,6 +72,8 @@ import com.ojhdtapp.parabox.ui.navigation.slideWithOffset
 import com.ojhdtapp.parabox.ui.navigation.suite.NavigationSuite
 import com.ojhdtapp.parabox.ui.setting.SettingPageViewModel
 import com.ojhdtapp.parabox.ui.setting.SettingPageWrapperUi
+import com.ojhdtapp.parabox.ui.theme.FontSize
+import com.ojhdtapp.parabox.ui.theme.LocalFontSize
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -92,11 +90,11 @@ class MainActivity : AppCompatActivity() {
                 if (BuildConfig.VERSION_CODE >= Build.VERSION_CODES.S) {
                     val manager = getSystemService(Context.UI_MODE_SERVICE) as UiModeManager
                     when (darkMode) {
-                        DataStoreKeys.DARK_MODE.YES.ordinal -> {
+                        DataStoreKeys.DarkMode.YES.ordinal -> {
                             manager.nightMode = UiModeManager.MODE_NIGHT_YES
                         }
 
-                        DataStoreKeys.DARK_MODE.NO.ordinal -> {
+                        DataStoreKeys.DarkMode.NO.ordinal -> {
                             manager.nightMode = UiModeManager.MODE_NIGHT_NO
                         }
 
@@ -106,11 +104,11 @@ class MainActivity : AppCompatActivity() {
                     }
                 } else {
                     when (darkMode) {
-                        DataStoreKeys.DARK_MODE.YES.ordinal -> {
+                        DataStoreKeys.DarkMode.YES.ordinal -> {
                             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
                         }
 
-                        DataStoreKeys.DARK_MODE.NO.ordinal -> {
+                        DataStoreKeys.DarkMode.NO.ordinal -> {
                             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
                         }
 
@@ -130,8 +128,6 @@ class MainActivity : AppCompatActivity() {
     )
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Apply Dark Mode
-        collectDarkModeFlow()
         // Bind Extension Service
         extensionServiceConnection = ExtensionServiceConnection(baseContext)
         lifecycle.addObserver(extensionServiceConnection)
@@ -207,6 +203,36 @@ class MainActivity : AppCompatActivity() {
 
             val mainSharedState by mainSharedViewModel.uiState.collectAsState()
 
+            // darkMode
+            LaunchedEffect(mainSharedState.datastore.darkMode) {
+                if (BuildConfig.VERSION_CODE >= Build.VERSION_CODES.S) {
+                    val manager = getSystemService(Context.UI_MODE_SERVICE) as UiModeManager
+                    when (mainSharedState.datastore.darkMode) {
+                        DataStoreKeys.DarkMode.YES -> {
+                            manager.nightMode = UiModeManager.MODE_NIGHT_YES
+                        }
+                        DataStoreKeys.DarkMode.NO -> {
+                            manager.nightMode = UiModeManager.MODE_NIGHT_NO
+                        }
+                        DataStoreKeys.DarkMode.FOLLOW_SYSTEM -> {
+                            manager.nightMode = UiModeManager.MODE_NIGHT_AUTO
+                        }
+                    }
+                } else {
+                    when (mainSharedState.datastore.darkMode) {
+                        DataStoreKeys.DarkMode.YES -> {
+                            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                        }
+                        DataStoreKeys.DarkMode.NO -> {
+                            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                        }
+                        DataStoreKeys.DarkMode.FOLLOW_SYSTEM -> {
+                            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+                        }
+                    }
+                    delegate.applyDayNight()
+                }
+            }
 //            val mainNavController = rememberNavController()
 //            val mainNavHostEngine = rememberAnimatedNavHostEngine(
 //                navHostContentAlignment = Alignment.TopCenter,
@@ -266,7 +292,8 @@ class MainActivity : AppCompatActivity() {
                         LocalFixedInsets provides fixedInsets,
                         LocalAudioRecorder provides AudioRecorder,
                         LocalSystemUiController provides SystemUiController(LocalContext.current as MainActivity),
-                        LocalMinimumInteractiveComponentEnforcement provides false
+                        LocalMinimumInteractiveComponentEnforcement provides false,
+                        LocalFontSize provides FontSize()
                     )
                 ) {
                     val rootStackState by root.rootStack.subscribeAsState()

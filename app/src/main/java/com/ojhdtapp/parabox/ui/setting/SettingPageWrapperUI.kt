@@ -38,6 +38,7 @@ import com.ojhdtapp.parabox.ui.navigation.DefaultRootComponent
 import com.ojhdtapp.parabox.ui.navigation.RootComponent
 import com.ojhdtapp.parabox.ui.navigation.SettingComponent
 import com.ojhdtapp.parabox.ui.navigation.slideWithOffset
+import com.ojhdtapp.parabox.ui.setting.detail.AppearanceSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.ExtensionSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.GeneralSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.LabelDetailSettingPage
@@ -168,7 +169,7 @@ fun SettingPageWrapperUi(
                         )
                     }
                     is SettingComponent.SettingChild.AppearanceSetting -> {
-                        GeneralSettingPage(
+                        AppearanceSettingPage(
                             state = state,
                             mainSharedState = mainSharedState,
                             layoutType = layoutType,

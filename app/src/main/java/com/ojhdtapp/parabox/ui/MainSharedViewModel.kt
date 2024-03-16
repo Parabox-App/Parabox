@@ -19,6 +19,7 @@ import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
 import com.ojhdtapp.parabox.domain.use_case.Query
 import com.ojhdtapp.parabox.ui.base.BaseViewModel
 import com.ojhdtapp.parabox.ui.base.UiEffect
+import com.ojhdtapp.parabox.ui.theme.Theme
 
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -450,6 +451,11 @@ class MainSharedViewModel @Inject constructor(
                 editDataStore(event.key, event.value)
                 return state
             }
+
+            is MainSharedEvent.UpdateSettingMenu -> {
+                editDataStore(event.key, event.value)
+                return state
+            }
         }
     }
 
@@ -711,7 +717,7 @@ class MainSharedViewModel @Inject constructor(
         }
     }
 
-    fun <T> editDataStore(key: Preferences.Key<T>, value: T) {
+    private fun <T> editDataStore(key: Preferences.Key<T>, value: T) {
         viewModelScope.launch(Dispatchers.IO) {
             context.dataStore.edit {
                 it[key] = value
@@ -736,6 +742,11 @@ class MainSharedViewModel @Inject constructor(
                         displayAvatarOnTopAppBar = it[DataStoreKeys.SETTINGS_DISPLAY_AVATAR_ON_TOP_APPBAR] ?: true,
                         enableInnerBrowser = it[DataStoreKeys.SETTINGS_ENABLE_INNER_BROWSER] ?: true,
                         sendViaEnter = it[DataStoreKeys.SETTINGS_SEND_VIA_ENTER] ?: false,
+                        enableDynamicColor = it[DataStoreKeys.SETTINGS_ENABLE_DYNAMIC_COLOR] ?: true,
+                        theme = it[DataStoreKeys.SETTINGS_THEME]?.let { Theme.fromOrdinal(it) }
+                            ?: Theme.WILLOW,
+                        darkMode = it[DataStoreKeys.SETTINGS_DARK_MODE]?.let { DataStoreKeys.DarkMode.fromOrdinal(it) }
+                            ?: DataStoreKeys.DarkMode.FOLLOW_SYSTEM,
                     )
                 ))
             }

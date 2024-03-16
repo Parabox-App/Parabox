@@ -384,6 +384,8 @@ fun MessagePage(
                                     chat = item,
                                     onClick = {
                                         viewModel.sendEvent(MessagePageEvent.LoadMessage(item))
+                                        scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
+                                        mainSharedViewModel.sendEvent(MainSharedEvent.ShowNavigationBar(false))
                                     },
                                     onLongClick = {
                                         hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
