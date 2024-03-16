@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DockedSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -66,14 +67,14 @@ fun ContactPickerDialog(
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     if (openDialog) {
-        AlertDialog(
+        BasicAlertDialog(
             onDismissRequest = onDismiss,
             modifier = modifier,
             properties = DialogProperties(
                 dismissOnBackPress = true,
                 dismissOnClickOutside = true,
                 usePlatformDefaultWidth = true
-            ),
+            )
         ) {
             Surface(
                 modifier = Modifier
@@ -102,7 +103,11 @@ fun ContactPickerDialog(
                             modifier = Modifier.height(SearchBarDefaults.InputFieldHeight),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(modifier = Modifier.padding(horizontal = 16.dp),imageVector = Icons.Outlined.Search, contentDescription = "search")
+                            Icon(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                imageVector = Icons.Outlined.Search,
+                                contentDescription = "search"
+                            )
                             BasicTextField(
                                 modifier = Modifier
                                     .weight(1f)

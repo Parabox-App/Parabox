@@ -71,6 +71,11 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
 import androidx.core.graphics.drawable.toBitmapOrNull
+import com.arkivanov.decompose.ExperimentalDecomposeApi
+import com.arkivanov.decompose.router.stack.ChildStack
+import com.arkivanov.decompose.router.stack.StackNavigation
+import com.arkivanov.decompose.router.stack.pushNew
+import com.arkivanov.decompose.router.stack.pushToFront
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.domain.model.Extension
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
@@ -79,6 +84,8 @@ import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.common.drag_drop.DraggableItem
 import com.ojhdtapp.parabox.ui.common.drag_drop.rememberDragDropState
 import com.ojhdtapp.parabox.ui.message.NewChatFilterDialog
+import com.ojhdtapp.parabox.ui.navigation.DefaultSettingComponent
+import com.ojhdtapp.parabox.ui.navigation.SettingComponent
 import com.ojhdtapp.parabox.ui.setting.Setting
 import com.ojhdtapp.parabox.ui.setting.SettingHeader
 import com.ojhdtapp.parabox.ui.setting.SettingItem
@@ -99,6 +106,8 @@ fun LabelSettingPage(
     mainSharedState: MainSharedState,
     layoutType: SettingLayoutType,
     scaffoldNavigator: ThreePaneScaffoldNavigator<Setting>,
+    navigation: StackNavigation<DefaultSettingComponent.SettingConfig>,
+    stackState: ChildStack<*, SettingComponent.SettingChild>,
     onEvent: (SettingPageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
@@ -132,6 +141,8 @@ fun LabelSettingPage(
                     state = state,
                     mainSharedState = mainSharedState,
                     layoutType = layoutType,
+                    navigation = navigation,
+                    stackState = stackState,
                     onEvent = onEvent,
                     onMainSharedEvent = onMainSharedEvent,
                 )
@@ -162,6 +173,8 @@ fun LabelSettingPage(
                 state = state,
                 mainSharedState = mainSharedState,
                 layoutType = layoutType,
+                navigation = navigation,
+                stackState = stackState,
                 onEvent = onEvent,
                 onMainSharedEvent = onMainSharedEvent
             )
@@ -169,13 +182,15 @@ fun LabelSettingPage(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalDecomposeApi::class)
 @Composable
 private fun Content(
     modifier: Modifier = Modifier,
     state: SettingPageState,
     mainSharedState: MainSharedState,
     layoutType: SettingLayoutType,
+    navigation: StackNavigation<DefaultSettingComponent.SettingConfig>,
+    stackState: ChildStack<*, SettingComponent.SettingChild>,
     onEvent: (SettingPageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
@@ -303,7 +318,10 @@ private fun Content(
                         layoutType = layoutType,
                         clickableOnly = true
                     ) {
-
+                        if (item is ChatFilter.Tag) {
+                            onEvent(SettingPageEvent.UpdateSelectedTagLabel(item))
+                            navigation.pushNew(DefaultSettingComponent.SettingConfig.LabelDetailSetting)
+                        }
                     }
                 }
             }

@@ -98,8 +98,6 @@ fun NavigationSuite(
         }
     }
 
-    // List
-    val listState = rememberLazyListState()
     // Drawer
     val drawerState = rememberMyDrawerState(initialValue = DrawerValue.Closed)
     val bottomSheetState = rememberModalBottomSheetState()
@@ -259,40 +257,6 @@ fun MenuAppContent(
     content: @Composable () -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
-    ChatPickerDialog(
-        openDialog = mainSharedState.chatPicker.showDialog,
-        data = mainSharedState.chatPicker.result,
-        query = mainSharedState.chatPicker.query,
-        onQueryChange = {
-            mainSharedViewModel.sendEvent(MainSharedEvent.PickChatQueryInput(it))
-        },
-        loadState = mainSharedState.chatPicker.loadState,
-        onConfirm = {
-            mainSharedViewModel.sendEvent(MainSharedEvent.PickChatDone(it))
-        },
-        onDismiss = {
-            mainSharedViewModel.sendEvent(MainSharedEvent.PickChatDone(null))
-        }
-    )
-    ContactPickerDialog(openDialog = mainSharedState.contactPicker.showDialog,
-        data = mainSharedState.contactPicker.result,
-        query = mainSharedState.contactPicker.query,
-        onQueryChange = {
-            mainSharedViewModel.sendEvent(MainSharedEvent.PickContactQueryInput(it))
-        },
-        loadState = mainSharedState.contactPicker.loadState,
-        onConfirm = {
-            mainSharedViewModel.sendEvent(MainSharedEvent.PickContactDone(it))
-        },
-        onDismiss = {
-            mainSharedViewModel.sendEvent(MainSharedEvent.PickContactDone(null))
-        }
-    )
-    DateRangePickerDialog(openDialog = mainSharedState.openDateRangePicker, onConfirm = { start, end ->
-        mainSharedViewModel.sendEvent(MainSharedEvent.PickDateRangeDone(start to end))
-    }, onDismiss = {
-        mainSharedViewModel.sendEvent(MainSharedEvent.PickDateRangeDone(null))
-    })
 
     Row(modifier = modifier.fillMaxWidth()) {
         AnimatedVisibility(

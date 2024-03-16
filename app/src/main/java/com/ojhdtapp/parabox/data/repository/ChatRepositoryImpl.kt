@@ -18,7 +18,9 @@ import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.domain.repository.ChatRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
@@ -146,6 +148,22 @@ class ChatRepositoryImpl @Inject constructor(
                         db.contactChatCrossRefDao.getChatsByContactId(contactId).let { chatIds ->
                             Resource.Success(db.chatDao.getChatsByIds(chatIds).map { it.toChat() })
                         }
+                    }
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+                emit(Resource.Error("unknown error" + e.message))
+            }
+        }
+    }
+
+    override fun withCustomTag(customTagChatFilter: ChatFilter.Tag): Flow<Resource<List<Chat>>> {
+        return flow {
+            emit(Resource.Loading())
+            try {
+                emitAll(
+                    db.chatDao.queryChatByTag(customTagChatFilter.label).map {
+                        Resource.Success(it.map { it.toChat() })
                     }
                 )
             } catch (e: Exception) {

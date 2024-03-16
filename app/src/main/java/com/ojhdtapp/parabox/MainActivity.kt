@@ -24,6 +24,7 @@ import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -50,7 +51,11 @@ import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.core.util.audio.AudioRecorder
 import com.ojhdtapp.parabox.core.util.audio.LocalAudioRecorder
 import com.ojhdtapp.parabox.domain.service.ExtensionServiceConnection
+import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
+import com.ojhdtapp.parabox.ui.common.ChatPickerDialog
+import com.ojhdtapp.parabox.ui.common.ContactPickerDialog
+import com.ojhdtapp.parabox.ui.common.DateRangePickerDialog
 import com.ojhdtapp.parabox.ui.common.DevicePosture
 import com.ojhdtapp.parabox.ui.theme.AppTheme
 import com.ojhdtapp.parabox.ui.common.FixedInsets
@@ -200,6 +205,8 @@ class MainActivity : AppCompatActivity() {
             val contactPageViewModel = hiltViewModel<ContactPageViewModel>()
             val settingPageViewModel = hiltViewModel<SettingPageViewModel>()
 
+            val mainSharedState by mainSharedViewModel.uiState.collectAsState()
+
 //            val mainNavController = rememberNavController()
 //            val mainNavHostEngine = rememberAnimatedNavHostEngine(
 //                navHostContentAlignment = Alignment.TopCenter,
@@ -263,6 +270,40 @@ class MainActivity : AppCompatActivity() {
                     )
                 ) {
                     val rootStackState by root.rootStack.subscribeAsState()
+                    ChatPickerDialog(
+                        openDialog = mainSharedState.chatPicker.showDialog,
+                        data = mainSharedState.chatPicker.result,
+                        query = mainSharedState.chatPicker.query,
+                        onQueryChange = {
+                            mainSharedViewModel.sendEvent(MainSharedEvent.PickChatQueryInput(it))
+                        },
+                        loadState = mainSharedState.chatPicker.loadState,
+                        onConfirm = {
+                            mainSharedViewModel.sendEvent(MainSharedEvent.PickChatDone(it))
+                        },
+                        onDismiss = {
+                            mainSharedViewModel.sendEvent(MainSharedEvent.PickChatDone(null))
+                        }
+                    )
+                    ContactPickerDialog(openDialog = mainSharedState.contactPicker.showDialog,
+                        data = mainSharedState.contactPicker.result,
+                        query = mainSharedState.contactPicker.query,
+                        onQueryChange = {
+                            mainSharedViewModel.sendEvent(MainSharedEvent.PickContactQueryInput(it))
+                        },
+                        loadState = mainSharedState.contactPicker.loadState,
+                        onConfirm = {
+                            mainSharedViewModel.sendEvent(MainSharedEvent.PickContactDone(it))
+                        },
+                        onDismiss = {
+                            mainSharedViewModel.sendEvent(MainSharedEvent.PickContactDone(null))
+                        }
+                    )
+                    DateRangePickerDialog(openDialog = mainSharedState.openDateRangePicker, onConfirm = { start, end ->
+                        mainSharedViewModel.sendEvent(MainSharedEvent.PickDateRangeDone(start to end))
+                    }, onDismiss = {
+                        mainSharedViewModel.sendEvent(MainSharedEvent.PickDateRangeDone(null))
+                    })
                     Children(
                         stack = root.rootStack,
                         animation = predictiveBackAnimation(

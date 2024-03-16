@@ -76,6 +76,9 @@ interface ChatDao {
     @Query("SELECT * FROM chat_entity WHERE name LIKE '%' || :query || '%' LIMIT :limit")
     fun queryChatWithLimit(query: String, limit: Int): List<ChatEntity>
 
+    @Query("SELECT * FROM chat_entity WHERE tags LIKE '%' || :tag || '%'")
+    fun queryChatByTag(tag: String): Flow<List<ChatEntity>>
+
     @Transaction
     @Query(
         "SELECT chat_entity.* FROM chat_entity " +

@@ -55,4 +55,8 @@ class GetChat @Inject constructor(
     fun containsContact(contactId: Long) : Flow<Resource<List<Chat>>> {
         return repository.containsContact(contactId)
     }
+
+    fun withCustomTag(customTagChatFilter: ChatFilter.Tag) : Flow<Resource<List<Chat>>> {
+        return repository.withCustomTag(customTagChatFilter)
+    }
 }

@@ -19,4 +19,5 @@ interface ChatRepository {
     fun updateArchive(chatId: Long, value: Boolean): Boolean
     fun updateTags(chatId: Long, value: List<String>): Boolean
     fun containsContact(contactId: Long) : Flow<Resource<List<Chat>>>
+    fun withCustomTag(customTagChatFilter: ChatFilter.Tag) : Flow<Resource<List<Chat>>>
 }

@@ -125,7 +125,7 @@ fun SettingPage(
                     leadingIcon = {
                         Icon(imageVector = Icons.Outlined.LibraryAdd, contentDescription = "extension settings", tint = MaterialTheme.colorScheme.onSurface)
                     },
-                    selected = layoutType == SettingLayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.ExtensionSetting,
+                    selected = layoutType == SettingLayoutType.SPLIT && (stackState.active.instance is SettingComponent.SettingChild.ExtensionSetting || stackState.active.instance is SettingComponent.SettingChild.ExtensionAddSetting),
                     layoutType = layoutType
                 ) {
 //                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.ADDONS))
@@ -141,7 +141,7 @@ fun SettingPage(
                     leadingIcon = {
                         Icon(imageVector = Icons.AutoMirrored.Outlined.Label, contentDescription = "label settings", tint = MaterialTheme.colorScheme.onSurface)
                     },
-                    selected = layoutType == SettingLayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.LabelSetting,
+                    selected = layoutType == SettingLayoutType.SPLIT && (stackState.active.instance is SettingComponent.SettingChild.LabelSetting || stackState.active.instance is SettingComponent.SettingChild.LabelDetailSetting),
                     layoutType = layoutType
                 ) {
 //                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.LABELS))

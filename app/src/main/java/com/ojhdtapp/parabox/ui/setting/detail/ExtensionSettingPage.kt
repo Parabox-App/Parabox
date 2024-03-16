@@ -54,10 +54,14 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
 import androidx.core.graphics.drawable.toBitmapOrNull
+import com.arkivanov.decompose.router.stack.ChildStack
+import com.arkivanov.decompose.router.stack.StackNavigation
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.domain.model.Extension
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
+import com.ojhdtapp.parabox.ui.navigation.DefaultSettingComponent
+import com.ojhdtapp.parabox.ui.navigation.SettingComponent
 import com.ojhdtapp.parabox.ui.setting.Setting
 import com.ojhdtapp.parabox.ui.setting.SettingHeader
 import com.ojhdtapp.parabox.ui.setting.SettingItem
@@ -76,6 +80,8 @@ fun ExtensionSettingPage(
     mainSharedState: MainSharedState,
     layoutType: SettingLayoutType,
     scaffoldNavigator: ThreePaneScaffoldNavigator<Setting>,
+    navigation: StackNavigation<DefaultSettingComponent.SettingConfig>,
+    stackState: ChildStack<*, SettingComponent.SettingChild>,
     onEvent: (SettingPageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {

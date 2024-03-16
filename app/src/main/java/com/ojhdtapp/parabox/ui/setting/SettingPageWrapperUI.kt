@@ -40,6 +40,7 @@ import com.ojhdtapp.parabox.ui.navigation.SettingComponent
 import com.ojhdtapp.parabox.ui.navigation.slideWithOffset
 import com.ojhdtapp.parabox.ui.setting.detail.ExtensionSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.GeneralSettingPage
+import com.ojhdtapp.parabox.ui.setting.detail.LabelDetailSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.LabelSettingPage
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3WindowSizeClassApi::class,
@@ -124,6 +125,8 @@ fun SettingPageWrapperUi(
                             mainSharedState = mainSharedState,
                             layoutType = layoutType,
                             scaffoldNavigator = scaffoldNavigator,
+                            navigation = component.settingNav,
+                            stackState = settingStackState,
                             onEvent = viewModel::sendEvent,
                             onMainSharedEvent = mainSharedViewModel::sendEvent
                         )
@@ -134,6 +137,8 @@ fun SettingPageWrapperUi(
                             mainSharedState = mainSharedState,
                             layoutType = layoutType,
                             scaffoldNavigator = scaffoldNavigator,
+                            navigation = component.settingNav,
+                            stackState = settingStackState,
                             onEvent = viewModel::sendEvent,
                             onMainSharedEvent = mainSharedViewModel::sendEvent
                         )
@@ -144,16 +149,20 @@ fun SettingPageWrapperUi(
                             mainSharedState = mainSharedState,
                             layoutType = layoutType,
                             scaffoldNavigator = scaffoldNavigator,
+                            navigation = component.settingNav,
+                            stackState = settingStackState,
                             onEvent = viewModel::sendEvent,
                             onMainSharedEvent = mainSharedViewModel::sendEvent
                         )
                     }
                     is SettingComponent.SettingChild.LabelDetailSetting -> {
-                        LabelSettingPage(
+                        LabelDetailSettingPage(
                             state = state,
                             mainSharedState = mainSharedState,
                             layoutType = layoutType,
                             scaffoldNavigator = scaffoldNavigator,
+                            navigation = component.settingNav,
+                            stackState = settingStackState,
                             onEvent = viewModel::sendEvent,
                             onMainSharedEvent = mainSharedViewModel::sendEvent
                         )
