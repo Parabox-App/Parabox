@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ojhdtapp.parabox.ui.theme.fontSize
 
@@ -55,7 +56,7 @@ fun SettingItem(
                 Spacer(modifier = Modifier.width(24.dp))
             }
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = title, fontSize = MaterialTheme.fontSize.title, color = MaterialTheme.colorScheme.onSurface)
+                Text(text = title, fontSize = MaterialTheme.fontSize.title, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 if (subTitle != null) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(

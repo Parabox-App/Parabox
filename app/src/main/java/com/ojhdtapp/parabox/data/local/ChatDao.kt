@@ -15,6 +15,7 @@ import com.ojhdtapp.parabox.data.local.entity.ChatEntity
 import com.ojhdtapp.parabox.data.local.entity.ChatHideUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatWithLatestMessageEntity
 import com.ojhdtapp.parabox.data.local.entity.ChatLatestMessageIdUpdate
+import com.ojhdtapp.parabox.data.local.entity.ChatNotificationEnabledUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatPinUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatTagsUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatUnreadMessagesNumUpdate
@@ -65,10 +66,13 @@ interface ChatDao {
     fun getArchivedChats(): Flow<List<ChatEntity>>
 
     @Query("SELECT * FROM chat_entity WHERE isHidden")
-    fun getAllHiddenChats(): Flow<List<ChatEntity>>
+    fun getHiddenChats(): Flow<List<ChatEntity>>
 
     @Query("SELECT * FROM chat_entity WHERE NOT isHidden AND NOT isArchived")
-    fun getAllUnhiddenChats(): Flow<List<ChatEntity>>
+    fun getUnhiddenChats(): Flow<List<ChatEntity>>
+
+    @Query("SELECT * FROM chat_entity WHERE NOT isNotificationEnabled")
+    fun getNotificationDisabledChats(): Flow<List<ChatEntity>>
 
     @Query("SELECT * FROM chat_entity WHERE name LIKE '%' || :query || '%'")
     fun queryChat(query: String): List<ChatEntity>
@@ -108,4 +112,7 @@ interface ChatDao {
 
     @Update(entity = ChatEntity::class)
     fun updateTags(obj: ChatTagsUpdate): Int
+
+    @Update(entity = ChatEntity::class)
+    fun updateNotificationEnabled(obj: ChatNotificationEnabledUpdate): Int
 }

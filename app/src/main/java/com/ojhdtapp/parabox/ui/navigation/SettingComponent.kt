@@ -102,6 +102,8 @@ class DefaultSettingComponent(
             }
         )
 
+    @Parcelize
+    @Serializable
     sealed interface SettingConfig : Parcelable {
         @Parcelize
         @Serializable

@@ -83,45 +83,6 @@ import kotlinx.coroutines.flow.*
 class MainActivity : AppCompatActivity() {
 
     private lateinit var extensionServiceConnection: ExtensionServiceConnection
-    private fun collectDarkModeFlow() {
-        lifecycleScope.launch {
-            dataStore.data.collectLatest {
-                val darkMode = it[DataStoreKeys.SETTINGS_DARK_MODE]
-                if (BuildConfig.VERSION_CODE >= Build.VERSION_CODES.S) {
-                    val manager = getSystemService(Context.UI_MODE_SERVICE) as UiModeManager
-                    when (darkMode) {
-                        DataStoreKeys.DarkMode.YES.ordinal -> {
-                            manager.nightMode = UiModeManager.MODE_NIGHT_YES
-                        }
-
-                        DataStoreKeys.DarkMode.NO.ordinal -> {
-                            manager.nightMode = UiModeManager.MODE_NIGHT_NO
-                        }
-
-                        else -> {
-                            manager.nightMode = UiModeManager.MODE_NIGHT_AUTO
-                        }
-                    }
-                } else {
-                    when (darkMode) {
-                        DataStoreKeys.DarkMode.YES.ordinal -> {
-                            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-                        }
-
-                        DataStoreKeys.DarkMode.NO.ordinal -> {
-                            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-                        }
-
-                        else -> {
-                            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
-                        }
-                    }
-                    delegate.applyDayNight()
-                }
-            }
-        }
-    }
-
     @OptIn(
         ExperimentalMaterial3Api::class,
         ExperimentalDecomposeApi::class,

@@ -59,4 +59,8 @@ class GetChat @Inject constructor(
     fun withCustomTag(customTagChatFilter: ChatFilter.Tag) : Flow<Resource<List<Chat>>> {
         return repository.withCustomTag(customTagChatFilter)
     }
+
+    fun notificationDisabled() : Flow<Resource<List<Chat>>> {
+        return repository.getNotificationDisabledChat()
+    }
 }

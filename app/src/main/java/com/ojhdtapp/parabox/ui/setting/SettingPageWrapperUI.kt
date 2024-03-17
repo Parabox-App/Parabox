@@ -43,6 +43,8 @@ import com.ojhdtapp.parabox.ui.setting.detail.ExtensionSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.GeneralSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.LabelDetailSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.LabelSettingPage
+import com.ojhdtapp.parabox.ui.setting.detail.NotificationSettingPage
+import com.ojhdtapp.parabox.ui.setting.detail.StorageSettingPage
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3WindowSizeClassApi::class,
     ExperimentalDecomposeApi::class
@@ -179,7 +181,7 @@ fun SettingPageWrapperUi(
                         )
                     }
                     is SettingComponent.SettingChild.NotificationSetting -> {
-                        GeneralSettingPage(
+                        NotificationSettingPage(
                             state = state,
                             mainSharedState = mainSharedState,
                             layoutType = layoutType,
@@ -189,7 +191,7 @@ fun SettingPageWrapperUi(
                         )
                     }
                     is SettingComponent.SettingChild.StorageSetting -> {
-                        GeneralSettingPage(
+                        StorageSettingPage(
                             state = state,
                             mainSharedState = mainSharedState,
                             layoutType = layoutType,

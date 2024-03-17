@@ -25,4 +25,8 @@ class UpdateChat @Inject constructor(
     fun tags(chatId: Long, value: List<String>): Boolean {
         return chatRepository.updateTags(chatId, value)
     }
+
+    fun notificationEnabled(chatId: Long, value: Boolean): Boolean {
+        return chatRepository.updateNotificationEnabled(chatId, value)
+    }
 }

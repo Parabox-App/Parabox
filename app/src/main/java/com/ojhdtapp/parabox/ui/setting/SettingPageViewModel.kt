@@ -39,7 +39,8 @@ class SettingPageViewModel @Inject constructor(
 ) : BaseViewModel<SettingPageState, SettingPageEvent, SettingPageEffect>() {
     override fun initialState(): SettingPageState {
         return SettingPageState(
-            labelDetailState = SettingPageState.LabelDetailState()
+            labelDetailState = SettingPageState.LabelDetailState(),
+            notificationState = SettingPageState.NotificationState()
         )
     }
 
@@ -96,6 +97,22 @@ class SettingPageViewModel @Inject constructor(
                 }
                 state
             }
+
+            is SettingPageEvent.NotificationDisabledChatLoadDone -> {
+                state.copy(
+                    notificationState = state.notificationState.copy(
+                        chatList = event.chats,
+                        loadState = event.loadState
+                    )
+                )
+            }
+
+            is SettingPageEvent.UpdateChatNotificationEnabled -> {
+                viewModelScope.launch(Dispatchers.IO) {
+                    updateChat.notificationEnabled(event.chatId, event.value)
+                }
+                state
+            }
         }
     }
 
@@ -115,6 +132,15 @@ class SettingPageViewModel @Inject constructor(
     }
 
     init {
+        viewModelScope.launch {
+            getChat.notificationDisabled().distinctUntilChangedBy { it.data?.size }.collectLatest {
+                if (it is Resource.Success) {
+                    sendEvent(SettingPageEvent.NotificationDisabledChatLoadDone(it.data?: emptyList(), LoadState.SUCCESS))
+                } else {
+                    sendEvent(SettingPageEvent.NotificationDisabledChatLoadDone(emptyList(), LoadState.ERROR))
+                }
+            }
+        }
         viewModelScope.launch {
             extensionManager.extensionPkgFlow.collectLatest {
                 sendEvent(SettingPageEvent.UpdatePackageInfo(it))

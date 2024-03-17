@@ -9,6 +9,7 @@ import com.ojhdtapp.parabox.data.local.entity.ChatArchiveUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatBeanEntity
 import com.ojhdtapp.parabox.data.local.entity.ChatEntity
 import com.ojhdtapp.parabox.data.local.entity.ChatHideUpdate
+import com.ojhdtapp.parabox.data.local.entity.ChatNotificationEnabledUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatPinUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatTagsUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatUnreadMessagesNumUpdate
@@ -119,6 +120,22 @@ class ChatRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun getNotificationDisabledChat(): Flow<Resource<List<Chat>>> {
+        return flow {
+            emit(Resource.Loading())
+            try {
+               emitAll(
+                   db.chatDao.getNotificationDisabledChats().map {
+                       Resource.Success(it.map { it.toChat() })
+                   }
+               )
+            } catch (e: Exception) {
+                e.printStackTrace()
+                emit(Resource.Error("unknown error"))
+            }
+        }
+    }
+
     override fun updateUnreadMessagesNum(chatId: Long, value: Int): Boolean {
         return db.chatDao.updateUnreadMessageNum(ChatUnreadMessagesNumUpdate(chatId, value)) == 1
     }
@@ -137,6 +154,10 @@ class ChatRepositoryImpl @Inject constructor(
 
     override fun updateTags(chatId: Long, value: List<String>): Boolean {
         return db.chatDao.updateTags(ChatTagsUpdate(chatId, value)) == 1
+    }
+
+    override fun updateNotificationEnabled(chatId: Long, value: Boolean): Boolean {
+        return db.chatDao.updateNotificationEnabled(ChatNotificationEnabledUpdate(chatId, value)) == 1
     }
 
     override fun containsContact(contactId: Long): Flow<Resource<List<Chat>>> {

@@ -24,7 +24,7 @@ fun buildChatEntity(msg: ReceiveMessage, ext: ExtensionInfo): ChatEntity {
         isHidden = false,
         isPinned = false,
         isArchived = false,
-        isNotificationEnabled = false,
+        isNotificationEnabled = true,
         tags = emptyList(),
         subChatIds = emptyList(),
         type = msg.chat.type,

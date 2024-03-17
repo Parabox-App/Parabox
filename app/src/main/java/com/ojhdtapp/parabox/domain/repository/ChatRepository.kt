@@ -13,11 +13,13 @@ interface ChatRepository {
     fun getPinnedChatPagingSource() : PagingSource<Int, ChatEntity>
     fun queryChatWithLimit(query: String, limit: Int): Flow<Resource<List<Chat>>>
     fun getChatWithLimit(limit: Int): Flow<Resource<List<Chat>>>
+    fun getNotificationDisabledChat(): Flow<Resource<List<Chat>>>
     fun updateUnreadMessagesNum(chatId: Long, value: Int): Boolean
     fun updatePin(chatId: Long, value: Boolean): Boolean
     fun updateHide(chatId: Long, value: Boolean): Boolean
     fun updateArchive(chatId: Long, value: Boolean): Boolean
     fun updateTags(chatId: Long, value: List<String>): Boolean
+    fun updateNotificationEnabled(chatId: Long, value: Boolean): Boolean
     fun containsContact(contactId: Long) : Flow<Resource<List<Chat>>>
     fun withCustomTag(customTagChatFilter: ChatFilter.Tag) : Flow<Resource<List<Chat>>>
 }

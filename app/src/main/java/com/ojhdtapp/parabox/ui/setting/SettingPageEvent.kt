@@ -18,4 +18,6 @@ sealed interface SettingPageEvent : UiEvent{
     data class UpdateSelectedTagLabel(val tagLabel: ChatFilter.Tag): SettingPageEvent
     data class TagLabelChatsLoadDone(val chats: List<Chat>, val loadState: LoadState) : SettingPageEvent
     data class UpdateChatTags(val chatId: Long, val tags: List<String>): SettingPageEvent
+    data class NotificationDisabledChatLoadDone(val chats: List<Chat>, val loadState: LoadState) : SettingPageEvent
+    data class UpdateChatNotificationEnabled(val chatId: Long, val value: Boolean): SettingPageEvent
 }

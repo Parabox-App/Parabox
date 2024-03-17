@@ -13,9 +13,14 @@ data class SettingPageState(
     val packageInfo: List<PackageInfo> = emptyList(),
     val extension: List<Extension> = emptyList(),
     val labelDetailState: LabelDetailState,
+    val notificationState: NotificationState,
 ) : UiState {
     data class LabelDetailState(
         val selected: ChatFilter.Tag? = null,
+        val chatList: List<Chat> = emptyList(),
+        val loadState: LoadState = LoadState.LOADING,
+    )
+    data class NotificationState(
         val chatList: List<Chat> = emptyList(),
         val loadState: LoadState = LoadState.LOADING,
     )

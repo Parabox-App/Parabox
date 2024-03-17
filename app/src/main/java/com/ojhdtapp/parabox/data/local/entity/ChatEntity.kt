@@ -98,3 +98,10 @@ data class ChatTagsUpdate(
     @ColumnInfo(name = "tags")
     val tags: List<String>,
 )
+
+data class ChatNotificationEnabledUpdate(
+    @ColumnInfo(name = "chatId")
+    val chatId: Long,
+    @ColumnInfo(name = "isNotificationEnabled")
+    val isNotificationEnabled: Boolean,
+)
