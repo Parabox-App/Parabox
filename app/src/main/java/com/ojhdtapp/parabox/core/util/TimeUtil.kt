@@ -74,6 +74,10 @@ fun Long.toFormattedDate(context: Context): String {
     return SimpleDateFormat(context.getString(R.string.date_format_pattern), Locale.getDefault()).format(Date(this))
 }
 
+fun Long.toFormattedTime(context: Context): String {
+    return SimpleDateFormat("a h:mm", Locale.getDefault()).format(Date(this))
+}
+
 fun Long.toDateAndTimeString(): String {
     return SimpleDateFormat(
         "yyyy-MM-dd-HH-mm-ss-",

@@ -179,6 +179,21 @@ private fun Content(
             }
         }
         item {
+            SettingItem(title = "展示消息接收时间",
+                subTitle = "在每条消息上展示接收时间",
+                selected = false,
+                layoutType = layoutType,
+                trailingIcon = {
+                    Switch(checked = mainSharedState.datastore.displayTimeOnEachMsg, onCheckedChange = {
+                        onMainSharedEvent(MainSharedEvent.UpdateSettingSwitch(DataStoreKeys.SETTINGS_DISPLAY_TIME_ON_EACH_MSG, it))
+                    })
+                }) {
+                onMainSharedEvent(MainSharedEvent.UpdateSettingSwitch(
+                    DataStoreKeys.SETTINGS_DISPLAY_AVATAR_ON_TOP_APPBAR,
+                    !mainSharedState.datastore.displayAvatarOnTopAppBar))
+            }
+        }
+        item {
             SettingItem(title = "使用回车键发送消息",
                 selected = false,
                 layoutType = layoutType,

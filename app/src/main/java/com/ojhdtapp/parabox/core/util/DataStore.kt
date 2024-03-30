@@ -32,6 +32,7 @@ object DataStoreKeys {
     val SETTINGS_ENABLE_MARQUEE_EFFECT_ON_CHAT_NAME = booleanPreferencesKey("settings_enable_marquee_effect_on_chat_name")
     val SETTINGS_ENABLE_SWIPE_TO_DISMISS = booleanPreferencesKey("settings_enable_swipe_to_dismiss")
     val SETTINGS_DISPLAY_AVATAR_ON_TOP_APPBAR = booleanPreferencesKey("settings_display_avatar_on_top_appbar")
+    val SETTINGS_DISPLAY_TIME_ON_EACH_MSG = booleanPreferencesKey("settings_display_time_on_each_msg")
     val SETTINGS_ENABLE_INNER_BROWSER = booleanPreferencesKey("settings_enable_inner_browser")
     val SETTINGS_SEND_VIA_ENTER = booleanPreferencesKey("settings_send_via_enter")
 

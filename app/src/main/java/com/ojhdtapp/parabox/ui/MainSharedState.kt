@@ -32,6 +32,7 @@ data class MainSharedState(
         val enableMarqueeEffectOnChatName: Boolean = true,
         val enableSwipeToDismiss: Boolean = true,
         val displayAvatarOnTopAppBar: Boolean = true,
+        val displayTimeOnEachMsg: Boolean = false,
         val enableInnerBrowser: Boolean = true,
         val sendViaEnter: Boolean = false,
         val enableDynamicColor: Boolean = true,

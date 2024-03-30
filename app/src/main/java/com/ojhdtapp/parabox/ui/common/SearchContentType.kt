@@ -739,7 +739,7 @@ fun TypingSearchContent(
 
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun DoneSearchContent(
     modifier: Modifier = Modifier,
@@ -754,7 +754,10 @@ fun DoneSearchContent(
             "会话"
         )
         val pagerState = rememberPagerState() { tabList.size }
-        androidx.compose.material3.TabRow(selectedTabIndex = pagerState.currentPage) {
+        androidx.compose.material3.PrimaryTabRow(
+            selectedTabIndex = pagerState.currentPage,
+            containerColor = Color.Transparent
+        ) {
             tabList.forEachIndexed { index, s ->
                 Tab(selected = index == pagerState.currentPage, onClick = {
                     coroutineScope.launch {

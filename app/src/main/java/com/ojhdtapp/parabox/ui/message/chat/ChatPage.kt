@@ -358,6 +358,7 @@ fun NormalChatPage(
                                                 isLast = !((after as? ChatPageUiModel.MessageWithSender)?.sender?.platformEqual(
                                                     item.sender
                                                 ) ?: false),
+                                                shouldDisplayTime = mainSharedState.datastore.displayTimeOnEachMsg,
                                                 onImageClick = { elementId ->
                                                     coroutineScope.launch {
                                                         var index = -1

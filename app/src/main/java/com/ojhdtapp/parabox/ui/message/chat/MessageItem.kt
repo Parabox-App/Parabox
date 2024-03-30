@@ -55,6 +55,8 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.ojhdtapp.parabox.core.util.Resource
+import com.ojhdtapp.parabox.core.util.toFormattedDate
+import com.ojhdtapp.parabox.core.util.toFormattedTime
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.contains
@@ -97,6 +99,7 @@ fun MessageItem(
     previewerState: ImagePreviewerState,
     isFirst: Boolean = true,
     isLast: Boolean = true,
+    shouldDisplayTime: Boolean = false,
     onImageClick: (elementId: Long) -> Unit,
     onEvent: (e: MessagePageEvent) -> Unit,
 ) {
@@ -220,14 +223,24 @@ fun MessageItem(
                 }
                 if (isFirst) {
                     DisableSelection {
-                        Text(
-                            text = messageWithSender.sender.name,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Text(
+                                text = messageWithSender.sender.name,
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            if (shouldDisplayTime) {
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = messageWithSender.message.timestamp.toFormattedTime(context),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                     }
                 }
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Surface(
                     modifier = Modifier.layout { measurable, constraints ->
                         val placeable = measurable.measure(
