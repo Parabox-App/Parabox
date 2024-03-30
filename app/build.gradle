@@ -201,7 +201,7 @@ dependencies {
         exclude module: 'guava-jdk5'
     }
     // Room DB backup
-    implementation 'de.raphaelebner:roomdatabasebackup:1.0.0-beta10'
+    implementation 'de.raphaelebner:roomdatabasebackup:1.0.0-beta14'
 
     // FontAwesome Icon
     implementation 'com.github.Gurupreet:FontAwesomeCompose:1.1.0'

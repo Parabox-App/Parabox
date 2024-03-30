@@ -215,10 +215,14 @@ fun NormalChatPage(
             }
         }
     }
+    // sync latest sheet state with edit area state
+    LaunchedEffect(sheetState.isOpen) {
+        onEvent(MessagePageEvent.OpenEditArea(sheetState.isOpen))
+    }
     LaunchedEffect(state.chatDetail.editAreaState) {
-        if (state.chatDetail.editAreaState.expanded) {
+        if (state.chatDetail.editAreaState.expanded && !sheetState.isOpen) {
             sheetState.open()
-        } else {
+        } else if (!state.chatDetail.editAreaState.expanded && sheetState.isOpen){
             sheetState.close()
         }
     }
@@ -269,42 +273,35 @@ fun NormalChatPage(
                     layoutType = layoutType,
                     shouldDisplayAvatar = mainSharedState.datastore.displayAvatarOnTopAppBar,
                     onNavigateBack = {
-                    if (state.chatDetail.selectedMessageList.isNotEmpty()) {
-                        onEvent(MessagePageEvent.ClearSelectedMessage)
-                    } else {
-                        scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.List)
-                        onMainSharedEvent(MainSharedEvent.ShowNavigationBar(true))
-                    }
-                }, onEvent = onEvent)
+                        if (state.chatDetail.selectedMessageList.isNotEmpty()) {
+                            onEvent(MessagePageEvent.ClearSelectedMessage)
+                        } else {
+                            scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.List)
+                            onMainSharedEvent(MainSharedEvent.ShowNavigationBar(true))
+                        }
+                    }, onEvent = onEvent
+                )
             },
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         ) { paddingValues ->
             val bottomPadding by remember {
                 derivedStateOf {
                     val bottomPaddingValues = paddingValues.calculateBottomPadding()
-                    when (sheetState.swipeableState.direction) {
-                        1F -> {
-                            sheetState.swipeableState.progress.fraction * bottomPaddingValues
-                        }
+                    if (imeVisible) {
+                        0.dp
+                    } else {
+                        when (sheetState.swipeableState.progress.to) {
+                            DrawerValue.Closed -> {
+                                sheetState.swipeableState.progress.fraction * bottomPaddingValues
+                            }
 
-                        -1F -> {
-                            bottomPaddingValues * (1 - sheetState.swipeableState.progress.fraction)
-                        }
-
-                        else -> {
-                            if (sheetState.isOpen || imeVisible) {
-                                0.dp
-                            } else {
-                                bottomPaddingValues
+                            DrawerValue.Open -> {
+                                bottomPaddingValues * (1 - sheetState.swipeableState.progress.fraction)
                             }
                         }
                     }
                 }
             }
-//            val bottomPadding = animateDpAsState(
-//                targetValue = if (sheetState.isOpen || WindowInsets.isImeVisible) 0.dp else paddingValues.calculateBottomPadding(),
-//                label = "edit_area_bottom_padding"
-//            )
             val sheetHeight by remember(state.chatDetail.editAreaState) {
                 derivedStateOf { if (state.chatDetail.editAreaState.mode == EditAreaMode.LOCATION_PICKER) 320.dp else 160.dp }
             }
