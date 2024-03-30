@@ -5,9 +5,11 @@ import android.graphics.drawable.BitmapDrawable
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,6 +42,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
@@ -57,6 +61,7 @@ import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -67,6 +72,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -161,7 +167,25 @@ private fun ContactDetailPageContent(
     layoutType: ContactLayoutType,
     onMainSharedEvent: (MainSharedEvent) -> Unit
 ) {
+    val scrollState = rememberScrollState()
+    val backgroundHeightPx = with(LocalDensity.current) { 108.dp.toPx() }
+    val isScrolled by remember {
+        derivedStateOf { scrollState.value > backgroundHeightPx }
+    }
     var isBackgroundLight by remember { mutableStateOf(true) }
+    var navigationIconTint =
+        if (isBackgroundLight xor isSystemInDarkTheme()) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.inverseOnSurface
+    val navigationContentColor by animateColorAsState(targetValue = if (isScrolled) MaterialTheme.colorScheme.onSurface else navigationIconTint)
+    LaunchedEffect(isScrolled) {
+        if (layoutType == ContactLayoutType.NORMAL) {
+            if (isScrolled) {
+                systemUiController.reset()
+            } else {
+                systemUiController.setStatusBarColor(isBackgroundLight)
+
+            }
+        }
+    }
     BackHandler(layoutType == ContactLayoutType.NORMAL) {
         scaffoldNavigator.navigateBack()
         systemUiController.reset()
@@ -173,15 +197,16 @@ private fun ContactDetailPageContent(
                 title = {},
                 navigationIcon = {
                     if (layoutType == ContactLayoutType.NORMAL) {
-                        IconButton(onClick = {
-                            scaffoldNavigator.navigateBack()
-                            systemUiController.reset()
-                            onMainSharedEvent(MainSharedEvent.ShowNavigationBar(true))
-                        }) {
+                        IconButton(
+                            onClick = {
+                                scaffoldNavigator.navigateBack()
+                                systemUiController.reset()
+                                onMainSharedEvent(MainSharedEvent.ShowNavigationBar(true))
+                            }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                                 contentDescription = "back",
-                                tint = if (isBackgroundLight) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.inverseOnSurface
+                                tint = navigationContentColor
                             )
                         }
                     }
@@ -190,7 +215,7 @@ private fun ContactDetailPageContent(
             )
         },
         containerColor = MaterialTheme.colorScheme.surfaceContainer
-    ) {  innerPadding ->
+    ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
             AsyncImage(
                 modifier = Modifier
@@ -202,7 +227,7 @@ private fun ContactDetailPageContent(
                     .build(),
                 contentDescription = "avatar_bg", contentScale = ContentScale.Crop,
                 onSuccess = {
-                    if(layoutType == ContactLayoutType.NORMAL) {
+                    if (layoutType == ContactLayoutType.NORMAL) {
                         (it.result.drawable as? BitmapDrawable)?.bitmap?.also { bitmap ->
                             isBackgroundLight = ImageUtil.checkBitmapLight(bitmap)
                             systemUiController.setStatusBarColor(isBackgroundLight)
@@ -211,7 +236,7 @@ private fun ContactDetailPageContent(
                 }
             )
             Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
+                modifier = Modifier.verticalScroll(scrollState),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box(
