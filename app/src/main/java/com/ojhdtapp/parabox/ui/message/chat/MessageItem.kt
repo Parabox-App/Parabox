@@ -212,7 +212,7 @@ fun MessageItem(
                 }
             }
             Spacer(modifier = Modifier.width(8.dp))
-            Column(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
                 var isMenuVisible by rememberSaveable { mutableStateOf(false) }
                 DisableSelection {
                     MessageDropdownMenu(
@@ -239,8 +239,8 @@ fun MessageItem(
                             }
                         }
                     }
+                    Spacer(modifier = Modifier.height(4.dp))
                 }
-                Spacer(modifier = Modifier.height(4.dp))
                 Surface(
                     modifier = Modifier.layout { measurable, constraints ->
                         val placeable = measurable.measure(

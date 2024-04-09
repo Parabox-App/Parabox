@@ -314,7 +314,7 @@ fun Toolbar(
                                 } else {
                                     items(items = state.memeList) {
                                         Surface(
-                                            modifier = Modifier.animateItemPlacement(),
+                                            modifier = Modifier.animateItem(),
                                             color = MaterialTheme.colorScheme.secondaryContainer,
                                             tonalElevation = 3.dp,
                                             shape = RoundedCornerShape(16.dp)
@@ -378,7 +378,7 @@ fun Toolbar(
                                                 modifier = Modifier
                                                     .fillMaxHeight()
                                                     .width(96.dp)
-                                                    .animateItemPlacement(),
+                                                    .animateItem(),
                                                 horizontalAlignment = Alignment.CenterHorizontally,
                                                 verticalArrangement = Arrangement.Center
                                             ) {

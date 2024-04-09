@@ -23,8 +23,10 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.content.MediaType
-import androidx.compose.foundation.content.consumeEach
-import androidx.compose.foundation.content.receiveContent
+import androidx.compose.foundation.content.ReceiveContentListener
+import androidx.compose.foundation.content.TransferableContent
+import androidx.compose.foundation.content.consume
+import androidx.compose.foundation.content.contentReceiver
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -48,9 +50,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.TextFieldDecorator
-import androidx.compose.foundation.text.input.forEachTextValue
-import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.foundation.text.input.textAsFlow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.NavigateNext
 import androidx.compose.material.icons.automirrored.outlined.Send
@@ -492,7 +491,7 @@ fun EditArea(
                                                 items = state.chosenImageList,
                                                 key = { index, item -> item }) { index, item ->
                                                 ImageSendingLayout(
-                                                    modifier = Modifier.animateItemPlacement(),
+                                                    modifier = Modifier.animateItem(),
                                                     model = item,
                                                     previewIndex = index,
                                                     onClick = { },
@@ -504,21 +503,19 @@ fun EditArea(
                                         }
                                     }
                                     val interactionSource = remember { MutableInteractionSource() }
-                                    LaunchedEffect(Unit) {
-                                        state.input.forEachTextValue {
+                                    LaunchedEffect(state.input.text) {
                                             when {
                                                 // can be optimized
-                                                it.length > 6 -> {
+                                                state.input.text.length > 6 -> {
                                                     if (!state.iconShrink) {
                                                         onEvent(MessagePageEvent.UpdateIconShrink(true))
                                                     }
                                                 }
 
-                                                it.isEmpty() -> {
+                                                state.input.text.isEmpty() -> {
                                                     onEvent(MessagePageEvent.UpdateIconShrink(false))
                                                 }
                                             }
-                                        }
                                     }
                                     BasicTextField(
                                         modifier = Modifier
@@ -526,8 +523,8 @@ fun EditArea(
                                                 minWidth = TextFieldDefaults.MinWidth,
                                                 minHeight = TextFieldDefaults.MinHeight
                                             )
-                                            .receiveContent(setOf(MediaType.All)) { content ->
-                                                content.consumeEach {
+                                            .contentReceiver { transferableContent ->
+                                                transferableContent.consume {
                                                     it.uri?.let {
                                                         onEvent(MessagePageEvent.ChooseImageUri(it))
                                                         true

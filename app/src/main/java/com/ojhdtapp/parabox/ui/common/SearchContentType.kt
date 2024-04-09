@@ -198,7 +198,8 @@ fun RecentSearchContent(
                             trailingIcon = {
                                 Icon(modifier = Modifier.clickable {
                                     onEvent(MainSharedEvent.DeleteRecentQuery(it.id))
-                                }, imageVector = Icons.Outlined.Close, contentDescription = "delete recent query")
+                                }, imageVector = Icons.Outlined.Close, contentDescription = "delete recent query",
+                                tint = MaterialTheme.colorScheme.onSurface)
                             }
                         ) {
                             onEvent(MainSharedEvent.SearchConfirm(it.value))
@@ -498,7 +499,8 @@ fun TypingSearchContent(
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = "无搜索结果",
-                        style = MaterialTheme.typography.bodyLarge
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -1016,7 +1018,8 @@ fun DoneSearchMessageContent(
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = "无搜索结果",
-                        style = MaterialTheme.typography.bodyLarge
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -1108,7 +1111,8 @@ fun DoneSearchContactContent(
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = "无搜索结果",
-                        style = MaterialTheme.typography.bodyLarge
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -1213,7 +1217,8 @@ fun DoneSearchChatContent(
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = "无搜索结果",
-                        style = MaterialTheme.typography.bodyLarge
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }

@@ -265,7 +265,7 @@ class MessagePageViewModel @Inject constructor(
 
             is MessagePageEvent.AppendEditAreaInput -> {
                 state.chatDetail.editAreaState.input.edit {
-                    insert(this.selectionInChars.end, event.input)
+                    insert(this.selection.end, event.input)
                 }
                 state.copy(
                     chatDetail = state.chatDetail.copy(

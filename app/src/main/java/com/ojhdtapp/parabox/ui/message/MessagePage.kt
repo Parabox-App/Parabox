@@ -380,7 +380,7 @@ fun MessagePage(
                                     onEvent = viewModel::sendEvent,
                                     onDismiss = { isMenuVisible = false })
                                 PinnedChatItems(
-                                    modifier = Modifier.animateItemPlacement(),
+                                    modifier = Modifier.animateItem(),
                                     chat = item,
                                     onClick = {
                                         viewModel.sendEvent(MessagePageEvent.LoadMessage(item))
@@ -457,6 +457,7 @@ fun MessagePage(
                                 bottomStart = bottomRadius
                             )
                         )
+                        .animateItem()
                 ) {
                     val item = chatLazyPagingData[index]
                     if (item == null) {
