@@ -196,13 +196,13 @@ fun MessageItem(
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.Start
         ) {
-            Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .clip(CircleShape)
-                    .clickable { }
-            ) {
-                if (isFirst) {
+            if (isFirst) {
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(CircleShape)
+                        .clickable { }
+                ) {
                     CommonAvatar(
                         model = CommonAvatarModel(
                             model = messageWithSender.sender.avatar.getModel(),
@@ -210,6 +210,8 @@ fun MessageItem(
                         )
                     )
                 }
+            } else {
+                Spacer(modifier = Modifier.width(42.dp))
             }
             Spacer(modifier = Modifier.width(8.dp))
             Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
@@ -271,7 +273,7 @@ fun MessageItem(
                         }
                     }
                 ) {
-                    Column {
+                    Column(horizontalAlignment = Alignment.Start) {
                         LaunchedEffect(Unit) {
                             messageWithSender.message.contents.filterIsInstance<ParaboxAt>().forEach {
                                 if (!state.atCache.containsKey("${messageWithSender.sender.pkg}${it.target.uid}")) {
@@ -307,6 +309,7 @@ fun MessageItem(
                         }
                     }
                 }
+                Spacer(modifier = Modifier.height(2.dp))
                 AnimatedVisibility(
                     visible = isLast,
                     enter = expandVertically(),

@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -28,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -253,7 +255,7 @@ class MainActivity : AppCompatActivity() {
                         LocalFixedInsets provides fixedInsets,
                         LocalAudioRecorder provides AudioRecorder,
                         LocalSystemUiController provides SystemUiController(LocalContext.current as MainActivity),
-                        LocalMinimumInteractiveComponentEnforcement provides false,
+                        LocalMinimumInteractiveComponentSize provides 32.dp,
                         LocalFontSize provides FontSize()
                     )
                 ) {
