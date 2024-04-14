@@ -157,55 +157,6 @@ fun MessagePage(
         atEnd = mainSharedState.search.isActive
     )
 
-    EnabledChatFilterDialog(
-        openDialog = state.openEnabledChatFilterDialog,
-        enabledList = mainSharedState.datastore.enabledChatFilterList,
-        onConfirm = {
-            mainSharedViewModel.sendEvent(MainSharedEvent.UpdateEnabledChatFilterList(it))
-            viewModel.sendEvent(MessagePageEvent.UpdateSelectedChatFilter(
-                state.selectedChatFilterLists.toMutableList().apply {
-                    retainAll(it)
-                    if (isEmpty()) {
-                        add(ChatFilter.Normal)
-                    }
-                }
-            ))
-            viewModel.sendEvent(MessagePageEvent.OpenEnabledChatFilterDialog(false))
-        },
-        onDismiss = {
-            viewModel.sendEvent(
-                MessagePageEvent.OpenEnabledChatFilterDialog(
-                    false
-                )
-            )
-        }
-    )
-
-    val openEditTagDialog by remember {
-        derivedStateOf {
-            state.editingChatTags != null
-        }
-    }
-
-    EditChatTagsDialog(
-        openDialog = openEditTagDialog,
-        tags = state.editingChatTags?.tags ?: emptyList(),
-        onConfirm = {
-            coroutineScope.launch {
-                viewModel.sendEvent(
-                    MessagePageEvent.UpdateChatTags(
-                        state.editingChatTags!!.chatId,
-                        it,
-                        state.editingChatTags!!.tags
-                    )
-                )
-            }
-            viewModel.sendEvent(MessagePageEvent.UpdateEditingChatTags(null))
-        },
-        onDismiss = {
-            viewModel.sendEvent(MessagePageEvent.UpdateEditingChatTags(null))
-        })
-
     Scaffold(
         modifier = modifier,
         snackbarHost = { SnackbarHost(modifier = Modifier.offset(y = 80.dp), hostState = snackBarHostState) },

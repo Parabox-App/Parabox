@@ -298,13 +298,15 @@ fun InfoSettingArea(
             }
         }
         SettingHeader(text = "标签")
-        FlowRow(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            infoAreaState.realTimeChat?.tags?.forEach {
-                MyFilterChip(
-                    selected = false,
-                    label = { Text(text = it) }
-                ) {}
+        if (infoAreaState.realTimeChat?.tags?.isNotEmpty() == true) {
+            FlowRow(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                infoAreaState.realTimeChat?.tags?.forEach {
+                    MyFilterChip(
+                        selected = false,
+                        label = { Text(text = it) }
+                    ) {}
+                }
             }
         }
         SettingItem(

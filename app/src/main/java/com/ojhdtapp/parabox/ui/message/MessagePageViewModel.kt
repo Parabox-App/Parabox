@@ -263,15 +263,19 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.LoadMessage -> {
-                    return state.copy(
-                        chatDetail = state.chatDetail.copy(
-                            chat = event.chat,
-                            editAreaState = state.chatDetail.editAreaState.copy(
-                                memeList = refreshMemeList()
-                            )
-                        )
-                    )
+                if (state.chatDetail.infoAreaState.expanded) {
+                    cancelRealTimeChatCollection()
                 }
+                return state.copy(
+                    chatDetail = state.chatDetail.copy(
+                        chat = event.chat,
+                        editAreaState = state.chatDetail.editAreaState.copy(
+                            memeList = refreshMemeList()
+                        ),
+                        infoAreaState = MessagePageState.InfoAreaState()
+                    )
+                )
+            }
 
 
             is MessagePageEvent.OpenEditArea -> {
@@ -750,12 +754,18 @@ class MessagePageViewModel @Inject constructor(
 
     private var realTimeChatCollectionJob: Job? = null
     private fun beginRealTimeChatCollection(chatId: Long) {
+        realTimeChatCollectionJob?.cancel()
         realTimeChatCollectionJob = viewModelScope.launch(Dispatchers.IO) {
             getChat.byId(chatId).collectLatest {
                 if (it is Resource.Success) {
                     sendEvent(MessagePageEvent.UpdateInfoAreaRealTimeChat(it.data, LoadState.SUCCESS))
                 } else if (it is Resource.Error) {
-                    sendEvent(MessagePageEvent.UpdateInfoAreaRealTimeChat(uiState.value.chatDetail.infoAreaState.realTimeChat, LoadState.ERROR))
+                    sendEvent(
+                        MessagePageEvent.UpdateInfoAreaRealTimeChat(
+                            uiState.value.chatDetail.infoAreaState.realTimeChat,
+                            LoadState.ERROR
+                        )
+                    )
                 }
             }
         }

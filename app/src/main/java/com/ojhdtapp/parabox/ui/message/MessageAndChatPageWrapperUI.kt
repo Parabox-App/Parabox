@@ -17,17 +17,20 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import calculateMyStandardPaneScaffoldDirective
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
+import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.message.chat.ChatPage
 import com.ojhdtapp.parabox.ui.navigation.DefaultMenuComponent
 import com.ojhdtapp.parabox.ui.navigation.MenuComponent
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
@@ -39,6 +42,7 @@ fun MessageAndChatPageWrapperUI(
     stackState: ChildStack<*, MenuComponent.MenuChild>
 ) {
 //    val viewModel = hiltViewModel<MessagePageViewModel>()
+    val coroutineScope = rememberCoroutineScope()
     val state by viewModel.uiState.collectAsState()
     val mainSharedState by mainSharedViewModel.uiState.collectAsState()
     val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<Nothing>(
@@ -56,6 +60,49 @@ fun MessageAndChatPageWrapperUI(
             }
         }
     }
+
+    EnabledChatFilterDialog(
+        openDialog = state.openEnabledChatFilterDialog,
+        enabledList = mainSharedState.datastore.enabledChatFilterList,
+        onConfirm = {
+            mainSharedViewModel.sendEvent(MainSharedEvent.UpdateEnabledChatFilterList(it))
+            viewModel.sendEvent(MessagePageEvent.UpdateSelectedChatFilter(
+                state.selectedChatFilterLists.toMutableList().apply {
+                    retainAll(it)
+                    if (isEmpty()) {
+                        add(ChatFilter.Normal)
+                    }
+                }
+            ))
+            viewModel.sendEvent(MessagePageEvent.OpenEnabledChatFilterDialog(false))
+        },
+        onDismiss = {
+            viewModel.sendEvent(
+                MessagePageEvent.OpenEnabledChatFilterDialog(
+                    false
+                )
+            )
+        }
+    )
+
+    EditChatTagsDialog(
+        openDialog = state.editingChatTags != null,
+        tags = state.editingChatTags?.tags ?: emptyList(),
+        onConfirm = {
+            coroutineScope.launch {
+                viewModel.sendEvent(
+                    MessagePageEvent.UpdateChatTags(
+                        state.editingChatTags!!.chatId,
+                        it,
+                        state.editingChatTags!!.tags
+                    )
+                )
+            }
+            viewModel.sendEvent(MessagePageEvent.UpdateEditingChatTags(null))
+        },
+        onDismiss = {
+            viewModel.sendEvent(MessagePageEvent.UpdateEditingChatTags(null))
+        })
 
     ListDetailPaneScaffold(
         directive = scaffoldNavigator.scaffoldDirective,
