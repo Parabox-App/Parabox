@@ -1,14 +1,12 @@
 package com.ojhdtapp.parabox.ui.message
 
 import android.net.Uri
-import androidx.compose.ui.text.input.TextFieldValue
 import com.google.android.gms.maps.model.LatLng
 import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.data.local.entity.ChatTagsUpdate
 import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
-import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.base.UiEvent
 import com.ojhdtapp.parabox.ui.message.chat.AudioRecorderState
 import com.ojhdtapp.parabox.ui.message.chat.EditAreaMode
@@ -26,10 +24,13 @@ sealed interface MessagePageEvent : UiEvent {
     data class UpdateChatPin(val chatId: Long, val value: Boolean, val oldValue: Boolean) : MessagePageEvent
     data class UpdateChatArchive(val chatId: Long, val value: Boolean, val oldValue: Boolean) : MessagePageEvent
     data class UpdateChatTags(val chatId: Long, val value: List<String>, val oldValue: List<String>) : MessagePageEvent
+    data class UpdateChatNotificationEnabled(val chatId: Long, val value: Boolean, val oldValue: Boolean) : MessagePageEvent
     data class ShowChatDetail(val chatId: Long, val detail: Chat): MessagePageEvent
     data class UpdateEditingChatTags(val obj: ChatTagsUpdate?): MessagePageEvent
     data class LoadMessage(val chat: Chat): MessagePageEvent
     data class OpenEditArea(val open: Boolean): MessagePageEvent
+    data class OpenInfoArea(val open: Boolean) : MessagePageEvent
+    data class UpdateInfoAreaRealTimeChat(val chat: Chat?, val loadState: LoadState): MessagePageEvent
     data class AppendEditAreaInput(val input: String): MessagePageEvent
     @Deprecated("Use AppendEditAreaInput instead")
     data class UpdateEditAreaInput(val input: String): MessagePageEvent
@@ -47,12 +48,12 @@ sealed interface MessagePageEvent : UiEvent {
     data class ShowVoicePermissionDeniedDialog(val open: Boolean): MessagePageEvent
     data class ShowLocationPermissionDeniedDialog(val open: Boolean): MessagePageEvent
     data class UpdateIconShrink(val shouldShrink: Boolean): MessagePageEvent
-    object SendMessage: MessagePageEvent
+    data object SendMessage: MessagePageEvent
     data class SendAudioMessage(val audioFile: File): MessagePageEvent
     data class SendMemeMessage(val imageUri: Uri): MessagePageEvent
     data class SendFileMessage(val fileUri: Uri, val size: Long, val name: String): MessagePageEvent
     data class AddOrRemoveSelectedMessage(val msg: Message) : MessagePageEvent
-    object ClearSelectedMessage : MessagePageEvent
+    data object ClearSelectedMessage : MessagePageEvent
     data class UpdateLocation(val location: LatLng): MessagePageEvent
     data class UpdateSelectedLocation(val location: LatLng): MessagePageEvent
     data class UpdateSelectedLocationAddress(val address: String, val loadState: LoadState): MessagePageEvent

@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.Flow
 interface ChatRepository {
     fun getChatPagingSource(filter: List<ChatFilter>) : PagingSource<Int, ChatWithLatestMessageEntity>
     fun getPinnedChatPagingSource() : PagingSource<Int, ChatEntity>
+    fun getChatById(id: Long) : Flow<Resource<Chat>>
     fun queryChatWithLimit(query: String, limit: Int): Flow<Resource<List<Chat>>>
     fun getChatWithLimit(limit: Int): Flow<Resource<List<Chat>>>
     fun getNotificationDisabledChat(): Flow<Resource<List<Chat>>>

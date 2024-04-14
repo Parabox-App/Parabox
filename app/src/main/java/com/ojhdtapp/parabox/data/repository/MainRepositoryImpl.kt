@@ -6,7 +6,6 @@ import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.parabox.core.util.getDataStoreValue
 import com.ojhdtapp.parabox.data.local.AppDatabase
-import com.ojhdtapp.parabox.data.local.ExtensionInfo
 import com.ojhdtapp.parabox.data.local.buildChatEntity
 import com.ojhdtapp.parabox.data.local.buildContactEntity
 import com.ojhdtapp.parabox.data.local.buildMessageEntity
@@ -95,7 +94,7 @@ class MainRepositoryImpl @Inject constructor(
 
             if (chatIdDeferred.await() != -1L) {
                 launch(Dispatchers.IO) {
-                    val originalChat = db.chatDao.getChatById(chatIdDeferred.await())
+                    val originalChat = db.chatDao.getChatByIdWithoutObserve(chatIdDeferred.await())
                     if (originalChat?.name?.isNotEmpty() != true || originalChat.avatar is ParaboxResourceInfo.ParaboxEmptyInfo) {
                         val basicInfo = when (originalChat?.type) {
                             ParaboxChat.TYPE_PRIVATE -> ext.ext.onGetUserBasicInfo(msg.sender.uid)

@@ -181,17 +181,25 @@ fun MessagePage(
         }
     )
 
+    val openEditTagDialog by remember {
+        derivedStateOf {
+            state.editingChatTags != null
+        }
+    }
+
     EditChatTagsDialog(
-        openDialog = state.editingChatTags != null,
+        openDialog = openEditTagDialog,
         tags = state.editingChatTags?.tags ?: emptyList(),
         onConfirm = {
-            viewModel.sendEvent(
-                MessagePageEvent.UpdateChatTags(
-                    state.editingChatTags!!.chatId,
-                    it,
-                    state.editingChatTags!!.tags
+            coroutineScope.launch {
+                viewModel.sendEvent(
+                    MessagePageEvent.UpdateChatTags(
+                        state.editingChatTags!!.chatId,
+                        it,
+                        state.editingChatTags!!.tags
+                    )
                 )
-            )
+            }
             viewModel.sendEvent(MessagePageEvent.UpdateEditingChatTags(null))
         },
         onDismiss = {

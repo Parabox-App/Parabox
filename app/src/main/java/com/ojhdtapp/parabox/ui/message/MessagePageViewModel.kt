@@ -5,10 +5,8 @@ import android.net.Uri
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.delete
 import androidx.compose.foundation.text.input.insert
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.core.net.toUri
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
@@ -236,6 +234,29 @@ class MessagePageViewModel @Inject constructor(
                 }
             }
 
+            is MessagePageEvent.UpdateChatNotificationEnabled -> {
+                coroutineScope {
+                    val res = withContext(Dispatchers.IO) {
+                        updateChat.notificationEnabled(event.chatId, event.value)
+                    }
+                    if (res) {
+                        sendEffect(
+                            MessagePageEffect.ShowSnackBar(
+                                message = "操作成功",
+                                label = context.getString(R.string.cancel),
+                                callback = {
+                                    launch(Dispatchers.IO) {
+                                        updateChat.archive(event.chatId, event.oldValue)
+                                    }
+                                })
+                        )
+                    } else {
+                        sendEffect(MessagePageEffect.ShowSnackBar(message = "操作失败"))
+                    }
+                    state
+                }
+            }
+
             is MessagePageEvent.ShowChatDetail -> {
                 Toast.makeText(context, event.detail.chatId.toString(), Toast.LENGTH_SHORT).show()
                 state
@@ -258,6 +279,34 @@ class MessagePageViewModel @Inject constructor(
                     chatDetail = state.chatDetail.copy(
                         editAreaState = state.chatDetail.editAreaState.copy(
                             expanded = event.open
+                        )
+                    )
+                )
+            }
+
+            is MessagePageEvent.OpenInfoArea -> {
+                if (event.open) {
+                    state.chatDetail.chat?.let { beginRealTimeChatCollection(it.chatId) }
+                } else {
+                    cancelRealTimeChatCollection()
+                }
+                state.copy(
+                    chatDetail = state.chatDetail.copy(
+                        infoAreaState = state.chatDetail.infoAreaState.copy(
+                            expanded = event.open,
+                            realTimeChat = state.chatDetail.chat,
+                            loadState = LoadState.SUCCESS
+                        )
+                    )
+                )
+            }
+
+            is MessagePageEvent.UpdateInfoAreaRealTimeChat -> {
+                state.copy(
+                    chatDetail = state.chatDetail.copy(
+                        infoAreaState = state.chatDetail.infoAreaState.copy(
+                            realTimeChat = event.chat,
+                            loadState = event.loadState
                         )
                     )
                 )
@@ -697,6 +746,23 @@ class MessagePageViewModel @Inject constructor(
         ).reversed().map {
             it.toUri()
         }
+    }
+
+    private var realTimeChatCollectionJob: Job? = null
+    private fun beginRealTimeChatCollection(chatId: Long) {
+        realTimeChatCollectionJob = viewModelScope.launch(Dispatchers.IO) {
+            getChat.byId(chatId).collectLatest {
+                if (it is Resource.Success) {
+                    sendEvent(MessagePageEvent.UpdateInfoAreaRealTimeChat(it.data, LoadState.SUCCESS))
+                } else if (it is Resource.Error) {
+                    sendEvent(MessagePageEvent.UpdateInfoAreaRealTimeChat(uiState.value.chatDetail.infoAreaState.realTimeChat, LoadState.ERROR))
+                }
+            }
+        }
+    }
+
+    private fun cancelRealTimeChatCollection() {
+        realTimeChatCollectionJob?.cancel()
     }
 
     @OptIn(ExperimentalFoundationApi::class)

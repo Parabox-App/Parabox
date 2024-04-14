@@ -54,7 +54,10 @@ interface ChatDao {
     fun getPinnedChatPagingSource(): PagingSource<Int, ChatEntity>
 
     @Query("SELECT * FROM chat_entity WHERE chatId = :id LIMIT 1")
-    suspend fun getChatById(id: Long): ChatEntity?
+    suspend fun getChatByIdWithoutObserve(id: Long): ChatEntity?
+
+    @Query("SELECT * FROM chat_entity WHERE chatId = :id LIMIT 1")
+    fun getChatById(id: Long): Flow<ChatEntity?>
 
     @Query("SELECT * FROM chat_entity WHERE chatId IN (:ids)")
     suspend fun getChatsByIds(ids: List<Long>): List<ChatEntity>

@@ -52,6 +52,10 @@ class GetChat @Inject constructor(
             }
     }
 
+    fun byId(chatId: Long): Flow<Resource<Chat>> {
+        return repository.getChatById(chatId)
+    }
+
     fun containsContact(contactId: Long) : Flow<Resource<List<Chat>>> {
         return repository.containsContact(contactId)
     }

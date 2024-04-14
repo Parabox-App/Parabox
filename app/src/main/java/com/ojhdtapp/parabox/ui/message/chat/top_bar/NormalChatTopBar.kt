@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -29,7 +30,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -90,29 +90,11 @@ fun NormalChatTopBar(
                 if (num > 0) {
                     Text(text = num.toString(), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 } else {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (shouldDisplayAvatar) {
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CommonAvatar(
-                                    model = CommonAvatarModel(
-                                        model = chatDetail.chat?.avatar?.getModel(),
-                                        name = chatDetail.chat?.name ?: ""
-                                    )
-                                )
-                            }
-                            Spacer(modifier = Modifier.size(8.dp))
-                        }
-                        Text(
-                            text = chatDetail.chat?.name ?: "",
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
+                    Text(
+                        text = chatDetail.chat?.name ?: "",
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
             }
         },
@@ -133,6 +115,25 @@ fun NormalChatTopBar(
                     imageVector = Icons.Outlined.Search,
                     contentDescription = "search"
                 )
+            }
+            IconButton(onClick = { onEvent(MessagePageEvent.OpenInfoArea(true)) }) {
+                if (shouldDisplayAvatar) {
+                    Box(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clip(CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CommonAvatar(
+                            model = CommonAvatarModel(
+                                model = chatDetail.chat?.avatar?.getModel(),
+                                name = chatDetail.chat?.name ?: ""
+                            )
+                        )
+                    }
+                } else {
+                    Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = "more")
+                }
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(

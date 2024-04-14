@@ -2,14 +2,11 @@ package com.ojhdtapp.parabox.ui.message.chat
 
 import android.util.Log
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -18,8 +15,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.imeNestedScroll
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
@@ -34,31 +29,25 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowDownward
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
 import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.material3.surfaceColorAtElevation
-import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
@@ -70,12 +59,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
-import androidx.navigation.NavController
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
-import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.common.DismissibleBottomSheet
 import com.ojhdtapp.parabox.ui.common.LocalSystemUiController
 import com.ojhdtapp.parabox.ui.common.MyModalNavigationDrawerReverse
@@ -186,7 +173,8 @@ fun NormalChatPage(
     }
     val messageLazyPagingItems = viewModel.messagePagingDataFlow.collectAsLazyPagingItems()
     LaunchedEffect(messageLazyPagingItems.itemCount) {
-        if (lazyListState.firstVisibleItemIndex == 1 && lazyListState.firstVisibleItemScrollOffset < 50) {
+        if (lazyListState.firstVisibleItemIndex == 1 && lazyListState.firstVisibleItemScrollOffset < 100) {
+            delay(50)
             lazyListState.animateScrollToItem(0)
         }
     }
@@ -226,6 +214,17 @@ fun NormalChatPage(
             sheetState.close()
         }
     }
+    // the same to drawer state
+    LaunchedEffect(drawerState.isOpen) {
+        onEvent(MessagePageEvent.OpenInfoArea(drawerState.isOpen))
+    }
+    LaunchedEffect(state.chatDetail.infoAreaState) {
+        if (state.chatDetail.infoAreaState.expanded && !drawerState.isOpen) {
+            drawerState.open()
+        } else if (!state.chatDetail.infoAreaState.expanded && drawerState.isOpen){
+            drawerState.close()
+        }
+    }
     // close edit area each time ime is visible
     val imeVisible by imeVisibleAsState()
     LaunchedEffect(imeVisible) {
@@ -259,8 +258,25 @@ fun NormalChatPage(
                 modifier = Modifier
                     .width(360.dp)
                     .fillMaxHeight()
-                    .background(Color.Green)
-            )
+            ) {
+                if (state.chatDetail.chat != null) {
+                    InfoArea(
+                        modifier = Modifier.fillMaxSize()
+                            .clip(
+                                RoundedCornerShape(
+                                    topStart = 24.dp,
+                                    topEnd = 0.dp,
+                                    bottomStart = 24.dp,
+                                    bottomEnd = 0.dp
+                                )
+                            )
+                            .background(MaterialTheme.colorScheme.surfaceContainerLow),
+                        infoAreaState = state.chatDetail.infoAreaState,
+                        imageSnapshotList = state.chatDetail.imagePreviewerState.imageSnapshotList,
+                        onEvent = onEvent
+                    )
+                }
+            }
         },
         gesturesEnabled = state.chatDetail.editAreaState.audioRecorderState !is AudioRecorderState.Recording,
         drawerState = drawerState,
@@ -308,7 +324,7 @@ fun NormalChatPage(
             DismissibleBottomSheet(
                 sheetContent = {
                     Crossfade(
-                        modifier = Modifier.background(MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)),
+                        modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh),
                         targetState = state.chatDetail.editAreaState.mode == EditAreaMode.LOCATION_PICKER,
                         label = "location toolbar"
                     ) {

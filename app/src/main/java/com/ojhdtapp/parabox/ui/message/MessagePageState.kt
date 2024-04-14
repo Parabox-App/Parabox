@@ -30,11 +30,13 @@ data class MessagePageState(
 
 
     data class ChatDetail(
+        // the chat that is currently being viewed, but will not follow the latest database update
         val chat: Chat? = null,
         val selectedMessageList: List<Message> = emptyList(),
         val openDeleteMessageConfirmDialog: Boolean = false,
         val imagePreviewerState: ImagePreviewerState = ImagePreviewerState(),
         val editAreaState: EditAreaState = EditAreaState(),
+        val infoAreaState: InfoAreaState = InfoAreaState(),
         val atCache: Map<String, Resource<Contact>> = emptyMap(),
     )
 
@@ -52,6 +54,12 @@ data class MessagePageState(
         val toolbarState: ToolbarState = ToolbarState.Tools,
         val iconShrink: Boolean = false,
         val mode: EditAreaMode = EditAreaMode.NORMAL
+    )
+
+    data class InfoAreaState(
+        val expanded: Boolean = false,
+        val realTimeChat: Chat? = null,
+        val loadState: LoadState = LoadState.LOADING,
     )
 
     data class ImagePreviewerState(
