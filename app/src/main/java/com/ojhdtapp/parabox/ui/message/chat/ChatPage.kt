@@ -195,7 +195,25 @@ fun NormalChatPage(
     )
     LaunchedEffect(previewerState.currentPage) {
         Log.d("parabox", "gettingIndex=${previewerState.currentPage}/${state.chatDetail.imagePreviewerState.imageSnapshotList.lastIndex}")
-        if (state.chatDetail.imagePreviewerState.imageSnapshotList.isNotEmpty() && previewerState.currentPage == state.chatDetail.imagePreviewerState.imageSnapshotList.lastIndex) {
+        if (state.chatDetail.imagePreviewerState.imageSnapshotList.isEmpty()) {
+            delay(500)
+            refreshImageSnapshotList(
+                elementId = null,
+                oldList = emptyList(),
+                messageLazyPagingItems = messageLazyPagingItems,
+                onEvent = onEvent
+            )
+        } else if (previewerState.currentPage == 0) {
+//            val imagePreviewerItem = state.chatDetail.imagePreviewerState.imageSnapshotList.first()
+//            messageLazyPagingItems.get(imagePreviewerItem.indexInPaging)
+//            delay(100)
+//            refreshImageSnapshotList(
+//                elementId = imagePreviewerItem.elementId,
+//                oldList = state.chatDetail.imagePreviewerState.imageSnapshotList,
+//                messageLazyPagingItems = messageLazyPagingItems,
+//                onEvent = onEvent
+//            )
+        } else if (previewerState.currentPage == state.chatDetail.imagePreviewerState.imageSnapshotList.lastIndex) {
             val imagePreviewerItem = state.chatDetail.imagePreviewerState.imageSnapshotList.last()
             messageLazyPagingItems.get(imagePreviewerItem.indexInPaging)
             delay(100)
@@ -477,7 +495,7 @@ fun NormalChatPage(
 }
 
 suspend fun refreshImageSnapshotList(
-    elementId: Long,
+    elementId: Long?,
     oldList: List<MessagePageState.ImagePreviewerState.ImagePreviewerItem>,
     messageLazyPagingItems: LazyPagingItems<ChatPageUiModel>,
     onEvent: (MessagePageEvent) -> Unit
@@ -513,12 +531,10 @@ suspend fun refreshImageSnapshotList(
         "parabox",
         "image clicked;index: ${targetElementIndex}"
     )
-    if (targetElementIndex > -1) {
-        onEvent(
-            MessagePageEvent.UpdateImagePreviewerSnapshotList(
-                newList,
-                targetElementIndex
-            )
+    onEvent(
+        MessagePageEvent.UpdateImagePreviewerSnapshotList(
+            newList,
+            targetElementIndex
         )
-    }
+    )
 }
