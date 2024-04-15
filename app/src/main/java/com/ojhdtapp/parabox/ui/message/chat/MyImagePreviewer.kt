@@ -1,21 +1,18 @@
 package com.ojhdtapp.parabox.ui.message.chat
 
-import android.os.Build
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.MoreVert
@@ -28,44 +25,25 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
-import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.net.toFile
-import androidx.paging.compose.LazyPagingItems
-import androidx.paging.compose.itemContentType
-import coil.ImageLoader
 import coil.compose.rememberAsyncImagePainter
-import coil.decode.GifDecoder
-import coil.decode.ImageDecoderDecoder
 import coil.request.ImageRequest
 import coil.size.Size
 import com.ojhdtapp.parabox.R
-import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.ui.common.LocalSystemUiController
-import com.ojhdtapp.parabox.ui.common.RoundedCornerCascadeDropdownMenu
 import com.ojhdtapp.parabox.ui.message.MessageLayoutType
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageState
-import com.ojhdtapp.parabox.ui.message.chat.contents_layout.model.ChatPageUiModel
-import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 import com.origeek.imageViewer.previewer.ImagePreviewer
 import com.origeek.imageViewer.previewer.ImagePreviewerState
-import com.origeek.imageViewer.previewer.rememberPreviewerState
 import kotlinx.coroutines.launch
 import me.saket.cascade.CascadeDropdownMenu
 
@@ -94,10 +72,12 @@ fun MyImagePreviewer(
         state = previewerState,
         imageLoader = { index ->
             if (index < state.imageSnapshotList.size) {
-                val t = state.imageSnapshotList[index].second
+                val imageItem = state.imageSnapshotList[index]
+                if (index == state.imageSnapshotList.lastIndex) {
+                }
                 rememberAsyncImagePainter(
                     model = ImageRequest.Builder(context)
-                        .data(t.resourceInfo.getModel())
+                        .data(imageItem.image.resourceInfo.getModel())
                         .size(Size.ORIGINAL)
                         .build(),
                     error = painterResource(id = R.drawable.image_lost),
@@ -166,7 +146,7 @@ fun MyImagePreviewer(
                                             onEvent(MessagePageEvent.ExpandImagePreviewerMenu(false))
                                             try {
                                                 val image =
-                                                    state.imageSnapshotList.getOrNull(current)?.second
+                                                    state.imageSnapshotList.getOrNull(current)?.image
                                                         ?: throw NoSuchElementException("id lost")
                                                 // TODO: downloader
                                                 when (image.resourceInfo) {
@@ -208,7 +188,7 @@ fun MyImagePreviewer(
                                             onEvent(MessagePageEvent.ExpandImagePreviewerMenu(false))
                                             try {
                                                 val image =
-                                                    state.imageSnapshotList.getOrNull(current)?.second
+                                                    state.imageSnapshotList.getOrNull(current)?.image
                                                         ?: throw NoSuchElementException("id lost")
                                                 onEvent(MessagePageEvent.SaveImageToLocal(image, {}, {}))
                                                 Toast.makeText(

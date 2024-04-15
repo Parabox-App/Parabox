@@ -65,10 +65,16 @@ data class MessagePageState(
     data class ImagePreviewerState(
         val showToolbar: Boolean = true,
         val expandMenu: Boolean = false,
-        val imageSnapshotList: List<Pair<Long, ParaboxImage>> = emptyList(),
+        val imageSnapshotList: List<ImagePreviewerItem> = emptyList(),
         @Deprecated("use effect instead")
         val targetElementIndex: Int = -1,
-    )
+    ) {
+        data class ImagePreviewerItem(
+            val image: ParaboxImage,
+            val elementId: Long,
+            val indexInPaging: Int,
+        )
+    }
 
     data class LocationPickerState(
         val currentLocation: LatLng = LatLng(0.0, 0.0),

@@ -47,7 +47,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
@@ -59,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
+import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import com.ojhdtapp.parabox.ui.MainSharedEvent
@@ -184,21 +184,41 @@ fun NormalChatPage(
             state.chatDetail.imagePreviewerState.imageSnapshotList.size
         },
         getKey = {
+            val imageItem = state.chatDetail.imagePreviewerState.imageSnapshotList.getOrNull(it)
+            val elementId = imageItem?.elementId ?: 0L
             if (state.chatDetail.infoAreaState.expanded) {
-                ("info_area_" + state.chatDetail.imagePreviewerState.imageSnapshotList.getOrNull(it)?.first)
+                ("info_area_$elementId")
             } else {
-                state.chatDetail.imagePreviewerState.imageSnapshotList.getOrNull(it)?.first ?: 0L
+                elementId
             }
         }
     )
+    LaunchedEffect(previewerState.currentPage) {
+        Log.d("parabox", "gettingIndex=${previewerState.currentPage}/${state.chatDetail.imagePreviewerState.imageSnapshotList.lastIndex}")
+        if (state.chatDetail.imagePreviewerState.imageSnapshotList.isNotEmpty() && previewerState.currentPage == state.chatDetail.imagePreviewerState.imageSnapshotList.lastIndex) {
+            val imagePreviewerItem = state.chatDetail.imagePreviewerState.imageSnapshotList.last()
+            messageLazyPagingItems.get(imagePreviewerItem.indexInPaging)
+            delay(100)
+            refreshImageSnapshotList(
+                elementId = imagePreviewerItem.elementId,
+                oldList = state.chatDetail.imagePreviewerState.imageSnapshotList,
+                messageLazyPagingItems = messageLazyPagingItems,
+                onEvent = onEvent
+            )
+        }
+    }
     LaunchedEffect(Unit) {
         viewModel.uiEffect.flowWithLifecycle(lifecycleOwner.lifecycle, Lifecycle.State.STARTED).collectLatest {
             when (it) {
                 is MessagePageEffect.ImagePreviewerOpenTransform -> {
-                    if (previewerState.canOpen && it.index > -1) {
-                        previewerState.openTransform(it.index)
-                        if (layoutType == MessageLayoutType.NORMAL) {
-                            systemUiController.setStatusBarColor(false)
+                    if (it.index > -1) {
+                        if (previewerState.canOpen) {
+                            previewerState.openTransform(it.index)
+                            if (layoutType == MessageLayoutType.NORMAL) {
+                                systemUiController.setStatusBarColor(false)
+                            }
+                        } else {
+                            previewerState.scrollToPage(it.index, 0f)
                         }
                     }
                 }
@@ -214,7 +234,7 @@ fun NormalChatPage(
     LaunchedEffect(state.chatDetail.editAreaState) {
         if (state.chatDetail.editAreaState.expanded && !sheetState.isOpen) {
             sheetState.open()
-        } else if (!state.chatDetail.editAreaState.expanded && sheetState.isOpen){
+        } else if (!state.chatDetail.editAreaState.expanded && sheetState.isOpen) {
             sheetState.close()
         }
     }
@@ -225,7 +245,7 @@ fun NormalChatPage(
     LaunchedEffect(state.chatDetail.infoAreaState) {
         if (state.chatDetail.infoAreaState.expanded && !drawerState.isOpen) {
             drawerState.open()
-        } else if (!state.chatDetail.infoAreaState.expanded && drawerState.isOpen){
+        } else if (!state.chatDetail.infoAreaState.expanded && drawerState.isOpen) {
             drawerState.close()
         }
     }
@@ -265,7 +285,8 @@ fun NormalChatPage(
             ) {
                 if (state.chatDetail.chat != null) {
                     InfoArea(
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier
+                            .fillMaxSize()
                             .clip(
                                 RoundedCornerShape(
                                     topStart = 24.dp,
@@ -280,39 +301,14 @@ fun NormalChatPage(
                         imageSnapshotList = state.chatDetail.imagePreviewerState.imageSnapshotList,
                         onImageClick = { elementId ->
                             coroutineScope.launch {
-                                var index = -1
-                                val imageSnapshotList =
-                                    messageLazyPagingItems.itemSnapshotList.items.filterIsInstance<ChatPageUiModel.MessageWithSender>()
-                                        .map { it.message }
-                                        .fold(
-                                            initial = mutableListOf<Pair<Long, ParaboxImage>>(),
-                                            operation = { acc, message ->
-                                                message.contents.forEachIndexed { mIndex, paraboxMessageElement ->
-                                                    if (paraboxMessageElement is ParaboxImage) {
-                                                        val mElementId =
-                                                            message.contentsId[mIndex]
-                                                        if (elementId == mElementId) {
-                                                            index = acc.size
-                                                        }
-                                                        acc.add(mElementId to paraboxMessageElement)
-                                                    }
-                                                }
-                                                acc
-                                            }).reversed()
-                                Log.d(
-                                    "parabox",
-                                    "image clicked;index: ${imageSnapshotList.size - index - 1}"
+                                refreshImageSnapshotList(
+                                    elementId = elementId,
+                                    oldList = state.chatDetail.imagePreviewerState.imageSnapshotList,
+                                    messageLazyPagingItems = messageLazyPagingItems,
+                                    onEvent = onEvent
                                 )
-                                if (index > -1) {
-                                    onEvent(
-                                        MessagePageEvent.UpdateImagePreviewerSnapshotList(
-                                            imageSnapshotList,
-                                            imageSnapshotList.size - index - 1
-                                        )
-                                    )
-                                }
                             }
-                        } ,
+                        },
                         onEvent = onEvent
                     )
                 }
@@ -417,37 +413,12 @@ fun NormalChatPage(
                                                 shouldDisplayTime = mainSharedState.datastore.displayTimeOnEachMsg,
                                                 onImageClick = { elementId ->
                                                     coroutineScope.launch {
-                                                        var index = -1
-                                                        val imageSnapshotList =
-                                                            messageLazyPagingItems.itemSnapshotList.items.filterIsInstance<ChatPageUiModel.MessageWithSender>()
-                                                                .map { it.message }
-                                                                .fold(
-                                                                    initial = mutableListOf<Pair<Long, ParaboxImage>>(),
-                                                                    operation = { acc, message ->
-                                                                        message.contents.forEachIndexed { mIndex, paraboxMessageElement ->
-                                                                            if (paraboxMessageElement is ParaboxImage) {
-                                                                                val mElementId =
-                                                                                    message.contentsId[mIndex]
-                                                                                if (elementId == mElementId) {
-                                                                                    index = acc.size
-                                                                                }
-                                                                                acc.add(mElementId to paraboxMessageElement)
-                                                                            }
-                                                                        }
-                                                                        acc
-                                                                    }).reversed()
-                                                        Log.d(
-                                                            "parabox",
-                                                            "image clicked;index: ${imageSnapshotList.size - index - 1}"
+                                                        refreshImageSnapshotList(
+                                                            elementId = elementId,
+                                                            oldList = state.chatDetail.imagePreviewerState.imageSnapshotList,
+                                                            messageLazyPagingItems = messageLazyPagingItems,
+                                                            onEvent = onEvent
                                                         )
-                                                        if (index > -1) {
-                                                            onEvent(
-                                                                MessagePageEvent.UpdateImagePreviewerSnapshotList(
-                                                                    imageSnapshotList,
-                                                                    imageSnapshotList.size - index - 1
-                                                                )
-                                                            )
-                                                        }
                                                     }
                                                 },
                                                 onEvent = onEvent
@@ -503,4 +474,51 @@ fun NormalChatPage(
         layoutType = layoutType,
         onEvent = onEvent
     )
+}
+
+suspend fun refreshImageSnapshotList(
+    elementId: Long,
+    oldList: List<MessagePageState.ImagePreviewerState.ImagePreviewerItem>,
+    messageLazyPagingItems: LazyPagingItems<ChatPageUiModel>,
+    onEvent: (MessagePageEvent) -> Unit
+) {
+    val newList = oldList.toMutableList().apply {
+        messageLazyPagingItems.itemSnapshotList.items.forEachIndexed { index, chatPageUiModel ->
+            if (chatPageUiModel is ChatPageUiModel.MessageWithSender) {
+                chatPageUiModel.message.contents.forEachIndexed { mIndex, paraboxMessageElement ->
+                    if (paraboxMessageElement is ParaboxImage) {
+
+                        val mElementId =
+                            chatPageUiModel.message.contentsId[mIndex]
+                        if (this.find { it.elementId == mElementId } == null) {
+                            Log.d(
+                                "parabox",
+                                "image add;elementId = ${mElementId};indexOfPaging=${index}"
+                            )
+                            add(
+                                MessagePageState.ImagePreviewerState.ImagePreviewerItem(
+                                    image = paraboxMessageElement,
+                                    elementId = mElementId,
+                                    indexInPaging = index
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }.sortedBy { it.indexInPaging }
+    val targetElementIndex = newList.indexOfFirst { it.elementId == elementId }
+    Log.d(
+        "parabox",
+        "image clicked;index: ${targetElementIndex}"
+    )
+    if (targetElementIndex > -1) {
+        onEvent(
+            MessagePageEvent.UpdateImagePreviewerSnapshotList(
+                newList,
+                targetElementIndex
+            )
+        )
+    }
 }

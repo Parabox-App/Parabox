@@ -267,12 +267,8 @@ class MessagePageViewModel @Inject constructor(
                     cancelRealTimeChatCollection()
                 }
                 return state.copy(
-                    chatDetail = state.chatDetail.copy(
-                        chat = event.chat,
-                        editAreaState = state.chatDetail.editAreaState.copy(
-                            memeList = refreshMemeList()
-                        ),
-                        infoAreaState = MessagePageState.InfoAreaState()
+                    chatDetail = MessagePageState.ChatDetail(
+                        chat = event.chat
                     )
                 )
             }

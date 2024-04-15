@@ -97,7 +97,7 @@ fun InfoArea(
     modifier: Modifier = Modifier,
     infoAreaState: MessagePageState.InfoAreaState,
     previewerState: ImagePreviewerState,
-    imageSnapshotList: List<Pair<Long, ParaboxImage>>,
+    imageSnapshotList: List<MessagePageState.ImagePreviewerState.ImagePreviewerItem>,
     onImageClick: (elementId: Long) -> Unit,
     onEvent: (MessagePageEvent) -> Unit
 ) {
@@ -388,7 +388,7 @@ fun InfoSettingArea(
 @Composable
 fun InfoGalleryArea(
     modifier: Modifier = Modifier,
-    imageSnapshotList: List<Pair<Long, ParaboxImage>>,
+    imageSnapshotList: List<MessagePageState.ImagePreviewerState.ImagePreviewerItem>,
     previewerState: ImagePreviewerState,
     onImageClick: (elementId: Long) -> Unit,
     onEvent: (MessagePageEvent) -> Unit
@@ -402,13 +402,13 @@ fun InfoGalleryArea(
         verticalArrangement = Arrangement.spacedBy(3.dp),
         horizontalArrangement = Arrangement.spacedBy(3.dp)
     ) {
-        items(items = imageSnapshotList, key = { it.first }) { pair ->
+        items(items = imageSnapshotList, key = { it.elementId }) { item ->
             val painter = rememberAsyncImagePainter(
                 model = ImageRequest.Builder(context)
-                    .data(pair.second.resourceInfo.getModel())
+                    .data(item.image.resourceInfo.getModel())
                     .size(coil.size.Size.ORIGINAL)
                     .crossfade(true)
-                    .memoryCacheKey("${pair.first}")
+                    .memoryCacheKey("${item.elementId}")
                     .build(),
                 error = painterResource(id = R.drawable.image_lost),
                 fallback = painterResource(id = R.drawable.image_lost),
@@ -420,10 +420,10 @@ fun InfoGalleryArea(
                     .aspectRatio(1F)
                     .pointerInput(Unit) {
                         detectTapGestures {
-                            onImageClick(pair.first)
+                            onImageClick(item.elementId)
                         }
                     },
-                key = "info_area_${pair.first}",
+                key = "info_area_${item.elementId}",
                 painter = painter,
                 previewerState = previewerState,
             )
