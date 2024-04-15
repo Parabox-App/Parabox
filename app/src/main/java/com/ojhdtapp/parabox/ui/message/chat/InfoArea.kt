@@ -1,5 +1,8 @@
 package com.ojhdtapp.parabox.ui.message.chat
 
+import android.graphics.BitmapFactory
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -7,13 +10,18 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -50,7 +58,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.times
+import androidx.compose.ui.util.fastJoinToString
+import androidx.core.graphics.drawable.toBitmap
+import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
+import coil.size.Size
+import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.data.local.entity.ChatTagsUpdate
 import com.ojhdtapp.parabox.domain.model.Chat
@@ -65,6 +85,10 @@ import com.ojhdtapp.parabox.ui.setting.SettingHeader
 import com.ojhdtapp.parabox.ui.setting.SettingItem
 import com.ojhdtapp.parabox.ui.setting.SettingLayoutType
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
+import com.origeek.imageViewer.gallery.ImageGallery
+import com.origeek.imageViewer.gallery.rememberImageGalleryState
+import com.origeek.imageViewer.previewer.ImagePreviewerState
+import com.origeek.imageViewer.previewer.TransformImageView
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -72,7 +96,9 @@ import kotlinx.coroutines.launch
 fun InfoArea(
     modifier: Modifier = Modifier,
     infoAreaState: MessagePageState.InfoAreaState,
+    previewerState: ImagePreviewerState,
     imageSnapshotList: List<Pair<Long, ParaboxImage>>,
+    onImageClick: (elementId: Long) -> Unit,
     onEvent: (MessagePageEvent) -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -119,7 +145,7 @@ fun InfoArea(
             "成员"
         )
         val pagerState = rememberPagerState() { tabList.size }
-        androidx.compose.material3.SecondaryScrollableTabRow(
+        androidx.compose.material3.PrimaryTabRow(
             selectedTabIndex = pagerState.currentPage,
             containerColor = Color.Transparent
         ) {
@@ -143,6 +169,8 @@ fun InfoArea(
                 1 -> {
                     InfoGalleryArea(
                         imageSnapshotList = imageSnapshotList,
+                        previewerState = previewerState,
+                        onImageClick = onImageClick,
                         onEvent = onEvent
                     )
                 }
@@ -299,8 +327,10 @@ fun InfoSettingArea(
         }
         SettingHeader(text = "标签")
         if (infoAreaState.realTimeChat?.tags?.isNotEmpty() == true) {
-            FlowRow(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 infoAreaState.realTimeChat?.tags?.forEach {
                     MyFilterChip(
                         selected = false,
@@ -314,7 +344,8 @@ fun InfoSettingArea(
             leadingIcon = {
                 Icon(
                     imageVector = Icons.Outlined.NewLabel,
-                    contentDescription = "new label"
+                    contentDescription = "new label",
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
             },
             selected = false,
@@ -342,6 +373,11 @@ fun InfoSettingArea(
         infoAreaState.realTimeChat?.uid?.let {
             InfoBlank(key = "UID", value = it)
         }
+        InfoBlank(
+            key = "子会话ID",
+            value = (infoAreaState.realTimeChat?.subChatIds?.takeIf { it.isNotEmpty() }
+                ?: listOf("空")).fastJoinToString(",")
+        )
         infoAreaState.realTimeChat?.pkg?.let {
             InfoBlank(key = "扩展包名", value = it)
         }
@@ -353,8 +389,47 @@ fun InfoSettingArea(
 fun InfoGalleryArea(
     modifier: Modifier = Modifier,
     imageSnapshotList: List<Pair<Long, ParaboxImage>>,
+    previewerState: ImagePreviewerState,
+    onImageClick: (elementId: Long) -> Unit,
     onEvent: (MessagePageEvent) -> Unit
 ) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val density = LocalDensity.current
+    LazyVerticalGrid(
+        modifier = modifier.fillMaxSize(),
+        columns = GridCells.Fixed(3),
+        verticalArrangement = Arrangement.spacedBy(3.dp),
+        horizontalArrangement = Arrangement.spacedBy(3.dp)
+    ) {
+        items(items = imageSnapshotList, key = { it.first }) { pair ->
+            val painter = rememberAsyncImagePainter(
+                model = ImageRequest.Builder(context)
+                    .data(pair.second.resourceInfo.getModel())
+                    .size(coil.size.Size.ORIGINAL)
+                    .crossfade(true)
+                    .memoryCacheKey("${pair.first}")
+                    .build(),
+                error = painterResource(id = R.drawable.image_lost),
+                fallback = painterResource(id = R.drawable.image_lost),
+                contentScale = ContentScale.Fit,
+            )
+            TransformImageView(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1F)
+                    .pointerInput(Unit) {
+                        detectTapGestures {
+                            onImageClick(pair.first)
+                        }
+                    },
+                key = "info_area_${pair.first}",
+                painter = painter,
+                previewerState = previewerState,
+            )
+        }
+
+    }
 }
 
 @Composable

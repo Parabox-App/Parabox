@@ -184,7 +184,11 @@ fun NormalChatPage(
             state.chatDetail.imagePreviewerState.imageSnapshotList.size
         },
         getKey = {
-            state.chatDetail.imagePreviewerState.imageSnapshotList.getOrNull(it)?.first ?: 0L
+            if (state.chatDetail.infoAreaState.expanded) {
+                ("info_area_" + state.chatDetail.imagePreviewerState.imageSnapshotList.getOrNull(it)?.first)
+            } else {
+                state.chatDetail.imagePreviewerState.imageSnapshotList.getOrNull(it)?.first ?: 0L
+            }
         }
     )
     LaunchedEffect(Unit) {
@@ -272,7 +276,43 @@ fun NormalChatPage(
                             )
                             .background(MaterialTheme.colorScheme.surfaceContainerLow),
                         infoAreaState = state.chatDetail.infoAreaState,
+                        previewerState = previewerState,
                         imageSnapshotList = state.chatDetail.imagePreviewerState.imageSnapshotList,
+                        onImageClick = { elementId ->
+                            coroutineScope.launch {
+                                var index = -1
+                                val imageSnapshotList =
+                                    messageLazyPagingItems.itemSnapshotList.items.filterIsInstance<ChatPageUiModel.MessageWithSender>()
+                                        .map { it.message }
+                                        .fold(
+                                            initial = mutableListOf<Pair<Long, ParaboxImage>>(),
+                                            operation = { acc, message ->
+                                                message.contents.forEachIndexed { mIndex, paraboxMessageElement ->
+                                                    if (paraboxMessageElement is ParaboxImage) {
+                                                        val mElementId =
+                                                            message.contentsId[mIndex]
+                                                        if (elementId == mElementId) {
+                                                            index = acc.size
+                                                        }
+                                                        acc.add(mElementId to paraboxMessageElement)
+                                                    }
+                                                }
+                                                acc
+                                            }).reversed()
+                                Log.d(
+                                    "parabox",
+                                    "image clicked;index: ${imageSnapshotList.size - index - 1}"
+                                )
+                                if (index > -1) {
+                                    onEvent(
+                                        MessagePageEvent.UpdateImagePreviewerSnapshotList(
+                                            imageSnapshotList,
+                                            imageSnapshotList.size - index - 1
+                                        )
+                                    )
+                                }
+                            }
+                        } ,
                         onEvent = onEvent
                     )
                 }
