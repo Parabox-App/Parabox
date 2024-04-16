@@ -404,7 +404,7 @@ fun MessagePage(
                 contentType = chatLazyPagingData.itemContentType { "chat" }
             ) { index ->
                 val topRadius = if (index == 0) 24.dp else 3.dp
-                val bottomRadius = if (index == chatLazyPagingData.itemSnapshotList.size - 1) 24.dp else 3.dp
+                val bottomRadius = if (index == chatLazyPagingData.itemSnapshotList.lastIndex) 24.dp else 3.dp
                 Box(
                     modifier = Modifier
                         .padding(horizontal = horizontalPadding)

@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.ui.message.chat
 
 import android.graphics.BitmapFactory
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +23,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -48,6 +51,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -98,7 +102,8 @@ fun InfoArea(
     infoAreaState: MessagePageState.InfoAreaState,
     previewerState: ImagePreviewerState,
     imageSnapshotList: List<MessagePageState.ImagePreviewerState.ImagePreviewerItem>,
-    onImageClick: (elementId: Long) -> Unit,
+    onImageClick: (indexOfSnapshot: Int, elementId: Long) -> Unit,
+    onLazyGridEndReached: () -> Unit,
     onEvent: (MessagePageEvent) -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -171,6 +176,7 @@ fun InfoArea(
                         imageSnapshotList = imageSnapshotList,
                         previewerState = previewerState,
                         onImageClick = onImageClick,
+                        onLazyGridEndReached = onLazyGridEndReached,
                         onEvent = onEvent
                     )
                 }
@@ -390,19 +396,28 @@ fun InfoGalleryArea(
     modifier: Modifier = Modifier,
     imageSnapshotList: List<MessagePageState.ImagePreviewerState.ImagePreviewerItem>,
     previewerState: ImagePreviewerState,
-    onImageClick: (elementId: Long) -> Unit,
+    onImageClick: (indexOfSnapshot: Int, elementId: Long) -> Unit,
+    onLazyGridEndReached: () -> Unit,
     onEvent: (MessagePageEvent) -> Unit
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
+    val state = rememberLazyGridState()
+    LaunchedEffect(state.canScrollForward) {
+        if (!state.canScrollForward) {
+            Log.d("parabox", "onLazyGridEndReached")
+            onLazyGridEndReached()
+        }
+    }
     LazyVerticalGrid(
         modifier = modifier.fillMaxSize(),
+        state = state,
         columns = GridCells.Fixed(3),
         verticalArrangement = Arrangement.spacedBy(3.dp),
         horizontalArrangement = Arrangement.spacedBy(3.dp)
     ) {
-        items(items = imageSnapshotList, key = { it.elementId }) { item ->
+        itemsIndexed(items = imageSnapshotList, key = { index, item -> item.elementId }) { index, item ->
             val painter = rememberAsyncImagePainter(
                 model = ImageRequest.Builder(context)
                     .data(item.image.resourceInfo.getModel())
@@ -420,7 +435,7 @@ fun InfoGalleryArea(
                     .aspectRatio(1F)
                     .pointerInput(Unit) {
                         detectTapGestures {
-                            onImageClick(item.elementId)
+                            onImageClick(index, item.elementId)
                         }
                     },
                 key = "info_area_${item.elementId}",
