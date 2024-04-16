@@ -278,10 +278,17 @@ fun NormalChatPage(
         scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.List)
         onMainSharedEvent(MainSharedEvent.ShowNavigationBar(true))
     }
+
     BackHandler(sheetState.isOpen) {
         coroutineScope.launch {
             sheetState.close()
         }
+    }
+    BackHandler(state.chatDetail.editAreaState.chosenQuoteReply != null) {
+        onEvent(MessagePageEvent.ChooseQuoteReply(null))
+    }
+    BackHandler(state.chatDetail.selectedMessageList.isNotEmpty()) {
+        onEvent(MessagePageEvent.ClearSelectedMessage)
     }
     BackHandler(state.chatDetail.editAreaState.mode != EditAreaMode.NORMAL) {
         onEvent(MessagePageEvent.UpdateEditAreaMode(EditAreaMode.NORMAL))
@@ -291,8 +298,13 @@ fun NormalChatPage(
             drawerState.close()
         }
     }
-    BackHandler(state.chatDetail.selectedMessageList.isNotEmpty()) {
-        onEvent(MessagePageEvent.ClearSelectedMessage)
+    BackHandler(previewerState.canClose) {
+        coroutineScope.launch {
+            previewerState.closeTransform()
+            if (layoutType == MessageLayoutType.NORMAL) {
+                systemUiController.reset()
+            }
+        }
     }
     MyModalNavigationDrawerReverse(
         drawerContent = {

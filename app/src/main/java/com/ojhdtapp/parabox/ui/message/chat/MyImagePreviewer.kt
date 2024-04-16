@@ -59,15 +59,6 @@ fun MyImagePreviewer(
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     val systemUiController = LocalSystemUiController.current
-    BackHandler(previewerState.canClose) {
-        coroutineScope.launch {
-            previewerState.closeTransform()
-            if (layoutType == MessageLayoutType.NORMAL) {
-                systemUiController.reset()
-            }
-//            onEvent(MessagePageEvent.UpdateImagePreviewerSnapshotList(emptyList(), -1))
-        }
-    }
     ImagePreviewer(modifier = modifier.fillMaxSize(),
         state = previewerState,
         imageLoader = { index ->
