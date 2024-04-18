@@ -482,7 +482,7 @@ fun InfoContactArea(
                 )
             } else {
                 ContactItem(
-                    modifier = Modifier.padding(horizontal = 16.dp).animateItem(),
+                    modifier = Modifier.animateItem(),
                     name = item.contact.name,
                     lastName = (index - 1).takeIf { it >= 0 }
                         ?.let { contactLazyPagingItems.peek(it) }?.contact?.name,
