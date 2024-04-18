@@ -51,7 +51,7 @@ import me.saket.cascade.CascadeDropdownMenu
 @Composable
 fun MyImagePreviewer(
     modifier: Modifier = Modifier,
-    state: MessagePageState.ImagePreviewerState,
+    state: MessagePageState.ChatDetail,
     layoutType: MessageLayoutType,
     previewerState: ImagePreviewerState,
     onEvent: (e: MessagePageEvent) -> Unit,
@@ -62,9 +62,9 @@ fun MyImagePreviewer(
     ImagePreviewer(modifier = modifier.fillMaxSize(),
         state = previewerState,
         imageLoader = { index ->
-            if (index < state.imageSnapshotList.size) {
-                val imageItem = state.imageSnapshotList[index]
-                if (index == state.imageSnapshotList.lastIndex) {
+            if (index < state.imagePreviewerState.imageSnapshotList.size) {
+                val imageItem = state.imagePreviewerState.imageSnapshotList[index]
+                if (index == state.imagePreviewerState.imageSnapshotList.lastIndex) {
                 }
                 rememberAsyncImagePainter(
                     model = ImageRequest.Builder(context)
@@ -81,7 +81,7 @@ fun MyImagePreviewer(
         previewerLayer = {
             foreground = { current ->
                 AnimatedVisibility(
-                    state.showToolbar,
+                    state.imagePreviewerState.showToolbar,
                     enter = expandVertically(),
                     exit = shrinkVertically()
                 ) {
@@ -110,7 +110,7 @@ fun MyImagePreviewer(
                                     .wrapContentSize(Alignment.TopStart)
                             ) {
                                 IconButton(onClick = {
-                                    onEvent(MessagePageEvent.ExpandImagePreviewerMenu(!state.expandMenu))
+                                    onEvent(MessagePageEvent.ExpandImagePreviewerMenu(!state.imagePreviewerState.expandMenu))
                                 }) {
                                     Icon(
                                         imageVector = Icons.Outlined.MoreVert,
@@ -118,7 +118,7 @@ fun MyImagePreviewer(
                                     )
                                 }
                                 CascadeDropdownMenu(
-                                    expanded = state.expandMenu,
+                                    expanded = state.imagePreviewerState.expandMenu,
                                     onDismissRequest = {
                                         onEvent(MessagePageEvent.ExpandImagePreviewerMenu(false))
                                     },
@@ -137,7 +137,7 @@ fun MyImagePreviewer(
                                             onEvent(MessagePageEvent.ExpandImagePreviewerMenu(false))
                                             try {
                                                 val image =
-                                                    state.imageSnapshotList.getOrNull(current)?.image
+                                                    state.imagePreviewerState.imageSnapshotList.getOrNull(current)?.image
                                                         ?: throw NoSuchElementException("id lost")
                                                 // TODO: downloader
                                                 when (image.resourceInfo) {
@@ -179,7 +179,7 @@ fun MyImagePreviewer(
                                             onEvent(MessagePageEvent.ExpandImagePreviewerMenu(false))
                                             try {
                                                 val image =
-                                                    state.imageSnapshotList.getOrNull(current)?.image
+                                                    state.imagePreviewerState.imageSnapshotList.getOrNull(current)?.image
                                                         ?: throw NoSuchElementException("id lost")
                                                 onEvent(MessagePageEvent.SaveImageToLocal(image, {}, {}))
                                                 Toast.makeText(
@@ -217,11 +217,12 @@ fun MyImagePreviewer(
         },
         detectGesture = {
             onTap = {
-                onEvent(MessagePageEvent.ExpandImagePreviewerToolbar(!state.showToolbar))
+                onEvent(MessagePageEvent.ExpandImagePreviewerToolbar(!state.imagePreviewerState.showToolbar))
             }
         },
-        onCLoseWithDrag = {
+        onCloseWithDrag = {
             systemUiController.reset()
-        }
+        },
+        reverseLayout = !state.infoAreaState.expanded
     )
 }

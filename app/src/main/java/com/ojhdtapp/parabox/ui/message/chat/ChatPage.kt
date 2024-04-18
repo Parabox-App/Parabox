@@ -520,7 +520,7 @@ fun NormalChatPage(
     }
     MyImagePreviewer(
         previewerState = previewerState,
-        state = state.chatDetail.imagePreviewerState,
+        state = state.chatDetail,
         layoutType = layoutType,
         onEvent = onEvent
     )
