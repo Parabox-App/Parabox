@@ -13,6 +13,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.outlined.Chat
+import androidx.compose.material.icons.automirrored.outlined.MenuOpen
 import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.outlined.Add
@@ -23,6 +24,8 @@ import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.WorkOutline
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.DrawerState
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButton
@@ -38,6 +41,7 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -52,6 +56,7 @@ import com.arkivanov.decompose.router.stack.pushNew
 import com.arkivanov.decompose.router.stack.replaceAll
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.ui.MainSharedState
+import com.ojhdtapp.parabox.ui.menu.MenuNavigationType
 import com.ojhdtapp.parabox.ui.menu.MenuPageEvent
 import com.ojhdtapp.parabox.ui.navigation.DefaultMenuComponent
 import com.ojhdtapp.parabox.ui.navigation.DefaultRootComponent
@@ -148,24 +153,20 @@ fun MenuNavigationDrawerContent(
     rootNavigation: StackNavigation<DefaultRootComponent.RootConfig>,
     stackState: ChildStack<*, MenuComponent.MenuChild>,
     mainSharedState: MainSharedState,
+    navigationType: MenuNavigationType,
     onEvent: (event: MenuPageEvent) -> Unit,
-) =
-    ModalDrawerSheet(
-        modifier = modifier
-            .width(304.dp)
-            .fillMaxHeight()
-            .verticalScroll(rememberScrollState())
-    ) {
-        val coroutineScope = rememberCoroutineScope()
-        Spacer(modifier = Modifier.statusBarsPadding())
-        IconButton(
-            modifier = Modifier.padding(12.dp),
-            onClick = {
-                onEvent(MenuPageEvent.OnMenuClick)
-            }
-        ) {
-            Icon(imageVector = Icons.Outlined.MenuOpen, contentDescription = "menu_open")
+) {
+    val coroutineScope = rememberCoroutineScope()
+    Spacer(modifier = Modifier.statusBarsPadding())
+    IconButton(
+        modifier = Modifier.padding(12.dp),
+        onClick = {
+            onEvent(MenuPageEvent.OnMenuClick)
         }
+    ) {
+        Icon(imageVector = Icons.AutoMirrored.Outlined.MenuOpen, contentDescription = "menu_open")
+    }
+    if (navigationType == MenuNavigationType.BOTTOM_NAVIGATION) {
         ExtendedFloatingActionButton(
             modifier = Modifier.padding(horizontal = 12.dp),
             onClick = { onEvent(MenuPageEvent.OnFABClicked) },
@@ -186,117 +187,138 @@ fun MenuNavigationDrawerContent(
             }
 
         }
-        Spacer(modifier = Modifier.height(32.dp))
-        NavigationDrawerItem(
-            modifier = Modifier
-                .padding(12.dp, 0.dp, 12.dp, 6.dp)
-                .height(48.dp),
-            selected = stackState.active.instance is MenuComponent.MenuChild.Message, onClick = {
-                navigation.bringToFront(DefaultMenuComponent.MenuConfig.Message) {
-                    navigation.replaceAll(DefaultMenuComponent.MenuConfig.Message)
-                }
-                onEvent(MenuPageEvent.OnDrawerItemClicked(false))
-
-            }, icon = {
-                Icon(
-                    imageVector = if (stackState.active.instance is MenuComponent.MenuChild.Message) Icons.AutoMirrored.Default.Chat else Icons.AutoMirrored.Outlined.Chat,
-                    contentDescription = stringResource(id = R.string.conversation)
-                )
-            },
-            label = {
+    } else {
+        ExtendedFloatingActionButton(
+            modifier = Modifier.padding(horizontal = 12.dp),
+            text = {
                 Text(
-                    text = stringResource(id = R.string.conversation),
+                    text = stringResource(id = R.string.new_contact),
                 )
-            },
-            badge = {
-                if (mainSharedState.datastore.messageBadgeNum > 0)
-                    Badge(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                    ) {
-                        Text(
-                            text = "${mainSharedState.datastore.messageBadgeNum}",
-                            modifier = Modifier.padding(4.dp)
-                        )
-                    }
-            }
-        )
-        NavigationDrawerItem(
-            modifier = Modifier
-                .padding(12.dp, 0.dp, 12.dp, 6.dp)
-                .height(48.dp),
-            selected = stackState.active.instance is MenuComponent.MenuChild.File,
-            onClick = {
-                navigation.bringToFront(DefaultMenuComponent.MenuConfig.File) {
-                    navigation.replaceAll(DefaultMenuComponent.MenuConfig.File)
-                }
-                onEvent(MenuPageEvent.OnDrawerItemClicked(false))
-
             },
             icon = {
-                Icon(
-                    imageVector = if (stackState.active.instance is MenuComponent.MenuChild.File) Icons.Default.Work else Icons.Outlined.WorkOutline,
-                    contentDescription = stringResource(id = R.string.work)
-                )
+                Icon(imageVector = Icons.Outlined.Add, contentDescription = "add")
             },
-            label = {
-                Text(
-                    text = stringResource(id = R.string.work),
-                )
-            },
-        )
-
-        NavigationDrawerItem(
-            modifier = Modifier
-                .padding(12.dp, 0.dp, 12.dp, 6.dp)
-                .height(48.dp),
-            selected = stackState.active.instance is MenuComponent.MenuChild.Contact,
             onClick = {
-                navigation.bringToFront(DefaultMenuComponent.MenuConfig.Contact) {
-                    navigation.replaceAll(DefaultMenuComponent.MenuConfig.Contact)
-                }
-                onEvent(MenuPageEvent.OnDrawerItemClicked(false))
-
+                onEvent(MenuPageEvent.OnFABClicked)
             },
-            icon = {
-                Icon(
-                    imageVector = if (stackState.active.instance is MenuComponent.MenuChild.Contact) Icons.Default.Contacts else Icons.Outlined.Contacts,
-                    contentDescription = stringResource(id = R.string.contact_person)
-                )
-            },
-            label = {
-                Text(
-                    text = stringResource(id = R.string.contact_person),
-                )
-            },
+            elevation = FloatingActionButtonDefaults.elevation(
+                defaultElevation = 0.dp,
+                pressedElevation = 0.dp
+            )
         )
-        Spacer(modifier = Modifier.height(16.dp))
-        HorizontalDivider()
-        Spacer(modifier = Modifier.height(16.dp))
-        NavigationDrawerItem(
-            modifier = Modifier
-                .padding(horizontal = 12.dp)
-                .padding(bottom = 6.dp)
-                .height(48.dp),
-            icon = {
-                Icon(
-                    imageVector = Icons.Outlined.Settings,
-                    contentDescription = stringResource(id = R.string.settings)
-                )
-            },
-            label = {
-                Text(
-                    text = stringResource(id = R.string.settings)
-                )
-            },
-            selected = false,
-            onClick = {
-                coroutineScope.launch {
-                    onEvent(MenuPageEvent.OnDrawerItemClicked(false))
-                    rootNavigation.pushNew(DefaultRootComponent.RootConfig.Setting)
-                }
-            })
     }
+
+    Spacer(modifier = Modifier.height(32.dp))
+    NavigationDrawerItem(
+        modifier = Modifier
+            .padding(12.dp, 0.dp, 12.dp, 6.dp)
+            .height(48.dp),
+        selected = stackState.active.instance is MenuComponent.MenuChild.Message, onClick = {
+            navigation.bringToFront(DefaultMenuComponent.MenuConfig.Message) {
+                navigation.replaceAll(DefaultMenuComponent.MenuConfig.Message)
+            }
+            onEvent(MenuPageEvent.OnDrawerItemClicked(false))
+
+        }, icon = {
+            Icon(
+                imageVector = if (stackState.active.instance is MenuComponent.MenuChild.Message) Icons.AutoMirrored.Default.Chat else Icons.AutoMirrored.Outlined.Chat,
+                contentDescription = stringResource(id = R.string.conversation)
+            )
+        },
+        label = {
+            Text(
+                text = stringResource(id = R.string.conversation),
+            )
+        },
+        badge = {
+            if (mainSharedState.datastore.messageBadgeNum > 0)
+                Badge(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ) {
+                    Text(
+                        text = "${mainSharedState.datastore.messageBadgeNum}",
+                        modifier = Modifier.padding(4.dp)
+                    )
+                }
+        }
+    )
+    NavigationDrawerItem(
+        modifier = Modifier
+            .padding(12.dp, 0.dp, 12.dp, 6.dp)
+            .height(48.dp),
+        selected = stackState.active.instance is MenuComponent.MenuChild.File,
+        onClick = {
+            navigation.bringToFront(DefaultMenuComponent.MenuConfig.File) {
+                navigation.replaceAll(DefaultMenuComponent.MenuConfig.File)
+            }
+            onEvent(MenuPageEvent.OnDrawerItemClicked(false))
+
+        },
+        icon = {
+            Icon(
+                imageVector = if (stackState.active.instance is MenuComponent.MenuChild.File) Icons.Default.Work else Icons.Outlined.WorkOutline,
+                contentDescription = stringResource(id = R.string.work)
+            )
+        },
+        label = {
+            Text(
+                text = stringResource(id = R.string.work),
+            )
+        },
+    )
+
+    NavigationDrawerItem(
+        modifier = Modifier
+            .padding(12.dp, 0.dp, 12.dp, 6.dp)
+            .height(48.dp),
+        selected = stackState.active.instance is MenuComponent.MenuChild.Contact,
+        onClick = {
+            navigation.bringToFront(DefaultMenuComponent.MenuConfig.Contact) {
+                navigation.replaceAll(DefaultMenuComponent.MenuConfig.Contact)
+            }
+            onEvent(MenuPageEvent.OnDrawerItemClicked(false))
+
+        },
+        icon = {
+            Icon(
+                imageVector = if (stackState.active.instance is MenuComponent.MenuChild.Contact) Icons.Default.Contacts else Icons.Outlined.Contacts,
+                contentDescription = stringResource(id = R.string.contact_person)
+            )
+        },
+        label = {
+            Text(
+                text = stringResource(id = R.string.contact_person),
+            )
+        },
+    )
+    Spacer(modifier = Modifier.height(16.dp))
+    HorizontalDivider()
+    Spacer(modifier = Modifier.height(16.dp))
+    NavigationDrawerItem(
+        modifier = Modifier
+            .padding(horizontal = 12.dp)
+            .padding(bottom = 6.dp)
+            .height(48.dp),
+        icon = {
+            Icon(
+                imageVector = Icons.Outlined.Settings,
+                contentDescription = stringResource(id = R.string.settings)
+            )
+        },
+        label = {
+            Text(
+                text = stringResource(id = R.string.settings)
+            )
+        },
+        selected = false,
+        onClick = {
+            coroutineScope.launch {
+                onEvent(MenuPageEvent.OnDrawerItemClicked(false))
+                rootNavigation.pushNew(DefaultRootComponent.RootConfig.Setting)
+            }
+        })
+}
 
 
 @OptIn(ExperimentalMaterial3Api::class)

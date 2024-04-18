@@ -8,6 +8,7 @@ import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.layout.AnimatedPane
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
+import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
@@ -21,7 +22,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import calculateMyStandardPaneScaffoldDirective
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
@@ -46,12 +46,15 @@ fun MessageAndChatPageWrapperUI(
     val state by viewModel.uiState.collectAsState()
     val mainSharedState by mainSharedViewModel.uiState.collectAsState()
     val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<Nothing>(
-        scaffoldDirective = calculateMyStandardPaneScaffoldDirective(
-            windowSizeClass = calculateWindowSizeClass(activity = LocalContext.current as Activity),
-            windowAdaptiveInfo = currentWindowAdaptiveInfo()
-        )
+//        scaffoldDirective = calculateMyStandardPaneScaffoldDirective(
+//            windowSizeClass = calculateWindowSizeClass(activity = LocalContext.current as Activity),
+//            windowAdaptiveInfo = currentWindowAdaptiveInfo()
+//        )
     )
-    val layoutType by remember{
+//    calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth(
+//        windowAdaptiveInfo = currentWindowAdaptiveInfo()
+//    )
+    val layoutType by remember {
         derivedStateOf {
             if (scaffoldNavigator.scaffoldDirective.maxHorizontalPartitions == 1) {
                 MessageLayoutType.NORMAL
@@ -108,7 +111,6 @@ fun MessageAndChatPageWrapperUI(
         directive = scaffoldNavigator.scaffoldDirective,
         value = scaffoldNavigator.scaffoldValue,
         modifier = modifier,
-        windowInsets = WindowInsets(0.dp),
         listPane = {
             AnimatedPane(modifier = Modifier.preferredWidth(352.dp)) {
                 MessagePage(
@@ -118,18 +120,18 @@ fun MessageAndChatPageWrapperUI(
                     layoutType = layoutType,
                 )
             }
-        }
-    ) {
-        AnimatedPane(modifier = Modifier) {
-            ChatPage(
-                viewModel = viewModel,
-                state = state,
-                mainSharedState = mainSharedState,
-                scaffoldNavigator = scaffoldNavigator,
-                layoutType = layoutType,
-                onEvent = viewModel::sendEvent,
-                onMainSharedEvent = mainSharedViewModel::sendEvent
-            )
-        }
-    }
+        },
+        detailPane = {
+            AnimatedPane(modifier = Modifier) {
+                ChatPage(
+                    viewModel = viewModel,
+                    state = state,
+                    mainSharedState = mainSharedState,
+                    scaffoldNavigator = scaffoldNavigator,
+                    layoutType = layoutType,
+                    onEvent = viewModel::sendEvent,
+                    onMainSharedEvent = mainSharedViewModel::sendEvent
+                )
+            }
+        })
 }

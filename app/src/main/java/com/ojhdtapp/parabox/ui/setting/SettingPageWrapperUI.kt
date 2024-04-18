@@ -21,7 +21,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import calculateMyDensePaneScaffoldDirective
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.stack.Children
 import com.arkivanov.decompose.extensions.compose.stack.animation.fade
@@ -46,7 +45,8 @@ import com.ojhdtapp.parabox.ui.setting.detail.LabelSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.NotificationSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.StorageSettingPage
 
-@OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3WindowSizeClassApi::class,
+@OptIn(
+    ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3WindowSizeClassApi::class,
     ExperimentalDecomposeApi::class
 )
 @Composable
@@ -62,10 +62,10 @@ fun SettingPageWrapperUi(
     val state by viewModel.uiState.collectAsState()
     val mainSharedState by mainSharedViewModel.uiState.collectAsState()
     val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<Setting>(
-        scaffoldDirective = calculateMyDensePaneScaffoldDirective(
-            windowSizeClass = calculateWindowSizeClass(activity = LocalContext.current as Activity),
-            windowAdaptiveInfo = currentWindowAdaptiveInfo()
-        )
+//        scaffoldDirective = calculateMyDensePaneScaffoldDirective(
+//            windowSizeClass = calculateWindowSizeClass(activity = LocalContext.current as Activity),
+//            windowAdaptiveInfo = currentWindowAdaptiveInfo()
+//        )
     )
     val layoutType by remember {
         derivedStateOf {
@@ -82,7 +82,6 @@ fun SettingPageWrapperUi(
         modifier = modifier.background(MaterialTheme.colorScheme.surfaceContainer),
         directive = scaffoldNavigator.scaffoldDirective,
         value = scaffoldNavigator.scaffoldValue,
-        windowInsets = WindowInsets(0.dp),
         listPane = {
             AnimatedPane(modifier = Modifier.preferredWidth(352.dp)) {
                 SettingPage(
@@ -97,131 +96,146 @@ fun SettingPageWrapperUi(
                     rootStackState = stackState
                 )
             }
-        }
-    ) {
-        AnimatedPane(modifier = Modifier) {
-            Children(
-                stack = component.settingStack,
-                animation = predictiveBackAnimation(
-                    backHandler = component.backHandler,
-                    fallbackAnimation = stackAnimation(fade() + slideWithOffset(tween(), Orientation.Horizontal, 300f)),
-                    selector = { backEvent, _, _ -> androidPredictiveBackAnimatable(backEvent) },
-                    onBack = {
-                        component.settingNav.pop()
-                    },
-                ),
-            ) { child ->
-                when (val instance = child.instance) {
-                    is SettingComponent.SettingChild.GeneralSetting -> {
-                        GeneralSettingPage(
-                            state = state,
-                            mainSharedState = mainSharedState,
-                            layoutType = layoutType,
-                            scaffoldNavigator = scaffoldNavigator,
-                            onEvent = viewModel::sendEvent,
-                            onMainSharedEvent = mainSharedViewModel::sendEvent
-                        )
-                    }
-                    is SettingComponent.SettingChild.ExtensionSetting -> {
-                        ExtensionSettingPage(
-                            state = state,
-                            mainSharedState = mainSharedState,
-                            layoutType = layoutType,
-                            scaffoldNavigator = scaffoldNavigator,
-                            navigation = component.settingNav,
-                            stackState = settingStackState,
-                            onEvent = viewModel::sendEvent,
-                            onMainSharedEvent = mainSharedViewModel::sendEvent
-                        )
-                    }
-                    is SettingComponent.SettingChild.ExtensionAddSetting -> {
-                        ExtensionSettingPage(
-                            state = state,
-                            mainSharedState = mainSharedState,
-                            layoutType = layoutType,
-                            scaffoldNavigator = scaffoldNavigator,
-                            navigation = component.settingNav,
-                            stackState = settingStackState,
-                            onEvent = viewModel::sendEvent,
-                            onMainSharedEvent = mainSharedViewModel::sendEvent
-                        )
-                    }
-                    is SettingComponent.SettingChild.LabelSetting -> {
-                        LabelSettingPage(
-                            state = state,
-                            mainSharedState = mainSharedState,
-                            layoutType = layoutType,
-                            scaffoldNavigator = scaffoldNavigator,
-                            navigation = component.settingNav,
-                            stackState = settingStackState,
-                            onEvent = viewModel::sendEvent,
-                            onMainSharedEvent = mainSharedViewModel::sendEvent
-                        )
-                    }
-                    is SettingComponent.SettingChild.LabelDetailSetting -> {
-                        LabelDetailSettingPage(
-                            state = state,
-                            mainSharedState = mainSharedState,
-                            layoutType = layoutType,
-                            scaffoldNavigator = scaffoldNavigator,
-                            navigation = component.settingNav,
-                            stackState = settingStackState,
-                            onEvent = viewModel::sendEvent,
-                            onMainSharedEvent = mainSharedViewModel::sendEvent
-                        )
-                    }
-                    is SettingComponent.SettingChild.AppearanceSetting -> {
-                        AppearanceSettingPage(
-                            state = state,
-                            mainSharedState = mainSharedState,
-                            layoutType = layoutType,
-                            scaffoldNavigator = scaffoldNavigator,
-                            onEvent = viewModel::sendEvent,
-                            onMainSharedEvent = mainSharedViewModel::sendEvent
-                        )
-                    }
-                    is SettingComponent.SettingChild.NotificationSetting -> {
-                        NotificationSettingPage(
-                            state = state,
-                            mainSharedState = mainSharedState,
-                            layoutType = layoutType,
-                            scaffoldNavigator = scaffoldNavigator,
-                            onEvent = viewModel::sendEvent,
-                            onMainSharedEvent = mainSharedViewModel::sendEvent
-                        )
-                    }
-                    is SettingComponent.SettingChild.StorageSetting -> {
-                        StorageSettingPage(
-                            state = state,
-                            mainSharedState = mainSharedState,
-                            layoutType = layoutType,
-                            scaffoldNavigator = scaffoldNavigator,
-                            onEvent = viewModel::sendEvent,
-                            onMainSharedEvent = mainSharedViewModel::sendEvent
-                        )
-                    }
-                    is SettingComponent.SettingChild.ExperimentalSetting -> {
-                        GeneralSettingPage(
-                            state = state,
-                            mainSharedState = mainSharedState,
-                            layoutType = layoutType,
-                            scaffoldNavigator = scaffoldNavigator,
-                            onEvent = viewModel::sendEvent,
-                            onMainSharedEvent = mainSharedViewModel::sendEvent
-                        )
-                    }
-                    is SettingComponent.SettingChild.HelpAndSupportSetting -> {
-                        GeneralSettingPage(
-                            state = state,
-                            mainSharedState = mainSharedState,
-                            layoutType = layoutType,
-                            scaffoldNavigator = scaffoldNavigator,
-                            onEvent = viewModel::sendEvent,
-                            onMainSharedEvent = mainSharedViewModel::sendEvent
-                        )
+        },
+        detailPane = {
+            AnimatedPane(modifier = Modifier) {
+                Children(
+                    stack = component.settingStack,
+                    animation = predictiveBackAnimation(
+                        backHandler = component.backHandler,
+                        fallbackAnimation = stackAnimation(
+                            fade() + slideWithOffset(
+                                tween(),
+                                Orientation.Horizontal,
+                                300f
+                            )
+                        ),
+                        selector = { backEvent, _, _ -> androidPredictiveBackAnimatable(backEvent) },
+                        onBack = {
+                            component.settingNav.pop()
+                        },
+                    ),
+                ) { child ->
+                    when (val instance = child.instance) {
+                        is SettingComponent.SettingChild.GeneralSetting -> {
+                            GeneralSettingPage(
+                                state = state,
+                                mainSharedState = mainSharedState,
+                                layoutType = layoutType,
+                                scaffoldNavigator = scaffoldNavigator,
+                                onEvent = viewModel::sendEvent,
+                                onMainSharedEvent = mainSharedViewModel::sendEvent
+                            )
+                        }
+
+                        is SettingComponent.SettingChild.ExtensionSetting -> {
+                            ExtensionSettingPage(
+                                state = state,
+                                mainSharedState = mainSharedState,
+                                layoutType = layoutType,
+                                scaffoldNavigator = scaffoldNavigator,
+                                navigation = component.settingNav,
+                                stackState = settingStackState,
+                                onEvent = viewModel::sendEvent,
+                                onMainSharedEvent = mainSharedViewModel::sendEvent
+                            )
+                        }
+
+                        is SettingComponent.SettingChild.ExtensionAddSetting -> {
+                            ExtensionSettingPage(
+                                state = state,
+                                mainSharedState = mainSharedState,
+                                layoutType = layoutType,
+                                scaffoldNavigator = scaffoldNavigator,
+                                navigation = component.settingNav,
+                                stackState = settingStackState,
+                                onEvent = viewModel::sendEvent,
+                                onMainSharedEvent = mainSharedViewModel::sendEvent
+                            )
+                        }
+
+                        is SettingComponent.SettingChild.LabelSetting -> {
+                            LabelSettingPage(
+                                state = state,
+                                mainSharedState = mainSharedState,
+                                layoutType = layoutType,
+                                scaffoldNavigator = scaffoldNavigator,
+                                navigation = component.settingNav,
+                                stackState = settingStackState,
+                                onEvent = viewModel::sendEvent,
+                                onMainSharedEvent = mainSharedViewModel::sendEvent
+                            )
+                        }
+
+                        is SettingComponent.SettingChild.LabelDetailSetting -> {
+                            LabelDetailSettingPage(
+                                state = state,
+                                mainSharedState = mainSharedState,
+                                layoutType = layoutType,
+                                scaffoldNavigator = scaffoldNavigator,
+                                navigation = component.settingNav,
+                                stackState = settingStackState,
+                                onEvent = viewModel::sendEvent,
+                                onMainSharedEvent = mainSharedViewModel::sendEvent
+                            )
+                        }
+
+                        is SettingComponent.SettingChild.AppearanceSetting -> {
+                            AppearanceSettingPage(
+                                state = state,
+                                mainSharedState = mainSharedState,
+                                layoutType = layoutType,
+                                scaffoldNavigator = scaffoldNavigator,
+                                onEvent = viewModel::sendEvent,
+                                onMainSharedEvent = mainSharedViewModel::sendEvent
+                            )
+                        }
+
+                        is SettingComponent.SettingChild.NotificationSetting -> {
+                            NotificationSettingPage(
+                                state = state,
+                                mainSharedState = mainSharedState,
+                                layoutType = layoutType,
+                                scaffoldNavigator = scaffoldNavigator,
+                                onEvent = viewModel::sendEvent,
+                                onMainSharedEvent = mainSharedViewModel::sendEvent
+                            )
+                        }
+
+                        is SettingComponent.SettingChild.StorageSetting -> {
+                            StorageSettingPage(
+                                state = state,
+                                mainSharedState = mainSharedState,
+                                layoutType = layoutType,
+                                scaffoldNavigator = scaffoldNavigator,
+                                onEvent = viewModel::sendEvent,
+                                onMainSharedEvent = mainSharedViewModel::sendEvent
+                            )
+                        }
+
+                        is SettingComponent.SettingChild.ExperimentalSetting -> {
+                            GeneralSettingPage(
+                                state = state,
+                                mainSharedState = mainSharedState,
+                                layoutType = layoutType,
+                                scaffoldNavigator = scaffoldNavigator,
+                                onEvent = viewModel::sendEvent,
+                                onMainSharedEvent = mainSharedViewModel::sendEvent
+                            )
+                        }
+
+                        is SettingComponent.SettingChild.HelpAndSupportSetting -> {
+                            GeneralSettingPage(
+                                state = state,
+                                mainSharedState = mainSharedState,
+                                layoutType = layoutType,
+                                scaffoldNavigator = scaffoldNavigator,
+                                onEvent = viewModel::sendEvent,
+                                onMainSharedEvent = mainSharedViewModel::sendEvent
+                            )
+                        }
                     }
                 }
-            }
 //            when (state.selected) {
 //                Setting.GENERAL -> {
 //                    GeneralSettingPage(
@@ -311,6 +325,6 @@ fun SettingPageWrapperUi(
 //                    )
 //                }
 //            }
-        }
-    }
+            }
+        })
 }

@@ -73,15 +73,16 @@ fun ContactItem(
                 modifier = Modifier.weight(1f),
                 text = name,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.width(16.dp))
-            Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = CircleShape) {
+            Surface(color = MaterialTheme.colorScheme.primary, shape = CircleShape) {
                 Text(
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                     text = extName,
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     maxLines = 1
                 )
             }

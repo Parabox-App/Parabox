@@ -26,7 +26,7 @@ class DefaultRootComponent(componentContext: ComponentContext) : RootComponent, 
 
     @OptIn(InternalSerializationApi::class)
     override val rootStack: Value<ChildStack<*, RootComponent.RootChild>> =
-        childStack<RootConfig, RootComponent.RootChild>(
+        childStack<_, RootConfig, RootComponent.RootChild>(
             source = rootNav,
             serializer = RootConfig::class.serializer(),
             initialConfiguration = RootConfig.Menu,

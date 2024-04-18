@@ -19,7 +19,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import calculateMyStandardPaneScaffoldDirective
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.ojhdtapp.parabox.ui.MainSharedEvent
@@ -40,10 +39,10 @@ fun ContactPageWrapperUI(
     val state by viewModel.uiState.collectAsState()
     val mainSharedState by mainSharedViewModel.uiState.collectAsState()
     val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<Nothing>(
-        scaffoldDirective = calculateMyStandardPaneScaffoldDirective(
-            windowSizeClass = calculateWindowSizeClass(activity = LocalContext.current as Activity),
-            windowAdaptiveInfo = currentWindowAdaptiveInfo()
-        )
+//        scaffoldDirective = calculateMyStandardPaneScaffoldDirective(
+//            windowSizeClass = calculateWindowSizeClass(activity = LocalContext.current as Activity),
+//            windowAdaptiveInfo = currentWindowAdaptiveInfo()
+//        )
     )
     val layoutType by remember {
         derivedStateOf {
@@ -58,7 +57,6 @@ fun ContactPageWrapperUI(
         modifier = modifier,
         directive = scaffoldNavigator.scaffoldDirective,
         value = scaffoldNavigator.scaffoldValue,
-        windowInsets = WindowInsets(0.dp),
         listPane = {
             AnimatedPane(modifier = Modifier.preferredWidth(352.dp)) {
                 ContactPage(
@@ -69,16 +67,17 @@ fun ContactPageWrapperUI(
                     onMainSharedEvent = mainSharedViewModel::sendEvent
                 )
             }
+        },
+        detailPane = {
+            AnimatedPane(modifier = Modifier) {
+                ContactDetailPage(
+                    viewModel = viewModel,
+                    scaffoldNavigator = scaffoldNavigator,
+                    mainSharedState = mainSharedState,
+                    layoutType = layoutType,
+                    onMainSharedEvent = mainSharedViewModel::sendEvent
+                )
+            }
         }
-    ) {
-        AnimatedPane(modifier = Modifier) {
-            ContactDetailPage(
-                viewModel = viewModel,
-                scaffoldNavigator = scaffoldNavigator,
-                mainSharedState = mainSharedState,
-                layoutType = layoutType,
-                onMainSharedEvent = mainSharedViewModel::sendEvent
-            )
-        }
-    }
+    )
 }

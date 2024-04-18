@@ -29,7 +29,7 @@ class DefaultMenuComponent(
 
     @OptIn(InternalSerializationApi::class)
     override val menuStack: Value<ChildStack<*, MenuComponent.MenuChild>> =
-        childStack<MenuConfig, MenuComponent.MenuChild>(
+        childStack<_, MenuConfig, MenuComponent.MenuChild>(
             source = menuNav,
             serializer = MenuConfig::class.serializer(),
             initialConfiguration = MenuConfig.Message,

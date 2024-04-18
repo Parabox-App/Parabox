@@ -64,6 +64,6 @@ interface ContactDao {
     @Query("SELECT contact_entity.* FROM contact_entity " +
             "INNER JOIN contact_chat_cross_ref ref ON contact_entity.contactId == ref.contactId " +
             "WHERE ref.chatId IN (:chatIds) " +
-            "ORDER BY name collate localized")
+            "ORDER BY contact_entity.name collate localized")
     fun getContactInChatWithExtensionInfoPagingSource(chatIds: List<Long>) : PagingSource<Int, ContactWithExtensionInfoEntity>
 }

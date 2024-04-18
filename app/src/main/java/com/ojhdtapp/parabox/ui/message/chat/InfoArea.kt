@@ -451,7 +451,7 @@ fun InfoGalleryArea(
                         detectTapGestures {
                             onImageClick(index, item.elementId)
                         }
-                    },
+                    }.animateItem(),
                 key = "info_area_${item.elementId}",
                 painter = painter,
                 previewerState = previewerState,

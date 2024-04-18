@@ -9,6 +9,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
@@ -41,6 +42,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Clear
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Face
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Folder
@@ -50,6 +52,7 @@ import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
@@ -58,8 +61,11 @@ import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel
+import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -69,6 +75,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -93,7 +100,10 @@ import com.ojhdtapp.parabox.core.util.launchSetting
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageState
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalAnimationApi::class, ExperimentalPermissionsApi::class)
+@OptIn(
+    ExperimentalFoundationApi::class, ExperimentalAnimationApi::class, ExperimentalPermissionsApi::class,
+    ExperimentalMaterial3Api::class
+)
 @Composable
 fun Toolbar(
     modifier: Modifier = Modifier,
@@ -278,107 +288,50 @@ fun Toolbar(
                             .weight(1f), targetState = memeState, label = "meme_favorite"
                     ) {
                         if (it) {
-                            var showMemeDeleteBtn by remember {
-                                mutableStateOf(false)
-                            }
-                            LazyRow(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(start = 16.dp),
-                                contentPadding = PaddingValues(end = 16.dp),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                if (state.memeList.isEmpty()) {
-                                    item {
-                                        Column(
-                                            modifier = Modifier.fillParentMaxSize(),
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                            verticalArrangement = Arrangement.Center
-                                        ) {
-                                            Text(
-                                                text = stringResource(R.string.no_meme),
-                                                style = MaterialTheme.typography.labelMedium,
-                                                color = MaterialTheme.colorScheme.onSurface,
-                                            )
-                                            TextButton(onClick = {
-                                                addMemeLauncher.launch(
-                                                    PickVisualMediaRequest(
-                                                        ActivityResultContracts.PickVisualMedia.ImageOnly
-                                                    )
+                            Crossfade(targetState = state.memeList.isEmpty()) {
+                                if (it) {
+                                    Column(
+                                        modifier = Modifier.fillMaxSize(),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.no_meme),
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                        )
+                                        TextButton(onClick = {
+                                            addMemeLauncher.launch(
+                                                PickVisualMediaRequest(
+                                                    ActivityResultContracts.PickVisualMedia.ImageOnly
                                                 )
-                                            }) {
-                                                Text(text = stringResource(R.string.add_meme_by_hand))
-                                            }
+                                            )
+                                        }) {
+                                            Text(text = stringResource(R.string.add_meme_by_hand))
                                         }
                                     }
                                 } else {
-                                    items(items = state.memeList) {
-                                        Surface(
-                                            modifier = Modifier.animateItem(),
-                                            color = MaterialTheme.colorScheme.secondaryContainer,
-                                            tonalElevation = 3.dp,
-                                            shape = RoundedCornerShape(16.dp)
-                                        ) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .padding(3.dp)
-                                            ) {
-                                                AsyncImage(
-                                                    model = ImageRequest.Builder(
-                                                        LocalContext.current
-                                                    )
-                                                        .data(it)
-                                                        .crossfade(true)
-                                                        .build(),
-                                                    contentDescription = "meme",
-                                                    contentScale = ContentScale.FillHeight,
-                                                    modifier = Modifier
-                                                        .fillMaxHeight()
-                                                        .widthIn(0.dp, 144.dp)
-                                                        .clip(
-                                                            RoundedCornerShape(13.dp)
-                                                        )
-                                                        .combinedClickable(onClick = {
-                                                            if (showMemeDeleteBtn) {
-                                                                showMemeDeleteBtn = false
-                                                            } else {
-                                                                onEvent(MessagePageEvent.SendMemeMessage(it))
-                                                            }
-                                                        }, onLongClick = {
-                                                            showMemeDeleteBtn = !showMemeDeleteBtn
-                                                        }),
-                                                )
-                                                androidx.compose.animation.AnimatedVisibility(
-                                                    modifier = Modifier.align(Alignment.TopEnd),
-                                                    visible = showMemeDeleteBtn,
-                                                    enter = scaleIn(),
-                                                    exit = scaleOut()
-                                                ) {
-                                                    FilledIconButton(
-                                                        modifier = Modifier
-                                                            .size(32.dp)
-                                                            .padding(4.dp),
-                                                        onClick = {
-                                                            onEvent(MessagePageEvent.RemoveMeme(it, {}, {}))
-                                                        },
-                                                    ) {
-                                                        Icon(
-                                                            modifier = Modifier.size(14.dp),
-                                                            imageVector = Icons.Outlined.Clear,
-                                                            contentDescription = "delete"
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        }
+                                    var showingMemeDeleteBtnIndex by remember {
+                                        mutableStateOf(-1)
                                     }
-                                    item {
-                                        if (state.memeList.isNotEmpty())
+                                    val carouselState = rememberCarouselState {
+                                        state.memeList.size + 1
+                                    }
+                                    HorizontalMultiBrowseCarousel(
+                                        state = carouselState,
+                                        preferredItemWidth = 144.dp,
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(horizontal = 16.dp),
+                                        itemSpacing = 4.dp,
+                                    ) {
+                                        if (it == state.memeList.lastIndex + 1) {
                                             Column(
                                                 modifier = Modifier
-                                                    .fillMaxHeight()
-                                                    .width(96.dp)
-                                                    .animateItem(),
+                                                    .fillMaxSize()
+                                                    .graphicsLayer {
+                                                        alpha = carouselItemInfo.size / carouselItemInfo.maxSize
+                                                    },
                                                 horizontalAlignment = Alignment.CenterHorizontally,
                                                 verticalArrangement = Arrangement.Center
                                             ) {
@@ -401,8 +354,66 @@ fun Toolbar(
                                                         contentDescription = "add"
                                                     )
                                                 }
-//                                                Text(text = "添加", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
                                             }
+                                        } else {
+                                            Box(modifier = Modifier.graphicsLayer {
+                                                alpha = carouselItemInfo.size / carouselItemInfo.maxSize
+                                            }) {
+                                                AsyncImage(
+                                                    model = ImageRequest.Builder(
+                                                        LocalContext.current
+                                                    )
+                                                        .data(state.memeList.getOrNull(it))
+                                                        .crossfade(true)
+                                                        .build(),
+                                                    contentDescription = "meme",
+                                                    contentScale = ContentScale.Crop,
+                                                    modifier = Modifier
+                                                        .fillMaxHeight()
+                                                        .width(144.dp)
+                                                        .combinedClickable(onClick = {
+                                                            if (showingMemeDeleteBtnIndex != -1) {
+                                                                showingMemeDeleteBtnIndex = -1
+                                                            } else {
+                                                                state.memeList
+                                                                    .getOrNull(it)
+                                                                    ?.let {
+                                                                        onEvent(MessagePageEvent.SendMemeMessage(it))
+                                                                    }
+                                                            }
+                                                        }, onLongClick = {
+                                                            showingMemeDeleteBtnIndex = it
+                                                        }),
+                                                )
+                                                androidx.compose.animation.AnimatedVisibility(
+                                                    modifier = Modifier.align(Alignment.Center),
+                                                    visible = showingMemeDeleteBtnIndex == it,
+                                                    enter = scaleIn(),
+                                                    exit = scaleOut()
+                                                ) {
+                                                    SmallFloatingActionButton(
+                                                        onClick = {
+                                                            state.memeList
+                                                                .getOrNull(it)
+                                                                ?.let {
+                                                                    onEvent(MessagePageEvent.RemoveMeme(it, {}, {}))
+                                                                    showingMemeDeleteBtnIndex = -1
+                                                                }
+                                                        },
+                                                        shape = CircleShape,
+                                                        elevation = FloatingActionButtonDefaults.elevation(
+                                                            defaultElevation = 0.dp,
+                                                            pressedElevation = 0.dp
+                                                        )
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Outlined.Delete,
+                                                            contentDescription = "delete"
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }

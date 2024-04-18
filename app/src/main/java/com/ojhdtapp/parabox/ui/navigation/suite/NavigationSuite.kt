@@ -10,14 +10,24 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.DismissibleDrawerSheet
+import androidx.compose.material3.DismissibleNavigationDrawer
+import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
@@ -99,7 +109,7 @@ fun NavigationSuite(
     }
 
     // Drawer
-    val drawerState = rememberMyDrawerState(initialValue = DrawerValue.Closed)
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val bottomSheetState = rememberModalBottomSheetState()
 
     // Main State
@@ -187,17 +197,27 @@ fun NavigationSuite(
         mainSharedViewModel.sendEvent(MainSharedEvent.OpenBottomSheet(false))
     }
     if (navigationType == MenuNavigationType.PERMANENT_NAVIGATION_DRAWER) {
-        MyDismissibleNavigationDrawer(
+        DismissibleNavigationDrawer(
             modifier = modifier.background(MaterialTheme.colorScheme.surface),
             drawerContent = {
-                MenuNavigationDrawerContent(
-                    navigation = menuNavigation,
-                    stackState = menuStackState,
-                    rootNavigation = rootNavigation,
-                    mainSharedState = mainSharedState,
-                    onEvent = menuEventHandler
-                )
-            }, drawerState = drawerState, drawerWidth = 304.dp
+                DismissibleDrawerSheet(
+                    modifier = modifier
+//                        .width(304.dp)
+                        .fillMaxHeight()
+                        .verticalScroll(rememberScrollState()),
+                    drawerState = drawerState
+                ) {
+                    MenuNavigationDrawerContent(
+                        navigation = menuNavigation,
+                        stackState = menuStackState,
+                        rootNavigation = rootNavigation,
+                        mainSharedState = mainSharedState,
+                        navigationType = navigationType,
+                        onEvent = menuEventHandler
+                    )
+                }
+
+            }, drawerState = drawerState
         ) {
             MenuAppContent(
                 navigation = menuNavigation,
@@ -212,20 +232,30 @@ fun NavigationSuite(
             )
         }
     } else {
-        MyModalNavigationDrawer(
+        ModalNavigationDrawer(
             modifier = modifier.background(MaterialTheme.colorScheme.surface),
             drawerContent = {
-                MenuNavigationDrawerContent(
-                    navigation = menuNavigation,
-                    stackState = menuStackState,
-                    rootNavigation = rootNavigation,
-                    mainSharedState = mainSharedState,
-                    onEvent = menuEventHandler
-                )
+                ModalDrawerSheet(
+                    modifier = modifier
+                        .width(304.dp)
+                        .fillMaxHeight()
+                        .verticalScroll(rememberScrollState()),
+                    drawerState = drawerState
+                ){
+                    MenuNavigationDrawerContent(
+                        navigation = menuNavigation,
+                        stackState = menuStackState,
+                        rootNavigation = rootNavigation,
+                        mainSharedState = mainSharedState,
+                        navigationType = navigationType,
+                        onEvent = menuEventHandler
+                    )
+                }
+
             },
             drawerState = drawerState,
             gesturesEnabled = !mainSharedState.search.isActive && mainSharedState.showNavigationBar,
-            drawerWidth = 304.dp
+//            drawerWidth = 304.dp
         ) {
             MenuAppContent(
                 navigation = menuNavigation,
@@ -249,7 +279,7 @@ fun MenuAppContent(
     navigation: StackNavigation<DefaultMenuComponent.MenuConfig>,
     stackState: ChildStack<*, MenuComponent.MenuChild>,
     navigationType: MenuNavigationType,
-    drawerState: MyDrawerState,
+    drawerState: DrawerState,
     bottomSheetState: SheetState,
     mainSharedViewModel: MainSharedViewModel,
     mainSharedState: MainSharedState,
