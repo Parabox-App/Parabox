@@ -325,6 +325,7 @@ fun NormalChatPage(
                                 )
                             )
                             .background(MaterialTheme.colorScheme.surfaceContainerLow),
+                        contactPagingDataFlow = viewModel.contactPagingDataFlow,
                         infoAreaState = state.chatDetail.infoAreaState,
                         previewerState = previewerState,
                         imageSnapshotList = state.chatDetail.imagePreviewerState.imageSnapshotList,

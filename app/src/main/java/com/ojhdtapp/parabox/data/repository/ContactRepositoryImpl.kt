@@ -100,4 +100,8 @@ class ContactRepositoryImpl @Inject constructor(
             db.contactDao.getContactWithExtensionInfoPagingSource()
         }
     }
+
+    override fun getContactInChatWithExtensionInfoPagingSource(chatIds: List<Long>): PagingSource<Int, ContactWithExtensionInfoEntity> {
+        return db.contactDao.getContactInChatWithExtensionInfoPagingSource(chatIds)
+    }
 }

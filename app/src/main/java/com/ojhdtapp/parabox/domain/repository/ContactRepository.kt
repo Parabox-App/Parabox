@@ -15,4 +15,5 @@ interface ContactRepository {
     fun getContactByPlatformInfo(pkg: String, uid: String): Flow<Resource<Contact>>
     fun getContactPagingSource() : PagingSource<Int, ContactEntity>
     fun getContactWithExtensionInfoPagingSource(friendOnly: Boolean) : PagingSource<Int, ContactWithExtensionInfoEntity>
+    fun getContactInChatWithExtensionInfoPagingSource(chatIds: List<Long>) : PagingSource<Int, ContactWithExtensionInfoEntity>
 }

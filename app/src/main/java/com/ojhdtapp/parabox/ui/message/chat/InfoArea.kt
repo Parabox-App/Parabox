@@ -16,15 +16,18 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -71,6 +74,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
 import androidx.compose.ui.util.fastJoinToString
 import androidx.core.graphics.drawable.toBitmap
+import androidx.paging.PagingData
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemKey
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import coil.size.Size
@@ -78,10 +84,13 @@ import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.data.local.entity.ChatTagsUpdate
 import com.ojhdtapp.parabox.domain.model.Chat
+import com.ojhdtapp.parabox.domain.model.ContactWithExtensionInfo
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.common.CommonAvatar
 import com.ojhdtapp.parabox.ui.common.CommonAvatarModel
 import com.ojhdtapp.parabox.ui.common.MyFilterChip
+import com.ojhdtapp.parabox.ui.contact.ContactItem
+import com.ojhdtapp.parabox.ui.contact.EmptyContactItem
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageState
 import com.ojhdtapp.parabox.ui.message.NewChatTagDialog
@@ -93,12 +102,14 @@ import com.origeek.imageViewer.gallery.ImageGallery
 import com.origeek.imageViewer.gallery.rememberImageGalleryState
 import com.origeek.imageViewer.previewer.ImagePreviewerState
 import com.origeek.imageViewer.previewer.TransformImageView
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InfoArea(
     modifier: Modifier = Modifier,
+    contactPagingDataFlow: Flow<PagingData<ContactWithExtensionInfo>>,
     infoAreaState: MessagePageState.InfoAreaState,
     previewerState: ImagePreviewerState,
     imageSnapshotList: List<MessagePageState.ImagePreviewerState.ImagePreviewerItem>,
@@ -186,7 +197,10 @@ fun InfoArea(
                 }
 
                 3 -> {
-
+                    InfoContactArea(
+                        contactPagingDataFlow = contactPagingDataFlow,
+                        onEvent = onEvent
+                    )
                 }
             }
         }
@@ -444,6 +458,44 @@ fun InfoGalleryArea(
             )
         }
 
+    }
+}
+
+@Composable
+fun InfoContactArea(
+    modifier: Modifier = Modifier,
+    contactPagingDataFlow: Flow<PagingData<ContactWithExtensionInfo>>,
+    onEvent: (MessagePageEvent) -> Unit
+) {
+    val contactLazyPagingItems = contactPagingDataFlow.collectAsLazyPagingItems()
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+    ) {
+        items(
+            count = contactLazyPagingItems.itemCount,
+            key = contactLazyPagingItems.itemKey { it.contact.contactId }
+        ) { index ->
+            val item = contactLazyPagingItems[index]
+            if (item == null) {
+                EmptyContactItem(
+                    modifier = Modifier.animateItem()
+                )
+            } else {
+                ContactItem(
+                    modifier = Modifier.padding(horizontal = 16.dp).animateItem(),
+                    name = item.contact.name,
+                    lastName = (index - 1).takeIf { it >= 0 }
+                        ?.let { contactLazyPagingItems.peek(it) }?.contact?.name,
+                    avatarModel = item.contact.avatar.getModel(),
+                    extName = item.extensionInfo.alias,
+                ) {
+
+                }
+            }
+        }
+        item {
+            Spacer(modifier = Modifier.navigationBarsPadding())
+        }
     }
 }
 

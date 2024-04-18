@@ -21,6 +21,7 @@ import com.ojhdtapp.parabox.core.util.buildFileName
 import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.ChatWithLatestMessage
 import com.ojhdtapp.parabox.domain.model.Contact
+import com.ojhdtapp.parabox.domain.model.ContactWithExtensionInfo
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.domain.use_case.GetChat
 import com.ojhdtapp.parabox.domain.use_case.GetContact
@@ -796,6 +797,18 @@ class MessagePageViewModel @Inject constructor(
                         add(it.chatId)
                         addAll(it.subChatIds)
                     }.distinct(), emptyList())
+                } ?: emptyFlow()
+            }.cachedIn(viewModelScope)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val contactPagingDataFlow: Flow<PagingData<ContactWithExtensionInfo>> =
+        uiState.distinctUntilChanged { old, new -> old.chatDetail.chat == new.chatDetail.chat || new.chatDetail.chat == null }
+            .flatMapLatest {
+                it.chatDetail.chat?.let {
+                    getContact.inChatPagingSource(buildList {
+                        add(it.chatId)
+                        addAll(it.subChatIds)
+                    }.distinct())
                 } ?: emptyFlow()
             }.cachedIn(viewModelScope)
 
