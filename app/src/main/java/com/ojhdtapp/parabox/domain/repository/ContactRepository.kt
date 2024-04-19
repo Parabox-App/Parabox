@@ -12,6 +12,7 @@ interface ContactRepository {
     fun queryContactWithLimit(query: String, limit: Int): Flow<Resource<List<Contact>>>
     fun getContactWithLimit(limit: Int): Flow<Resource<List<Contact>>>
     fun getContactById(contactId: Long): Flow<Resource<Contact>>
+    fun getContactWithExtensionInfoById(contactId: Long): Flow<Resource<ContactWithExtensionInfo>>
     fun getContactByPlatformInfo(pkg: String, uid: String): Flow<Resource<Contact>>
     fun getContactPagingSource() : PagingSource<Int, ContactEntity>
     fun getContactWithExtensionInfoPagingSource(friendOnly: Boolean) : PagingSource<Int, ContactWithExtensionInfoEntity>

@@ -5,6 +5,7 @@ import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.Contact
+import com.ojhdtapp.parabox.domain.model.ContactWithExtensionInfo
 import com.ojhdtapp.parabox.domain.model.QueryMessage
 import com.ojhdtapp.parabox.domain.model.RecentQuery
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
@@ -22,6 +23,7 @@ data class MainSharedState(
     val contactPicker: ContactPicker = ContactPicker(),
     val chatPicker: ChatPicker = ChatPicker(),
     val openDateRangePicker: Boolean = false,
+    val contactDetailDialogState: ContactDetailDialogState = ContactDetailDialogState(),
 ): UiState{
     data class DataStore(
         val messageBadgeNum: Int = 0,
@@ -90,5 +92,11 @@ data class MainSharedState(
         val loadState: LoadState = LoadState.LOADING,
         val query: String = "",
         val result: List<Chat> = emptyList(),
+    )
+
+    data class ContactDetailDialogState(
+        val contactWithExtensionInfo: ContactWithExtensionInfo? = null,
+        val relativeChatList: List<Chat> = emptyList(),
+        val loadState: LoadState = LoadState.LOADING,
     )
 }

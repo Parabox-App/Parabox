@@ -47,8 +47,6 @@ fun EnabledChatFilterDialog(
     onDismiss: () -> Unit,
 ) {
     if (openDialog) {
-
-
         var openCustomTagFilterDialog by remember {
             mutableStateOf(false)
         }

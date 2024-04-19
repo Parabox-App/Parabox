@@ -2,11 +2,9 @@ package com.ojhdtapp.parabox.ui.contact
 
 import android.annotation.SuppressLint
 import android.graphics.drawable.BitmapDrawable
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -15,7 +13,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,7 +20,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -32,18 +28,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Message
-import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.LibraryAdd
-import androidx.compose.material.icons.outlined.Message
 import androidx.compose.material.icons.outlined.PersonAddAlt
 import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
@@ -52,10 +43,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarColors
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
 import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
@@ -73,18 +62,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
-import coil3.request.transformations
-import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.ImageUtil
 import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.domain.model.Chat
@@ -409,7 +390,7 @@ private fun ContactDetailPageContent(
                         when (state.contactDetail.relativeChatState.loadState) {
                             LoadState.LOADING -> {
                                 repeat(2) {
-                                    EmptyChatItem()
+                                    EmptyRelativeChatItem()
                                 }
                             }
 
@@ -426,7 +407,7 @@ private fun ContactDetailPageContent(
                             LoadState.SUCCESS -> {
                                 Column {
                                     state.contactDetail.relativeChatState.chatList.forEach {
-                                        ChatItem(chat = it) {
+                                        RelativeChatItem(chat = it) {
 
                                         }
                                     }
@@ -443,7 +424,7 @@ private fun ContactDetailPageContent(
 }
 
 @Composable
-private fun EmptyChatItem(modifier: Modifier = Modifier) {
+fun EmptyRelativeChatItem(modifier: Modifier = Modifier) {
     Surface(color = MaterialTheme.colorScheme.surfaceContainerHighest) {
         Row(
             modifier = modifier.padding(vertical = 16.dp),
@@ -469,7 +450,7 @@ private fun EmptyChatItem(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun ChatItem(modifier: Modifier = Modifier, chat: Chat, onClick: () -> Unit) {
+fun RelativeChatItem(modifier: Modifier = Modifier, chat: Chat, onClick: () -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainerHighest,

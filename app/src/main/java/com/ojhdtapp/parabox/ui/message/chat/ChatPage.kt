@@ -360,6 +360,9 @@ fun NormalChatPage(
                                 )
                             }
                         },
+                        onShowContactDetail = {
+                            onMainSharedEvent(MainSharedEvent.ShowContactDetailDialog(it))
+                        },
                         onEvent = onEvent
                     )
                 }
@@ -471,6 +474,12 @@ fun NormalChatPage(
                                                             onEvent = onEvent
                                                         )
                                                     }
+                                                },
+                                                onAvatarClick = {
+                                                    onMainSharedEvent(MainSharedEvent.LoadContactDetailDialog(item.sender.contactId))
+                                                },
+                                                onAvatarLongClick = {
+
                                                 },
                                                 onEvent = onEvent
                                             )

@@ -8,7 +8,9 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -92,6 +94,7 @@ import me.saket.swipe.SwipeableActionsBox
 import me.saket.swipe.rememberSwipeableActionsState
 import kotlin.math.abs
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MessageItem(
     modifier: Modifier = Modifier,
@@ -102,6 +105,8 @@ fun MessageItem(
     isLast: Boolean = true,
     shouldDisplayTime: Boolean = false,
     onImageClick: (elementId: Long) -> Unit,
+    onAvatarClick: () -> Unit,
+    onAvatarLongClick: () -> Unit,
     onEvent: (e: MessagePageEvent) -> Unit,
 ) {
     val context = LocalContext.current
@@ -202,7 +207,10 @@ fun MessageItem(
                     modifier = Modifier
                         .size(42.dp)
                         .clip(CircleShape)
-                        .clickable { }
+                        .combinedClickable(
+                            onClick = onAvatarClick,
+                            onLongClick = onAvatarLongClick
+                        )
                 ) {
                     CommonAvatar(
                         model = CommonAvatarModel(

@@ -330,10 +330,9 @@ fun RecentSearchContent(
                         modifier = Modifier
                             .padding(start = 16.dp)
                             .placeholder(
-                                visible = state.contact.loadState == LoadState.LOADING,
-                                color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                                isLoading = state.contact.loadState == LoadState.LOADING,
+                                backgroundColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
                                 shape = MaterialTheme.shapes.large,
-                                highlight = PlaceholderHighlight.fade(),
                             ),
                         avatarModel = it.avatar.getModel(),
                         title = buildAnnotatedString {
@@ -342,7 +341,7 @@ fun RecentSearchContent(
                                     withStyle(
                                         style = SpanStyle(
                                             fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.primary
+                                            color = MaterialTheme.colorScheme.primaryContainer
                                         )
                                     ) {
                                         append(it)
@@ -354,7 +353,7 @@ fun RecentSearchContent(
                         },
                         subTitle = null
                     ) {
-
+                        onEvent(MainSharedEvent.LoadContactDetailDialog(it.contactId))
                     }
                 }
             }
@@ -612,10 +611,9 @@ fun TypingSearchContent(
                         modifier = Modifier
                             .padding(start = 16.dp)
                             .placeholder(
-                                visible = state.contact.loadState == LoadState.LOADING,
-                                color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                                isLoading = state.contact.loadState == LoadState.LOADING,
+                                backgroundColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
                                 shape = MaterialTheme.shapes.large,
-                                highlight = PlaceholderHighlight.fade(),
                             ),
                         avatarModel = it.avatar.getModel(),
                         title = buildAnnotatedString {
@@ -636,7 +634,7 @@ fun TypingSearchContent(
                         },
                         subTitle = null
                     ) {
-
+                        onEvent(MainSharedEvent.LoadContactDetailDialog(it.contactId))
                     }
                 }
             }
@@ -1092,7 +1090,7 @@ fun DoneSearchContactContent(
                 },
                 subTitle = null,
             ) {
-
+                onEvent(MainSharedEvent.LoadContactDetailDialog(res.contactId))
             }
         }
         item {
@@ -1255,7 +1253,7 @@ fun SearchResultItem(
                     .size(32.dp)
                     .background(
                         if (leadingIcon != null) MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
-                        else MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.primaryContainer
                     ),
                 contentAlignment = Alignment.Center
             ) {
@@ -1313,9 +1311,8 @@ fun EmptySearchResultItem(
                     .size(32.dp)
                     .background(MaterialTheme.colorScheme.primary)
                     .placeholder(
-                        visible = true,
-                        color = MaterialTheme.colorScheme.secondaryContainer,
-                        highlight = PlaceholderHighlight.fade(),
+                        isLoading = true,
+                        backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
                     ),
                 contentAlignment = Alignment.Center
             ) {}
@@ -1367,6 +1364,7 @@ fun SearchResultItemVertical(
         modifier = modifier,
         onClick = onClick,
         elevation = 0.dp,
+        shape = RoundedCornerShape(8.dp),
         color = Color.Transparent
     ) {
         Column(
@@ -1380,7 +1378,7 @@ fun SearchResultItemVertical(
                 modifier = Modifier
                     .clip(CircleShape)
                     .size(48.dp)
-                    .background(MaterialTheme.colorScheme.primary),
+                    .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
                 CommonAvatar(model = CommonAvatarModel(model = avatarModel, name = title.text) )

@@ -16,6 +16,8 @@ import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.domain.model.filter.MessageFilter
 import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
+import com.ojhdtapp.parabox.domain.use_case.GetChat
+import com.ojhdtapp.parabox.domain.use_case.GetContact
 import com.ojhdtapp.parabox.domain.use_case.Query
 import com.ojhdtapp.parabox.ui.base.BaseViewModel
 import com.ojhdtapp.parabox.ui.base.UiEffect
@@ -33,6 +35,8 @@ class MainSharedViewModel @Inject constructor(
     val query: Query,
     val extensionManager: ExtensionManager,
     val gson: Gson,
+    val getChat: GetChat,
+    val getContact: GetContact
 ) : BaseViewModel<MainSharedState, MainSharedEvent, UiEffect>() {
 
     override fun initialState(): MainSharedState {
@@ -456,6 +460,41 @@ class MainSharedViewModel @Inject constructor(
                 editDataStore(event.key, event.value)
                 return state
             }
+
+            is MainSharedEvent.LoadContactDetailDialog -> {
+                viewModelScope.launch {
+                    getContact.withExtensionInfoById(event.contactId).collectLatest {
+                        if (it is Resource.Success) {
+                            sendEvent(MainSharedEvent.ShowContactDetailDialog(it.data!!))
+                        }
+                    }
+                }
+                return state
+            }
+
+            is MainSharedEvent.ShowContactDetailDialog -> {
+                loadRelativeChatList(event.contactWithExtensionInfo.contact.contactId)
+                return state.copy(
+                    contactDetailDialogState = MainSharedState.ContactDetailDialogState(
+                        contactWithExtensionInfo = event.contactWithExtensionInfo
+                    )
+                )
+            }
+
+            is MainSharedEvent.DismissContactDetailDialog -> {
+                return state.copy(
+                    contactDetailDialogState = MainSharedState.ContactDetailDialogState()
+                )
+            }
+
+            is MainSharedEvent.UpdateContactRelativeChatList -> {
+                return state.copy(
+                    contactDetailDialogState = state.contactDetailDialogState.copy(
+                        relativeChatList = event.list,
+                            loadState = event.loadState
+                    )
+                )
+            }
         }
     }
 
@@ -715,6 +754,19 @@ class MainSharedViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    private suspend fun loadRelativeChatList(contactId: Long) {
+        viewModelScope.launch(Dispatchers.IO) {
+            getChat.containsContact(contactId).collectLatest {
+                if (it is Resource.Success) {
+                    sendEvent(MainSharedEvent.UpdateContactRelativeChatList(it.data ?: emptyList(), LoadState.SUCCESS))
+                } else if (it is Resource.Error) {
+                    sendEvent(MainSharedEvent.UpdateContactRelativeChatList(emptyList(), LoadState.ERROR))
+                }
+            }
+        }
+
     }
 
     private fun <T> editDataStore(key: Preferences.Key<T>, value: T) {

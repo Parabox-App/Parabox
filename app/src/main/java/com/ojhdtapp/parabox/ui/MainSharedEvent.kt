@@ -1,8 +1,10 @@
 package com.ojhdtapp.parabox.ui
 
 import androidx.datastore.preferences.core.Preferences
+import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.Contact
+import com.ojhdtapp.parabox.domain.model.ContactWithExtensionInfo
 import com.ojhdtapp.parabox.domain.model.QueryMessage
 import com.ojhdtapp.parabox.domain.model.RecentQuery
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
@@ -14,7 +16,7 @@ sealed interface MainSharedEvent : UiEvent {
     data class UpdateDataStore(val value: MainSharedState.DataStore) : MainSharedEvent
     data class QueryInput(val input: String) : MainSharedEvent
     data class SearchConfirm(val input: String) : MainSharedEvent
-    object GetRecentQuery : MainSharedEvent
+    data object GetRecentQuery : MainSharedEvent
     data class GetRecentQueryDone(val res: List<RecentQuery>, val isSuccess: Boolean) : MainSharedEvent
     data class DeleteRecentQuery(val id: Long) : MainSharedEvent
     data class MessageSearchDone(val res: List<QueryMessage>, val isSuccess: Boolean) :
@@ -39,11 +41,15 @@ sealed interface MainSharedEvent : UiEvent {
     data class GetPickContactDone(val res: List<Contact>, val isSuccess: Boolean) : MainSharedEvent
     data class PickDateRange(val onDone: (Pair<Long, Long>?) -> Unit) : MainSharedEvent
     data class PickDateRangeDone(val res: Pair<Long, Long>?) : MainSharedEvent
-    object PageListScrollBy : MainSharedEvent
+    data object PageListScrollBy : MainSharedEvent
     data class UpdateEnabledChatFilterList(val list: List<ChatFilter>) : MainSharedEvent
     data class OnChatFilterAdded(val filter: ChatFilter) : MainSharedEvent
     data class OnChatFilterRemoved(val filter: ChatFilter) : MainSharedEvent
     data class OnChatFilterListReordered(val fromIndex: Int, val toIndex: Int) : MainSharedEvent
     data class UpdateSettingSwitch(val key: Preferences.Key<Boolean>, val value: Boolean) : MainSharedEvent
     data class UpdateSettingMenu(val key: Preferences.Key<Int>, val value: Int) : MainSharedEvent
+    data class LoadContactDetailDialog(val contactId: Long) : MainSharedEvent
+    data class ShowContactDetailDialog(val contactWithExtensionInfo: ContactWithExtensionInfo) : MainSharedEvent
+    data object DismissContactDetailDialog : MainSharedEvent
+    data class UpdateContactRelativeChatList(val list: List<Chat>, val loadState: LoadState) : MainSharedEvent
 }

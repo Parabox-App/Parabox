@@ -71,6 +71,24 @@ class ContactRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun getContactWithExtensionInfoById(contactId: Long): Flow<Resource<ContactWithExtensionInfo>> {
+        return flow {
+            emit(Resource.Loading())
+            try {
+                emit(
+                    withContext(Dispatchers.IO) {
+                        db.contactDao.getContactWithExtensionInfoById(contactId)?.toContactWithExtensionInfo()?.let {
+                            Resource.Success(it)
+                        }
+                    } ?: Resource.Error("not found")
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+                emit(Resource.Error("unknown error"))
+            }
+        }
+    }
+
     override fun getContactByPlatformInfo(pkg: String, uid: String): Flow<Resource<Contact>> {
         return flow {
             emit(Resource.Loading())

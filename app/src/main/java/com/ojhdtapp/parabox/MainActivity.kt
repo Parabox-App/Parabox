@@ -65,6 +65,7 @@ import com.ojhdtapp.parabox.ui.common.isSeparating
 import com.ojhdtapp.parabox.ui.contact.ContactPageViewModel
 import com.ojhdtapp.parabox.ui.contact.ContactPageWrapperUI
 import com.ojhdtapp.parabox.ui.file.FilePageViewModel
+import com.ojhdtapp.parabox.ui.message.ContactDetailDialog
 import com.ojhdtapp.parabox.ui.message.MessageAndChatPageWrapperUI
 import com.ojhdtapp.parabox.ui.message.MessagePageViewModel
 import com.ojhdtapp.parabox.ui.navigation.DefaultRootComponent
@@ -294,6 +295,10 @@ class MainActivity : AppCompatActivity() {
                     }, onDismiss = {
                         mainSharedViewModel.sendEvent(MainSharedEvent.PickDateRangeDone(null))
                     })
+                    ContactDetailDialog(
+                        contactDetailDialogState = mainSharedState.contactDetailDialogState,
+                        onEvent = mainSharedViewModel::sendEvent
+                    )
                     Children(
                         stack = root.rootStack,
                         animation = predictiveBackAnimation(

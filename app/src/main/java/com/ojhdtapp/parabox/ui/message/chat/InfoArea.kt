@@ -86,6 +86,7 @@ fun InfoArea(
     imageSnapshotList: List<MessagePageState.ImagePreviewerState.ImagePreviewerItem>,
     onImageClick: (indexOfSnapshot: Int, elementId: Long) -> Unit,
     onLazyGridEndReached: () -> Unit,
+    onShowContactDetail: (contactWithExtensionInfo: ContactWithExtensionInfo) -> Unit,
     onEvent: (MessagePageEvent) -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -170,6 +171,7 @@ fun InfoArea(
                 3 -> {
                     InfoContactArea(
                         contactPagingDataFlow = contactPagingDataFlow,
+                        onShowContactDetail = onShowContactDetail,
                         onEvent = onEvent
                     )
                 }
@@ -436,6 +438,7 @@ fun InfoGalleryArea(
 fun InfoContactArea(
     modifier: Modifier = Modifier,
     contactPagingDataFlow: Flow<PagingData<ContactWithExtensionInfo>>,
+    onShowContactDetail: (contactWithExtensionInfo: ContactWithExtensionInfo) -> Unit,
     onEvent: (MessagePageEvent) -> Unit
 ) {
     val contactLazyPagingItems = contactPagingDataFlow.collectAsLazyPagingItems()
@@ -460,7 +463,7 @@ fun InfoContactArea(
                     avatarModel = item.contact.avatar.getModel(),
                     extName = item.extensionInfo.alias,
                 ) {
-
+                    onShowContactDetail(item)
                 }
             }
         }

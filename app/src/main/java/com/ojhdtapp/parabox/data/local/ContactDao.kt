@@ -31,6 +31,14 @@ interface ContactDao {
     )
     fun getContactById(contactId: Long): ContactEntity?
 
+    @Transaction
+    @Query(
+        "SELECT * FROM contact_entity " +
+                "WHERE contactId = :contactId " +
+                "LIMIT 1"
+    )
+    fun getContactWithExtensionInfoById(contactId: Long): ContactWithExtensionInfoEntity?
+
     @Query("SELECT * FROM contact_entity WHERE name LIKE '%' || :query || '%'")
     fun queryContact(query: String): List<ContactEntity>
 
