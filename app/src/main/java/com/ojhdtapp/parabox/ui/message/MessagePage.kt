@@ -164,141 +164,164 @@ fun MessagePage(
         topBar = {
             if (layoutType == MessageLayoutType.SPLIT) {
                 DockedSearchBar(
+                    inputField = {
+                        SearchBarDefaults.InputField(
+                            query = mainSharedState.search.query,
+                            onQueryChange = {
+                                mainSharedViewModel.sendEvent(
+                                    MainSharedEvent.QueryInput(it)
+                                )
+                            },
+                            onSearch = {
+                                if (it.isNotBlank()) {
+                                    mainSharedViewModel.sendEvent(MainSharedEvent.SearchConfirm(it))
+                                }
+                            },
+                            expanded = mainSharedState.search.isActive,
+                            onExpandedChange = { mainSharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(it)) },
+                            enabled = true,
+                            placeholder = { Text(text = "搜索 Parabox") },
+                            leadingIcon = {
+                                IconButton(
+                                    onClick = {
+                                        if (mainSharedState.search.isActive) {
+                                            mainSharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(false))
+                                        } else {
+                                            mainSharedViewModel.sendEvent(MainSharedEvent.OpenDrawer(!mainSharedState.openDrawer.open))
+                                        }
+                                    }
+                                ) {
+                                    Image(
+                                        painter = menuPainter, contentDescription = "drawer",
+                                        contentScale = ContentScale.FillBounds
+                                    )
+                                }
+                            },
+                            trailingIcon = {
+                                AnimatedVisibility(
+                                    visible = !mainSharedState.search.isActive,
+                                    enter = fadeIn(),
+                                    exit = fadeOut()
+                                ) {
+                                    IconButton(
+                                        onClick = { mainSharedViewModel.sendEvent(MainSharedEvent.SearchAvatarClicked) },
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(CircleShape)
+                                                .size(30.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            CommonAvatar(
+                                                model = CommonAvatarModel(
+                                                    model = mainSharedState.datastore.localAvatarUri,
+                                                    name = mainSharedState.datastore.localName,
+                                                ),
+                                                backgroundColor = MaterialTheme.colorScheme.primary,
+                                                textColor = MaterialTheme.colorScheme.onPrimary
+                                            )
+                                        }
+                                    }
+                                }
+                            },
+                            interactionSource = null,
+                        )
+                    },
+                    expanded = mainSharedState.search.isActive,
+                    onExpandedChange = { mainSharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(it)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = horizontalPadding)
                         .statusBarsPadding()
                         .clearFocusOnKeyboardDismiss(),
-                    query = mainSharedState.search.query,
-                    onQueryChange = {
-                        mainSharedViewModel.sendEvent(
-                            MainSharedEvent.QueryInput(it)
-                        )
-                    },
-                    onSearch = {
-                        if (it.isNotBlank()) {
-                            mainSharedViewModel.sendEvent(MainSharedEvent.SearchConfirm(it))
-                        }
-                    },
-                    active = mainSharedState.search.isActive,
-                    onActiveChange = { mainSharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(it)) },
-                    placeholder = { Text(text = "搜索 Parabox") },
-                    leadingIcon = {
-                        IconButton(
-                            onClick = {
-                                if (mainSharedState.search.isActive) {
-                                    mainSharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(false))
-                                } else {
-                                    mainSharedViewModel.sendEvent(MainSharedEvent.OpenDrawer(!mainSharedState.openDrawer.open))
-                                }
-                            }
-                        ) {
-                            Image(
-                                painter = menuPainter, contentDescription = "drawer",
-                                contentScale = ContentScale.FillBounds
-                            )
-                        }
-                    },
-                    trailingIcon = {
-                        AnimatedVisibility(
-                            visible = !mainSharedState.search.isActive,
-                            enter = fadeIn(),
-                            exit = fadeOut()
-                        ) {
-                            IconButton(
-                                onClick = { mainSharedViewModel.sendEvent(MainSharedEvent.SearchAvatarClicked) },
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .clip(CircleShape)
-                                        .size(30.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CommonAvatar(
-                                        model = CommonAvatarModel(
-                                            model = mainSharedState.datastore.localAvatarUri,
-                                            name = mainSharedState.datastore.localName,
-                                        ),
-                                        backgroundColor = MaterialTheme.colorScheme.primary,
-                                        textColor = MaterialTheme.colorScheme.onPrimary
-                                    )
-                                }
-                            }
-                        }
-                    },
+                    shape = SearchBarDefaults.dockedShape,
+                    colors = SearchBarDefaults.colors(dividerColor = Color.Transparent),
+                    tonalElevation = SearchBarDefaults.TonalElevation,
                     shadowElevation = searchBarShadowElevation,
-                    colors = SearchBarDefaults.colors(dividerColor = Color.Transparent)
-                ) {
-                    SearchContent(state = mainSharedState, onEvent = mainSharedViewModel::sendEvent)
-                }
+                    content = {
+                        SearchContent(state = mainSharedState, onEvent = mainSharedViewModel::sendEvent)
+                    },
+                )
             } else {
                 SearchBar(
+                    inputField = {
+                        SearchBarDefaults.InputField(
+                            query = mainSharedState.search.query,
+                            onQueryChange = {
+                                mainSharedViewModel.sendEvent(
+                                    MainSharedEvent.QueryInput(it)
+                                )
+                            },
+                            onSearch = {
+                                if (it.isNotBlank()) {
+                                    mainSharedViewModel.sendEvent(MainSharedEvent.SearchConfirm(it))
+                                }
+                            },
+                            expanded = mainSharedState.search.isActive,
+                            onExpandedChange = { mainSharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(it)) },
+                            enabled = true,
+                            placeholder = { Text(text = "搜索 Parabox") },
+                            leadingIcon = {
+                                IconButton(
+                                    onClick = {
+                                        if (mainSharedState.search.isActive) {
+                                            mainSharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(false))
+                                        } else {
+                                            mainSharedViewModel.sendEvent(MainSharedEvent.OpenDrawer(!mainSharedState.openDrawer.open))
+                                        }
+                                    }
+                                ) {
+                                    Image(
+                                        painter = menuPainter, contentDescription = "drawer",
+                                        contentScale = ContentScale.FillBounds
+                                    )
+                                }
+                            },
+                            trailingIcon = {
+                                AnimatedVisibility(
+                                    visible = !mainSharedState.search.isActive,
+                                    enter = fadeIn(),
+                                    exit = fadeOut()
+                                ) {
+                                    IconButton(
+                                        onClick = { mainSharedViewModel.sendEvent(MainSharedEvent.SearchAvatarClicked) },
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(CircleShape)
+                                                .size(30.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            CommonAvatar(
+                                                model = CommonAvatarModel(
+                                                    model = mainSharedState.datastore.localAvatarUri,
+                                                    name = mainSharedState.datastore.localName,
+                                                ),
+                                                backgroundColor = MaterialTheme.colorScheme.primary,
+                                                textColor = MaterialTheme.colorScheme.onPrimary
+                                            )
+                                        }
+                                    }
+                                }
+                            },
+                            interactionSource = null,
+                        )
+                    },
+                    expanded = mainSharedState.search.isActive,
+                    onExpandedChange = { mainSharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(it)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = searchBarPadding)
                         .clearFocusOnKeyboardDismiss(),
-                    query = mainSharedState.search.query,
-                    onQueryChange = {
-                        mainSharedViewModel.sendEvent(
-                            MainSharedEvent.QueryInput(it)
-                        )
-                    },
-                    onSearch = {
-                        if (it.isNotBlank()) {
-                            mainSharedViewModel.sendEvent(MainSharedEvent.SearchConfirm(it))
-                        }
-                    },
-                    active = mainSharedState.search.isActive,
-                    onActiveChange = { mainSharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(it)) },
-                    placeholder = { Text(text = "搜索 Parabox") },
-                    leadingIcon = {
-                        IconButton(
-                            onClick = {
-                                if (mainSharedState.search.isActive) {
-                                    mainSharedViewModel.sendEvent(MainSharedEvent.TriggerSearchBar(false))
-                                } else {
-                                    mainSharedViewModel.sendEvent(MainSharedEvent.OpenDrawer(!mainSharedState.openDrawer.open))
-                                }
-                            }
-                        ) {
-                            Image(
-                                painter = menuPainter, contentDescription = "drawer",
-                                contentScale = ContentScale.FillBounds
-                            )
-                        }
-                    },
-                    trailingIcon = {
-                        AnimatedVisibility(
-                            visible = !mainSharedState.search.isActive,
-                            enter = fadeIn(),
-                            exit = fadeOut()
-                        ) {
-                            IconButton(
-                                onClick = { mainSharedViewModel.sendEvent(MainSharedEvent.SearchAvatarClicked) },
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .clip(CircleShape)
-                                        .size(30.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CommonAvatar(
-                                        model = CommonAvatarModel(
-                                            model = mainSharedState.datastore.localAvatarUri,
-                                            name = mainSharedState.datastore.localName,
-                                        ),
-                                        backgroundColor = MaterialTheme.colorScheme.primary,
-                                        textColor = MaterialTheme.colorScheme.onPrimary
-                                    )
-                                }
-                            }
-                        }
-                    },
+                    shape = SearchBarDefaults.inputFieldShape,
+                    colors = SearchBarDefaults.colors(dividerColor = Color.Transparent),
+                    tonalElevation = SearchBarDefaults.TonalElevation,
                     shadowElevation = searchBarShadowElevation,
-                    colors = SearchBarDefaults.colors(dividerColor = Color.Transparent)
-                ) {
-                    SearchContent(state = mainSharedState, onEvent = mainSharedViewModel::sendEvent)
-                }
+                    windowInsets = SearchBarDefaults.windowInsets,
+                    content = {
+                        SearchContent(state = mainSharedState, onEvent = mainSharedViewModel::sendEvent)
+                    },
+                )
             }
 
         }) {

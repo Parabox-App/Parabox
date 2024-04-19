@@ -536,9 +536,9 @@ suspend fun refreshImageSnapshotList(
     val newList = oldList.toMutableList().apply {
         messageLazyPagingItems.itemSnapshotList.forEachIndexed { index, chatPageUiModel ->
             if (chatPageUiModel is ChatPageUiModel.MessageWithSender) {
+                val tempList = mutableListOf<MessagePageState.ImagePreviewerState.ImagePreviewerItem>()
                 chatPageUiModel.message.contents.forEachIndexed { mIndex, paraboxMessageElement ->
                     if (paraboxMessageElement is ParaboxImage) {
-
                         val mElementId =
                             chatPageUiModel.message.contentsId[mIndex]
                         if (this.find { it.elementId == mElementId } == null) {
@@ -546,7 +546,7 @@ suspend fun refreshImageSnapshotList(
                                 "parabox",
                                 "image add;elementId = ${mElementId};indexOfPaging=${index};itemCount=${messageLazyPagingItems.itemCount}"
                             )
-                            add(
+                            tempList.add(0,
                                 MessagePageState.ImagePreviewerState.ImagePreviewerItem(
                                     image = paraboxMessageElement,
                                     elementId = mElementId,
@@ -556,6 +556,7 @@ suspend fun refreshImageSnapshotList(
                         }
                     }
                 }
+                addAll(tempList)
             }
         }
     }.sortedBy { it.indexInPaging }

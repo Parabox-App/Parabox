@@ -15,6 +15,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -118,218 +119,241 @@ fun ContactPage(
         topBar = {
             if (layoutType == ContactLayoutType.SPLIT) {
                 DockedSearchBar(
+                    inputField = {
+                        SearchBarDefaults.InputField(
+                            query = mainSharedState.search.query,
+                            onQueryChange = {
+                                onMainSharedEvent(
+                                    MainSharedEvent.QueryInput(it)
+                                )
+                            },
+                            onSearch = {
+                                if (it.isNotBlank()) {
+                                    onMainSharedEvent(MainSharedEvent.SearchConfirm(it))
+                                }
+                            },
+                            expanded = mainSharedState.search.isActive,
+                            onExpandedChange = { onMainSharedEvent(MainSharedEvent.TriggerSearchBar(it)) },
+                            enabled = true,
+                            placeholder = { Text(text = "搜索 Parabox") },
+                            leadingIcon = {
+                                IconButton(
+                                    onClick = {
+                                        if (mainSharedState.search.isActive) {
+                                            onMainSharedEvent(MainSharedEvent.TriggerSearchBar(false))
+                                        } else {
+                                            onMainSharedEvent(MainSharedEvent.OpenDrawer(!mainSharedState.openDrawer.open))
+                                        }
+                                    }
+                                ) {
+                                    Icon(painter = menuPainter, contentDescription = "drawer")
+                                }
+                            },
+                            trailingIcon = {
+                                AnimatedVisibility(
+                                    visible = !mainSharedState.search.isActive,
+                                    enter = fadeIn(),
+                                    exit = fadeOut()
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Box {
+                                            var isMenuVisible by remember {
+                                                mutableStateOf(false)
+                                            }
+                                            CascadeDropdownMenu(
+                                                expanded = isMenuVisible,
+                                                onDismissRequest = { isMenuVisible = false },
+                                                offset = DpOffset(16.dp, 0.dp),
+                                                properties = PopupProperties(
+                                                    dismissOnBackPress = true,
+                                                    dismissOnClickOutside = true,
+                                                    focusable = true
+                                                ),
+                                                shape = MaterialTheme.shapes.medium,
+                                            ) {
+                                                DropdownMenuHeader {
+                                                    Text(text = "筛选")
+                                                }
+                                                androidx.compose.material3.DropdownMenuItem(
+                                                    text = {
+                                                        Text(text = "仅显示好友")
+                                                    },
+                                                    onClick = {
+                                                        viewModel.sendEvent(ContactPageEvent.ToggleFriendOnly)
+                                                        isMenuVisible = false
+                                                    },
+                                                    trailingIcon = {
+                                                        Checkbox(checked = state.friendOnly, onCheckedChange = {
+                                                            viewModel.sendEvent(ContactPageEvent.ToggleFriendOnly)
+                                                            isMenuVisible = false
+                                                        })
+                                                    })
+                                            }
+                                            IconButton(onClick = { isMenuVisible = true }) {
+                                                Icon(imageVector = Icons.Outlined.Tune, contentDescription = "more")
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        IconButton(
+                                            onClick = { onMainSharedEvent(MainSharedEvent.SearchAvatarClicked) },
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .clip(CircleShape)
+                                                    .size(30.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                CommonAvatar(
+                                                    model = CommonAvatarModel(
+                                                        model = mainSharedState.datastore.localAvatarUri,
+                                                        name = mainSharedState.datastore.localName
+                                                    ),
+                                                    backgroundColor = MaterialTheme.colorScheme.primary,
+                                                    textColor = MaterialTheme.colorScheme.onPrimary
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            interactionSource = null,
+                        )
+                    },
+                    expanded = mainSharedState.search.isActive,
+                    onExpandedChange = { onMainSharedEvent(MainSharedEvent.TriggerSearchBar(it)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .statusBarsPadding()
                         .padding(horizontal = 2.dp)
                         .clearFocusOnKeyboardDismiss(),
-                    query = mainSharedState.search.query,
-                    onQueryChange = {
-                        onMainSharedEvent(
-                            MainSharedEvent.QueryInput(it)
-                        )
-                    },
-                    onSearch = {
-                        if (it.isNotBlank()) {
-                            onMainSharedEvent(MainSharedEvent.SearchConfirm(it))
-                        }
-                    },
-                    active = mainSharedState.search.isActive,
-                    onActiveChange = { onMainSharedEvent(MainSharedEvent.TriggerSearchBar(it)) },
-                    placeholder = { Text(text = "搜索 Parabox") },
-                    leadingIcon = {
-                        IconButton(
-                            onClick = {
-                                if (mainSharedState.search.isActive) {
-                                    onMainSharedEvent(MainSharedEvent.TriggerSearchBar(false))
-                                } else {
-                                    onMainSharedEvent(MainSharedEvent.OpenDrawer(!mainSharedState.openDrawer.open))
-                                }
-                            }
-                        ) {
-                            Icon(painter = menuPainter, contentDescription = "drawer")
-                        }
-                    },
-                    trailingIcon = {
-                        AnimatedVisibility(
-                            visible = !mainSharedState.search.isActive,
-                            enter = fadeIn(),
-                            exit = fadeOut()
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box {
-                                    var isMenuVisible by remember {
-                                        mutableStateOf(false)
-                                    }
-                                    CascadeDropdownMenu(
-                                        expanded = isMenuVisible,
-                                        onDismissRequest = { isMenuVisible = false },
-                                        offset = DpOffset(16.dp, 0.dp),
-                                        properties = PopupProperties(
-                                            dismissOnBackPress = true,
-                                            dismissOnClickOutside = true,
-                                            focusable = true
-                                        ),
-                                        shape = MaterialTheme.shapes.medium,
-                                    ) {
-                                        DropdownMenuHeader {
-                                            Text(text = "筛选")
-                                        }
-                                        androidx.compose.material3.DropdownMenuItem(
-                                            text = {
-                                                Text(text = "仅显示好友")
-                                            },
-                                            onClick = {
-                                                viewModel.sendEvent(ContactPageEvent.ToggleFriendOnly)
-                                                isMenuVisible = false
-                                            },
-                                            trailingIcon = {
-                                                Checkbox(checked = state.friendOnly, onCheckedChange = {
-                                                    viewModel.sendEvent(ContactPageEvent.ToggleFriendOnly)
-                                                    isMenuVisible = false
-                                                })
-                                            })
-                                    }
-                                    IconButton(onClick = { isMenuVisible = true }) {
-                                        Icon(imageVector = Icons.Outlined.Tune, contentDescription = "more")
-                                    }
-                                }
-                                Spacer(modifier = Modifier.width(8.dp))
-                                IconButton(
-                                    onClick = { onMainSharedEvent(MainSharedEvent.SearchAvatarClicked) },
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(CircleShape)
-                                            .size(30.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        CommonAvatar(
-                                            model = CommonAvatarModel(
-                                                model = mainSharedState.datastore.localAvatarUri,
-                                                name = mainSharedState.datastore.localName
-                                            ),
-                                            backgroundColor = MaterialTheme.colorScheme.primary,
-                                            textColor = MaterialTheme.colorScheme.onPrimary
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    },
+                    shape = SearchBarDefaults.dockedShape,
+                    colors = SearchBarDefaults.colors(dividerColor = Color.Transparent),
+                    tonalElevation = SearchBarDefaults.TonalElevation,
                     shadowElevation = searchBarShadowElevation,
-                    colors = SearchBarDefaults.colors(dividerColor = Color.Transparent)
-                ) {
-                    SearchContent(state = mainSharedState, onEvent = onMainSharedEvent)
-                }
+                    content = {
+                        SearchContent(state = mainSharedState, onEvent = onMainSharedEvent)
+                    },
+                )
             } else {
                 SearchBar(
+                    inputField = {
+                        SearchBarDefaults.InputField(
+                            query = mainSharedState.search.query,
+                            onQueryChange = {
+                                onMainSharedEvent(
+                                    MainSharedEvent.QueryInput(it)
+                                )
+                            },
+                            onSearch = {
+                                if (it.isNotBlank()) {
+                                    onMainSharedEvent(MainSharedEvent.SearchConfirm(it))
+                                }
+                            },
+                            expanded = mainSharedState.search.isActive,
+                            onExpandedChange = { onMainSharedEvent(MainSharedEvent.TriggerSearchBar(it)) },
+                            enabled = true,
+                            placeholder = { Text(text = "搜索 Parabox") },
+                            leadingIcon = {
+                                IconButton(
+                                    onClick = {
+                                        if (mainSharedState.search.isActive) {
+                                            onMainSharedEvent(MainSharedEvent.TriggerSearchBar(false))
+                                        } else {
+                                            onMainSharedEvent(MainSharedEvent.OpenDrawer(!mainSharedState.openDrawer.open))
+                                        }
+                                    }
+                                ) {
+                                    Image(
+                                        painter = menuPainter, contentDescription = "drawer",
+                                        contentScale = ContentScale.FillBounds
+                                    )
+                                }
+                            },
+                            trailingIcon = {
+                                AnimatedVisibility(
+                                    visible = !mainSharedState.search.isActive,
+                                    enter = fadeIn(),
+                                    exit = fadeOut()
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Box {
+                                            var isMenuVisible by remember {
+                                                mutableStateOf(false)
+                                            }
+                                            CascadeDropdownMenu(
+                                                expanded = isMenuVisible,
+                                                onDismissRequest = { isMenuVisible = false },
+                                                offset = DpOffset(16.dp, 0.dp),
+                                                properties = PopupProperties(
+                                                    dismissOnBackPress = true,
+                                                    dismissOnClickOutside = true,
+                                                    focusable = true
+                                                ),
+                                                shape = MaterialTheme.shapes.medium,
+                                            ) {
+                                                DropdownMenuHeader {
+                                                    Text(text = "筛选")
+                                                }
+                                                androidx.compose.material3.DropdownMenuItem(
+                                                    text = {
+                                                        Text(text = "仅显示好友")
+                                                    },
+                                                    onClick = {
+                                                        viewModel.sendEvent(ContactPageEvent.ToggleFriendOnly)
+                                                        isMenuVisible = false
+                                                    },
+                                                    trailingIcon = {
+                                                        Checkbox(checked = state.friendOnly, onCheckedChange = {
+                                                            viewModel.sendEvent(ContactPageEvent.ToggleFriendOnly)
+                                                            isMenuVisible = false
+                                                        })
+                                                    })
+                                            }
+                                            IconButton(onClick = { isMenuVisible = true }) {
+                                                Icon(imageVector = Icons.Outlined.Tune, contentDescription = "more")
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        IconButton(
+                                            onClick = { onMainSharedEvent(MainSharedEvent.SearchAvatarClicked) },
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .clip(CircleShape)
+                                                    .size(30.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                CommonAvatar(
+                                                    model = CommonAvatarModel(
+                                                        model = mainSharedState.datastore.localAvatarUri,
+                                                        name = mainSharedState.datastore.localName
+                                                    ),
+                                                    backgroundColor = MaterialTheme.colorScheme.primary,
+                                                    textColor = MaterialTheme.colorScheme.onPrimary
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            interactionSource = null,
+                        )
+                    },
+                    expanded = mainSharedState.search.isActive,
+                    onExpandedChange = { onMainSharedEvent(MainSharedEvent.TriggerSearchBar(it)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = searchBarPadding)
                         .clearFocusOnKeyboardDismiss(),
-                    query = mainSharedState.search.query,
-                    onQueryChange = {
-                        onMainSharedEvent(
-                            MainSharedEvent.QueryInput(it)
-                        )
-                    },
-                    onSearch = {
-                        if (it.isNotBlank()) {
-                            onMainSharedEvent(MainSharedEvent.SearchConfirm(it))
-                        }
-                    },
-                    active = mainSharedState.search.isActive,
-                    onActiveChange = { onMainSharedEvent(MainSharedEvent.TriggerSearchBar(it)) },
-                    placeholder = { Text(text = "搜索 Parabox") },
-                    leadingIcon = {
-                        IconButton(
-                            onClick = {
-                                if (mainSharedState.search.isActive) {
-                                    onMainSharedEvent(MainSharedEvent.TriggerSearchBar(false))
-                                } else {
-                                    onMainSharedEvent(MainSharedEvent.OpenDrawer(!mainSharedState.openDrawer.open))
-                                }
-                            }
-                        ) {
-                            Image(
-                                painter = menuPainter, contentDescription = "drawer",
-                                contentScale = ContentScale.FillBounds
-                            )
-                        }
-                    },
-                    trailingIcon = {
-                        AnimatedVisibility(
-                            visible = !mainSharedState.search.isActive,
-                            enter = fadeIn(),
-                            exit = fadeOut()
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box {
-                                    var isMenuVisible by remember {
-                                        mutableStateOf(false)
-                                    }
-                                    CascadeDropdownMenu(
-                                        expanded = isMenuVisible,
-                                        onDismissRequest = { isMenuVisible = false },
-                                        offset = DpOffset(16.dp, 0.dp),
-                                        properties = PopupProperties(
-                                            dismissOnBackPress = true,
-                                            dismissOnClickOutside = true,
-                                            focusable = true
-                                        ),
-                                        shape = MaterialTheme.shapes.medium,
-                                    ) {
-                                        DropdownMenuHeader {
-                                            Text(text = "筛选")
-                                        }
-                                        androidx.compose.material3.DropdownMenuItem(
-                                            text = {
-                                                Text(text = "仅显示好友")
-                                            },
-                                            onClick = {
-                                                viewModel.sendEvent(ContactPageEvent.ToggleFriendOnly)
-                                                isMenuVisible = false
-                                            },
-                                            trailingIcon = {
-                                                Checkbox(checked = state.friendOnly, onCheckedChange = {
-                                                    viewModel.sendEvent(ContactPageEvent.ToggleFriendOnly)
-                                                    isMenuVisible = false
-                                                })
-                                            })
-                                    }
-                                    IconButton(onClick = { isMenuVisible = true }) {
-                                        Icon(imageVector = Icons.Outlined.Tune, contentDescription = "more")
-                                    }
-                                }
-                                Spacer(modifier = Modifier.width(8.dp))
-                                IconButton(
-                                    onClick = { onMainSharedEvent(MainSharedEvent.SearchAvatarClicked) },
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(CircleShape)
-                                            .size(30.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        CommonAvatar(
-                                            model = CommonAvatarModel(
-                                                model = mainSharedState.datastore.localAvatarUri,
-                                                name = mainSharedState.datastore.localName
-                                            ),
-                                            backgroundColor = MaterialTheme.colorScheme.primary,
-                                            textColor = MaterialTheme.colorScheme.onPrimary
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    },
+                    shape = SearchBarDefaults.inputFieldShape,
+                    colors = SearchBarDefaults.colors(dividerColor = Color.Transparent),
+                    tonalElevation = SearchBarDefaults.TonalElevation,
                     shadowElevation = searchBarShadowElevation,
-                    colors = SearchBarDefaults.colors(dividerColor = Color.Transparent)
-                ) {
-                    SearchContent(state = mainSharedState, onEvent = onMainSharedEvent)
-                }
+                    windowInsets = SearchBarDefaults.windowInsets,
+                    content = {
+                        SearchContent(state = mainSharedState, onEvent = onMainSharedEvent)
+                    },
+                )
             }
         }
     ) {
@@ -342,32 +366,6 @@ fun ContactPage(
                 item {
                     Spacer(modifier = Modifier.height(16.dp))
                 }
-//                for (index in 0 until contactPagingData.itemCount) {
-//                    val peekItem = contactPagingData.peek(index)
-//                    val nameFirstLetter = peekItem?.contact?.name?.let { FormUtil.getFirstLetter(it) }
-//                    val lastNameFirstLetter = (index - 1).takeIf { it >= 0 }
-//                        ?.let { contactPagingData.peek(it) }?.contact?.name?.let { FormUtil.getFirstLetter(it) }
-//                    if (lastNameFirstLetter == null || lastNameFirstLetter != nameFirstLetter) {
-//                        stickyHeader {
-//                            ContactStickyHeader(character = nameFirstLetter ?: "#")
-//                        }
-//                    }
-//                    item(key = peekItem?.contact?.contactId ?: index) {
-//                        val item = contactPagingData[index]
-//                        if (item == null) {
-//                            EmptyContactItem()
-//                        } else {
-//
-//                            ContactItem(
-//                                modifier = Modifier.padding(horizontal = if (layoutType == ContactLayoutType.SPLIT) 0.dp else 16.dp),
-//                                name = item.contact.name,
-//                                character = nameFirstLetter,
-//                                avatarModel = item.contact.avatar.getModel(),
-//                                extName = item.extensionInfo.alias,
-//                                onClick = {})
-//                        }
-//                    }
-//                }
                 if (state.friendOnly) {
                     item {
                         Box(modifier = Modifier.padding(horizontal = 16.dp)){
