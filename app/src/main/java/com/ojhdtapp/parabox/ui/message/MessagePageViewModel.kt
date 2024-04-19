@@ -269,7 +269,10 @@ class MessagePageViewModel @Inject constructor(
                 }
                 return state.copy(
                     chatDetail = MessagePageState.ChatDetail(
-                        chat = event.chat
+                        chat = event.chat,
+                        editAreaState = MessagePageState.EditAreaState(
+                            memeList = refreshMemeList()
+                        )
                     )
                 )
             }

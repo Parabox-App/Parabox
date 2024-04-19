@@ -18,22 +18,17 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DockedSearchBar
@@ -62,12 +57,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
-import androidx.navigation.NavController
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import com.ojhdtapp.parabox.R
@@ -78,10 +71,10 @@ import com.ojhdtapp.parabox.ui.common.CommonAvatar
 import com.ojhdtapp.parabox.ui.common.CommonAvatarModel
 import com.ojhdtapp.parabox.ui.common.SearchContent
 import com.ojhdtapp.parabox.ui.common.clearFocusOnKeyboardDismiss
-import com.ojhdtapp.parabox.ui.message.MessageLayoutType
+import com.ojhdtapp.parabox.ui.message.chat.PlainContactItem
+import com.ojhdtapp.parabox.ui.message.chat.EmptyPlainContactItem
 import me.saket.cascade.CascadeDropdownMenu
 import my.nanihadesuka.compose.InternalLazyColumnScrollbar
-import my.nanihadesuka.compose.LazyColumnScrollbar
 import my.nanihadesuka.compose.ScrollbarSelectionMode
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationGraphicsApi::class, ExperimentalFoundationApi::class,
@@ -376,14 +369,22 @@ fun ContactPage(
 //                    }
 //                }
                 if (state.friendOnly) {
+                    item {
+                        Box(modifier = Modifier.padding(horizontal = 16.dp)){
+                            Text(
+                                text = "所有好友（${friendPagingData.itemCount}）",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                        }
+                    }
                     items(count = friendPagingData.itemCount,
                         key = friendPagingData.itemKey { it.contact.contactId }) { index ->
                         val item = friendPagingData[index]
                         if (item == null) {
-                            EmptyContactItem()
+                            EmptyPlainContactItem()
                         } else {
-                            ContactItem(
-                                modifier = Modifier.padding(horizontal = if (layoutType == ContactLayoutType.SPLIT) 0.dp else 16.dp),
+                            PlainContactItem(
                                 name = item.contact.name,
                                 lastName = (index - 1).takeIf { it >= 0 }
                                     ?.let { friendPagingData.peek(it) }?.contact?.name,
@@ -397,14 +398,22 @@ fun ContactPage(
                         }
                     }
                 } else {
+                    item {
+                        Box(modifier = Modifier.padding(horizontal = 16.dp)){
+                            Text(
+                                text = "所有联系人（${contactPagingData.itemCount}）",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                     items(count = contactPagingData.itemCount,
                         key = contactPagingData.itemKey { it.contact.contactId }) { index ->
                         val item = contactPagingData[index]
                         if (item == null) {
-                            EmptyContactItem()
+                            EmptyPlainContactItem()
                         } else {
-                            ContactItem(
-                                modifier = Modifier.padding(horizontal = if (layoutType == ContactLayoutType.SPLIT) 0.dp else 16.dp),
+                            PlainContactItem(
                                 name = item.contact.name,
                                 lastName = (index - 1).takeIf { it >= 0 }
                                     ?.let { contactPagingData.peek(it) }?.contact?.name,

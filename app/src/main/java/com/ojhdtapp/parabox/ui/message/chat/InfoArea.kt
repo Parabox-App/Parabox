@@ -1,11 +1,8 @@
 package com.ojhdtapp.parabox.ui.message.chat
 
-import android.graphics.BitmapFactory
 import android.util.Log
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -18,23 +15,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.NewLabel
@@ -54,16 +46,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -71,35 +56,21 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.times
 import androidx.compose.ui.util.fastJoinToString
-import androidx.core.graphics.drawable.toBitmap
 import androidx.paging.PagingData
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
-import coil.size.Size
 import com.ojhdtapp.parabox.R
-import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.data.local.entity.ChatTagsUpdate
-import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.ContactWithExtensionInfo
-import com.ojhdtapp.parabox.ui.MainSharedEvent
-import com.ojhdtapp.parabox.ui.common.CommonAvatar
-import com.ojhdtapp.parabox.ui.common.CommonAvatarModel
 import com.ojhdtapp.parabox.ui.common.MyFilterChip
-import com.ojhdtapp.parabox.ui.contact.ContactItem
-import com.ojhdtapp.parabox.ui.contact.EmptyContactItem
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageState
-import com.ojhdtapp.parabox.ui.message.NewChatTagDialog
 import com.ojhdtapp.parabox.ui.setting.SettingHeader
 import com.ojhdtapp.parabox.ui.setting.SettingItem
 import com.ojhdtapp.parabox.ui.setting.SettingLayoutType
-import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
-import com.origeek.imageViewer.gallery.ImageGallery
-import com.origeek.imageViewer.gallery.rememberImageGalleryState
 import com.origeek.imageViewer.previewer.ImagePreviewerState
 import com.origeek.imageViewer.previewer.TransformImageView
 import kotlinx.coroutines.flow.Flow
@@ -477,11 +448,11 @@ fun InfoContactArea(
         ) { index ->
             val item = contactLazyPagingItems[index]
             if (item == null) {
-                EmptyContactItem(
+                EmptyPlainContactItem(
                     modifier = Modifier.animateItem()
                 )
             } else {
-                ContactItem(
+                PlainContactItem(
                     modifier = Modifier.animateItem(),
                     name = item.contact.name,
                     lastName = (index - 1).takeIf { it >= 0 }

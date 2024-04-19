@@ -217,10 +217,19 @@ private fun ContactDetailPageContent(
         containerColor = MaterialTheme.colorScheme.surfaceContainer
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
+            val density = LocalDensity.current
+            val offsetDp by remember {
+                derivedStateOf {
+                    with(density) {
+                        -(scrollState.value / 3).toDp()
+                    }
+                }
+            }
             AsyncImage(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(240.dp),
+                    .height(240.dp)
+                    .offset(y = offsetDp),
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(state.contactDetail.contactWithExtensionInfo?.contact?.avatar?.getModel())
                     .transformations(BlurTransformation(LocalContext.current))
@@ -263,10 +272,11 @@ private fun ContactDetailPageContent(
                         modifier = Modifier
                             .clip(CircleShape)
                             .size(96.dp)
-                            .border(2.dp, MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                            .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         CommonAvatar(
+                            modifier = Modifier.background(MaterialTheme.colorScheme.primaryContainer),
                             model = CommonAvatarModel(
                                 model = state.contactDetail.contactWithExtensionInfo?.contact?.avatar?.getModel(),
                                 name = state.contactDetail.contactWithExtensionInfo?.contact?.name ?: "null"
@@ -369,12 +379,12 @@ private fun ContactDetailPageContent(
                                 )
                             }
                             Spacer(modifier = Modifier.weight(1f))
-                            Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = CircleShape) {
+                            Surface(color = MaterialTheme.colorScheme.primary, shape = CircleShape) {
                                 Text(
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                                     text = state.contactDetail.contactWithExtensionInfo?.extensionInfo?.alias ?: "",
                                     style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.primary,
+                                    color = MaterialTheme.colorScheme.onPrimary,
                                     maxLines = 1
                                 )
                             }

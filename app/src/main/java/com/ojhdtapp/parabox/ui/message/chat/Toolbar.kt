@@ -67,6 +67,7 @@ import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -228,6 +229,12 @@ fun Toolbar(
                     var memeState by remember {
                         mutableStateOf(true)
                     }
+                    var showingMemeDeleteBtnIndex by remember {
+                        mutableIntStateOf(-1)
+                    }
+                    val carouselState = rememberCarouselState {
+                        state.memeList.size + 1
+                    }
                     Spacer(modifier = Modifier.width(14.dp))
                     Column(
                         modifier = Modifier
@@ -311,12 +318,6 @@ fun Toolbar(
                                         }
                                     }
                                 } else {
-                                    var showingMemeDeleteBtnIndex by remember {
-                                        mutableStateOf(-1)
-                                    }
-                                    val carouselState = rememberCarouselState {
-                                        state.memeList.size + 1
-                                    }
                                     HorizontalMultiBrowseCarousel(
                                         state = carouselState,
                                         preferredItemWidth = 144.dp,
