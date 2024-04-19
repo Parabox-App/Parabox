@@ -66,7 +66,7 @@ fun ImageLayout(
             .build(),
         error = painterResource(id = R.drawable.image_lost),
         fallback = painterResource(id = R.drawable.image_lost),
-        contentScale = ContentScale.Fit,
+        contentScale = ContentScale.Crop,
         onSuccess = {
             coroutineScope.launch {
                 val bitmap = it.result.drawable.toBitmap()
@@ -78,7 +78,7 @@ fun ImageLayout(
                 }
                 if (originalWidthDp != 0.dp) {
                     boxWidth = originalWidthDp.coerceIn(128.dp, 320.dp)
-                    boxHeight = (boxWidth / originalWidthDp * originalHeightDp).coerceAtMost(320.dp)
+                    boxHeight = (boxWidth / originalWidthDp * originalHeightDp).coerceIn(32.dp, 320.dp)
                 }
             }
         },

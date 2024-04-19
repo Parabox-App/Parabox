@@ -141,13 +141,13 @@ fun Toolbar(
             }
         }
     var tempCameraUri by remember {
-        mutableStateOf<Uri?>(null)
+        mutableStateOf<Uri>(Uri.EMPTY)
     }
     val cameraLauncher =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.TakePicture()) {
             if (it) {
-                onEvent(MessagePageEvent.ChooseImageUri(tempCameraUri!!))
-                tempCameraUri = null
+                onEvent(MessagePageEvent.ChooseImageUri(tempCameraUri))
+                tempCameraUri = Uri.EMPTY
             }
         }
     val filePickerLauncher =
@@ -548,6 +548,7 @@ fun Toolbar(
                             val path =
                                 fileUtil.createPathOnExternalFilesDir(FileUtil.EXTERNAL_FILES_DIR_CAMERA, fileName)
                             fileUtil.getUriForFile(path)?.let {
+                                tempCameraUri = it
                                 cameraLauncher.launch(it)
                             } ?: kotlin.run {
                                 Log.d("parabox", "tempCameraUri is null")
