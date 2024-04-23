@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.ui.setting
 
 import android.content.Context
+import android.content.pm.PackageInfo
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
@@ -38,10 +39,7 @@ class SettingPageViewModel @Inject constructor(
     val updateChat: UpdateChat
 ) : BaseViewModel<SettingPageState, SettingPageEvent, SettingPageEffect>() {
     override fun initialState(): SettingPageState {
-        return SettingPageState(
-            labelDetailState = SettingPageState.LabelDetailState(),
-            notificationState = SettingPageState.NotificationState()
-        )
+        return SettingPageState()
     }
 
     override suspend fun handleEvent(event: SettingPageEvent, state: SettingPageState): SettingPageState? {
@@ -70,6 +68,39 @@ class SettingPageViewModel @Inject constructor(
                 }
                 state
             }
+
+            is SettingPageEvent.UpdateExtensionInitActionState -> {
+                state.copy(
+                    initActionState = SettingPageState.InitActionState(
+                        packageInfo = event.initActionWrapper.packageInfo,
+                        actionList = event.initActionWrapper.actionList,
+                        currentIndex = event.initActionWrapper.currentIndex
+                    )
+                )
+            }
+
+            is SettingPageEvent.InitNewExtensionConnection -> {
+                initNewExtensionConnection(event.packageInfo)
+                state
+            }
+
+            is SettingPageEvent.SubmitExtensionInitActionResult -> {
+                submitExtensionInitActionResult(event.result)
+                state
+            }
+
+            is SettingPageEvent.RevertExtensionInitAction -> {
+                revertExtensionInitAction()
+                state
+            }
+
+            is SettingPageEvent.InitNewExtensionConnectionDone -> {
+                resetExtensionInit()
+                state.copy(
+                    initActionState = SettingPageState.InitActionState()
+                )
+            }
+
             is SettingPageEvent.RestartExtensionConnection -> {
                 extensionManager.restartExtension(event.extensionId)
                 state
@@ -117,7 +148,6 @@ class SettingPageViewModel @Inject constructor(
     }
 
     private var customTagLabelChatCollectionJob: Job? = null
-
     fun getChatWithCustomTag(customTag: ChatFilter.Tag) {
         customTagLabelChatCollectionJob?.cancel()
         customTagLabelChatCollectionJob = viewModelScope.launch(Dispatchers.IO) {
@@ -129,6 +159,37 @@ class SettingPageViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    private var initActionStateCollectionJob: Job? = null
+    private fun initNewExtensionConnection(packageInfo: PackageInfo) {
+        initActionStateCollectionJob?.cancel()
+        initActionStateCollectionJob = viewModelScope.launch(Dispatchers.IO) {
+            extensionManager.initActionWrapperFlow.collectLatest {
+                sendEvent(SettingPageEvent.UpdateExtensionInitActionState(it))
+            }
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            extensionManager.initNewExtensionConnection(packageInfo)
+        }
+    }
+
+    private fun submitExtensionInitActionResult(result: Any) {
+        viewModelScope.launch(Dispatchers.IO) {
+            extensionManager.submitInitActionResult(result)
+        }
+    }
+
+    private fun revertExtensionInitAction() {
+        viewModelScope.launch(Dispatchers.IO) {
+            extensionManager.revertInitAction()
+        }
+    }
+
+    private fun resetExtensionInit() {
+        initActionStateCollectionJob?.cancel()
+        initActionStateCollectionJob = null
+        extensionManager.resetInitAction()
     }
 
     init {

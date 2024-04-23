@@ -142,7 +142,7 @@ class ExtensionService : LifecycleService() {
             extensionManager.extensionPkgFlow.value.firstOrNull()?.let {
                 if (extensionManager.extensionFlow.value.isEmpty()) {
                     Log.d("bbb", "add pkgInfo")
-                    extensionManager.addPendingExtension("test", it, "")
+                    extensionManager.addPendingExtension("test", it, Bundle())
                 }
             }
         }

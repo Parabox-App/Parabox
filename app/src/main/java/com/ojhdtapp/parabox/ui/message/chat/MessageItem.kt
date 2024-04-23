@@ -260,7 +260,7 @@ fun MessageItem(
                             constraints.copy(
                                 maxWidth = constraints.maxWidth - with(density) {
                                     90.dp.roundToPx()
-                                },
+                                }.coerceAtLeast(0),
                             )
                         )
                         layout(placeable.width, placeable.height) {

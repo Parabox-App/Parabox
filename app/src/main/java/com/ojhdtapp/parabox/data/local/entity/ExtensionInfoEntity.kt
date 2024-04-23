@@ -13,7 +13,7 @@ data class ExtensionInfoEntity(
     val name: String,
     val version: String,
     val versionCode: Long,
-    val extra: String,
+    val extra: Bundle,
     @PrimaryKey(autoGenerate = true) val extensionId: Long = 0,
 ) {
     fun toExtensionInfo(): ExtensionInfo

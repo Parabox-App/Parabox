@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.domain.model
 
 import android.content.Context
+import android.os.Bundle
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.ojhdtapp.parabox.data.local.ExtensionInfo
@@ -17,7 +18,7 @@ sealed class Extension private constructor(
     override val pkg: String,
     override val version: String,
     override val versionCode: Long,
-    override val extra: String,
+    override val extra: Bundle,
     override val extensionId: Long,
 ) : ExtensionInfo(alias, pkg, name, version, versionCode, extra, extensionId) {
 
@@ -27,7 +28,7 @@ sealed class Extension private constructor(
         pkgName: String,
         versionName: String,
         versionCode: Long,
-        extra: String,
+        extra: Bundle,
         val ext: ParaboxExtension,
         extensionId: Long,
     ) : Extension(alias, name, pkgName, versionName, versionCode, extra, extensionId) {
@@ -58,7 +59,7 @@ sealed class Extension private constructor(
         pkgName: String,
         versionName: String,
         versionCode: Long,
-        extra: String,
+        extra: Bundle,
         extensionId: Long
     ) : Extension(alias, name, pkgName, versionName, versionCode, extra, extensionId) {
         constructor(info: ExtensionInfo) : this(
@@ -78,7 +79,7 @@ sealed class Extension private constructor(
         pkgName: String,
         versionName: String,
         versionCode: Long,
-        extra: String,
+        extra: Bundle,
         val ext: ParaboxExtension,
         val job: Job,
         extensionId: Long

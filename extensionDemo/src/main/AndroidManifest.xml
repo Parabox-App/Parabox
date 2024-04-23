@@ -17,6 +17,10 @@
             android:name="parabox.extension.class"
             android:value=".Extension"
             />
+        <meta-data
+            android:name="parabox.init_handler.class"
+            android:value=".InitHandler"
+            />
         <activity
             android:name=".MainActivity"
             android:exported="true"

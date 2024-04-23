@@ -11,16 +11,17 @@ import com.ojhdtapp.parabox.data.local.entity.ExtensionInfoEntity
 import com.ojhdtapp.parabox.domain.model.Extension
 import com.ojhdtapp.parabox.domain.repository.ExtensionInfoRepository
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxExtensionStatus
-import kotlinx.coroutines.DelicateCoroutinesApi
+import com.ojhdtapp.paraboxdevelopmentkit.init.ParaboxInitHandler
+import com.ojhdtapp.paraboxdevelopmentkit.model.init_actions.ParaboxInitAction
+import com.ojhdtapp.paraboxdevelopmentkit.model.init_actions.ParaboxInitActionResult
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.concurrent.CancellationException
 
 class ExtensionManager(
@@ -35,7 +36,182 @@ class ExtensionManager(
     private val _extensionFlow = MutableStateFlow(emptyList<Extension>())
     val extensionFlow = _extensionFlow.asStateFlow()
 
-    fun addPendingExtension(alias: String, packageInfo: PackageInfo, extra: String): Long {
+    // InitAction
+    private val _initActionWrapperFlow = MutableStateFlow(ExtensionInitActionWrapper())
+    val initActionWrapperFlow = _initActionWrapperFlow.asStateFlow()
+    private var initHandler: ParaboxInitHandler? = null
+    private var getInitActionJob: Job? = null
+    private var awaitInitActionResJob: Job? = null
+
+    suspend fun initNewExtensionConnection(packageInfo: PackageInfo) {
+        if (initHandler == null || initActionWrapperFlow.value.packageInfo?.packageName != packageInfo.packageName) {
+            initHandler = ExtensionLoader.createInitHandler(context, packageInfo)
+            _initActionWrapperFlow.value =
+                ExtensionInitActionWrapper(
+                    packageInfo = packageInfo,
+                    actionList = withContext(Dispatchers.IO) {
+                        initHandler?.getExtensionInitActions(packageInfo, emptyList(), 0) ?: emptyList()
+                    },
+                    currentIndex = 0
+                )
+        } else {
+            Log.d("parabox", "initNewExtensionConnection: already init")
+        }
+    }
+
+    suspend fun revertInitAction() {
+        awaitInitActionResJob?.cancel()
+        _initActionWrapperFlow.value = initActionWrapperFlow.value.copy(
+            currentIndex = initActionWrapperFlow.value.currentIndex - 1
+        )
+    }
+
+    suspend fun submitInitActionResult(result: Any) {
+        if (initActionWrapperFlow.value.packageInfo == null || initHandler == null) {
+            Log.e("parabox", "submitInitActionResult: packageInfo or initHandler is null")
+            return
+        }
+        awaitInitActionResJob?.cancel()
+        coroutineScope {
+            val currentActionIndex = initActionWrapperFlow.value.currentIndex
+            val action = initActionWrapperFlow.value.actionList.getOrNull(currentActionIndex) ?: return@coroutineScope
+            awaitInitActionResJob = launch(Dispatchers.IO) {
+                when (action) {
+                    is ParaboxInitAction.InfoAction -> {
+                        val res = action.onResult()
+                        if (res is ParaboxInitActionResult.Done) {
+                            _initActionWrapperFlow.value = initActionWrapperFlow.value.copy(
+                                actionList = initActionWrapperFlow.value.actionList.toMutableList().apply {
+                                    set(
+                                        currentActionIndex, action.copy(
+                                            errMsg = ""
+                                        )
+                                    )
+                                }
+                            )
+                            initHandler?.data?.putString(action.key, result.toString())
+                            increaseInitActionStep()
+                        } else {
+                            _initActionWrapperFlow.value = initActionWrapperFlow.value.copy(
+                                actionList = initActionWrapperFlow.value.actionList.toMutableList().apply {
+                                    set(
+                                        currentActionIndex, action.copy(
+                                            errMsg = (res as ParaboxInitActionResult.Error).message
+                                        )
+                                    )
+                                }
+                            )
+                        }
+                    }
+
+                    is ParaboxInitAction.TextInputAction -> {
+                        val res = action.onResult(result as String)
+                        if (res is ParaboxInitActionResult.Done) {
+                            _initActionWrapperFlow.value = initActionWrapperFlow.value.copy(
+                                actionList = initActionWrapperFlow.value.actionList.toMutableList().apply {
+                                    set(
+                                        currentActionIndex, action.copy(
+                                            errMsg = ""
+                                        )
+                                    )
+                                }
+                            )
+                            initHandler?.data?.putString(action.key, result.toString())
+                            increaseInitActionStep()
+                        } else {
+                            _initActionWrapperFlow.value = initActionWrapperFlow.value.copy(
+                                actionList = initActionWrapperFlow.value.actionList.toMutableList().apply {
+                                    set(
+                                        currentActionIndex, action.copy(
+                                            errMsg = (res as ParaboxInitActionResult.Error).message
+                                        )
+                                    )
+                                }
+                            )
+                        }
+                    }
+
+                    is ParaboxInitAction.SelectAction -> {
+                        val res = action.onResult(result as Int)
+                        if (res is ParaboxInitActionResult.Done) {
+                            _initActionWrapperFlow.value = initActionWrapperFlow.value.copy(
+                                actionList = initActionWrapperFlow.value.actionList.toMutableList().apply {
+                                    set(
+                                        currentActionIndex, action.copy(
+                                            errMsg = ""
+                                        )
+                                    )
+                                }
+                            )
+                            initHandler?.data?.putString(action.key, action.options[result])
+                            increaseInitActionStep()
+                        } else {
+                            _initActionWrapperFlow.value = initActionWrapperFlow.value.copy(
+                                actionList = initActionWrapperFlow.value.actionList.toMutableList().apply {
+                                    set(
+                                        currentActionIndex, action.copy(
+                                            errMsg = (res as ParaboxInitActionResult.Error).message
+                                        )
+                                    )
+                                }
+                            )
+                        }
+                    }
+
+                    is ParaboxInitAction.TextInputWithImageAction -> {
+                        val res = action.onResult(result.toString())
+                        if (res is ParaboxInitActionResult.Done) {
+                            _initActionWrapperFlow.value = initActionWrapperFlow.value.copy(
+                                actionList = initActionWrapperFlow.value.actionList.toMutableList().apply {
+                                    set(
+                                        currentActionIndex, action.copy(
+                                            errMsg = ""
+                                        )
+                                    )
+                                }
+                            )
+                            initHandler?.data?.putString(action.key, result.toString())
+                            increaseInitActionStep()
+                        } else {
+                            _initActionWrapperFlow.value = initActionWrapperFlow.value.copy(
+                                actionList = initActionWrapperFlow.value.actionList.toMutableList().apply {
+                                    set(
+                                        currentActionIndex, action.copy(
+                                            errMsg = (res as ParaboxInitActionResult.Error).message
+                                        )
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fun resetInitAction() {
+        _initActionWrapperFlow.value = ExtensionInitActionWrapper()
+        initHandler = null
+        getInitActionJob?.cancel()
+        getInitActionJob = null
+        awaitInitActionResJob?.cancel()
+        awaitInitActionResJob = null
+    }
+
+    private suspend fun increaseInitActionStep() {
+        _initActionWrapperFlow.value = initActionWrapperFlow.value.copy(
+            actionList = withContext(Dispatchers.IO) {
+                initHandler?.getExtensionInitActions(
+                    initActionWrapperFlow.value.packageInfo!!,
+                    initActionWrapperFlow.value.actionList,
+                    initActionWrapperFlow.value.currentIndex + 1
+                ) ?: emptyList()
+            },
+            currentIndex = initActionWrapperFlow.value.currentIndex + 1
+        )
+    }
+
+    fun addPendingExtension(alias: String, packageInfo: PackageInfo, extra: Bundle): Long {
         val pkgManager = context.packageManager
         val appInfo = try {
             pkgManager.getApplicationInfo(packageInfo.packageName, PackageManager.GET_META_DATA)

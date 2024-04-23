@@ -8,6 +8,6 @@ open class ExtensionInfo(
     open val name: String,
     open val version: String,
     open val versionCode: Long,
-    open val extra: String,
+    open val extra: Bundle,
     open val extensionId: Long,
 )

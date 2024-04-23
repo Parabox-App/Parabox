@@ -1,5 +1,7 @@
 package com.ojhdtapp.parabox.data.local
 
+import android.os.Bundle
+import android.os.Parcel
 import androidx.room.ProvidedTypeConverter
 import androidx.room.TypeConverter
 import com.google.gson.reflect.TypeToken
@@ -27,6 +29,29 @@ import kotlinx.serialization.protobuf.ProtoBuf
 class Converters(
     private val jsonParser: JsonParser
 ) {
+
+    @TypeConverter
+    fun fromBundle(bundle: Bundle): ByteArray {
+        val parcel = Parcel.obtain()
+        try {
+            parcel.writeBundle(bundle)
+            return parcel.marshall()
+        } finally {
+            parcel.recycle()
+        }
+    }
+
+    @TypeConverter
+    fun toBundle(data: ByteArray): Bundle {
+        val parcel = Parcel.obtain()
+        try {
+            parcel.unmarshall(data, 0, data.size)
+            parcel.setDataPosition(0)
+            return requireNotNull(parcel.readBundle())
+        } finally {
+            parcel.recycle()
+        }
+    }
 
     @OptIn(ExperimentalSerializationApi::class)
     @TypeConverter
