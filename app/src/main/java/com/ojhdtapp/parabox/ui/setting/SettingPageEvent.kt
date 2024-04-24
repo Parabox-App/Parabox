@@ -19,7 +19,7 @@ sealed interface SettingPageEvent : UiEvent{
     data class InitNewExtensionConnection(val packageInfo: PackageInfo): SettingPageEvent
     data class SubmitExtensionInitActionResult(val result: Any): SettingPageEvent
     object RevertExtensionInitAction: SettingPageEvent
-    data object InitNewExtensionConnectionDone : SettingPageEvent
+    data class InitNewExtensionConnectionDone(val isDone: Boolean) : SettingPageEvent
     data class RestartExtensionConnection(val extensionId: Long): SettingPageEvent
     data class UpdateSelectedTagLabel(val tagLabel: ChatFilter.Tag): SettingPageEvent
     data class TagLabelChatsLoadDone(val chats: List<Chat>, val loadState: LoadState) : SettingPageEvent

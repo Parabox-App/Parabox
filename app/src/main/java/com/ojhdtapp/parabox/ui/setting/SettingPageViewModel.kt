@@ -95,7 +95,7 @@ class SettingPageViewModel @Inject constructor(
             }
 
             is SettingPageEvent.InitNewExtensionConnectionDone -> {
-                resetExtensionInit()
+                resetExtensionInit(event.isDone)
                 state.copy(
                     initActionState = SettingPageState.InitActionState()
                 )
@@ -186,10 +186,10 @@ class SettingPageViewModel @Inject constructor(
         }
     }
 
-    private fun resetExtensionInit() {
+    private fun resetExtensionInit(isDone: Boolean) {
         initActionStateCollectionJob?.cancel()
         initActionStateCollectionJob = null
-        extensionManager.resetInitAction()
+        extensionManager.resetInitAction(isDone)
     }
 
     init {

@@ -189,7 +189,15 @@ class ExtensionManager(
         }
     }
 
-    fun resetInitAction() {
+    fun resetInitAction(isDone: Boolean) {
+        if (isDone && initHandler != null && initActionWrapperFlow.value.packageInfo != null) {
+            addPendingExtension(
+                alias = "#TODO: alias",
+                packageInfo = initActionWrapperFlow.value.packageInfo!!,
+                extra = initHandler!!.data
+            )
+        }
+
         _initActionWrapperFlow.value = ExtensionInitActionWrapper()
         initHandler = null
         getInitActionJob?.cancel()

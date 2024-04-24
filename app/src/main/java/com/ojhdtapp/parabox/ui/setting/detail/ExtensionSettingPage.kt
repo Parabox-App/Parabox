@@ -54,8 +54,10 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
 import androidx.core.graphics.drawable.toBitmapOrNull
+import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
+import com.arkivanov.decompose.router.stack.pushNew
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.domain.model.Extension
 import com.ojhdtapp.parabox.ui.MainSharedEvent
@@ -115,6 +117,8 @@ fun ExtensionSettingPage(
                     state = state,
                     mainSharedState = mainSharedState,
                     layoutType = layoutType,
+                    navigation = navigation,
+                    stackState = stackState,
                     onEvent = onEvent,
                     onMainSharedEvent = onMainSharedEvent,
                 )
@@ -145,6 +149,8 @@ fun ExtensionSettingPage(
                 state = state,
                 mainSharedState = mainSharedState,
                 layoutType = layoutType,
+                navigation = navigation,
+                stackState = stackState,
                 onEvent = onEvent,
                 onMainSharedEvent = onMainSharedEvent
             )
@@ -152,12 +158,15 @@ fun ExtensionSettingPage(
     }
 }
 
+@OptIn(ExperimentalDecomposeApi::class)
 @Composable
 private fun Content(
     modifier: Modifier = Modifier,
     state: SettingPageState,
     mainSharedState: MainSharedState,
     layoutType: SettingLayoutType,
+    navigation: StackNavigation<DefaultSettingComponent.SettingConfig>,
+    stackState: ChildStack<*, SettingComponent.SettingChild>,
     onEvent: (SettingPageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
@@ -200,6 +209,8 @@ private fun Content(
                 selected = false,
                 layoutType = layoutType
             ) {
+                onEvent(SettingPageEvent.InitNewExtensionConnection(it))
+                navigation.pushNew(DefaultSettingComponent.SettingConfig.ExtensionAddSetting)
             }
         }
         item {

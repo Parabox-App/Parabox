@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
@@ -38,6 +39,7 @@ import com.ojhdtapp.parabox.ui.navigation.RootComponent
 import com.ojhdtapp.parabox.ui.navigation.SettingComponent
 import com.ojhdtapp.parabox.ui.navigation.slideWithOffset
 import com.ojhdtapp.parabox.ui.setting.detail.AppearanceSettingPage
+import com.ojhdtapp.parabox.ui.setting.detail.ExtensionAddSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.ExtensionSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.GeneralSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.LabelDetailSettingPage
@@ -79,7 +81,11 @@ fun SettingPageWrapperUi(
     val settingStackState by component.settingStack.subscribeAsState()
 
     ListDetailPaneScaffold(
-        modifier = modifier.background(MaterialTheme.colorScheme.surfaceContainer),
+        modifier = modifier
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .padding(
+                horizontal = if (layoutType == SettingLayoutType.NORMAL) 0.dp else 16.dp,
+            ),
         directive = scaffoldNavigator.scaffoldDirective,
         value = scaffoldNavigator.scaffoldValue,
         listPane = {
@@ -142,7 +148,7 @@ fun SettingPageWrapperUi(
                         }
 
                         is SettingComponent.SettingChild.ExtensionAddSetting -> {
-                            ExtensionSettingPage(
+                            ExtensionAddSettingPage(
                                 state = state,
                                 mainSharedState = mainSharedState,
                                 layoutType = layoutType,
