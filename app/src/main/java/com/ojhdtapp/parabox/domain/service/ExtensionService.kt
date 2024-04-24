@@ -83,7 +83,7 @@ class ExtensionService : LifecycleService() {
                                 Log.e("parabox", "extension ${it} error", th)
                                 it.updateStatus(ParaboxExtensionStatus.Error(th.message ?: "unknown error"))
                             } + job) {
-                                it.init(baseContext, bridge)
+                                it.init(baseContext, bridge, it.extra)
                             }
                         }
                     } catch (e: Exception) {
@@ -135,17 +135,17 @@ class ExtensionService : LifecycleService() {
                 Log.d("parabox", "extensionFlow=${it}")
             }
         }
-
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            delay(5000)
-            extensionManager.extensionPkgFlow.value.firstOrNull()?.let {
-                if (extensionManager.extensionFlow.value.isEmpty()) {
-                    Log.d("bbb", "add pkgInfo")
-                    extensionManager.addPendingExtension("test", it, Bundle())
-                }
-            }
-        }
+//
+//
+//        lifecycleScope.launch(Dispatchers.IO) {
+//            delay(5000)
+//            extensionManager.extensionPkgFlow.value.firstOrNull()?.let {
+//                if (extensionManager.extensionFlow.value.isEmpty()) {
+//                    Log.d("bbb", "add pkgInfo")
+//                    extensionManager.addPendingExtension("test", it, Bundle())
+//                }
+//            }
+//        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

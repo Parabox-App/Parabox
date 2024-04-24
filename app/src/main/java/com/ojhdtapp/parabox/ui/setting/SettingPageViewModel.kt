@@ -144,6 +144,11 @@ class SettingPageViewModel @Inject constructor(
                 }
                 state
             }
+
+            is SettingPageEvent.RefreshExtensionPkgInfo -> {
+                extensionManager.refreshExtensionPkg()
+                state
+            }
         }
     }
 
@@ -189,7 +194,9 @@ class SettingPageViewModel @Inject constructor(
     private fun resetExtensionInit(isDone: Boolean) {
         initActionStateCollectionJob?.cancel()
         initActionStateCollectionJob = null
-        extensionManager.resetInitAction(isDone)
+        viewModelScope.launch {
+            extensionManager.resetInitAction(isDone)
+        }
     }
 
     init {

@@ -24,6 +24,7 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Extension
 import androidx.compose.material.icons.outlined.Pending
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -211,6 +212,14 @@ private fun Content(
             ) {
                 onEvent(SettingPageEvent.InitNewExtensionConnection(it))
                 navigation.pushNew(DefaultSettingComponent.SettingConfig.ExtensionAddSetting)
+            }
+        }
+        item {
+            SettingItem(title = "刷新可用连接", selected = false, layoutType = layoutType,
+                leadingIcon = {
+                    Icon(imageVector = Icons.Outlined.Refresh, contentDescription = "refresh")
+                }) {
+                onEvent(SettingPageEvent.RefreshExtensionPkgInfo)
             }
         }
         item {

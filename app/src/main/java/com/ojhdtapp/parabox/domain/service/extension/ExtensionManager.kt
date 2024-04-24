@@ -50,7 +50,7 @@ class ExtensionManager(
                 ExtensionInitActionWrapper(
                     packageInfo = packageInfo,
                     actionList = withContext(Dispatchers.IO) {
-                        initHandler?.getExtensionInitActions(packageInfo, emptyList(), 0) ?: emptyList()
+                        listOf(ExtensionManager.aliasAction) + (initHandler?.getExtensionInitActions(packageInfo, emptyList(), 0) ?: emptyList())
                     },
                     currentIndex = 0
                 )
@@ -189,13 +189,20 @@ class ExtensionManager(
         }
     }
 
-    fun resetInitAction(isDone: Boolean) {
+    suspend fun resetInitAction(isDone: Boolean) {
         if (isDone && initHandler != null && initActionWrapperFlow.value.packageInfo != null) {
-            addPendingExtension(
-                alias = "#TODO: alias",
-                packageInfo = initActionWrapperFlow.value.packageInfo!!,
-                extra = initHandler!!.data
-            )
+            coroutineScope {
+                launch(Dispatchers.IO) {
+                    addPendingExtension(
+                        alias = initHandler!!.data.getString(
+                            ALIAS_KEY, initActionWrapperFlow.value.packageInfo?.packageName ?: "alias"
+                        ),
+                        packageInfo = initActionWrapperFlow.value.packageInfo!!,
+                        extra = initHandler!!.data
+                    )
+                }
+            }
+
         }
 
         _initActionWrapperFlow.value = ExtensionInitActionWrapper()
@@ -209,11 +216,11 @@ class ExtensionManager(
     private suspend fun increaseInitActionStep() {
         _initActionWrapperFlow.value = initActionWrapperFlow.value.copy(
             actionList = withContext(Dispatchers.IO) {
-                initHandler?.getExtensionInitActions(
+                listOf(ExtensionManager.aliasAction) +( initHandler?.getExtensionInitActions(
                     initActionWrapperFlow.value.packageInfo!!,
                     initActionWrapperFlow.value.actionList,
                     initActionWrapperFlow.value.currentIndex + 1
-                ) ?: emptyList()
+                ) ?: emptyList())
             },
             currentIndex = initActionWrapperFlow.value.currentIndex + 1
         )
@@ -290,5 +297,24 @@ class ExtensionManager(
                 }
             }
         }
+    }
+
+    companion object ExtensionManager {
+        private const val TAG = "ExtensionManager"
+        private const val ALIAS_KEY = "alias"
+        private val aliasAction = ParaboxInitAction.TextInputAction(
+            key = ALIAS_KEY,
+            title = "输入别名",
+            errMsg = "",
+            description = "别名将用于区分同一扩展提供的不同连接。",
+            label = "别名",
+            onResult = { alias ->
+                if (alias.isEmpty()) {
+                    ParaboxInitActionResult.Error("别名不能为空")
+                } else {
+                    ParaboxInitActionResult.Done
+                }
+            }
+        )
     }
 }

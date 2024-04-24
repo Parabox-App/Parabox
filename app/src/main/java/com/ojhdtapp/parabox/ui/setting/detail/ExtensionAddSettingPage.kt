@@ -60,6 +60,7 @@ import androidx.compose.ui.window.PopupProperties
 import androidx.core.os.LocaleListCompat
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
+import com.arkivanov.decompose.router.stack.pop
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.ui.MainSharedEvent
@@ -118,6 +119,9 @@ fun ExtensionAddSettingPage(
                     state = state,
                     mainSharedState = mainSharedState,
                     layoutType = layoutType,
+                    scaffoldNavigator = scaffoldNavigator,
+                    navigation = navigation,
+                    stackState = stackState,
                     onEvent = onEvent,
                     onMainSharedEvent = onMainSharedEvent,
                 )
@@ -138,7 +142,10 @@ fun ExtensionAddSettingPage(
                         )
                     },
                     navigationIcon = {
-                        IconButton(onClick = { scaffoldNavigator.navigateBack(BackNavigationBehavior.PopLatest) }) {
+                        IconButton(onClick = {
+                            scaffoldNavigator.navigateBack(BackNavigationBehavior.PopLatest)
+                            onEvent(SettingPageEvent.InitNewExtensionConnectionDone(false))
+                        }) {
                             Icon(imageVector = Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "back")
                         }
                     },
@@ -150,6 +157,9 @@ fun ExtensionAddSettingPage(
                 state = state,
                 mainSharedState = mainSharedState,
                 layoutType = layoutType,
+                scaffoldNavigator = scaffoldNavigator,
+                navigation = navigation,
+                stackState = stackState,
                 onEvent = onEvent,
                 onMainSharedEvent = onMainSharedEvent
             )
@@ -157,12 +167,16 @@ fun ExtensionAddSettingPage(
     }
 }
 
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 private fun Content(
     modifier: Modifier = Modifier,
     state: SettingPageState,
     mainSharedState: MainSharedState,
     layoutType: SettingLayoutType,
+    scaffoldNavigator: ThreePaneScaffoldNavigator<Setting>,
+    navigation: StackNavigation<DefaultSettingComponent.SettingConfig>,
+    stackState: ChildStack<*, SettingComponent.SettingChild>,
     onEvent: (SettingPageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) =
@@ -299,12 +313,11 @@ private fun Content(
                                         }
                                         Spacer(modifier = Modifier.width(8.dp))
                                     }
-                                    if (state.initActionState.currentIndex <= state.initActionState.actionList.size - 1) {
-                                        Button(onClick = {
-                                            onEvent(SettingPageEvent.InitNewExtensionConnectionDone(true))
-                                        }) {
-                                            Text(text = "完成")
-                                        }
+                                    Button(onClick = {
+                                        navigation.pop()
+                                        onEvent(SettingPageEvent.InitNewExtensionConnectionDone(true))
+                                    }) {
+                                        Text(text = "完成")
                                     }
                                 }
                             }
@@ -313,5 +326,4 @@ private fun Content(
                 }
             }
         }
-        state.initActionState.actionList
     }

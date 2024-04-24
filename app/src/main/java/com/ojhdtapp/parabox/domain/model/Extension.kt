@@ -120,8 +120,8 @@ sealed class Extension private constructor(
             )
         }
 
-        suspend fun init(context: Context, bridge: ParaboxBridge) {
-            ext.init(context, bridge)
+        suspend fun init(context: Context, bridge: ParaboxBridge, extra: Bundle) {
+            ext.init(context, bridge, extra)
         }
 
         fun getStatus(): StateFlow<ParaboxExtensionStatus> {

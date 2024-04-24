@@ -3,6 +3,7 @@ package com.ojhdtapp.parabox.ui.message
 import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.layout.AnimatedPane
@@ -30,6 +31,7 @@ import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.message.chat.ChatPage
 import com.ojhdtapp.parabox.ui.navigation.DefaultMenuComponent
 import com.ojhdtapp.parabox.ui.navigation.MenuComponent
+import com.ojhdtapp.parabox.ui.setting.SettingLayoutType
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3WindowSizeClassApi::class)
@@ -110,7 +112,9 @@ fun MessageAndChatPageWrapperUI(
     ListDetailPaneScaffold(
         directive = scaffoldNavigator.scaffoldDirective,
         value = scaffoldNavigator.scaffoldValue,
-        modifier = modifier,
+        modifier = modifier.padding(
+            horizontal = if (layoutType == MessageLayoutType.NORMAL) 0.dp else 16.dp,
+        ),
         listPane = {
             AnimatedPane(modifier = Modifier.preferredWidth(352.dp)) {
                 MessagePage(

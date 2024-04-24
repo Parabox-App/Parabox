@@ -2,6 +2,7 @@ package com.ojhdtapp.parabox.ui.contact
 
 import android.app.Activity
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.adaptive.layout.AnimatedPane
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
@@ -25,6 +26,7 @@ import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.navigation.DefaultMenuComponent
 import com.ojhdtapp.parabox.ui.navigation.MenuComponent
+import com.ojhdtapp.parabox.ui.setting.SettingLayoutType
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
@@ -54,7 +56,9 @@ fun ContactPageWrapperUI(
         }
     }
     ListDetailPaneScaffold(
-        modifier = modifier,
+        modifier = modifier.padding(
+            horizontal = if (layoutType == ContactLayoutType.NORMAL) 0.dp else 16.dp,
+        ),
         directive = scaffoldNavigator.scaffoldDirective,
         value = scaffoldNavigator.scaffoldValue,
         listPane = {

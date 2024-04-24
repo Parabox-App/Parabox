@@ -1,6 +1,7 @@
 package com.ojhdtapp.paraboxdevelopmentkit.extension
 
 import android.content.Context
+import android.os.Bundle
 import android.util.Log
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
@@ -30,7 +31,7 @@ abstract class ParaboxExtension {
     private var _status: MutableStateFlow<ParaboxExtensionStatus> = MutableStateFlow(ParaboxExtensionStatus.Pending)
     val status get() = _status.asStateFlow()
 
-    suspend fun init(context: Context, bridge: ParaboxBridge) {
+    suspend fun init(context: Context, bridge: ParaboxBridge, extra: Bundle) {
         coroutineScope {
             if (BuildConfig.DEBUG) {
                 launch {
@@ -46,7 +47,7 @@ abstract class ParaboxExtension {
             mContext = context
             mBridge = bridge
             updateStatus(ParaboxExtensionStatus.Initializing)
-            onInitialize()
+            onInitialize(extra)
         }
     }
 
@@ -75,7 +76,7 @@ abstract class ParaboxExtension {
             mBridge!!.recallMessage(uuid)
         }
     }
-    abstract suspend fun onInitialize() : Boolean
+    abstract suspend fun onInitialize(extra: Bundle) : Boolean
     abstract fun onSendMessage(message: SendMessage)
     abstract fun onRecallMessage()
     abstract fun onGetContacts()

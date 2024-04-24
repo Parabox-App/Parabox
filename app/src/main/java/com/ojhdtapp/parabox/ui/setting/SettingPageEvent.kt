@@ -26,4 +26,5 @@ sealed interface SettingPageEvent : UiEvent{
     data class UpdateChatTags(val chatId: Long, val tags: List<String>): SettingPageEvent
     data class NotificationDisabledChatLoadDone(val chats: List<Chat>, val loadState: LoadState) : SettingPageEvent
     data class UpdateChatNotificationEnabled(val chatId: Long, val value: Boolean): SettingPageEvent
+    data object RefreshExtensionPkgInfo: SettingPageEvent
 }

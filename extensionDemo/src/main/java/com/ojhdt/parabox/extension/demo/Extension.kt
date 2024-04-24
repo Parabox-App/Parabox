@@ -1,5 +1,6 @@
 package com.ojhdt.parabox.extension.demo
 
+import android.os.Bundle
 import android.util.Log
 import androidx.lifecycle.LifecycleOwner
 import cn.evole.onebot.client.config.BotConfig
@@ -26,7 +27,9 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.contact.ParaboxContact
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.lang.Exception
 import java.net.URI
+import java.util.concurrent.BlockingQueue
 import java.util.concurrent.LinkedBlockingQueue
 
 class Extension : ParaboxExtension() {
@@ -34,15 +37,23 @@ class Extension : ParaboxExtension() {
     private lateinit var client: WSClient
     private lateinit var dispatchers: EventBus
 
-    override suspend fun onInitialize(): Boolean {
+    override suspend fun onInitialize(extra: Bundle): Boolean {
+        val ip = extra.getString("onebot_ip") ?: "127.0.0.1"
+        val port = extra.getString("onebot_port") ?: "8080"
         val botConfig = BotConfig().apply {
-            url = "ws://127.0.0.1:8080"
+            url = "ws://${ip}:${port}"
         }
         val blockingQueue = LinkedBlockingQueue<String>() //使用队列传输数据
         val actionHandler = ActionHandler(botConfig)
-        client = WSClient(URI.create("ws://127.0.0.1:8081"), blockingQueue, actionHandler)
+        client = OneBotClient(
+            URI.create("ws://${ip}:${port}"), blockingQueue, actionHandler,
+            { code, reason, remote ->
+                updateStatus(ParaboxExtensionStatus.Error(reason ?: "Connection closed"))
+            }, { ex ->
+                updateStatus(ParaboxExtensionStatus.Initializing)
+            }
+        )
         bot = client.createBot()
-
         dispatchers = EventBus(blockingQueue)
         dispatchers.addListener(object : SimpleEventListener<GroupMessageEvent>() {
             override fun onMessage(event: GroupMessageEvent?) {
@@ -67,7 +78,6 @@ class Extension : ParaboxExtension() {
                     }
                 }
             }
-
         })
         coroutineScope?.launch(Dispatchers.IO) {
             client.connect()
@@ -150,7 +160,7 @@ class Extension : ParaboxExtension() {
         return receiveMessage(obj)
     }
 
-    suspend fun receivePrivateMessage(msg: PrivateMessageEvent) : ParaboxResult {
+    suspend fun receivePrivateMessage(msg: PrivateMessageEvent): ParaboxResult {
         val obj = ReceiveMessage(
             contents = msg.arrayMsg.mapNotNull { it.toParaboxMessageElement() },
             sender = ParaboxContact(
@@ -172,5 +182,21 @@ class Extension : ParaboxExtension() {
             uuid = msg.messageId.toString()
         )
         return receiveMessage(obj)
+    }
+}
+
+class OneBotClient(
+    uri: URI, queue: BlockingQueue<String>, actionHandler: ActionHandler,
+    val mOnClose: (code: Int, reason: String?, remote: Boolean) -> Unit,
+    val mOnError: (ex: Exception?) -> Unit
+) : WSClient(uri, queue, actionHandler) {
+    override fun onClose(code: Int, reason: String?, remote: Boolean) {
+        super.onClose(code, reason, remote)
+        mOnClose(code, reason, remote)
+    }
+
+    override fun onError(ex: Exception?) {
+        super.onError(ex)
+        mOnError(ex)
     }
 }
