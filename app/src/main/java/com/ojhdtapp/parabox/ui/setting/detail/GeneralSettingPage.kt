@@ -189,8 +189,8 @@ private fun Content(
                     })
                 }) {
                 onMainSharedEvent(MainSharedEvent.UpdateSettingSwitch(
-                    DataStoreKeys.SETTINGS_DISPLAY_AVATAR_ON_TOP_APPBAR,
-                    !mainSharedState.datastore.displayAvatarOnTopAppBar))
+                    DataStoreKeys.SETTINGS_DISPLAY_TIME_ON_EACH_MSG,
+                    !mainSharedState.datastore.displayTimeOnEachMsg))
             }
         }
         item {

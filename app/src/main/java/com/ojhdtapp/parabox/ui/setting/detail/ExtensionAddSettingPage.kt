@@ -143,7 +143,7 @@ fun ExtensionAddSettingPage(
                     },
                     navigationIcon = {
                         IconButton(onClick = {
-                            scaffoldNavigator.navigateBack(BackNavigationBehavior.PopLatest)
+                            navigation.pop()
                             onEvent(SettingPageEvent.InitNewExtensionConnectionDone(false))
                         }) {
                             Icon(imageVector = Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "back")

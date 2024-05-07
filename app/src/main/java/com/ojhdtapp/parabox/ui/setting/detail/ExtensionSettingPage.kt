@@ -1,24 +1,37 @@
 package com.ojhdtapp.parabox.ui.setting.detail
 
+import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowForwardIos
+import androidx.compose.material.icons.automirrored.outlined.ArrowRight
+import androidx.compose.material.icons.automirrored.outlined.NavigateNext
+import androidx.compose.material.icons.outlined.ArrowForwardIos
+import androidx.compose.material.icons.outlined.ArrowRight
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.ErrorOutline
@@ -26,6 +39,7 @@ import androidx.compose.material.icons.outlined.Extension
 import androidx.compose.material.icons.outlined.Pending
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.RestartAlt
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -48,6 +62,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
@@ -176,42 +191,35 @@ private fun Content(
         item {
             SettingHeader(text = "建立新连接")
         }
-        items(state.packageInfo, key = { it.packageName }) {
-            val label = remember {
-                it.applicationInfo.loadLabel(context.packageManager).toString()
-            }
-            val iconBm = remember {
-                it.applicationInfo.loadIcon(context.packageManager).toBitmapOrNull()?.asImageBitmap()
-            }
-            val subTitle = remember {
-                buildString {
-                    append("版本: ${it.versionName}")
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                        append("(${it.longVersionCode})")
-                    } else {
-                        append("(${it.versionCode})")
+        item {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp)) {
+                items(state.packageInfo, key = { it.packageName }) {
+                    val label = remember {
+                        it.applicationInfo.loadLabel(context.packageManager).toString()
                     }
+                    val iconBm = remember {
+                        it.applicationInfo.loadIcon(context.packageManager).toBitmapOrNull()?.asImageBitmap()
+                    }
+                    val subTitle = remember {
+                        buildString {
+                            append(" ${it.versionName}")
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                append("(${it.longVersionCode})")
+                            } else {
+                                append("(${it.versionCode})")
+                            }
+                        }
+                    }
+                    ConnectionCard(
+                        name = label,
+                        iconBm = iconBm,
+                        version = subTitle,
+                        onClick = {
+                            onEvent(SettingPageEvent.InitNewExtensionConnection(it))
+                            navigation.pushNew(DefaultSettingComponent.SettingConfig.ExtensionAddSetting)
+                        }
+                    )
                 }
-            }
-            SettingItem(
-                title = label,
-                subTitle = subTitle,
-                leadingIcon = {
-                    if (iconBm == null) {
-                        Icon(imageVector = Icons.Outlined.Extension, contentDescription = "icon")
-                    } else {
-                        Image(
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clip(CircleShape), bitmap = iconBm, contentDescription = "icon"
-                        )
-                    }
-                },
-                selected = false,
-                layoutType = layoutType
-            ) {
-                onEvent(SettingPageEvent.InitNewExtensionConnection(it))
-                navigation.pushNew(DefaultSettingComponent.SettingConfig.ExtensionAddSetting)
             }
         }
         item {
@@ -329,7 +337,44 @@ private fun Content(
                 ) {
                 }
             }
+        }
+    }
+}
 
+@Composable
+private fun ConnectionCard(
+    modifier: Modifier = Modifier,
+    name: String,
+    iconBm: ImageBitmap?,
+    version: String,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        modifier = modifier
+    ) {
+        Row(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.width(144.dp)) {
+                Box(modifier = Modifier.size(36.dp), contentAlignment = Alignment.Center) {
+                    if (iconBm == null) {
+                        Icon(imageVector = Icons.Outlined.Extension, contentDescription = "icon")
+                    } else {
+                        Image(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape), bitmap = iconBm, contentDescription = "icon"
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(text = name, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.basicMarquee(
+                    delayMillis = 5000,
+                    initialDelayMillis = 2000
+                ), style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = version, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium)
+            }
+            Icon(imageVector = Icons.AutoMirrored.Outlined.NavigateNext, contentDescription = "")
         }
     }
 }
