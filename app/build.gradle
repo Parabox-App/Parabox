@@ -143,7 +143,7 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.5.0"
 
     // Decompose
-    def decompose_version = "3.0.0-beta01"
+    def decompose_version = "3.0.0"
     implementation "com.arkivanov.decompose:decompose:$decompose_version"
     implementation "com.arkivanov.decompose:extensions-compose:$decompose_version"
 
@@ -228,7 +228,7 @@ dependencies {
     implementation 'com.ojhdt:parabox-development-kit:1.0.6'
 
     // Paging
-    def paging_version = "3.3.0-alpha02"
+    def paging_version = "3.3.0-rc01"
     implementation "androidx.paging:paging-runtime-ktx:$paging_version"
     implementation "androidx.paging:paging-compose:$paging_version"
 
@@ -252,7 +252,7 @@ dependencies {
 //    ksp 'io.github.raamcosta.compose-destinations:ksp:1.11.0-alpha'
 
     // DataStore
-    implementation "androidx.datastore:datastore-preferences:1.0.0"
+    implementation "androidx.datastore:datastore-preferences:1.1.1"
 
     // Accompanist
     def acc_version = "0.32.0"
