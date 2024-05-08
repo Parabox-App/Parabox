@@ -64,11 +64,15 @@ private val WillowLightThemeColors = lightColorScheme(
     inverseSurface = willow_theme_light_inverseSurface,
     inversePrimary = willow_theme_light_inversePrimary,
     // ===
-    surfaceContainer = willow_theme_light_surface,
-    surfaceContainerHigh = willow_theme_light_surface,
-    surfaceContainerHighest = willow_theme_light_surface,
-    surfaceContainerLow = willow_theme_light_surface,
-    surfaceContainerLowest = willow_theme_light_surface
+    outlineVariant = willow_theme_light_outline_variant,
+    scrim = willow_theme_light_scrim,
+    surfaceDim = willow_theme_light_surface_dim,
+    surfaceBright = willow_theme_light_surface_bright,
+    surfaceContainer = willow_theme_light_surface_container,
+    surfaceContainerHigh = willow_theme_light_surface_container_high,
+    surfaceContainerHighest = willow_theme_light_surface_container_highest,
+    surfaceContainerLow = willow_theme_light_surface_container_low,
+    surfaceContainerLowest = willow_theme_light_surface_container_lowest
 )
 private val WillowDarkThemeColors = darkColorScheme(
     primary = willow_theme_dark_primary,
@@ -98,11 +102,15 @@ private val WillowDarkThemeColors = darkColorScheme(
     inverseSurface = willow_theme_dark_inverseSurface,
     inversePrimary = willow_theme_dark_inversePrimary,
     // ===
-    surfaceContainer = willow_theme_dark_surface,
-    surfaceContainerHigh = willow_theme_dark_surface,
-    surfaceContainerHighest = willow_theme_dark_surface,
-    surfaceContainerLow = willow_theme_dark_surface,
-    surfaceContainerLowest = willow_theme_dark_surface
+    outlineVariant = willow_theme_dark_outline_variant,
+    scrim = willow_theme_dark_scrim,
+    surfaceDim = willow_theme_dark_surface_dim,
+    surfaceBright = willow_theme_dark_surface_bright,
+    surfaceContainer = willow_theme_dark_surface_container,
+    surfaceContainerHigh = willow_theme_dark_surface_container_high,
+    surfaceContainerHighest = willow_theme_dark_surface_container_highest,
+    surfaceContainerLow = willow_theme_dark_surface_container_low,
+    surfaceContainerLowest = willow_theme_dark_surface_container_lowest
 )
 
 private val PurpleLightThemeColors = lightColorScheme(
@@ -133,6 +141,15 @@ private val PurpleLightThemeColors = lightColorScheme(
     inverseOnSurface = md_theme_light_inverseOnSurface,
     inverseSurface = md_theme_light_inverseSurface,
     inversePrimary = md_theme_light_inversePrimary,
+    outlineVariant = md_theme_light_outline_variant,
+    scrim = md_theme_light_scrim,
+    surfaceDim = md_theme_light_surface_dim,
+    surfaceBright = md_theme_light_surface_bright,
+    surfaceContainer = md_theme_light_surface_container,
+    surfaceContainerHigh = md_theme_light_surface_container_high,
+    surfaceContainerHighest = md_theme_light_surface_container_highest,
+    surfaceContainerLow = md_theme_light_surface_container_low,
+    surfaceContainerLowest = md_theme_light_surface_container_lowest
 //	shadow = md_theme_light_shadow,
 )
 private val PurpleDarkThemeColors = darkColorScheme(
@@ -163,6 +180,15 @@ private val PurpleDarkThemeColors = darkColorScheme(
     inverseOnSurface = md_theme_dark_inverseOnSurface,
     inverseSurface = md_theme_dark_inverseSurface,
     inversePrimary = md_theme_dark_inversePrimary,
+    outlineVariant = md_theme_dark_outline_variant,
+    scrim = md_theme_dark_scrim,
+    surfaceDim = md_theme_dark_surface_dim,
+    surfaceBright = md_theme_dark_surface_bright,
+    surfaceContainer = md_theme_dark_surface_container,
+    surfaceContainerHigh = md_theme_dark_surface_container_high,
+    surfaceContainerHighest = md_theme_dark_surface_container_highest,
+    surfaceContainerLow = md_theme_dark_surface_container_low,
+    surfaceContainerLowest = md_theme_dark_surface_container_lowest
 //	shadow = md_theme_dark_shadow,
 )
 
@@ -194,11 +220,15 @@ private val SakuraLightThemeColors = lightColorScheme(
     inverseSurface = sakura_theme_light_inverseSurface,
     inversePrimary = sakura_theme_light_inversePrimary,
     // ===
-    surfaceContainer = sakura_theme_light_surface,
-    surfaceContainerHigh = sakura_theme_light_surface,
-    surfaceContainerHighest = sakura_theme_light_surface,
-    surfaceContainerLow = sakura_theme_light_surface,
-    surfaceContainerLowest = sakura_theme_light_surface
+    outlineVariant = sakura_theme_light_outline_variant,
+    scrim = sakura_theme_light_scrim,
+    surfaceDim = sakura_theme_light_surface_dim,
+    surfaceBright = sakura_theme_light_surface_bright,
+    surfaceContainer = sakura_theme_light_surface_container,
+    surfaceContainerHigh = sakura_theme_light_surface_container_high,
+    surfaceContainerHighest = sakura_theme_light_surface_container_highest,
+    surfaceContainerLow = sakura_theme_light_surface_container_low,
+    surfaceContainerLowest = sakura_theme_light_surface_container_lowest
 )
 private val SakuraDarkThemeColors = darkColorScheme(
     primary = sakura_theme_dark_primary,
@@ -228,11 +258,15 @@ private val SakuraDarkThemeColors = darkColorScheme(
     inverseSurface = sakura_theme_dark_inverseSurface,
     inversePrimary = sakura_theme_dark_inversePrimary,
     // ===
-    surfaceContainer = sakura_theme_dark_surface,
-    surfaceContainerHigh = sakura_theme_dark_surface,
-    surfaceContainerHighest = sakura_theme_dark_surface,
-    surfaceContainerLow = sakura_theme_dark_surface,
-    surfaceContainerLowest = sakura_theme_dark_surface
+    outlineVariant = sakura_theme_dark_outline_variant,
+    scrim = sakura_theme_dark_scrim,
+    surfaceDim = sakura_theme_dark_surface_dim,
+    surfaceBright = sakura_theme_dark_surface_bright,
+    surfaceContainer = sakura_theme_dark_surface_container,
+    surfaceContainerHigh = sakura_theme_dark_surface_container_high,
+    surfaceContainerHighest = sakura_theme_dark_surface_container_highest,
+    surfaceContainerLow = sakura_theme_dark_surface_container_low,
+    surfaceContainerLowest = sakura_theme_dark_surface_container_lowest
 )
 private val GardeniaLightThemeColors = lightColorScheme(
     primary = gardenia_theme_light_primary,
@@ -262,11 +296,15 @@ private val GardeniaLightThemeColors = lightColorScheme(
     inverseSurface = gardenia_theme_light_inverseSurface,
     inversePrimary = gardenia_theme_light_inversePrimary,
     // ===
-    surfaceContainer = gardenia_theme_light_surface,
-    surfaceContainerHigh = gardenia_theme_light_surface,
-    surfaceContainerHighest = gardenia_theme_light_surface,
-    surfaceContainerLow = gardenia_theme_light_surface,
-    surfaceContainerLowest = gardenia_theme_light_surface
+    outlineVariant = gardenia_theme_light_outline_variant,
+    scrim = gardenia_theme_light_scrim,
+    surfaceDim = gardenia_theme_light_surface_dim,
+    surfaceBright = gardenia_theme_light_surface_bright,
+    surfaceContainer = gardenia_theme_light_surface_container,
+    surfaceContainerHigh = gardenia_theme_light_surface_container_high,
+    surfaceContainerHighest = gardenia_theme_light_surface_container_highest,
+    surfaceContainerLow = gardenia_theme_light_surface_container_low,
+    surfaceContainerLowest = gardenia_theme_light_surface_container_lowest
 )
 private val GardeniaDarkThemeColors = darkColorScheme(
     primary = gardenia_theme_dark_primary,
@@ -296,11 +334,15 @@ private val GardeniaDarkThemeColors = darkColorScheme(
     inverseSurface = gardenia_theme_dark_inverseSurface,
     inversePrimary = gardenia_theme_dark_inversePrimary,
     // ===
-    surfaceContainer = gardenia_theme_dark_surface,
-    surfaceContainerHigh = gardenia_theme_dark_surface,
-    surfaceContainerHighest = gardenia_theme_dark_surface,
-    surfaceContainerLow = gardenia_theme_dark_surface,
-    surfaceContainerLowest = gardenia_theme_dark_surface
+    outlineVariant = gardenia_theme_dark_outline_variant,
+    scrim = gardenia_theme_dark_scrim,
+    surfaceDim = gardenia_theme_dark_surface_dim,
+    surfaceBright = gardenia_theme_dark_surface_bright,
+    surfaceContainer = gardenia_theme_dark_surface_container,
+    surfaceContainerHigh = gardenia_theme_dark_surface_container_high,
+    surfaceContainerHighest = gardenia_theme_dark_surface_container_highest,
+    surfaceContainerLow = gardenia_theme_dark_surface_container_low,
+    surfaceContainerLowest = gardenia_theme_dark_surface_container_lowest
 )
 private val WaterLightThemeColors = lightColorScheme(
     primary = water_theme_light_primary,
@@ -330,11 +372,15 @@ private val WaterLightThemeColors = lightColorScheme(
     inverseSurface = water_theme_light_inverseSurface,
     inversePrimary = water_theme_light_inversePrimary,
     // ===
-    surfaceContainer = water_theme_light_surface,
-    surfaceContainerHigh = water_theme_light_surface,
-    surfaceContainerHighest = water_theme_light_surface,
-    surfaceContainerLow = water_theme_light_surface,
-    surfaceContainerLowest = water_theme_light_surface
+    outlineVariant = water_theme_light_outline_variant,
+    scrim = water_theme_light_scrim,
+    surfaceDim = water_theme_light_surface_dim,
+    surfaceBright = water_theme_light_surface_bright,
+    surfaceContainer = water_theme_light_surface_container,
+    surfaceContainerHigh = water_theme_light_surface_container_high,
+    surfaceContainerHighest = water_theme_light_surface_container_highest,
+    surfaceContainerLow = water_theme_light_surface_container_low,
+    surfaceContainerLowest = water_theme_light_surface_container_lowest
 )
 private val WaterDarkThemeColors = darkColorScheme(
     primary = water_theme_dark_primary,
@@ -364,11 +410,15 @@ private val WaterDarkThemeColors = darkColorScheme(
     inverseSurface = water_theme_dark_inverseSurface,
     inversePrimary = water_theme_dark_inversePrimary,
     // ===
-    surfaceContainer = water_theme_dark_surface,
-    surfaceContainerHigh = water_theme_dark_surface,
-    surfaceContainerHighest = water_theme_dark_surface,
-    surfaceContainerLow = water_theme_dark_surface,
-    surfaceContainerLowest = water_theme_dark_surface
+    outlineVariant = water_theme_dark_outline_variant,
+    scrim = water_theme_dark_scrim,
+    surfaceDim = water_theme_dark_surface_dim,
+    surfaceBright = water_theme_dark_surface_bright,
+    surfaceContainer = water_theme_dark_surface_container,
+    surfaceContainerHigh = water_theme_dark_surface_container_high,
+    surfaceContainerHighest = water_theme_dark_surface_container_highest,
+    surfaceContainerLow = water_theme_dark_surface_container_low,
+    surfaceContainerLowest = water_theme_dark_surface_container_lowest
 )
 
 @Composable
