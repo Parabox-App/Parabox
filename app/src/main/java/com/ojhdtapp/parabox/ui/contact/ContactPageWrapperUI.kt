@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.ui.contact
 
 import android.app.Activity
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.adaptive.layout.AnimatedPane
@@ -40,12 +41,10 @@ fun ContactPageWrapperUI(
 //    val viewModel = hiltViewModel<ContactPageViewModel>()
     val state by viewModel.uiState.collectAsState()
     val mainSharedState by mainSharedViewModel.uiState.collectAsState()
-    val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<Nothing>(
-//        scaffoldDirective = calculateMyStandardPaneScaffoldDirective(
-//            windowSizeClass = calculateWindowSizeClass(activity = LocalContext.current as Activity),
-//            windowAdaptiveInfo = currentWindowAdaptiveInfo()
-//        )
-    )
+    val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<Nothing>()
+    BackHandler(scaffoldNavigator.canNavigateBack()) {
+        scaffoldNavigator.navigateBack()
+    }
     val layoutType by remember {
         derivedStateOf {
             if(scaffoldNavigator.scaffoldDirective.maxHorizontalPartitions == 1) {

@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.ui.setting
 
 import android.app.Activity
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
@@ -63,12 +64,10 @@ fun SettingPageWrapperUi(
 //    val viewModel = hiltViewModel<SettingPageViewModel>()
     val state by viewModel.uiState.collectAsState()
     val mainSharedState by mainSharedViewModel.uiState.collectAsState()
-    val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<Setting>(
-//        scaffoldDirective = calculateMyDensePaneScaffoldDirective(
-//            windowSizeClass = calculateWindowSizeClass(activity = LocalContext.current as Activity),
-//            windowAdaptiveInfo = currentWindowAdaptiveInfo()
-//        )
-    )
+    val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<Setting>()
+    BackHandler(scaffoldNavigator.canNavigateBack()) {
+        scaffoldNavigator.navigateBack()
+    }
     val layoutType by remember {
         derivedStateOf {
             if (scaffoldNavigator.scaffoldDirective.maxHorizontalPartitions == 1) {

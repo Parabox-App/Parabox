@@ -47,15 +47,10 @@ fun MessageAndChatPageWrapperUI(
     val coroutineScope = rememberCoroutineScope()
     val state by viewModel.uiState.collectAsState()
     val mainSharedState by mainSharedViewModel.uiState.collectAsState()
-    val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<Nothing>(
-//        scaffoldDirective = calculateMyStandardPaneScaffoldDirective(
-//            windowSizeClass = calculateWindowSizeClass(activity = LocalContext.current as Activity),
-//            windowAdaptiveInfo = currentWindowAdaptiveInfo()
-//        )
-    )
-//    calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth(
-//        windowAdaptiveInfo = currentWindowAdaptiveInfo()
-//    )
+    val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<Nothing>()
+    BackHandler(scaffoldNavigator.canNavigateBack()) {
+        scaffoldNavigator.navigateBack()
+    }
     val layoutType by remember {
         derivedStateOf {
             if (scaffoldNavigator.scaffoldDirective.maxHorizontalPartitions == 1) {
