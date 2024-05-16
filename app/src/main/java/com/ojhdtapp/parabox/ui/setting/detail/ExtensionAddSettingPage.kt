@@ -90,6 +90,9 @@ fun ExtensionAddSettingPage(
     onEvent: (SettingPageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
+    BackHandler {
+        scaffoldNavigator.navigateBack()
+    }
     if (layoutType == SettingLayoutType.SPLIT) {
         Surface(
             modifier = Modifier
