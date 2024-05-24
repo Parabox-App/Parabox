@@ -61,16 +61,19 @@ import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.carousel.CarouselState
 import androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel
 import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -232,9 +235,6 @@ fun Toolbar(
                     var showingMemeDeleteBtnIndex by remember {
                         mutableIntStateOf(-1)
                     }
-                    val carouselState = rememberCarouselState {
-                        state.memeList.size + 1
-                    }
                     Spacer(modifier = Modifier.width(14.dp))
                     Column(
                         modifier = Modifier
@@ -318,88 +318,35 @@ fun Toolbar(
                                         }
                                     }
                                 } else {
-                                    HorizontalMultiBrowseCarousel(
-                                        state = carouselState,
-                                        preferredItemWidth = 144.dp,
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .padding(horizontal = 16.dp),
-                                        itemSpacing = 4.dp,
-                                    ) {
-                                        if (it == state.memeList.lastIndex + 1) {
-                                            Column(
-                                                modifier = Modifier
-                                                    .fillMaxSize()
-                                                    .graphicsLayer {
-                                                        alpha = carouselItemInfo.size / carouselItemInfo.maxSize
-                                                    },
-                                                horizontalAlignment = Alignment.CenterHorizontally,
-                                                verticalArrangement = Arrangement.Center
-                                            ) {
-                                                SmallFloatingActionButton(
-                                                    onClick = {
-                                                        addMemeLauncher.launch(
-                                                            PickVisualMediaRequest(
-                                                                ActivityResultContracts.PickVisualMedia.ImageOnly
-                                                            )
-                                                        )
-                                                    },
-                                                    shape = CircleShape,
-                                                    elevation = FloatingActionButtonDefaults.elevation(
-                                                        defaultElevation = 0.dp,
-                                                        pressedElevation = 0.dp
-                                                    )
-                                                ) {
-                                                    Icon(
-                                                        imageVector = Icons.Outlined.Add,
-                                                        contentDescription = "add"
-                                                    )
-                                                }
-                                            }
-                                        } else {
-                                            Box(modifier = Modifier.graphicsLayer {
-                                                alpha = carouselItemInfo.size / carouselItemInfo.maxSize
-                                            }) {
-                                                AsyncImage(
-                                                    model = ImageRequest.Builder(
-                                                        LocalContext.current
-                                                    )
-                                                        .data(state.memeList.getOrNull(it))
-                                                        .crossfade(true)
-                                                        .build(),
-                                                    contentDescription = "meme",
-                                                    contentScale = ContentScale.Crop,
+                                    key(state.memeList.size) {
+                                        val carouselState = rememberCarouselState {
+                                            state.memeList.size + 1
+                                        }
+                                        HorizontalMultiBrowseCarousel(
+                                            state = carouselState,
+                                            preferredItemWidth = 144.dp,
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .padding(horizontal = 16.dp),
+                                            itemSpacing = 4.dp,
+                                        ) {
+                                            if (it == state.memeList.lastIndex + 1) {
+                                                Column(
                                                     modifier = Modifier
-                                                        .fillMaxHeight()
-                                                        .width(144.dp)
-                                                        .combinedClickable(onClick = {
-                                                            if (showingMemeDeleteBtnIndex != -1) {
-                                                                showingMemeDeleteBtnIndex = -1
-                                                            } else {
-                                                                state.memeList
-                                                                    .getOrNull(it)
-                                                                    ?.let {
-                                                                        onEvent(MessagePageEvent.SendMemeMessage(it))
-                                                                    }
-                                                            }
-                                                        }, onLongClick = {
-                                                            showingMemeDeleteBtnIndex = it
-                                                        }),
-                                                )
-                                                androidx.compose.animation.AnimatedVisibility(
-                                                    modifier = Modifier.align(Alignment.Center),
-                                                    visible = showingMemeDeleteBtnIndex == it,
-                                                    enter = scaleIn(),
-                                                    exit = scaleOut()
+                                                        .fillMaxSize()
+                                                        .graphicsLayer {
+                                                            alpha = carouselItemInfo.size / carouselItemInfo.maxSize
+                                                        },
+                                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                                    verticalArrangement = Arrangement.Center
                                                 ) {
                                                     SmallFloatingActionButton(
                                                         onClick = {
-                                                            state.memeList
-                                                                .getOrNull(it)
-                                                                ?.let {
-                                                                    onEvent(MessagePageEvent.RemoveMeme(it, {}, {}))
-                                                                    showingMemeDeleteBtnIndex = -1
-                                                                }
+                                                            addMemeLauncher.launch(
+                                                                PickVisualMediaRequest(
+                                                                    ActivityResultContracts.PickVisualMedia.ImageOnly
+                                                                )
+                                                            )
                                                         },
                                                         shape = CircleShape,
                                                         elevation = FloatingActionButtonDefaults.elevation(
@@ -408,9 +355,67 @@ fun Toolbar(
                                                         )
                                                     ) {
                                                         Icon(
-                                                            imageVector = Icons.Outlined.Delete,
-                                                            contentDescription = "delete"
+                                                            imageVector = Icons.Outlined.Add,
+                                                            contentDescription = "add"
                                                         )
+                                                    }
+                                                }
+                                            } else {
+                                                Box(modifier = Modifier.graphicsLayer {
+                                                    alpha = carouselItemInfo.size / carouselItemInfo.maxSize
+                                                }) {
+                                                    AsyncImage(
+                                                        model = ImageRequest.Builder(
+                                                            LocalContext.current
+                                                        )
+                                                            .data(state.memeList.getOrNull(it))
+                                                            .crossfade(true)
+                                                            .build(),
+                                                        contentDescription = "meme",
+                                                        contentScale = ContentScale.Crop,
+                                                        modifier = Modifier
+                                                            .fillMaxHeight()
+                                                            .width(144.dp)
+                                                            .combinedClickable(onClick = {
+                                                                if (showingMemeDeleteBtnIndex != -1) {
+                                                                    showingMemeDeleteBtnIndex = -1
+                                                                } else {
+                                                                    state.memeList
+                                                                        .getOrNull(it)
+                                                                        ?.let {
+                                                                            onEvent(MessagePageEvent.SendMemeMessage(it))
+                                                                        }
+                                                                }
+                                                            }, onLongClick = {
+                                                                showingMemeDeleteBtnIndex = it
+                                                            }),
+                                                    )
+                                                    androidx.compose.animation.AnimatedVisibility(
+                                                        modifier = Modifier.align(Alignment.Center),
+                                                        visible = showingMemeDeleteBtnIndex == it,
+                                                        enter = scaleIn(),
+                                                        exit = scaleOut()
+                                                    ) {
+                                                        SmallFloatingActionButton(
+                                                            onClick = {
+                                                                state.memeList
+                                                                    .getOrNull(it)
+                                                                    ?.let {
+                                                                        onEvent(MessagePageEvent.RemoveMeme(it, {}, {}))
+                                                                        showingMemeDeleteBtnIndex = -1
+                                                                    }
+                                                            },
+                                                            shape = CircleShape,
+                                                            elevation = FloatingActionButtonDefaults.elevation(
+                                                                defaultElevation = 0.dp,
+                                                                pressedElevation = 0.dp
+                                                            )
+                                                        ) {
+                                                            Icon(
+                                                                imageVector = Icons.Outlined.Delete,
+                                                                contentDescription = "delete"
+                                                            )
+                                                        }
                                                     }
                                                 }
                                             }
