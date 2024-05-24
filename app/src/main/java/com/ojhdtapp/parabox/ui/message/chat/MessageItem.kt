@@ -203,22 +203,19 @@ fun MessageItem(
             horizontalArrangement = Arrangement.Start
         ) {
             if (isFirst) {
-                Box(
+                CommonAvatar(
                     modifier = Modifier
                         .size(42.dp)
                         .clip(CircleShape)
                         .combinedClickable(
                             onClick = onAvatarClick,
                             onLongClick = onAvatarLongClick
-                        )
-                ) {
-                    CommonAvatar(
-                        model = CommonAvatarModel(
-                            model = messageWithSender.sender.avatar.getModel(),
-                            name = messageWithSender.sender.name
-                        )
+                        ),
+                    model = CommonAvatarModel(
+                        model = messageWithSender.sender.avatar.getModel(),
+                        name = messageWithSender.sender.name
                     )
-                }
+                )
             } else {
                 Spacer(modifier = Modifier.width(42.dp))
             }

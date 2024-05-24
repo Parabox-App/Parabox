@@ -192,7 +192,11 @@ private fun Content(
                             .height(160.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(text = "加载时发生错误", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            text = "加载时发生错误",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }
@@ -206,7 +210,11 @@ private fun Content(
                                 .height(160.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(text = "没有会话", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                text = "没有会话",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                 }
@@ -216,11 +224,12 @@ private fun Content(
                         selected = false,
                         layoutType = layoutType,
                         leadingIcon = {
-                            Box(modifier = Modifier
-                                .size(24.dp)
-                                .clip(CircleShape)) {
-                                CommonAvatar(model = CommonAvatarModel(chat.avatar.getModel(), chat.name))
-                            }
+                            CommonAvatar(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clip(CircleShape),
+                                model = CommonAvatarModel(chat.avatar.getModel(), chat.name)
+                            )
                         }
                     ) {}
                 }
@@ -239,9 +248,13 @@ private fun Content(
                         chat?.let {
                             if (chat.tags.contains(state.labelDetailState.selected?.label ?: "")) return@PickChat
                             else {
-                                onEvent(SettingPageEvent.UpdateChatTags(chat.chatId, chat.tags.toMutableList().apply {
-                                    add(state.labelDetailState.selected?.label ?: "")
-                                }))
+                                onEvent(
+                                    SettingPageEvent.UpdateChatTags(
+                                        chat.chatId,
+                                        chat.tags.toMutableList().apply {
+                                            add(state.labelDetailState.selected?.label ?: "")
+                                        })
+                                )
                             }
                         }
                     }
@@ -252,7 +265,7 @@ private fun Content(
             SettingItem(title = "移除该标签", selected = false, layoutType = layoutType,
                 leadingIcon = {
                     Icon(imageVector = Icons.Outlined.Delete, contentDescription = "移除该标签")
-                }){
+                }) {
                 if (state.labelDetailState.selected != null) {
                     onMainSharedEvent(MainSharedEvent.OnChatFilterRemoved(state.labelDetailState.selected))
                     navigation.pop()

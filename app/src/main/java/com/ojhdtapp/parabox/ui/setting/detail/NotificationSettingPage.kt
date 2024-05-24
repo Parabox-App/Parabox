@@ -248,11 +248,11 @@ private fun Content(
                         selected = false,
                         layoutType = layoutType,
                         leadingIcon = {
-                            Box(modifier = Modifier
-                                .size(24.dp)
-                                .clip(CircleShape)) {
-                                CommonAvatar(model = CommonAvatarModel(chat.avatar.getModel(), chat.name))
-                            }
+                                CommonAvatar(
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .clip(CircleShape),
+                                    model = CommonAvatarModel(chat.avatar.getModel(), chat.name))
                         }
                     ) {}
                 }

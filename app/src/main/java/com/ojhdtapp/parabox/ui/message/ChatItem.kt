@@ -110,7 +110,6 @@ fun ChatItem(
                 modifier = Modifier
                     .clip(CircleShape)
                     .size(48.dp)
-                    .background(avatarBackgroundColor)
                     .clickable {
                         onAvatarClick()
                     },
@@ -128,6 +127,10 @@ fun ChatItem(
                             icon()
                         } else {
                             CommonAvatar(
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .background(avatarBackgroundColor)
+                                    .fillMaxSize(),
                                 model = CommonAvatarModel(
                                     model = chatWithLatestMessage.chat.avatar.getModel(),
                                     name = chatWithLatestMessage.chat.name,
@@ -246,6 +249,7 @@ fun PinnedChatItems(
                     contentAlignment = Alignment.Center
                 ) {
                     icon?.invoke() ?: CommonAvatar(
+                        modifier = Modifier.fillMaxSize(),
                         model = CommonAvatarModel(
                             model = chat.avatar.getModel(),
                             name = chat.name

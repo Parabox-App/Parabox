@@ -41,15 +41,12 @@ fun PickerItem(
                 .height(56.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
+            CommonAvatar(
                 modifier = Modifier
                     .clip(CircleShape)
                     .size(32.dp)
                     .background(MaterialTheme.colorScheme.primary),
-                contentAlignment = Alignment.Center
-            ) {
-                CommonAvatar(model = CommonAvatarModel(model = avatarModel, name = title))
-            }
+                model = CommonAvatarModel(model = avatarModel, name = title))
             Spacer(modifier = Modifier.width(16.dp))
             Text(
                 modifier = Modifier.weight(1f),

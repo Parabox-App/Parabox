@@ -63,16 +63,12 @@ fun PlainContactItem(
                 }
             }
             Spacer(modifier = Modifier.width(16.dp))
-            Box(
+            CommonAvatar(
                 modifier = Modifier
                     .clip(CircleShape)
                     .size(36.dp)
                     .background(MaterialTheme.colorScheme.primaryContainer),
-//                    .border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
-                contentAlignment = Alignment.Center
-            ) {
-                CommonAvatar(model = CommonAvatarModel(model = avatarModel, name = name))
-            }
+                model = CommonAvatarModel(model = avatarModel, name = name))
             Spacer(modifier = Modifier.width(16.dp))
             Text(
                 modifier = Modifier.weight(1f),

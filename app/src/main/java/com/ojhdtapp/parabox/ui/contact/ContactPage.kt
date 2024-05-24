@@ -197,21 +197,17 @@ fun ContactPage(
                                         IconButton(
                                             onClick = { onMainSharedEvent(MainSharedEvent.SearchAvatarClicked) },
                                         ) {
-                                            Box(
+                                            CommonAvatar(
                                                 modifier = Modifier
                                                     .clip(CircleShape)
                                                     .size(30.dp),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                CommonAvatar(
-                                                    model = CommonAvatarModel(
-                                                        model = mainSharedState.datastore.localAvatarUri,
-                                                        name = mainSharedState.datastore.localName
-                                                    ),
-                                                    backgroundColor = MaterialTheme.colorScheme.primary,
-                                                    textColor = MaterialTheme.colorScheme.onPrimary
-                                                )
-                                            }
+                                                model = CommonAvatarModel(
+                                                    model = mainSharedState.datastore.localAvatarUri,
+                                                    name = mainSharedState.datastore.localName
+                                                ),
+                                                backgroundColor = MaterialTheme.colorScheme.primary,
+                                                textColor = MaterialTheme.colorScheme.onPrimary
+                                            )
                                         }
                                     }
                                 }
@@ -317,21 +313,17 @@ fun ContactPage(
                                         IconButton(
                                             onClick = { onMainSharedEvent(MainSharedEvent.SearchAvatarClicked) },
                                         ) {
-                                            Box(
+                                            CommonAvatar(
                                                 modifier = Modifier
                                                     .clip(CircleShape)
                                                     .size(30.dp),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                CommonAvatar(
-                                                    model = CommonAvatarModel(
-                                                        model = mainSharedState.datastore.localAvatarUri,
-                                                        name = mainSharedState.datastore.localName
-                                                    ),
-                                                    backgroundColor = MaterialTheme.colorScheme.primary,
-                                                    textColor = MaterialTheme.colorScheme.onPrimary
-                                                )
-                                            }
+                                                model = CommonAvatarModel(
+                                                    model = mainSharedState.datastore.localAvatarUri,
+                                                    name = mainSharedState.datastore.localName
+                                                ),
+                                                backgroundColor = MaterialTheme.colorScheme.primary,
+                                                textColor = MaterialTheme.colorScheme.onPrimary
+                                            )
                                         }
                                     }
                                 }

@@ -257,7 +257,7 @@ private fun ContactDetailPageContent(
                         contentAlignment = Alignment.Center
                     ) {
                         CommonAvatar(
-                            modifier = Modifier.background(MaterialTheme.colorScheme.primaryContainer),
+                            modifier = Modifier.background(MaterialTheme.colorScheme.primaryContainer).fillMaxSize(),
                             model = CommonAvatarModel(
                                 model = state.contactDetail.contactWithExtensionInfo?.contact?.avatar?.getModel(),
                                 name = state.contactDetail.contactWithExtensionInfo?.contact?.name ?: "null"
@@ -461,20 +461,16 @@ fun RelativeChatItem(modifier: Modifier = Modifier, chat: Chat, onClick: () -> U
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
+            CommonAvatar(
                 modifier = Modifier
                     .clip(CircleShape)
                     .size(24.dp)
                     .background(MaterialTheme.colorScheme.secondary),
-            ) {
-                CommonAvatar(
-                    model = CommonAvatarModel(
-                        model = chat.avatar.getModel(),
-                        name = chat.name
-                    )
+                model = CommonAvatarModel(
+                    model = chat.avatar.getModel(),
+                    name = chat.name
                 )
-
-            }
+            )
             Spacer(modifier = Modifier.width(16.dp))
             Text(
                 text = chat.name,

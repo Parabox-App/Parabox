@@ -196,10 +196,12 @@ fun RecentSearchContent(
                                 )
                             },
                             trailingIcon = {
-                                Icon(modifier = Modifier.clickable {
-                                    onEvent(MainSharedEvent.DeleteRecentQuery(it.id))
-                                }, imageVector = Icons.Outlined.Close, contentDescription = "delete recent query",
-                                tint = MaterialTheme.colorScheme.onSurface)
+                                Icon(
+                                    modifier = Modifier.clickable {
+                                        onEvent(MainSharedEvent.DeleteRecentQuery(it.id))
+                                    }, imageVector = Icons.Outlined.Close, contentDescription = "delete recent query",
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
                             }
                         ) {
                             onEvent(MainSharedEvent.SearchConfirm(it.value))
@@ -1124,9 +1126,10 @@ fun DoneSearchChatContent(
     state: MainSharedState.Search,
     onEvent: (e: MainSharedEvent) -> Unit
 ) {
-    LazyColumn(modifier = modifier,
+    LazyColumn(
+        modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(3.dp)
-        ) {
+    ) {
         item {
             Row(
                 modifier = Modifier
@@ -1257,7 +1260,10 @@ fun SearchResultItem(
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                leadingIcon?.invoke() ?: CommonAvatar(model = CommonAvatarModel(model = avatarModel, name = title.text))
+                leadingIcon?.invoke() ?: CommonAvatar(
+                    modifier = Modifier.fillMaxSize(),
+                    model = CommonAvatarModel(model = avatarModel, name = title.text)
+                )
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column(
@@ -1374,15 +1380,13 @@ fun SearchResultItemVertical(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Box(
+            CommonAvatar(
                 modifier = Modifier
                     .clip(CircleShape)
                     .size(48.dp)
                     .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                CommonAvatar(model = CommonAvatarModel(model = avatarModel, name = title.text) )
-            }
+                model = CommonAvatarModel(model = avatarModel, name = title.text)
+            )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = title,

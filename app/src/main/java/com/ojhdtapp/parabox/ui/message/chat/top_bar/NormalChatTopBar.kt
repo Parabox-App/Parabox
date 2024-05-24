@@ -118,19 +118,15 @@ fun NormalChatTopBar(
             }
             IconButton(onClick = { onEvent(MessagePageEvent.OpenInfoArea(true)) }) {
                 if (shouldDisplayAvatar) {
-                    Box(
+                    CommonAvatar(
                         modifier = Modifier
                             .size(24.dp)
                             .clip(CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CommonAvatar(
-                            model = CommonAvatarModel(
-                                model = chatDetail.chat?.avatar?.getModel(),
-                                name = chatDetail.chat?.name ?: ""
-                            )
+                        model = CommonAvatarModel(
+                            model = chatDetail.chat?.avatar?.getModel(),
+                            name = chatDetail.chat?.name ?: ""
                         )
-                    }
+                    )
                 } else {
                     Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = "more")
                 }
