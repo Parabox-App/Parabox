@@ -80,10 +80,13 @@ import com.ojhdtapp.parabox.ui.theme.LocalFontSize
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import javax.inject.Inject
 
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
+    @Inject
+    lateinit var notificationUtil: NotificationUtil
 
     private lateinit var extensionServiceConnection: ExtensionServiceConnection
     @OptIn(
@@ -95,6 +98,8 @@ class MainActivity : AppCompatActivity() {
         // Bind Extension Service
         extensionServiceConnection = ExtensionServiceConnection(baseContext)
         lifecycle.addObserver(extensionServiceConnection)
+        // notification util
+        lifecycle.addObserver(notificationUtil)
         // Edge to Edge
         if (DeviceUtil.isMIUI(this)) {
             window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
@@ -109,7 +114,7 @@ class MainActivity : AppCompatActivity() {
 
         // Device Posture
         val devicePostureFlow = WindowInfoTracker.getOrCreate(this).windowLayoutInfo(this)
-            .flowWithLifecycle(this.lifecycle)
+            .flowWithLifecycle(lifecycle)
             .map { layoutInfo ->
                 val foldingFeature =
                     layoutInfo.displayFeatures.filterIsInstance<FoldingFeature>().firstOrNull()
@@ -255,7 +260,7 @@ class MainActivity : AppCompatActivity() {
                     values = arrayOf(
                         LocalFixedInsets provides fixedInsets,
                         LocalAudioRecorder provides AudioRecorder,
-                        LocalSystemUiController provides SystemUiController(LocalContext.current as MainActivity),
+                        LocalSystemUiController provides SystemUiController(this),
                         LocalMinimumInteractiveComponentSize provides 32.dp,
                         LocalFontSize provides FontSize()
                     )
@@ -397,6 +402,12 @@ class MainActivity : AppCompatActivity() {
 //                )
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        lifecycle.removeObserver(extensionServiceConnection)
+        lifecycle.removeObserver(notificationUtil)
     }
 
     private val lightScrim = android.graphics.Color.argb(0xe6, 0xFF, 0xFF, 0xFF)

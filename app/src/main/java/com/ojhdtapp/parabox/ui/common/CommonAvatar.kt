@@ -18,7 +18,7 @@ import coil.compose.SubcomposeAsyncImageContent
 import com.google.accompanist.placeholder.PlaceholderHighlight
 import com.google.accompanist.placeholder.material3.fade
 import com.google.accompanist.placeholder.placeholder
-import com.ojhdtapp.parabox.core.util.AvatarUtil
+import com.ojhdtapp.parabox.core.util.ImageUtil
 
 @Composable
 fun CommonAvatar(
@@ -28,7 +28,7 @@ fun CommonAvatar(
     textColor: Color = MaterialTheme.colorScheme.onSecondaryContainer
 ){
     val namePainter = remember {
-        BitmapPainter(AvatarUtil.createNamedAvatarBm(
+        BitmapPainter(ImageUtil.createNamedAvatarBm(
             backgroundColor = backgroundColor.toArgb(),
             textColor = textColor.toArgb(),
             name = model.name ?: "name"

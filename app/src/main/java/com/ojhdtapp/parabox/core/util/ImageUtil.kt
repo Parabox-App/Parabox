@@ -1,8 +1,70 @@
 package com.ojhdtapp.parabox.core.util
 
+import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
+import android.graphics.Rect
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Icon
+import android.net.Uri
+import android.provider.MediaStore
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import coil.ImageLoader
+import coil.request.ImageRequest
+import coil.request.SuccessResult
+import java.io.ByteArrayOutputStream
 
 object ImageUtil {
+
+    fun createNamedAvatarBm(
+        width: Int = 150, height: Int = 150,
+        backgroundColor: Int,
+        textColor: Int,
+        name: String?
+    ): Bitmap {
+        val shortName = name?.takeIf { it.isNotEmpty() }?.substring(0, 1)
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val rect = Rect(0, 0, width, height)
+        val canvas = Canvas(bitmap)
+
+        val backgroundPaint = Paint()
+        backgroundPaint.color = backgroundColor
+        canvas.drawRect(rect, backgroundPaint)
+
+        val textPaint = Paint()
+        textPaint.color = textColor
+        textPaint.textSize = 72f
+        textPaint.textScaleX = 1f
+        textPaint.textAlign = Paint.Align.CENTER
+        if (shortName != null) {
+            val baselineY = rect.centerY() - (textPaint.descent() + textPaint.ascent()) / 2
+            canvas.drawText(shortName, rect.centerX().toFloat(), baselineY, textPaint)
+        }
+        return bitmap
+    }
+
+    fun ByteArray.toAvatarBitmap(): ImageBitmap {
+        return BitmapFactory.decodeByteArray(this, 0, this.size).asImageBitmap()
+    }
+
+    fun Bitmap.getCircledBitmap(): Bitmap {
+        val output = Bitmap.createBitmap(this.width, this.height, Bitmap.Config.ARGB_8888)
+//        val output = copy(Bitmap.Config.ARGB_8888, true)
+        val canvas = Canvas(output)
+        val paint = Paint()
+        val rect = Rect(0, 0, this.width, this.height)
+        paint.isAntiAlias = true
+        canvas.drawARGB(0, 0, 0, 0)
+        canvas.drawCircle(this.width / 2f, this.height / 2f, this.width / 2f, paint)
+        paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
+        canvas.drawBitmap(this, rect, rect, paint)
+        return output
+    }
     fun checkBitmapLight(bitmap: Bitmap, skipStep: Int = 2): Boolean {
         val width = bitmap.width
         val height = bitmap.height
@@ -26,5 +88,22 @@ object ImageUtil {
         val darkRatio = darkPixelCount.toFloat() / pixels.size
         val isLight = lightRatio > darkRatio
         return isLight
+    }
+
+    suspend fun getBitmapWithCoil(context: Context, model: Any?) : Bitmap? {
+        val loader = ImageLoader(context)
+        val request = ImageRequest.Builder(context)
+            .data(model)
+            .allowHardware(false)
+            .build()
+        val result = (loader.execute(request) as? SuccessResult)?.drawable
+        return (result as? BitmapDrawable)?.bitmap
+    }
+
+    fun getImageUriFromBitmap(context: Context, bitmap: Bitmap, title: String?): Uri {
+        val bytes = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bytes)
+        val path = MediaStore.Images.Media.insertImage(context.contentResolver, bitmap, title ?: "Title", null)
+        return Uri.parse(path)
     }
 }

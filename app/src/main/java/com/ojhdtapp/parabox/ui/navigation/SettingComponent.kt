@@ -35,6 +35,7 @@ interface SettingComponent: BackHandlerOwner {
         class AppearanceSetting(val component: ApperaranceSettingComponent) : SettingChild()
         class NotificationSetting(val component: NotificationSettingComponent) : SettingChild()
         class StorageSetting(val component: StorageSettingComponent) : SettingChild()
+        class CloudSetting(val component: StorageSettingComponent) : SettingChild()
         class ExperimentalSetting(val component: ExperimentalSettingComponent) : SettingChild()
         class HelpAndSupportSetting(val component: HelpAndSupportSettingComponent) : SettingChild()
     }
@@ -91,6 +92,10 @@ class DefaultSettingComponent(
                         StorageSettingComponent(childComponentContext)
                     )
 
+                    SettingConfig.CloudSetting -> SettingComponent.SettingChild.CloudSetting(
+                        StorageSettingComponent(childComponentContext)
+                    )
+
                     SettingConfig.ExperimentalSetting -> SettingComponent.SettingChild.ExperimentalSetting(
                         ExperimentalSettingComponent(childComponentContext)
                     )
@@ -136,6 +141,10 @@ class DefaultSettingComponent(
         @Parcelize
         @Serializable
         data object StorageSetting : SettingConfig
+
+        @Parcelize
+        @Serializable
+        data object CloudSetting : SettingConfig
 
         @Parcelize
         @Serializable

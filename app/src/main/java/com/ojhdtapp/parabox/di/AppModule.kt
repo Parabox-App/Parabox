@@ -90,8 +90,9 @@ object AppModule {
     @Singleton
     fun provideMainRepository(
         @ApplicationContext applicationContext: Context,
-        database: AppDatabase
-    ): MainRepository = MainRepositoryImpl(context = applicationContext, db = database)
+        database: AppDatabase,
+        notificationUtil: NotificationUtil
+    ): MainRepository = MainRepositoryImpl(context = applicationContext, db = database, notificationUtil = notificationUtil)
 
     @Provides
     @Singleton

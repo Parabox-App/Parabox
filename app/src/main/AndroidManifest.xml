@@ -12,7 +12,9 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission-sdk-23 android:name="android.permission.FOREGROUND_SERVICE_REMOTE_MESSAGING"/>
+
+    <uses-permission-sdk-23 android:name="android.permission.FOREGROUND_SERVICE_REMOTE_MESSAGING" />
+
     <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -24,6 +26,7 @@
         </intent>
         <intent>
             <action android:name="android.intent.action.INSERT" />
+
             <data android:mimeType="vnd.android.cursor.dir/event" />
         </intent>
     </queries>
@@ -40,38 +43,43 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Parabox"
         android:usesCleartextTraffic="true">
+        <receiver
+            android:name=".domain.receiver.ReplyReceiver"
+            android:enabled="true"
+            android:exported="true"></receiver>
+        <receiver
+            android:name=".domain.receiver.MarkAsReadReceiver"
+            android:enabled="true"
+            android:exported="true" />
 
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_stat_name" />
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="${MAPS_API_KEY}" />
-
-        <!--        <activity-->
-        <!--            android:name=".ui.bubble.BubbleActivity"-->
-        <!--            android:allowEmbedded="true"-->
-        <!--            android:documentLaunchMode="always"-->
-        <!--            android:exported="false"-->
-        <!--            android:resizeableActivity="true"-->
-        <!--            android:theme="@style/Theme.Parabox">-->
-        <!--            <meta-data-->
-        <!--                android:name="android.app.lib_name"-->
-        <!--                android:value="" />-->
-        <!--        </activity>-->
-
+            android:value="${MAPS_API_KEY}" /> <!-- <activity -->
+        <!-- android:name=".ui.bubble.BubbleActivity" -->
+        <!-- android:allowEmbedded="true" -->
+        <!-- android:documentLaunchMode="always" -->
+        <!-- android:exported="false" -->
+        <!-- android:resizeableActivity="true" -->
+        <!-- android:theme="@style/Theme.Parabox"> -->
+        <!-- <meta-data -->
+        <!-- android:name="android.app.lib_name" -->
+        <!-- android:value="" /> -->
+        <!-- </activity> -->
         <service
             android:name=".domain.service.ExtensionService"
-            android:foregroundServiceType="remoteMessaging"
             android:enabled="true"
-            android:exported="true" />
+            android:exported="true"
+            android:foregroundServiceType="remoteMessaging" />
 
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:windowSoftInputMode="adjustResize"
-            android:theme="@style/Theme.Parabox">
+            android:theme="@style/Theme.Parabox"
+            android:windowSoftInputMode="adjustResize">
             <meta-data
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />
@@ -81,9 +89,7 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-
-        <!--Intent filter to capture authorization code response from the default browser on the device calling back to our app after interactive sign in -->
+        </activity> <!-- Intent filter to capture authorization code response from the default browser on the device calling back to our app after interactive sign in -->
         <activity
             android:name="com.microsoft.identity.client.BrowserTabActivity"
             android:exported="true">
@@ -108,7 +114,6 @@
                 android:name="autoStoreLocales"
                 android:value="true" />
         </service>
-
         <service
             android:name=".domain.service.MyFirebaseMessagingService"
             android:exported="false">

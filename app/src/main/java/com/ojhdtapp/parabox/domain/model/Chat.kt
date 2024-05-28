@@ -1,7 +1,10 @@
 package com.ojhdtapp.parabox.domain.model
 
+import android.os.Parcelable
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
+import kotlinx.parcelize.Parcelize
 
+@Parcelize
 data class Chat (
     val avatar: ParaboxResourceInfo,
     val latestMessageId: Long?,
@@ -17,7 +20,7 @@ data class Chat (
     val uid: String,
     val extensionId: Long?,
     val chatId: Long,
-) {
+) : Parcelable {
     var name: String = ""
         get() = field.ifBlank { uid }
     constructor(

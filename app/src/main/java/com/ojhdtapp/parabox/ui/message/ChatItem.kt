@@ -40,7 +40,6 @@ import com.google.accompanist.placeholder.PlaceholderHighlight
 import com.google.accompanist.placeholder.material3.fade
 import com.google.accompanist.placeholder.placeholder
 import com.ojhdtapp.parabox.R
-import com.ojhdtapp.parabox.core.util.AvatarUtil
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.toTimeUntilNow
 import com.ojhdtapp.parabox.domain.model.Chat
@@ -243,13 +242,13 @@ fun PinnedChatItems(
             ) {
                 Box(
                     modifier = Modifier
-                        .clip(CircleShape)
-                        .size(40.dp)
-                        .background(avatarBackgroundColor),
+                        .size(40.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     icon?.invoke() ?: CommonAvatar(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.clip(CircleShape)
+                            .background(avatarBackgroundColor)
+                            .fillMaxSize(),
                         model = CommonAvatarModel(
                             model = chat.avatar.getModel(),
                             name = chat.name

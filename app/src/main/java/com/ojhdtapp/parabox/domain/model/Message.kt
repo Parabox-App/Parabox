@@ -1,7 +1,10 @@
 package com.ojhdtapp.parabox.domain.model
 
+import android.os.Parcelable
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxMessageElement
+import kotlinx.parcelize.Parcelize
 
+@Parcelize
 data class Message(
     val contents: List<ParaboxMessageElement>,
     val contentTypes: Int,
@@ -15,7 +18,7 @@ data class Message(
     val uid: String,
     val extensionId: Long,
     val messageId: Long,
-){
+) : Parcelable {
     val contentsId: List<Long> get() = contents.indices.map {
         "${messageId}${it}".toLong()
     }

@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.automirrored.outlined.Label
+import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.EditNotifications
 import androidx.compose.material.icons.outlined.LibraryAdd
 import androidx.compose.material.icons.outlined.Palette
@@ -197,6 +198,22 @@ fun SettingPage(
                         navigation.replaceAll(DefaultSettingComponent.SettingConfig.StorageSetting)
                     }
                     scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.STORAGE)
+                }
+            }
+            item {
+                SettingItem(
+                    title = "云服务",
+                    leadingIcon = {
+                        Icon(imageVector = Icons.Outlined.Cloud, contentDescription = "cloud settings", tint = MaterialTheme.colorScheme.onSurface)
+                    },
+                    selected = layoutType == SettingLayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.CloudSetting,
+                    layoutType = layoutType
+                ) {
+//                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.STORAGE))
+                    navigation.bringToFront(DefaultSettingComponent.SettingConfig.CloudSetting) {
+                        navigation.replaceAll(DefaultSettingComponent.SettingConfig.CloudSetting)
+                    }
+                    scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.CLOUD)
                 }
             }
             item {

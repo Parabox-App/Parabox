@@ -40,6 +40,7 @@ import com.ojhdtapp.parabox.ui.navigation.RootComponent
 import com.ojhdtapp.parabox.ui.navigation.SettingComponent
 import com.ojhdtapp.parabox.ui.navigation.slideWithOffset
 import com.ojhdtapp.parabox.ui.setting.detail.AppearanceSettingPage
+import com.ojhdtapp.parabox.ui.setting.detail.CloudSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.ExtensionAddSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.ExtensionSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.GeneralSettingPage
@@ -206,6 +207,17 @@ fun SettingPageWrapperUi(
 
                         is SettingComponent.SettingChild.StorageSetting -> {
                             StorageSettingPage(
+                                state = state,
+                                mainSharedState = mainSharedState,
+                                layoutType = layoutType,
+                                scaffoldNavigator = scaffoldNavigator,
+                                onEvent = viewModel::sendEvent,
+                                onMainSharedEvent = mainSharedViewModel::sendEvent
+                            )
+                        }
+
+                        is SettingComponent.SettingChild.CloudSetting -> {
+                            CloudSettingPage(
                                 state = state,
                                 mainSharedState = mainSharedState,
                                 layoutType = layoutType,

@@ -2,6 +2,7 @@ import android.content.Context
 import android.util.Log
 import androidx.datastore.preferences.core.edit
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
+import com.ojhdtapp.parabox.core.util.NotificationUtil
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.parabox.core.util.getDataStoreValue
@@ -31,6 +32,7 @@ import kotlinx.coroutines.flow.flow
 class MainRepositoryImpl @Inject constructor(
     val context: Context,
     private val db: AppDatabase,
+    val notificationUtil: NotificationUtil
 ) : MainRepository {
     override suspend fun receiveMessage(msg: ReceiveMessage, ext: Extension.ExtensionSuccess): ParaboxResult {
         Log.d("parabox", "receiving msg from ${ext.name}")
@@ -126,6 +128,11 @@ class MainRepositoryImpl @Inject constructor(
                     preferences[DataStoreKeys.MESSAGE_BADGE_NUM] = it + 1
                 }
             }
+            notificationUtil.sendNewMessageNotification(
+                messageEntity.toMessage(),
+                contactEntity.toContact(),
+                chatEntity.toChat(),
+                ext.toExtensionInfo())
         }
 
         return ParaboxResult(ParaboxResult.SUCCESS, ParaboxResult.SUCCESS_MSG)

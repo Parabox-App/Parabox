@@ -22,27 +22,40 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.util.Log
-import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.getSystemService
 import androidx.core.net.toUri
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.OnLifecycleEvent
 import coil.ImageLoader
 import coil.request.ImageRequest
 import coil.request.SuccessResult
 import com.ojhdtapp.parabox.MainActivity
 import com.ojhdtapp.parabox.R
-import com.ojhdtapp.parabox.core.util.AvatarUtil.getCircledBitmap
+import com.ojhdtapp.parabox.core.util.ImageUtil.getCircledBitmap
 import com.ojhdtapp.parabox.data.local.AppDatabase
+import com.ojhdtapp.parabox.data.local.ExtensionInfo
+import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.Contact
+import com.ojhdtapp.parabox.domain.model.Extension
 import com.ojhdtapp.parabox.domain.model.Message
+import com.ojhdtapp.parabox.domain.receiver.MarkAsReadReceiver
+import com.ojhdtapp.parabox.domain.receiver.ReplyReceiver
+import com.ojhdtapp.parabox.ui.message.chat.contents_layout.model.ChatPageUiModel
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendTargetType
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxMessageElement
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.withContext
-import okhttp3.internal.notify
 import java.io.IOException
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
@@ -51,7 +64,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 class NotificationUtil(
     val context: Context,
     val database: AppDatabase
-) {
+): DefaultLifecycleObserver {
     companion object {
         const val GROUP_KEY_NEW_MESSAGE = "group_new_message"
         const val GROUP_KEY_INTERNAL = "group_internal"
@@ -66,15 +79,27 @@ class NotificationUtil(
         const val KEY_TEXT_REPLY = "key_text_reply"
     }
 
+    private var isForeground = false
+
+    override fun onStart(owner: LifecycleOwner) {
+        super.onStart(owner)
+        isForeground = true
+    }
+
+    override fun onStop(owner: LifecycleOwner) {
+        super.onStop(owner)
+        isForeground = false
+    }
+
     private val remoteInput: RemoteInput = RemoteInput.Builder(KEY_TEXT_REPLY).run {
         setLabel(context.getString(R.string.reply_label))
         build()
     }
     private val notificationManager: NotificationManager =
-        context.getSystemService() ?: throw IllegalStateException()
+        context.getSystemService<NotificationManager>() ?: throw IllegalStateException()
 
     private val shortcutManager: ShortcutManager =
-        context.getSystemService() ?: throw IllegalStateException()
+        context.getSystemService<ShortcutManager>() ?: throw IllegalStateException()
 
     private val tempMessageMap =
         mutableMapOf<Long, CopyOnWriteArrayList<Pair<Message, Person>>>()
@@ -111,316 +136,197 @@ class NotificationUtil(
         }
     }
 
-//    suspend fun updateShortcuts(importantContact: Contact? = null) {
-//        // Truncate the list if we can't show all of our contacts.
-//        val maxCount = shortcutManager.maxShortcutCountPerActivity
-//        var contacts = database.contactDao.getAllContacts().firstOrNull() ?: emptyList()
-//        // Move the important contact to the front of the shortcut list.
-//        if (importantContact != null) {
-//            contacts =
-//                contacts.sortedByDescending { it.contactId == importantContact.contactId }
-//        }
-//        if (contacts.size > maxCount) {
-//            contacts = contacts.take(maxCount)
-//        }
-//        var shortcuts = contacts.map {
-//            val icon = it.profile.let { profile ->
-//                withContext(Dispatchers.IO) {
-//                    if (profile.avatar != null || profile.avatarUri != null) {
-//                        try {
-//                            val loader = ImageLoader(context)
-//                            val request = ImageRequest.Builder(context)
-//                                .data(profile.avatarUri ?: profile.avatar)
-//                                .allowHardware(false) // Disable hardware bitmaps.
-//                                .build()
-//                            val result = (loader.execute(request) as SuccessResult).drawable
-//                            val bitmap = (result as BitmapDrawable).bitmap.getCircledBitmap()
-//                            Icon.createWithAdaptiveBitmap(bitmap)
-//                        } catch (e: ClassCastException) {
-//                            e.printStackTrace()
-//                            null
-//                        }
-//                    } else null
-//                } ?: Icon.createWithAdaptiveBitmap(
-//                    AvatarUtil.createNamedAvatarBm(
-//                        width = 224,
-//                        height = 224,
-//                        backgroundColor = context.getThemeColor(com.google.android.material.R.attr.colorPrimary),
-//                        textColor = context.getThemeColor(com.google.android.material.R.attr.colorOnPrimary),
-//                        name = profile.name.ifBlank { null }?.substring(0, 1)?.uppercase(Locale.getDefault())
-//                    )
-//                )
-//            }
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-//                ShortcutInfo.Builder(context, it.contactId.toString())
-//                    .setLocusId(LocusId(it.contactId.toString()))
-//                    .setActivity(ComponentName(context, MainActivity::class.java))
-//                    .setShortLabel(it.profile.name)
-//                    .setLongLabel(it.profile.name)
-//                    .setIcon(icon)
-//                    .setLongLived(true)
-//                    .setCategories(setOf("com.ojhdtapp.parabox.bubbles.category.TEXT_SHARE_TARGET"))
-//                    .setIntent(Intent(context, MainActivity::class.java).apply {
-//                        action = Intent.ACTION_VIEW
-//                        data = Uri.parse("parabox://contact/${it.contactId}")
-//                    })
-//                    .setPerson(
-//                        Person.Builder()
-//                            .setName(it.profile.name)
-//                            .setIcon(icon)
-//                            .build()
-//                    )
-//                    .build()
-//            } else {
-//                ShortcutInfo.Builder(context, it.contactId.toString())
-//                    .setActivity(ComponentName(context, MainActivity::class.java))
-//                    .setShortLabel(it.profile.name)
-//                    .setLongLabel(it.profile.name)
-//                    .setIcon(icon)
-//                    .setCategories(setOf("com.ojhdtapp.parabox.bubbles.category.TEXT_SHARE_TARGET"))
-//                    .setIntent(Intent(context, MainActivity::class.java).apply {
-//                        action = Intent.ACTION_VIEW
-//                        data = Uri.parse("parabox://contact/${it.contactId}")
-//                    })
-//                    .build()
-//            }
-//        }
-//        shortcutManager.dynamicShortcuts = shortcuts
-//    }
-//
-//    suspend fun sendNewMessageNotification(
-//        message: Message,
-//        contact: Contact,
-//        channelId: String,
-//        isGroupSpecify: Boolean? = null,
-//        fromChat: Boolean = false,
-//    ) {
-//        Log.d("parabox", "sendNotification at channel:${channelId}")
-//        updateShortcuts(contact)
-//        val contactIdUri = "parabox://contact/${contact.contactId}".toUri()
-//        val isGroup = isGroupSpecify ?: (message.profile.name != contact.profile.name)
-//        val userNameFlow: Flow<String> = context.dataStore.data
-//            .catch { exception ->
-//                if (exception is IOException) {
-//                    emit(emptyPreferences())
-//                } else {
-//                    throw exception
-//                }
-//            }
-//            .map { settings ->
-//                settings[DataStoreKeys.USER_NAME] ?: context.getString(R.string.you)
-//            }
-//        val userAvatarFlow: Flow<String?> = context.dataStore.data
-//            .catch { exception ->
-//                if (exception is IOException) {
-//                    emit(emptyPreferences())
-//                } else {
-//                    throw exception
-//                }
-//            }
-//            .map { settings ->
-//                settings[DataStoreKeys.USER_AVATAR]
-//            }
-//
-//        val launchPendingIntent: PendingIntent =
-//            Intent(context, MainActivity::class.java).apply {
-//                action = Intent.ACTION_VIEW
-//                data = contactIdUri
-//                addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-//            }.let {
-//                PendingIntent.getActivity(
-//                    context, 0, it,
-//                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-//                )
-//            }
-//        val replyPendingIntent: PendingIntent =
-//            PendingIntent.getBroadcast(
-//                context,
-//                message.messageId.toInt(),
-//                Intent(context, ReplyReceiver::class.java).apply {
-//                    putExtra("contact", contact)
-//                    putExtra(
-//                        "sendTargetType",
-//                        if (isGroup) SendTargetType.GROUP else SendTargetType.USER
-//                    )
-//                },
-//                PendingIntent.FLAG_MUTABLE
-//            )
-//        val markAsReadPendingIntent: PendingIntent =
-//            PendingIntent.getBroadcast(
-//                context,
-//                message.messageId.toInt(),
-//                Intent(context, MarkAsReadReceiver::class.java).apply {
-//                    putExtra("contact", contact)
-//                },
-//                PendingIntent.FLAG_MUTABLE
-//            )
-//
-//        val notificationBuilder: Notification.Builder =
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-//                val userIcon = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-//                    userAvatarFlow.firstOrNull()?.let {
-//                        Icon.createWithAdaptiveBitmapContentUri(it)
-//                    }
-//                } else {
-//                    userAvatarFlow.firstOrNull()?.let {
-//                        Icon.createWithContentUri(it)
-//                    }
-//                } ?: Icon.createWithAdaptiveBitmap(
-//                    AvatarUtil.createNamedAvatarBm(
-//                        width = 224,
-//                        height = 224,
-//                        backgroundColor = context.getThemeColor(com.google.android.material.R.attr.colorPrimary),
-//                        textColor = context.getThemeColor(com.google.android.material.R.attr.colorOnPrimary),
-//                        name = userNameFlow.firstOrNull()?.ifBlank { null }?.substring(0, 1)
-//                            ?.uppercase(Locale.getDefault())
-//                    )
-//                )
-//                val user =
-//                    Person.Builder().setName(userNameFlow.firstOrNull()).setIcon(userIcon).build()
-//
-//                val personIcon = message.profile.let { profile ->
-//                    withContext(Dispatchers.IO) {
-//                        if (profile.avatar != null || profile.avatarUri != null) {
-//                            try {
-//                                val loader = ImageLoader(context)
-//                                val request = ImageRequest.Builder(context)
-//                                    .data(profile.avatarUri ?: profile.avatar)
-//                                    .allowHardware(false) // Disable hardware bitmaps.
-//                                    .build()
-//                                val result = (loader.execute(request) as SuccessResult).drawable
-//                                val bitmap = (result as BitmapDrawable).bitmap
-//                                Icon.createWithAdaptiveBitmap(bitmap.getCircledBitmap())
-//                            } catch (e: ClassCastException) {
-//                                e.printStackTrace()
-//                                null
-//                            }
-//                        } else null
-//                    } ?: Icon.createWithAdaptiveBitmap(
-//                        AvatarUtil.createNamedAvatarBm(
-//                            width = 224,
-//                            height = 224,
-//                            backgroundColor = context.getThemeColor(com.google.android.material.R.attr.colorPrimary),
-//                            textColor = context.getThemeColor(com.google.android.material.R.attr.colorOnPrimary),
-//                            name = profile.name.ifBlank { null }?.substring(0, 1)?.uppercase(Locale.getDefault())
-//                        )
-//                    )
-//                }
-//                val person =
-//                    Person.Builder().setName(message.profile.name).setIcon(personIcon).build()
-//                val groupIcon = contact.profile.let { profile ->
-//                    withContext(Dispatchers.IO) {
-//                        if (profile.avatar != null || profile.avatarUri != null) {
-//                            try {
-//                                val loader = ImageLoader(context)
-//                                val request = ImageRequest.Builder(context)
-//                                    .data(profile.avatarUri ?: profile.avatar)
-//                                    .allowHardware(false) // Disable hardware bitmaps.
-//                                    .build()
-//                                val result = (loader.execute(request) as SuccessResult).drawable
-//                                val bitmap = (result as BitmapDrawable).bitmap.getCircledBitmap()
-//                                Icon.createWithAdaptiveBitmap(bitmap)
-//                            } catch (e: ClassCastException) {
-//                                e.printStackTrace()
-//                                null
-//                            }
-//                        } else null
-//                    } ?: Icon.createWithAdaptiveBitmap(
-//                        AvatarUtil.createNamedAvatarBm(
-//                            width = 224,
-//                            height = 224,
-//                            backgroundColor = context.getThemeColor(com.google.android.material.R.attr.colorPrimary),
-//                            textColor = context.getThemeColor(com.google.android.material.R.attr.colorOnPrimary),
-//                            name = profile.name.ifBlank { null }?.substring(0, 1)?.uppercase(Locale.getDefault())
-//                        )
-//                    )
-//                }
-//                Notification.Builder(context, channelId)
-//                    .setSmallIcon(R.drawable.ic_stat_name)
-//                    .setLargeIcon(groupIcon)
-//                    .setContentTitle(contact.profile.name)
-//                    .setCategory(Notification.CATEGORY_MESSAGE)
-//                    .setShortcutId(contact.contactId.toString())
-//                    .setContentIntent(launchPendingIntent)
-//                    .addPerson(person)
-//                    .setShowWhen(true)
-//                    .setAutoCancel(true)
-//                    .setWhen(message.timestamp)
-//                    .setGroup(GROUP_KEY_NEW_MESSAGE)
-//                    .setActions(
-//                        Notification.Action
-//                            .Builder(
-//                                Icon.createWithResource(context, R.drawable.baseline_send_24),
-//                                context.getString(R.string.reply),
-//                                replyPendingIntent
-//                            )
-//                            .addRemoteInput(remoteInput)
-//                            .setAllowGeneratedReplies(true)
-//                            .build(),
-//                        Notification.Action.Builder(
-//                            Icon.createWithResource(context, R.drawable.baseline_mark_chat_read_24),
-//                            context.getString(R.string.mark_as_read),
-//                            markAsReadPendingIntent
-//                        ).build()
-//                    )
-//                    .setStyle(
-//                        Notification.MessagingStyle(user).apply {
-//                            // temp message
-//                            if (tempMessageMap[contact.contactId] == null) {
-//                                tempMessageMap[contact.contactId] =
-//                                    CopyOnWriteArrayList(arrayOf(message to person))
-//                            } else {
-//                                tempMessageMap[contact.contactId]?.run {
-//                                    add(message to person)
-//                                    if (size > 6) {
-//                                        this.removeAt(0)
-//                                    }
-//                                }
-//                            }
-//
-//                            tempMessageMap[contact.contactId]?.forEach {
-//                                val m = Notification.MessagingStyle.Message(
-//                                    it.first.contents.getContentString(),
-//                                    it.first.timestamp,
-//                                    if (it.first.sentByMe) null else it.second
-//                                ).apply {
-//                                    it.first.contents.filterIsInstance<Image>().firstOrNull()?.let {
-//                                        val mimetype = "image/"
-//                                        val imageUri =
-//                                            it.uriString?.let { Uri.parse(it) } ?: try {
-//                                                val loader = ImageLoader(context)
-//                                                val request = ImageRequest.Builder(context)
-//                                                    .data(it.url)
-//                                                    .allowHardware(false) // Disable hardware bitmaps.
-//                                                    .build()
-//                                                val result =
-//                                                    (loader.execute(request) as SuccessResult).drawable
-//                                                FileUtil.getUriFromBitmapWithCleanCache(
-//                                                    context,
-//                                                    (result as BitmapDrawable).bitmap
-//                                                )
-//                                            } catch (e: ClassCastException) {
-//                                                e.printStackTrace()
-//                                                null
-//                                            }
-////                                        Log.d("parabox", imageUri.toString())
-//                                        setData(mimetype, imageUri)
-//                                    }
-//                                }
-//                                if (it.first.timestamp < m.timestamp) {
-//                                    addHistoricMessage(m)
-//                                } else {
-//                                    addMessage(m)
-//                                }
-//                            }
-//
-//                            isGroupConversation = isGroup
-//                            conversationTitle = contact.profile.name
-//                        }
-//                    ).apply {
-//                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-//                            setLocusId(LocusId(contact.contactId.toString()))
-//                        }
+    suspend fun updateShortcuts() {
+        val maxCount = shortcutManager.maxShortcutCountPerActivity
+        var chatList = database.chatDao.getChatWithLimit(maxCount)
+        val shortcutList =
+            chatList.map { chat ->
+                val avatarBitmap = ImageUtil.getBitmapWithCoil(context, chat.avatar.getModel())
+                    ?: ImageUtil.createNamedAvatarBm(
+                        backgroundColor = context.getThemeColor(com.google.android.material.R.attr.colorSecondary),
+                        textColor = context.getThemeColor(com.google.android.material.R.attr.colorOnSecondary),
+                        name = chat.name ?: "name"
+                    )
+                val icon = Icon.createWithAdaptiveBitmap(avatarBitmap.getCircledBitmap())
+                val builder = ShortcutInfo.Builder(context, chat.chatId.toString())
+                    .setActivity(ComponentName(context, MainActivity::class.java))
+                    .setShortLabel(chat.name ?: "name")
+                    .setLongLabel(chat.name ?: "name")
+                    .setIcon(icon)
+                    .setCategories(setOf("com.ojhdtapp.parabox.bubbles.category.TEXT_SHARE_TARGET"))
+                    .setIntent(Intent(context, MainActivity::class.java).apply {
+                        action = Intent.ACTION_VIEW
+                        data = Uri.parse("parabox://chat/${chat.chatId}")
+                    })
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    builder.setLocusId(LocusId(chat.chatId.toString()))
+                        .setLongLived(true)
+                        .setPerson(
+                            Person.Builder()
+                                .setName(chat.name ?: "name")
+                                .setIcon(icon)
+                                .build()
+                        )
+                }
+                builder.build()
+            }
+        shortcutManager.dynamicShortcuts = shortcutList
+    }
+
+    suspend fun sendNewMessageNotification(
+        message: Message,
+        contact: Contact,
+        chat: Chat,
+        extensionInfo: ExtensionInfo,
+        fromChat: Boolean = false,
+    ) {
+        val channelId = "${extensionInfo.pkg}_${extensionInfo.extensionId}_${extensionInfo.alias}"
+        createNotificationChannel(
+            channelId = channelId,
+            channelName = extensionInfo.alias,
+            channelDescription = "来自${extensionInfo.name}扩展，${extensionInfo.alias}连接的消息"
+        )
+        Log.d("parabox", "sendNotification at channel:${channelId}")
+
+        updateShortcuts()
+        val launchUri = "parabox://chat/${chat.chatId}".toUri()
+
+        val userName = context.getDataStoreValue(DataStoreKeys.USER_NAME, context.getString(R.string.you))
+        val userAvatarModel = context.getDataStoreValue(DataStoreKeys.USER_AVATAR, "")
+        val userAvatarBitmap = ImageUtil.getBitmapWithCoil(context, userAvatarModel)
+            ?: ImageUtil.createNamedAvatarBm(
+                backgroundColor = context.getThemeColor(com.google.android.material.R.attr.colorSecondary),
+                textColor = context.getThemeColor(com.google.android.material.R.attr.colorOnSecondary),
+                name = userName
+            )
+        val userIcon = Icon.createWithAdaptiveBitmap(userAvatarBitmap.getCircledBitmap())
+
+        val senderAvatarBitmap = ImageUtil.getBitmapWithCoil(context, contact.avatar.getModel())
+            ?: ImageUtil.createNamedAvatarBm(
+                backgroundColor = context.getThemeColor(com.google.android.material.R.attr.colorPrimary),
+                textColor = context.getThemeColor(com.google.android.material.R.attr.colorOnPrimary),
+                name = contact.name
+            )
+        val senderIcon = Icon.createWithAdaptiveBitmap(senderAvatarBitmap.getCircledBitmap())
+
+        val chatAvatarBitmap = ImageUtil.getBitmapWithCoil(context, chat.avatar.getModel())
+            ?: ImageUtil.createNamedAvatarBm(
+                backgroundColor = context.getThemeColor(com.google.android.material.R.attr.colorPrimary),
+                textColor = context.getThemeColor(com.google.android.material.R.attr.colorOnPrimary),
+                name = chat.name
+            )
+        val chatIcon = Icon.createWithAdaptiveBitmap(chatAvatarBitmap.getCircledBitmap())
+        val launchPendingIntent: PendingIntent =
+            Intent(context, MainActivity::class.java).apply {
+                action = Intent.ACTION_VIEW
+                data = launchUri
+                addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            }.let {
+                PendingIntent.getActivity(
+                    context, 0, it,
+                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                )
+            }
+        val replyPendingIntent: PendingIntent =
+            PendingIntent.getBroadcast(
+                context,
+                message.messageId.toInt(),
+                Intent(context, ReplyReceiver::class.java).apply {
+                    putExtra("chat", chat)
+                },
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+        val markAsReadPendingIntent: PendingIntent =
+            PendingIntent.getBroadcast(
+                context,
+                message.messageId.toInt(),
+                Intent(context, MarkAsReadReceiver::class.java).apply {
+                    putExtra("chat", chat)
+                },
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+
+        val notificationBuilder: Notification.Builder =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                val userPerson =
+                    Person.Builder().setName(userName).setIcon(userIcon).build()
+                val senderPerson = Person.Builder().setName(contact.name).setIcon(senderIcon).build()
+                val chatPerson = Person.Builder().setName(chat.name).setIcon(chatIcon).build()
+                Notification.Builder(context, channelId)
+                    .setSmallIcon(R.drawable.ic_stat_name)
+                    .setLargeIcon(chatIcon)
+                    .setContentTitle(chat.name)
+                    .setCategory(Notification.CATEGORY_MESSAGE)
+                    .setShortcutId(chat.chatId.toString())
+                    .setContentIntent(launchPendingIntent)
+                    .addPerson(senderPerson)
+                    .setShowWhen(true)
+                    .setAutoCancel(true)
+                    .setWhen(message.timestamp)
+                    .setGroup(GROUP_KEY_NEW_MESSAGE)
+                    .setActions(
+                        Notification.Action
+                            .Builder(
+                                Icon.createWithResource(context, R.drawable.baseline_send_24),
+                                context.getString(R.string.reply),
+                                replyPendingIntent
+                            )
+                            .addRemoteInput(remoteInput)
+                            .setAllowGeneratedReplies(true)
+                            .build(),
+                        Notification.Action.Builder(
+                            Icon.createWithResource(context, R.drawable.baseline_mark_chat_read_24),
+                            context.getString(R.string.mark_as_read),
+                            markAsReadPendingIntent
+                        ).build()
+                    )
+                    .setStyle(
+                        Notification.MessagingStyle(userPerson).apply {
+                            // temp message
+                            if (tempMessageMap[chat.chatId] == null) {
+                                tempMessageMap[chat.chatId] =
+                                    CopyOnWriteArrayList(arrayOf(message to senderPerson))
+                            } else {
+                                tempMessageMap[chat.chatId]?.run {
+                                    add(message to senderPerson)
+                                    if (size > 6) {
+                                        this.removeAt(0)
+                                    }
+                                }
+                            }
+
+                            tempMessageMap[chat.chatId]?.forEach {
+                                val m = Notification.MessagingStyle.Message(
+                                    it.first.contentString,
+                                    it.first.timestamp,
+                                    if (it.first.sentByMe) null else it.second
+                                ).apply {
+                                    it.first.contents.filterIsInstance<ParaboxImage>().firstOrNull()?.let {
+                                        val mimetype = "image/"
+                                        val bitmap = ImageUtil.getBitmapWithCoil(context, it.resourceInfo.getModel())
+                                            ?: ImageUtil.createNamedAvatarBm(
+                                                backgroundColor = context.getThemeColor(com.google.android.material.R.attr.colorPrimary),
+                                                textColor = context.getThemeColor(com.google.android.material.R.attr.colorOnPrimary),
+                                                name = contact.name
+                                            )
+                                        val imageUri = ImageUtil.getImageUriFromBitmap(context, bitmap, it.fileName)
+                                        setData(mimetype, imageUri)
+                                    }
+                                }
+                                if (it.first.timestamp < m.timestamp) {
+                                    addHistoricMessage(m)
+                                } else {
+                                    addMessage(m)
+                                }
+                            }
+
+                            isGroupConversation = chat.type == SendTargetType.GROUP
+                            conversationTitle = chat.name
+                        }
+                    ).apply {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            setLocusId(LocusId(chat.chatId.toString()))
+                        }
 //                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
 //                            setBubbleMetadata(
 //                                Notification.BubbleMetadata
@@ -430,11 +336,10 @@ class NotificationUtil(
 //                                            REQUEST_BUBBLE,
 //                                            Intent(context, BubbleActivity::class.java)
 //                                                .setAction(Intent.ACTION_VIEW)
-////                                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-//                                                .setData(contactIdUri),
-//                                            PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+//                                                .setData(launchUri),
+//                                            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
 //                                        ),
-//                                        personIcon
+//                                        chatIcon
 //                                    )
 //                                    // The height of the expanded bubble.
 //                                    .setDesiredHeightResId(R.dimen.bubble_height)
@@ -450,46 +355,44 @@ class NotificationUtil(
 //                                    .build()
 //                            )
 //                        }
-//                    }
-//            } else {
-//                Log.d("parabox", "old notification pattern")
-//                val notificationBuilder = Notification.Builder(context, channelId)
-//                    .setSmallIcon(R.drawable.ic_stat_name)
-//                    .setContentTitle(contact.profile.name)
-//                    .setContentText(message.contents.getContentString())
-//                    .setContentIntent(launchPendingIntent)
-//                    .setAutoCancel(true)
-//                val senderName = context.getString(R.string.you)
-//                Notification.MessagingStyle(senderName)
-//                    .addMessage(message.contents.getContentString(), Date().time, senderName)
-//                    .setConversationTitle(contact.profile.name)
-//                    .setBuilder(notificationBuilder)
-//                notificationBuilder
-//            }
-//
-//        val messageBadgeNum = context.dataStore.data.map { preferences ->
-//            preferences[DataStoreKeys.MESSAGE_BADGE_NUM] ?: 0
-//        }.firstOrNull() ?: 0
-//
-//        val summaryNotificationBuilder = Notification.Builder(context, channelId)
-//            .setSmallIcon(R.drawable.ic_stat_name)
-//            .setContentTitle(context.getString(R.string.notification_group_title))
-//            .setContentText(context.getString(R.string.notification_group_summary, messageBadgeNum))
-//            .setShowWhen(true)
-//            .setAutoCancel(true)
-//            .setWhen(message.timestamp)
-//            .setStyle(
-//                Notification.InboxStyle()
-//                    .addLine(message.contents.getContentString())
-//                    .setBigContentTitle(context.getString(R.string.notification_group_summary, messageBadgeNum))
-//                    .setSummaryText(context.getString(R.string.notification_group_summary, messageBadgeNum))
-//            )
-//            .setGroup(GROUP_KEY_NEW_MESSAGE)
-//            .setGroupSummary(true)
-//
-//        notificationManager.notify(SUMMARY_ID, summaryNotificationBuilder.build())
-//        notificationManager.notify(contact.contactId.toInt(), notificationBuilder.build())
-//    }
+                    }
+            } else {
+                Log.d("parabox", "old notification pattern")
+                val notificationBuilder = Notification.Builder(context, channelId)
+                    .setSmallIcon(R.drawable.ic_stat_name)
+                    .setContentTitle(contact.name)
+                    .setContentText(message.contentString)
+                    .setContentIntent(launchPendingIntent)
+                    .setAutoCancel(true)
+                val senderName = context.getString(R.string.you)
+                Notification.MessagingStyle(senderName)
+                    .addMessage(message.contentString, Date().time, senderName)
+                    .setConversationTitle(chat.name)
+                    .setBuilder(notificationBuilder)
+                notificationBuilder
+            }
+
+        val messageBadgeNum = context.getDataStoreValue(DataStoreKeys.MESSAGE_BADGE_NUM, 0)
+
+        val summaryNotificationBuilder = Notification.Builder(context, channelId)
+            .setSmallIcon(R.drawable.ic_stat_name)
+            .setContentTitle(context.getString(R.string.notification_group_title))
+            .setContentText(context.getString(R.string.notification_group_summary, messageBadgeNum))
+            .setShowWhen(true)
+            .setAutoCancel(true)
+            .setWhen(message.timestamp)
+            .setStyle(
+                Notification.InboxStyle()
+                    .addLine(message.contentString)
+                    .setBigContentTitle(context.getString(R.string.notification_group_summary, messageBadgeNum))
+                    .setSummaryText(context.getString(R.string.notification_group_summary, messageBadgeNum))
+            )
+            .setGroup(GROUP_KEY_NEW_MESSAGE)
+            .setGroupSummary(true)
+
+        notificationManager.notify(SUMMARY_ID, summaryNotificationBuilder.build())
+        notificationManager.notify(contact.contactId.toInt(), notificationBuilder.build())
+    }
 
     fun clearNotification(id: Int) {
         notificationManager.cancel(id)

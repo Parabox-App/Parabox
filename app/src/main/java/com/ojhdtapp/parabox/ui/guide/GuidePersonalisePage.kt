@@ -25,7 +25,6 @@ package com.ojhdtapp.parabox.ui.guide
 //import coil.request.CachePolicy
 //import coil.request.ImageRequest
 //import com.ojhdtapp.parabox.R
-//import com.ojhdtapp.parabox.core.util.AvatarUtil
 //import com.ojhdtapp.parabox.core.util.DataStoreKeys
 //import com.ojhdtapp.parabox.ui.MainSharedViewModel
 //import com.ojhdtapp.parabox.ui.destinations.GuideTermsPageDestination
