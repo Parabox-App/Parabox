@@ -36,106 +36,109 @@ class MainRepositoryImpl @Inject constructor(
 ) : MainRepository {
     override suspend fun receiveMessage(msg: ReceiveMessage, ext: Extension.ExtensionSuccess): ParaboxResult {
         Log.d("parabox", "receiving msg from ${ext.name}")
-        coroutineScope {
-            val info = ext.toExtensionInfo()
-            val allowForegroundNotification = context.getDataStoreValue(
-                DataStoreKeys.SETTINGS_ALLOW_FOREGROUND_NOTIFICATION,
-                false
-            )
-            val chatEntity = buildChatEntity(msg, info)
-            val contactEntity = buildContactEntity(msg, info)
-            val chatIdDeferred = async {
-                db.chatDao.checkChat(chatEntity.pkg, chatEntity.uid)
-                    ?: db.chatDao.insertChat(chatEntity)
-            }
-            val contactIdDeferred = async {
-                db.contactDao.checkContact(contactEntity.pkg, contactEntity.uid)
-                    ?: db.contactDao.insertContact(contactEntity)
-            }
-            // crossRef contact and chat
-            db.contactChatCrossRefDao.insertContactChatCrossRef(
-                ContactChatCrossRef(
-                    contactIdDeferred.await(),
-                    chatIdDeferred.await()
+        return coroutineScope {
+            try {
+                val info = ext.toExtensionInfo()
+                val allowForegroundNotification = context.getDataStoreValue(
+                    DataStoreKeys.SETTINGS_ALLOW_FOREGROUND_NOTIFICATION,
+                    false
                 )
-            )
-
-            val messageEntity =
-                buildMessageEntity(msg, info, contactIdDeferred.await(), chatIdDeferred.await())
-            val messageIdDeferred = async {
-                db.messageDao.insertMessage(messageEntity)
-            }
-            Log.d(
-                "parabox",
-                "chatId:${chatIdDeferred.await()};contactId:${contactIdDeferred.await()};messageId:${messageIdDeferred.await()}"
-            )
-            db.chatDao.updateLatestMessageId(
-                ChatLatestMessageIdUpdate(
-                    chatId = chatIdDeferred.await(),
-                    latestMessageId = messageIdDeferred.await()
-                )
-            )
-
-            if (contactIdDeferred.await() != -1L) {
-                launch(Dispatchers.IO) {
-                    val originalContact = db.contactDao.getContactById(contactIdDeferred.await())
-                    if (originalContact?.name?.isNotEmpty() != true || originalContact.avatar is ParaboxResourceInfo.ParaboxEmptyInfo) {
-                        val basicInfo = ext.ext.onGetUserBasicInfo(msg.sender.uid)
-                        if (basicInfo != null) {
-                            db.contactDao.updateBasicInfo(
-                                ContactBasicInfoUpdate(
-                                    contactId = contactIdDeferred.await(),
-                                    name = basicInfo.name ?: originalContact?.name,
-                                    avatar = basicInfo.avatar.takeIf { it !is ParaboxResourceInfo.ParaboxEmptyInfo } ?: originalContact?.avatar ?: ParaboxResourceInfo.ParaboxEmptyInfo
-                                )
-                            )
-                        }
-                    }
+                val chatEntity = buildChatEntity(msg, info)
+                val contactEntity = buildContactEntity(msg, info)
+                val chatIdDeferred = async {
+                    db.chatDao.checkChat(chatEntity.pkg, chatEntity.uid)
+                        ?: db.chatDao.insertChat(chatEntity)
                 }
-            }
-
-            if (chatIdDeferred.await() != -1L) {
-                launch(Dispatchers.IO) {
-                    val originalChat = db.chatDao.getChatByIdWithoutObserve(chatIdDeferred.await())
-                    if (originalChat?.name?.isNotEmpty() != true || originalChat.avatar is ParaboxResourceInfo.ParaboxEmptyInfo) {
-                        val basicInfo = when (originalChat?.type) {
-                            ParaboxChat.TYPE_PRIVATE -> ext.ext.onGetUserBasicInfo(msg.sender.uid)
-                            ParaboxChat.TYPE_GROUP -> ext.ext.onGetGroupBasicInfo(msg.chat.uid)
-                            else -> null
-                        }
-                        if (basicInfo != null) {
-                            db.chatDao.updateBasicInfo(
-                                ChatBasicInfoUpdate(
-                                    chatId = chatIdDeferred.await(),
-                                    name = basicInfo.name ?: originalChat?.name,
-                                    avatar = basicInfo.avatar.takeIf { it !is ParaboxResourceInfo.ParaboxEmptyInfo } ?: originalChat?.avatar ?: ParaboxResourceInfo.ParaboxEmptyInfo
-                                )
-                            )
-                        }
-                    }
-                    val originalNum = originalChat?.unreadMessageNum ?: 0
-                    db.chatDao.updateUnreadMessageNum(
-                        ChatUnreadMessagesNumUpdate(
-                            chatId = chatIdDeferred.await(),
-                            unreadMessageNum = originalNum + 1
-                        )
+                val contactIdDeferred = async {
+                    db.contactDao.checkContact(contactEntity.pkg, contactEntity.uid)
+                        ?: db.contactDao.insertContact(contactEntity)
+                }
+                // crossRef contact and chat
+                db.contactChatCrossRefDao.insertContactChatCrossRef(
+                    ContactChatCrossRef(
+                        contactIdDeferred.await(),
+                        chatIdDeferred.await()
                     )
-                }
-            }
+                )
 
-            context.getDataStoreValue(DataStoreKeys.MESSAGE_BADGE_NUM, 0).also {
-                context.dataStore.edit { preferences ->
-                    preferences[DataStoreKeys.MESSAGE_BADGE_NUM] = it + 1
+                val messageEntity =
+                    buildMessageEntity(msg, info, contactIdDeferred.await(), chatIdDeferred.await())
+                val messageIdDeferred = async {
+                    db.messageDao.insertMessage(messageEntity)
                 }
+                Log.d(
+                    "parabox",
+                    "chatId:${chatIdDeferred.await()};contactId:${contactIdDeferred.await()};messageId:${messageIdDeferred.await()}"
+                )
+                db.chatDao.updateLatestMessageId(
+                    ChatLatestMessageIdUpdate(
+                        chatId = chatIdDeferred.await(),
+                        latestMessageId = messageIdDeferred.await()
+                    )
+                )
+
+                if (contactIdDeferred.await() != -1L) {
+                    launch(Dispatchers.IO) {
+                        val originalContact = db.contactDao.getContactById(contactIdDeferred.await())
+                        if (originalContact?.name?.isNotEmpty() != true || originalContact.avatar is ParaboxResourceInfo.ParaboxEmptyInfo) {
+                            val basicInfo = ext.ext.onGetUserBasicInfo(msg.sender.uid)
+                            if (basicInfo != null) {
+                                db.contactDao.updateBasicInfo(
+                                    ContactBasicInfoUpdate(
+                                        contactId = contactIdDeferred.await(),
+                                        name = basicInfo.name ?: originalContact?.name,
+                                        avatar = basicInfo.avatar.takeIf { it !is ParaboxResourceInfo.ParaboxEmptyInfo } ?: originalContact?.avatar ?: ParaboxResourceInfo.ParaboxEmptyInfo
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+
+                if (chatIdDeferred.await() != -1L) {
+                    launch(Dispatchers.IO) {
+                        val originalChat = db.chatDao.getChatByIdWithoutObserve(chatIdDeferred.await())
+                        if (originalChat?.name?.isNotEmpty() != true || originalChat.avatar is ParaboxResourceInfo.ParaboxEmptyInfo) {
+                            val basicInfo = when (originalChat?.type) {
+                                ParaboxChat.TYPE_PRIVATE -> ext.ext.onGetUserBasicInfo(msg.sender.uid)
+                                ParaboxChat.TYPE_GROUP -> ext.ext.onGetGroupBasicInfo(msg.chat.uid)
+                                else -> null
+                            }
+                            if (basicInfo != null) {
+                                db.chatDao.updateBasicInfo(
+                                    ChatBasicInfoUpdate(
+                                        chatId = chatIdDeferred.await(),
+                                        name = basicInfo.name ?: originalChat?.name,
+                                        avatar = basicInfo.avatar.takeIf { it !is ParaboxResourceInfo.ParaboxEmptyInfo } ?: originalChat?.avatar ?: ParaboxResourceInfo.ParaboxEmptyInfo
+                                    )
+                                )
+                            }
+                        }
+                        val originalNum = originalChat?.unreadMessageNum ?: 0
+                        db.chatDao.updateUnreadMessageNum(
+                            ChatUnreadMessagesNumUpdate(
+                                chatId = chatIdDeferred.await(),
+                                unreadMessageNum = originalNum + 1
+                            )
+                        )
+                    }
+                }
+
+                context.getDataStoreValue(DataStoreKeys.MESSAGE_BADGE_NUM, 0).also {
+                    context.dataStore.edit { preferences ->
+                        preferences[DataStoreKeys.MESSAGE_BADGE_NUM] = it + 1
+                    }
+                }
+                notificationUtil.sendNewMessageNotification(
+                    messageIdDeferred.await(),
+                    contactIdDeferred.await(),
+                    chatIdDeferred.await(),
+                    ext.toExtensionInfo())
+                ParaboxResult(ParaboxResult.SUCCESS, ParaboxResult.SUCCESS_MSG)
+            } catch (e: Exception) {
+                ParaboxResult(ParaboxResult.ERROR_UNKNOWN, e.message ?: ParaboxResult.ERROR_UNKNOWN_MSG)
             }
-            notificationUtil.sendNewMessageNotification(
-                messageEntity.toMessage(),
-                contactEntity.toContact(),
-                chatEntity.toChat(),
-                ext.toExtensionInfo())
         }
-
-        return ParaboxResult(ParaboxResult.SUCCESS, ParaboxResult.SUCCESS_MSG)
     }
 
     override fun getRecentQuery(): Flow<Resource<List<RecentQuery>>> {

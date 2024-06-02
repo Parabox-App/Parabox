@@ -12,9 +12,11 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Icon
 import android.net.Uri
 import android.provider.MediaStore
+import android.util.Log
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import coil.ImageLoader
+import coil.request.ErrorResult
 import coil.request.ImageRequest
 import coil.request.SuccessResult
 import java.io.ByteArrayOutputStream
@@ -91,19 +93,30 @@ object ImageUtil {
     }
 
     suspend fun getBitmapWithCoil(context: Context, model: Any?) : Bitmap? {
-        val loader = ImageLoader(context)
-        val request = ImageRequest.Builder(context)
-            .data(model)
-            .allowHardware(false)
-            .build()
-        val result = (loader.execute(request) as? SuccessResult)?.drawable
-        return (result as? BitmapDrawable)?.bitmap
+        Log.d("parabox", "getBitmapWithCoil: $model")
+        return try {
+            val loader = ImageLoader(context)
+            val request = ImageRequest.Builder(context)
+                .data(model)
+                .allowHardware(false)
+                .build()
+            val result = loader.execute(request)
+            if (result is SuccessResult) {
+                (result.drawable as BitmapDrawable).bitmap
+            } else {
+                (result as ErrorResult).throwable.printStackTrace()
+                null
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 
     fun getImageUriFromBitmap(context: Context, bitmap: Bitmap, title: String?): Uri {
         val bytes = ByteArrayOutputStream()
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bytes)
-        val path = MediaStore.Images.Media.insertImage(context.contentResolver, bitmap, title ?: "Title", null)
+        val path = MediaStore.Images.Media.insertImage(context.contentResolver, bitmap, title ?: buildFileName(FileUtil.DEFAULT_IMAGE_NAME, FileUtil.DEFAULT_IMAGE_EXTENSION), null)
         return Uri.parse(path)
     }
 }

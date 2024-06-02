@@ -25,6 +25,7 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.toArgb
+import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.getSystemService
@@ -54,6 +55,7 @@ import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendTargetType
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxMessageElement
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.withContext
 import java.io.IOException
@@ -174,12 +176,15 @@ class NotificationUtil(
     }
 
     suspend fun sendNewMessageNotification(
-        message: Message,
-        contact: Contact,
-        chat: Chat,
+        messageId: Long,
+        contactId: Long,
+        chatId: Long,
         extensionInfo: ExtensionInfo,
         fromChat: Boolean = false,
     ) {
+        val message = database.messageDao.getMessageById(messageId)?.toMessage() ?: return
+        val contact = database.contactDao.getContactById(contactId)?.toContact() ?: return
+        val chat = database.chatDao.getChatByIdWithoutObserve(chatId)?.toChat() ?: return
         val channelId = "${extensionInfo.pkg}_${extensionInfo.extensionId}_${extensionInfo.alias}"
         createNotificationChannel(
             channelId = channelId,
@@ -234,7 +239,7 @@ class NotificationUtil(
                 Intent(context, ReplyReceiver::class.java).apply {
                     putExtra("chat", chat)
                 },
-                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                getPendingIntentFlags(true)
             )
         val markAsReadPendingIntent: PendingIntent =
             PendingIntent.getBroadcast(
@@ -304,12 +309,11 @@ class NotificationUtil(
                                     it.first.contents.filterIsInstance<ParaboxImage>().firstOrNull()?.let {
                                         val mimetype = "image/"
                                         val bitmap = ImageUtil.getBitmapWithCoil(context, it.resourceInfo.getModel())
-                                            ?: ImageUtil.createNamedAvatarBm(
-                                                backgroundColor = context.getThemeColor(com.google.android.material.R.attr.colorPrimary),
-                                                textColor = context.getThemeColor(com.google.android.material.R.attr.colorOnPrimary),
-                                                name = contact.name
-                                            )
-                                        val imageUri = ImageUtil.getImageUriFromBitmap(context, bitmap, it.fileName)
+                                        val imageUri = if (bitmap != null) {
+                                            ImageUtil.getImageUriFromBitmap(context, bitmap, it.fileName)
+                                        } else {
+                                            Uri.parse("android.resource://${context.packageName}/${R.drawable.image_lost}")
+                                        }
                                         setData(mimetype, imageUri)
                                     }
                                 }
@@ -391,7 +395,7 @@ class NotificationUtil(
             .setGroupSummary(true)
 
         notificationManager.notify(SUMMARY_ID, summaryNotificationBuilder.build())
-        notificationManager.notify(contact.contactId.toInt(), notificationBuilder.build())
+        notificationManager.notify(chat.chatId.toInt(), notificationBuilder.build())
     }
 
     fun clearNotification(id: Int) {
@@ -478,4 +482,15 @@ class NotificationUtil(
             notificationManager.areBubblesAllowed()
         } || channel?.canBubble() == true
     }
+
+    private fun getPendingIntentFlags(isMutable: Boolean = false) =
+        when {
+            isMutable && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+
+            !isMutable && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ->
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+
+            else -> PendingIntent.FLAG_UPDATE_CURRENT
+        }
 }
