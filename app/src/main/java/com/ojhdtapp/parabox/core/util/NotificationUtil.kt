@@ -310,7 +310,7 @@ class NotificationUtil(
                                         val mimetype = "image/"
                                         val bitmap = ImageUtil.getBitmapWithCoil(context, it.resourceInfo.getModel())
                                         val imageUri = if (bitmap != null) {
-                                            ImageUtil.getImageUriFromBitmap(context, bitmap, it.fileName)
+                                            ImageUtil.getImageUriFromBitmapWithCache(context, bitmap)
                                         } else {
                                             Uri.parse("android.resource://${context.packageName}/${R.drawable.image_lost}")
                                         }

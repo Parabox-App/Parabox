@@ -15,13 +15,19 @@ import android.provider.MediaStore
 import android.util.Log
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.core.content.FileProvider
 import coil.ImageLoader
 import coil.request.ErrorResult
 import coil.request.ImageRequest
 import coil.request.SuccessResult
+import com.ojhdtapp.parabox.BuildConfig
 import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileOutputStream
+import java.util.concurrent.ConcurrentHashMap
 
 object ImageUtil {
+    private val imageBitmap2UriMap = ConcurrentHashMap<String, Uri>()
 
     fun createNamedAvatarBm(
         width: Int = 150, height: Int = 150,
@@ -113,10 +119,40 @@ object ImageUtil {
         }
     }
 
-    fun getImageUriFromBitmap(context: Context, bitmap: Bitmap, title: String?): Uri {
+    fun getImageUriFromBitmapWithCache(context: Context, bm: Bitmap, cacheKey: String? = null): Uri? {
+        if (cacheKey != null && imageBitmap2UriMap.containsKey(cacheKey)) {
+            return imageBitmap2UriMap[cacheKey]
+        }
+        val targetDir = File(context.externalCacheDir, "bm")
+        if (!targetDir.exists()) targetDir.mkdirs()
+        targetDir.listFiles()?.sortedByDescending { it.lastModified() }
+            ?.forEachIndexed() { index, file ->
+                if (index > 20) {
+                    file.delete()
+                }
+            }
+        return getImageUriFromBitmap(context, bm)?.also {
+            if (cacheKey != null) {
+                imageBitmap2UriMap[cacheKey] = it
+            }
+        }
+    }
+
+    fun getImageUriFromBitmap(context: Context, bm: Bitmap): Uri? {
+        val targetDir = File(context.externalCacheDir, "bm")
+        if (!targetDir.exists()) targetDir.mkdirs()
+        val tempFile =
+            File(targetDir, buildFileName(FileUtil.DEFAULT_IMAGE_NAME, FileUtil.DEFAULT_IMAGE_EXTENSION))
         val bytes = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bytes)
-        val path = MediaStore.Images.Media.insertImage(context.contentResolver, bitmap, title ?: buildFileName(FileUtil.DEFAULT_IMAGE_NAME, FileUtil.DEFAULT_IMAGE_EXTENSION), null)
-        return Uri.parse(path)
+        bm.compress(Bitmap.CompressFormat.PNG, 100, bytes)
+        val bitmapData = bytes.toByteArray()
+
+        val fileOutPut = FileOutputStream(tempFile).use {
+            it.write(bitmapData)
+        }
+        return FileProvider.getUriForFile(
+            context,
+            BuildConfig.APPLICATION_ID + ".provider", tempFile
+        )
     }
 }
