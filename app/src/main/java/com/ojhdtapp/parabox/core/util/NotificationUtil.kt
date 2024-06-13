@@ -194,6 +194,9 @@ class NotificationUtil(
         Log.d("parabox", "sendNotification at channel:${channelId}")
 
         updateShortcuts()
+        if (!context.getDataStoreValue(DataStoreKeys.SETTINGS_ALLOW_FOREGROUND_NOTIFICATION, false) && isForeground) {
+            return
+        }
         val launchUri = "parabox://chat/${chat.chatId}".toUri()
 
         val userName = context.getDataStoreValue(DataStoreKeys.USER_NAME, context.getString(R.string.you))
@@ -259,12 +262,12 @@ class NotificationUtil(
                 val chatPerson = Person.Builder().setName(chat.name).setIcon(chatIcon).build()
                 Notification.Builder(context, channelId)
                     .setSmallIcon(R.drawable.ic_stat_name)
-                    .setLargeIcon(chatIcon)
+//                    .setLargeIcon(chatIcon)
                     .setContentTitle(chat.name)
                     .setCategory(Notification.CATEGORY_MESSAGE)
                     .setShortcutId(chat.chatId.toString())
                     .setContentIntent(launchPendingIntent)
-                    .addPerson(senderPerson)
+                    .addPerson(chatPerson)
                     .setShowWhen(true)
                     .setAutoCancel(true)
                     .setWhen(message.timestamp)
@@ -304,7 +307,7 @@ class NotificationUtil(
                                 val m = Notification.MessagingStyle.Message(
                                     it.first.contentString,
                                     it.first.timestamp,
-                                    if (it.first.sentByMe) null else it.second
+                                    if (it.first.sentByMe) userPerson else it.second
                                 ).apply {
                                     it.first.contents.filterIsInstance<ParaboxImage>().firstOrNull()?.let {
                                         val mimetype = "image/"
@@ -323,7 +326,6 @@ class NotificationUtil(
                                     addMessage(m)
                                 }
                             }
-
                             isGroupConversation = chat.type == SendTargetType.GROUP
                             conversationTitle = chat.name
                         }

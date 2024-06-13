@@ -160,6 +160,27 @@ private fun Content(
     LazyColumn(modifier = modifier) {
         item{
             SettingHeader(
+                text = "行为"
+            )
+        }
+        item {
+            SettingItem(
+                title = "允许前台发送",
+                subTitle = "应用前台运行时也照常发送通知",
+                selected = false,
+                layoutType = layoutType,
+                trailingIcon = {
+                    Switch(checked = mainSharedState.datastore.enableForegroundNotification, onCheckedChange = {
+                        onMainSharedEvent(MainSharedEvent.UpdateSettingSwitch(DataStoreKeys.SETTINGS_ALLOW_FOREGROUND_NOTIFICATION, it))
+                    })
+                }) {
+                onMainSharedEvent(MainSharedEvent.UpdateSettingSwitch(
+                    DataStoreKeys.SETTINGS_ALLOW_FOREGROUND_NOTIFICATION,
+                    !mainSharedState.datastore.enableForegroundNotification))
+            }
+        }
+        item{
+            SettingHeader(
                 text = "系统设置"
             )
         }

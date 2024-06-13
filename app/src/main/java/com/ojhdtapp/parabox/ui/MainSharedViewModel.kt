@@ -796,6 +796,7 @@ class MainSharedViewModel @Inject constructor(
                         enableInnerBrowser = it[DataStoreKeys.SETTINGS_ENABLE_INNER_BROWSER] ?: true,
                         sendViaEnter = it[DataStoreKeys.SETTINGS_SEND_VIA_ENTER] ?: false,
                         enableDynamicColor = it[DataStoreKeys.SETTINGS_ENABLE_DYNAMIC_COLOR] ?: true,
+                        enableForegroundNotification = it[DataStoreKeys.SETTINGS_ALLOW_FOREGROUND_NOTIFICATION] ?: false,
                         theme = it[DataStoreKeys.SETTINGS_THEME]?.let { Theme.fromOrdinal(it) }
                             ?: Theme.WILLOW,
                         darkMode = it[DataStoreKeys.SETTINGS_DARK_MODE]?.let { DataStoreKeys.DarkMode.fromOrdinal(it) }

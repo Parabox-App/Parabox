@@ -38,6 +38,7 @@ data class MainSharedState(
         val enableInnerBrowser: Boolean = true,
         val sendViaEnter: Boolean = false,
         val enableDynamicColor: Boolean = true,
+        val enableForegroundNotification: Boolean = false,
         val theme: Theme = Theme.WILLOW,
         val darkMode: DataStoreKeys.DarkMode = DataStoreKeys.DarkMode.FOLLOW_SYSTEM,
     )
