@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.google.accompanist.permissions.isGranted
 import com.ojhdtapp.parabox.ui.theme.fontSize
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -32,6 +33,7 @@ fun SettingItem(
     trailingIcon: (@Composable () -> Unit)? = null,
     selected: Boolean,
     layoutType: SettingLayoutType,
+    disabled: Boolean = false,
     clickableOnly: Boolean = false,
     onLongClick: () -> Unit = {},
     onClick: () -> Unit,
@@ -56,13 +58,13 @@ fun SettingItem(
                 Spacer(modifier = Modifier.width(24.dp))
             }
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = title, fontSize = MaterialTheme.fontSize.title, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(text = title, fontSize = MaterialTheme.fontSize.title, color = if (disabled) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 if (subTitle != null) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = subTitle,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = if (disabled) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

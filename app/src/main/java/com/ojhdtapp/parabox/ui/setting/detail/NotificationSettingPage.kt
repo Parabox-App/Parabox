@@ -191,6 +191,7 @@ private fun Content(
                 else stringResource(R.string.notification_permission_not_granted),
                 selected = false,
                 layoutType = layoutType,
+                disabled = notificationPermissionState.status.isGranted,
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Outlined.AdminPanelSettings,

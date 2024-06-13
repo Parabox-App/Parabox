@@ -48,6 +48,8 @@ import com.arkivanov.decompose.router.stack.pop
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.core.util.audio.AudioRecorder
 import com.ojhdtapp.parabox.core.util.audio.LocalAudioRecorder
+import com.ojhdtapp.parabox.core.util.backup.LocalRoomBackup
+import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.domain.service.ExtensionServiceConnection
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
@@ -78,6 +80,7 @@ import com.ojhdtapp.parabox.ui.setting.SettingPageWrapperUi
 import com.ojhdtapp.parabox.ui.theme.FontSize
 import com.ojhdtapp.parabox.ui.theme.LocalFontSize
 import dagger.hilt.android.AndroidEntryPoint
+import de.raphaelebner.roomdatabasebackup.core.RoomBackup
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import javax.inject.Inject
@@ -88,6 +91,11 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var notificationUtil: NotificationUtil
 
+    @Inject
+    lateinit var appDatabase: AppDatabase
+
+    lateinit var roomBackup: RoomBackup
+
     private lateinit var extensionServiceConnection: ExtensionServiceConnection
     @OptIn(
         ExperimentalMaterial3Api::class,
@@ -95,6 +103,7 @@ class MainActivity : AppCompatActivity() {
     )
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        roomBackup = RoomBackup(this)
         // Bind Extension Service
         extensionServiceConnection = ExtensionServiceConnection(baseContext)
         lifecycle.addObserver(extensionServiceConnection)
@@ -262,7 +271,9 @@ class MainActivity : AppCompatActivity() {
                         LocalAudioRecorder provides AudioRecorder,
                         LocalSystemUiController provides SystemUiController(this),
                         LocalMinimumInteractiveComponentSize provides 32.dp,
-                        LocalFontSize provides FontSize()
+                        LocalFontSize provides FontSize(),
+                        LocalRoomBackup provides roomBackup,
+                        LocalCacheUtil provides CacheUtil(this)
                     )
                 ) {
                     val rootStackState by root.rootStack.subscribeAsState()
