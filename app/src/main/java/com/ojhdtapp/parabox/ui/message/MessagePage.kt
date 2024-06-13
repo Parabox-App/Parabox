@@ -87,6 +87,7 @@ fun MessagePage(
     val horizontalPadding by animateDpAsState(
         targetValue = when (layoutType) {
             MessageLayoutType.NORMAL -> 16.dp
+            MessageLayoutType.SINGLE_PAGE -> 16.dp
             MessageLayoutType.SPLIT -> 2.dp
         },
         animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)

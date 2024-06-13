@@ -1,5 +1,5 @@
 package com.ojhdtapp.parabox.ui.message
 
 enum class MessageLayoutType {
-    NORMAL, SPLIT
+    NORMAL, SPLIT, SINGLE_PAGE
 }

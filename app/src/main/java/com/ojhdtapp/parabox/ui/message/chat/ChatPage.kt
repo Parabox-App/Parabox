@@ -150,7 +150,7 @@ fun NormalChatPage(
     viewModel: MessagePageViewModel,
     state: MessagePageState,
     mainSharedState: MainSharedState,
-    scaffoldNavigator: ThreePaneScaffoldNavigator<Nothing>,
+    scaffoldNavigator: ThreePaneScaffoldNavigator<Nothing>?,
     layoutType: MessageLayoutType,
     onEvent: (e: MessagePageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
@@ -274,7 +274,7 @@ fun NormalChatPage(
         }
     }
     BackHandler(layoutType == MessageLayoutType.NORMAL) {
-        scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.List)
+        scaffoldNavigator?.navigateTo(ListDetailPaneScaffoldRole.List)
         onMainSharedEvent(MainSharedEvent.ShowNavigationBar(true))
     }
 
@@ -382,7 +382,7 @@ fun NormalChatPage(
                         if (state.chatDetail.selectedMessageList.isNotEmpty()) {
                             onEvent(MessagePageEvent.ClearSelectedMessage)
                         } else {
-                            scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.List)
+                            scaffoldNavigator?.navigateTo(ListDetailPaneScaffoldRole.List)
                             onMainSharedEvent(MainSharedEvent.ShowNavigationBar(true))
                         }
                     }, onEvent = onEvent

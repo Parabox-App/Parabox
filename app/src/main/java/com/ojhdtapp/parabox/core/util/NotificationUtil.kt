@@ -39,6 +39,7 @@ import androidx.lifecycle.OnLifecycleEvent
 import coil.ImageLoader
 import coil.request.ImageRequest
 import coil.request.SuccessResult
+import com.ojhdtapp.parabox.BubbleActivity
 import com.ojhdtapp.parabox.MainActivity
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.ImageUtil.getCircledBitmap
@@ -150,6 +151,7 @@ class NotificationUtil(
                         name = chat.name ?: "name"
                     )
                 val icon = Icon.createWithAdaptiveBitmap(avatarBitmap.getCircledBitmap())
+                Log.d("shortcut", "shortcut id b:${chat.chatId}")
                 val builder = ShortcutInfo.Builder(context, chat.chatId.toString())
                     .setActivity(ComponentName(context, MainActivity::class.java))
                     .setShortLabel(chat.name ?: "name")
@@ -192,11 +194,10 @@ class NotificationUtil(
             channelDescription = "来自${extensionInfo.name}扩展，${extensionInfo.alias}连接的消息"
         )
         Log.d("parabox", "sendNotification at channel:${channelId}")
-
-        updateShortcuts()
         if (!context.getDataStoreValue(DataStoreKeys.SETTINGS_ALLOW_FOREGROUND_NOTIFICATION, false) && isForeground) {
             return
         }
+        updateShortcuts()
         val launchUri = "parabox://chat/${chat.chatId}".toUri()
 
         val userName = context.getDataStoreValue(DataStoreKeys.USER_NAME, context.getString(R.string.you))
@@ -260,9 +261,10 @@ class NotificationUtil(
                     Person.Builder().setName(userName).setIcon(userIcon).build()
                 val senderPerson = Person.Builder().setName(contact.name).setIcon(senderIcon).build()
                 val chatPerson = Person.Builder().setName(chat.name).setIcon(chatIcon).build()
+                Log.d("shortcut", "shortcut id a:${chat.chatId}")
                 Notification.Builder(context, channelId)
                     .setSmallIcon(R.drawable.ic_stat_name)
-//                    .setLargeIcon(chatIcon)
+                    .setLargeIcon(chatIcon)
                     .setContentTitle(chat.name)
                     .setCategory(Notification.CATEGORY_MESSAGE)
                     .setShortcutId(chat.chatId.toString())
@@ -333,34 +335,35 @@ class NotificationUtil(
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                             setLocusId(LocusId(chat.chatId.toString()))
                         }
-//                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-//                            setBubbleMetadata(
-//                                Notification.BubbleMetadata
-//                                    .Builder(
-//                                        PendingIntent.getActivity(
-//                                            context,
-//                                            REQUEST_BUBBLE,
-//                                            Intent(context, BubbleActivity::class.java)
-//                                                .setAction(Intent.ACTION_VIEW)
-//                                                .setData(launchUri),
-//                                            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-//                                        ),
-//                                        chatIcon
-//                                    )
-//                                    // The height of the expanded bubble.
-//                                    .setDesiredHeightResId(R.dimen.bubble_height)
-//                                    .apply {
-//                                        // When the bubble is explicitly opened by the user, we can show the bubble
-//                                        // automatically in the expanded state. This works only when the app is in
-//                                        // the foreground.
-//                                        if (fromChat) {
-//                                            setAutoExpandBubble(true)
-//                                            setSuppressNotification(true)
-//                                        }
-//                                    }
-//                                    .build()
-//                            )
-//                        }
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            setBubbleMetadata(
+                                Notification.BubbleMetadata
+                                    .Builder(
+                                        PendingIntent.getActivity(
+                                            context,
+                                            REQUEST_BUBBLE,
+                                            Intent(context, BubbleActivity::class.java)
+                                                .setAction(Intent.ACTION_VIEW)
+//                                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                                .setData(launchUri),
+                                            PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                                        ),
+                                        chatIcon
+                                    )
+                                    // The height of the expanded bubble.
+                                    .setDesiredHeightResId(R.dimen.bubble_height)
+                                    .apply {
+                                        // When the bubble is explicitly opened by the user, we can show the bubble
+                                        // automatically in the expanded state. This works only when the app is in
+                                        // the foreground.
+                                        if (fromChat) {
+                                            setAutoExpandBubble(true)
+                                            setSuppressNotification(true)
+                                        }
+                                    }
+                                    .build()
+                            )
+                        }
                     }
             } else {
                 Log.d("parabox", "old notification pattern")
