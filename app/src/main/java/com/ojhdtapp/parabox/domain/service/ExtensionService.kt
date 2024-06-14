@@ -68,7 +68,7 @@ class ExtensionService : LifecycleService() {
                 runningList.filterIsInstance<Extension.ExtensionPending>().map {
                     try {
                         val job = SupervisorJob()
-                        Extension.ExtensionSuccess(it, job).also {
+                        it.toSuccess(job).also {
                             val bridge = object : ParaboxBridge {
                                 override suspend fun receiveMessage(message: ReceiveMessage): ParaboxResult {
                                     return mainRepository.receiveMessage(msg = message, ext = it)
@@ -79,7 +79,7 @@ class ExtensionService : LifecycleService() {
                                 }
                             }
                             lifecycle.addObserver(it)
-                            lifecycleScope.launch(context = CoroutineName("${it.pkg}:${it.alias}:${it.extensionId}") + CoroutineExceptionHandler { context, th ->
+                            lifecycleScope.launch(context = CoroutineName("${it.name}:${it.alias}:${it.extensionId}") + CoroutineExceptionHandler { context, th ->
                                 Log.e("parabox", "extension ${it} error", th)
                                 it.updateStatus(ParaboxExtensionStatus.Error(th.message ?: "unknown error"))
                             } + job) {
@@ -87,7 +87,7 @@ class ExtensionService : LifecycleService() {
                             }
                         }
                     } catch (e: Exception) {
-                        Extension.ExtensionFail(it)
+                        it.toFail()
                     }
                 }.also {
                     extensionManager.updateExtensions(it)

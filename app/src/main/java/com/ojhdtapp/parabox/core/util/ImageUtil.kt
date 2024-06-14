@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.core.util
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
@@ -150,9 +151,11 @@ object ImageUtil {
         val fileOutPut = FileOutputStream(tempFile).use {
             it.write(bitmapData)
         }
-        return FileProvider.getUriForFile(
+        val uri = FileProvider.getUriForFile(
             context,
             BuildConfig.APPLICATION_ID + ".provider", tempFile
         )
+        context.grantUriPermission(context.packageName, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        return uri
     }
 }

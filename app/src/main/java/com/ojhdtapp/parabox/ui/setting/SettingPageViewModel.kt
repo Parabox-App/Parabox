@@ -1,14 +1,13 @@
 package com.ojhdtapp.parabox.ui.setting
 
 import android.content.Context
-import android.content.pm.PackageInfo
 import androidx.lifecycle.viewModelScope
-import androidx.paging.PagingData
-import androidx.paging.cachedIn
 import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.core.util.Resource
-import com.ojhdtapp.parabox.domain.model.ChatWithLatestMessage
+import com.ojhdtapp.parabox.domain.built_in.BuiltInConnectionUtil
+import com.ojhdtapp.parabox.domain.model.Connection
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
+import com.ojhdtapp.parabox.domain.model.toConnection
 import com.ojhdtapp.parabox.domain.repository.ExtensionInfoRepository
 import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
 import com.ojhdtapp.parabox.domain.use_case.GetChat
@@ -17,16 +16,9 @@ import com.ojhdtapp.parabox.ui.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.distinctUntilChangedBy
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -50,9 +42,9 @@ class SettingPageViewModel @Inject constructor(
                 )
             }
 
-            is SettingPageEvent.UpdatePackageInfo -> {
+            is SettingPageEvent.UpdateConnection -> {
                 state.copy(
-                    packageInfo = event.list
+                    connectionList = event.list
                 )
             }
 
@@ -72,7 +64,7 @@ class SettingPageViewModel @Inject constructor(
             is SettingPageEvent.UpdateExtensionInitActionState -> {
                 state.copy(
                     initActionState = SettingPageState.InitActionState(
-                        packageInfo = event.initActionWrapper.packageInfo,
+                        name = event.initActionWrapper.name,
                         actionList = event.initActionWrapper.actionList,
                         currentIndex = event.initActionWrapper.currentIndex
                     )
@@ -80,7 +72,7 @@ class SettingPageViewModel @Inject constructor(
             }
 
             is SettingPageEvent.InitNewExtensionConnection -> {
-                initNewExtensionConnection(event.packageInfo)
+                initNewExtensionConnection(event.connection)
                 state
             }
 
@@ -167,7 +159,7 @@ class SettingPageViewModel @Inject constructor(
     }
 
     private var initActionStateCollectionJob: Job? = null
-    private fun initNewExtensionConnection(packageInfo: PackageInfo) {
+    private fun initNewExtensionConnection(connection: Connection) {
         initActionStateCollectionJob?.cancel()
         initActionStateCollectionJob = viewModelScope.launch(Dispatchers.IO) {
             extensionManager.initActionWrapperFlow.collectLatest {
@@ -175,7 +167,7 @@ class SettingPageViewModel @Inject constructor(
             }
         }
         viewModelScope.launch(Dispatchers.IO) {
-            extensionManager.initNewExtensionConnection(packageInfo)
+            extensionManager.initNewExtensionConnection(connection)
         }
     }
 
@@ -211,7 +203,7 @@ class SettingPageViewModel @Inject constructor(
         }
         viewModelScope.launch {
             extensionManager.extensionPkgFlow.collectLatest {
-                sendEvent(SettingPageEvent.UpdatePackageInfo(it))
+                sendEvent(SettingPageEvent.UpdateConnection(it.map { it.toConnection(context) } + BuiltInConnectionUtil.getConnectionCardModelList()))
             }
         }
         viewModelScope.launch {

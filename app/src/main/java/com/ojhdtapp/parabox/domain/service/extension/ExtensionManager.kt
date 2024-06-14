@@ -7,7 +7,10 @@ import android.os.Bundle
 import android.util.Log
 import androidx.core.content.pm.PackageInfoCompat
 import com.ojhdtapp.parabox.data.local.ExtensionInfo
+import com.ojhdtapp.parabox.data.local.ExtensionInfoType
 import com.ojhdtapp.parabox.data.local.entity.ExtensionInfoEntity
+import com.ojhdtapp.parabox.domain.built_in.BuiltInConnectionUtil
+import com.ojhdtapp.parabox.domain.model.Connection
 import com.ojhdtapp.parabox.domain.model.Extension
 import com.ojhdtapp.parabox.domain.repository.ExtensionInfoRepository
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxExtensionStatus
@@ -43,14 +46,25 @@ class ExtensionManager(
     private var getInitActionJob: Job? = null
     private var awaitInitActionResJob: Job? = null
 
-    suspend fun initNewExtensionConnection(packageInfo: PackageInfo) {
-        if (initHandler == null || initActionWrapperFlow.value.packageInfo?.packageName != packageInfo.packageName) {
-            initHandler = ExtensionLoader.createInitHandler(context, packageInfo)
+    suspend fun initNewExtensionConnection(connection: Connection) {
+        if (initHandler == null || initActionWrapperFlow.value.key != connection.getKey()) {
+            initHandler = when (connection) {
+                is Connection.BuiltInConnection -> BuiltInConnectionUtil.getInitHandlerByKey(connection.builtInKey)
+                is Connection.ExtendConnection -> ExtensionLoader.createInitHandler(context, connection.packageInfo)
+            }
+            val initActions = try {
+                initHandler?.getExtensionInitActions(emptyList(), 0)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                emptyList()
+            }
             _initActionWrapperFlow.value =
                 ExtensionInitActionWrapper(
-                    packageInfo = packageInfo,
+                    key = connection.getKey(),
+                    name = connection.name,
+                    connection = connection,
                     actionList = withContext(Dispatchers.IO) {
-                        listOf(ExtensionManager.aliasAction) + (initHandler?.getExtensionInitActions(packageInfo, emptyList(), 0) ?: emptyList())
+                        listOf(ExtensionManager.aliasAction) + (initActions ?: emptyList())
                     },
                     currentIndex = 0
                 )
@@ -67,7 +81,7 @@ class ExtensionManager(
     }
 
     suspend fun submitInitActionResult(result: Any) {
-        if (initActionWrapperFlow.value.packageInfo == null || initHandler == null) {
+        if (initActionWrapperFlow.value.key == null || initHandler == null) {
             Log.e("parabox", "submitInitActionResult: packageInfo or initHandler is null")
             return
         }
@@ -190,16 +204,35 @@ class ExtensionManager(
     }
 
     suspend fun resetInitAction(isDone: Boolean) {
-        if (isDone && initHandler != null && initActionWrapperFlow.value.packageInfo != null) {
+        if (isDone && initHandler != null && initActionWrapperFlow.value.key != null) {
             coroutineScope {
                 launch(Dispatchers.IO) {
-                    addPendingExtension(
-                        alias = initHandler!!.data.getString(
-                            ALIAS_KEY, initActionWrapperFlow.value.packageInfo?.packageName ?: "alias"
-                        ),
-                        packageInfo = initActionWrapperFlow.value.packageInfo!!,
-                        extra = initHandler!!.data
-                    )
+                    when (initActionWrapperFlow.value.connection) {
+                        is Connection.BuiltInConnection -> {
+                            addBuiltInPendingExtension(
+                                alias = initHandler!!.data.getString(
+                                    ALIAS_KEY, initActionWrapperFlow.value.key ?: "alias"
+                                ),
+                                name = (initActionWrapperFlow.value.connection as Connection.BuiltInConnection).name,
+                                key = (initActionWrapperFlow.value.connection as Connection.BuiltInConnection).builtInKey,
+                                extra = initHandler!!.data
+                            )
+                        }
+
+                        is Connection.ExtendConnection -> {
+                            addPendingExtension(
+                                alias = initHandler!!.data.getString(
+                                    ALIAS_KEY, initActionWrapperFlow.value.key ?: "alias"
+                                ),
+                                packageInfo = (initActionWrapperFlow.value.connection as Connection.ExtendConnection).packageInfo,
+                                extra = initHandler!!.data
+                            )
+                        }
+
+                        else -> {
+
+                        }
+                    }
                 }
             }
 
@@ -214,13 +247,18 @@ class ExtensionManager(
     }
 
     private suspend fun increaseInitActionStep() {
+        val initActions = try {
+            initHandler?.getExtensionInitActions(
+                initActionWrapperFlow.value.actionList,
+                initActionWrapperFlow.value.currentIndex + 1
+            )
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
+        }
         _initActionWrapperFlow.value = initActionWrapperFlow.value.copy(
             actionList = withContext(Dispatchers.IO) {
-                listOf(ExtensionManager.aliasAction) +( initHandler?.getExtensionInitActions(
-                    initActionWrapperFlow.value.packageInfo!!,
-                    initActionWrapperFlow.value.actionList,
-                    initActionWrapperFlow.value.currentIndex + 1
-                ) ?: emptyList())
+                listOf(ExtensionManager.aliasAction) + (initActions ?: emptyList())
             },
             currentIndex = initActionWrapperFlow.value.currentIndex + 1
         )
@@ -242,7 +280,21 @@ class ExtensionManager(
         }
         return extensionInfoRepository.insertExtensionInfo(
             ExtensionInfoEntity(
-                alias, packageInfo.packageName, extName, versionName, versionCode, extra
+                alias,
+                extName,
+                ExtensionInfoType.Extend.ordinal,
+                extra,
+                packageInfo.packageName,
+                versionName,
+                versionCode
+            )
+        )
+    }
+
+    fun addBuiltInPendingExtension(alias: String, key: String, name: String, extra: Bundle): Long {
+        return extensionInfoRepository.insertExtensionInfo(
+            ExtensionInfoEntity(
+                alias, name, ExtensionInfoType.BuiltIn.ordinal, extra, "", "", 0, key
             )
         )
     }
@@ -252,11 +304,35 @@ class ExtensionManager(
     }
 
     fun createAndTryAppendExtension(extensionInfo: ExtensionInfo) {
-        val extension = ExtensionLoader.createExtension(context, extensionInfo)
+        val extension = when (extensionInfo.type) {
+            ExtensionInfoType.BuiltIn -> {
+                createBuiltInExtension(extensionInfo)
+            }
+
+            ExtensionInfoType.Extend -> {
+                ExtensionLoader.createExtension(context, extensionInfo)
+            }
+        }
         _extensionFlow.update {
             it + extension
         }
         Log.d("parabox", "append extension=${_extensionFlow.value}")
+    }
+
+    private fun createBuiltInExtension(extensionInfo: ExtensionInfo): Extension {
+        return try {
+            val ext = BuiltInConnectionUtil.getExtensionByKey(extensionInfo.builtInKey)
+            if (ext != null) {
+                Extension.ExtensionPending.BuiltInExtensionPending(
+                    extensionInfo, ext
+                )
+            } else {
+                Extension.ExtensionFail.BuiltInExtensionFail(extensionInfo)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Extension.ExtensionFail.BuiltInExtensionFail(extensionInfo)
+        }
     }
 
     // replace the old extension with the new one if the extensionId is the same
@@ -290,7 +366,7 @@ class ExtensionManager(
                     it.ext.onPause()
                     it.ext.onStop()
                     it.ext.onDestroy()
-                    updateExtensions(listOf(Extension.ExtensionPending(it)))
+                    updateExtensions(listOf(it.toPending()))
                 } catch (e: Exception) {
                     it.ext.updateStatus(ParaboxExtensionStatus.Error(e.message ?: "restart error"))
                     Log.e("parabox", "restartExtension error", e)

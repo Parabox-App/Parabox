@@ -8,7 +8,6 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.init_actions.ParaboxInitActionRe
 
 class InitHandler : ParaboxInitHandler() {
     override suspend fun getExtensionInitActions(
-        packageInfo: PackageInfo,
         list: List<ParaboxInitAction>,
         currentActionIndex: Int
     ): List<ParaboxInitAction> {

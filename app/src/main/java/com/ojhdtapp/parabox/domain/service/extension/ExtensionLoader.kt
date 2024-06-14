@@ -67,7 +67,7 @@ object ExtensionLoader {
             pkgManager.getApplicationInfo(extensionInfo.pkg, PackageManager.GET_META_DATA)
         } catch (error: PackageManager.NameNotFoundException) {
             // Unlikely, but the package may have been uninstalled at this point
-            return Extension.ExtensionFail(extensionInfo)
+            return Extension.ExtensionFail.ExtendExtensionFail(extensionInfo)
         }
         val classLoader = PathClassLoader(appInfo.sourceDir, null, context.classLoader)
         return try {
@@ -76,15 +76,15 @@ object ExtensionLoader {
                 val clazz = Class.forName(fullExtClass, false, classLoader)
                 clazz.newInstance()
             } as ParaboxExtension
-            Extension.ExtensionPending(
+            Extension.ExtensionPending.ExtendExtensionPending(
                 extensionInfo, ext
             )
         } catch (e: ClassCastException) {
             e.printStackTrace()
-            Extension.ExtensionFail(extensionInfo)
+            Extension.ExtensionFail.ExtendExtensionFail(extensionInfo)
         } catch (e: ClassNotFoundException) {
             e.printStackTrace()
-            Extension.ExtensionFail(extensionInfo)
+            Extension.ExtensionFail.ExtendExtensionFail(extensionInfo)
         }
     }
 

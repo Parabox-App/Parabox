@@ -186,7 +186,7 @@ fun SettingPage(
             }
             item {
                 SettingItem(
-                    title = "存储空间",
+                    title = "存储",
                     leadingIcon = {
                         Icon(imageVector = Icons.Outlined.Storage, contentDescription = "storage settings", tint = MaterialTheme.colorScheme.onSurface)
                     },

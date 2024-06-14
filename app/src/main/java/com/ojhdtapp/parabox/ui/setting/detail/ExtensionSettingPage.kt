@@ -1,10 +1,6 @@
 package com.ojhdtapp.parabox.ui.setting.detail
 
-import android.graphics.Bitmap
-import android.graphics.drawable.BitmapDrawable
-import android.os.Build
 import androidx.activity.compose.BackHandler
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
@@ -14,6 +10,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -27,11 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.automirrored.outlined.ArrowForwardIos
-import androidx.compose.material.icons.automirrored.outlined.ArrowRight
 import androidx.compose.material.icons.automirrored.outlined.NavigateNext
-import androidx.compose.material.icons.outlined.ArrowForwardIos
-import androidx.compose.material.icons.outlined.ArrowRight
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.ErrorOutline
@@ -45,7 +38,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
@@ -53,8 +45,6 @@ import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
 import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -63,18 +53,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
-import androidx.core.graphics.drawable.toBitmapOrNull
+import coil.compose.AsyncImage
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.pushNew
-import com.ojhdtapp.parabox.core.util.DataStoreKeys
+import com.ojhdtapp.parabox.domain.model.Connection
 import com.ojhdtapp.parabox.domain.model.Extension
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
@@ -193,27 +185,9 @@ private fun Content(
         }
         item {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp)) {
-                items(state.packageInfo, key = { it.packageName }) {
-                    val label = remember {
-                        it.applicationInfo.loadLabel(context.packageManager).toString()
-                    }
-                    val iconBm = remember {
-                        it.applicationInfo.loadIcon(context.packageManager).toBitmapOrNull()?.asImageBitmap()
-                    }
-                    val subTitle = remember {
-                        buildString {
-                            append(" ${it.versionName}")
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                                append("(${it.longVersionCode})")
-                            } else {
-                                append("(${it.versionCode})")
-                            }
-                        }
-                    }
+                items(state.connectionList, key = { it.name }) {
                     ConnectionCard(
-                        name = label,
-                        iconBm = iconBm,
-                        version = subTitle,
+                        model = it,
                         onClick = {
                             onEvent(SettingPageEvent.InitNewExtensionConnection(it))
                             navigation.pushNew(DefaultSettingComponent.SettingConfig.ExtensionAddSetting)
@@ -338,15 +312,29 @@ private fun Content(
                 }
             }
         }
+        if (state.extension.isEmpty()) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(160.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "暂无连接",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
     }
 }
 
 @Composable
 private fun ConnectionCard(
     modifier: Modifier = Modifier,
-    name: String,
-    iconBm: ImageBitmap?,
-    version: String,
+    model: Connection,
     onClick: () -> Unit
 ) {
     Card(
@@ -356,23 +344,55 @@ private fun ConnectionCard(
         Row(modifier = Modifier.padding(16.dp)) {
             Column(modifier = Modifier.width(144.dp)) {
                 Box(modifier = Modifier.size(36.dp), contentAlignment = Alignment.Center) {
-                    if (iconBm == null) {
+                    if (model.icon == null) {
                         Icon(imageVector = Icons.Outlined.Extension, contentDescription = "icon")
                     } else {
-                        Image(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape), bitmap = iconBm, contentDescription = "icon"
-                        )
+                        if (model.icon is ImageBitmap) {
+                            Image(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape),
+                                bitmap = model.icon as ImageBitmap, contentDescription = "icon")
+                        } else {
+                            AsyncImage(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape),
+                                model = model.icon, contentDescription = "icon")
+                        }
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(text = name, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.basicMarquee(
+                Text(text = model.name, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.basicMarquee(
                     delayMillis = 5000,
                     initialDelayMillis = 2000
                 ), style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(text = version, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium)
+                when(model) {
+                    is Connection.BuiltInConnection -> {
+                        Text(text = model.description, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
+                    }
+                    is Connection.ExtendConnection -> {
+                        val primaryColor = MaterialTheme.colorScheme.primary
+                        val text = remember {
+                            buildAnnotatedString {
+                                withStyle(
+                                    style = SpanStyle(
+                                        color = primaryColor
+                                    )
+                                ) {
+                                    append("外部扩展 ")
+                                }
+                                append(model.version)
+                            }
+                        }
+                        Text(
+                            text = text,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
             }
             Icon(imageVector = Icons.AutoMirrored.Outlined.NavigateNext, contentDescription = "")
         }

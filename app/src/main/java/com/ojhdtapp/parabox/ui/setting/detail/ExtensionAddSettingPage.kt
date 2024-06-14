@@ -109,9 +109,7 @@ fun ExtensionAddSettingPage(
                     Text(
                         modifier = Modifier.padding(horizontal = 24.dp, vertical = 32.dp),
                         color = MaterialTheme.colorScheme.onSurface,
-                        text = state.initActionState.packageInfo?.applicationInfo?.loadLabel(
-                            (LocalContext.current.packageManager)
-                        )?.toString() ?: "应用名称",
+                        text = state.initActionState.name ?: "应用名称",
                         style = MaterialTheme.typography.headlineMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -137,9 +135,7 @@ fun ExtensionAddSettingPage(
                     title = {
                         Text(
                             modifier = Modifier.padding(start = 8.dp),
-                            text =  state.initActionState.packageInfo?.applicationInfo?.loadLabel(
-                                (LocalContext.current.packageManager)
-                            )?.toString() ?: "应用名称",
+                            text =  state.initActionState.name ?: "应用名称",
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
