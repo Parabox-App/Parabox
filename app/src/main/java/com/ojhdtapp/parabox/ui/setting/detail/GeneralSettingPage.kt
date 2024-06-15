@@ -1,5 +1,7 @@
 package com.ojhdtapp.parabox.ui.setting.detail
 
+import android.content.Context
+import android.os.PowerManager
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,19 +25,23 @@ import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
 import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
+import com.ojhdtapp.parabox.core.util.requestIgnoringBatteryOptimizationSetting
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
+import com.ojhdtapp.parabox.ui.common.LayoutType
 import com.ojhdtapp.parabox.ui.setting.Setting
 import com.ojhdtapp.parabox.ui.setting.SettingHeader
 import com.ojhdtapp.parabox.ui.setting.SettingItem
-import com.ojhdtapp.parabox.ui.setting.SettingLayoutType
 import com.ojhdtapp.parabox.ui.setting.SettingPageEvent
 import com.ojhdtapp.parabox.ui.setting.SettingPageState
+
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
 @Composable
@@ -43,15 +49,15 @@ fun GeneralSettingPage(
     modifier: Modifier = Modifier,
     state: SettingPageState,
     mainSharedState: MainSharedState,
-    layoutType: SettingLayoutType,
+    layoutType: LayoutType,
     scaffoldNavigator: ThreePaneScaffoldNavigator<Setting>,
     onEvent: (SettingPageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
-    BackHandler(enabled = layoutType != SettingLayoutType.SPLIT) {
+    BackHandler(enabled = layoutType != LayoutType.SPLIT) {
         scaffoldNavigator.navigateBack(BackNavigationBehavior.PopLatest)
     }
-    if (layoutType == SettingLayoutType.SPLIT) {
+    if (layoutType == LayoutType.SPLIT) {
         Surface(
             modifier = Modifier
                 .fillMaxSize()
@@ -120,7 +126,7 @@ private fun Content(
     modifier: Modifier = Modifier,
     state: SettingPageState,
     mainSharedState: MainSharedState,
-    layoutType: SettingLayoutType,
+    layoutType: LayoutType,
     onEvent: (SettingPageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) =
@@ -136,12 +142,20 @@ private fun Content(
                 layoutType = layoutType,
                 trailingIcon = {
                     Switch(checked = mainSharedState.datastore.enableMarqueeEffectOnChatName, onCheckedChange = {
-                        onMainSharedEvent(MainSharedEvent.UpdateSettingSwitch(DataStoreKeys.SETTINGS_ENABLE_MARQUEE_EFFECT_ON_CHAT_NAME, it))
+                        onMainSharedEvent(
+                            MainSharedEvent.UpdateSettingSwitch(
+                                DataStoreKeys.SETTINGS_ENABLE_MARQUEE_EFFECT_ON_CHAT_NAME,
+                                it
+                            )
+                        )
                     })
                 }) {
-                onMainSharedEvent(MainSharedEvent.UpdateSettingSwitch(
-                    DataStoreKeys.SETTINGS_ENABLE_MARQUEE_EFFECT_ON_CHAT_NAME,
-                    !mainSharedState.datastore.enableMarqueeEffectOnChatName))
+                onMainSharedEvent(
+                    MainSharedEvent.UpdateSettingSwitch(
+                        DataStoreKeys.SETTINGS_ENABLE_MARQUEE_EFFECT_ON_CHAT_NAME,
+                        !mainSharedState.datastore.enableMarqueeEffectOnChatName
+                    )
+                )
             }
         }
         item {
@@ -152,12 +166,20 @@ private fun Content(
                 layoutType = layoutType,
                 trailingIcon = {
                     Switch(checked = mainSharedState.datastore.enableSwipeToDismiss, onCheckedChange = {
-                        onMainSharedEvent(MainSharedEvent.UpdateSettingSwitch(DataStoreKeys.SETTINGS_ENABLE_SWIPE_TO_DISMISS, it))
+                        onMainSharedEvent(
+                            MainSharedEvent.UpdateSettingSwitch(
+                                DataStoreKeys.SETTINGS_ENABLE_SWIPE_TO_DISMISS,
+                                it
+                            )
+                        )
                     })
                 }) {
-                onMainSharedEvent(MainSharedEvent.UpdateSettingSwitch(
-                    DataStoreKeys.SETTINGS_ENABLE_SWIPE_TO_DISMISS,
-                    !mainSharedState.datastore.enableSwipeToDismiss))
+                onMainSharedEvent(
+                    MainSharedEvent.UpdateSettingSwitch(
+                        DataStoreKeys.SETTINGS_ENABLE_SWIPE_TO_DISMISS,
+                        !mainSharedState.datastore.enableSwipeToDismiss
+                    )
+                )
             }
         }
         item {
@@ -170,12 +192,20 @@ private fun Content(
                 layoutType = layoutType,
                 trailingIcon = {
                     Switch(checked = mainSharedState.datastore.displayAvatarOnTopAppBar, onCheckedChange = {
-                        onMainSharedEvent(MainSharedEvent.UpdateSettingSwitch(DataStoreKeys.SETTINGS_DISPLAY_AVATAR_ON_TOP_APPBAR, it))
+                        onMainSharedEvent(
+                            MainSharedEvent.UpdateSettingSwitch(
+                                DataStoreKeys.SETTINGS_DISPLAY_AVATAR_ON_TOP_APPBAR,
+                                it
+                            )
+                        )
                     })
                 }) {
-                onMainSharedEvent(MainSharedEvent.UpdateSettingSwitch(
-                    DataStoreKeys.SETTINGS_DISPLAY_AVATAR_ON_TOP_APPBAR,
-                    !mainSharedState.datastore.displayAvatarOnTopAppBar))
+                onMainSharedEvent(
+                    MainSharedEvent.UpdateSettingSwitch(
+                        DataStoreKeys.SETTINGS_DISPLAY_AVATAR_ON_TOP_APPBAR,
+                        !mainSharedState.datastore.displayAvatarOnTopAppBar
+                    )
+                )
             }
         }
         item {
@@ -185,12 +215,20 @@ private fun Content(
                 layoutType = layoutType,
                 trailingIcon = {
                     Switch(checked = mainSharedState.datastore.displayTimeOnEachMsg, onCheckedChange = {
-                        onMainSharedEvent(MainSharedEvent.UpdateSettingSwitch(DataStoreKeys.SETTINGS_DISPLAY_TIME_ON_EACH_MSG, it))
+                        onMainSharedEvent(
+                            MainSharedEvent.UpdateSettingSwitch(
+                                DataStoreKeys.SETTINGS_DISPLAY_TIME_ON_EACH_MSG,
+                                it
+                            )
+                        )
                     })
                 }) {
-                onMainSharedEvent(MainSharedEvent.UpdateSettingSwitch(
-                    DataStoreKeys.SETTINGS_DISPLAY_TIME_ON_EACH_MSG,
-                    !mainSharedState.datastore.displayTimeOnEachMsg))
+                onMainSharedEvent(
+                    MainSharedEvent.UpdateSettingSwitch(
+                        DataStoreKeys.SETTINGS_DISPLAY_TIME_ON_EACH_MSG,
+                        !mainSharedState.datastore.displayTimeOnEachMsg
+                    )
+                )
             }
         }
         item {
@@ -199,12 +237,20 @@ private fun Content(
                 layoutType = layoutType,
                 trailingIcon = {
                     Switch(checked = mainSharedState.datastore.sendViaEnter, onCheckedChange = {
-                        onMainSharedEvent(MainSharedEvent.UpdateSettingSwitch(DataStoreKeys.SETTINGS_SEND_VIA_ENTER, it))
+                        onMainSharedEvent(
+                            MainSharedEvent.UpdateSettingSwitch(
+                                DataStoreKeys.SETTINGS_SEND_VIA_ENTER,
+                                it
+                            )
+                        )
                     })
                 }) {
-                onMainSharedEvent(MainSharedEvent.UpdateSettingSwitch(
-                    DataStoreKeys.SETTINGS_SEND_VIA_ENTER,
-                    !mainSharedState.datastore.sendViaEnter))
+                onMainSharedEvent(
+                    MainSharedEvent.UpdateSettingSwitch(
+                        DataStoreKeys.SETTINGS_SEND_VIA_ENTER,
+                        !mainSharedState.datastore.sendViaEnter
+                    )
+                )
             }
         }
         item {
@@ -217,12 +263,35 @@ private fun Content(
                 layoutType = layoutType,
                 trailingIcon = {
                     Switch(checked = mainSharedState.datastore.enableInnerBrowser, onCheckedChange = {
-                        onMainSharedEvent(MainSharedEvent.UpdateSettingSwitch(DataStoreKeys.SETTINGS_ENABLE_INNER_BROWSER, it))
+                        onMainSharedEvent(
+                            MainSharedEvent.UpdateSettingSwitch(
+                                DataStoreKeys.SETTINGS_ENABLE_INNER_BROWSER,
+                                it
+                            )
+                        )
                     })
                 }) {
-                onMainSharedEvent(MainSharedEvent.UpdateSettingSwitch(
-                    DataStoreKeys.SETTINGS_ENABLE_INNER_BROWSER,
-                    !mainSharedState.datastore.enableInnerBrowser))
+                onMainSharedEvent(
+                    MainSharedEvent.UpdateSettingSwitch(
+                        DataStoreKeys.SETTINGS_ENABLE_INNER_BROWSER,
+                        !mainSharedState.datastore.enableInnerBrowser
+                    )
+                )
+            }
+        }
+        item {
+            val context = LocalContext.current
+            val pm = remember {
+                context.getSystemService(Context.POWER_SERVICE) as? PowerManager
+            }
+            SettingItem(
+                title = "关闭电池优化",
+                subTitle = "帮助保持服务后台运行，可能增加耗电",
+                selected = false,
+                layoutType = layoutType,
+                disabled = pm?.isIgnoringBatteryOptimizations(context.packageName) ?: false
+            ) {
+                context.requestIgnoringBatteryOptimizationSetting()
             }
         }
     }

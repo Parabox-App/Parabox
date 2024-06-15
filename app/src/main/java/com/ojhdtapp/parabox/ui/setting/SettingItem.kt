@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.permissions.isGranted
+import com.ojhdtapp.parabox.ui.common.LayoutType
 import com.ojhdtapp.parabox.ui.theme.fontSize
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -32,7 +33,7 @@ fun SettingItem(
     leadingIcon: (@Composable () -> Unit)? = null,
     trailingIcon: (@Composable () -> Unit)? = null,
     selected: Boolean,
-    layoutType: SettingLayoutType,
+    layoutType: LayoutType,
     disabled: Boolean = false,
     clickableOnly: Boolean = false,
     onLongClick: () -> Unit = {},
@@ -40,10 +41,11 @@ fun SettingItem(
 ) {
     Surface(
         modifier = modifier.combinedClickable(
+            enabled = !disabled,
             onClick = onClick,
             onLongClick = if (!clickableOnly) onLongClick else null
         ),
-        shape = if (layoutType == SettingLayoutType.SPLIT) RoundedCornerShape(32.dp) else RectangleShape,
+        shape = if (layoutType == LayoutType.SPLIT) RoundedCornerShape(32.dp) else RectangleShape,
         color = if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
     ) {
         Row(

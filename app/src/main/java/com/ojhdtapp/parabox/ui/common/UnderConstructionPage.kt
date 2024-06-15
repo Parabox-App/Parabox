@@ -26,7 +26,7 @@ fun UnderConstructionPage(
         AnimatedPreloader(modifier = Modifier.size(240.dp), resId = R.raw.lottie_under_construction)
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "建设中……",
+            text = "页面建设中……",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurface
         )

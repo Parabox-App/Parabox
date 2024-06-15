@@ -57,7 +57,7 @@ import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.setting.Setting
 import com.ojhdtapp.parabox.ui.setting.SettingHeader
 import com.ojhdtapp.parabox.ui.setting.SettingItem
-import com.ojhdtapp.parabox.ui.setting.SettingLayoutType
+import com.ojhdtapp.parabox.ui.common.LayoutType
 import com.ojhdtapp.parabox.ui.setting.SettingPageEvent
 import com.ojhdtapp.parabox.ui.setting.SettingPageState
 import com.ojhdtapp.parabox.ui.theme.Theme
@@ -69,15 +69,15 @@ fun AppearanceSettingPage(
     modifier: Modifier = Modifier,
     state: SettingPageState,
     mainSharedState: MainSharedState,
-    layoutType: SettingLayoutType,
+    layoutType: LayoutType,
     scaffoldNavigator: ThreePaneScaffoldNavigator<Setting>,
     onEvent: (SettingPageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
-    BackHandler(enabled = layoutType != SettingLayoutType.SPLIT) {
+    BackHandler(enabled = layoutType != LayoutType.SPLIT) {
         scaffoldNavigator.navigateBack(BackNavigationBehavior.PopLatest)
     }
-    if (layoutType == SettingLayoutType.SPLIT) {
+    if (layoutType == LayoutType.SPLIT) {
         Surface(
             modifier = Modifier
                 .fillMaxSize()
@@ -146,7 +146,7 @@ private fun Content(
     modifier: Modifier = Modifier,
     state: SettingPageState,
     mainSharedState: MainSharedState,
-    layoutType: SettingLayoutType,
+    layoutType: LayoutType,
     onEvent: (SettingPageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) =

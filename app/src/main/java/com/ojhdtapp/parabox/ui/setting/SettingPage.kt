@@ -44,6 +44,7 @@ import com.arkivanov.decompose.router.stack.replaceAll
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
+import com.ojhdtapp.parabox.ui.common.LayoutType
 import com.ojhdtapp.parabox.ui.navigation.DefaultRootComponent
 import com.ojhdtapp.parabox.ui.navigation.DefaultSettingComponent
 import com.ojhdtapp.parabox.ui.navigation.RootComponent
@@ -55,7 +56,7 @@ fun SettingPage(
     modifier: Modifier = Modifier,
     viewModel: SettingPageViewModel,
     mainSharedState: MainSharedState,
-    layoutType: SettingLayoutType,
+    layoutType: LayoutType,
     scaffoldNavigator: ThreePaneScaffoldNavigator<Setting>,
     navigation: StackNavigation<DefaultSettingComponent.SettingConfig>,
     stackState: ChildStack<*, SettingComponent.SettingChild>,
@@ -67,7 +68,7 @@ fun SettingPage(
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        containerColor = if (layoutType != SettingLayoutType.SPLIT) MaterialTheme.colorScheme.surface else Color.Transparent,
+        containerColor = if (layoutType != LayoutType.SPLIT) MaterialTheme.colorScheme.surface else Color.Transparent,
         topBar = {
             MaterialTheme(
                 typography = MaterialTheme.typography.copy(
@@ -88,10 +89,10 @@ fun SettingPage(
                             Icon(imageVector = Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "back")
                         }
                     },
-                    scrollBehavior = if (layoutType == SettingLayoutType.SPLIT) scrollBehavior else null,
+                    scrollBehavior = if (layoutType == LayoutType.SPLIT) scrollBehavior else null,
                     colors = TopAppBarDefaults.largeTopAppBarColors(
-                        containerColor = if (layoutType != SettingLayoutType.SPLIT) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceContainer,
-                        scrolledContainerColor = if (layoutType != SettingLayoutType.SPLIT) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceContainer
+                        containerColor = if (layoutType != LayoutType.SPLIT) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceContainer,
+                        scrolledContainerColor = if (layoutType != LayoutType.SPLIT) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceContainer
                     )
                 )
             }
@@ -102,7 +103,7 @@ fun SettingPage(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item {
-                Spacer(modifier = Modifier.height(if (layoutType == SettingLayoutType.SPLIT) 24.dp else 16.dp))
+                Spacer(modifier = Modifier.height(if (layoutType == LayoutType.SPLIT) 24.dp else 16.dp))
             }
             item {
                 SettingItem(
@@ -110,7 +111,7 @@ fun SettingPage(
                     leadingIcon = {
                         Icon(imageVector = Icons.Outlined.Settings, contentDescription = "general settings", tint = MaterialTheme.colorScheme.onSurface)
                     },
-                    selected = layoutType == SettingLayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.GeneralSetting,
+                    selected = layoutType == LayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.GeneralSetting,
                     layoutType = layoutType
                 ) {
 //                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.GENERAL))
@@ -126,7 +127,7 @@ fun SettingPage(
                     leadingIcon = {
                         Icon(imageVector = Icons.Outlined.LibraryAdd, contentDescription = "extension settings", tint = MaterialTheme.colorScheme.onSurface)
                     },
-                    selected = layoutType == SettingLayoutType.SPLIT && (stackState.active.instance is SettingComponent.SettingChild.ExtensionSetting || stackState.active.instance is SettingComponent.SettingChild.ExtensionAddSetting),
+                    selected = layoutType == LayoutType.SPLIT && (stackState.active.instance is SettingComponent.SettingChild.ExtensionSetting || stackState.active.instance is SettingComponent.SettingChild.ExtensionAddSetting),
                     layoutType = layoutType
                 ) {
 //                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.ADDONS))
@@ -142,7 +143,7 @@ fun SettingPage(
                     leadingIcon = {
                         Icon(imageVector = Icons.AutoMirrored.Outlined.Label, contentDescription = "label settings", tint = MaterialTheme.colorScheme.onSurface)
                     },
-                    selected = layoutType == SettingLayoutType.SPLIT && (stackState.active.instance is SettingComponent.SettingChild.LabelSetting || stackState.active.instance is SettingComponent.SettingChild.LabelDetailSetting),
+                    selected = layoutType == LayoutType.SPLIT && (stackState.active.instance is SettingComponent.SettingChild.LabelSetting || stackState.active.instance is SettingComponent.SettingChild.LabelDetailSetting),
                     layoutType = layoutType
                 ) {
 //                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.LABELS))
@@ -158,7 +159,7 @@ fun SettingPage(
                     leadingIcon = {
                         Icon(imageVector = Icons.Outlined.Palette, contentDescription = "interface settings", tint = MaterialTheme.colorScheme.onSurface)
                     },
-                    selected = layoutType == SettingLayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.AppearanceSetting,
+                    selected = layoutType == LayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.AppearanceSetting,
                     layoutType = layoutType
                 ) {
 //                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.APPEARANCE))
@@ -174,7 +175,7 @@ fun SettingPage(
                     leadingIcon = {
                         Icon(imageVector = Icons.Outlined.EditNotifications, contentDescription = "notification settings", tint = MaterialTheme.colorScheme.onSurface)
                     },
-                    selected = layoutType == SettingLayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.NotificationSetting,
+                    selected = layoutType == LayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.NotificationSetting,
                     layoutType = layoutType
                 ) {
 //                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.NOTIFICATION))
@@ -190,7 +191,7 @@ fun SettingPage(
                     leadingIcon = {
                         Icon(imageVector = Icons.Outlined.Storage, contentDescription = "storage settings", tint = MaterialTheme.colorScheme.onSurface)
                     },
-                    selected = layoutType == SettingLayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.StorageSetting,
+                    selected = layoutType == LayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.StorageSetting,
                     layoutType = layoutType
                 ) {
 //                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.STORAGE))
@@ -206,7 +207,7 @@ fun SettingPage(
                     leadingIcon = {
                         Icon(imageVector = Icons.Outlined.Cloud, contentDescription = "cloud settings", tint = MaterialTheme.colorScheme.onSurface)
                     },
-                    selected = layoutType == SettingLayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.CloudSetting,
+                    selected = layoutType == LayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.CloudSetting,
                     layoutType = layoutType
                 ) {
 //                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.STORAGE))
@@ -222,7 +223,7 @@ fun SettingPage(
                     leadingIcon = {
                         Icon(imageVector = Icons.Outlined.Science, contentDescription = "experimental settings", tint = MaterialTheme.colorScheme.onSurface)
                     },
-                    selected = layoutType == SettingLayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.ExperimentalSetting,
+                    selected = layoutType == LayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.ExperimentalSetting,
                     layoutType = layoutType
                 ) {
 //                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.EXPERIMENTAL))
@@ -238,7 +239,7 @@ fun SettingPage(
                     leadingIcon = {
                         Icon(imageVector = Icons.AutoMirrored.Outlined.HelpOutline, contentDescription = "support settings", tint = MaterialTheme.colorScheme.onSurface)
                     },
-                    selected = layoutType == SettingLayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.HelpAndSupportSetting,
+                    selected = layoutType == LayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.HelpAndSupportSetting,
                     layoutType = layoutType
                 ) {
 //                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.HELP))

@@ -35,15 +35,18 @@ import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.pop
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
+import com.ojhdtapp.parabox.ui.common.LayoutType
 import com.ojhdtapp.parabox.ui.navigation.DefaultRootComponent
 import com.ojhdtapp.parabox.ui.navigation.RootComponent
 import com.ojhdtapp.parabox.ui.navigation.SettingComponent
 import com.ojhdtapp.parabox.ui.navigation.slideWithOffset
 import com.ojhdtapp.parabox.ui.setting.detail.AppearanceSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.CloudSettingPage
+import com.ojhdtapp.parabox.ui.setting.detail.ExperimentalSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.ExtensionAddSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.ExtensionSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.GeneralSettingPage
+import com.ojhdtapp.parabox.ui.setting.detail.HelpAndSupportSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.LabelDetailSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.LabelSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.NotificationSettingPage
@@ -69,9 +72,9 @@ fun SettingPageWrapperUi(
     val layoutType by remember {
         derivedStateOf {
             if (scaffoldNavigator.scaffoldDirective.maxHorizontalPartitions == 1) {
-                SettingLayoutType.NORMAL
+                LayoutType.NORMAL
             } else {
-                SettingLayoutType.SPLIT
+                LayoutType.SPLIT
             }
         }
     }
@@ -81,7 +84,7 @@ fun SettingPageWrapperUi(
         modifier = modifier
             .background(MaterialTheme.colorScheme.surfaceContainer)
             .padding(
-                horizontal = if (layoutType == SettingLayoutType.NORMAL) 0.dp else 16.dp,
+                horizontal = if (layoutType == LayoutType.NORMAL) 0.dp else 16.dp,
             ),
         directive = scaffoldNavigator.scaffoldDirective,
         value = scaffoldNavigator.scaffoldValue,
@@ -228,7 +231,7 @@ fun SettingPageWrapperUi(
                         }
 
                         is SettingComponent.SettingChild.ExperimentalSetting -> {
-                            GeneralSettingPage(
+                            ExperimentalSettingPage(
                                 state = state,
                                 mainSharedState = mainSharedState,
                                 layoutType = layoutType,
@@ -239,7 +242,7 @@ fun SettingPageWrapperUi(
                         }
 
                         is SettingComponent.SettingChild.HelpAndSupportSetting -> {
-                            GeneralSettingPage(
+                            HelpAndSupportSettingPage(
                                 state = state,
                                 mainSharedState = mainSharedState,
                                 layoutType = layoutType,

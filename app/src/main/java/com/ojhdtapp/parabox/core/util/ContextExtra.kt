@@ -68,3 +68,11 @@ fun Context.getThemeColor(attrRes: Int): Int {
     typedValue.recycle()
     return color
 }
+
+fun Context.requestIgnoringBatteryOptimizationSetting() {
+    val intent = Intent().apply {
+        action = Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+        data = Uri.fromParts("package", packageName, null)
+    }
+    startActivity(intent)
+}

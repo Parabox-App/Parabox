@@ -70,7 +70,7 @@ import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageState
 import com.ojhdtapp.parabox.ui.setting.SettingHeader
 import com.ojhdtapp.parabox.ui.setting.SettingItem
-import com.ojhdtapp.parabox.ui.setting.SettingLayoutType
+import com.ojhdtapp.parabox.ui.common.LayoutType
 import com.origeek.imageViewer.previewer.ImagePreviewerState
 import com.origeek.imageViewer.previewer.TransformImageView
 import kotlinx.coroutines.flow.Flow
@@ -197,7 +197,7 @@ fun InfoSettingArea(
             title = "允许通知",
             subTitle = "接收新消息通知",
             selected = false,
-            layoutType = SettingLayoutType.NORMAL,
+            layoutType = LayoutType.NORMAL,
             trailingIcon = {
                 Switch(
                     enabled = infoAreaState.realTimeChat != null,
@@ -229,7 +229,7 @@ fun InfoSettingArea(
             title = "归档",
             subTitle = "将会话收入归档",
             selected = false,
-            layoutType = SettingLayoutType.NORMAL,
+            layoutType = LayoutType.NORMAL,
             trailingIcon = {
                 Switch(
                     enabled = infoAreaState.realTimeChat != null,
@@ -260,7 +260,7 @@ fun InfoSettingArea(
             title = "置顶",
             subTitle = "将会话置于列表顶部",
             selected = false,
-            layoutType = SettingLayoutType.NORMAL,
+            layoutType = LayoutType.NORMAL,
             trailingIcon = {
                 Switch(
                     enabled = infoAreaState.realTimeChat != null,
@@ -291,7 +291,7 @@ fun InfoSettingArea(
             title = "暂时隐藏",
             subTitle = "将会话从列表隐藏，直至收到新消息",
             selected = false,
-            layoutType = SettingLayoutType.NORMAL,
+            layoutType = LayoutType.NORMAL,
             trailingIcon = {
                 Switch(
                     enabled = infoAreaState.realTimeChat != null,
@@ -342,7 +342,7 @@ fun InfoSettingArea(
                 )
             },
             selected = false,
-            layoutType = SettingLayoutType.NORMAL,
+            layoutType = LayoutType.NORMAL,
         ) {
             if (infoAreaState.realTimeChat != null) {
                 onEvent(
