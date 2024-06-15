@@ -28,6 +28,7 @@ import com.arkivanov.decompose.router.stack.StackNavigation
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
+import com.ojhdtapp.parabox.ui.common.LayoutType
 import com.ojhdtapp.parabox.ui.message.chat.ChatPage
 import com.ojhdtapp.parabox.ui.navigation.DefaultMenuComponent
 import com.ojhdtapp.parabox.ui.navigation.MenuComponent
@@ -51,9 +52,9 @@ fun MessageAndChatPageWrapperUI(
     val layoutType by remember {
         derivedStateOf {
             if (scaffoldNavigator.scaffoldDirective.maxHorizontalPartitions == 1) {
-                MessageLayoutType.NORMAL
+                LayoutType.NORMAL
             } else {
-                MessageLayoutType.SPLIT
+                LayoutType.SPLIT
             }
         }
     }
@@ -105,7 +106,7 @@ fun MessageAndChatPageWrapperUI(
         directive = scaffoldNavigator.scaffoldDirective,
         value = scaffoldNavigator.scaffoldValue,
         modifier = modifier.padding(
-            horizontal = if (layoutType == MessageLayoutType.NORMAL) 0.dp else 16.dp,
+            horizontal = if (layoutType == LayoutType.NORMAL) 0.dp else 16.dp,
         ),
         listPane = {
             AnimatedPane(modifier = Modifier.preferredWidth(352.dp)) {

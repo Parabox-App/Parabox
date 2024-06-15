@@ -73,12 +73,13 @@ fun LabelDetailSettingPage(
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
     BackHandler {
-        scaffoldNavigator.navigateBack()
+        navigation.pop()
     }
     if (layoutType == SettingLayoutType.SPLIT) {
         Surface(
             modifier = Modifier
                 .fillMaxSize()
+
                 .systemBarsPadding(),
             color = MaterialTheme.colorScheme.background,
             shape = RoundedCornerShape(24.dp)

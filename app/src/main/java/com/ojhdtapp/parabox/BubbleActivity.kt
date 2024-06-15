@@ -29,7 +29,7 @@ import com.ojhdtapp.parabox.ui.common.FixedInsets
 import com.ojhdtapp.parabox.ui.common.LocalFixedInsets
 import com.ojhdtapp.parabox.ui.common.LocalSystemUiController
 import com.ojhdtapp.parabox.ui.common.SystemUiController
-import com.ojhdtapp.parabox.ui.message.MessageLayoutType
+import com.ojhdtapp.parabox.ui.common.LayoutType
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageViewModel
 import com.ojhdtapp.parabox.ui.message.chat.NormalChatPage
@@ -120,7 +120,7 @@ class BubbleActivity : AppCompatActivity() {
                         state = state,
                         mainSharedState = mainSharedState,
                         scaffoldNavigator = null,
-                        layoutType = MessageLayoutType.SINGLE_PAGE,
+                        layoutType = LayoutType.SINGLE_PAGE,
                         onEvent = messagePageViewModel::sendEvent,
                         onMainSharedEvent = mainSharedViewModel::sendEvent
                     )

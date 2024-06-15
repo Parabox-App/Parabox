@@ -70,6 +70,7 @@ import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.common.CommonAvatar
 import com.ojhdtapp.parabox.ui.common.CommonAvatarModel
+import com.ojhdtapp.parabox.ui.common.LayoutType
 import com.ojhdtapp.parabox.ui.common.SearchContent
 import com.ojhdtapp.parabox.ui.common.clearFocusOnKeyboardDismiss
 import com.ojhdtapp.parabox.ui.message.chat.PlainContactItem
@@ -87,7 +88,7 @@ fun ContactPage(
     viewModel: ContactPageViewModel,
     scaffoldNavigator: ThreePaneScaffoldNavigator<Nothing>,
     mainSharedState: MainSharedState,
-    layoutType: ContactLayoutType,
+    layoutType: LayoutType,
     onMainSharedEvent: (MainSharedEvent) -> Unit
 ) {
     val hapticFeedback = LocalHapticFeedback.current
@@ -101,7 +102,7 @@ fun ContactPage(
     )
     val listState = rememberLazyListState()
     val searchBarPadding by animateDpAsState(
-        targetValue = if (mainSharedState.search.isActive || layoutType == ContactLayoutType.SPLIT) 0.dp else 16.dp,
+        targetValue = if (mainSharedState.search.isActive || layoutType == LayoutType.SPLIT) 0.dp else 16.dp,
         animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
     )
     val shouldHoverSearchBar by remember {
@@ -117,7 +118,7 @@ fun ContactPage(
         snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
         containerColor = Color.Transparent,
         topBar = {
-            if (layoutType == ContactLayoutType.SPLIT) {
+            if (layoutType == LayoutType.SPLIT) {
                 DockedSearchBar(
                     inputField = {
                         SearchBarDefaults.InputField(
@@ -227,7 +228,7 @@ fun ContactPage(
                     tonalElevation = SearchBarDefaults.TonalElevation,
                     shadowElevation = searchBarShadowElevation,
                     content = {
-                        SearchContent(state = mainSharedState, onEvent = onMainSharedEvent)
+                        SearchContent(layoutType = layoutType, state = mainSharedState, onEvent = onMainSharedEvent)
                     },
                 )
             } else {
@@ -343,7 +344,7 @@ fun ContactPage(
                     shadowElevation = searchBarShadowElevation,
                     windowInsets = SearchBarDefaults.windowInsets,
                     content = {
-                        SearchContent(state = mainSharedState, onEvent = onMainSharedEvent)
+                        SearchContent(layoutType = layoutType, state = mainSharedState, onEvent = onMainSharedEvent)
                     },
                 )
             }
@@ -418,12 +419,12 @@ fun ContactPage(
                     }
                 }
                 item {
-                    if (layoutType == ContactLayoutType.NORMAL) {
+                    if (layoutType == LayoutType.NORMAL) {
                         Spacer(modifier = Modifier.height(80.dp))
                     }
                 }
             }
-            val paddingValues = if (layoutType == ContactLayoutType.SPLIT) {
+            val paddingValues = if (layoutType == LayoutType.SPLIT) {
                 it
             } else {
                 PaddingValues(

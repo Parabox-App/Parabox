@@ -72,7 +72,7 @@ fun MessagePage(
     viewModel: MessagePageViewModel,
     mainSharedViewModel: MainSharedViewModel,
     scaffoldNavigator: ThreePaneScaffoldNavigator<Nothing>,
-    layoutType: MessageLayoutType,
+    layoutType: LayoutType,
 ) {
     val coroutineScope = rememberCoroutineScope()
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -86,9 +86,9 @@ fun MessagePage(
     val listState = rememberLazyListState()
     val horizontalPadding by animateDpAsState(
         targetValue = when (layoutType) {
-            MessageLayoutType.NORMAL -> 16.dp
-            MessageLayoutType.SINGLE_PAGE -> 16.dp
-            MessageLayoutType.SPLIT -> 2.dp
+            LayoutType.NORMAL -> 16.dp
+            LayoutType.SINGLE_PAGE -> 16.dp
+            LayoutType.SPLIT -> 2.dp
         },
         animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
     )
@@ -134,7 +134,11 @@ fun MessagePage(
                             }
                         }
                     }
-
+                    is MainSharedEffect.LoadMessage -> {
+                        viewModel.sendEvent(MessagePageEvent.LoadMessage(it.chat, it.scrollToMessageId))
+                        scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
+                        mainSharedViewModel.sendEvent(MainSharedEvent.ShowNavigationBar(false))
+                    }
                     else -> {}
                 }
             }
@@ -142,7 +146,7 @@ fun MessagePage(
     val chatLazyPagingData = viewModel.chatPagingDataFlow.collectAsLazyPagingItems()
     val pinnedChatLazyPagingData = viewModel.pinnedChatPagingDataFlow.collectAsLazyPagingItems()
     val searchBarPadding by animateDpAsState(
-        targetValue = if (mainSharedState.search.isActive || layoutType == MessageLayoutType.SPLIT) 0.dp else 16.dp,
+        targetValue = if (mainSharedState.search.isActive || layoutType == LayoutType.SPLIT) 0.dp else 16.dp,
         animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
     )
     val shouldHoverSearchBar by remember {
@@ -163,7 +167,7 @@ fun MessagePage(
         snackbarHost = { SnackbarHost(modifier = Modifier.offset(y = 80.dp), hostState = snackBarHostState) },
         containerColor = Color.Transparent,
         topBar = {
-            if (layoutType == MessageLayoutType.SPLIT) {
+            if (layoutType == LayoutType.SPLIT) {
                 DockedSearchBar(
                     inputField = {
                         SearchBarDefaults.InputField(
@@ -236,7 +240,7 @@ fun MessagePage(
                     tonalElevation = SearchBarDefaults.TonalElevation,
                     shadowElevation = searchBarShadowElevation,
                     content = {
-                        SearchContent(state = mainSharedState, onEvent = mainSharedViewModel::sendEvent)
+                        SearchContent(layoutType = layoutType, state = mainSharedState, onEvent = mainSharedViewModel::sendEvent)
                     },
                 )
             } else {
@@ -312,7 +316,7 @@ fun MessagePage(
                     shadowElevation = searchBarShadowElevation,
                     windowInsets = SearchBarDefaults.windowInsets,
                     content = {
-                        SearchContent(state = mainSharedState, onEvent = mainSharedViewModel::sendEvent)
+                        SearchContent(layoutType = layoutType, state = mainSharedState, onEvent = mainSharedViewModel::sendEvent)
                     },
                 )
             }
@@ -479,7 +483,7 @@ fun MessagePage(
                                 contact = state.chatLatestMessageSenderCache[item.message?.senderId]
                                     ?: Resource.Loading(),
                                 isEditing = state.chatDetail.chat?.chatId == item.chat.chatId,
-                                isExpanded = layoutType == MessageLayoutType.SPLIT,
+                                isExpanded = layoutType == LayoutType.SPLIT,
                                 enableMarqueeEffectOnChatName = mainSharedState.datastore.enableMarqueeEffectOnChatName,
                                 onClick = {
                                     viewModel.sendEvent(MessagePageEvent.LoadMessage(item.chat))
@@ -496,7 +500,7 @@ fun MessagePage(
                 }
             }
             item {
-                if (layoutType == MessageLayoutType.NORMAL) {
+                if (layoutType == LayoutType.NORMAL) {
                     Spacer(modifier = Modifier.height(80.dp))
                 }
             }

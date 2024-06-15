@@ -495,6 +495,20 @@ class MainSharedViewModel @Inject constructor(
                     )
                 )
             }
+
+            is MainSharedEvent.LoadMessage -> {
+                viewModelScope.launch {
+                    sendEffect(MainSharedEffect.LoadMessage(event.chat, event.scrollToMessageId))
+                }
+                return state
+            }
+
+            is MainSharedEvent.MenuNavigate -> {
+                viewModelScope.launch {
+                    sendEffect(MainSharedEffect.MenuNavigate(event.target))
+                }
+                return state
+            }
         }
     }
 

@@ -25,6 +25,7 @@ import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
+import com.ojhdtapp.parabox.ui.common.LayoutType
 import com.ojhdtapp.parabox.ui.navigation.DefaultMenuComponent
 import com.ojhdtapp.parabox.ui.navigation.MenuComponent
 import com.ojhdtapp.parabox.ui.setting.SettingLayoutType
@@ -45,15 +46,15 @@ fun ContactPageWrapperUI(
     val layoutType by remember {
         derivedStateOf {
             if(scaffoldNavigator.scaffoldDirective.maxHorizontalPartitions == 1) {
-                ContactLayoutType.NORMAL
+                LayoutType.NORMAL
             } else {
-                ContactLayoutType.SPLIT
+                LayoutType.SPLIT
             }
         }
     }
     ListDetailPaneScaffold(
         modifier = modifier.padding(
-            horizontal = if (layoutType == ContactLayoutType.NORMAL) 0.dp else 16.dp,
+            horizontal = if (layoutType == LayoutType.NORMAL) 0.dp else 16.dp,
         ),
         directive = scaffoldNavigator.scaffoldDirective,
         value = scaffoldNavigator.scaffoldValue,

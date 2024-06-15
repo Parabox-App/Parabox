@@ -27,7 +27,7 @@ sealed interface MessagePageEvent : UiEvent {
     data class UpdateChatNotificationEnabled(val chatId: Long, val value: Boolean, val oldValue: Boolean) : MessagePageEvent
     data class ShowChatDetail(val chatId: Long, val detail: Chat): MessagePageEvent
     data class UpdateEditingChatTags(val obj: ChatTagsUpdate?): MessagePageEvent
-    data class LoadMessage(val chat: Chat): MessagePageEvent
+    data class LoadMessage(val chat: Chat, val scrollToMessageId: Long? = null): MessagePageEvent
     data class OpenEditArea(val open: Boolean): MessagePageEvent
     data class OpenInfoArea(val open: Boolean) : MessagePageEvent
     data class UpdateInfoAreaRealTimeChat(val chat: Chat?, val loadState: LoadState): MessagePageEvent

@@ -13,12 +13,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ojhdtapp.parabox.R
-import com.ojhdtapp.parabox.ui.message.MessageLayoutType
+import com.ojhdtapp.parabox.ui.common.LayoutType
 
 @Composable
 fun EmptyChatPage(
     modifier: Modifier = Modifier,
-    layoutType: MessageLayoutType,
+    layoutType: LayoutType,
 ) {
     Column(
         modifier = modifier.fillMaxSize(),

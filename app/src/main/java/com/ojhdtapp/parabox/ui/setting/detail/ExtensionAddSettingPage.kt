@@ -91,7 +91,8 @@ fun ExtensionAddSettingPage(
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
     BackHandler {
-        scaffoldNavigator.navigateBack()
+        navigation.pop()
+        onEvent(SettingPageEvent.InitNewExtensionConnectionDone(false))
     }
     if (layoutType == SettingLayoutType.SPLIT) {
         Surface(

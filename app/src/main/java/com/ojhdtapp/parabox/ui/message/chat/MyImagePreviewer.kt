@@ -38,7 +38,7 @@ import coil.request.ImageRequest
 import coil.size.Size
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.ui.common.LocalSystemUiController
-import com.ojhdtapp.parabox.ui.message.MessageLayoutType
+import com.ojhdtapp.parabox.ui.common.LayoutType
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageState
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
@@ -52,7 +52,7 @@ import me.saket.cascade.CascadeDropdownMenu
 fun MyImagePreviewer(
     modifier: Modifier = Modifier,
     state: MessagePageState.ChatDetail,
-    layoutType: MessageLayoutType,
+    layoutType: LayoutType,
     previewerState: ImagePreviewerState,
     onEvent: (e: MessagePageEvent) -> Unit,
 ) {

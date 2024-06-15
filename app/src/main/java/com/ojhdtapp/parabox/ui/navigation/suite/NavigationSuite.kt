@@ -48,9 +48,13 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
+import com.arkivanov.decompose.router.stack.bringToFront
+import com.arkivanov.decompose.router.stack.replaceAll
+import com.ojhdtapp.parabox.ui.MainSharedEffect
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
+import com.ojhdtapp.parabox.ui.MenuNavigateTarget
 import com.ojhdtapp.parabox.ui.common.ChatPickerDialog
 import com.ojhdtapp.parabox.ui.common.ContactPickerDialog
 import com.ojhdtapp.parabox.ui.common.DateRangePickerDialog
@@ -175,6 +179,25 @@ fun NavigationSuite(
         mainSharedViewModel.uiEffect.flowWithLifecycle(lifecycleOwner.lifecycle, Lifecycle.State.STARTED)
             .collectLatest {
                 when (it) {
+                    is MainSharedEffect.MenuNavigate -> {
+                        when(it.target) {
+                            MenuNavigateTarget.Message -> {
+                                menuNavigation.bringToFront(DefaultMenuComponent.MenuConfig.Message) {
+                                    menuNavigation.replaceAll(DefaultMenuComponent.MenuConfig.Message)
+                                }
+                            }
+                            MenuNavigateTarget.File -> {
+                                menuNavigation.bringToFront(DefaultMenuComponent.MenuConfig.File) {
+                                    menuNavigation.replaceAll(DefaultMenuComponent.MenuConfig.File)
+                                }
+                            }
+                            MenuNavigateTarget.Contact -> {
+                                menuNavigation.bringToFront(DefaultMenuComponent.MenuConfig.Contact) {
+                                    menuNavigation.replaceAll(DefaultMenuComponent.MenuConfig.Contact)
+                                }
+                            }
+                        }
+                    }
                     else -> {}
                 }
             }

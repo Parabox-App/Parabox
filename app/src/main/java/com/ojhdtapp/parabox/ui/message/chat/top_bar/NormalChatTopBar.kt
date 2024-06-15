@@ -44,7 +44,7 @@ import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.ui.common.CommonAvatar
 import com.ojhdtapp.parabox.ui.common.CommonAvatarModel
-import com.ojhdtapp.parabox.ui.message.MessageLayoutType
+import com.ojhdtapp.parabox.ui.common.LayoutType
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageState
 
@@ -54,7 +54,7 @@ fun NormalChatTopBar(
     modifier: Modifier = Modifier,
     chatDetail: MessagePageState.ChatDetail,
     shouldDisplayAvatar: Boolean,
-    layoutType: MessageLayoutType,
+    layoutType: LayoutType,
     onNavigateBack: () -> Unit,
     onEvent: (MessagePageEvent) -> Unit,
 ) {
@@ -99,7 +99,7 @@ fun NormalChatTopBar(
             }
         },
         navigationIcon = {
-            if (layoutType == MessageLayoutType.NORMAL) {
+            if (layoutType == LayoutType.NORMAL) {
                 IconButton(onClick = onNavigateBack) {
                     Icon(
                         modifier = Modifier.size(24.dp),

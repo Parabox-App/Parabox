@@ -199,7 +199,7 @@ private fun Content(
         item {
             SettingItem(title = "刷新可用连接", selected = false, layoutType = layoutType,
                 leadingIcon = {
-                    Icon(imageVector = Icons.Outlined.Refresh, contentDescription = "refresh")
+                    Icon(imageVector = Icons.Outlined.Refresh, contentDescription = "refresh", tint = MaterialTheme.colorScheme.onSurface)
                 }) {
                 onEvent(SettingPageEvent.RefreshExtensionPkgInfo)
             }

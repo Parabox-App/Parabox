@@ -64,11 +64,11 @@ import androidx.paging.compose.itemKey
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.common.DismissibleBottomSheet
+import com.ojhdtapp.parabox.ui.common.LayoutType
 import com.ojhdtapp.parabox.ui.common.LocalSystemUiController
 import com.ojhdtapp.parabox.ui.common.MyModalNavigationDrawerReverse
 import com.ojhdtapp.parabox.ui.common.imeVisibleAsState
 import com.ojhdtapp.parabox.ui.common.rememberMyDrawerState
-import com.ojhdtapp.parabox.ui.message.MessageLayoutType
 import com.ojhdtapp.parabox.ui.message.MessagePageEffect
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageState
@@ -90,11 +90,11 @@ fun ChatPage(
     state: MessagePageState,
     mainSharedState: MainSharedState,
     scaffoldNavigator: ThreePaneScaffoldNavigator<Nothing>,
-    layoutType: MessageLayoutType,
+    layoutType: LayoutType,
     onEvent: (MessagePageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
-    if (layoutType == MessageLayoutType.SPLIT) {
+    if (layoutType == LayoutType.SPLIT) {
         Surface(
             modifier = Modifier
                 .fillMaxSize()
@@ -151,7 +151,7 @@ fun NormalChatPage(
     state: MessagePageState,
     mainSharedState: MainSharedState,
     scaffoldNavigator: ThreePaneScaffoldNavigator<Nothing>?,
-    layoutType: MessageLayoutType,
+    layoutType: LayoutType,
     onEvent: (e: MessagePageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
@@ -231,7 +231,7 @@ fun NormalChatPage(
                     if (it.index > -1) {
                         if (previewerState.canOpen) {
                             previewerState.openTransform(it.index)
-                            if (layoutType == MessageLayoutType.NORMAL) {
+                            if (layoutType == LayoutType.NORMAL) {
                                 systemUiController.setStatusBarColor(false)
                             }
                         } else {
@@ -273,7 +273,7 @@ fun NormalChatPage(
             onEvent(MessagePageEvent.OpenEditArea(false))
         }
     }
-    BackHandler(layoutType == MessageLayoutType.NORMAL) {
+    BackHandler(layoutType == LayoutType.NORMAL) {
         scaffoldNavigator?.navigateTo(ListDetailPaneScaffoldRole.List)
         onMainSharedEvent(MainSharedEvent.ShowNavigationBar(true))
     }
@@ -300,7 +300,7 @@ fun NormalChatPage(
     BackHandler(previewerState.canClose) {
         coroutineScope.launch {
             previewerState.closeTransform()
-            if (layoutType == MessageLayoutType.NORMAL) {
+            if (layoutType == LayoutType.NORMAL) {
                 systemUiController.reset()
             }
         }

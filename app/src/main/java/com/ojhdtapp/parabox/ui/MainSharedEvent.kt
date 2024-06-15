@@ -19,9 +19,7 @@ sealed interface MainSharedEvent : UiEvent {
     data object GetRecentQuery : MainSharedEvent
     data class GetRecentQueryDone(val res: List<RecentQuery>, val isSuccess: Boolean) : MainSharedEvent
     data class DeleteRecentQuery(val id: Long) : MainSharedEvent
-    data class MessageSearchDone(val res: List<QueryMessage>, val isSuccess: Boolean) :
-        MainSharedEvent
-
+    data class MessageSearchDone(val res: List<QueryMessage>, val isSuccess: Boolean) : MainSharedEvent
     data class ContactSearchDone(val res: List<Contact>, val isSuccess: Boolean) : MainSharedEvent
     data class ChatSearchDone(val res: List<Chat>, val isSuccess: Boolean) : MainSharedEvent
     data class TriggerSearchBar(val isActive: Boolean) : MainSharedEvent
@@ -52,4 +50,10 @@ sealed interface MainSharedEvent : UiEvent {
     data class ShowContactDetailDialog(val contactWithExtensionInfo: ContactWithExtensionInfo) : MainSharedEvent
     data object DismissContactDetailDialog : MainSharedEvent
     data class UpdateContactRelativeChatList(val list: List<Chat>, val loadState: LoadState) : MainSharedEvent
+    data class LoadMessage(val chat: Chat, val scrollToMessageId: Long? = null) : MainSharedEvent
+    data class MenuNavigate(val target: MenuNavigateTarget) : MainSharedEvent
+}
+
+enum class MenuNavigateTarget {
+    Message, File, Contact
 }

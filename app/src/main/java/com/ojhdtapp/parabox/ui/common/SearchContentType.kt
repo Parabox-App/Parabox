@@ -83,11 +83,12 @@ import com.ojhdtapp.parabox.domain.model.filter.MessageFilter
 import com.ojhdtapp.parabox.domain.use_case.Query.Companion.SEARCH_RECENT_DATA_NUM
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
+import com.ojhdtapp.parabox.ui.MenuNavigateTarget
 import kotlinx.coroutines.launch
 import me.saket.cascade.CascadeDropdownMenu
 
 @Composable
-fun SearchContent(modifier: Modifier = Modifier, state: MainSharedState, onEvent: (e: MainSharedEvent) -> Unit) {
+fun SearchContent(modifier: Modifier = Modifier, layoutType: LayoutType, state: MainSharedState, onEvent: (e: MainSharedEvent) -> Unit) {
     val searchPageState by remember(state.search) {
         derivedStateOf {
             when {
@@ -100,15 +101,15 @@ fun SearchContent(modifier: Modifier = Modifier, state: MainSharedState, onEvent
     Crossfade(targetState = searchPageState, modifier = modifier, label = "search_pages") {
         when (it) {
             SearchContentType.RECENT -> {
-                RecentSearchContent(state = state.search, onEvent = onEvent)
+                RecentSearchContent(layoutType = layoutType, state = state.search, onEvent = onEvent)
             }
 
             SearchContentType.TYPING -> {
-                TypingSearchContent(state = state.search, onEvent = onEvent)
+                TypingSearchContent(layoutType = layoutType, state = state.search, onEvent = onEvent)
             }
 
             SearchContentType.DONE -> {
-                DoneSearchContent(state = state.search, onEvent = onEvent)
+                DoneSearchContent(layoutType = layoutType, state = state.search, onEvent = onEvent)
             }
         }
     }
@@ -122,6 +123,7 @@ enum class SearchContentType {
 @Composable
 fun RecentSearchContent(
     modifier: Modifier = Modifier,
+    layoutType: LayoutType,
     state: MainSharedState.Search,
     onEvent: (e: MainSharedEvent) -> Unit
 ) {
@@ -146,7 +148,8 @@ fun RecentSearchContent(
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = "搜索 Parabox",
-                        style = MaterialTheme.typography.bodyLarge
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -299,7 +302,11 @@ fun RecentSearchContent(
                             },
                             subTitle = null
                         ) {
-
+                            onEvent(MainSharedEvent.LoadMessage(it))
+                            onEvent(MainSharedEvent.MenuNavigate(MenuNavigateTarget.Message))
+                            if (layoutType != LayoutType.SPLIT) {
+                                onEvent(MainSharedEvent.TriggerSearchBar(false))
+                            }
                         }
                     }
                 }
@@ -429,7 +436,11 @@ fun RecentSearchContent(
                                 }
                             },
                         ) {
-
+                            onEvent(MainSharedEvent.LoadMessage(it.chat!!, it.message.messageId))
+                            onEvent(MainSharedEvent.MenuNavigate(MenuNavigateTarget.Message))
+                            if (layoutType != LayoutType.SPLIT) {
+                                onEvent(MainSharedEvent.TriggerSearchBar(false))
+                            }
                         }
                     }
                 }
@@ -445,6 +456,7 @@ fun RecentSearchContent(
 @Composable
 fun TypingSearchContent(
     modifier: Modifier = Modifier,
+    layoutType: LayoutType,
     state: MainSharedState.Search,
     onEvent: (e: MainSharedEvent) -> Unit
 ) {
@@ -565,7 +577,11 @@ fun TypingSearchContent(
                             },
                             subTitle = null
                         ) {
-
+                            onEvent(MainSharedEvent.LoadMessage(it))
+                            onEvent(MainSharedEvent.MenuNavigate(MenuNavigateTarget.Message))
+                            if (layoutType != LayoutType.SPLIT) {
+                                onEvent(MainSharedEvent.TriggerSearchBar(false))
+                            }
                         }
                     }
                     if (state.chat.result.size >= SEARCH_RECENT_DATA_NUM) {
@@ -710,7 +726,11 @@ fun TypingSearchContent(
                                 }
                             },
                         ) {
-
+                            onEvent(MainSharedEvent.LoadMessage(it.chat, it.message.messageId))
+                            onEvent(MainSharedEvent.MenuNavigate(MenuNavigateTarget.Message))
+                            if (layoutType != LayoutType.SPLIT) {
+                                onEvent(MainSharedEvent.TriggerSearchBar(false))
+                            }
                         }
                     }
                 }
@@ -737,6 +757,9 @@ fun TypingSearchContent(
                 }
             }
         }
+        item {
+            Spacer(modifier = Modifier.height(16.dp))
+        }
     }
 
 }
@@ -745,6 +768,7 @@ fun TypingSearchContent(
 @Composable
 fun DoneSearchContent(
     modifier: Modifier = Modifier,
+    layoutType: LayoutType,
     state: MainSharedState.Search,
     onEvent: (e: MainSharedEvent) -> Unit
 ) {
@@ -771,7 +795,7 @@ fun DoneSearchContent(
         HorizontalPager(modifier = Modifier.weight(1f), state = pagerState) {
             when (it) {
                 0 -> {
-                    DoneSearchMessageContent(modifier = Modifier.fillMaxSize(), state = state, onEvent = onEvent)
+                    DoneSearchMessageContent(modifier = Modifier.fillMaxSize(), layoutType = layoutType, state = state, onEvent = onEvent)
                 }
 
                 1 -> {
@@ -779,7 +803,7 @@ fun DoneSearchContent(
                 }
 
                 2 -> {
-                    DoneSearchChatContent(modifier = Modifier.fillMaxSize(), state = state, onEvent = onEvent)
+                    DoneSearchChatContent(modifier = Modifier.fillMaxSize(), layoutType = layoutType, state = state, onEvent = onEvent)
                 }
             }
         }
@@ -790,6 +814,7 @@ fun DoneSearchContent(
 @Composable
 fun DoneSearchMessageContent(
     modifier: Modifier = Modifier,
+    layoutType: LayoutType,
     state: MainSharedState.Search,
     onEvent: (e: MainSharedEvent) -> Unit
 ) {
@@ -998,7 +1023,11 @@ fun DoneSearchMessageContent(
                     }
                 },
             ) {
-
+                onEvent(MainSharedEvent.LoadMessage(res.chat!!, res.message.messageId))
+                onEvent(MainSharedEvent.MenuNavigate(MenuNavigateTarget.Message))
+                if (layoutType != LayoutType.SPLIT) {
+                    onEvent(MainSharedEvent.TriggerSearchBar(false))
+                }
             }
         }
         item {
@@ -1123,6 +1152,7 @@ fun DoneSearchContactContent(
 @Composable
 fun DoneSearchChatContent(
     modifier: Modifier = Modifier,
+    layoutType: LayoutType,
     state: MainSharedState.Search,
     onEvent: (e: MainSharedEvent) -> Unit
 ) {
@@ -1199,7 +1229,11 @@ fun DoneSearchChatContent(
                 },
                 subTitle = null,
             ) {
-
+                onEvent(MainSharedEvent.LoadMessage(res))
+                onEvent(MainSharedEvent.MenuNavigate(MenuNavigateTarget.Message))
+                if (layoutType != LayoutType.SPLIT) {
+                    onEvent(MainSharedEvent.TriggerSearchBar(false))
+                }
             }
         }
         item {
@@ -1223,6 +1257,9 @@ fun DoneSearchChatContent(
                     )
                 }
             }
+        }
+        item {
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

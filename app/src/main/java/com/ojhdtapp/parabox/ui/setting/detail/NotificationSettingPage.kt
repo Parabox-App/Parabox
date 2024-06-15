@@ -211,7 +211,8 @@ private fun Content(
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Outlined.NotificationsActive,
-                        contentDescription = "channel"
+                        contentDescription = "channel",
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 },
                 selected = false, layoutType = layoutType
@@ -283,7 +284,7 @@ private fun Content(
         item {
             SettingItem(title = "添加会话", selected = false, layoutType = layoutType,
                 leadingIcon = {
-                    Icon(imageVector = Icons.Outlined.AddComment, contentDescription = "添加会话")
+                    Icon(imageVector = Icons.Outlined.AddComment, contentDescription = "添加会话", tint = MaterialTheme.colorScheme.onSurface)
                 }) {
                 onMainSharedEvent(MainSharedEvent.PickChat(
                     onDone = { chat ->

@@ -74,6 +74,7 @@ import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.common.BlurTransformation
 import com.ojhdtapp.parabox.ui.common.CommonAvatar
 import com.ojhdtapp.parabox.ui.common.CommonAvatarModel
+import com.ojhdtapp.parabox.ui.common.LayoutType
 import com.ojhdtapp.parabox.ui.common.LocalSystemUiController
 import com.ojhdtapp.parabox.ui.common.SystemUiController
 import com.ojhdtapp.parabox.ui.common.placeholder
@@ -86,12 +87,12 @@ fun ContactDetailPage(
     viewModel: ContactPageViewModel,
     scaffoldNavigator: ThreePaneScaffoldNavigator<Nothing>,
     mainSharedState: MainSharedState,
-    layoutType: ContactLayoutType,
+    layoutType: LayoutType,
     onMainSharedEvent: (MainSharedEvent) -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
     val systemUiController = LocalSystemUiController.current
-    if (layoutType == ContactLayoutType.SPLIT) {
+    if (layoutType == LayoutType.SPLIT) {
         Surface(
             modifier = Modifier
                 .fillMaxSize()
@@ -145,7 +146,7 @@ private fun ContactDetailPageContent(
     scaffoldNavigator: ThreePaneScaffoldNavigator<Nothing>,
     systemUiController: SystemUiController,
     mainSharedState: MainSharedState,
-    layoutType: ContactLayoutType,
+    layoutType: LayoutType,
     onMainSharedEvent: (MainSharedEvent) -> Unit
 ) {
     val scrollState = rememberScrollState()
@@ -158,7 +159,7 @@ private fun ContactDetailPageContent(
         if (isBackgroundLight xor isSystemInDarkTheme()) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.inverseOnSurface
     val navigationContentColor by animateColorAsState(targetValue = if (isScrolled) MaterialTheme.colorScheme.onSurface else navigationIconTint)
     LaunchedEffect(isScrolled) {
-        if (layoutType == ContactLayoutType.NORMAL) {
+        if (layoutType == LayoutType.NORMAL) {
             if (isScrolled) {
                 systemUiController.reset()
             } else {
@@ -167,7 +168,7 @@ private fun ContactDetailPageContent(
             }
         }
     }
-    BackHandler(layoutType == ContactLayoutType.NORMAL) {
+    BackHandler(layoutType == LayoutType.NORMAL) {
         scaffoldNavigator.navigateBack()
         systemUiController.reset()
         onMainSharedEvent(MainSharedEvent.ShowNavigationBar(true))
@@ -177,7 +178,7 @@ private fun ContactDetailPageContent(
             TopAppBar(
                 title = {},
                 navigationIcon = {
-                    if (layoutType == ContactLayoutType.NORMAL) {
+                    if (layoutType == LayoutType.NORMAL) {
                         IconButton(
                             onClick = {
                                 scaffoldNavigator.navigateBack()
@@ -217,7 +218,7 @@ private fun ContactDetailPageContent(
                     .build(),
                 contentDescription = "avatar_bg", contentScale = ContentScale.Crop,
                 onSuccess = {
-                    if (layoutType == ContactLayoutType.NORMAL) {
+                    if (layoutType == LayoutType.NORMAL) {
                         (it.result.drawable as? BitmapDrawable)?.bitmap?.also { bitmap ->
                             isBackgroundLight = ImageUtil.checkBitmapLight(bitmap)
                             systemUiController.setStatusBarColor(isBackgroundLight)
@@ -241,7 +242,7 @@ private fun ContactDetailPageContent(
                             bottomStart = 0.dp,
                             bottomEnd = 0.dp
                         ),
-                        color = if (layoutType == ContactLayoutType.NORMAL) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceContainer,
+                        color = if (layoutType == LayoutType.NORMAL) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceContainer,
                     ) {
                         Box(
                             modifier = Modifier
@@ -269,7 +270,7 @@ private fun ContactDetailPageContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(
-                            if (layoutType == ContactLayoutType.NORMAL) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceContainer,
+                            if (layoutType == LayoutType.NORMAL) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceContainer,
                         ),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {

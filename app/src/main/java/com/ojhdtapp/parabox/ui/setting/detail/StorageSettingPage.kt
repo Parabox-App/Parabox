@@ -182,7 +182,8 @@ private fun Content(
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Outlined.FileOpen,
-                        contentDescription = "backup"
+                        contentDescription = "backup",
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 },
                 selected = false, layoutType = layoutType
@@ -219,7 +220,8 @@ private fun Content(
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Outlined.Restore,
-                        contentDescription = "restore"
+                        contentDescription = "restore",
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 },
                 selected = false, layoutType = layoutType
