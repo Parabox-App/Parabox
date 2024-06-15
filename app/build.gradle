@@ -184,7 +184,7 @@ dependencies {
     implementation 'com.qcloud.cos:cos-android-lite-nobeacon:5.9.8'
 
     // Firebase
-    implementation platform('com.google.firebase:firebase-bom:31.0.1')
+    implementation platform('com.google.firebase:firebase-bom:33.1.0')
     implementation 'com.google.firebase:firebase-analytics-ktx'
     implementation 'com.google.firebase:firebase-messaging-ktx'
     implementation 'com.google.firebase:firebase-firestore-ktx'

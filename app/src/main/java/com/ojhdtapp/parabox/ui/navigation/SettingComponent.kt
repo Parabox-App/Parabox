@@ -16,6 +16,7 @@ import com.ojhdtapp.parabox.ui.navigation.settings.HelpAndSupportSettingComponen
 import com.ojhdtapp.parabox.ui.navigation.settings.LabelDetailSettingComponent
 import com.ojhdtapp.parabox.ui.navigation.settings.LabelSettingComponent
 import com.ojhdtapp.parabox.ui.navigation.settings.NotificationSettingComponent
+import com.ojhdtapp.parabox.ui.navigation.settings.OpenSourceLicenseSettingComponent
 import com.ojhdtapp.parabox.ui.navigation.settings.StorageSettingComponent
 import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.InternalSerializationApi
@@ -38,6 +39,7 @@ interface SettingComponent: BackHandlerOwner {
         class CloudSetting(val component: StorageSettingComponent) : SettingChild()
         class ExperimentalSetting(val component: ExperimentalSettingComponent) : SettingChild()
         class HelpAndSupportSetting(val component: HelpAndSupportSettingComponent) : SettingChild()
+        class OpenSourceLicenseSetting(val component: OpenSourceLicenseSettingComponent) : SettingChild()
     }
 }
 
@@ -103,6 +105,10 @@ class DefaultSettingComponent(
                     SettingConfig.HelpAndSupportSetting -> SettingComponent.SettingChild.HelpAndSupportSetting(
                         HelpAndSupportSettingComponent(childComponentContext)
                     )
+
+                    SettingConfig.OpenSourceLicenseSetting -> SettingComponent.SettingChild.OpenSourceLicenseSetting(
+                        OpenSourceLicenseSettingComponent(childComponentContext)
+                    )
                 }
             }
         )
@@ -153,5 +159,9 @@ class DefaultSettingComponent(
         @Parcelize
         @Serializable
         data object HelpAndSupportSetting : SettingConfig
+
+        @Parcelize
+        @Serializable
+        data object OpenSourceLicenseSetting : SettingConfig
     }
 }

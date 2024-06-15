@@ -13,14 +13,20 @@ object BrowserUtil {
 //        .setToolbarColor(colorInt)
         .build()
 
-    fun launchURL(context: Context, url: String) {
+    suspend fun launchURL(context: Context, url: String) {
         try {
             var mUrl = url
             if (!url.startsWith("http")) mUrl = "https://${url}"
-            val customTabsIntent = CustomTabsIntent.Builder()
-                .setDefaultColorSchemeParams(defaultColor)
-                .build()
-            customTabsIntent.launchUrl(context, Uri.parse(mUrl))
+            if(context.getDataStoreValue(DataStoreKeys.SETTINGS_ENABLE_INNER_BROWSER, true)){
+                val customTabsIntent = CustomTabsIntent.Builder()
+                    .setDefaultColorSchemeParams(defaultColor)
+                    .build()
+                customTabsIntent.launchUrl(context, Uri.parse(mUrl))
+            } else {
+                // Fallback to default browser
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(mUrl))
+                context.startActivity(intent)
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }

@@ -8,7 +8,7 @@ import android.os.Build
 import android.provider.Settings
 import com.google.android.material.color.DynamicColors
 
-fun Context.launchPlayStore(pkg: String) {
+suspend fun Context.launchPlayStore(pkg: String) {
     try {
         startActivity(
             Intent(

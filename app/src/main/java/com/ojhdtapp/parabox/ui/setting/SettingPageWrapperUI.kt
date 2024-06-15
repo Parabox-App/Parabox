@@ -50,6 +50,7 @@ import com.ojhdtapp.parabox.ui.setting.detail.HelpAndSupportSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.LabelDetailSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.LabelSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.NotificationSettingPage
+import com.ojhdtapp.parabox.ui.setting.detail.OpenSourceLicenseSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.StorageSettingPage
 
 @OptIn(
@@ -247,101 +248,27 @@ fun SettingPageWrapperUi(
                                 mainSharedState = mainSharedState,
                                 layoutType = layoutType,
                                 scaffoldNavigator = scaffoldNavigator,
+                                navigation = component.settingNav,
+                                stackState = settingStackState,
+                                onEvent = viewModel::sendEvent,
+                                onMainSharedEvent = mainSharedViewModel::sendEvent
+                            )
+                        }
+
+                        is SettingComponent.SettingChild.OpenSourceLicenseSetting -> {
+                            OpenSourceLicenseSettingPage(
+                                state = state,
+                                mainSharedState = mainSharedState,
+                                layoutType = layoutType,
+                                scaffoldNavigator = scaffoldNavigator,
+                                navigation = component.settingNav,
+                                stackState = settingStackState,
                                 onEvent = viewModel::sendEvent,
                                 onMainSharedEvent = mainSharedViewModel::sendEvent
                             )
                         }
                     }
                 }
-//            when (state.selected) {
-//                Setting.GENERAL -> {
-//                    GeneralSettingPage(
-//                        state = state,
-//                        mainSharedState = mainSharedState,
-//                        layoutType = layoutType,
-//                        scaffoldNavigator = scaffoldNavigator,
-//                        onEvent = viewModel::sendEvent,
-//                        onMainSharedEvent = mainSharedViewModel::sendEvent
-//                    )
-//                }
-//
-//                Setting.ADDONS -> {
-//                    ExtensionSettingPage(
-//                        state = state,
-//                        mainSharedState = mainSharedState,
-//                        layoutType = layoutType,
-//                        scaffoldNavigator = scaffoldNavigator,
-//                        onEvent = viewModel::sendEvent,
-//                        onMainSharedEvent = mainSharedViewModel::sendEvent
-//                    )
-//                }
-//
-//                Setting.LABELS -> {
-//                    LabelSettingPage(
-//                        state = state,
-//                        mainSharedState = mainSharedState,
-//                        layoutType = layoutType,
-//                        scaffoldNavigator = scaffoldNavigator,
-//                        onEvent = viewModel::sendEvent,
-//                        onMainSharedEvent = mainSharedViewModel::sendEvent
-//                    )
-//                }
-//
-//                Setting.APPEARANCE -> {
-//                    GeneralSettingPage(
-//                        state = state,
-//                        mainSharedState = mainSharedState,
-//                        layoutType = layoutType,
-//                        scaffoldNavigator = scaffoldNavigator,
-//                        onEvent = viewModel::sendEvent,
-//                        onMainSharedEvent = mainSharedViewModel::sendEvent
-//                    )
-//                }
-//
-//                Setting.NOTIFICATION -> {
-//                    GeneralSettingPage(
-//                        state = state,
-//                        mainSharedState = mainSharedState,
-//                        layoutType = layoutType,
-//                        scaffoldNavigator = scaffoldNavigator,
-//                        onEvent = viewModel::sendEvent,
-//                        onMainSharedEvent = mainSharedViewModel::sendEvent
-//                    )
-//                }
-//
-//                Setting.STORAGE -> {
-//                    GeneralSettingPage(
-//                        state = state,
-//                        mainSharedState = mainSharedState,
-//                        layoutType = layoutType,
-//                        scaffoldNavigator = scaffoldNavigator,
-//                        onEvent = viewModel::sendEvent,
-//                        onMainSharedEvent = mainSharedViewModel::sendEvent
-//                    )
-//                }
-//
-//                Setting.EXPERIMENTAL -> {
-//                    GeneralSettingPage(
-//                        state = state,
-//                        mainSharedState = mainSharedState,
-//                        layoutType = layoutType,
-//                        scaffoldNavigator = scaffoldNavigator,
-//                        onEvent = viewModel::sendEvent,
-//                        onMainSharedEvent = mainSharedViewModel::sendEvent
-//                    )
-//                }
-//
-//                Setting.HELP -> {
-//                    GeneralSettingPage(
-//                        state = state,
-//                        mainSharedState = mainSharedState,
-//                        layoutType = layoutType,
-//                        scaffoldNavigator = scaffoldNavigator,
-//                        onEvent = viewModel::sendEvent,
-//                        onMainSharedEvent = mainSharedViewModel::sendEvent
-//                    )
-//                }
-//            }
             }
         })
 }
