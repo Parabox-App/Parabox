@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.setting.detail
 
+import android.app.Activity
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
@@ -48,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.pushNew
+import com.google.android.play.core.review.ReviewManagerFactory
 import com.guru.fontawesomecomposelib.FaIcon
 import com.guru.fontawesomecomposelib.FaIcons
 import com.ojhdtapp.parabox.BuildConfig
@@ -55,6 +57,7 @@ import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.BrowserUtil
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.LocalPlayAppUpdateUtil
+import com.ojhdtapp.parabox.core.util.launchPlayStore
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.common.LayoutType
@@ -315,8 +318,11 @@ private fun Content(
             }
         }
         item {
-            val context = LocalContext.current
+            val context = LocalContext.current as Activity
             val coroutineScope = rememberCoroutineScope()
+            val reviewManager = remember {
+                ReviewManagerFactory.create(context)
+            }
             SettingItem(
                 title = stringResource(R.string.rate_title),
                 subTitle = stringResource(R.string.rate_subtitle),
@@ -330,7 +336,18 @@ private fun Content(
                     )
                 }
             ) {
-
+                val request = reviewManager.requestReviewFlow()
+                request.addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        val reviewInfo = task.result
+                        reviewManager.launchReviewFlow(context, reviewInfo)
+                    } else {
+                        task.exception?.printStackTrace()
+                        coroutineScope.launch {
+                            context.launchPlayStore(context.packageName)
+                        }
+                    }
+                }
             }
         }
         item {
