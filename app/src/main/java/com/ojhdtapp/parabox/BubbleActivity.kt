@@ -3,6 +3,7 @@ package com.ojhdtapp.parabox
 import android.app.UiModeManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
@@ -39,6 +40,7 @@ import com.ojhdtapp.parabox.ui.theme.LocalFontSize
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.jetbrains.kotlin.library.impl.toSpaceSeparatedString
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -61,18 +63,21 @@ class BubbleActivity : AppCompatActivity() {
             val messagePageViewModel = hiltViewModel<MessagePageViewModel>()
             val mainSharedState by mainSharedViewModel.uiState.collectAsState()
             LaunchedEffect(Unit) {
-                val chatId = intent.data?.lastPathSegment?.toLongOrNull()
-                if (chatId != null) {
-                    lifecycleScope.launch(Dispatchers.IO) {
-                        val chat = database.chatDao.getChatByIdWithoutObserve(chatId)?.toChat()
-                        if (chat != null) {
-                            messagePageViewModel.sendEvent(MessagePageEvent.LoadMessage(chat))
-                        } else {
-                            Toast.makeText(this@BubbleActivity, "加载消息列表失败", Toast.LENGTH_SHORT).show()
+                Log.d("parabox", "new intent host=${intent.data?.host},scheme=${intent.data?.scheme},path=${intent.data?.host},query=${intent.data?.encodedQuery},pathSegments=${intent.data?.pathSegments?.toSpaceSeparatedString()}")
+                if (intent.data?.host == "chat") {
+                    val chatId = intent.data?.lastPathSegment?.toLongOrNull()
+                    if (chatId != null) {
+                        lifecycleScope.launch(Dispatchers.IO) {
+                            val chat = database.chatDao.getChatByIdWithoutObserve(chatId)?.toChat()
+                            if (chat != null) {
+                                messagePageViewModel.sendEvent(MessagePageEvent.LoadMessage(chat))
+                            } else {
+                                Toast.makeText(this@BubbleActivity, "加载消息列表失败", Toast.LENGTH_SHORT).show()
+                            }
                         }
+                    } else {
+                        Toast.makeText(this@BubbleActivity, "加载消息列表失败", Toast.LENGTH_SHORT).show()
                     }
-                } else {
-                    Toast.makeText(this@BubbleActivity, "加载消息列表失败", Toast.LENGTH_SHORT).show()
                 }
             }
             LaunchedEffect(mainSharedState.datastore.darkMode) {

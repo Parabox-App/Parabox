@@ -3,12 +3,16 @@ package com.ojhdtapp.parabox
 import FilePage
 import android.app.UiModeManager
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.WindowManager
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.core.tween
@@ -45,6 +49,9 @@ import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimation
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.arkivanov.decompose.retainedComponent
 import com.arkivanov.decompose.router.stack.pop
+import com.google.android.play.core.install.InstallStateUpdatedListener
+import com.google.android.play.core.install.model.InstallStatus
+import com.google.android.play.core.ktx.installStatus
 import com.ojhdtapp.parabox.core.util.*
 import com.ojhdtapp.parabox.core.util.audio.AudioRecorder
 import com.ojhdtapp.parabox.core.util.audio.LocalAudioRecorder
@@ -98,6 +105,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var roomBackup: RoomBackup
 
     private lateinit var extensionServiceConnection: ExtensionServiceConnection
+    private lateinit var playAppUpdateUtil: PlayAppUpdateUtil
     @OptIn(
         ExperimentalMaterial3Api::class,
         ExperimentalDecomposeApi::class,
@@ -148,6 +156,38 @@ class MainActivity : AppCompatActivity() {
                 componentContext = it,
             )
         }
+
+        val appUpdateActivityResultLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result: ActivityResult ->
+            if (result.resultCode != RESULT_OK) {
+                Log.d("parabox", "Update flow failed! Result code: " + result.resultCode);
+                // If the update is canceled or fails,
+                // you can request to start the update again.
+            }
+        }
+        val installStateUpdatedListener = InstallStateUpdatedListener { state ->
+            when(state.installStatus) {
+                InstallStatus.DOWNLOADING -> {
+                    val bytesDownloaded = state.bytesDownloaded()
+                    val totalBytesToDownload = state.totalBytesToDownload()
+                    notificationUtil.sendPlayUpdateNotification(bytesDownloaded.toInt(), totalBytesToDownload.toInt())
+                }
+                InstallStatus.DOWNLOADED -> {
+                    notificationUtil.sendPlayUpdateResultNotification(true)
+                }
+                InstallStatus.FAILED -> {
+                    notificationUtil.sendPlayUpdateResultNotification(false)
+
+                }
+                InstallStatus.CANCELED -> {
+                    notificationUtil.sendPlayUpdateResultNotification(false)
+                }
+            }
+        }
+        playAppUpdateUtil = PlayAppUpdateUtil(
+            this,
+            appUpdateActivityResultLauncher,
+            installStateUpdatedListener
+        )
 
         setContent {
             // System Ui
@@ -274,7 +314,8 @@ class MainActivity : AppCompatActivity() {
                         LocalMinimumInteractiveComponentSize provides 32.dp,
                         LocalFontSize provides FontSize(),
                         LocalRoomBackup provides roomBackup,
-                        LocalCacheUtil provides CacheUtil(this)
+                        LocalCacheUtil provides CacheUtil(this),
+                        LocalPlayAppUpdateUtil provides playAppUpdateUtil
                     )
                 ) {
                     val rootStackState by root.rootStack.subscribeAsState()
@@ -424,6 +465,13 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         lifecycle.removeObserver(extensionServiceConnection)
         lifecycle.removeObserver(notificationUtil)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.data?.host == "update") {
+            playAppUpdateUtil.completeUpdate()
+        }
     }
 
     private val lightScrim = android.graphics.Color.argb(0xe6, 0xFF, 0xFF, 0xFF)

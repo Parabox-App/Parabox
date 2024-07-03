@@ -80,6 +80,9 @@ class NotificationUtil(
         private const val FOREGROUND_PLUGIN_SERVICE_NOTIFICATION_ID = 999
 
         const val KEY_TEXT_REPLY = "key_text_reply"
+
+        const val PLAY_APP_UPDATE_CHANNEL_ID = "play_app_update_channel"
+        const val PLAY_APP_UPDATE_NOTIFICATION_ID = 9997
     }
 
     private var isForeground = false
@@ -498,4 +501,58 @@ class NotificationUtil(
 
             else -> PendingIntent.FLAG_UPDATE_CURRENT
         }
+
+    fun sendPlayUpdateNotification(progressCurrent: Int, progressMax: Int) {
+        createNotificationChannel(
+            PLAY_APP_UPDATE_CHANNEL_ID,
+            "更新",
+            "应用更新",
+            NotificationManager.IMPORTANCE_DEFAULT
+        )
+        val builder = Notification.Builder(context, PLAY_APP_UPDATE_CHANNEL_ID).apply {
+            setContentTitle("Parabox 版本更新")
+            setContentText("正在获取更新")
+            setSmallIcon(R.drawable.ic_stat_name)
+            setProgress(progressMax, progressCurrent, false)
+        }
+        notificationManager.notify(PLAY_APP_UPDATE_NOTIFICATION_ID, builder.build())
+    }
+    fun sendPlayUpdateResultNotification(isSuccess: Boolean) {
+        createNotificationChannel(
+            PLAY_APP_UPDATE_CHANNEL_ID,
+            "更新",
+            "应用更新",
+            NotificationManager.IMPORTANCE_DEFAULT
+        )
+        val launchPendingIntent: PendingIntent =
+            Intent(context, MainActivity::class.java).apply {
+                action = Intent.ACTION_VIEW
+                data = "parabox://update".toUri()
+                addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            }.let {
+                PendingIntent.getActivity(
+                    context, 0, it,
+                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                )
+            }
+        val builder = Notification.Builder(context, PLAY_APP_UPDATE_CHANNEL_ID).apply {
+            setProgress(0, 0, false)
+            setContentTitle("Parabox 版本更新")
+            if (isSuccess) {
+                setContentText("更新已就绪，等待重启")
+                setContentIntent(launchPendingIntent)
+                setActions(
+                    Notification.Action.Builder(
+                        Icon.createWithResource(context, R.drawable.baseline_mark_chat_read_24),
+                        "重启应用",
+                        launchPendingIntent
+                    ).build()
+                )
+            } else {
+                setContentText("未知错误")
+            }
+            setSmallIcon(R.drawable.ic_stat_name)
+        }
+        notificationManager.notify(PLAY_APP_UPDATE_NOTIFICATION_ID, builder.build())
+    }
 }

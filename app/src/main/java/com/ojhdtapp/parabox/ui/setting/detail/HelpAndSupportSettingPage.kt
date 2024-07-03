@@ -54,6 +54,7 @@ import com.ojhdtapp.parabox.BuildConfig
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.BrowserUtil
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
+import com.ojhdtapp.parabox.core.util.LocalPlayAppUpdateUtil
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.common.LayoutType
@@ -337,6 +338,7 @@ private fun Content(
         }
         item {
             val context = LocalContext.current
+            val playAppUpdateUtil = LocalPlayAppUpdateUtil.current
             var showEasterEgg by remember { mutableStateOf(false) }
             var easterEggCount by remember { mutableStateOf(0) }
             var lastClickTime by remember { mutableStateOf(0L) }
@@ -364,6 +366,11 @@ private fun Content(
                         }
                     } else {
                         easterEggCount = 0
+                        playAppUpdateUtil.checkAndUpdate {
+                            if (!it) {
+                                Toast.makeText(context, "应用为最新版本", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     }
                     lastClickTime = currentTime
                 }
