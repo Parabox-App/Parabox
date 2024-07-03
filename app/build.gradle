@@ -142,6 +142,12 @@ dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0'
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.5.0"
 
+    // Markdown
+    def richtext_version = "1.0.0-alpha01"
+    implementation "com.halilibo.compose-richtext:richtext-ui:$richtext_version"
+    implementation "com.halilibo.compose-richtext:richtext-commonmark:$richtext_version"
+
+
     // Play Core
     implementation 'com.google.android.play:review:2.0.1'
     implementation 'com.google.android.play:review-ktx:2.0.1'

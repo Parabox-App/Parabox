@@ -2,6 +2,7 @@ package com.ojhdtapp.parabox.ui
 
 import androidx.datastore.preferences.core.Preferences
 import com.ojhdtapp.parabox.core.util.LoadState
+import com.ojhdtapp.parabox.domain.model.ChangeLog
 import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.ContactWithExtensionInfo
@@ -25,7 +26,7 @@ sealed interface MainSharedEvent : UiEvent {
     data class TriggerSearchBar(val isActive: Boolean) : MainSharedEvent
     data class OpenDrawer(val open: Boolean, val snap: Boolean = false) : MainSharedEvent
     data class OpenBottomSheet(val open: Boolean, val snap: Boolean = false) : MainSharedEvent
-    object SearchAvatarClicked : MainSharedEvent
+    data object SearchAvatarClicked : MainSharedEvent
     data class ShowNavigationBar(val show: Boolean) : MainSharedEvent
     data class UpdateSearchDoneChatFilter(val filter: ChatFilter) : MainSharedEvent
     data class UpdateSearchDoneMessageFilter(val filter: MessageFilter) : MainSharedEvent
@@ -52,6 +53,9 @@ sealed interface MainSharedEvent : UiEvent {
     data class UpdateContactRelativeChatList(val list: List<Chat>, val loadState: LoadState) : MainSharedEvent
     data class LoadMessage(val chat: Chat, val scrollToMessageId: Long? = null) : MainSharedEvent
     data class MenuNavigate(val target: MenuNavigateTarget) : MainSharedEvent
+    data class ShowChangeLog(val show: Boolean): MainSharedEvent
+    data class GetChangeLogDone(val res: List<ChangeLog>, val isSuccess: Boolean) : MainSharedEvent
+
 }
 
 enum class MenuNavigateTarget {

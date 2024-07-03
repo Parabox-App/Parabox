@@ -383,7 +383,7 @@ private fun Content(
                     )
                 }
             ) {
-
+                onMainSharedEvent(MainSharedEvent.ShowChangeLog(true))
             }
         }
         item {

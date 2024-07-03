@@ -3,6 +3,7 @@ package com.ojhdtapp.parabox.ui
 import android.net.Uri
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.LoadState
+import com.ojhdtapp.parabox.domain.model.ChangeLog
 import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.ContactWithExtensionInfo
@@ -24,6 +25,7 @@ data class MainSharedState(
     val chatPicker: ChatPicker = ChatPicker(),
     val openDateRangePicker: Boolean = false,
     val contactDetailDialogState: ContactDetailDialogState = ContactDetailDialogState(),
+    val changeLogBottomSheetState: ChangeLogBottomSheetState = ChangeLogBottomSheetState()
 ): UiState{
     data class DataStore(
         val messageBadgeNum: Int = 0,
@@ -99,5 +101,11 @@ data class MainSharedState(
         val contactWithExtensionInfo: ContactWithExtensionInfo? = null,
         val relativeChatList: List<Chat> = emptyList(),
         val loadState: LoadState = LoadState.LOADING,
+    )
+
+    data class ChangeLogBottomSheetState(
+        val showBottomSheet: Boolean = false,
+        val loadState: LoadState = LoadState.LOADING,
+        val data: List<ChangeLog> = emptyList()
     )
 }

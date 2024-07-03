@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
+import com.ojhdtapp.parabox.core.util.FirebaseUtil
 import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.dataStore
@@ -491,7 +492,7 @@ class MainSharedViewModel @Inject constructor(
                 return state.copy(
                     contactDetailDialogState = state.contactDetailDialogState.copy(
                         relativeChatList = event.list,
-                            loadState = event.loadState
+                        loadState = event.loadState
                     )
                 )
             }
@@ -508,6 +509,52 @@ class MainSharedViewModel @Inject constructor(
                     sendEffect(MainSharedEffect.MenuNavigate(event.target))
                 }
                 return state
+            }
+
+            is MainSharedEvent.ShowChangeLog -> {
+                if (event.show) {
+                    if (state.changeLogBottomSheetState.loadState in listOf(LoadState.LOADING, LoadState.ERROR)) {
+                        viewModelScope.launch {
+                            try {
+                                val res = FirebaseUtil.getChangeLogFromFireStore()
+                                sendEvent(
+                                    MainSharedEvent.GetChangeLogDone(
+                                        res = res,
+                                        isSuccess = true
+                                    )
+                                )
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                sendEvent(
+                                    MainSharedEvent.GetChangeLogDone(
+                                        res = emptyList(),
+                                        isSuccess = false
+                                    )
+                                )
+                            }
+                        }
+                    }
+                    return state.copy(
+                        changeLogBottomSheetState = state.changeLogBottomSheetState.copy(
+                            showBottomSheet = true
+                        )
+                    )
+                } else {
+                    return state.copy(
+                        changeLogBottomSheetState = state.changeLogBottomSheetState.copy(
+                            showBottomSheet = false
+                        )
+                    )
+                }
+            }
+
+            is MainSharedEvent.GetChangeLogDone -> {
+                return state.copy(
+                    changeLogBottomSheetState = state.changeLogBottomSheetState.copy(
+                        loadState = if (event.isSuccess) LoadState.SUCCESS else LoadState.ERROR,
+                        data = event.res
+                    )
+                )
             }
         }
     }
@@ -801,16 +848,21 @@ class MainSharedViewModel @Inject constructor(
                         localAvatarUri = it[DataStoreKeys.USER_AVATAR]?.takeIf { it.isNotBlank() }
                             ?.let { Uri.parse(it) }
                             ?: Uri.EMPTY,
-                        enabledChatFilterList = gson.fromJson(it[DataStoreKeys.CHAT_FILTERS], Array<String>::class.java)
+                        enabledChatFilterList = gson.fromJson(
+                            it[DataStoreKeys.CHAT_FILTERS],
+                            Array<String>::class.java
+                        )
                             ?.map { key -> ChatFilter.fromKey(key) }?.filterNotNull() ?: emptyList(),
-                        enableMarqueeEffectOnChatName = it[DataStoreKeys.SETTINGS_ENABLE_MARQUEE_EFFECT_ON_CHAT_NAME] ?: true,
+                        enableMarqueeEffectOnChatName = it[DataStoreKeys.SETTINGS_ENABLE_MARQUEE_EFFECT_ON_CHAT_NAME]
+                            ?: true,
                         enableSwipeToDismiss = it[DataStoreKeys.SETTINGS_ENABLE_SWIPE_TO_DISMISS] ?: true,
                         displayAvatarOnTopAppBar = it[DataStoreKeys.SETTINGS_DISPLAY_AVATAR_ON_TOP_APPBAR] ?: true,
                         displayTimeOnEachMsg = it[DataStoreKeys.SETTINGS_DISPLAY_TIME_ON_EACH_MSG] ?: false,
                         enableInnerBrowser = it[DataStoreKeys.SETTINGS_ENABLE_INNER_BROWSER] ?: true,
                         sendViaEnter = it[DataStoreKeys.SETTINGS_SEND_VIA_ENTER] ?: false,
                         enableDynamicColor = it[DataStoreKeys.SETTINGS_ENABLE_DYNAMIC_COLOR] ?: true,
-                        enableForegroundNotification = it[DataStoreKeys.SETTINGS_ALLOW_FOREGROUND_NOTIFICATION] ?: false,
+                        enableForegroundNotification = it[DataStoreKeys.SETTINGS_ALLOW_FOREGROUND_NOTIFICATION]
+                            ?: false,
                         theme = it[DataStoreKeys.SETTINGS_THEME]?.let { Theme.fromOrdinal(it) }
                             ?: Theme.WILLOW,
                         darkMode = it[DataStoreKeys.SETTINGS_DARK_MODE]?.let { DataStoreKeys.DarkMode.fromOrdinal(it) }

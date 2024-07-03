@@ -53,6 +53,7 @@ import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.domain.service.ExtensionServiceConnection
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
+import com.ojhdtapp.parabox.ui.common.ChangeLogBottomSheet
 import com.ojhdtapp.parabox.ui.common.ChatPickerDialog
 import com.ojhdtapp.parabox.ui.common.ContactPickerDialog
 import com.ojhdtapp.parabox.ui.common.DateRangePickerDialog
@@ -313,6 +314,10 @@ class MainActivity : AppCompatActivity() {
                     })
                     ContactDetailDialog(
                         contactDetailDialogState = mainSharedState.contactDetailDialogState,
+                        onEvent = mainSharedViewModel::sendEvent
+                    )
+                    ChangeLogBottomSheet(
+                        changeLogBottomSheetState = mainSharedState.changeLogBottomSheetState,
                         onEvent = mainSharedViewModel::sendEvent
                     )
                     Children(
