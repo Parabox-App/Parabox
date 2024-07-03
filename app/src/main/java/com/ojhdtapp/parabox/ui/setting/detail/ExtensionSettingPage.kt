@@ -370,7 +370,10 @@ private fun ConnectionCard(
                 Spacer(modifier = Modifier.height(8.dp))
                 when(model) {
                     is Connection.BuiltInConnection -> {
-                        Text(text = model.description, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
+                        Text(text = model.description, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium, maxLines = 1, modifier = Modifier.basicMarquee(
+                                delayMillis = 5000,
+                        initialDelayMillis = 2000
+                        ))
                     }
                     is Connection.ExtendConnection -> {
                         val primaryColor = MaterialTheme.colorScheme.primary
