@@ -53,7 +53,7 @@ object OneBot11 : BuiltInConnection {
                     host = host,
                     port = port,
                 )
-                appWebSocketConnection = OneBot11AppWebSocketConnection(appWebSocketConnectionConfiguration).awaitUtilConnected()
+                appWebSocketConnection = OneBot11AppWebSocketConnection(appWebSocketConnectionConfiguration)
                 return true
             }
 

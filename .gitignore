@@ -16,5 +16,4 @@ local.properties
 app/release
 .idea/gradle.xml
 .idea/deploymentTargetDropDown.xml
-local.defaults.properties
 secrets.properties
