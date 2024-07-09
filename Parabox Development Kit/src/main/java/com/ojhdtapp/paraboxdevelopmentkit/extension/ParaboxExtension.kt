@@ -77,13 +77,13 @@ abstract class ParaboxExtension {
         }
     }
     abstract suspend fun onInitialize(extra: Bundle) : Boolean
-    abstract fun onSendMessage(message: SendMessage)
-    abstract fun onRecallMessage()
-    abstract fun onGetContacts()
-    abstract fun onGetChats()
-    abstract fun onQueryMessageHistory(uuid: String)
-    abstract fun onGetGroupBasicInfo(groupId: String): ParaboxBasicInfo?
-    abstract fun onGetUserBasicInfo(userId: String) : ParaboxBasicInfo?
+    abstract suspend fun onSendMessage(message: SendMessage)
+    abstract suspend fun onRecallMessage()
+    abstract suspend fun onGetContacts()
+    abstract suspend fun onGetChats()
+    abstract suspend fun onQueryMessageHistory(uuid: String)
+    abstract suspend fun onGetGroupBasicInfo(groupId: String): ParaboxBasicInfo?
+    abstract suspend fun onGetUserBasicInfo(userId: String) : ParaboxBasicInfo?
 
     open fun onCreate(){}
     open fun onStart(){}

@@ -94,27 +94,27 @@ class Extension : ParaboxExtension() {
         dispatchers.stop()
     }
 
-    override fun onSendMessage(message: SendMessage) {
+    override suspend fun onSendMessage(message: SendMessage) {
         TODO("Not yet implemented")
     }
 
-    override fun onRecallMessage() {
+    override suspend fun onRecallMessage() {
         TODO("Not yet implemented")
     }
 
-    override fun onGetContacts() {
+    override suspend fun onGetContacts() {
         TODO("Not yet implemented")
     }
 
-    override fun onGetChats() {
+    override suspend fun onGetChats() {
         TODO("Not yet implemented")
     }
 
-    override fun onQueryMessageHistory(uuid: String) {
+    override suspend fun onQueryMessageHistory(uuid: String) {
         TODO("Not yet implemented")
     }
 
-    override fun onGetGroupBasicInfo(groupId: String): ParaboxBasicInfo? {
+    override suspend fun onGetGroupBasicInfo(groupId: String): ParaboxBasicInfo? {
         return groupId.toLongOrNull()?.let {
             val groupInfo = bot?.getGroupInfo(it, false)
             val avatar = BotUtils.getGroupAvatar(it, 100)
@@ -125,7 +125,7 @@ class Extension : ParaboxExtension() {
         }
     }
 
-    override fun onGetUserBasicInfo(userId: String): ParaboxBasicInfo? {
+    override suspend fun onGetUserBasicInfo(userId: String): ParaboxBasicInfo? {
         return userId.toLongOrNull()?.let {
             val avatar = BotUtils.getUserAvatar(it, 100)
             ParaboxBasicInfo(
