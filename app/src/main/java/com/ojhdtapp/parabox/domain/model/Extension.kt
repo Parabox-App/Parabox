@@ -7,10 +7,9 @@ import androidx.lifecycle.LifecycleOwner
 import com.ojhdtapp.parabox.data.local.ExtensionInfo
 import com.ojhdtapp.parabox.data.local.ExtensionInfoType
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxBridge
-import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxExtension
-import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxExtensionStatus
+import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnection
+import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnectionStatus
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
 sealed interface Extension {
@@ -21,7 +20,7 @@ sealed interface Extension {
 
     fun toExtensionInfo() : ExtensionInfo
     sealed interface ExtensionPending : Extension {
-        val ext: ParaboxExtension
+        val connection: ParaboxConnection
 
         fun toFail() : ExtensionFail
         fun toSuccess(job: Job): ExtensionSuccess
@@ -30,10 +29,10 @@ sealed interface Extension {
             override val name: String,
             override val extra: Bundle,
             override val extensionId: Long,
-            override val ext: ParaboxExtension,
+            override val connection: ParaboxConnection,
             override val key: String
         ) : ExtensionPending, BuiltInExtension{
-            constructor(extensionInfo: ExtensionInfo, ext: ParaboxExtension) : this(
+            constructor(extensionInfo: ExtensionInfo, ext: ParaboxConnection) : this(
                 extensionInfo.alias,
                 extensionInfo.name,
                 extensionInfo.extra,
@@ -50,7 +49,7 @@ sealed interface Extension {
 
             override fun toSuccess(job: Job): ExtensionSuccess {
                 return ExtensionSuccess.BuiltInExtensionSuccess(
-                    alias, name, extra, extensionId, ext, job, key
+                    alias, name, extra, extensionId, connection, job, key
                 )
             }
 
@@ -71,17 +70,17 @@ sealed interface Extension {
             override val name: String,
             override val extra: Bundle,
             override val extensionId: Long,
-            override val ext: ParaboxExtension,
+            override val connection: ParaboxConnection,
             override val pkg: String,
             override val version: String,
             override val versionCode: Long
         ) : ExtensionPending, ExtendExtension {
-            constructor(extensionInfo: ExtensionInfo, ext: ParaboxExtension) : this(
+            constructor(extensionInfo: ExtensionInfo, connection: ParaboxConnection) : this(
                 extensionInfo.alias,
                 extensionInfo.name,
                 extensionInfo.extra,
                 extensionInfo.extensionId,
-                ext,
+                connection,
                 extensionInfo.pkg,
                 extensionInfo.version,
                 extensionInfo.versionCode
@@ -95,7 +94,7 @@ sealed interface Extension {
 
             override fun toSuccess(job: Job): ExtensionSuccess {
                 return ExtensionSuccess.ExtendExtensionSuccess(
-                    alias, name, extra, extensionId, ext, job, pkg, version, versionCode
+                    alias, name, extra, extensionId, connection, job, pkg, version, versionCode
                 )
             }
 
@@ -176,7 +175,7 @@ sealed interface Extension {
     }
 
     sealed class ExtensionSuccess : DefaultLifecycleObserver, Extension {
-        abstract val ext: ParaboxExtension
+        abstract val connection: ParaboxConnection
         abstract val job: Job
 
         abstract fun toPending() : ExtensionPending
@@ -186,13 +185,13 @@ sealed interface Extension {
             override val name: String,
             override val extra: Bundle,
             override val extensionId: Long,
-            override val ext: ParaboxExtension,
+            override val connection: ParaboxConnection,
             override val job: Job,
             override val key: String
         ) : ExtensionSuccess(), BuiltInExtension {
             override fun toPending(): ExtensionPending {
                 return ExtensionPending.BuiltInExtensionPending(
-                    alias, name, extra, extensionId, ext, key
+                    alias, name, extra, extensionId, connection, key
                 )
             }
 
@@ -214,7 +213,7 @@ sealed interface Extension {
             override val name: String,
             override val extra: Bundle,
             override val extensionId: Long,
-            override val ext: ParaboxExtension,
+            override val connection: ParaboxConnection,
             override val job: Job,
             override val pkg: String,
             override val version: String,
@@ -222,7 +221,7 @@ sealed interface Extension {
         ) : ExtensionSuccess(), ExtendExtension {
             override fun toPending(): ExtensionPending {
                 return ExtensionPending.ExtendExtensionPending(
-                    alias, name, extra, extensionId, ext, pkg, version, versionCode
+                    alias, name, extra, extensionId, connection, pkg, version, versionCode
                 )
             }
             override fun toExtensionInfo(): ExtensionInfo {
@@ -240,39 +239,39 @@ sealed interface Extension {
         }
 
         suspend fun init(context: Context, bridge: ParaboxBridge, extra: Bundle) {
-            ext.init(context, bridge, extra)
+            connection.init(context, bridge, extra)
         }
 
-        fun getStatus(): StateFlow<ParaboxExtensionStatus> {
-            return ext.status
+        fun getStatus(): StateFlow<ParaboxConnectionStatus> {
+            return connection.status
         }
 
-        fun updateStatus(status: ParaboxExtensionStatus) {
-            ext.updateStatus(status)
+        fun updateStatus(status: ParaboxConnectionStatus) {
+            connection.updateStatus(status)
         }
 
         override fun onCreate(owner: LifecycleOwner) {
-            ext.onCreate()
+            connection.onCreate()
         }
 
         override fun onStart(owner: LifecycleOwner) {
-            ext.onStart()
+            connection.onStart()
         }
 
         override fun onResume(owner: LifecycleOwner) {
-            ext.onResume()
+            connection.onResume()
         }
 
         override fun onPause(owner: LifecycleOwner) {
-            ext.onPause()
+            connection.onPause()
         }
 
         override fun onStop(owner: LifecycleOwner) {
-            ext.onStop()
+            connection.onStop()
         }
 
         override fun onDestroy(owner: LifecycleOwner) {
-            ext.onDestroy()
+            connection.onDestroy()
         }
     }
 }

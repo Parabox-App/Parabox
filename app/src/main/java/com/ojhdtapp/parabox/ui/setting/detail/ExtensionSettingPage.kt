@@ -66,7 +66,7 @@ import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.pushNew
-import com.ojhdtapp.parabox.domain.model.Connection
+import com.ojhdtapp.parabox.domain.model.ExtensionInfo
 import com.ojhdtapp.parabox.domain.model.Extension
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
@@ -78,7 +78,7 @@ import com.ojhdtapp.parabox.ui.setting.SettingItem
 import com.ojhdtapp.parabox.ui.common.LayoutType
 import com.ojhdtapp.parabox.ui.setting.SettingPageEvent
 import com.ojhdtapp.parabox.ui.setting.SettingPageState
-import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxExtensionStatus
+import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnectionStatus
 import kotlinx.coroutines.flow.collectLatest
 import me.saket.cascade.CascadeDropdownMenu
 
@@ -185,7 +185,7 @@ private fun Content(
         }
         item {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp)) {
-                items(state.connectionList, key = { it.name }) {
+                items(state.extensionInfoList, key = { it.name }) {
                     ConnectionCard(
                         model = it,
                         onClick = {
@@ -269,22 +269,22 @@ private fun Content(
                         is Extension.ExtensionSuccess -> {
                             it.getStatus().collectLatest {
                                 when (it) {
-                                    is ParaboxExtensionStatus.Pending -> {
+                                    is ParaboxConnectionStatus.Pending -> {
                                         status = "等待初始化"
                                         statusIcon = Icons.Outlined.Pending
                                     }
 
-                                    is ParaboxExtensionStatus.Initializing -> {
+                                    is ParaboxConnectionStatus.Initializing -> {
                                         status = "正在初始化"
                                         statusIcon = Icons.Outlined.Pending
                                     }
 
-                                    is ParaboxExtensionStatus.Active -> {
+                                    is ParaboxConnectionStatus.Active -> {
                                         status = "运行中"
                                         statusIcon = Icons.Outlined.CheckCircle
                                     }
 
-                                    is ParaboxExtensionStatus.Error -> {
+                                    is ParaboxConnectionStatus.Error -> {
                                         status = "错误（${it.message}）"
                                         statusIcon = Icons.Outlined.ErrorOutline
                                     }
@@ -334,7 +334,7 @@ private fun Content(
 @Composable
 private fun ConnectionCard(
     modifier: Modifier = Modifier,
-    model: Connection,
+    model: ExtensionInfo,
     onClick: () -> Unit
 ) {
     Card(
@@ -369,13 +369,13 @@ private fun ConnectionCard(
                 ), style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(8.dp))
                 when(model) {
-                    is Connection.BuiltInConnection -> {
+                    is ExtensionInfo.BuiltInExtensionInfo -> {
                         Text(text = model.description, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium, maxLines = 1, modifier = Modifier.basicMarquee(
                                 delayMillis = 5000,
                         initialDelayMillis = 2000
                         ))
                     }
-                    is Connection.ExtendConnection -> {
+                    is ExtensionInfo.ExtendExtensionInfo -> {
                         val primaryColor = MaterialTheme.colorScheme.primary
                         val text = remember {
                             buildAnnotatedString {

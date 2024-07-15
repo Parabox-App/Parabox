@@ -15,11 +15,11 @@
         android:usesCleartextTraffic="true"  >
         <meta-data
             android:name="parabox.extension.class"
-            android:value=".Extension"
+            android:value=".extension_a.ExtensionA"
             />
         <meta-data
-            android:name="parabox.init_handler.class"
-            android:value=".InitHandler"
+            android:name="parabox.extension.lib_version"
+            android:value="${PARABOX_DEVELOPMENT_KIT_VERSION}"
             />
         <activity
             android:name=".MainActivity"

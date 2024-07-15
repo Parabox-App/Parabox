@@ -4,8 +4,8 @@ import android.content.Context
 import androidx.lifecycle.viewModelScope
 import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.core.util.Resource
-import com.ojhdtapp.parabox.domain.built_in.BuiltInConnectionUtil
-import com.ojhdtapp.parabox.domain.model.Connection
+import com.ojhdtapp.parabox.domain.built_in.BuiltInExtensionUtil
+import com.ojhdtapp.parabox.domain.model.ExtensionInfo
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.domain.model.toConnection
 import com.ojhdtapp.parabox.domain.repository.ExtensionInfoRepository
@@ -44,7 +44,7 @@ class SettingPageViewModel @Inject constructor(
 
             is SettingPageEvent.UpdateConnection -> {
                 state.copy(
-                    connectionList = event.list
+                    extensionInfoList = event.list
                 )
             }
 
@@ -72,7 +72,7 @@ class SettingPageViewModel @Inject constructor(
             }
 
             is SettingPageEvent.InitNewExtensionConnection -> {
-                initNewExtensionConnection(event.connection)
+                initNewExtensionConnection(event.extensionInfo)
                 state
             }
 
@@ -159,7 +159,7 @@ class SettingPageViewModel @Inject constructor(
     }
 
     private var initActionStateCollectionJob: Job? = null
-    private fun initNewExtensionConnection(connection: Connection) {
+    private fun initNewExtensionConnection(extensionInfo: ExtensionInfo) {
         initActionStateCollectionJob?.cancel()
         initActionStateCollectionJob = viewModelScope.launch(Dispatchers.IO) {
             extensionManager.initActionWrapperFlow.collectLatest {
@@ -167,7 +167,7 @@ class SettingPageViewModel @Inject constructor(
             }
         }
         viewModelScope.launch(Dispatchers.IO) {
-            extensionManager.initNewExtensionConnection(connection)
+            extensionManager.initNewExtensionConnection(extensionInfo)
         }
     }
 
@@ -203,7 +203,7 @@ class SettingPageViewModel @Inject constructor(
         }
         viewModelScope.launch {
             extensionManager.extensionPkgFlow.collectLatest {
-                sendEvent(SettingPageEvent.UpdateConnection(it.map { it.toConnection(context) } + BuiltInConnectionUtil.getConnectionCardModelList()))
+                sendEvent(SettingPageEvent.UpdateConnection(it.map { it.toConnection(context) } + BuiltInExtensionUtil.getConnectionCardModelList()))
             }
         }
         viewModelScope.launch {

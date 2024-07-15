@@ -4,17 +4,11 @@ import android.content.Context
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
-import android.util.Log
-import androidx.core.content.pm.PackageInfoCompat
-import androidx.lifecycle.Lifecycle
 import com.ojhdtapp.parabox.data.local.ExtensionInfo
 import com.ojhdtapp.parabox.domain.model.Extension
-import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxExtension
+import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnection
 import com.ojhdtapp.paraboxdevelopmentkit.init.ParaboxInitHandler
 import dalvik.system.PathClassLoader
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.runBlocking
 import java.lang.ClassCastException
 
 object ExtensionLoader {
@@ -75,7 +69,7 @@ object ExtensionLoader {
                 val fullExtClass = extClass.takeUnless { it.startsWith(".") } ?: (extensionInfo.pkg + extClass)
                 val clazz = Class.forName(fullExtClass, false, classLoader)
                 clazz.newInstance()
-            } as ParaboxExtension
+            } as ParaboxConnection
             Extension.ExtensionPending.ExtendExtensionPending(
                 extensionInfo, ext
             )

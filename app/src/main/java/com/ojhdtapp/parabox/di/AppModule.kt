@@ -68,8 +68,9 @@ object AppModule {
     @Singleton
     fun provideExtensionManager(
         @ApplicationContext applicationContext: Context,
+        mainRepository: MainRepository,
         extensionInfoRepository: ExtensionInfoRepository
-    ): ExtensionManager = ExtensionManager(applicationContext, extensionInfoRepository)
+    ): ExtensionManager = ExtensionManager(applicationContext, mainRepository, extensionInfoRepository)
 
     @Provides
     @Singleton
