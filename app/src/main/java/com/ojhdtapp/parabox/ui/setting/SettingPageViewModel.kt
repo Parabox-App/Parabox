@@ -50,7 +50,7 @@ class SettingPageViewModel @Inject constructor(
 
             is SettingPageEvent.UpdateExtension -> {
                 state.copy(
-                    extension = event.list
+                    connection = event.list
                 )
             }
 
@@ -207,7 +207,7 @@ class SettingPageViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
-            extensionManager.extensionFlow.collectLatest {
+            extensionManager.connectionFlow.collectLatest {
                 sendEvent(SettingPageEvent.UpdateExtension(it))
             }
         }

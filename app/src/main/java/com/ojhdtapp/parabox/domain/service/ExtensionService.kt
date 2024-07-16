@@ -5,32 +5,15 @@ import android.os.Binder
 import android.os.IBinder
 import android.util.Log
 import androidx.lifecycle.LifecycleService
-import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.lifecycleScope
 import com.ojhdtapp.parabox.core.util.NotificationUtil
-import com.ojhdtapp.parabox.core.util.Resource
-import com.ojhdtapp.parabox.domain.model.Extension
 import com.ojhdtapp.parabox.domain.repository.ExtensionInfoRepository
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
-import com.ojhdtapp.paraboxdevelopmentkit.BuildConfig
-import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxBridge
-import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnectionStatus
-import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
-import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import java.util.concurrent.CancellationException
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -75,7 +58,7 @@ class ExtensionService : LifecycleService() {
         lifecycle.addObserver(extensionManager)
 
         lifecycleScope.launch {
-            extensionManager.extensionFlow.collectLatest {
+            extensionManager.connectionFlow.collectLatest {
                 Log.d("parabox", "extensionFlow=${it}")
             }
         }

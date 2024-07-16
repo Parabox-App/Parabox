@@ -17,7 +17,7 @@ import com.ojhdtapp.parabox.data.local.entity.ContactBasicInfoUpdate
 import com.ojhdtapp.parabox.data.local.entity.ContactChatCrossRef
 import com.ojhdtapp.parabox.data.local.entity.RecentQueryEntity
 import com.ojhdtapp.parabox.data.local.entity.RecentQueryTimestampUpdate
-import com.ojhdtapp.parabox.domain.model.Extension
+import com.ojhdtapp.parabox.domain.model.Connection
 import com.ojhdtapp.parabox.domain.model.RecentQuery
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
@@ -34,7 +34,7 @@ class MainRepositoryImpl @Inject constructor(
     private val db: AppDatabase,
     val notificationUtil: NotificationUtil
 ) : MainRepository {
-    override suspend fun receiveMessage(msg: ReceiveMessage, ext: Extension.ExtensionSuccess): ParaboxResult {
+    override suspend fun receiveMessage(msg: ReceiveMessage, ext: Connection.ConnectionSuccess): ParaboxResult {
         Log.d("parabox", "receiving msg from ${ext.name}")
         return coroutineScope {
             try {

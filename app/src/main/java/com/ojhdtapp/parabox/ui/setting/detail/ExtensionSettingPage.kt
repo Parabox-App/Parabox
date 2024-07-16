@@ -67,7 +67,7 @@ import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.pushNew
 import com.ojhdtapp.parabox.domain.model.ExtensionInfo
-import com.ojhdtapp.parabox.domain.model.Extension
+import com.ojhdtapp.parabox.domain.model.Connection
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.navigation.DefaultSettingComponent
@@ -207,7 +207,7 @@ private fun Content(
         item {
             SettingHeader(text = "已建立的连接")
         }
-        items(state.extension, key = { it.extensionId }) {
+        items(state.connection, key = { it.extensionId }) {
             Box {
                 var isMenuVisible by remember {
                     mutableStateOf(false)
@@ -231,7 +231,7 @@ private fun Content(
                     ),
                     shape = MaterialTheme.shapes.medium,
                 ) {
-                    if (it is Extension.ExtensionSuccess) {
+                    if (it is Connection.ConnectionSuccess) {
                         androidx.compose.material3.DropdownMenuItem(
                             text = { Text("重新启动") },
                             onClick = {
@@ -256,17 +256,17 @@ private fun Content(
                 }
                 LaunchedEffect(Unit) {
                     when (it) {
-                        is Extension.ExtensionPending -> {
+                        is Connection.ConnectionPending -> {
                             status = "等待实例化"
                             statusIcon = Icons.Outlined.Pending
                         }
 
-                        is Extension.ExtensionFail -> {
+                        is Connection.ConnectionFail -> {
                             status = "实例化失败"
                             statusIcon = Icons.Outlined.ErrorOutline
                         }
 
-                        is Extension.ExtensionSuccess -> {
+                        is Connection.ConnectionSuccess -> {
                             it.getStatus().collectLatest {
                                 when (it) {
                                     is ParaboxConnectionStatus.Pending -> {
@@ -312,7 +312,7 @@ private fun Content(
                 }
             }
         }
-        if (state.extension.isEmpty()) {
+        if (state.connection.isEmpty()) {
             item {
                 Box(
                     modifier = Modifier
