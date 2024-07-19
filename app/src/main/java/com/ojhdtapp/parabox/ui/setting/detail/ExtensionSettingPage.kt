@@ -68,6 +68,7 @@ import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.pushNew
 import com.ojhdtapp.parabox.domain.model.ExtensionInfo
 import com.ojhdtapp.parabox.domain.model.Connection
+import com.ojhdtapp.parabox.domain.model.Extension
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.navigation.DefaultSettingComponent
@@ -185,12 +186,14 @@ private fun Content(
         }
         item {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp)) {
-                items(state.extensionInfoList, key = { it.name }) {
+                items(items = state.extensionList, key = { it.key }) {
                     ConnectionCard(
                         model = it,
                         onClick = {
-                            onEvent(SettingPageEvent.InitNewExtensionConnection(it))
-                            navigation.pushNew(DefaultSettingComponent.SettingConfig.ExtensionAddSetting)
+                            if (it is Extension.Success) {
+                                onEvent(SettingPageEvent.InitNewConnection(it))
+                                navigation.pushNew(DefaultSettingComponent.SettingConfig.ExtensionAddSetting)
+                            }
                         }
                     )
                 }
@@ -201,13 +204,13 @@ private fun Content(
                 leadingIcon = {
                     Icon(imageVector = Icons.Outlined.Refresh, contentDescription = "refresh", tint = MaterialTheme.colorScheme.onSurface)
                 }) {
-                onEvent(SettingPageEvent.RefreshExtensionPkgInfo)
+                onEvent(SettingPageEvent.ReloadExtension)
             }
         }
         item {
             SettingHeader(text = "已建立的连接")
         }
-        items(state.connection, key = { it.extensionId }) {
+        items(state.connectionList, key = { "${it.extensionId}#${it.alias}" }) {
             Box {
                 var isMenuVisible by remember {
                     mutableStateOf(false)
@@ -312,7 +315,7 @@ private fun Content(
                 }
             }
         }
-        if (state.connection.isEmpty()) {
+        if (state.connectionList.isEmpty()) {
             item {
                 Box(
                     modifier = Modifier
@@ -334,12 +337,13 @@ private fun Content(
 @Composable
 private fun ConnectionCard(
     modifier: Modifier = Modifier,
-    model: ExtensionInfo,
+    model: Extension,
     onClick: () -> Unit
 ) {
     Card(
         onClick = onClick,
-        modifier = modifier
+        modifier = modifier,
+        enabled = model is Extension.Success
     ) {
         Row(modifier = Modifier.padding(16.dp)) {
             Column(modifier = Modifier.width(144.dp)) {
@@ -369,13 +373,38 @@ private fun ConnectionCard(
                 ), style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(8.dp))
                 when(model) {
-                    is ExtensionInfo.BuiltInExtensionInfo -> {
-                        Text(text = model.description, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium, maxLines = 1, modifier = Modifier.basicMarquee(
+                    is Extension.Error -> {
+                        val primaryColor = MaterialTheme.colorScheme.error
+                        val text = remember {
+                            buildAnnotatedString {
+                                withStyle(
+                                    style = SpanStyle(
+                                        color = primaryColor
+                                    )
+                                ) {
+                                    append("错误 ")
+                                }
+                                append(model.errMsg)
+                            }
+                        }
+                        Text(
+                            text = text,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            style = MaterialTheme.typography.bodyMedium,
+                            maxLines = 1,
+                            modifier = Modifier.basicMarquee(
+                                delayMillis = 5000,
+                                initialDelayMillis = 2000
+                            )
+                        )
+                    }
+                    is Extension.Success.BuiltIn -> {
+                        Text(text = model.des?: "无说明文本", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium, maxLines = 1, modifier = Modifier.basicMarquee(
                                 delayMillis = 5000,
                         initialDelayMillis = 2000
                         ))
                     }
-                    is ExtensionInfo.ExtendExtensionInfo -> {
+                    is Extension.Success.External -> {
                         val primaryColor = MaterialTheme.colorScheme.primary
                         val text = remember {
                             buildAnnotatedString {
@@ -386,13 +415,18 @@ private fun ConnectionCard(
                                 ) {
                                     append("外部扩展 ")
                                 }
-                                append(model.version)
+                                append(model.pkg)
                             }
                         }
                         Text(
                             text = text,
                             color = MaterialTheme.colorScheme.onSurface,
-                            style = MaterialTheme.typography.bodyMedium
+                            style = MaterialTheme.typography.bodyMedium,
+                            maxLines = 1,
+                            modifier = Modifier.basicMarquee(
+                                delayMillis = 5000,
+                                initialDelayMillis = 2000
+                            )
                         )
                     }
                 }

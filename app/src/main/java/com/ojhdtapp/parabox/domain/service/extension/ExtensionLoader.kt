@@ -109,30 +109,6 @@ object ExtensionLoader {
         } ?: emptyList()
     }
 
-    private fun createInitHandler(context: Context, packageInfo: PackageInfo): ParaboxInitHandler? {
-        val pkgManager = context.packageManager
-        val appInfo = try {
-            pkgManager.getApplicationInfo(packageInfo.packageName, PackageManager.GET_META_DATA)
-        } catch (error: PackageManager.NameNotFoundException) {
-            // Unlikely, but the package may have been uninstalled at this point
-            return null
-        }
-        val classLoader = PathClassLoader(appInfo.sourceDir, null, context.classLoader)
-        return try {
-            appInfo.metaData.getString(EXTENSION_INIT_HANDLER_CLASS)?.let { extClass ->
-                val fullExtClass = extClass.takeUnless { it.startsWith(".") } ?: (packageInfo.packageName + extClass)
-                val clazz = Class.forName(fullExtClass, false, classLoader)
-                clazz.newInstance()
-            } as ParaboxInitHandler
-        } catch (e: ClassCastException) {
-            e.printStackTrace()
-            null
-        } catch (e: ClassNotFoundException) {
-            e.printStackTrace()
-            null
-        }
-    }
-
     fun createExtension(context: Context, extensionInfo: ExtensionInfo): Connection {
         val pkgManager = context.packageManager
         val appInfo = try {

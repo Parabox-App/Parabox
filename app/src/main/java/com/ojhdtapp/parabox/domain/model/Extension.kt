@@ -9,15 +9,14 @@ sealed interface Extension {
     val des: String?
     val key: String
     sealed interface Success : Extension {
+        // singleton
         val initHandler: ParaboxInitHandler
-        val connectionClassName: String
         data class BuiltIn(
             override val name: String,
             override val icon: ImageBitmap?,
             override val des: String?,
             override val key: String,
-            override val initHandler: ParaboxInitHandler,
-            override val connectionClassName: String
+            override val initHandler: ParaboxInitHandler
         ) : Success, BuiltInExtension
         data class External(
             override val name: String,
@@ -45,6 +44,7 @@ interface BuiltInExtension {
 }
 
 interface ExternalExtension {
+    val connectionClassName: String
     val version: String
     val versionCode: Long
     val pkg: String

@@ -16,7 +16,7 @@ sealed interface SettingPageEvent : UiEvent{
     data class UpdateExtension(val list: List<Extension>): SettingPageEvent
     data class DeleteExtensionInfo(val extensionId: Long): SettingPageEvent
     data class UpdateExtensionInitActionState(val initActionWrapper: ExtensionInitActionWrapper): SettingPageEvent
-    data class InitNewExtensionConnection(val extensionInfo: ExtensionInfo): SettingPageEvent
+    data class InitNewConnection(val extension: Extension.Success): SettingPageEvent
     data class SubmitExtensionInitActionResult(val result: Any): SettingPageEvent
     object RevertExtensionInitAction: SettingPageEvent
     data class InitNewExtensionConnectionDone(val isDone: Boolean) : SettingPageEvent
@@ -26,5 +26,5 @@ sealed interface SettingPageEvent : UiEvent{
     data class UpdateChatTags(val chatId: Long, val tags: List<String>): SettingPageEvent
     data class NotificationDisabledChatLoadDone(val chats: List<Chat>, val loadState: LoadState) : SettingPageEvent
     data class UpdateChatNotificationEnabled(val chatId: Long, val value: Boolean): SettingPageEvent
-    data object RefreshExtensionPkgInfo: SettingPageEvent
+    data object ReloadExtension: SettingPageEvent
 }

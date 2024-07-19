@@ -4,10 +4,9 @@ import android.content.Context
 import androidx.lifecycle.viewModelScope
 import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.core.util.Resource
-import com.ojhdtapp.parabox.domain.built_in.BuiltInExtensionUtil
+import com.ojhdtapp.parabox.domain.model.Extension
 import com.ojhdtapp.parabox.domain.model.ExtensionInfo
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
-import com.ojhdtapp.parabox.domain.model.toConnection
 import com.ojhdtapp.parabox.domain.repository.ExtensionInfoRepository
 import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
 import com.ojhdtapp.parabox.domain.use_case.GetChat
@@ -44,13 +43,13 @@ class SettingPageViewModel @Inject constructor(
 
             is SettingPageEvent.UpdateConnection -> {
                 state.copy(
-                    extensionInfoList = event.list
+                    connectionList = event.list
                 )
             }
 
             is SettingPageEvent.UpdateExtension -> {
                 state.copy(
-                    connection = event.list
+                    extensionList = event.list
                 )
             }
 
@@ -71,8 +70,8 @@ class SettingPageViewModel @Inject constructor(
                 )
             }
 
-            is SettingPageEvent.InitNewExtensionConnection -> {
-                initNewExtensionConnection(event.extensionInfo)
+            is SettingPageEvent.InitNewConnection -> {
+                initNewExtensionConnection(event.extension)
                 state
             }
 
@@ -137,8 +136,8 @@ class SettingPageViewModel @Inject constructor(
                 state
             }
 
-            is SettingPageEvent.RefreshExtensionPkgInfo -> {
-                extensionManager.refreshExtensionPkg()
+            is SettingPageEvent.ReloadExtension -> {
+                extensionManager.reloadExtension()
                 state
             }
         }
@@ -159,7 +158,7 @@ class SettingPageViewModel @Inject constructor(
     }
 
     private var initActionStateCollectionJob: Job? = null
-    private fun initNewExtensionConnection(extensionInfo: ExtensionInfo) {
+    private fun initNewExtensionConnection(extension: Extension.Success) {
         initActionStateCollectionJob?.cancel()
         initActionStateCollectionJob = viewModelScope.launch(Dispatchers.IO) {
             extensionManager.initActionWrapperFlow.collectLatest {
@@ -167,7 +166,7 @@ class SettingPageViewModel @Inject constructor(
             }
         }
         viewModelScope.launch(Dispatchers.IO) {
-            extensionManager.initNewExtensionConnection(extensionInfo)
+            extensionManager.initNewExtensionConnection(extension)
         }
     }
 
@@ -202,13 +201,13 @@ class SettingPageViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
-            extensionManager.extensionPkgFlow.collectLatest {
-                sendEvent(SettingPageEvent.UpdateConnection(it.map { it.toConnection(context) } + BuiltInExtensionUtil.getConnectionCardModelList()))
+            extensionManager.extensionFlow.collectLatest {
+                sendEvent(SettingPageEvent.UpdateExtension(it))
             }
         }
         viewModelScope.launch {
             extensionManager.connectionFlow.collectLatest {
-                sendEvent(SettingPageEvent.UpdateExtension(it))
+                sendEvent(SettingPageEvent.UpdateConnection(it))
             }
         }
     }
