@@ -57,10 +57,6 @@ class ExtensionManager(
     private val _extensionFlow = MutableStateFlow(emptyList<Extension>())
     val extensionFlow get() = _extensionFlow.asStateFlow().map { it + BuiltInExtensionUtil.getAllExtension() }
 
-    // Pkg
-    private val _extensionPkgFlow = MutableStateFlow(emptyList<PackageInfo>())
-    val extensionPkgFlow = _extensionPkgFlow.asStateFlow()
-
     // Init
     private val _connectionFlow = MutableStateFlow(emptyList<Connection>())
     val connectionFlow = _connectionFlow.asStateFlow()

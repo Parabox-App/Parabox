@@ -62,11 +62,7 @@ class SettingPageViewModel @Inject constructor(
 
             is SettingPageEvent.UpdateExtensionInitActionState -> {
                 state.copy(
-                    initActionState = SettingPageState.InitActionState(
-                        name = event.initActionWrapper.name,
-                        actionList = event.initActionWrapper.actionList,
-                        currentIndex = event.initActionWrapper.currentIndex
-                    )
+                    initActionState = event.state
                 )
             }
 
@@ -96,6 +92,7 @@ class SettingPageViewModel @Inject constructor(
                 extensionManager.restartExtension(event.extensionId)
                 state
             }
+
             is SettingPageEvent.UpdateSelectedTagLabel -> {
                 getChatWithCustomTag(event.tagLabel)
                 state.copy(
@@ -104,6 +101,7 @@ class SettingPageViewModel @Inject constructor(
                     )
                 )
             }
+
             is SettingPageEvent.TagLabelChatsLoadDone -> {
                 state.copy(
                     labelDetailState = state.labelDetailState.copy(
@@ -149,7 +147,7 @@ class SettingPageViewModel @Inject constructor(
         customTagLabelChatCollectionJob = viewModelScope.launch(Dispatchers.IO) {
             getChat.withCustomTag(customTag).distinctUntilChangedBy { it.data?.size }.collectLatest {
                 if (it is Resource.Success) {
-                    sendEvent(SettingPageEvent.TagLabelChatsLoadDone(it.data?: emptyList(), LoadState.SUCCESS))
+                    sendEvent(SettingPageEvent.TagLabelChatsLoadDone(it.data ?: emptyList(), LoadState.SUCCESS))
                 } else {
                     sendEvent(SettingPageEvent.TagLabelChatsLoadDone(emptyList(), LoadState.ERROR))
                 }
@@ -162,7 +160,17 @@ class SettingPageViewModel @Inject constructor(
         initActionStateCollectionJob?.cancel()
         initActionStateCollectionJob = viewModelScope.launch(Dispatchers.IO) {
             extensionManager.initActionWrapperFlow.collectLatest {
-                sendEvent(SettingPageEvent.UpdateExtensionInitActionState(it))
+                if (it != null) {
+                    sendEvent(
+                        SettingPageEvent.UpdateExtensionInitActionState(
+                            SettingPageState.InitActionState(
+                                name = it.name,
+                                actionList = it.actionList,
+                                currentIndex = it.currentIndex
+                            )
+                        )
+                    )
+                }
             }
         }
         viewModelScope.launch(Dispatchers.IO) {
@@ -194,7 +202,12 @@ class SettingPageViewModel @Inject constructor(
         viewModelScope.launch {
             getChat.notificationDisabled().distinctUntilChangedBy { it.data?.size }.collectLatest {
                 if (it is Resource.Success) {
-                    sendEvent(SettingPageEvent.NotificationDisabledChatLoadDone(it.data?: emptyList(), LoadState.SUCCESS))
+                    sendEvent(
+                        SettingPageEvent.NotificationDisabledChatLoadDone(
+                            it.data ?: emptyList(),
+                            LoadState.SUCCESS
+                        )
+                    )
                 } else {
                     sendEvent(SettingPageEvent.NotificationDisabledChatLoadDone(emptyList(), LoadState.ERROR))
                 }

@@ -15,7 +15,7 @@ sealed interface SettingPageEvent : UiEvent{
     data class UpdateConnection(val list: List<Connection>): SettingPageEvent
     data class UpdateExtension(val list: List<Extension>): SettingPageEvent
     data class DeleteExtensionInfo(val extensionId: Long): SettingPageEvent
-    data class UpdateExtensionInitActionState(val initActionWrapper: ExtensionInitActionWrapper): SettingPageEvent
+    data class UpdateExtensionInitActionState(val state: SettingPageState.InitActionState): SettingPageEvent
     data class InitNewConnection(val extension: Extension.Success): SettingPageEvent
     data class SubmitExtensionInitActionResult(val result: Any): SettingPageEvent
     object RevertExtensionInitAction: SettingPageEvent
