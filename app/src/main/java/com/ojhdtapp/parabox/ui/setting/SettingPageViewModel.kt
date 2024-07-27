@@ -5,9 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.domain.model.Extension
-import com.ojhdtapp.parabox.domain.model.ExtensionInfo
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
-import com.ojhdtapp.parabox.domain.repository.ExtensionInfoRepository
+import com.ojhdtapp.parabox.domain.repository.ConnectionInfoRepository
 import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
 import com.ojhdtapp.parabox.domain.use_case.GetChat
 import com.ojhdtapp.parabox.domain.use_case.UpdateChat
@@ -25,7 +24,7 @@ import javax.inject.Inject
 class SettingPageViewModel @Inject constructor(
     @ApplicationContext val context: Context,
     val extensionManager: ExtensionManager,
-    val extensionInfoRepository: ExtensionInfoRepository,
+    val connectionInfoRepository: ConnectionInfoRepository,
     val getChat: GetChat,
     val updateChat: UpdateChat
 ) : BaseViewModel<SettingPageState, SettingPageEvent, SettingPageEffect>() {
@@ -53,9 +52,9 @@ class SettingPageViewModel @Inject constructor(
                 )
             }
 
-            is SettingPageEvent.DeleteExtensionInfo -> {
+            is SettingPageEvent.DeleteConnection -> {
                 viewModelScope.launch(Dispatchers.IO) {
-                    extensionInfoRepository.deleteExtensionInfoById(event.extensionId)
+                    connectionInfoRepository.deleteConnectionInfoById(event.extensionId)
                 }
                 state
             }
@@ -83,13 +82,12 @@ class SettingPageViewModel @Inject constructor(
 
             is SettingPageEvent.InitNewExtensionConnectionDone -> {
                 resetExtensionInit(event.isDone)
-                state.copy(
-                    initActionState = SettingPageState.InitActionState()
-                )
+                // don't clear the UI state
+                state
             }
 
             is SettingPageEvent.RestartExtensionConnection -> {
-                extensionManager.restartExtension(event.extensionId)
+                extensionManager.restartConnection(event.extensionId)
                 state
             }
 
@@ -159,7 +157,7 @@ class SettingPageViewModel @Inject constructor(
     private fun initNewExtensionConnection(extension: Extension.Success) {
         initActionStateCollectionJob?.cancel()
         initActionStateCollectionJob = viewModelScope.launch(Dispatchers.IO) {
-            extensionManager.initActionWrapperFlow.collectLatest {
+            extensionManager.initActionStateFlow.collectLatest {
                 if (it != null) {
                     sendEvent(
                         SettingPageEvent.UpdateExtensionInitActionState(

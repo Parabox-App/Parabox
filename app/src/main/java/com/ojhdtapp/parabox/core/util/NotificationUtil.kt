@@ -33,7 +33,7 @@ import com.ojhdtapp.parabox.MainActivity
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.ImageUtil.getCircledBitmap
 import com.ojhdtapp.parabox.data.local.AppDatabase
-import com.ojhdtapp.parabox.data.local.ExtensionInfo
+import com.ojhdtapp.parabox.data.local.ConnectionInfo
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.receiver.MarkAsReadReceiver
@@ -164,17 +164,17 @@ class NotificationUtil(
         messageId: Long,
         contactId: Long,
         chatId: Long,
-        extensionInfo: ExtensionInfo,
+        connectionInfo: ConnectionInfo,
         fromChat: Boolean = false,
     ) {
         val message = database.messageDao.getMessageById(messageId)?.toMessage() ?: return
         val contact = database.contactDao.getContactById(contactId)?.toContact() ?: return
         val chat = database.chatDao.getChatByIdWithoutObserve(chatId)?.toChat() ?: return
-        val channelId = "${extensionInfo.pkg}_${extensionInfo.extensionId}_${extensionInfo.alias}"
+        val channelId = "${connectionInfo.pkg}_${connectionInfo.connectionId}_${connectionInfo.alias}"
         createNotificationChannel(
             channelId = channelId,
-            channelName = extensionInfo.alias,
-            channelDescription = "来自${extensionInfo.name}扩展，${extensionInfo.alias}连接的消息"
+            channelName = connectionInfo.alias,
+            channelDescription = "来自${connectionInfo.name}扩展，${connectionInfo.alias}连接的消息"
         )
         Log.d("parabox", "sendNotification at channel:${channelId}")
         if (!context.getDataStoreValue(DataStoreKeys.SETTINGS_ALLOW_FOREGROUND_NOTIFICATION, false) && isForeground) {

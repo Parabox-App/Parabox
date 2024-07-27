@@ -1,6 +1,6 @@
 package com.ojhdtapp.parabox.domain.built_in
 
-import com.ojhdtapp.parabox.domain.built_in.onebot11.OneBot11
+import com.ojhdtapp.parabox.domain.built_in.onebot11.OneBot11Connection
 import com.ojhdtapp.parabox.domain.built_in.onebot11.OneBot11InitHandler
 import com.ojhdtapp.parabox.domain.model.Extension
 import com.ojhdtapp.parabox.domain.model.ExtensionInfo
@@ -12,16 +12,9 @@ object BuiltInExtensionUtil {
         return listOf(oneBot11)
     }
 
-    fun getInitHandlerByKey(key: String): ParaboxInitHandler? {
+    fun getConnectionByKey(key: String) : ParaboxConnection? {
         return when(key) {
-            OneBot11.key -> OneBot11.initHandler
-            else -> null
-        }
-    }
-
-    fun getExtensionByKey(key: String) : ParaboxConnection? {
-        return when(key) {
-            OneBot11.key -> OneBot11.connection
+            "onebot11" -> OneBot11Connection()
             else -> null
         }
     }

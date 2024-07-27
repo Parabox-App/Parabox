@@ -461,7 +461,7 @@ fun InfoContactArea(
                     lastName = (index - 1).takeIf { it >= 0 }
                         ?.let { contactLazyPagingItems.peek(it) }?.contact?.name,
                     avatarModel = item.contact.avatar.getModel(),
-                    extName = item.extensionInfo.alias,
+                    extName = item.connectionInfo.alias,
                 ) {
                     onShowContactDetail(item)
                 }

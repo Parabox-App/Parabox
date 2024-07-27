@@ -214,12 +214,12 @@ fun ContactDetailDialog(
                                 ) {
                                     Column {
                                         Text(
-                                            text = contactDetailDialogState.contactWithExtensionInfo.extensionInfo.name,
+                                            text = contactDetailDialogState.contactWithExtensionInfo.connectionInfo.name,
                                             maxLines = 1
                                         )
                                         Spacer(modifier = Modifier.height(2.dp))
                                         Text(
-                                            text = contactDetailDialogState.contactWithExtensionInfo.extensionInfo.pkg,
+                                            text = contactDetailDialogState.contactWithExtensionInfo.connectionInfo.pkg,
                                             maxLines = 1,
                                             style = MaterialTheme.typography.labelMedium,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -229,7 +229,7 @@ fun ContactDetailDialog(
                                     Surface(color = MaterialTheme.colorScheme.primary, shape = CircleShape) {
                                         Text(
                                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                            text = contactDetailDialogState.contactWithExtensionInfo.extensionInfo.alias,
+                                            text = contactDetailDialogState.contactWithExtensionInfo.connectionInfo.alias,
                                             style = MaterialTheme.typography.labelMedium,
                                             color = MaterialTheme.colorScheme.onPrimary,
                                             maxLines = 1

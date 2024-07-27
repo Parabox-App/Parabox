@@ -4,19 +4,18 @@ import com.ojhdtapp.parabox.data.local.entity.ChatEntity
 import com.ojhdtapp.parabox.data.local.entity.ContactEntity
 import com.ojhdtapp.parabox.data.local.entity.MessageEntity
 import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
-import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxMessageElement
 
-fun buildContactEntity(msg: ReceiveMessage, ext: ExtensionInfo): ContactEntity {
+fun buildContactEntity(msg: ReceiveMessage, ext: ConnectionInfo): ContactEntity {
     return ContactEntity(
         name = msg.sender.basicInfo.name,
         avatar = msg.sender.basicInfo.avatar,
         pkg = ext.pkg,
         uid = msg.sender.uid,
-        extensionId = ext.extensionId
+        connectionId = ext.connectionId
     )
 }
 
-fun buildChatEntity(msg: ReceiveMessage, ext: ExtensionInfo): ChatEntity {
+fun buildChatEntity(msg: ReceiveMessage, ext: ConnectionInfo): ChatEntity {
     return ChatEntity(
         name = msg.chat.basicInfo.name,
         avatar = msg.chat.basicInfo.avatar,
@@ -30,11 +29,11 @@ fun buildChatEntity(msg: ReceiveMessage, ext: ExtensionInfo): ChatEntity {
         type = msg.chat.type,
         pkg = ext.pkg,
         uid = msg.chat.uid,
-        extensionId = ext.extensionId
+        extensionId = ext.connectionId
     )
 }
 
-fun buildMessageEntity(msg: ReceiveMessage, ext: ExtensionInfo, senderId: Long, chatId: Long): MessageEntity {
+fun buildMessageEntity(msg: ReceiveMessage, ext: ConnectionInfo, senderId: Long, chatId: Long): MessageEntity {
     val typeList = msg.contents.map { it.getType() }
     val contentTypes = buildString {
         (0 until (typeList.maxOrNull() ?: 0)).forEach {
@@ -54,6 +53,6 @@ fun buildMessageEntity(msg: ReceiveMessage, ext: ExtensionInfo, senderId: Long, 
         verified = false,
         pkg = ext.pkg,
         uid = msg.uuid,
-        extensionId = ext.extensionId
+        extensionId = ext.connectionId
     )
 }

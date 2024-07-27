@@ -349,12 +349,12 @@ private fun ContactDetailPageContent(
                         ) {
                             Column {
                                 Text(
-                                    text = state.contactDetail.contactWithExtensionInfo?.extensionInfo?.name ?: "",
+                                    text = state.contactDetail.contactWithExtensionInfo?.connectionInfo?.name ?: "",
                                     maxLines = 1
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = state.contactDetail.contactWithExtensionInfo?.extensionInfo?.pkg ?: "",
+                                    text = state.contactDetail.contactWithExtensionInfo?.connectionInfo?.pkg ?: "",
                                     maxLines = 1,
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -364,7 +364,7 @@ private fun ContactDetailPageContent(
                             Surface(color = MaterialTheme.colorScheme.primary, shape = CircleShape) {
                                 Text(
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                    text = state.contactDetail.contactWithExtensionInfo?.extensionInfo?.alias ?: "",
+                                    text = state.contactDetail.contactWithExtensionInfo?.connectionInfo?.alias ?: "",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onPrimary,
                                     maxLines = 1

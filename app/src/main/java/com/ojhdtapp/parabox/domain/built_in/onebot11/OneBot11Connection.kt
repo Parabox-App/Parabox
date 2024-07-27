@@ -73,7 +73,11 @@ class OneBot11Connection : ParaboxConnection() {
 //                )
 //                appReverseWebSocketConnection = OneBot11AppReverseWebSocketConnection(appReverseWebSocketConnectionConfiguration)
         coroutineScope?.launch(Dispatchers.IO) {
-            appWebSocketConnection = OneBot11AppWebSocketConnection(appWebSocketConnectionConfiguration).awaitUtilConnected()
+            appWebSocketConnection = OneBot11AppWebSocketConnection(
+                configuration = appWebSocketConnectionConfiguration,
+                job = job,
+                coroutineContext = coroutineContext
+            ).awaitUtilConnected()
             Log.d("parabox", "appWebSocketConnection connected")
             registerListener()
         }
@@ -119,7 +123,7 @@ class OneBot11Connection : ParaboxConnection() {
                 uid = data.sender.userId.toString()
             ),
             timestamp = data.time,
-            uuid = data.messageID.toString()
+            uuid = data.messageId.toString()
         )
         return receiveMessage(obj)
     }
@@ -143,7 +147,7 @@ class OneBot11Connection : ParaboxConnection() {
                 uid = data.groupId.toString()
             ),
             timestamp = data.time,
-            uuid = data.messageID.toString()
+            uuid = data.messageId.toString()
         )
         return receiveMessage(obj)
     }

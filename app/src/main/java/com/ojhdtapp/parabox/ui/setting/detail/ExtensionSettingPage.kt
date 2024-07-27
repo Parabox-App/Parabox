@@ -66,7 +66,6 @@ import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.pushNew
-import com.ojhdtapp.parabox.domain.model.ExtensionInfo
 import com.ojhdtapp.parabox.domain.model.Connection
 import com.ojhdtapp.parabox.domain.model.Extension
 import com.ojhdtapp.parabox.ui.MainSharedEvent
@@ -210,7 +209,7 @@ private fun Content(
         item {
             SettingHeader(text = "已建立的连接")
         }
-        items(state.connectionList, key = { "${it.extensionId}#${it.alias}" }) {
+        items(state.connectionList, key = { "${it.connectionId}#${it.alias}" }) {
             Box {
                 var isMenuVisible by remember {
                     mutableStateOf(false)
@@ -238,7 +237,7 @@ private fun Content(
                         androidx.compose.material3.DropdownMenuItem(
                             text = { Text("重新启动") },
                             onClick = {
-                                onEvent(SettingPageEvent.RestartExtensionConnection(it.extensionId))
+                                onEvent(SettingPageEvent.RestartExtensionConnection(it.connectionId))
                                 isMenuVisible = false
                             },
                             leadingIcon = {
@@ -249,7 +248,7 @@ private fun Content(
                     androidx.compose.material3.DropdownMenuItem(
                         text = { Text("删除") },
                         onClick = {
-                            onEvent(SettingPageEvent.DeleteExtensionInfo(it.extensionId))
+                            onEvent(SettingPageEvent.DeleteConnection(it.connectionId))
                             isMenuVisible = false
                         },
                         leadingIcon = {
@@ -374,29 +373,25 @@ private fun ConnectionCard(
                 Spacer(modifier = Modifier.height(8.dp))
                 when(model) {
                     is Extension.Error -> {
-                        val primaryColor = MaterialTheme.colorScheme.error
-                        val text = remember {
-                            buildAnnotatedString {
-                                withStyle(
-                                    style = SpanStyle(
-                                        color = primaryColor
-                                    )
-                                ) {
-                                    append("错误 ")
-                                }
-                                append(model.errMsg)
-                            }
-                        }
-                        Text(
-                            text = text,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            style = MaterialTheme.typography.bodyMedium,
-                            maxLines = 1,
-                            modifier = Modifier.basicMarquee(
-                                delayMillis = 5000,
-                                initialDelayMillis = 2000
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "错误",
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodyMedium,
+                                maxLines = 1,
                             )
-                        )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = model.errMsg,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                style = MaterialTheme.typography.bodyMedium,
+                                maxLines = 1,
+                                modifier = Modifier.weight(1f).basicMarquee(
+                                    delayMillis = 5000,
+                                    initialDelayMillis = 2000
+                                )
+                            )
+                        }
                     }
                     is Extension.Success.BuiltIn -> {
                         Text(text = model.des?: "无说明文本", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium, maxLines = 1, modifier = Modifier.basicMarquee(
@@ -405,29 +400,25 @@ private fun ConnectionCard(
                         ))
                     }
                     is Extension.Success.External -> {
-                        val primaryColor = MaterialTheme.colorScheme.primary
-                        val text = remember {
-                            buildAnnotatedString {
-                                withStyle(
-                                    style = SpanStyle(
-                                        color = primaryColor
-                                    )
-                                ) {
-                                    append("外部扩展 ")
-                                }
-                                append(model.pkg)
-                            }
-                        }
-                        Text(
-                            text = text,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            style = MaterialTheme.typography.bodyMedium,
-                            maxLines = 1,
-                            modifier = Modifier.basicMarquee(
-                                delayMillis = 5000,
-                                initialDelayMillis = 2000
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "扩展",
+                                color = MaterialTheme.colorScheme.primary,
+                                style = MaterialTheme.typography.bodyMedium,
+                                maxLines = 1,
                             )
-                        )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = model.des ?: model.pkg,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                style = MaterialTheme.typography.bodyMedium,
+                                maxLines = 1,
+                                modifier = Modifier.weight(1f).basicMarquee(
+                                    delayMillis = 5000,
+                                    initialDelayMillis = 2000
+                                )
+                            )
+                        }
                     }
                 }
             }

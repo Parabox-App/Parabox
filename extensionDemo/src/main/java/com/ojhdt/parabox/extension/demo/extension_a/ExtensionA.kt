@@ -15,6 +15,10 @@ class ExtensionA(
         return "Test Onebot Extension"
     }
 
+    override fun getDescription(): String? {
+        return "Test Onebot Extension"
+    }
+
     override fun getIconResId(): Int? {
         return R.mipmap.icon
     }

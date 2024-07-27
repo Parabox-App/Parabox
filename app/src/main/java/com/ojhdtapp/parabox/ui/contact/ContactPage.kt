@@ -15,7 +15,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -380,7 +379,7 @@ fun ContactPage(
                                 lastName = (index - 1).takeIf { it >= 0 }
                                     ?.let { friendPagingData.peek(it) }?.contact?.name,
                                 avatarModel = item.contact.avatar.getModel(),
-                                extName = item.extensionInfo.alias,
+                                extName = item.connectionInfo.alias,
                                 onClick = {
                                     viewModel.sendEvent(ContactPageEvent.LoadContactDetail(item))
                                     scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
@@ -409,7 +408,7 @@ fun ContactPage(
                                 lastName = (index - 1).takeIf { it >= 0 }
                                     ?.let { contactPagingData.peek(it) }?.contact?.name,
                                 avatarModel = item.contact.avatar.getModel(),
-                                extName = item.extensionInfo.alias,
+                                extName = item.connectionInfo.alias,
                                 onClick = {
                                     viewModel.sendEvent(ContactPageEvent.LoadContactDetail(item))
                                     scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.Detail)

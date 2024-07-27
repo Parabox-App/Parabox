@@ -9,7 +9,7 @@ data class Contact(
     val avatar: ParaboxResourceInfo,
     val pkg: String,
     val uid: String,
-    val extensionId: Long,
+    val connectionId: Long,
     val isFriend: Boolean,
     val contactId: Long,
 ) : Parcelable {
@@ -21,10 +21,10 @@ data class Contact(
         avatar: ParaboxResourceInfo,
         pkg: String,
         uid: String,
-        extensionId: Long,
+        connectionId: Long,
         isFriend: Boolean,
         contactId: Long
-    ) : this(avatar, pkg, uid, extensionId, isFriend, contactId) {
+    ) : this(avatar, pkg, uid, connectionId, isFriend, contactId) {
         this.name = name ?: ""
     }
 

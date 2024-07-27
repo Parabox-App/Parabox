@@ -2,11 +2,9 @@ package com.ojhdtapp.parabox.ui.setting
 
 import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.domain.model.Chat
-import com.ojhdtapp.parabox.domain.model.ExtensionInfo
 import com.ojhdtapp.parabox.domain.model.Connection
 import com.ojhdtapp.parabox.domain.model.Extension
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
-import com.ojhdtapp.parabox.domain.service.extension.ExtensionInitActionWrapper
 import com.ojhdtapp.parabox.ui.base.UiEvent
 
 sealed interface SettingPageEvent : UiEvent{
@@ -14,7 +12,7 @@ sealed interface SettingPageEvent : UiEvent{
     data class SelectSetting(val setting: Setting) : SettingPageEvent
     data class UpdateConnection(val list: List<Connection>): SettingPageEvent
     data class UpdateExtension(val list: List<Extension>): SettingPageEvent
-    data class DeleteExtensionInfo(val extensionId: Long): SettingPageEvent
+    data class DeleteConnection(val extensionId: Long): SettingPageEvent
     data class UpdateExtensionInitActionState(val state: SettingPageState.InitActionState): SettingPageEvent
     data class InitNewConnection(val extension: Extension.Success): SettingPageEvent
     data class SubmitExtensionInitActionResult(val result: Any): SettingPageEvent

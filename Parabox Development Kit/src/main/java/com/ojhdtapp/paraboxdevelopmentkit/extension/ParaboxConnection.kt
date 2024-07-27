@@ -10,6 +10,7 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
 import com.ojhdtapp.paraboxdevelopmentkit.model.SendMessage
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,16 +18,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 abstract class ParaboxConnection {
-    private var mContext: Context? = null
-    private var mBridge: ParaboxBridge? = null
-    var coroutineScope: CoroutineScope? = null
-        private set
+    lateinit var mContext: Context
+    lateinit var mBridge: ParaboxBridge
+    lateinit var coroutineScope: CoroutineScope
+    lateinit var job: Job
     private var _status: MutableStateFlow<ParaboxConnectionStatus> = MutableStateFlow(ParaboxConnectionStatus.Pending)
     val status get() = _status.asStateFlow()
 
-    suspend fun init(context: Context, bridge: ParaboxBridge, extra: Bundle) {
+    suspend fun init(context: Context, coroutineJob: Job, bridge: ParaboxBridge, extra: Bundle) {
         coroutineScope {
             coroutineScope = this
+            job = coroutineJob
             mContext = context
             mBridge = bridge
             updateStatus(ParaboxConnectionStatus.Initializing)
@@ -73,11 +75,7 @@ abstract class ParaboxConnection {
     open fun onResume(){}
     open fun onPause(){}
     open fun onStop(){}
-    open fun onDestroy() {
-        mContext = null
-        mBridge = null
-        coroutineScope = null
-    }
+    open fun onDestroy(){}
 }
 
 sealed interface ParaboxConnectionStatus {

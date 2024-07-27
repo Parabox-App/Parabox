@@ -12,13 +12,13 @@ data class ContactEntity(
     val avatar: ParaboxResourceInfo,
     val pkg: String,
     val uid: String,
-    val extensionId: Long,
+    val connectionId: Long,
     val isFriend: Boolean = false,
     @PrimaryKey(autoGenerate = true) val contactId: Long = 0,
 ){
     fun toContact(): Contact{
         return Contact(
-            name, avatar, pkg, uid, extensionId, isFriend, contactId
+            name, avatar, pkg, uid, connectionId, isFriend, contactId
         )
     }
 }

@@ -1,8 +1,8 @@
 package com.ojhdtapp.parabox.domain.model
 
-import com.ojhdtapp.parabox.data.local.ExtensionInfo
+import com.ojhdtapp.parabox.data.local.ConnectionInfo
 
 data class ContactWithExtensionInfo(
     val contact: Contact,
-    val extensionInfo: ExtensionInfo
+    val connectionInfo: ConnectionInfo
 )

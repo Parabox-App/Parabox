@@ -13,11 +13,11 @@ import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.Converters
 import com.ojhdtapp.parabox.data.repository.ChatRepositoryImpl
 import com.ojhdtapp.parabox.data.repository.ContactRepositoryImpl
-import com.ojhdtapp.parabox.data.repository.ExtensionInfoRepositoryImpl
+import com.ojhdtapp.parabox.data.repository.ConnectionInfoRepositoryImpl
 import com.ojhdtapp.parabox.data.repository.MessageRepositoryImpl
 import com.ojhdtapp.parabox.domain.repository.ChatRepository
 import com.ojhdtapp.parabox.domain.repository.ContactRepository
-import com.ojhdtapp.parabox.domain.repository.ExtensionInfoRepository
+import com.ojhdtapp.parabox.domain.repository.ConnectionInfoRepository
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import com.ojhdtapp.parabox.domain.repository.MessageRepository
 import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
@@ -69,8 +69,8 @@ object AppModule {
     fun provideExtensionManager(
         @ApplicationContext applicationContext: Context,
         mainRepository: MainRepository,
-        extensionInfoRepository: ExtensionInfoRepository
-    ): ExtensionManager = ExtensionManager(applicationContext, mainRepository, extensionInfoRepository)
+        connectionInfoRepository: ConnectionInfoRepository
+    ): ExtensionManager = ExtensionManager(applicationContext, mainRepository, connectionInfoRepository)
 
     @Provides
     @Singleton
@@ -121,7 +121,7 @@ object AppModule {
     fun provideExtensionInfoRepository(
         @ApplicationContext applicationContext: Context,
         database: AppDatabase
-    ): ExtensionInfoRepository = ExtensionInfoRepositoryImpl(context =  applicationContext, db = database)
+    ): ConnectionInfoRepository = ConnectionInfoRepositoryImpl(context =  applicationContext, db = database)
 
     @Provides
     @Singleton

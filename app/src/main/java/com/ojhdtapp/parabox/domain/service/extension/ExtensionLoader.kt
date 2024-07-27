@@ -6,12 +6,11 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.graphics.drawable.toBitmapOrNull
-import com.ojhdtapp.parabox.data.local.ExtensionInfo
+import com.ojhdtapp.parabox.data.local.ConnectionInfo
 import com.ojhdtapp.parabox.domain.model.Connection
 import com.ojhdtapp.parabox.domain.model.Extension
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnection
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxExtension
-import com.ojhdtapp.paraboxdevelopmentkit.init.ParaboxInitHandler
 import dalvik.system.PathClassLoader
 import java.lang.ClassCastException
 
@@ -33,6 +32,16 @@ object ExtensionLoader {
         }
         return installedPkgs.filter { isPackageAnExtension(it) }.flatMap {
             createExternalExtension(context, it)
+        }
+    }
+
+    fun scanAppWithPackageName(context: Context, packageName: String): List<Extension> {
+        val pkgManager = context.packageManager
+        val packageInfo = pkgManager.getPackageInfo(packageName, PACKAGE_FLAGS)
+        return if (isPackageAnExtension(packageInfo)) {
+            createExternalExtension(context, packageInfo)
+        } else {
+            emptyList()
         }
     }
 
@@ -60,7 +69,7 @@ object ExtensionLoader {
         } else {
             packageInfo.versionCode.toLong()
         }
-        if ((libVersion.replace(",", "").toIntOrNull() ?: 0) < MIN_LIB_VERSION) {
+        if ((libVersion.replace(".", "").toIntOrNull() ?: 0) < MIN_LIB_VERSION) {
             return listOf(Extension.Error(
                 appName,
                 appIcon,
@@ -109,30 +118,30 @@ object ExtensionLoader {
         } ?: emptyList()
     }
 
-    fun createExtension(context: Context, extensionInfo: ExtensionInfo): Connection {
+    fun createExternalConnection(context: Context, connectionInfo: ConnectionInfo): Connection {
         val pkgManager = context.packageManager
         val appInfo = try {
-            pkgManager.getApplicationInfo(extensionInfo.pkg, PackageManager.GET_META_DATA)
+            pkgManager.getApplicationInfo(connectionInfo.pkg, PackageManager.GET_META_DATA)
         } catch (error: PackageManager.NameNotFoundException) {
             // Unlikely, but the package may have been uninstalled at this point
-            return Connection.ConnectionFail.ExtendConnectionFail(extensionInfo)
+            return Connection.ConnectionFail.ExtendConnectionFail(connectionInfo)
         }
         val classLoader = PathClassLoader(appInfo.sourceDir, null, context.classLoader)
         return try {
-            val ext = appInfo.metaData.getString(EXTENSION_CLASS)?.let { extClass ->
-                val fullExtClass = extClass.takeUnless { it.startsWith(".") } ?: (extensionInfo.pkg + extClass)
+            val ext = connectionInfo.connectionClassName.let { extClass ->
+                val fullExtClass = extClass.takeUnless { it.startsWith(".") } ?: (connectionInfo.pkg + extClass)
                 val clazz = Class.forName(fullExtClass, false, classLoader)
                 clazz.newInstance()
             } as ParaboxConnection
             Connection.ConnectionPending.ExtendConnectionPending(
-                extensionInfo, ext
+                connectionInfo, ext
             )
         } catch (e: ClassCastException) {
             e.printStackTrace()
-            Connection.ConnectionFail.ExtendConnectionFail(extensionInfo)
+            Connection.ConnectionFail.ExtendConnectionFail(connectionInfo)
         } catch (e: ClassNotFoundException) {
             e.printStackTrace()
-            Connection.ConnectionFail.ExtendConnectionFail(extensionInfo)
+            Connection.ConnectionFail.ExtendConnectionFail(connectionInfo)
         }
     }
 

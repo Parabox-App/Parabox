@@ -4,8 +4,8 @@ import android.content.Context
 import android.os.Bundle
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
-import com.ojhdtapp.parabox.data.local.ExtensionInfo
-import com.ojhdtapp.parabox.data.local.ExtensionInfoType
+import com.ojhdtapp.parabox.data.local.ConnectionInfo
+import com.ojhdtapp.parabox.data.local.ConnectionInfoType
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxBridge
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnection
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnectionStatus
@@ -16,9 +16,9 @@ sealed interface Connection {
     val alias: String
     val name: String
     val extra: Bundle
-    val extensionId: Long
+    val connectionId: Long
 
-    fun toExtensionInfo() : ExtensionInfo
+    fun toExtensionInfo() : ConnectionInfo
     sealed interface ConnectionPending : Connection {
         val connection: ParaboxConnection
 
@@ -28,39 +28,39 @@ sealed interface Connection {
             override val alias: String,
             override val name: String,
             override val extra: Bundle,
-            override val extensionId: Long,
+            override val connectionId: Long,
             override val connection: ParaboxConnection,
             override val key: String
         ) : ConnectionPending, BuiltInConnection{
-            constructor(extensionInfo: ExtensionInfo, ext: ParaboxConnection) : this(
-                extensionInfo.alias,
-                extensionInfo.name,
-                extensionInfo.extra,
-                extensionInfo.extensionId,
+            constructor(connectionInfo: ConnectionInfo, ext: ParaboxConnection) : this(
+                connectionInfo.alias,
+                connectionInfo.name,
+                connectionInfo.extra,
+                connectionInfo.connectionId,
                 ext,
-                extensionInfo.builtInKey
+                connectionInfo.key
             )
 
             override fun toFail(): ConnectionFail {
                 return ConnectionFail.BuiltInConnectionFail(
-                    alias, name, extra, extensionId, key
+                    alias, name, extra, connectionId, key
                 )
             }
 
             override fun toSuccess(job: Job): ConnectionSuccess {
                 return ConnectionSuccess.BuiltInConnectionSuccess(
-                    alias, name, extra, extensionId, connection, job, key
+                    alias, name, extra, connectionId, connection, job, key
                 )
             }
 
-            override fun toExtensionInfo(): ExtensionInfo {
-                return ExtensionInfo(
+            override fun toExtensionInfo(): ConnectionInfo {
+                return ConnectionInfo(
                     alias = alias,
                     name = name,
-                    type = ExtensionInfoType.BuiltIn,
+                    type = ConnectionInfoType.BuiltIn,
                     extra = extra,
-                    builtInKey = key,
-                    extensionId = extensionId
+                    key = key,
+                    connectionId = connectionId
                 )
             }
         }
@@ -69,45 +69,45 @@ sealed interface Connection {
             override val alias: String,
             override val name: String,
             override val extra: Bundle,
-            override val extensionId: Long,
+            override val connectionId: Long,
             override val connection: ParaboxConnection,
             override val pkg: String,
             override val version: String,
             override val versionCode: Long
         ) : ConnectionPending, ExternalConnection {
-            constructor(extensionInfo: ExtensionInfo, connection: ParaboxConnection) : this(
-                extensionInfo.alias,
-                extensionInfo.name,
-                extensionInfo.extra,
-                extensionInfo.extensionId,
+            constructor(connectionInfo: ConnectionInfo, connection: ParaboxConnection) : this(
+                connectionInfo.alias,
+                connectionInfo.name,
+                connectionInfo.extra,
+                connectionInfo.connectionId,
                 connection,
-                extensionInfo.pkg,
-                extensionInfo.version,
-                extensionInfo.versionCode
+                connectionInfo.pkg,
+                connectionInfo.version,
+                connectionInfo.versionCode
             )
 
             override fun toFail(): ConnectionFail {
                 return ConnectionFail.ExtendConnectionFail(
-                    alias, name, extra, extensionId, pkg, version, versionCode
+                    alias, name, extra, connectionId, pkg, version, versionCode
                 )
             }
 
             override fun toSuccess(job: Job): ConnectionSuccess {
                 return ConnectionSuccess.ExtendConnectionSuccess(
-                    alias, name, extra, extensionId, connection, job, pkg, version, versionCode
+                    alias, name, extra, connectionId, connection, job, pkg, version, versionCode
                 )
             }
 
-            override fun toExtensionInfo(): ExtensionInfo {
-                return ExtensionInfo(
+            override fun toExtensionInfo(): ConnectionInfo {
+                return ConnectionInfo(
                     alias = alias,
                     name = name,
-                    type = ExtensionInfoType.Extend,
+                    type = ConnectionInfoType.Extend,
                     extra = extra,
                     pkg = pkg,
                     version = version,
                     versionCode = versionCode,
-                    extensionId = extensionId
+                    connectionId = connectionId
                 )
             }
         }
@@ -118,25 +118,25 @@ sealed interface Connection {
             override val alias: String,
             override val name: String,
             override val extra: Bundle,
-            override val extensionId: Long,
+            override val connectionId: Long,
             override val key: String
         ) : ConnectionFail, BuiltInConnection {
-            constructor(extensionInfo: ExtensionInfo): this(
-                extensionInfo.alias,
-                extensionInfo.name,
-                extensionInfo.extra,
-                extensionInfo.extensionId,
-                extensionInfo.builtInKey
+            constructor(connectionInfo: ConnectionInfo): this(
+                connectionInfo.alias,
+                connectionInfo.name,
+                connectionInfo.extra,
+                connectionInfo.connectionId,
+                connectionInfo.key
             )
 
-            override fun toExtensionInfo(): ExtensionInfo {
-                return ExtensionInfo(
+            override fun toExtensionInfo(): ConnectionInfo {
+                return ConnectionInfo(
                     alias = alias,
                     name = name,
-                    type = ExtensionInfoType.BuiltIn,
+                    type = ConnectionInfoType.BuiltIn,
                     extra = extra,
-                    builtInKey = key,
-                    extensionId = extensionId
+                    key = key,
+                    connectionId = connectionId
                 )
             }
         }
@@ -145,30 +145,30 @@ sealed interface Connection {
             override val alias: String,
             override val name: String,
             override val extra: Bundle,
-            override val extensionId: Long,
+            override val connectionId: Long,
             override val pkg: String,
             override val version: String,
             override val versionCode: Long
         ) : ConnectionFail, ExternalConnection {
-            constructor(extensionInfo: ExtensionInfo) : this(
-                extensionInfo.alias,
-                extensionInfo.name,
-                extensionInfo.extra,
-                extensionInfo.extensionId,
-                extensionInfo.pkg,
-                extensionInfo.version,
-                extensionInfo.versionCode
+            constructor(connectionInfo: ConnectionInfo) : this(
+                connectionInfo.alias,
+                connectionInfo.name,
+                connectionInfo.extra,
+                connectionInfo.connectionId,
+                connectionInfo.pkg,
+                connectionInfo.version,
+                connectionInfo.versionCode
             )
-            override fun toExtensionInfo(): ExtensionInfo {
-                return ExtensionInfo(
+            override fun toExtensionInfo(): ConnectionInfo {
+                return ConnectionInfo(
                     alias = alias,
                     name = name,
-                    type = ExtensionInfoType.Extend,
+                    type = ConnectionInfoType.Extend,
                     extra = extra,
                     pkg = pkg,
                     version = version,
                     versionCode = versionCode,
-                    extensionId = extensionId
+                    connectionId = connectionId
                 )
             }
         }
@@ -184,25 +184,25 @@ sealed interface Connection {
             override val alias: String,
             override val name: String,
             override val extra: Bundle,
-            override val extensionId: Long,
+            override val connectionId: Long,
             override val realConnection: ParaboxConnection,
             override val job: Job,
             override val key: String
         ) : ConnectionSuccess(), BuiltInConnection {
             override fun toPending(): ConnectionPending {
                 return ConnectionPending.BuiltInConnectionPending(
-                    alias, name, extra, extensionId, realConnection, key
+                    alias, name, extra, connectionId, realConnection, key
                 )
             }
 
-            override fun toExtensionInfo(): ExtensionInfo {
-                return ExtensionInfo(
+            override fun toExtensionInfo(): ConnectionInfo {
+                return ConnectionInfo(
                     alias = alias,
                     name = name,
-                    type = ExtensionInfoType.BuiltIn,
+                    type = ConnectionInfoType.BuiltIn,
                     extra = extra,
-                    builtInKey = key,
-                    extensionId = extensionId
+                    key = key,
+                    connectionId = connectionId
                 )
             }
 
@@ -212,7 +212,7 @@ sealed interface Connection {
             override val alias: String,
             override val name: String,
             override val extra: Bundle,
-            override val extensionId: Long,
+            override val connectionId: Long,
             override val realConnection: ParaboxConnection,
             override val job: Job,
             override val pkg: String,
@@ -221,25 +221,25 @@ sealed interface Connection {
         ) : ConnectionSuccess(), ExternalConnection {
             override fun toPending(): ConnectionPending {
                 return ConnectionPending.ExtendConnectionPending(
-                    alias, name, extra, extensionId, realConnection, pkg, version, versionCode
+                    alias, name, extra, connectionId, realConnection, pkg, version, versionCode
                 )
             }
-            override fun toExtensionInfo(): ExtensionInfo {
-                return ExtensionInfo(
+            override fun toExtensionInfo(): ConnectionInfo {
+                return ConnectionInfo(
                     alias = alias,
                     name = name,
-                    type = ExtensionInfoType.Extend,
+                    type = ConnectionInfoType.Extend,
                     extra = extra,
                     pkg = pkg,
                     version = version,
                     versionCode = versionCode,
-                    extensionId = extensionId
+                    connectionId = connectionId
                 )
             }
         }
 
         suspend fun init(context: Context, bridge: ParaboxBridge, extra: Bundle) {
-            realConnection.init(context, bridge, extra)
+            realConnection.init(context, job, bridge, extra)
         }
 
         fun getStatus(): StateFlow<ParaboxConnectionStatus> {

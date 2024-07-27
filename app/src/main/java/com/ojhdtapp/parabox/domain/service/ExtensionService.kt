@@ -7,7 +7,7 @@ import android.util.Log
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.ojhdtapp.parabox.core.util.NotificationUtil
-import com.ojhdtapp.parabox.domain.repository.ExtensionInfoRepository
+import com.ojhdtapp.parabox.domain.repository.ConnectionInfoRepository
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
 import dagger.hilt.android.AndroidEntryPoint
@@ -28,7 +28,7 @@ class ExtensionService : LifecycleService() {
     lateinit var notificationUtil: NotificationUtil
 
     @Inject
-    lateinit var extensionInfoRepository: ExtensionInfoRepository
+    lateinit var connectionInfoRepository: ConnectionInfoRepository
 
     private var bridge: ExtensionServiceBridge? = null
 
