@@ -20,6 +20,7 @@ import coil.request.CachePolicy
 import coil.util.DebugLogger
 import com.ojhdtapp.parabox.BuildConfig
 import dagger.hilt.android.HiltAndroidApp
+import org.lsposed.hiddenapibypass.HiddenApiBypass
 import top.canyie.pine.Pine
 import top.canyie.pine.PineConfig
 import top.canyie.pine.callback.MethodReplacement
@@ -64,6 +65,9 @@ class HiltApplication : Application(), Configuration.Provider, ImageLoaderFactor
     @OptIn(ExperimentalMaterial3AdaptiveApi::class)
     override fun onCreate() {
         pineHook()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            HiddenApiBypass.addHiddenApiExemptions("");
+        }
         super.onCreate()
     }
 }

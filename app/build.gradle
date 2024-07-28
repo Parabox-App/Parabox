@@ -8,6 +8,7 @@ plugins {
     id 'com.google.gms.google-services'
     id 'org.jetbrains.kotlin.plugin.serialization'
     id 'com.google.android.libraries.mapsplatform.secrets-gradle-plugin'
+    id 'dev.rikka.tools.refine'
 }
 
 android {
@@ -149,6 +150,10 @@ dependencies {
     implementation "com.fasterxml.jackson.core:jackson-annotations:$jackson_version"
     implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jackson_version"
 
+    // Refine
+    compileOnly project(':app:hidden-api')
+    implementation "dev.rikka.tools.refine:runtime:4.4.0"
+    implementation "org.lsposed.hiddenapibypass:hiddenapibypass:4.3"
 
     // Markdown
     def richtext_version = "1.0.0-alpha01"

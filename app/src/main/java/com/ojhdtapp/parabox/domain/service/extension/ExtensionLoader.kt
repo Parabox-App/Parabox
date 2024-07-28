@@ -3,6 +3,8 @@ package com.ojhdtapp.parabox.domain.service.extension
 import android.content.Context
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
+import android.content.res.AssetManager
+import android.content.res.Resources
 import android.os.Build
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.graphics.drawable.toBitmapOrNull
@@ -12,6 +14,7 @@ import com.ojhdtapp.parabox.domain.model.Extension
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnection
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxExtension
 import dalvik.system.PathClassLoader
+import dev.rikka.tools.refine.Refine
 import java.lang.ClassCastException
 
 object ExtensionLoader {
@@ -85,9 +88,21 @@ object ExtensionLoader {
             try {
                 val clazz = Class.forName(fullExtClass, false, classLoader)
                 val entrance = clazz.newInstance() as ParaboxExtension
+                val icon = entrance.getIconResId()?.let {
+                    try {
+                        val assetManager = AssetManager::class.java.newInstance()
+                        val method = AssetManager::class.java.getDeclaredMethod("addAssetPath", String::class.java)
+                        method.invoke(assetManager, appInfo.sourceDir)
+                        val resources = Resources(assetManager, context.resources.displayMetrics, context.resources.configuration)
+                        resources.getDrawable(it)?.toBitmapOrNull()?.asImageBitmap()
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        null
+                    }
+                }
                 Extension.Success.External(
                     entrance.getName() ?: appName,
-                    appIcon,
+                    icon ?: appIcon,
                     entrance.getDescription(),
                     entrance.getKey(),
                     entrance.getInitHandler(),

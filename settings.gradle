@@ -20,3 +20,4 @@ rootProject.name = "Parabox"
 include ':app'
 include ':Parabox Development Kit'
 include ':extensionDemo'
+include ':app:hidden-api'
