@@ -66,6 +66,7 @@ fun SettingPage(
 ) {
     val state by viewModel.uiState.collectAsState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = if (layoutType != LayoutType.SPLIT) MaterialTheme.colorScheme.surface else Color.Transparent,
@@ -123,7 +124,7 @@ fun SettingPage(
             }
             item {
                 SettingItem(
-                    title = "扩展",
+                    title = "连接与扩展",
                     leadingIcon = {
                         Icon(imageVector = Icons.Outlined.LibraryAdd, contentDescription = "extension settings", tint = MaterialTheme.colorScheme.onSurface)
                     },

@@ -114,7 +114,7 @@ fun ExtensionSettingPage(
                     Text(
                         modifier = Modifier.padding(horizontal = 24.dp, vertical = 32.dp),
                         color = MaterialTheme.colorScheme.onSurface,
-                        text = "扩展",
+                        text = "连接与扩展",
                         style = MaterialTheme.typography.headlineMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -139,7 +139,7 @@ fun ExtensionSettingPage(
                     title = {
                         Text(
                             modifier = Modifier.padding(start = 8.dp),
-                            text = "扩展",
+                            text = "连接与扩展",
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )

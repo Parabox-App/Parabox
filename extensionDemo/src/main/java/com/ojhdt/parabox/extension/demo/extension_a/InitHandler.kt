@@ -39,6 +39,16 @@ class InitHandler : ParaboxInitHandler() {
                         ParaboxInitActionResult.Error("请输入正确的端口")
                     }
                 }
+            ),
+            ParaboxInitAction.TextInputAction(
+                key = "onebot_token",
+                title = "输入 AccessToken",
+                errMsg = "",
+                description = "请输入 Access Token（可留空）",
+                label = "端口",
+                onResult = { res: String ->
+                    ParaboxInitActionResult.Done
+                }
             )
         )
     }

@@ -511,6 +511,20 @@ class MainSharedViewModel @Inject constructor(
                 return state
             }
 
+            is MainSharedEvent.SettingNavigate -> {
+                viewModelScope.launch {
+                    sendEffect(MainSharedEffect.SettingNavigate(event.target))
+                }
+                return state
+            }
+
+            is MainSharedEvent.RootNavigate -> {
+                viewModelScope.launch {
+                    sendEffect(MainSharedEffect.RootNavigate(event.target))
+                }
+                return state
+            }
+
             is MainSharedEvent.ShowChangeLog -> {
                 if (event.show) {
                     if (state.changeLogBottomSheetState.loadState in listOf(LoadState.LOADING, LoadState.ERROR)) {

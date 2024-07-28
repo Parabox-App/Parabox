@@ -38,8 +38,12 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxMessageElement
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxPlainText
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxUnsupported
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 class OneBot11Connection : ParaboxConnection() {
     private var appWebSocketConnection: OneBot11AppWebSocketConnection? = null
@@ -65,18 +69,21 @@ class OneBot11Connection : ParaboxConnection() {
         val appWebSocketConnectionConfiguration = OneBot11AppWebSocketConnectionConfiguration(
             host = host,
             port = port,
-            accessToken = token
+            accessToken = token,
+            heartbeatInterval = 10.seconds,
         )
 //                val appReverseWebSocketConnectionConfiguration = OneBot11AppReverseWebSocketConnectionConfiguration(
 //                    host = reverseHost,
 //                    port = reversePort,
 //                )
 //                appReverseWebSocketConnection = OneBot11AppReverseWebSocketConnection(appReverseWebSocketConnectionConfiguration)
-        coroutineScope?.launch(Dispatchers.IO) {
+        coroutineScope.launch(Dispatchers.IO) {
+            val job = SupervisorJob()
+            val coroutineScope = CoroutineScope(job + Dispatchers.IO)
             appWebSocketConnection = OneBot11AppWebSocketConnection(
                 configuration = appWebSocketConnectionConfiguration,
                 job = job,
-                coroutineContext = coroutineContext
+                coroutineContext = coroutineScope.coroutineContext
             ).awaitUtilConnected()
             Log.d("parabox", "appWebSocketConnection connected")
             registerListener()
@@ -92,15 +99,13 @@ class OneBot11Connection : ParaboxConnection() {
         }
         appWebSocketConnection?.incomingChannel?.registerListenerWithoutQuickOperation(PRIVATE_MESSAGE_EVENT) {
             Log.d("parabox", "receive private message")
-            coroutineScope?.launch(Dispatchers.IO) {
+            coroutineScope.launch(Dispatchers.IO) {
                 receivePrivateMessage(it)
             }
         }
         appWebSocketConnection?.incomingChannel?.registerListenerWithoutQuickOperation(GROUP_MESSAGE_EVENT) {
             Log.d("parabox", "receive group message")
-            coroutineScope?.launch(Dispatchers.IO) {
-                receiveGroupMessage(it)
-            }
+            receiveGroupMessage(it)
         }
     }
 
@@ -149,6 +154,7 @@ class OneBot11Connection : ParaboxConnection() {
             timestamp = data.time,
             uuid = data.messageId.toString()
         )
+        Log.d("parabox", "receive group message:${obj.contents}")
         return receiveMessage(obj)
     }
 

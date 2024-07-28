@@ -53,6 +53,8 @@ sealed interface MainSharedEvent : UiEvent {
     data class UpdateContactRelativeChatList(val list: List<Chat>, val loadState: LoadState) : MainSharedEvent
     data class LoadMessage(val chat: Chat, val scrollToMessageId: Long? = null) : MainSharedEvent
     data class MenuNavigate(val target: MenuNavigateTarget) : MainSharedEvent
+    data class SettingNavigate(val target: SettingNavigateTarget) : MainSharedEvent
+    data class RootNavigate(val target: RootNavigateTarget) : MainSharedEvent
     data class ShowChangeLog(val show: Boolean): MainSharedEvent
     data class GetChangeLogDone(val res: List<ChangeLog>, val isSuccess: Boolean) : MainSharedEvent
 
@@ -60,4 +62,12 @@ sealed interface MainSharedEvent : UiEvent {
 
 enum class MenuNavigateTarget {
     Message, File, Contact
+}
+
+enum class SettingNavigateTarget {
+    GENERAL, ADDONS, LABELS, APPEARANCE, NOTIFICATION, STORAGE, CLOUD, EXPERIMENTAL, HELP
+}
+
+enum class RootNavigateTarget {
+    Menu, Setting
 }

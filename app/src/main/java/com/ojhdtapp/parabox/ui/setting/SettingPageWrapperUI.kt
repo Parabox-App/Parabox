@@ -12,10 +12,12 @@ import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.layout.AnimatedPane
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
+import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldRole
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -23,6 +25,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.flowWithLifecycle
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.stack.Children
 import com.arkivanov.decompose.extensions.compose.stack.animation.fade
@@ -33,10 +38,15 @@ import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimation
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
+import com.arkivanov.decompose.router.stack.bringToFront
 import com.arkivanov.decompose.router.stack.pop
+import com.arkivanov.decompose.router.stack.replaceAll
+import com.ojhdtapp.parabox.ui.MainSharedEffect
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
+import com.ojhdtapp.parabox.ui.SettingNavigateTarget
 import com.ojhdtapp.parabox.ui.common.LayoutType
 import com.ojhdtapp.parabox.ui.navigation.DefaultRootComponent
+import com.ojhdtapp.parabox.ui.navigation.DefaultSettingComponent
 import com.ojhdtapp.parabox.ui.navigation.RootComponent
 import com.ojhdtapp.parabox.ui.navigation.SettingComponent
 import com.ojhdtapp.parabox.ui.navigation.slideWithOffset
@@ -52,6 +62,7 @@ import com.ojhdtapp.parabox.ui.setting.detail.LabelSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.NotificationSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.OpenSourceLicenseSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.StorageSettingPage
+import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(
     ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3WindowSizeClassApi::class,
@@ -80,7 +91,73 @@ fun SettingPageWrapperUi(
         }
     }
     val settingStackState by component.settingStack.subscribeAsState()
-
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(Unit) {
+        mainSharedViewModel.uiEffect.flowWithLifecycle(lifecycleOwner.lifecycle, Lifecycle.State.STARTED)
+            .collectLatest {
+                when (it) {
+                    is MainSharedEffect.SettingNavigate -> {
+                        when(it.target) {
+                            SettingNavigateTarget.GENERAL -> {
+                                component.settingNav.bringToFront(DefaultSettingComponent.SettingConfig.GeneralSetting) {
+                                    component.settingNav.replaceAll(DefaultSettingComponent.SettingConfig.GeneralSetting)
+                                }
+                                scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.GENERAL)
+                            }
+                            SettingNavigateTarget.ADDONS -> {
+                                component.settingNav.bringToFront(DefaultSettingComponent.SettingConfig.ExtensionSetting) {
+                                    component.settingNav.replaceAll(DefaultSettingComponent.SettingConfig.ExtensionSetting)
+                                }
+                                scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.ADDONS)
+                            }
+                            SettingNavigateTarget.LABELS -> {
+                                component.settingNav.bringToFront(DefaultSettingComponent.SettingConfig.LabelSetting) {
+                                    component.settingNav.replaceAll(DefaultSettingComponent.SettingConfig.LabelSetting)
+                                }
+                                scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.LABELS)
+                            }
+                            SettingNavigateTarget.APPEARANCE -> {
+                                component.settingNav.bringToFront(DefaultSettingComponent.SettingConfig.AppearanceSetting) {
+                                    component.settingNav.replaceAll(DefaultSettingComponent.SettingConfig.AppearanceSetting)
+                                }
+                                scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.APPEARANCE)
+                            }
+                            SettingNavigateTarget.NOTIFICATION -> {
+                                component.settingNav.bringToFront(DefaultSettingComponent.SettingConfig.NotificationSetting) {
+                                    component.settingNav.replaceAll(DefaultSettingComponent.SettingConfig.NotificationSetting)
+                                }
+                                scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.NOTIFICATION)
+                            }
+                            SettingNavigateTarget.STORAGE -> {
+                                component.settingNav.bringToFront(DefaultSettingComponent.SettingConfig.StorageSetting) {
+                                    component.settingNav.replaceAll(DefaultSettingComponent.SettingConfig.StorageSetting)
+                                }
+                                scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.STORAGE)
+                            }
+                            SettingNavigateTarget.CLOUD -> {
+                                component.settingNav.bringToFront(DefaultSettingComponent.SettingConfig.CloudSetting) {
+                                    component.settingNav.replaceAll(DefaultSettingComponent.SettingConfig.CloudSetting)
+                                }
+                                scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.CLOUD)
+                            }
+                            SettingNavigateTarget.EXPERIMENTAL -> {
+                                component.settingNav.bringToFront(DefaultSettingComponent.SettingConfig.ExperimentalSetting) {
+                                    component.settingNav.replaceAll(DefaultSettingComponent.SettingConfig.ExperimentalSetting)
+                                }
+                                scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.EXPERIMENTAL)
+                            }
+                            SettingNavigateTarget.HELP -> {
+                                component.settingNav.bringToFront(DefaultSettingComponent.SettingConfig.HelpAndSupportSetting) {
+                                    component.settingNav.replaceAll(DefaultSettingComponent.SettingConfig.HelpAndSupportSetting)
+                                }
+                                scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.HELP)
+                            }
+                        }
+                    }
+                    else -> {}
+                }
+            }
+    }
     ListDetailPaneScaffold(
         modifier = modifier
             .background(MaterialTheme.colorScheme.surfaceContainer)

@@ -37,6 +37,7 @@ class Connection : ParaboxConnection() {
     override suspend fun onInitialize(extra: Bundle): Boolean {
         val ip = extra.getString("onebot_ip") ?: "127.0.0.1"
         val port = extra.getString("onebot_port") ?: "8080"
+        val token = extra.getString("onebot_token")
         val botConfig = BotConfig().apply {
             url = "ws://${ip}:${port}"
         }

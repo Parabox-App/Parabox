@@ -55,6 +55,7 @@ import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.MenuNavigateTarget
+import com.ojhdtapp.parabox.ui.RootNavigateTarget
 import com.ojhdtapp.parabox.ui.common.ChatPickerDialog
 import com.ojhdtapp.parabox.ui.common.ContactPickerDialog
 import com.ojhdtapp.parabox.ui.common.DateRangePickerDialog
@@ -194,6 +195,20 @@ fun NavigationSuite(
                             MenuNavigateTarget.Contact -> {
                                 menuNavigation.bringToFront(DefaultMenuComponent.MenuConfig.Contact) {
                                     menuNavigation.replaceAll(DefaultMenuComponent.MenuConfig.Contact)
+                                }
+                            }
+                        }
+                    }
+                    is MainSharedEffect.RootNavigate -> {
+                        when(it.target) {
+                            RootNavigateTarget.Menu -> {
+                                rootNavigation.bringToFront(DefaultRootComponent.RootConfig.Menu) {
+                                    rootNavigation.replaceAll(DefaultRootComponent.RootConfig.Menu)
+                                }
+                            }
+                            RootNavigateTarget.Setting -> {
+                                rootNavigation.bringToFront(DefaultRootComponent.RootConfig.Setting) {
+                                    rootNavigation.replaceAll(DefaultRootComponent.RootConfig.Setting)
                                 }
                             }
                         }

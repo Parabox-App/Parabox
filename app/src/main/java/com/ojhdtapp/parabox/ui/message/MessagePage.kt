@@ -53,6 +53,8 @@ import com.ojhdtapp.parabox.ui.MainSharedEffect
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
+import com.ojhdtapp.parabox.ui.RootNavigateTarget
+import com.ojhdtapp.parabox.ui.SettingNavigateTarget
 import com.ojhdtapp.parabox.ui.common.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -495,6 +497,21 @@ fun MessagePage(
                                     hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                                 }
                             )
+                        }
+                    }
+                }
+            }
+            item {
+                if (chatLazyPagingData.itemCount == 0) {
+                    EmptyChatNoticeBlock(
+                        modifier = Modifier.fillMaxWidth()
+                            .fillParentMaxHeight(0.7f),
+                        state = mainSharedState
+                    ) {
+                        coroutineScope.launch {
+                            mainSharedViewModel.sendEvent(MainSharedEvent.RootNavigate(RootNavigateTarget.Setting))
+                            delay(300)
+                            mainSharedViewModel.sendEvent(MainSharedEvent.SettingNavigate(SettingNavigateTarget.ADDONS))
                         }
                     }
                 }

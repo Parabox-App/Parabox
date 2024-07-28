@@ -2,8 +2,6 @@ package com.ojhdtapp.paraboxdevelopmentkit.extension
 
 import android.content.Context
 import android.os.Bundle
-import android.util.Log
-import com.ojhdtapp.paraboxdevelopmentkit.BuildConfig
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxBasicInfo
 import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
@@ -47,7 +45,7 @@ abstract class ParaboxConnection {
                 message = ParaboxResult.ERROR_UNINITIALIZED_MSG
             )
         } else {
-            mBridge!!.receiveMessage(message)
+            mBridge.receiveMessage(message)
         }
     }
 
@@ -58,7 +56,7 @@ abstract class ParaboxConnection {
                 message = ParaboxResult.ERROR_UNINITIALIZED_MSG
             )
         } else {
-            mBridge!!.recallMessage(uuid)
+            mBridge.recallMessage(uuid)
         }
     }
     abstract suspend fun onInitialize(extra: Bundle) : Boolean
