@@ -81,7 +81,12 @@ class MainRepositoryImpl @Inject constructor(
                     launch(Dispatchers.IO) {
                         val originalContact = db.contactDao.getContactById(contactIdDeferred.await())
                         if (originalContact?.name?.isNotEmpty() != true || originalContact.avatar is ParaboxResourceInfo.ParaboxEmptyInfo) {
-                            val basicInfo = ext.realConnection.onGetUserBasicInfo(msg.sender.uid)
+                            val basicInfo = try {
+                                ext.realConnection.onGetUserBasicInfo(msg.sender.uid)
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                null
+                            }
                             if (basicInfo != null) {
                                 db.contactDao.updateBasicInfo(
                                     ContactBasicInfoUpdate(
@@ -99,10 +104,15 @@ class MainRepositoryImpl @Inject constructor(
                     launch(Dispatchers.IO) {
                         val originalChat = db.chatDao.getChatByIdWithoutObserve(chatIdDeferred.await())
                         if (originalChat?.name?.isNotEmpty() != true || originalChat.avatar is ParaboxResourceInfo.ParaboxEmptyInfo) {
-                            val basicInfo = when (originalChat?.type) {
-                                ParaboxChat.TYPE_PRIVATE -> ext.realConnection.onGetUserBasicInfo(msg.sender.uid)
-                                ParaboxChat.TYPE_GROUP -> ext.realConnection.onGetGroupBasicInfo(msg.chat.uid)
-                                else -> null
+                            val basicInfo = try {
+                                when (originalChat?.type) {
+                                    ParaboxChat.TYPE_PRIVATE -> ext.realConnection.onGetUserBasicInfo(msg.sender.uid)
+                                    ParaboxChat.TYPE_GROUP -> ext.realConnection.onGetGroupBasicInfo(msg.chat.uid)
+                                    else -> null
+                                }
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                null
                             }
                             if (basicInfo != null) {
                                 db.chatDao.updateBasicInfo(

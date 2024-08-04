@@ -4,12 +4,15 @@ import android.os.Bundle
 import android.util.Log
 import cn.chuanwise.onebot.lib.awaitUtilConnected
 import cn.chuanwise.onebot.lib.v11.GROUP_MESSAGE_EVENT
+import cn.chuanwise.onebot.lib.v11.LIFECYCLE_META_EVENT
 import cn.chuanwise.onebot.lib.v11.META_EVENT
 import cn.chuanwise.onebot.lib.v11.OneBot11AppReverseWebSocketConnection
 import cn.chuanwise.onebot.lib.v11.OneBot11AppWebSocketConnection
 import cn.chuanwise.onebot.lib.v11.OneBot11AppWebSocketConnectionConfiguration
 import cn.chuanwise.onebot.lib.v11.PRIVATE_MESSAGE_EVENT
 import cn.chuanwise.onebot.lib.v11.data.event.GroupMessageEventData
+import cn.chuanwise.onebot.lib.v11.data.event.HeartbeatEventData
+import cn.chuanwise.onebot.lib.v11.data.event.LifecycleMetaEventData
 import cn.chuanwise.onebot.lib.v11.data.event.PrivateMessageEventData
 import cn.chuanwise.onebot.lib.v11.data.message.ArrayMessageData
 import cn.chuanwise.onebot.lib.v11.data.message.AtData
@@ -21,6 +24,7 @@ import cn.chuanwise.onebot.lib.v11.data.message.SegmentData
 import cn.chuanwise.onebot.lib.v11.data.message.SingleMessageData
 import cn.chuanwise.onebot.lib.v11.data.message.TextData
 import cn.chuanwise.onebot.lib.v11.getGroupInfo
+import cn.chuanwise.onebot.lib.v11.getStrangerInfo
 import cn.chuanwise.onebot.lib.v11.registerListener
 import cn.chuanwise.onebot.lib.v11.registerListenerWithoutQuickOperation
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnection
@@ -88,13 +92,33 @@ class OneBot11Connection : ParaboxConnection() {
             registerListener()
         }
 //                appReverseWebSocketConnection!!.awaitUtilConnected()
-        updateStatus(ParaboxConnectionStatus.Active)
         return true
     }
 
     private fun registerListener() {
         appWebSocketConnection?.incomingChannel?.registerListener(META_EVENT) {
-            Log.d("parabox", "receive meta event:${it.metaEventType}")
+            when (it) {
+                is LifecycleMetaEventData -> {
+                    Log.d("parabox", "receive lifecycle meta event:${it.subType}")
+                    when (it.subType) {
+                        "enable" -> {
+
+                        }
+
+                        "disable" -> {
+                            updateStatus(ParaboxConnectionStatus.Error("OneBot disabled"))
+                        }
+
+                        "connect" -> {
+                            updateStatus(ParaboxConnectionStatus.Active)
+                        }
+                    }
+                }
+
+                is HeartbeatEventData -> {
+                    Log.d("parabox", "receive heartbeat, status=${it.status}")
+                }
+            }
         }
         appWebSocketConnection?.incomingChannel?.registerListenerWithoutQuickOperation(PRIVATE_MESSAGE_EVENT) {
             Log.d("parabox", "receive private message")
@@ -108,7 +132,7 @@ class OneBot11Connection : ParaboxConnection() {
         }
     }
 
-    private suspend fun receivePrivateMessage(data: PrivateMessageEventData) : ParaboxResult {
+    private suspend fun receivePrivateMessage(data: PrivateMessageEventData): ParaboxResult {
         val obj = ReceiveMessage(
             contents = data.message.toParaboxMessageElementList(),
             sender = ParaboxContact(
@@ -132,7 +156,7 @@ class OneBot11Connection : ParaboxConnection() {
         return receiveMessage(obj)
     }
 
-    private suspend fun receiveGroupMessage(data: GroupMessageEventData) : ParaboxResult {
+    private suspend fun receiveGroupMessage(data: GroupMessageEventData): ParaboxResult {
         val obj = ReceiveMessage(
             contents = data.message.toParaboxMessageElementList(),
             sender = ParaboxContact(
@@ -150,10 +174,10 @@ class OneBot11Connection : ParaboxConnection() {
                 type = ParaboxChat.TYPE_GROUP,
                 uid = data.groupId.toString()
             ),
-            timestamp = data.time,
+            timestamp = data.time * 1000,
             uuid = data.messageId.toString()
         )
-        Log.d("parabox", "receive group message:${obj.contents}")
+        Log.d("parabox", "receive group message:${obj.contents} at ${obj.timestamp}")
         return receiveMessage(obj)
     }
 
@@ -179,21 +203,29 @@ class OneBot11Connection : ParaboxConnection() {
     }
 
     override suspend fun onGetGroupBasicInfo(groupId: String): ParaboxBasicInfo? {
-        Log.d("parabox", "get group info $groupId")
-        if(appWebSocketConnection?.isConnected == true) {
+        return if (appWebSocketConnection?.isConnected == true) {
             appWebSocketConnection!!.getGroupInfo(groupId.toLong(), false).let {
-                return ParaboxBasicInfo(
+                ParaboxBasicInfo(
                     name = it.groupName,
                     avatar = ParaboxResourceInfo.ParaboxEmptyInfo
                 )
             }
         } else {
-            return null
+            null
         }
     }
 
     override suspend fun onGetUserBasicInfo(userId: String): ParaboxBasicInfo? {
-        TODO("Not yet implemented")
+        return if (appWebSocketConnection?.isConnected == true) {
+            appWebSocketConnection!!.getStrangerInfo(userId.toLong(), false).let {
+                ParaboxBasicInfo(
+                    name = it.nickname,
+                    avatar = ParaboxResourceInfo.ParaboxEmptyInfo
+                )
+            }
+        } else {
+            null
+        }
     }
 
     override fun onDestroy() {
@@ -204,15 +236,17 @@ class OneBot11Connection : ParaboxConnection() {
         appReverseWebSocketConnection = null
     }
 
-    private fun MessageData.toParaboxMessageElementList() : List<ParaboxMessageElement> {
+    private fun MessageData.toParaboxMessageElementList(): List<ParaboxMessageElement> {
         val res = mutableListOf<ParaboxMessageElement>()
-        when(this) {
+        when (this) {
             is SingleMessageData -> {
                 res.add(data.toParaboxMessageElement())
             }
+
             is ArrayMessageData -> {
                 res.addAll(data.map { it.data.toParaboxMessageElement() })
             }
+
             is CqCodeMessageData -> {
 
             }
@@ -220,12 +254,13 @@ class OneBot11Connection : ParaboxConnection() {
         return res
     }
 
-    private fun SegmentData.toParaboxMessageElement() : ParaboxMessageElement {
-        return when(this) {
+    private fun SegmentData.toParaboxMessageElement(): ParaboxMessageElement {
+        return when (this) {
             is TextData -> ParaboxPlainText(text)
             is ImageData -> ParaboxImage(
                 resourceInfo = ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo(file)
             )
+
             is AtData -> ParaboxAt(
                 target = ParaboxContact(
                     basicInfo = ParaboxBasicInfo(
@@ -235,6 +270,7 @@ class OneBot11Connection : ParaboxConnection() {
                     uid = qq
                 )
             )
+
             is LocationData -> {
                 val mLat = lat.toDoubleOrNull()
                 val mLon = lon.toDoubleOrNull()
@@ -249,6 +285,7 @@ class OneBot11Connection : ParaboxConnection() {
                     ParaboxUnsupported
                 }
             }
+
             else -> ParaboxUnsupported
         }
     }
