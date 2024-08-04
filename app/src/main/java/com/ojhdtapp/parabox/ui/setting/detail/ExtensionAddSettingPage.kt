@@ -25,6 +25,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -53,6 +55,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
@@ -241,7 +245,15 @@ private fun Content(
                                                     ) {
                                                         Text(text = paraboxInitAction.errMsg, style = MaterialTheme.typography.bodySmall)
                                                     }
-                                                }
+                                                },
+                                                keyboardOptions = KeyboardOptions(
+                                                    keyboardType = paraboxInitAction.type.toComposeKeyboardType(),
+                                                    imeAction = ImeAction.Done
+                                                ),
+                                                keyboardActions = KeyboardActions(
+                                                    onDone = {
+                                                        onEvent(SettingPageEvent.SubmitExtensionInitActionResult(text))
+                                                    }),
                                             )
                                             Row() {
                                                 if (state.initActionState.currentIndex > 0) {
@@ -327,3 +339,12 @@ private fun Content(
             }
         }
     }
+
+fun ParaboxInitAction.KeyboardType.toComposeKeyboardType(): KeyboardType {
+    return when (this) {
+        ParaboxInitAction.KeyboardType.TEXT -> KeyboardType.Text
+        ParaboxInitAction.KeyboardType.NUMBER ->KeyboardType.Number
+        ParaboxInitAction.KeyboardType.EMAIL -> KeyboardType.Email
+        ParaboxInitAction.KeyboardType.PASSWORD -> KeyboardType.Password
+    }
+}

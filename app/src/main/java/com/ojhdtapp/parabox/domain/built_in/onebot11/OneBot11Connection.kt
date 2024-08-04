@@ -85,7 +85,6 @@ class OneBot11Connection : ParaboxConnection() {
                 job = job,
                 coroutineContext = coroutineScope.coroutineContext
             ).awaitUtilConnected()
-            Log.d("parabox", "appWebSocketConnection connected")
             registerListener()
         }
 //                appReverseWebSocketConnection!!.awaitUtilConnected()
@@ -180,6 +179,7 @@ class OneBot11Connection : ParaboxConnection() {
     }
 
     override suspend fun onGetGroupBasicInfo(groupId: String): ParaboxBasicInfo? {
+        Log.d("parabox", "get group info $groupId")
         if(appWebSocketConnection?.isConnected == true) {
             appWebSocketConnection!!.getGroupInfo(groupId.toLong(), false).let {
                 return ParaboxBasicInfo(

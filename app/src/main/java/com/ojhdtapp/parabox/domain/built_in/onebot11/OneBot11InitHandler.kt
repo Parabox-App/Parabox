@@ -16,6 +16,7 @@ class OneBot11InitHandler: ParaboxInitHandler() {
                 errMsg = "",
                 description = "请输入 OneBot WebSocket 服务地址",
                 label = "IP 地址",
+                type = ParaboxInitAction.KeyboardType.NUMBER,
                 onResult = { res: String ->
                     // check res is basic ipv4 ip address
                     if (res.matches(Regex("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$"))) {
@@ -31,6 +32,7 @@ class OneBot11InitHandler: ParaboxInitHandler() {
                 errMsg = "",
                 description = "请输入 OneBot WebSocket 服务端口",
                 label = "端口",
+                type = ParaboxInitAction.KeyboardType.NUMBER,
                 onResult = { res: String ->
                     // check res is basic ipv4 port
                     if (res.matches(Regex("^[0-9]{1,5}$"))) {

@@ -20,9 +20,10 @@ sealed interface ParaboxInitAction {
     data class TextInputAction(
         override val key: String,
         override val title: String,
-        override val errMsg: String,
-        override val description: String,
+        override val errMsg: String = "",
+        override val description: String = "",
         val label: String,
+        val type: KeyboardType = KeyboardType.TEXT,
         val onResult: suspend (value: String) -> ParaboxInitActionResult,
     ) : ParaboxInitAction
 
@@ -43,6 +44,13 @@ sealed interface ParaboxInitAction {
         val image: ParaboxResourceInfo,
         val onResult: suspend (value: String) -> ParaboxInitActionResult,
     ) : ParaboxInitAction
+
+    enum class KeyboardType {
+        TEXT,
+        NUMBER,
+        EMAIL,
+        PASSWORD
+    }
 }
 
 sealed interface ParaboxInitActionResult {

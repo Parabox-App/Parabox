@@ -402,7 +402,8 @@ fun MessagePage(
                                         imageVector = Icons.Outlined.FilterList,
                                         contentDescription = "filter"
                                     )
-                                }) {
+                                },
+                                containerColor = Color.Transparent) {
                                 viewModel.sendEvent(MessagePageEvent.OpenEnabledChatFilterDialog(true))
                             }
                         }

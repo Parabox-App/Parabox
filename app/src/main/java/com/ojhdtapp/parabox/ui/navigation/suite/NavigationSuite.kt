@@ -203,12 +203,10 @@ fun NavigationSuite(
                         when(it.target) {
                             RootNavigateTarget.Menu -> {
                                 rootNavigation.bringToFront(DefaultRootComponent.RootConfig.Menu) {
-                                    rootNavigation.replaceAll(DefaultRootComponent.RootConfig.Menu)
                                 }
                             }
                             RootNavigateTarget.Setting -> {
                                 rootNavigation.bringToFront(DefaultRootComponent.RootConfig.Setting) {
-                                    rootNavigation.replaceAll(DefaultRootComponent.RootConfig.Setting)
                                 }
                             }
                         }
