@@ -10,6 +10,7 @@ import com.arkivanov.essenty.backhandler.BackHandlerOwner
 import com.ojhdtapp.parabox.ui.navigation.settings.ApperaranceSettingComponent
 import com.ojhdtapp.parabox.ui.navigation.settings.ExperimentalSettingComponent
 import com.ojhdtapp.parabox.ui.navigation.settings.ExtensionAddSettingComponent
+import com.ojhdtapp.parabox.ui.navigation.settings.ExtensionConfigSettingComponent
 import com.ojhdtapp.parabox.ui.navigation.settings.ExtensionSettingComponent
 import com.ojhdtapp.parabox.ui.navigation.settings.GeneralSettingComponent
 import com.ojhdtapp.parabox.ui.navigation.settings.HelpAndSupportSettingComponent
@@ -31,6 +32,7 @@ interface SettingComponent: BackHandlerOwner {
         class GeneralSetting(val component: GeneralSettingComponent) : SettingChild()
         class ExtensionSetting(val component: ExtensionSettingComponent) : SettingChild()
         class ExtensionAddSetting(val component: ExtensionAddSettingComponent) : SettingChild()
+        class ExtensionConfigSetting(val component: ExtensionConfigSettingComponent) : SettingChild()
         class LabelSetting(val component: LabelSettingComponent) : SettingChild()
         class LabelDetailSetting(val component: LabelDetailSettingComponent) : SettingChild()
         class AppearanceSetting(val component: ApperaranceSettingComponent) : SettingChild()
@@ -70,6 +72,10 @@ class DefaultSettingComponent(
 
                     SettingConfig.ExtensionAddSetting -> SettingComponent.SettingChild.ExtensionAddSetting(
                         ExtensionAddSettingComponent(childComponentContext)
+                    )
+
+                    SettingConfig.ExtensionConfigSetting -> SettingComponent.SettingChild.ExtensionConfigSetting(
+                        ExtensionConfigSettingComponent(childComponentContext)
                     )
 
                     SettingConfig.LabelSetting -> SettingComponent.SettingChild.LabelSetting(
@@ -127,6 +133,10 @@ class DefaultSettingComponent(
         @Parcelize
         @Serializable
         data object ExtensionAddSetting : SettingConfig
+
+        @Parcelize
+        @Serializable
+        data object ExtensionConfigSetting : SettingConfig
 
         @Parcelize
         @Serializable

@@ -54,6 +54,7 @@ import com.ojhdtapp.parabox.ui.setting.detail.AppearanceSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.CloudSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.ExperimentalSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.ExtensionAddSettingPage
+import com.ojhdtapp.parabox.ui.setting.detail.ExtensionConfigSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.ExtensionSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.GeneralSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.HelpAndSupportSettingPage
@@ -227,6 +228,19 @@ fun SettingPageWrapperUi(
 
                         is SettingComponent.SettingChild.ExtensionAddSetting -> {
                             ExtensionAddSettingPage(
+                                state = state,
+                                mainSharedState = mainSharedState,
+                                layoutType = layoutType,
+                                scaffoldNavigator = scaffoldNavigator,
+                                navigation = component.settingNav,
+                                stackState = settingStackState,
+                                onEvent = viewModel::sendEvent,
+                                onMainSharedEvent = mainSharedViewModel::sendEvent
+                            )
+                        }
+
+                        is SettingComponent.SettingChild.ExtensionConfigSetting -> {
+                            ExtensionConfigSettingPage(
                                 state = state,
                                 mainSharedState = mainSharedState,
                                 layoutType = layoutType,

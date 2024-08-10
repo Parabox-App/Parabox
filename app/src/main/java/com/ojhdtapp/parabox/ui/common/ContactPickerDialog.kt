@@ -117,7 +117,9 @@ fun ContactPickerDialog(
                                 onValueChange = onQueryChange,
                                 enabled = true,
                                 textStyle = MaterialTheme.typography.bodyLarge.merge(TextStyle(color = MaterialTheme.colorScheme.onSurface)),
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                keyboardOptions = KeyboardOptions.Default.copy(
+                                    imeAction = ImeAction.Done
+                                ),
                                 keyboardActions = KeyboardActions(
                                     onDone = { keyboardController?.hide() }),
                                 singleLine = true,

@@ -300,6 +300,19 @@ private fun Content(
                     title = it.alias,
                     subTitle = status,
                     trailingIcon = {
+                        Surface(
+                            color = MaterialTheme.colorScheme.primary,
+                            shape = CircleShape
+                        ) {
+                            Text(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                text = it.name,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                maxLines = 1
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
                         Icon(
                             imageVector = statusIcon,
                             contentDescription = "status_icon",
@@ -312,6 +325,8 @@ private fun Content(
                         isMenuVisible = true
                     }
                 ) {
+                    onEvent(SettingPageEvent.EditConnectionConfig(it))
+                    navigation.pushNew(DefaultSettingComponent.SettingConfig.ExtensionConfigSetting)
                 }
             }
         }

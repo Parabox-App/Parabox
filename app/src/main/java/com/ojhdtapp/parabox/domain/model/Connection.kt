@@ -17,6 +17,7 @@ sealed interface Connection {
     val name: String
     val extra: Bundle
     val connectionId: Long
+    val key: String
 
     fun toExtensionInfo() : ConnectionInfo
     sealed interface ConnectionPending : Connection {
@@ -73,7 +74,8 @@ sealed interface Connection {
             override val connection: ParaboxConnection,
             override val pkg: String,
             override val version: String,
-            override val versionCode: Long
+            override val versionCode: Long,
+            override val key: String
         ) : ConnectionPending, ExternalConnection {
             constructor(connectionInfo: ConnectionInfo, connection: ParaboxConnection) : this(
                 connectionInfo.alias,
@@ -83,18 +85,19 @@ sealed interface Connection {
                 connection,
                 connectionInfo.pkg,
                 connectionInfo.version,
-                connectionInfo.versionCode
+                connectionInfo.versionCode,
+                connectionInfo.key
             )
 
             override fun toFail(): ConnectionFail {
                 return ConnectionFail.ExtendConnectionFail(
-                    alias, name, extra, connectionId, pkg, version, versionCode
+                    alias, name, extra, connectionId, pkg, version, versionCode, key
                 )
             }
 
             override fun toSuccess(job: Job): ConnectionSuccess {
                 return ConnectionSuccess.ExtendConnectionSuccess(
-                    alias, name, extra, connectionId, connection, job, pkg, version, versionCode
+                    alias, name, extra, connectionId, connection, job, pkg, version, versionCode, key
                 )
             }
 
@@ -148,7 +151,8 @@ sealed interface Connection {
             override val connectionId: Long,
             override val pkg: String,
             override val version: String,
-            override val versionCode: Long
+            override val versionCode: Long,
+            override val key: String
         ) : ConnectionFail, ExternalConnection {
             constructor(connectionInfo: ConnectionInfo) : this(
                 connectionInfo.alias,
@@ -157,7 +161,8 @@ sealed interface Connection {
                 connectionInfo.connectionId,
                 connectionInfo.pkg,
                 connectionInfo.version,
-                connectionInfo.versionCode
+                connectionInfo.versionCode,
+                connectionInfo.key
             )
             override fun toExtensionInfo(): ConnectionInfo {
                 return ConnectionInfo(
@@ -217,11 +222,12 @@ sealed interface Connection {
             override val job: Job,
             override val pkg: String,
             override val version: String,
-            override val versionCode: Long
+            override val versionCode: Long,
+            override val key: String
         ) : ConnectionSuccess(), ExternalConnection {
             override fun toPending(): ConnectionPending {
                 return ConnectionPending.ExtendConnectionPending(
-                    alias, name, extra, connectionId, realConnection, pkg, version, versionCode
+                    alias, name, extra, connectionId, realConnection, pkg, version, versionCode, key
                 )
             }
             override fun toExtensionInfo(): ConnectionInfo {
@@ -277,7 +283,6 @@ sealed interface Connection {
 }
 
 interface BuiltInConnection {
-    val key: String
 }
 
 interface ExternalConnection {

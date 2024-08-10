@@ -246,7 +246,7 @@ private fun Content(
                                                         Text(text = paraboxInitAction.errMsg, style = MaterialTheme.typography.bodySmall)
                                                     }
                                                 },
-                                                keyboardOptions = KeyboardOptions(
+                                                keyboardOptions = KeyboardOptions.Default.copy(
                                                     keyboardType = paraboxInitAction.type.toComposeKeyboardType(),
                                                     imeAction = ImeAction.Done
                                                 ),

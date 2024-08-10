@@ -24,6 +24,7 @@ sealed interface ParaboxInitAction {
         override val description: String = "",
         val label: String,
         val type: KeyboardType = KeyboardType.TEXT,
+        val defaultValue: String? = null,
         val onResult: suspend (value: String) -> ParaboxInitActionResult,
     ) : ParaboxInitAction
 
@@ -33,6 +34,7 @@ sealed interface ParaboxInitAction {
         override val errMsg: String,
         override val description: String,
         val options: List<String>,
+        val defaultValue: Int? = null,
         val onResult: suspend (selectedIndex: Int) -> ParaboxInitActionResult,
     ) : ParaboxInitAction
 
@@ -42,7 +44,19 @@ sealed interface ParaboxInitAction {
         override val errMsg: String,
         override val description: String,
         val image: ParaboxResourceInfo,
+        val label: String,
+        val type: KeyboardType = KeyboardType.TEXT,
+        val defaultValue: String? = null,
         val onResult: suspend (value: String) -> ParaboxInitActionResult,
+    ) : ParaboxInitAction
+
+    data class SwitchAction(
+        override val key: String,
+        override val title: String,
+        override val errMsg: String,
+        override val description: String,
+        val defaultValue: Boolean,
+        val onResult: suspend (isChecked: Boolean) -> ParaboxInitActionResult,
     ) : ParaboxInitAction
 
     enum class KeyboardType {
@@ -55,5 +69,5 @@ sealed interface ParaboxInitAction {
 
 sealed interface ParaboxInitActionResult {
     data object Done: ParaboxInitActionResult
-    class Error (val message: String): ParaboxInitActionResult
+    class Error(val message: String): ParaboxInitActionResult
 }

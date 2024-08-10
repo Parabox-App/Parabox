@@ -1,10 +1,12 @@
 package com.ojhdtapp.parabox.data.repository
 
 import android.content.Context
+import android.os.Bundle
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.ConnectionInfo
 import com.ojhdtapp.parabox.data.local.entity.ConnectionInfoEntity
+import com.ojhdtapp.parabox.data.local.entity.ConnectionInfoExtraUpdate
 import com.ojhdtapp.parabox.domain.repository.ConnectionInfoRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
@@ -40,5 +42,9 @@ class ConnectionInfoRepositoryImpl @Inject constructor(
                 emit(Resource.Error("unknown error"))
             }
         }
+    }
+
+    override fun updateConnectionInfoExtra(connectionId: Long, extra: Bundle): Boolean {
+        return db.connectionInfoDao.updateConnectionInfoExtra(ConnectionInfoExtraUpdate(connectionId, extra)) == 1
     }
 }

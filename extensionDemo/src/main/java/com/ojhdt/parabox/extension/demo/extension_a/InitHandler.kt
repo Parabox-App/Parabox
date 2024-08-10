@@ -5,7 +5,7 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.init_actions.ParaboxInitAction
 import com.ojhdtapp.paraboxdevelopmentkit.model.init_actions.ParaboxInitActionResult
 
 class InitHandler : ParaboxInitHandler() {
-    override suspend fun getExtensionInitActions(
+    override suspend fun getInitAction(
         list: List<ParaboxInitAction>,
         currentActionIndex: Int
     ): List<ParaboxInitAction> {

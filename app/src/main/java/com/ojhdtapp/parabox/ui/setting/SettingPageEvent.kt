@@ -6,6 +6,7 @@ import com.ojhdtapp.parabox.domain.model.Connection
 import com.ojhdtapp.parabox.domain.model.Extension
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.ui.base.UiEvent
+import com.ojhdtapp.paraboxdevelopmentkit.model.config_item.ParaboxConfigItem
 
 sealed interface SettingPageEvent : UiEvent{
     @Deprecated("using decompose")
@@ -15,6 +16,10 @@ sealed interface SettingPageEvent : UiEvent{
     data class DeleteConnection(val extensionId: Long): SettingPageEvent
     data class UpdateExtensionInitActionState(val state: SettingPageState.InitActionState): SettingPageEvent
     data class InitNewConnection(val extension: Extension.Success): SettingPageEvent
+    data class EditConnectionConfig(val connection: Connection): SettingPageEvent
+    data class LoadConnectionConfig(val configList: List<ParaboxConfigItem>, val loadState: LoadState): SettingPageEvent
+    data class WriteConnectionConfigCache(val configItem: ParaboxConfigItem, val value: Any): SettingPageEvent
+    data object SubmitConnectionConfig: SettingPageEvent
     data class SubmitExtensionInitActionResult(val result: Any): SettingPageEvent
     object RevertExtensionInitAction: SettingPageEvent
     data class InitNewExtensionConnectionDone(val isDone: Boolean) : SettingPageEvent

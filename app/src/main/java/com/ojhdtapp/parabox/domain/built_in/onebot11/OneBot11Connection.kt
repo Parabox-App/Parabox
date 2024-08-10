@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.domain.built_in.onebot11
 
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import cn.chuanwise.onebot.lib.awaitUtilConnected
@@ -27,6 +28,7 @@ import cn.chuanwise.onebot.lib.v11.getGroupInfo
 import cn.chuanwise.onebot.lib.v11.getStrangerInfo
 import cn.chuanwise.onebot.lib.v11.registerListener
 import cn.chuanwise.onebot.lib.v11.registerListenerWithoutQuickOperation
+import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnection
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnectionStatus
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxBasicInfo
@@ -257,9 +259,14 @@ class OneBot11Connection : ParaboxConnection() {
     private fun SegmentData.toParaboxMessageElement(): ParaboxMessageElement {
         return when (this) {
             is TextData -> ParaboxPlainText(text)
-            is ImageData -> ParaboxImage(
-                resourceInfo = ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo(file)
-            )
+            is ImageData -> {
+                val remoteResource = url?.let { ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo(it) }
+                val localResource = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(Uri.parse(file))
+                ParaboxImage(
+                    fileName = FileUtil.getFileNameFromPath(file),
+                    resourceInfo = remoteResource ?: localResource
+                )
+            }
 
             is AtData -> ParaboxAt(
                 target = ParaboxContact(

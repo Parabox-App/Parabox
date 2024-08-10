@@ -128,7 +128,7 @@ fun SettingPage(
                     leadingIcon = {
                         Icon(imageVector = Icons.Outlined.LibraryAdd, contentDescription = "extension settings", tint = MaterialTheme.colorScheme.onSurface)
                     },
-                    selected = layoutType == LayoutType.SPLIT && (stackState.active.instance is SettingComponent.SettingChild.ExtensionSetting || stackState.active.instance is SettingComponent.SettingChild.ExtensionAddSetting),
+                    selected = layoutType == LayoutType.SPLIT && (stackState.active.instance is SettingComponent.SettingChild.ExtensionSetting || stackState.active.instance is SettingComponent.SettingChild.ExtensionAddSetting || stackState.active.instance is SettingComponent.SettingChild.ExtensionConfigSetting),
                     layoutType = layoutType
                 ) {
 //                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.ADDONS))
@@ -240,7 +240,7 @@ fun SettingPage(
                     leadingIcon = {
                         Icon(imageVector = Icons.AutoMirrored.Outlined.HelpOutline, contentDescription = "support settings", tint = MaterialTheme.colorScheme.onSurface)
                     },
-                    selected = layoutType == LayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.HelpAndSupportSetting,
+                    selected = layoutType == LayoutType.SPLIT && (stackState.active.instance is SettingComponent.SettingChild.HelpAndSupportSetting || stackState.active.instance is SettingComponent.SettingChild.OpenSourceLicenseSetting),
                     layoutType = layoutType
                 ) {
 //                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.HELP))

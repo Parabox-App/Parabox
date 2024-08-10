@@ -24,6 +24,7 @@ import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxBridge
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnectionStatus
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
 import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
+import com.ojhdtapp.paraboxdevelopmentkit.model.config_item.ParaboxConfigItem
 import com.ojhdtapp.paraboxdevelopmentkit.model.init_actions.ParaboxInitAction
 import com.ojhdtapp.paraboxdevelopmentkit.model.init_actions.ParaboxInitActionResult
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -38,6 +39,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
@@ -94,7 +96,7 @@ class ExtensionManager(
         }
         initializingExtension = extension
         val initActions = try {
-            initializingExtension!!.initHandler.getExtensionInitActions(emptyList(), 0)
+            initializingExtension!!.initHandler.getInitAction(emptyList(), 0)
         } catch (e: Exception) {
             e.printStackTrace()
             null
@@ -211,7 +213,7 @@ class ExtensionManager(
                     }
 
                     is ParaboxInitAction.TextInputWithImageAction -> {
-                        val res = action.onResult(result.toString())
+                        val res = action.onResult(result as String)
                         if (res is ParaboxInitActionResult.Done) {
                             _initActionStateFlow.value = initActionStateFlow.value!!.copy(
                                 actionList = initActionStateFlow.value!!.actionList.toMutableList().apply {
@@ -223,6 +225,33 @@ class ExtensionManager(
                                 }
                             )
                             initializingExtension!!.initHandler.data.putString(action.key, result.toString())
+                            increaseInitActionStep()
+                        } else {
+                            _initActionStateFlow.value = initActionStateFlow.value!!.copy(
+                                actionList = initActionStateFlow.value!!.actionList.toMutableList().apply {
+                                    set(
+                                        currentActionIndex, action.copy(
+                                            errMsg = (res as ParaboxInitActionResult.Error).message
+                                        )
+                                    )
+                                }
+                            )
+                        }
+                    }
+
+                    is ParaboxInitAction.SwitchAction -> {
+                        val res = action.onResult(result as Boolean)
+                        if (res is ParaboxInitActionResult.Done) {
+                            _initActionStateFlow.value = initActionStateFlow.value!!.copy(
+                                actionList = initActionStateFlow.value!!.actionList.toMutableList().apply {
+                                    set(
+                                        currentActionIndex, action.copy(
+                                            errMsg = ""
+                                        )
+                                    )
+                                }
+                            )
+                            initializingExtension!!.initHandler.data.putBoolean(action.key, result as Boolean)
                             increaseInitActionStep()
                         } else {
                             _initActionStateFlow.value = initActionStateFlow.value!!.copy(
@@ -298,7 +327,7 @@ class ExtensionManager(
     private suspend fun increaseInitActionStep() {
         if (initializingExtension != null && initActionStateFlow.value != null) {
             val initActions = try {
-                initializingExtension!!.initHandler.getExtensionInitActions(emptyList(), 0)
+                initializingExtension!!.initHandler.getInitAction(emptyList(), 0)
             } catch (e: Exception) {
                 e.printStackTrace()
                 null
@@ -377,6 +406,17 @@ class ExtensionManager(
                     Log.e("parabox", "restartExtension error", e)
                 }
             }
+        }
+    }
+
+    suspend fun getConnectionConfig(connection: Connection) : Resource<List<ParaboxConfigItem>> {
+        val extension = extensionFlow.firstOrNull()?.find { connection.key == it.key } as? Extension.Success
+        if (extension != null) {
+            val configItems = extension.initHandler.getConfig()
+            return Resource.Success(configItems)
+        } else {
+            Log.e("parabox", "editConnectionConfig: extension not found")
+            return Resource.Error("extension not found")
         }
     }
 

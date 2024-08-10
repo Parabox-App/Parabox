@@ -164,6 +164,10 @@ class FileUtil @Inject constructor(
             return File.createTempFile(type, extension, context.cacheDir)
         }
 
+        fun getFileNameFromPath(path: String): String {
+            return path.substringAfterLast('/')
+        }
+
         const val EXTERNAL_FILES_DIR_MEME = "meme"
         const val EXTERNAL_FILES_DIR_CAMERA = "camera"
         const val DEFAULT_IMAGE_NAME = "image"

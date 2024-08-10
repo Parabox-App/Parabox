@@ -1,9 +1,11 @@
 package com.ojhdtapp.parabox.ui.setting
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.core.util.Resource
+import com.ojhdtapp.parabox.domain.model.Connection
 import com.ojhdtapp.parabox.domain.model.Extension
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.domain.repository.ConnectionInfoRepository
@@ -11,6 +13,7 @@ import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
 import com.ojhdtapp.parabox.domain.use_case.GetChat
 import com.ojhdtapp.parabox.domain.use_case.UpdateChat
 import com.ojhdtapp.parabox.ui.base.BaseViewModel
+import com.ojhdtapp.paraboxdevelopmentkit.model.config_item.ParaboxConfigItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -91,6 +94,69 @@ class SettingPageViewModel @Inject constructor(
                 state
             }
 
+            is SettingPageEvent.EditConnectionConfig -> {
+                editConnectionConfig(event.connection)
+                state.copy(
+                    configState = SettingPageState.ConfigState(
+                        originalConnection = event.connection,
+                        cacheExtra = event.connection.extra
+                    )
+                )
+            }
+
+            is SettingPageEvent.LoadConnectionConfig -> {
+                state.copy(
+                    configState = state.configState.copy(
+                        configList = event.configList,
+                        loadState = event.loadState
+                    )
+                )
+            }
+
+            is SettingPageEvent.WriteConnectionConfigCache -> {
+                state.copy(
+                    configState = state.configState.copy(
+                        cacheExtra = state.configState.cacheExtra?.apply {
+                            when(event.configItem) {
+                                is ParaboxConfigItem.TextInputConfigItem -> {
+                                    putString(event.configItem.key, event.value as String)
+                                }
+                                is ParaboxConfigItem.SelectConfigItem -> {
+                                    putString(event.configItem.key, event.value as String)
+                                }
+                                is ParaboxConfigItem.SwitchConfigItem -> {
+                                    putBoolean(event.configItem.key, event.value as Boolean)
+                                }
+                                else -> {
+                                    Log.d("parabox", "Unsupported config item type: ${event.configItem}")
+                                }
+                            }
+                        },
+                        modified = true
+                    )
+                )
+            }
+
+            is SettingPageEvent.SubmitConnectionConfig -> {
+                if (state.configState.originalConnection == null) {
+                    return state
+                } else {
+                    if (state.configState.cacheExtra != null) {
+                        viewModelScope.launch(Dispatchers.IO) {
+                            connectionInfoRepository.updateConnectionInfoExtra(
+                                state.configState.originalConnection.connectionId,
+                                state.configState.cacheExtra)
+                        }
+                    }
+                    state.copy(
+                        configState = state.configState.copy(
+                            modified = false
+                        )
+                    )
+                }
+
+            }
+
             is SettingPageEvent.UpdateSelectedTagLabel -> {
                 getChatWithCustomTag(event.tagLabel)
                 state.copy(
@@ -148,6 +214,38 @@ class SettingPageViewModel @Inject constructor(
                     sendEvent(SettingPageEvent.TagLabelChatsLoadDone(it.data ?: emptyList(), LoadState.SUCCESS))
                 } else {
                     sendEvent(SettingPageEvent.TagLabelChatsLoadDone(emptyList(), LoadState.ERROR))
+                }
+            }
+        }
+    }
+
+    private fun editConnectionConfig(connection: Connection) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val res = extensionManager.getConnectionConfig(connection)
+            when(res) {
+                is Resource.Success -> {
+                    sendEvent(
+                        SettingPageEvent.LoadConnectionConfig(
+                            configList = res.data ?: emptyList(),
+                            loadState = LoadState.SUCCESS
+                        )
+                    )
+                }
+                is Resource.Error -> {
+                    sendEvent(
+                        SettingPageEvent.LoadConnectionConfig(
+                            configList = res.data ?: emptyList(),
+                            loadState = LoadState.ERROR
+                        )
+                    )
+                }
+                is Resource.Loading -> {
+                    sendEvent(
+                        SettingPageEvent.LoadConnectionConfig(
+                            configList = res.data ?: emptyList(),
+                            loadState = LoadState.LOADING
+                        )
+                    )
                 }
             }
         }

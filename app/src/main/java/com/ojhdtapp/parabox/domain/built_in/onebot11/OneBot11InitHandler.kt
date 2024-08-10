@@ -1,11 +1,12 @@
 package com.ojhdtapp.parabox.domain.built_in.onebot11
 
 import com.ojhdtapp.paraboxdevelopmentkit.init.ParaboxInitHandler
+import com.ojhdtapp.paraboxdevelopmentkit.model.config_item.ParaboxConfigItem
 import com.ojhdtapp.paraboxdevelopmentkit.model.init_actions.ParaboxInitAction
 import com.ojhdtapp.paraboxdevelopmentkit.model.init_actions.ParaboxInitActionResult
 
 class OneBot11InitHandler: ParaboxInitHandler() {
-    override suspend fun getExtensionInitActions(
+    override suspend fun getInitAction(
         list: List<ParaboxInitAction>,
         currentActionIndex: Int
     ): List<ParaboxInitAction> {
@@ -54,6 +55,17 @@ class OneBot11InitHandler: ParaboxInitHandler() {
                 }
             )
 
+        )
+    }
+
+    override suspend fun getConfig(): List<ParaboxConfigItem> {
+        return listOf(
+            ParaboxConfigItem.SwitchConfigItem(
+                key = "compatibility_mode",
+                title = "兼容模式",
+                description = "启用协议之外的兼容逻辑",
+                defaultValue = false
+            )
         )
     }
 }

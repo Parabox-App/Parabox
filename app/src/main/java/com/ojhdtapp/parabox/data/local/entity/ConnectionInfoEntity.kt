@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.data.local.entity
 
 import android.os.Bundle
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.ojhdtapp.parabox.data.local.ConnectionInfo
@@ -23,3 +24,10 @@ data class ConnectionInfoEntity(
     fun toConnectionInfo(): ConnectionInfo
     = ConnectionInfo(alias, name, ConnectionInfoType.entries[type], extra, pkg, connectionClassName, version, versionCode, builtInKey, connectionId)
 }
+
+data class ConnectionInfoExtraUpdate(
+    @ColumnInfo(name = "connectionId")
+    val connectionId: Long,
+    @ColumnInfo(name = "extra")
+    val extra: Bundle,
+)
