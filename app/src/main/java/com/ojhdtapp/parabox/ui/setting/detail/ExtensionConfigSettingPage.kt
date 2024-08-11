@@ -146,7 +146,7 @@ fun ExtensionConfigSettingPage(
                 modifier = Modifier
                     .fillMaxSize()
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(
                         modifier = Modifier.padding(horizontal = 24.dp, vertical = 32.dp),
                         color = MaterialTheme.colorScheme.onSurface,
@@ -155,7 +155,9 @@ fun ExtensionConfigSettingPage(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    TextButton(onClick = {
+                    Button(
+                        modifier = Modifier.padding(end = 24.dp),
+                        onClick = {
                         onEvent(SettingPageEvent.SubmitConnectionConfig)
                     }) {
                         Text(text = "保存")
@@ -278,7 +280,7 @@ private fun Content(
                     )
                     SettingItem(
                         title = paraboxConfig.title,
-                        subTitle = paraboxConfig.description,
+                        subTitle = state.configState.cacheExtra?.getString(paraboxConfig.key) ?: paraboxConfig.description,
                         selected = false,
                         layoutType = layoutType,
                     ) {

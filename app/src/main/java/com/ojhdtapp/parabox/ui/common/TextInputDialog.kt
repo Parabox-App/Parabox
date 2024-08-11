@@ -2,6 +2,8 @@ package com.ojhdtapp.parabox.ui.common
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
@@ -20,6 +22,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
 
 @Composable
 fun TextInputDialog(
@@ -51,6 +54,7 @@ fun TextInputDialog(
                 Column {
                     if (description != null) {
                         Text(text = description)
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
                     TextField(
                         modifier = Modifier

@@ -146,6 +146,7 @@ class SettingPageViewModel @Inject constructor(
                             connectionInfoRepository.updateConnectionInfoExtra(
                                 state.configState.originalConnection.connectionId,
                                 state.configState.cacheExtra)
+                            extensionManager.restartConnection(state.configState.originalConnection.connectionId)
                         }
                     }
                     state.copy(

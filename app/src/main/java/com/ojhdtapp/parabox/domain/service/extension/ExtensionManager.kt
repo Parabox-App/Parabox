@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -99,6 +100,11 @@ class ExtensionManager(
             initializingExtension!!.initHandler.getInitAction(emptyList(), 0)
         } catch (e: Exception) {
             e.printStackTrace()
+            Toast.makeText(context, "发生致命错误，请检查扩展版本", Toast.LENGTH_SHORT).show()
+            null
+        } catch (e : AbstractMethodError) {
+            e.printStackTrace()
+            Toast.makeText(context, "发生致命错误，请检查扩展版本", Toast.LENGTH_SHORT).show()
             null
         } ?: emptyList()
         _initActionStateFlow.value =
