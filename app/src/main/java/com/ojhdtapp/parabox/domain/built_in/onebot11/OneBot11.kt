@@ -1,46 +1,13 @@
 package com.ojhdtapp.parabox.domain.built_in.onebot11
 
-import android.os.Bundle
-import android.util.Log
-import cn.chuanwise.onebot.lib.awaitUtilConnected
-import cn.chuanwise.onebot.lib.v11.GROUP_MESSAGE_EVENT
-import cn.chuanwise.onebot.lib.v11.META_EVENT
-import cn.chuanwise.onebot.lib.v11.OneBot11AppReverseWebSocketConnection
-import cn.chuanwise.onebot.lib.v11.OneBot11AppWebSocketConnection
-import cn.chuanwise.onebot.lib.v11.OneBot11AppWebSocketConnectionConfiguration
-import cn.chuanwise.onebot.lib.v11.PRIVATE_MESSAGE_EVENT
-import cn.chuanwise.onebot.lib.v11.data.event.GroupMessageEventData
-import cn.chuanwise.onebot.lib.v11.data.event.PrivateMessageEventData
-import cn.chuanwise.onebot.lib.v11.data.message.ArrayMessageData
-import cn.chuanwise.onebot.lib.v11.data.message.AtData
-import cn.chuanwise.onebot.lib.v11.data.message.CqCodeMessageData
-import cn.chuanwise.onebot.lib.v11.data.message.ImageData
-import cn.chuanwise.onebot.lib.v11.data.message.LocationData
-import cn.chuanwise.onebot.lib.v11.data.message.MessageData
-import cn.chuanwise.onebot.lib.v11.data.message.SegmentData
-import cn.chuanwise.onebot.lib.v11.data.message.SingleMessageData
-import cn.chuanwise.onebot.lib.v11.data.message.TextData
-import cn.chuanwise.onebot.lib.v11.getGroupInfo
-import cn.chuanwise.onebot.lib.v11.registerListener
-import cn.chuanwise.onebot.lib.v11.registerListenerWithoutQuickOperation
 import com.ojhdtapp.parabox.domain.model.Extension
-import com.ojhdtapp.parabox.domain.model.ExtensionInfo
-import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnection
-import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnectionStatus
-import com.ojhdtapp.paraboxdevelopmentkit.init.ParaboxInitHandler
-import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxBasicInfo
-import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
-import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
-import com.ojhdtapp.paraboxdevelopmentkit.model.SendMessage
-import com.ojhdtapp.paraboxdevelopmentkit.model.chat.ParaboxChat
-import com.ojhdtapp.paraboxdevelopmentkit.model.contact.ParaboxContact
-import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAt
-import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
-import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxLocation
-import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxMessageElement
-import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxPlainText
-import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxUnsupported
-import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
+object OneBot11  {
+    val extension = Extension.Success.BuiltIn(
+        name = "OneBot 11",
+        icon = null,
+        des = "通用聊天机器人应用接口标准（版本11）",
+        key = "onebot11",
+        initHandler = OneBot11InitHandler()
+    )
+}

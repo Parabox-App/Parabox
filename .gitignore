@@ -17,3 +17,4 @@ app/release
 .idea/gradle.xml
 .idea/deploymentTargetDropDown.xml
 secrets.properties
+/.idea
