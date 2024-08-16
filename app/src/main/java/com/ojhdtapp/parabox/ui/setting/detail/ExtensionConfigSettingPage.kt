@@ -72,6 +72,8 @@ import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.pop
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
+import com.ojhdtapp.parabox.core.util.optBooleanOrNull
+import com.ojhdtapp.parabox.core.util.optStringOrNull
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.navigation.DefaultSettingComponent
@@ -273,7 +275,7 @@ private fun Content(
                 is ParaboxConfigItem.TextInputConfigItem -> {
                     var openDialog by remember { mutableStateOf(false) }
                     val defaultValue =
-                        state.configState.originalConnection?.extra?.getString(paraboxConfig.key)
+                        state.configState.originalConnection?.extra?.optStringOrNull(paraboxConfig.key)
                             ?: paraboxConfig.defaultValue
                     var errMsg by remember {
                         mutableStateOf<String?>(null)
@@ -304,7 +306,7 @@ private fun Content(
                     )
                     SettingItem(
                         title = paraboxConfig.title,
-                        subTitle = state.configState.cacheExtra?.getString(paraboxConfig.key)?.takeIf { it.isNotBlank() }
+                        subTitle = state.configState.cacheExtra?.optStringOrNull(paraboxConfig.key)?.takeIf { it.isNotBlank() }
                             ?: paraboxConfig.description.takeIf { it.isNotBlank() } ?: "空",
                         selected = false,
                         layoutType = layoutType,
@@ -316,7 +318,7 @@ private fun Content(
                 is ParaboxConfigItem.SwitchConfigItem -> {
                     var checked by remember {
                         mutableStateOf(
-                            state.configState.originalConnection?.extra?.getBoolean(paraboxConfig.key)
+                            state.configState.originalConnection?.extra?.optBooleanOrNull(paraboxConfig.key)
                                 ?: paraboxConfig.defaultValue
                         )
                     }

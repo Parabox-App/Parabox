@@ -10,7 +10,7 @@ class OneBot11InitHandler: ParaboxInitHandler() {
         list: List<ParaboxInitAction>,
         currentActionIndex: Int
     ): List<ParaboxInitAction> {
-        data.putBoolean("compatibility_mode", false)
+        data.put("compatibility_mode", false)
         return listOf(
             ParaboxInitAction.TextInputAction(
                 key = "host",

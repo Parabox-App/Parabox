@@ -238,7 +238,7 @@ private fun Content(
                         androidx.compose.material3.DropdownMenuItem(
                             text = { Text("重新启动") },
                             onClick = {
-                                onEvent(SettingPageEvent.RestartExtensionConnection(it.connectionId))
+                                onEvent(SettingPageEvent.RestartExtensionConnection(it.connectionId, false))
                                 isMenuVisible = false
                             },
                             leadingIcon = {

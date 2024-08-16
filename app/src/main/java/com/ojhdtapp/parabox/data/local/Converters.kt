@@ -24,6 +24,7 @@ import kotlinx.serialization.encodeToHexString
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.protobuf.ProtoBuf
+import org.json.JSONObject
 
 @ProvidedTypeConverter
 class Converters(
@@ -31,26 +32,13 @@ class Converters(
 ) {
 
     @TypeConverter
-    fun fromBundle(bundle: Bundle): ByteArray {
-        val parcel = Parcel.obtain()
-        try {
-            parcel.writeBundle(bundle)
-            return parcel.marshall()
-        } finally {
-            parcel.recycle()
-        }
+    fun fromJSONObject(data: JSONObject): String {
+        return data.toString()
     }
     
     @TypeConverter
-    fun toBundle(data: ByteArray): Bundle {
-        val parcel = Parcel.obtain()
-        try {
-            parcel.unmarshall(data, 0, data.size)
-            parcel.setDataPosition(0)
-            return requireNotNull(parcel.readBundle())
-        } finally {
-            parcel.recycle()
-        }
+    fun toJSONObject(data: String): JSONObject {
+        return JSONObject(data)
     }
 
     @OptIn(ExperimentalSerializationApi::class)

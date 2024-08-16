@@ -6,6 +6,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.ojhdtapp.parabox.data.local.ConnectionInfo
 import com.ojhdtapp.parabox.data.local.ConnectionInfoType
+import org.json.JSONObject
 
 @Entity(tableName = "connection_info_entity")
 
@@ -13,7 +14,7 @@ data class ConnectionInfoEntity(
     val alias: String,
     val name: String,
     val type: Int,
-    val extra: Bundle,
+    val extra: JSONObject,
     val pkg: String = "",
     val connectionClassName: String = "",
     val version: String = "",
@@ -30,5 +31,5 @@ data class ConnectionInfoExtraUpdate(
     @ColumnInfo(name = "connectionId")
     val connectionId: Long,
     @ColumnInfo(name = "extra")
-    val extra: Bundle,
+    val extra: JSONObject,
 )

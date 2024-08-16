@@ -10,6 +10,7 @@ import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.ui.base.UiState
 import com.ojhdtapp.paraboxdevelopmentkit.model.config_item.ParaboxConfigItem
 import com.ojhdtapp.paraboxdevelopmentkit.model.init_actions.ParaboxInitAction
+import org.json.JSONObject
 
 data class SettingPageState(
     @Deprecated("using decompose")
@@ -28,7 +29,7 @@ data class SettingPageState(
     )
     data class ConfigState(
         val originalConnection: Connection? = null,
-        val cacheExtra: Bundle? = null,
+        val cacheExtra: JSONObject? = null,
         val configList: List<ParaboxConfigItem> = emptyList(),
         val modified: Boolean = false,
         val loadState: LoadState = LoadState.LOADING,

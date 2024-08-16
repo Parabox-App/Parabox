@@ -29,6 +29,8 @@ import cn.chuanwise.onebot.lib.v11.getStrangerInfo
 import cn.chuanwise.onebot.lib.v11.registerListener
 import cn.chuanwise.onebot.lib.v11.registerListenerWithoutQuickOperation
 import com.ojhdtapp.parabox.core.util.FileUtil
+import com.ojhdtapp.parabox.core.util.optBooleanOrNull
+import com.ojhdtapp.parabox.core.util.optStringOrNull
 import com.ojhdtapp.parabox.domain.built_in.onebot11.util.CompatibilityUtil
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnection
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnectionStatus
@@ -49,6 +51,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -56,17 +59,17 @@ class OneBot11Connection : ParaboxConnection() {
     private var appWebSocketConnection: OneBot11AppWebSocketConnection? = null
     private var appReverseWebSocketConnection: OneBot11AppReverseWebSocketConnection? = null
     lateinit var compatibilityUtil: CompatibilityUtil
-    override suspend fun onInitialize(extra: Bundle): Boolean {
-        compatibilityUtil = CompatibilityUtil(enabled = extra.getBoolean("compatibility_mode", false))
-        val host = extra.getString("host") ?: run {
+    override suspend fun onInitialize(): Boolean {
+        compatibilityUtil = CompatibilityUtil(enabled = extra.optBooleanOrNull("compatibility_mode") ?: false)
+        val host = extra.optStringOrNull("host") ?: run {
             updateStatus(ParaboxConnectionStatus.Error("Host is not provided"))
             return false
         }
-        val port = extra.getString("port")?.toIntOrNull() ?: run {
+        val port = extra.optStringOrNull("port")?.toIntOrNull() ?: run {
             updateStatus(ParaboxConnectionStatus.Error("Port is not provided"))
             return false
         }
-        val token = extra.getString("token")
+        val token = extra.optStringOrNull("token")
 //                val reverseHost = extra.getString("reverse_host") ?: run {
 //                    updateStatus(ParaboxExtensionStatus.Error("Reverse host is not provided"))
 //                    return false
@@ -75,7 +78,7 @@ class OneBot11Connection : ParaboxConnection() {
 //                    updateStatus(ParaboxExtensionStatus.Error("Reverse port is not provided"))
 //                    return false
 //                }
-        val heartInterval = extra.getString("heart_interval")?.toIntOrNull() ?: 10
+        val heartInterval = extra.optStringOrNull("heart_interval")?.toIntOrNull() ?: 10
         val appWebSocketConnectionConfiguration = OneBot11AppWebSocketConnectionConfiguration(
             host = host,
             port = port,

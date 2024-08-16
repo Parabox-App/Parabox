@@ -14,23 +14,26 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 
 abstract class ParaboxConnection {
-    lateinit var mContext: Context
-    lateinit var mBridge: ParaboxBridge
+    lateinit var context: Context
+    lateinit var bridge: ParaboxBridge
     lateinit var coroutineScope: CoroutineScope
     lateinit var job: Job
+    lateinit var extra: JSONObject
     private var _status: MutableStateFlow<ParaboxConnectionStatus> = MutableStateFlow(ParaboxConnectionStatus.Pending)
     val status get() = _status.asStateFlow()
 
-    suspend fun init(context: Context, coroutineJob: Job, bridge: ParaboxBridge, extra: Bundle) {
+    suspend fun init(mContext: Context, coroutineJob: Job, mbridge: ParaboxBridge, mExtra: JSONObject) {
         coroutineScope {
             coroutineScope = this
             job = coroutineJob
-            mContext = context
-            mBridge = bridge
+            context = mContext
+            bridge = mbridge
+            extra = mExtra
             updateStatus(ParaboxConnectionStatus.Initializing)
-            onInitialize(extra)
+            onInitialize()
         }
     }
 
@@ -39,27 +42,27 @@ abstract class ParaboxConnection {
     }
 
     suspend fun receiveMessage(message: ReceiveMessage): ParaboxResult {
-        return if (mBridge == null) {
+        return if (bridge == null) {
             ParaboxResult(
                 code = ParaboxResult.ERROR_UNINITIALIZED,
                 message = ParaboxResult.ERROR_UNINITIALIZED_MSG
             )
         } else {
-            mBridge.receiveMessage(message)
+            bridge.receiveMessage(message)
         }
     }
 
     suspend fun recallMessage(uuid: String): ParaboxResult {
-        return if (mBridge == null) {
+        return if (bridge == null) {
             ParaboxResult(
                 code = ParaboxResult.ERROR_UNINITIALIZED,
                 message = ParaboxResult.ERROR_UNINITIALIZED_MSG
             )
         } else {
-            mBridge.recallMessage(uuid)
+            bridge.recallMessage(uuid)
         }
     }
-    abstract suspend fun onInitialize(extra: Bundle) : Boolean
+    abstract suspend fun onInitialize() : Boolean
     abstract suspend fun onSendMessage(message: SendMessage)
     abstract suspend fun onRecallMessage()
     abstract suspend fun onGetContacts()

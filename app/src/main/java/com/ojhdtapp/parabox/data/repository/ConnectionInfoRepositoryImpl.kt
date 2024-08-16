@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import org.json.JSONObject
 import javax.inject.Inject
 
 class ConnectionInfoRepositoryImpl @Inject constructor(
@@ -44,7 +45,7 @@ class ConnectionInfoRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun updateConnectionInfoExtra(connectionId: Long, extra: Bundle): Boolean {
+    override fun updateConnectionInfoExtra(connectionId: Long, extra: JSONObject): Boolean {
         return db.connectionInfoDao.updateConnectionInfoExtra(ConnectionInfoExtraUpdate(connectionId, extra)) == 1
     }
 }

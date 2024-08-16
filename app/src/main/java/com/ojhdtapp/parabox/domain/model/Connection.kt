@@ -11,27 +11,30 @@ import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnection
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnectionStatus
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.StateFlow
+import org.json.JSONObject
 
 sealed interface Connection {
     val alias: String
     val name: String
-    val extra: Bundle
+    val extra: JSONObject
     val connectionId: Long
     val key: String
 
     fun toExtensionInfo() : ConnectionInfo
     sealed interface ConnectionPending : Connection {
         val connection: ParaboxConnection
+        val needReloadExtra: Boolean
 
         fun toFail() : ConnectionFail
-        fun toSuccess(job: Job): ConnectionSuccess
+        fun toSuccess(job: Job, updateExtra: JSONObject? = null): ConnectionSuccess
         class BuiltInConnectionPending(
             override val alias: String,
             override val name: String,
-            override val extra: Bundle,
+            override val extra: JSONObject,
             override val connectionId: Long,
             override val connection: ParaboxConnection,
-            override val key: String
+            override val key: String,
+            override val needReloadExtra: Boolean = false
         ) : ConnectionPending, BuiltInConnection{
             constructor(connectionInfo: ConnectionInfo, ext: ParaboxConnection) : this(
                 connectionInfo.alias,
@@ -48,9 +51,9 @@ sealed interface Connection {
                 )
             }
 
-            override fun toSuccess(job: Job): ConnectionSuccess {
+            override fun toSuccess(job: Job, updateExtra: JSONObject?): ConnectionSuccess {
                 return ConnectionSuccess.BuiltInConnectionSuccess(
-                    alias, name, extra, connectionId, connection, job, key
+                    alias, name, updateExtra ?: extra, connectionId, connection, job, key
                 )
             }
 
@@ -69,13 +72,14 @@ sealed interface Connection {
         class ExtendConnectionPending(
             override val alias: String,
             override val name: String,
-            override val extra: Bundle,
+            override val extra: JSONObject,
             override val connectionId: Long,
             override val connection: ParaboxConnection,
             override val pkg: String,
             override val version: String,
             override val versionCode: Long,
-            override val key: String
+            override val key: String,
+            override val needReloadExtra: Boolean = false
         ) : ConnectionPending, ExternalConnection {
             constructor(connectionInfo: ConnectionInfo, connection: ParaboxConnection) : this(
                 connectionInfo.alias,
@@ -95,9 +99,9 @@ sealed interface Connection {
                 )
             }
 
-            override fun toSuccess(job: Job): ConnectionSuccess {
+            override fun toSuccess(job: Job, updateExtra: JSONObject?): ConnectionSuccess {
                 return ConnectionSuccess.ExtendConnectionSuccess(
-                    alias, name, extra, connectionId, connection, job, pkg, version, versionCode, key
+                    alias, name, updateExtra ?: extra, connectionId, connection, job, pkg, version, versionCode, key
                 )
             }
 
@@ -120,7 +124,7 @@ sealed interface Connection {
         class BuiltInConnectionFail(
             override val alias: String,
             override val name: String,
-            override val extra: Bundle,
+            override val extra: JSONObject,
             override val connectionId: Long,
             override val key: String
         ) : ConnectionFail, BuiltInConnection {
@@ -147,7 +151,7 @@ sealed interface Connection {
         class ExtendConnectionFail(
             override val alias: String,
             override val name: String,
-            override val extra: Bundle,
+            override val extra: JSONObject,
             override val connectionId: Long,
             override val pkg: String,
             override val version: String,
@@ -183,20 +187,20 @@ sealed interface Connection {
         abstract val realConnection: ParaboxConnection
         abstract val job: Job
 
-        abstract fun toPending() : ConnectionPending
+        abstract fun toPending(needReloadExtra: Boolean = false) : ConnectionPending
 
         class BuiltInConnectionSuccess(
             override val alias: String,
             override val name: String,
-            override val extra: Bundle,
+            override val extra: JSONObject,
             override val connectionId: Long,
             override val realConnection: ParaboxConnection,
             override val job: Job,
             override val key: String
         ) : ConnectionSuccess(), BuiltInConnection {
-            override fun toPending(): ConnectionPending {
+            override fun toPending(needReloadExtra: Boolean): ConnectionPending {
                 return ConnectionPending.BuiltInConnectionPending(
-                    alias, name, extra, connectionId, realConnection, key
+                    alias, name, extra, connectionId, realConnection, key, needReloadExtra
                 )
             }
 
@@ -216,7 +220,7 @@ sealed interface Connection {
         class ExtendConnectionSuccess(
             override val alias: String,
             override val name: String,
-            override val extra: Bundle,
+            override val extra: JSONObject,
             override val connectionId: Long,
             override val realConnection: ParaboxConnection,
             override val job: Job,
@@ -225,9 +229,9 @@ sealed interface Connection {
             override val versionCode: Long,
             override val key: String
         ) : ConnectionSuccess(), ExternalConnection {
-            override fun toPending(): ConnectionPending {
+            override fun toPending(needReloadExtra: Boolean): ConnectionPending {
                 return ConnectionPending.ExtendConnectionPending(
-                    alias, name, extra, connectionId, realConnection, pkg, version, versionCode, key
+                    alias, name, extra, connectionId, realConnection, pkg, version, versionCode, key, needReloadExtra
                 )
             }
             override fun toExtensionInfo(): ConnectionInfo {
@@ -244,7 +248,7 @@ sealed interface Connection {
             }
         }
 
-        suspend fun init(context: Context, bridge: ParaboxBridge, extra: Bundle) {
+        suspend fun init(context: Context, bridge: ParaboxBridge) {
             realConnection.init(context, job, bridge, extra)
         }
 

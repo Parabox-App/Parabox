@@ -12,6 +12,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.coroutineScope
 import com.ojhdtapp.parabox.core.util.Resource
+import com.ojhdtapp.parabox.core.util.optStringOrNull
 import com.ojhdtapp.parabox.data.local.ConnectionInfo
 import com.ojhdtapp.parabox.data.local.ConnectionInfoType
 import com.ojhdtapp.parabox.domain.built_in.BuiltInExtensionUtil
@@ -46,6 +47,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import java.util.concurrent.CancellationException
 
 class ExtensionManager(
@@ -149,7 +151,7 @@ class ExtensionManager(
                                     )
                                 }
                             )
-                            initializingExtension!!.initHandler.data.putString(action.key, result.toString())
+                            initializingExtension!!.initHandler.data.put(action.key, result.toString())
                             increaseInitActionStep()
                         } else {
                             _initActionStateFlow.value = initActionStateFlow.value!!.copy(
@@ -176,7 +178,7 @@ class ExtensionManager(
                                     )
                                 }
                             )
-                            initializingExtension!!.initHandler.data.putString(action.key, result.toString())
+                            initializingExtension!!.initHandler.data.put(action.key, result.toString())
                             increaseInitActionStep()
                         } else {
                             _initActionStateFlow.value = initActionStateFlow.value!!.copy(
@@ -203,7 +205,7 @@ class ExtensionManager(
                                     )
                                 }
                             )
-                            initializingExtension!!.initHandler.data.putString(action.key, action.options[result])
+                            initializingExtension!!.initHandler.data.put(action.key, action.options[result])
                             increaseInitActionStep()
                         } else {
                             _initActionStateFlow.value = initActionStateFlow.value!!.copy(
@@ -230,7 +232,7 @@ class ExtensionManager(
                                     )
                                 }
                             )
-                            initializingExtension!!.initHandler.data.putString(action.key, result.toString())
+                            initializingExtension!!.initHandler.data.put(action.key, result.toString())
                             increaseInitActionStep()
                         } else {
                             _initActionStateFlow.value = initActionStateFlow.value!!.copy(
@@ -257,7 +259,7 @@ class ExtensionManager(
                                     )
                                 }
                             )
-                            initializingExtension!!.initHandler.data.putBoolean(action.key, result as Boolean)
+                            initializingExtension!!.initHandler.data.put(action.key, result as Boolean)
                             increaseInitActionStep()
                         } else {
                             _initActionStateFlow.value = initActionStateFlow.value!!.copy(
@@ -284,7 +286,7 @@ class ExtensionManager(
                         is Extension.Success.BuiltIn -> {
                             val initHandler = (initializingExtension as Extension.Success).initHandler
                             ConnectionInfo(
-                                alias = initHandler.data.getString(
+                                alias = initHandler.data.optString(
                                     ALIAS_KEY, initializingExtension!!.key
                                 ),
                                 name = initializingExtension!!.name,
@@ -300,7 +302,7 @@ class ExtensionManager(
                         is Extension.Success.External -> {
                             val initHandler = (initializingExtension as Extension.Success).initHandler
                             ConnectionInfo(
-                                alias = initHandler.data.getString(
+                                alias = initHandler.data.optString(
                                     ALIAS_KEY, initializingExtension!!.key
                                 ),
                                 name = initializingExtension!!.name,
@@ -397,7 +399,7 @@ class ExtensionManager(
     }
 
     // Only ExtensionSuccess, no Context and bridge changed
-    fun restartConnection(connectionId: Long) {
+    fun restartConnection(connectionId: Long, needReloadExtra: Boolean) {
         _connectionFlow.value.find { it.connectionId == connectionId }?.also {
             if (it is Connection.ConnectionSuccess) {
                 try {
@@ -406,7 +408,7 @@ class ExtensionManager(
                     it.realConnection.onPause()
                     it.realConnection.onStop()
                     it.realConnection.onDestroy()
-                    updateConnections(listOf(it.toPending()))
+                    updateConnections(listOf(it.toPending(needReloadExtra = needReloadExtra)))
                 } catch (e: Exception) {
                     it.realConnection.updateStatus(ParaboxConnectionStatus.Error(e.message ?: "restart error"))
                     Log.e("parabox", "restartExtension error", e)
@@ -431,23 +433,27 @@ class ExtensionManager(
             .map { it.data }
             .combine(connectionFlow) { pendingList, runningList ->
                 Log.d("parabox", "pending=${pendingList};running=${runningList}")
-                runningList.filterIsInstance<Connection.ConnectionPending>().map {
+                runningList.filterIsInstance<Connection.ConnectionPending>().map { connectionPending ->
                     try {
                         val job = SupervisorJob()
-                        it.toSuccess(job).also {
+                        var updateExtra: JSONObject? = null
+                        if (connectionPending.needReloadExtra) {
+                            updateExtra = pendingList?.find { it.connectionId == connectionPending.connectionId }?.extra
+                        }
+                        connectionPending.toSuccess(job, updateExtra).also { connectionSuccess ->
                             val bridge = object : ParaboxBridge {
                                 override suspend fun receiveMessage(message: ReceiveMessage): ParaboxResult {
-                                    return mainRepository.receiveMessage(msg = message, ext = it)
+                                    return mainRepository.receiveMessage(msg = message, ext = connectionSuccess)
                                 }
 
                                 override suspend fun recallMessage(uuid: String): ParaboxResult {
                                     TODO("Not yet implemented")
                                 }
                             }
-                            lifecycle.addObserver(it)
-                            lifecycle.coroutineScope.launch(context = CoroutineName("${it.name}:${it.alias}:${it.connectionId}") + CoroutineExceptionHandler { context, th ->
-                                Log.e("parabox", "extension ${it} error", th)
-                                it.updateStatus(ParaboxConnectionStatus.Error(th.message ?: "unknown error"))
+                            lifecycle.addObserver(connectionSuccess)
+                            lifecycle.coroutineScope.launch(context = CoroutineName("${connectionSuccess.name}:${connectionSuccess.alias}:${connectionSuccess.connectionId}") + CoroutineExceptionHandler { context, th ->
+                                Log.e("parabox", "connection ${connectionSuccess} error", th)
+                                connectionSuccess.updateStatus(ParaboxConnectionStatus.Error(th.message ?: "unknown error"))
                             } + job) {
                                 if (BuildConfig.DEBUG) {
                                     launch {
@@ -460,11 +466,11 @@ class ExtensionManager(
                                         }
                                     }
                                 }
-                                it.init(context, bridge, it.extra)
+                                connectionSuccess.init(context, bridge)
                             }
                         }
                     } catch (e: Exception) {
-                        it.toFail()
+                        connectionPending.toFail()
                     }
                 }.also {
                     updateConnections(it)

@@ -12,6 +12,7 @@ import cn.evole.onebot.sdk.event.message.GroupMessageEvent
 import cn.evole.onebot.sdk.event.message.PrivateMessageEvent
 import cn.evole.onebot.sdk.util.BotUtils
 import cn.evole.onebot.sdk.util.json.GsonUtil
+import com.google.gson.JsonObject
 import com.ojhdt.parabox.extension.demo.util.toParaboxMessageElement
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnection
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnectionStatus
@@ -24,6 +25,7 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.contact.ParaboxContact
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 import java.lang.Exception
 import java.net.URI
 import java.util.concurrent.BlockingQueue
@@ -34,7 +36,7 @@ class Connection : ParaboxConnection() {
     private lateinit var client: WSClient
     private lateinit var dispatchers: EventBus
 
-    override suspend fun onInitialize(extra: Bundle): Boolean {
+    override suspend fun onInitialize(): Boolean {
         val ip = extra.getString("onebot_ip") ?: "127.0.0.1"
         val port = extra.getString("onebot_port") ?: "8080"
         val token = extra.getString("onebot_token")

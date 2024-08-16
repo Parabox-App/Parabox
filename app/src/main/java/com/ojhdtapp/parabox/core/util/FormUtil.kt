@@ -11,7 +11,9 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.TextUnit
+import com.google.gson.Gson
 import net.sourceforge.pinyin4j.PinyinHelper
+import org.json.JSONObject
 import java.util.Locale
 
 object FormUtil {
@@ -53,6 +55,42 @@ fun String.getAscllString(): String {
     }
     return sum
 }
+
+fun JSONObject.optStringOrNull(key: String, fallback: String? = null): String? {
+    val obj: Any? = opt(key)
+    if (obj is String) {
+        return obj
+    } else if (obj != null) {
+        return obj.toString()
+    }
+    return fallback
+}
+
+fun JSONObject.optBooleanOrNull(key: String, fallback: Boolean? = null): Boolean? {
+    val obj: Any? = opt(key)
+    when (obj) {
+        is Boolean -> return obj
+        is Number -> return obj.toInt() == 1
+        is String -> return obj.toBooleanStrictOrNull()
+    }
+    return fallback
+}
+
+fun JSONObject.optIntOrNull(key: String, fallback: Int? = null): Int? {
+    val obj: Any? = opt(key)
+    when (obj) {
+        is Number -> return obj.toInt()
+        is String -> return obj.toIntOrNull() ?: fallback
+    }
+    return fallback
+}
+
+fun JSONObject.deepCopy() : JSONObject {
+    val gson = Gson()
+    val jsonStr = gson.toJson(this)
+    return gson.fromJson(jsonStr, JSONObject::class.java)
+}
+
 
 @Composable
 fun HyperlinkText(

@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.core.util.Resource
+import com.ojhdtapp.parabox.core.util.deepCopy
 import com.ojhdtapp.parabox.domain.model.Connection
 import com.ojhdtapp.parabox.domain.model.Extension
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
@@ -21,6 +22,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 import javax.inject.Inject
 
 @HiltViewModel
@@ -90,7 +92,7 @@ class SettingPageViewModel @Inject constructor(
             }
 
             is SettingPageEvent.RestartExtensionConnection -> {
-                extensionManager.restartConnection(event.extensionId)
+                extensionManager.restartConnection(event.extensionId, event.needReloadExtra)
                 state
             }
 
@@ -117,15 +119,15 @@ class SettingPageViewModel @Inject constructor(
                 state.copy(
                     configState = state.configState.copy(
                         cacheExtra = state.configState.cacheExtra?.apply {
-                            when(event.configItem) {
+                            when (event.configItem) {
                                 is ParaboxConfigItem.TextInputConfigItem -> {
-                                    putString(event.configItem.key, event.value as String)
+                                    put(event.configItem.key, event.value as String)
                                 }
                                 is ParaboxConfigItem.SelectConfigItem -> {
-                                    putString(event.configItem.key, event.value as String)
+                                    put(event.configItem.key, event.value as String)
                                 }
                                 is ParaboxConfigItem.SwitchConfigItem -> {
-                                    putBoolean(event.configItem.key, event.value as Boolean)
+                                    put(event.configItem.key, event.value as Boolean)
                                 }
                                 else -> {
                                     Log.d("parabox", "Unsupported config item type: ${event.configItem}")
@@ -146,7 +148,7 @@ class SettingPageViewModel @Inject constructor(
                             connectionInfoRepository.updateConnectionInfoExtra(
                                 state.configState.originalConnection.connectionId,
                                 state.configState.cacheExtra)
-//                            extensionManager.restartConnection(state.configState.originalConnection.connectionId)
+                            extensionManager.restartConnection(state.configState.originalConnection.connectionId, true)
                         }
                     }
                     state.copy(
