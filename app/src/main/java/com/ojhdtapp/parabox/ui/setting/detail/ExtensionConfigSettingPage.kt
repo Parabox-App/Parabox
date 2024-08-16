@@ -4,6 +4,7 @@ import android.app.LocaleManager
 import android.os.Build
 import android.os.LocaleList
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.AnimatedVisibility
@@ -101,6 +102,7 @@ fun ExtensionConfigSettingPage(
     onEvent: (SettingPageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
+    val context = LocalContext.current
     var showConfirmDialogIfModified by remember { mutableStateOf(false) }
     if (showConfirmDialogIfModified) {
         AlertDialog(
@@ -121,8 +123,11 @@ fun ExtensionConfigSettingPage(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showConfirmDialogIfModified = false }) {
-                    Text(text = "取消")
+                TextButton(onClick = {
+                    showConfirmDialogIfModified = false
+                    navigation.pop()
+                }) {
+                    Text(text = "舍弃更改")
                 }
             },
         )
@@ -146,20 +151,39 @@ fun ExtensionConfigSettingPage(
                 modifier = Modifier
                     .fillMaxSize()
             ) {
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 32.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = {
+                        if (state.configState.modified) {
+                            showConfirmDialogIfModified = true
+                        } else {
+                            navigation.pop()
+                        }
+                    }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                            contentDescription = "back",
+                            tint = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
                     Text(
-                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 32.dp),
                         color = MaterialTheme.colorScheme.onSurface,
                         text = state.configState.originalConnection?.name ?: "Connection",
                         style = MaterialTheme.typography.headlineMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
+                    Spacer(modifier = Modifier.weight(1f))
                     Button(
-                        modifier = Modifier.padding(end = 24.dp),
                         onClick = {
-                        onEvent(SettingPageEvent.SubmitConnectionConfig)
-                    }) {
+                            onEvent(SettingPageEvent.SubmitConnectionConfig)
+                            Toast.makeText(context, "更改已应用", Toast.LENGTH_SHORT).show()
+                        }) {
                         Text(text = "保存")
                     }
                 }
@@ -190,7 +214,6 @@ fun ExtensionConfigSettingPage(
                     },
                     navigationIcon = {
                         IconButton(onClick = {
-                            navigation.pop()
                             if (state.configState.modified) {
                                 showConfirmDialogIfModified = true
                             } else {
@@ -203,6 +226,7 @@ fun ExtensionConfigSettingPage(
                     actions = {
                         TextButton(onClick = {
                             onEvent(SettingPageEvent.SubmitConnectionConfig)
+                            Toast.makeText(context, "更改已应用", Toast.LENGTH_SHORT).show()
                         }) {
                             Text(text = "保存")
                         }
@@ -280,7 +304,8 @@ private fun Content(
                     )
                     SettingItem(
                         title = paraboxConfig.title,
-                        subTitle = state.configState.cacheExtra?.getString(paraboxConfig.key) ?: paraboxConfig.description,
+                        subTitle = state.configState.cacheExtra?.getString(paraboxConfig.key)?.takeIf { it.isNotBlank() }
+                            ?: paraboxConfig.description.takeIf { it.isNotBlank() } ?: "空",
                         selected = false,
                         layoutType = layoutType,
                     ) {
@@ -301,14 +326,20 @@ private fun Content(
                         selected = false,
                         layoutType = layoutType,
                         trailingIcon = {
-                            Switch(checked = checked, onCheckedChange = {
-                                checked = it
-                                onEvent(SettingPageEvent.WriteConnectionConfigCache(paraboxConfig, it))
-                            })
+                            Switch(
+                                checked = checked,
+                                onCheckedChange = {
+                                    checked = it
+                                    onEvent(SettingPageEvent.WriteConnectionConfigCache(paraboxConfig, it))
+                                })
                         }
                     ) {
                         checked = !checked
-                        onEvent(SettingPageEvent.WriteConnectionConfigCache(paraboxConfig, checked))
+                        onEvent(
+                            SettingPageEvent.WriteConnectionConfigCache(
+                                paraboxConfig, !checked
+                            )
+                        )
                     }
                 }
 

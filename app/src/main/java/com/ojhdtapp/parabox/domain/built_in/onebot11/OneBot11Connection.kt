@@ -75,11 +75,12 @@ class OneBot11Connection : ParaboxConnection() {
 //                    updateStatus(ParaboxExtensionStatus.Error("Reverse port is not provided"))
 //                    return false
 //                }
+        val heartInterval = extra.getString("heart_interval")?.toIntOrNull() ?: 10
         val appWebSocketConnectionConfiguration = OneBot11AppWebSocketConnectionConfiguration(
             host = host,
             port = port,
             accessToken = token,
-            heartbeatInterval = 10.seconds,
+            heartbeatInterval = heartInterval.seconds,
         )
 //                val appReverseWebSocketConnectionConfiguration = OneBot11AppReverseWebSocketConnectionConfiguration(
 //                    host = reverseHost,

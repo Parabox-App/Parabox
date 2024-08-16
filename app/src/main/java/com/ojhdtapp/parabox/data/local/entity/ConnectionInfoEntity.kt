@@ -25,6 +25,7 @@ data class ConnectionInfoEntity(
     = ConnectionInfo(alias, name, ConnectionInfoType.entries[type], extra, pkg, connectionClassName, version, versionCode, builtInKey, connectionId)
 }
 
+@Entity
 data class ConnectionInfoExtraUpdate(
     @ColumnInfo(name = "connectionId")
     val connectionId: Long,

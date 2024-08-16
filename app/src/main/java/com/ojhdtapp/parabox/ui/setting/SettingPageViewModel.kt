@@ -99,7 +99,7 @@ class SettingPageViewModel @Inject constructor(
                 state.copy(
                     configState = SettingPageState.ConfigState(
                         originalConnection = event.connection,
-                        cacheExtra = event.connection.extra
+                        cacheExtra = event.connection.extra.deepCopy()
                     )
                 )
             }
@@ -146,7 +146,7 @@ class SettingPageViewModel @Inject constructor(
                             connectionInfoRepository.updateConnectionInfoExtra(
                                 state.configState.originalConnection.connectionId,
                                 state.configState.cacheExtra)
-                            extensionManager.restartConnection(state.configState.originalConnection.connectionId)
+//                            extensionManager.restartConnection(state.configState.originalConnection.connectionId)
                         }
                     }
                     state.copy(

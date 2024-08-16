@@ -108,6 +108,20 @@ class OneBot11InitHandler: ParaboxInitHandler() {
                     ParaboxInitActionResult.Done
                 }
             ),
+            ParaboxConfigItem.TextInputConfigItem(
+                key = "heart_interval",
+                title = "心跳间隔",
+                description = "控制心跳包的发送时间间隔，单位为秒",
+                defaultValue = "10",
+                label = "时间",
+                onResult = { res: String ->
+                    if (res.toIntOrNull()?.let { it in 1..60 } == true) {
+                        ParaboxInitActionResult.Done
+                    } else {
+                        ParaboxInitActionResult.Error("输入时间超出允许范围")
+                    }
+                }
+            ),
             ParaboxConfigItem.Category(
                 key = "category_advanced",
                 title = "高级",

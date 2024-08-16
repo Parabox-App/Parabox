@@ -40,7 +40,7 @@ class Converters(
             parcel.recycle()
         }
     }
-
+    
     @TypeConverter
     fun toBundle(data: ByteArray): Bundle {
         val parcel = Parcel.obtain()
