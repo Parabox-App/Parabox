@@ -17,6 +17,7 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxMessageElement
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxPlainText
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxQuoteReply
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxUnsupported
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxVideo
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromHexString
@@ -105,6 +106,7 @@ class Converters(
                     subclass(ParaboxAt::class, ParaboxAt.serializer())
                     subclass(ParaboxAtAll::class, ParaboxAtAll.serializer())
                     subclass(ParaboxAudio::class, ParaboxAudio.serializer())
+                    subclass(ParaboxVideo::class, ParaboxVideo.serializer())
                     subclass(ParaboxFile::class, ParaboxFile.serializer())
                     subclass(ParaboxImage::class, ParaboxImage.serializer())
                     subclass(ParaboxLocation::class, ParaboxLocation.serializer())

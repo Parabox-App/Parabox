@@ -7,6 +7,7 @@ import androidx.room.Room
 import com.google.android.gms.location.LocationServices
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.LocationUtil
 import com.ojhdtapp.parabox.core.util.NotificationUtil
 import com.ojhdtapp.parabox.data.local.AppDatabase
@@ -15,6 +16,7 @@ import com.ojhdtapp.parabox.data.repository.ChatRepositoryImpl
 import com.ojhdtapp.parabox.data.repository.ContactRepositoryImpl
 import com.ojhdtapp.parabox.data.repository.ConnectionInfoRepositoryImpl
 import com.ojhdtapp.parabox.data.repository.MessageRepositoryImpl
+import com.ojhdtapp.parabox.domain.cloud.KtorCloudServiceImpl
 import com.ojhdtapp.parabox.domain.repository.ChatRepository
 import com.ojhdtapp.parabox.domain.repository.ContactRepository
 import com.ojhdtapp.parabox.domain.repository.ConnectionInfoRepository
@@ -28,11 +30,15 @@ import com.ojhdtapp.parabox.domain.use_case.GetMessage
 import com.ojhdtapp.parabox.domain.use_case.Query
 import com.ojhdtapp.parabox.domain.use_case.UpdateChat
 import com.ojhdtapp.parabox.domain.util.GsonParser
+import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxCloudService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.HttpTimeout
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
@@ -57,6 +63,28 @@ object AppModule {
             .baseUrl("https://www.google.com/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideKtor(): HttpClient {
+        return HttpClient(OkHttp) {
+            install(HttpTimeout) {
+                requestTimeoutMillis = 15000
+                connectTimeoutMillis = 15000
+                socketTimeoutMillis = 15000
+            }
+        }
+    }
+
+    @Provides
+    @Singleton
+    fun provideCloudService(
+        @ApplicationContext applicationContext: Context,
+        fileUtil: FileUtil,
+        ktorClient: HttpClient
+    ): ParaboxCloudService {
+        return KtorCloudServiceImpl(applicationContext, fileUtil, ktorClient)
     }
 
     @Provides

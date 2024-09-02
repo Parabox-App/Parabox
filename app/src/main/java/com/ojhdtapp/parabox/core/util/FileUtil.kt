@@ -11,6 +11,7 @@ import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.webkit.MimeTypeMap
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.core.content.FileProvider
 import com.ojhdtapp.parabox.BuildConfig
 import com.ojhdtapp.parabox.R
@@ -23,6 +24,50 @@ import javax.inject.Inject
 class FileUtil @Inject constructor(
     @ApplicationContext val context: Context
 ) {
+    fun checkResourceModelAvailable(model: Any?): Boolean {
+        return when (model) {
+            is Uri -> model.checkUriAvailable()
+            is String -> model.checkPathAvailable()
+            is File -> model.exists()
+            else -> false
+        }
+    }
+
+    fun getUriFromResourceModel(model: Any?): Uri? {
+        return when (model) {
+            is Uri -> model
+            is String -> Uri.parse(model)
+            is File -> getUriForFile(model)
+            else -> null
+        }
+    }
+
+    fun Uri.checkUriAvailable(): Boolean {
+        return try {
+            val parcelFileDescriptor: ParcelFileDescriptor? =
+                context.contentResolver.openFileDescriptor(this, "r")
+            parcelFileDescriptor?.close()
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    fun String.checkPathAvailable(): Boolean {
+        return try {
+            val file = File(this)
+            file.exists()
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    fun Uri.replacedImageIfUnavailable(): Any {
+        return if (!checkUriAvailable()) {
+            R.drawable.image_lost
+        } else this
+    }
+
     fun getFileNameExtension(file: Any): String? {
         return getFileName(file)?.substringAfterLast('.', "*/*")
     }
@@ -175,4 +220,8 @@ class FileUtil @Inject constructor(
         const val DEFAULT_AUDIO_NAME = "audio"
         const val DEFAULT_AUDIO_EXTENSION = "mp3"
     }
+}
+
+val LocalFileUtil = staticCompositionLocalOf<FileUtil> {
+    error("No FileUtil provided")
 }

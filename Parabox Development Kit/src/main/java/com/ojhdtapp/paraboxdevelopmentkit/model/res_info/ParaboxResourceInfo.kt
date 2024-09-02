@@ -14,7 +14,6 @@ import kotlinx.serialization.encoding.Encoder
 
 @Serializable
 sealed interface ParaboxResourceInfo : Parcelable {
-
     fun getModel(): Any?
 
     operator fun plus(otherResourceInfo: ParaboxResourceInfo): ParaboxResourceInfo?
@@ -32,7 +31,6 @@ sealed interface ParaboxResourceInfo : Parcelable {
     }
 
     sealed interface ParaboxLocalInfo : ParaboxResourceInfo {
-        suspend fun upload(service: ParaboxCloudService): ParaboxSyncedInfo?
 
         override operator fun plus(otherResourceInfo: ParaboxResourceInfo): ParaboxResourceInfo? {
             return if(otherResourceInfo is ParaboxRemoteInfo){
@@ -42,9 +40,6 @@ sealed interface ParaboxResourceInfo : Parcelable {
         @Parcelize
         @Serializable
         data class UriLocalInfo(@Contextual val uri: Uri) : ParaboxLocalInfo {
-            override suspend fun upload(service: ParaboxCloudService): ParaboxSyncedInfo? {
-                return (service.upload(uri) + this) as? ParaboxSyncedInfo
-            }
 
             override fun getModel(): Any? {
                 return uri
@@ -53,7 +48,6 @@ sealed interface ParaboxResourceInfo : Parcelable {
     }
 
     sealed interface ParaboxRemoteInfo : ParaboxResourceInfo {
-        suspend fun download(service: ParaboxCloudService): ParaboxSyncedInfo?
 
         override operator fun plus(otherResourceInfo: ParaboxResourceInfo): ParaboxResourceInfo? {
             return if(otherResourceInfo is ParaboxLocalInfo){
@@ -63,9 +57,6 @@ sealed interface ParaboxResourceInfo : Parcelable {
         @Parcelize
         @Serializable
         data class UrlRemoteInfo(val url: String) : ParaboxRemoteInfo {
-            override suspend fun download(service: ParaboxCloudService): ParaboxSyncedInfo? {
-                return (service.download(url) + this) as? ParaboxSyncedInfo
-            }
 
             override fun getModel(): Any? {
                 return url
@@ -75,9 +66,6 @@ sealed interface ParaboxResourceInfo : Parcelable {
         @Parcelize
         @Serializable
         data class DriveRemoteInfo(val uuid: String, val cloudPath: String, val driveType: Int) : ParaboxRemoteInfo {
-            override suspend fun download(service: ParaboxCloudService): ParaboxSyncedInfo? {
-                return (service.download(uuid, cloudPath, driveType) + this) as? ParaboxSyncedInfo
-            }
 
             override fun getModel(): Any? {
                 return null
@@ -88,7 +76,7 @@ sealed interface ParaboxResourceInfo : Parcelable {
     @Parcelize
     @Serializable
     class ParaboxSyncedInfo(val local: ParaboxLocalInfo, val remote: ParaboxRemoteInfo) :
-        ParaboxResourceInfo {
+        ParaboxRemoteInfo, ParaboxLocalInfo {
         override fun getModel(): Any? {
             return local.getModel() ?: remote.getModel()
         }

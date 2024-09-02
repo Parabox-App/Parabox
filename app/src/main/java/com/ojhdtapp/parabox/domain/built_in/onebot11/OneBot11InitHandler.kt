@@ -66,6 +66,12 @@ class OneBot11InitHandler: ParaboxInitHandler() {
                 title = "通用",
                 description = "通用配置"
             ),
+            ParaboxConfigItem.SwitchConfigItem(
+                key = "auto_reconnect",
+                title = "自动重连",
+                description = "连接断开后自动重连",
+                defaultValue = true
+            ),
             ParaboxConfigItem.TextInputConfigItem(
                 key = "host",
                 title = "OneBot 服务地址",

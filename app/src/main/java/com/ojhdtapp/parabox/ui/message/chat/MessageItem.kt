@@ -87,6 +87,7 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxMessageElement
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxPlainText
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxQuoteReply
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxUnsupported
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxVideo
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.simplifyText
 import com.origeek.imageViewer.previewer.ImagePreviewerState
 import me.saket.swipe.SwipeAction
@@ -403,7 +404,11 @@ private fun ParaboxMessageElement.toLayout(
             onClick = onImageClick
         )
 
-        is ParaboxAudio -> AudioLayout()
+        is ParaboxAudio -> AudioLayout(
+            resourceInfo = resourceInfo,
+            length = length,
+        )
+        is ParaboxVideo -> {}
         is ParaboxFile -> FileLayout()
         is ParaboxLocation -> LocationLayout()
         is ParaboxQuoteReply -> {}

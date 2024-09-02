@@ -20,6 +20,8 @@ import cn.chuanwise.onebot.lib.v11.data.message.AtData
 import cn.chuanwise.onebot.lib.v11.data.message.CqCodeMessageData
 import cn.chuanwise.onebot.lib.v11.data.message.ImageData
 import cn.chuanwise.onebot.lib.v11.data.message.LocationData
+import cn.chuanwise.onebot.lib.v11.data.message.VideoData
+import cn.chuanwise.onebot.lib.v11.data.message.RecordData
 import cn.chuanwise.onebot.lib.v11.data.message.MessageData
 import cn.chuanwise.onebot.lib.v11.data.message.SegmentData
 import cn.chuanwise.onebot.lib.v11.data.message.SingleMessageData
@@ -41,15 +43,18 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.SendMessage
 import com.ojhdtapp.paraboxdevelopmentkit.model.chat.ParaboxChat
 import com.ojhdtapp.paraboxdevelopmentkit.model.contact.ParaboxContact
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAt
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAudio
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxLocation
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxMessageElement
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxPlainText
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxUnsupported
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxVideo
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import kotlin.time.Duration
@@ -91,8 +96,8 @@ class OneBot11Connection : ParaboxConnection() {
 //                )
 //                appReverseWebSocketConnection = OneBot11AppReverseWebSocketConnection(appReverseWebSocketConnectionConfiguration)
         coroutineScope.launch(Dispatchers.IO) {
-            val job = SupervisorJob()
-            val coroutineScope = CoroutineScope(job + Dispatchers.IO)
+//            val job = SupervisorJob()
+//            val coroutineScope = CoroutineScope(job + Dispatchers.IO)
             appWebSocketConnection = OneBot11AppWebSocketConnection(
                 configuration = appWebSocketConnectionConfiguration,
                 job = job,
@@ -116,6 +121,16 @@ class OneBot11Connection : ParaboxConnection() {
 
                         "disable" -> {
                             updateStatus(ParaboxConnectionStatus.Error("OneBot disabled"))
+                            if (extra.optBooleanOrNull("auto_reconnect") == true) {
+//                                appWebSocketConnection?.close()
+//                                appWebSocketConnection = null
+//                                coroutineScope.launch(Dispatchers.IO) {
+//                                    onInitialize()
+//                                }
+                                delay(5000)
+                                Log.d("parabox", "reconnect")
+                                appWebSocketConnection?.awaitUtilConnected()
+                            }
                         }
 
                         "connect" -> {
@@ -304,7 +319,28 @@ class OneBot11Connection : ParaboxConnection() {
                 }
             }
 
-            else -> ParaboxUnsupported
+            is RecordData -> {
+                val remoteResource = url?.let { ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo(it) }
+                val localResource = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(Uri.parse(file))
+                ParaboxAudio(
+                    fileName = FileUtil.getFileNameFromPath(file),
+                    resourceInfo = remoteResource ?: localResource
+                )
+            }
+
+            is VideoData -> {
+                val remoteResource = url?.let { ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo(it) }
+                val localResource = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(Uri.parse(file))
+                ParaboxVideo(
+                    fileName = FileUtil.getFileNameFromPath(file),
+                    resourceInfo = remoteResource ?: localResource
+                )
+            }
+
+            else -> {
+                Log.d("parabox", "unsupported segment:${this}")
+                ParaboxUnsupported
+            }
         }
     }
 }

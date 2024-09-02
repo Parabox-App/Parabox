@@ -102,6 +102,16 @@ fun Long.toMSString(): String{
     return "${if(totalSecond > 60) minute.plus("′") else ""}${second}“"
 }
 
+fun Int.toMSString(): String{
+    val df = DecimalFormat("#").apply {
+        roundingMode = RoundingMode.DOWN
+    }
+    val totalSecond = (this / 1000).toFloat().roundToInt()
+    val minute = df.format(totalSecond / 60)
+    val second = totalSecond % 60
+    return "${if(totalSecond > 60) minute.plus("′") else ""}${second}“"
+}
+
 // 2023-02-20T14:28:43.593Z
 fun String.toTimestamp(): Long{
     val year = this.substring(0, 4).toInt()
@@ -113,4 +123,13 @@ fun String.toTimestamp(): Long{
     val calendar = Calendar.getInstance()
     calendar.set(year, month - 1, day, hour, minute, second)
     return calendar.timeInMillis
+}
+
+fun Int.toMediaTimeString(): String {
+    val df = DecimalFormat("#").apply {
+        roundingMode = RoundingMode.DOWN
+    }
+    val minute = df.format(this / 60)
+    val second = df.format(this % 60)
+    return "$minute:$second"
 }

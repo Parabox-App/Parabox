@@ -9,6 +9,7 @@ plugins {
     id 'org.jetbrains.kotlin.plugin.serialization'
     id 'com.google.android.libraries.mapsplatform.secrets-gradle-plugin'
     id 'dev.rikka.tools.refine'
+    id 'org.jetbrains.kotlinx.atomicfu'
 }
 
 android {
@@ -145,10 +146,18 @@ dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0'
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.5.0"
 
+    implementation "org.jetbrains.kotlinx:atomicfu:0.25.0"
+
     def jackson_version = "2.17.1"
     implementation "com.fasterxml.jackson.core:jackson-databind:$jackson_version"
     implementation "com.fasterxml.jackson.core:jackson-annotations:$jackson_version"
     implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jackson_version"
+
+    // Ktor
+    def ktor_version = "2.3.12"
+    compileOnly "io.ktor:ktor-client-core:$ktor_version"
+    compileOnly "io.ktor:ktor-client-okhttp:$ktor_version"
+
 
     // Refine
     compileOnly project(':app:hidden-api')

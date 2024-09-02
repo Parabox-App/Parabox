@@ -56,7 +56,24 @@ data class ParaboxAudio(
     val resourceInfo: ParaboxResourceInfo
 ) : ParaboxMessageElement {
     override fun contentToString(): String {
-        return "[语音消息]"
+        return "[语音]"
+    }
+
+    override fun getType(): Int {
+        return ParaboxMessageElement.Companion.TYPE.VIDEO.ordinal
+    }
+}
+
+@Parcelize
+@Serializable
+data class ParaboxVideo(
+    val length: Long = 0L,
+    val fileName: String? = null,
+    val fileSize: Long = 0L,
+    val resourceInfo: ParaboxResourceInfo
+) : ParaboxMessageElement {
+    override fun contentToString(): String {
+        return "[视频]"
     }
 
     override fun getType(): Int {
@@ -169,7 +186,7 @@ data class ParaboxForward(
 
 @Serializable
 @Parcelize
-object ParaboxUnsupported : ParaboxMessageElement {
+data object ParaboxUnsupported : ParaboxMessageElement {
     override fun contentToString(): String {
         return "[不支持的类型]"
     }

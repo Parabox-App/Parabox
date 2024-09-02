@@ -53,10 +53,13 @@ import com.google.android.play.core.install.InstallStateUpdatedListener
 import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.ktx.installStatus
 import com.ojhdtapp.parabox.core.util.*
+import com.ojhdtapp.parabox.core.util.audio.AudioPlayer
 import com.ojhdtapp.parabox.core.util.audio.AudioRecorder
+import com.ojhdtapp.parabox.core.util.audio.LocalAudioPlayer
 import com.ojhdtapp.parabox.core.util.audio.LocalAudioRecorder
 import com.ojhdtapp.parabox.core.util.backup.LocalRoomBackup
 import com.ojhdtapp.parabox.data.local.AppDatabase
+import com.ojhdtapp.parabox.domain.cloud.LocalCloudService
 import com.ojhdtapp.parabox.domain.service.ExtensionServiceConnection
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
@@ -87,6 +90,7 @@ import com.ojhdtapp.parabox.ui.setting.SettingPageViewModel
 import com.ojhdtapp.parabox.ui.setting.SettingPageWrapperUi
 import com.ojhdtapp.parabox.ui.theme.FontSize
 import com.ojhdtapp.parabox.ui.theme.LocalFontSize
+import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxCloudService
 import dagger.hilt.android.AndroidEntryPoint
 import de.raphaelebner.roomdatabasebackup.core.RoomBackup
 import kotlinx.coroutines.*
@@ -97,10 +101,15 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     @Inject
+    lateinit var fileUtil: FileUtil
+    @Inject
     lateinit var notificationUtil: NotificationUtil
 
     @Inject
     lateinit var appDatabase: AppDatabase
+
+    @Inject
+    lateinit var cloudService: ParaboxCloudService
 
     lateinit var roomBackup: RoomBackup
 
@@ -309,13 +318,16 @@ class MainActivity : AppCompatActivity() {
                 CompositionLocalProvider(
                     values = arrayOf(
                         LocalFixedInsets provides fixedInsets,
+                        LocalFileUtil provides fileUtil,
                         LocalAudioRecorder provides AudioRecorder,
+                        LocalAudioPlayer provides AudioPlayer(applicationContext),
                         LocalSystemUiController provides SystemUiController(this),
                         LocalMinimumInteractiveComponentSize provides 32.dp,
                         LocalFontSize provides FontSize(),
                         LocalRoomBackup provides roomBackup,
-                        LocalCacheUtil provides CacheUtil(this),
-                        LocalPlayAppUpdateUtil provides playAppUpdateUtil
+                        LocalCacheUtil provides CacheUtil(applicationContext),
+                        LocalPlayAppUpdateUtil provides playAppUpdateUtil,
+                        LocalCloudService provides cloudService
                     )
                 ) {
                     val rootStackState by root.rootStack.subscribeAsState()
