@@ -150,8 +150,10 @@ data class ParaboxPlainText(
 @Serializable
 @Parcelize
 data class ParaboxQuoteReply(
-    val belong: ParaboxContact,
-    val messageUUID: String
+    val sender: ParaboxContact?,
+    val timestamp: Long?,
+    val id: String?,
+    val messages: List<ParaboxMessageElement>
 ) : ParaboxMessageElement {
     override fun contentToString(): String {
         return "[引用回复]"
@@ -170,8 +172,9 @@ data class ParaboxForward(
     @Parcelize
     @Serializable
     data class ForwardNode(
-        val sender: ParaboxContact,
-        val timestamp: Long,
+        val sender: ParaboxContact?,
+        val timestamp: Long?,
+        val id: String?,
         val messages: List<ParaboxMessageElement>
     ) : Parcelable
 

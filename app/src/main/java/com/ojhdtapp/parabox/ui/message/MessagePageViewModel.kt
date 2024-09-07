@@ -20,9 +20,11 @@ import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.buildFileName
 import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.ChatWithLatestMessage
+import com.ojhdtapp.parabox.domain.model.Connection
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.ContactWithExtensionInfo
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
+import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
 import com.ojhdtapp.parabox.domain.use_case.GetChat
 import com.ojhdtapp.parabox.domain.use_case.GetContact
 import com.ojhdtapp.parabox.domain.use_case.GetMessage
@@ -31,6 +33,9 @@ import com.ojhdtapp.parabox.ui.base.BaseViewModel
 import com.ojhdtapp.parabox.ui.message.chat.AudioRecorderState
 import com.ojhdtapp.parabox.ui.message.chat.EditAreaMode
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.model.ChatPageUiModel
+import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxBasicInfo
+import com.ojhdtapp.paraboxdevelopmentkit.model.SendMessage
+import com.ojhdtapp.paraboxdevelopmentkit.model.chat.ParaboxChat
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAudio
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxFile
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
@@ -56,6 +61,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.apache.commons.io.FileUtils
+import java.util.UUID
 import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -68,7 +74,8 @@ class MessagePageViewModel @Inject constructor(
     val getContact: GetContact,
     val updateChat: UpdateChat,
     val locationUtil: LocationUtil,
-    val fileUtil: FileUtil
+    val fileUtil: FileUtil,
+    val extensionManager: ExtensionManager
 ) : BaseViewModel<MessagePageState, MessagePageEvent, MessagePageEffect>() {
 
     override fun initialState(): MessagePageState {
@@ -550,11 +557,20 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.SendMessage -> {
+                val sendMessage = buildParaboxSendMessage()
+                if (sendMessage == null) {
+                    sendEffect(MessagePageEffect.ShowSnackBar("发送失败"))
+                    return state
+                }
                 state.chatDetail.editAreaState.input.edit {
                     delete(0, length)
                 }
                 viewModelScope.launch {
-                    buildParaboxSendMessage()
+                    extensionManager.connectionFlow.value.firstOrNull { it.connectionId == uiState.value.chatDetail.chat?.extensionId }?.let {
+                        if (it is Connection.ConnectionSuccess) {
+                            it.realConnection.onSendMessage(sendMessage)
+                        }
+                    }
                 }
                 state.copy(
                     chatDetail = state.chatDetail.copy(
@@ -775,20 +791,31 @@ class MessagePageViewModel @Inject constructor(
         realTimeChatCollectionJob?.cancel()
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
-    fun buildParaboxSendMessage() {
+    fun buildParaboxSendMessage() : SendMessage? {
         val contents = buildList<ParaboxMessageElement> {
             if (uiState.value.chatDetail.editAreaState.input.text.isNotEmpty()) {
-                add(ParaboxPlainText(uiState.value.chatDetail.editAreaState.input.toString()))
+                add(ParaboxPlainText(uiState.value.chatDetail.editAreaState.input.text.toString()))
             }
             uiState.value.chatDetail.editAreaState.chosenImageList.forEach {
                 add(ParaboxImage(resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(it)))
             }
         }
-//        SendMessage(
-//            contents = contents,
-//
-//        )
+        if (contents.isEmpty()) return null
+        return uiState.value.chatDetail.chat?.let { currentChat ->
+            SendMessage(
+                contents = contents,
+                chat = ParaboxChat(
+                    basicInfo = ParaboxBasicInfo(
+                        name = currentChat.name,
+                        avatar = currentChat.avatar
+                    ),
+                    type = currentChat.type,
+                    uid = currentChat.uid
+                ),
+                timestamp = System.currentTimeMillis(),
+                uuid = UUID.randomUUID().toString()
+            )
+        }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

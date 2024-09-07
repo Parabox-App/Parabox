@@ -6,6 +6,9 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxBasicInfo
 import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
 import com.ojhdtapp.paraboxdevelopmentkit.model.SendMessage
+import com.ojhdtapp.paraboxdevelopmentkit.model.chat.ParaboxChat
+import com.ojhdtapp.paraboxdevelopmentkit.model.contact.ParaboxContact
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxForward
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -64,12 +67,25 @@ abstract class ParaboxConnection {
     }
     abstract suspend fun onInitialize() : Boolean
     abstract suspend fun onSendMessage(message: SendMessage)
-    abstract suspend fun onRecallMessage()
-    abstract suspend fun onGetContacts()
-    abstract suspend fun onGetChats()
-    abstract suspend fun onQueryMessageHistory(uuid: String)
-    abstract suspend fun onGetGroupBasicInfo(groupId: String): ParaboxBasicInfo?
-    abstract suspend fun onGetUserBasicInfo(userId: String) : ParaboxBasicInfo?
+    open suspend fun onRecallMessage() {}
+    open suspend fun onGetContacts() : List<ParaboxContact>{
+        return emptyList()
+    }
+    open suspend fun onGetChats() : List<ParaboxChat> {
+        return emptyList()
+    }
+    open suspend fun onQueryMessageHistory(uuid: String) : List<ReceiveMessage> {
+        return emptyList()
+    }
+    open suspend fun onGetGroupBasicInfo(groupId: String): ParaboxBasicInfo? {
+        return null
+    }
+    open suspend fun onGetUserBasicInfo(userId: String) : ParaboxBasicInfo? {
+        return null
+    }
+    open suspend fun onQueryForwardNode(id: String): ParaboxForward.ForwardNode? {
+        return null
+    }
 
     open fun onCreate(){}
     open fun onStart(){}
