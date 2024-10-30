@@ -31,6 +31,7 @@ import cn.chuanwise.onebot.lib.v11.data.message.TextData
 import cn.chuanwise.onebot.lib.v11.data.message.MultiForwardNodeData
 import cn.chuanwise.onebot.lib.v11.data.message.EmptyData
 import cn.chuanwise.onebot.lib.v11.data.message.SingleForwardNodeData
+import cn.chuanwise.onebot.lib.v11.deleteMessage
 import cn.chuanwise.onebot.lib.v11.getForwardMessage
 import cn.chuanwise.onebot.lib.v11.getFriendList
 import cn.chuanwise.onebot.lib.v11.getGroupInfo
@@ -251,7 +252,7 @@ class OneBot11Connection : ParaboxConnection() {
     }
 
 
-    override suspend fun onSendMessage(message: SendMessage) {
+    override suspend fun onSendMessage(message: SendMessage): Boolean {
         val messageData = if (message.contents.size > 1) {
             ArrayMessageData(
                 data = message.contents.map {
@@ -282,10 +283,12 @@ class OneBot11Connection : ParaboxConnection() {
             }
 
         }
+        return true
     }
 
-    override suspend fun onRecallMessage() {
-        TODO("Not yet implemented")
+    override suspend fun onRecallMessage(uuid: String): Boolean {
+        uuid.toIntOrNull()?.let { appWebSocketConnection?.deleteMessage(it) }
+        return true
     }
 
     override suspend fun onGetContacts(): List<ParaboxContact> {

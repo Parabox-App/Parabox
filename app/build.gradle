@@ -148,6 +148,13 @@ dependencies {
 
     implementation "org.jetbrains.kotlinx:atomicfu:0.25.0"
 
+    implementation "io.grpc:grpc-stub:1.62.2"
+    implementation "io.grpc:grpc-protobuf:1.62.2"
+//    implementation("com.google.protobuf:protobuf-kotlin:3.25.1")
+    implementation("com.google.protobuf:protobuf-kotlin:3.25.3")
+    implementation "io.grpc:grpc-kotlin-stub:1.4.1"
+    compileOnly "io.grpc:grpc-netty:1.62.2"
+
     def jackson_version = "2.17.1"
     implementation "com.fasterxml.jackson.core:jackson-databind:$jackson_version"
     implementation "com.fasterxml.jackson.core:jackson-annotations:$jackson_version"
@@ -215,7 +222,9 @@ dependencies {
     implementation platform('com.google.firebase:firebase-bom:33.1.0')
     implementation 'com.google.firebase:firebase-analytics-ktx'
     implementation 'com.google.firebase:firebase-messaging-ktx'
-    implementation 'com.google.firebase:firebase-firestore-ktx'
+    implementation ('com.google.firebase:firebase-firestore-ktx'){
+        exclude group: 'com.google.firebase', module: 'protolite-well-known-types'
+    }
     implementation 'com.google.firebase:firebase-appcheck-playintegrity'
 
     // WorkManager

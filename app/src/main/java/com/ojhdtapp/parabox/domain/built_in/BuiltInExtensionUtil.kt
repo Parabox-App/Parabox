@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.domain.built_in
 
+import com.ojhdtapp.parabox.domain.built_in.kritor.KritorConnection
 import com.ojhdtapp.parabox.domain.built_in.onebot11.OneBot11
 import com.ojhdtapp.parabox.domain.built_in.onebot11.OneBot11Connection
 import com.ojhdtapp.parabox.domain.model.Extension
@@ -13,7 +14,8 @@ object BuiltInExtensionUtil {
     fun getConnectionByKey(key: String) : ParaboxConnection? {
         return when(key) {
             "onebot11" -> OneBot11Connection()
-            else -> null
+            "kritor" -> KritorConnection()
+            else -> throw IllegalArgumentException("No implementation found for key: $key")
         }
     }
 

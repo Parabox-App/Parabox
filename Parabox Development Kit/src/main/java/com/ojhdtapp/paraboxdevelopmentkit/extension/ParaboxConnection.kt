@@ -66,8 +66,10 @@ abstract class ParaboxConnection {
         }
     }
     abstract suspend fun onInitialize() : Boolean
-    abstract suspend fun onSendMessage(message: SendMessage)
-    open suspend fun onRecallMessage() {}
+    abstract suspend fun onSendMessage(message: SendMessage): Boolean
+    open suspend fun onRecallMessage(uuid: String): Boolean {
+        return false
+    }
     open suspend fun onGetContacts() : List<ParaboxContact>{
         return emptyList()
     }
