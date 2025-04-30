@@ -123,7 +123,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
 
     // compose bom
-    implementation(platform("androidx.compose:compose-bom:2025.01.00"))
+    implementation(platform("androidx.compose:compose-bom:2025.04.01"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
@@ -134,7 +134,7 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material3:material3-adaptive-navigation-suite")
     implementation("androidx.compose.material3:material3-window-size-class-android")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2025.01.00"))
+    androidTestImplementation(platform("androidx.compose:compose-bom:2025.04.01"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
@@ -148,13 +148,13 @@ dependencies {
     implementation("com.google.accompanist:accompanist-placeholder-material3:$accVersion")
 
     // Adaptive
-    val adaptiveVersion = "1.1.0-alpha09"
+    val adaptiveVersion = "1.2.0-alpha04"
     implementation("androidx.compose.material3.adaptive:adaptive:$adaptiveVersion")
     implementation("androidx.compose.material3.adaptive:adaptive-layout-android:$adaptiveVersion")
     implementation("androidx.compose.material3.adaptive:adaptive-navigation-android:$adaptiveVersion")
 
     // Navigation Compose
-    val navVersion = "2.8.2"
+    val navVersion = "2.8.9"
     implementation("androidx.navigation:navigation-compose:$navVersion")
 
     // Lottie
@@ -162,7 +162,7 @@ dependencies {
     implementation("com.airbnb.android:lottie-compose:$lottieVersion")
 
     // Decompose
-    val decomposeVersion = "3.3.0-alpha03"
+    val decomposeVersion = "3.3.0"
     implementation("com.arkivanov.decompose:decompose:$decomposeVersion")
     implementation("com.arkivanov.decompose:extensions-compose:$decomposeVersion")
 
@@ -195,7 +195,7 @@ dependencies {
     implementation("me.saket.swipe:swipe:1.3.0")
 
     // Paging
-    val pagingVersion = "3.3.2"
+    val pagingVersion = "3.3.6"
     implementation("androidx.paging:paging-runtime-ktx:$pagingVersion")
     implementation("androidx.paging:paging-compose:$pagingVersion")
 
@@ -215,7 +215,7 @@ dependencies {
     implementation("androidx.hilt:hilt-work:$androidxHiltVersion")
 
     // Room
-    val roomVersion = "2.6.1"
+    val roomVersion = "2.7.1"
     implementation("androidx.room:room-runtime:$roomVersion")
     ksp("androidx.room:room-compiler:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
@@ -288,7 +288,7 @@ dependencies {
     implementation("com.github.SmartToolFactory:Compose-Extended-Gestures:3.0.0")
 
     // Amplituda
-    implementation("com.github.lincollincol:amplituda:2.2.1")
+//    implementation("com.github.lincollincol:amplituda:2.2.1")
 
     // Apache Commons
     implementation("commons-io:commons-io:2.15.1")

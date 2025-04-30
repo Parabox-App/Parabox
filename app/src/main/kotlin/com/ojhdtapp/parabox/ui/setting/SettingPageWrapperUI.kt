@@ -2,7 +2,13 @@ package com.ojhdtapp.parabox.ui.setting
 
 import android.app.Activity
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.WindowInsets
@@ -13,6 +19,7 @@ import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.layout.AnimatedPane
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
 import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldRole
+import androidx.compose.material3.adaptive.layout.calculateDefaultEnterTransition
 import androidx.compose.material3.adaptive.navigation.NavigableListDetailPaneScaffold
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
@@ -82,7 +89,7 @@ fun SettingPageWrapperUi(
 //    val viewModel = hiltViewModel<SettingPageViewModel>()
     val state by viewModel.uiState.collectAsState()
     val mainSharedState by mainSharedViewModel.uiState.collectAsState()
-    val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<Setting>( )
+    val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<Setting>()
     val layoutType by remember {
         derivedStateOf {
             if (scaffoldNavigator.scaffoldDirective.maxHorizontalPartitions == 1) {
@@ -186,7 +193,11 @@ fun SettingPageWrapperUi(
             ),
         navigator = scaffoldNavigator,
         listPane = {
-            AnimatedPane(modifier = Modifier.preferredWidth(352.dp)) {
+            AnimatedPane(
+                enterTransition = slideInHorizontally { -350 } + fadeIn(),
+                exitTransition = slideOutHorizontally { -350 } + fadeOut(),
+                modifier = Modifier.preferredWidth(352.dp),
+            ) {
                 SettingPage(
                     viewModel = viewModel,
                     mainSharedState = mainSharedState,
@@ -201,7 +212,10 @@ fun SettingPageWrapperUi(
             }
         },
         detailPane = {
-            AnimatedPane(modifier = Modifier) {
+            AnimatedPane(modifier = Modifier,
+                enterTransition = slideInHorizontally { 350 } + fadeIn(),
+                exitTransition = slideOutHorizontally { 350 } + fadeOut(),
+            ) {
                 Children(
                     stack = component.settingStack,
                     animation = predictiveBackAnimation(
