@@ -7,7 +7,10 @@ import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.shrinkOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -23,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -30,6 +34,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
@@ -165,7 +170,18 @@ private fun Content(
                 selected = false,
                 layoutType = layoutType,
                 trailingIcon = {
-                    Switch(checked = mainSharedState.datastore.enableDynamicColor, onCheckedChange = {
+                    Switch(
+                        thumbContent = {
+                            if (mainSharedState.datastore.enableDynamicColor) {
+                                Icon(
+                                    modifier = Modifier.size(SwitchDefaults.IconSize),
+                                    imageVector = Icons.Outlined.Check,
+                                    contentDescription = "check"
+                                )
+                            }
+                        },
+                        checked = mainSharedState.datastore.enableDynamicColor,
+                        onCheckedChange = {
                         onMainSharedEvent(
                             MainSharedEvent.UpdateSettingSwitch(
                                 DataStoreKeys.SETTINGS_ENABLE_DYNAMIC_COLOR,

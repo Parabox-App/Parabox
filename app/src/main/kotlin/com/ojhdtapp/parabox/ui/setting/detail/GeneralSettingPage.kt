@@ -7,18 +7,21 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
@@ -145,7 +148,18 @@ private fun Content(
                 selected = false,
                 layoutType = layoutType,
                 trailingIcon = {
-                    Switch(checked = mainSharedState.datastore.enableMarqueeEffectOnChatName, onCheckedChange = {
+                    Switch(
+                        thumbContent = {
+                            if (mainSharedState.datastore.enableMarqueeEffectOnChatName) {
+                                Icon(
+                                    modifier = Modifier.size(SwitchDefaults.IconSize),
+                                    imageVector = Icons.Outlined.Check,
+                                    contentDescription = "check"
+                                )
+                            }
+                        },
+                        checked = mainSharedState.datastore.enableMarqueeEffectOnChatName,
+                        onCheckedChange = {
                         onMainSharedEvent(
                             MainSharedEvent.UpdateSettingSwitch(
                                 DataStoreKeys.SETTINGS_ENABLE_MARQUEE_EFFECT_ON_CHAT_NAME,
@@ -169,7 +183,17 @@ private fun Content(
                 selected = false,
                 layoutType = layoutType,
                 trailingIcon = {
-                    Switch(checked = mainSharedState.datastore.enableSwipeToDismiss, onCheckedChange = {
+                    Switch(
+                        thumbContent = {
+                            if (mainSharedState.datastore.enableSwipeToDismiss) {
+                                Icon(
+                                    modifier = Modifier.size(SwitchDefaults.IconSize),
+                                    imageVector = Icons.Outlined.Check,
+                                    contentDescription = "check"
+                                )
+                            }
+                        },
+                        checked = mainSharedState.datastore.enableSwipeToDismiss, onCheckedChange = {
                         onMainSharedEvent(
                             MainSharedEvent.UpdateSettingSwitch(
                                 DataStoreKeys.SETTINGS_ENABLE_SWIPE_TO_DISMISS,
@@ -195,7 +219,17 @@ private fun Content(
                 selected = false,
                 layoutType = layoutType,
                 trailingIcon = {
-                    Switch(checked = mainSharedState.datastore.displayAvatarOnTopAppBar, onCheckedChange = {
+                    Switch(
+                        thumbContent = {
+                            if (mainSharedState.datastore.displayAvatarOnTopAppBar) {
+                                Icon(
+                                    modifier = Modifier.size(SwitchDefaults.IconSize),
+                                    imageVector = Icons.Outlined.Check,
+                                    contentDescription = "check"
+                                )
+                            }
+                        },
+                        checked = mainSharedState.datastore.displayAvatarOnTopAppBar, onCheckedChange = {
                         onMainSharedEvent(
                             MainSharedEvent.UpdateSettingSwitch(
                                 DataStoreKeys.SETTINGS_DISPLAY_AVATAR_ON_TOP_APPBAR,
@@ -218,7 +252,17 @@ private fun Content(
                 selected = false,
                 layoutType = layoutType,
                 trailingIcon = {
-                    Switch(checked = mainSharedState.datastore.displayTimeOnEachMsg, onCheckedChange = {
+                    Switch(
+                        thumbContent = {
+                            if (mainSharedState.datastore.displayTimeOnEachMsg) {
+                                Icon(
+                                    modifier = Modifier.size(SwitchDefaults.IconSize),
+                                    imageVector = Icons.Outlined.Check,
+                                    contentDescription = "check"
+                                )
+                            }
+                        },
+                        checked = mainSharedState.datastore.displayTimeOnEachMsg, onCheckedChange = {
                         onMainSharedEvent(
                             MainSharedEvent.UpdateSettingSwitch(
                                 DataStoreKeys.SETTINGS_DISPLAY_TIME_ON_EACH_MSG,
@@ -240,7 +284,17 @@ private fun Content(
                 selected = false,
                 layoutType = layoutType,
                 trailingIcon = {
-                    Switch(checked = mainSharedState.datastore.sendViaEnter, onCheckedChange = {
+                    Switch(
+                        thumbContent = {
+                            if (mainSharedState.datastore.sendViaEnter) {
+                                Icon(
+                                    modifier = Modifier.size(SwitchDefaults.IconSize),
+                                    imageVector = Icons.Outlined.Check,
+                                    contentDescription = "check"
+                                )
+                            }
+                        },
+                        checked = mainSharedState.datastore.sendViaEnter, onCheckedChange = {
                         onMainSharedEvent(
                             MainSharedEvent.UpdateSettingSwitch(
                                 DataStoreKeys.SETTINGS_SEND_VIA_ENTER,
@@ -266,7 +320,17 @@ private fun Content(
                 selected = false,
                 layoutType = layoutType,
                 trailingIcon = {
-                    Switch(checked = mainSharedState.datastore.enableInnerBrowser, onCheckedChange = {
+                    Switch(
+                        thumbContent = {
+                            if (mainSharedState.datastore.enableInnerBrowser) {
+                                Icon(
+                                    modifier = Modifier.size(SwitchDefaults.IconSize),
+                                    imageVector = Icons.Outlined.Check,
+                                    contentDescription = "check"
+                                )
+                            }
+                        },
+                        checked = mainSharedState.datastore.enableInnerBrowser, onCheckedChange = {
                         onMainSharedEvent(
                             MainSharedEvent.UpdateSettingSwitch(
                                 DataStoreKeys.SETTINGS_ENABLE_INNER_BROWSER,

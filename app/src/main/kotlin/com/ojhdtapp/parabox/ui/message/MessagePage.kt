@@ -209,7 +209,7 @@ fun MessagePage(
                                         CommonAvatar(
                                             modifier = Modifier
                                                 .clip(CircleShape)
-                                                .size(30.dp),
+                                                .size(36.dp),
                                             model = CommonAvatarModel(
                                                 model = mainSharedState.datastore.localAvatarUri,
                                                 name = mainSharedState.datastore.localName,
@@ -289,7 +289,7 @@ fun MessagePage(
                                         CommonAvatar(
                                             modifier = Modifier
                                                 .clip(CircleShape)
-                                                .size(30.dp),
+                                                .size(36.dp),
                                             model = CommonAvatarModel(
                                                 model = mainSharedState.datastore.localAvatarUri,
                                                 name = mainSharedState.datastore.localName,
