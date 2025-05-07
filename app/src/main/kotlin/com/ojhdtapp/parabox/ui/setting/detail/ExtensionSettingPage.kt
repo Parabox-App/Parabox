@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Button
 import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -32,12 +33,16 @@ import androidx.compose.material.icons.outlined.Pending
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardColors
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
@@ -76,6 +81,7 @@ import com.ojhdtapp.parabox.ui.setting.SettingHeader
 import com.ojhdtapp.parabox.ui.setting.SettingItem
 import com.ojhdtapp.parabox.ui.setting.SettingPageEvent
 import com.ojhdtapp.parabox.ui.setting.SettingPageState
+import com.ojhdtapp.parabox.ui.theme.fontSize
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnectionStatus
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -184,27 +190,44 @@ private fun Content(
         item {
             SettingHeader(text = "建立新连接")
         }
-        item {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp)) {
-                items(items = state.extensionList, key = { it.key }) {
-                    ConnectionCard(
-                        model = it,
-                        onClick = {
-                            if (it is Extension.Success) {
-                                onEvent(SettingPageEvent.InitNewConnection(it))
-                                navigation.pushNew(DefaultSettingComponent.SettingConfig.ExtensionAddSetting)
-                            }
-                        }
-                    )
+//        item {
+//            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp)) {
+//                items(items = state.extensionList, key = { it.key }) {
+//                    ConnectionCard(
+//                        model = it,
+//                        onClick = {
+//                            if (it is Extension.Success) {
+//                                onEvent(SettingPageEvent.InitNewConnection(it))
+//                                navigation.pushNew(DefaultSettingComponent.SettingConfig.ExtensionAddSetting)
+//                            }
+//                        }
+//                    )
+//                }
+//            }
+//        }
+        items(items = state.extensionList, key = { it.key }) {
+            ConnectionCard(
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                model = it,
+                onClick = {
+                    if (it is Extension.Success) {
+                        onEvent(SettingPageEvent.InitNewConnection(it))
+                        navigation.pushNew(DefaultSettingComponent.SettingConfig.ExtensionAddSetting)
+                    }
                 }
-            }
+            )
         }
         item {
-            SettingItem(title = "刷新可用连接", selected = false, layoutType = layoutType,
-                leadingIcon = {
-                    Icon(imageVector = Icons.Outlined.Refresh, contentDescription = "refresh", tint = MaterialTheme.colorScheme.onSurface)
-                }) {
+//            SettingItem(title = "刷新可用连接", selected = false, layoutType = layoutType,
+//                leadingIcon = {
+//                    Icon(imageVector = Icons.Outlined.Refresh, contentDescription = "refresh", tint = MaterialTheme.colorScheme.onSurface)
+//                }) {
+//                onEvent(SettingPageEvent.ReloadExtension)
+//            }
+            FilledTonalButton(modifier = Modifier.padding(start = 24.dp, top = 8.dp) , onClick = {
                 onEvent(SettingPageEvent.ReloadExtension)
+            }) {
+                Text("刷新可用连接")
             }
         }
         item {
@@ -358,33 +381,47 @@ private fun ConnectionCard(
     Card(
         onClick = onClick,
         modifier = modifier,
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+        ),
         enabled = model is Extension.Success
     ) {
-        Row(modifier = Modifier.padding(16.dp)) {
-            Column(modifier = Modifier.width(144.dp)) {
-                Box(modifier = Modifier.size(36.dp), contentAlignment = Alignment.Center) {
-                    if (model.icon == null) {
-                        Icon(imageVector = Icons.Outlined.Extension, contentDescription = "icon")
-                    } else {
-                        if (model.icon is ImageBitmap) {
-                            Image(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape),
-                                bitmap = model.icon as ImageBitmap, contentDescription = "icon")
-                        } else {
-                            AsyncImage(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape),
-                                model = model.icon, contentDescription = "icon",
-                                contentScale = ContentScale.Crop)
+        Row(
+            modifier = Modifier
+                .padding(vertical = 16.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Spacer(modifier = Modifier.width(24.dp))
+            Box(modifier = Modifier.size(36.dp), contentAlignment = Alignment.Center) {
+                if (model.icon == null) {
+                    Surface(modifier = Modifier.size(36.dp), shape = CircleShape, color = MaterialTheme.colorScheme.primary) {
+                        Box(modifier = Modifier.size(24.dp), contentAlignment = Alignment.Center) {
+                            Icon(imageVector = Icons.Outlined.Extension, contentDescription = "icon", tint = MaterialTheme.colorScheme.onPrimary)
                         }
                     }
+                } else {
+                    if (model.icon is ImageBitmap) {
+                        Image(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape),
+                            bitmap = model.icon as ImageBitmap, contentDescription = "icon")
+                    } else {
+                        AsyncImage(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape),
+                            model = model.icon, contentDescription = "icon",
+                            contentScale = ContentScale.Crop)
+                    }
                 }
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(text = model.name, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleMedium)
-                Spacer(modifier = Modifier.height(8.dp))
+            }
+            Spacer(modifier = Modifier.width(24.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = model.name, fontSize = MaterialTheme.fontSize.title, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Spacer(modifier = Modifier.height(4.dp))
                 when(model) {
                     is Extension.Error -> {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -427,7 +464,9 @@ private fun ConnectionCard(
                     }
                 }
             }
+            Spacer(modifier = Modifier.width(24.dp))
             Icon(imageVector = Icons.AutoMirrored.Outlined.NavigateNext, contentDescription = "")
+            Spacer(modifier = Modifier.width(24.dp))
         }
     }
 }
