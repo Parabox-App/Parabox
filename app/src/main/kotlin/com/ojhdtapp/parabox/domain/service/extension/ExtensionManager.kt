@@ -100,6 +100,7 @@ class ExtensionManager @Inject constructor(
         }
         initializingExtension = extension
         val initActions = try {
+            initializingExtension!!.initHandler.attachContext(context)
             initializingExtension!!.initHandler.getInitAction(emptyList(), 0)
         } catch (e: Exception) {
             e.printStackTrace()
@@ -325,7 +326,7 @@ class ExtensionManager @Inject constructor(
             }
 
         }
-
+        initializingExtension?.initHandler?.finish()
         initializingExtension = null
         getInitActionJob?.cancel()
         getInitActionJob = null

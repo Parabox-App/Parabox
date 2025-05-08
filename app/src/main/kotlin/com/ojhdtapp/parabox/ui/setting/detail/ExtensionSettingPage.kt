@@ -396,11 +396,11 @@ private fun ConnectionCard(
             Spacer(modifier = Modifier.width(24.dp))
             Box(modifier = Modifier.size(36.dp), contentAlignment = Alignment.Center) {
                 if (model.icon == null) {
-                    Surface(modifier = Modifier.size(36.dp), shape = CircleShape, color = MaterialTheme.colorScheme.primary) {
-                        Box(modifier = Modifier.size(24.dp), contentAlignment = Alignment.Center) {
-                            Icon(imageVector = Icons.Outlined.Extension, contentDescription = "icon", tint = MaterialTheme.colorScheme.onPrimary)
-                        }
-                    }
+//                    Surface(modifier = Modifier.size(36.dp), shape = CircleShape, color = MaterialTheme.colorScheme.primary) {
+//                        Box(modifier = Modifier.size(24.dp), contentAlignment = Alignment.Center) {
+//                        }
+//                    }
+                    Icon(imageVector = Icons.Outlined.Extension, contentDescription = "icon", tint = MaterialTheme.colorScheme.primary)
                 } else {
                     if (model.icon is ImageBitmap) {
                         Image(

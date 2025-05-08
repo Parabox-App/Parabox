@@ -6,6 +6,9 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.init_actions.ParaboxInitAction
 import com.ojhdtapp.paraboxdevelopmentkit.model.init_actions.ParaboxInitActionResult
 
 class OneBot11InitHandler: ParaboxInitHandler() {
+    override fun onInit() {
+    }
+
     override suspend fun getInitAction(
         list: List<ParaboxInitAction>,
         currentActionIndex: Int
@@ -140,5 +143,8 @@ class OneBot11InitHandler: ParaboxInitHandler() {
                 defaultValue = false
             )
         )
+    }
+
+    override fun onDestroy() {
     }
 }
