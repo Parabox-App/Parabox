@@ -58,6 +58,7 @@ object ExtensionLoader {
                 null,
                 null,
                 packageInfo.packageName,
+                true,
                 error.message ?: "package may have been uninstalled while loading"
             ))
         }
@@ -77,6 +78,7 @@ object ExtensionLoader {
                 appIcon,
                 null,
                 packageInfo.packageName,
+                true,
                 "Lib version ${libVersion} is lower than require version ${MIN_LIB_VERSION}"
             ))
         }
@@ -104,6 +106,7 @@ object ExtensionLoader {
                     icon ?: appIcon,
                     entrance.getDescription(),
                     entrance.getKey(),
+                    entrance.getSingleton(),
                     entrance.getInitHandler(),
                     entrance.getConnectionClassName(),
                     version!!,
@@ -117,6 +120,7 @@ object ExtensionLoader {
                     appIcon,
                     null,
                     "${packageInfo.packageName}_$index",
+                    true,
                     e.message ?: "target class is not instance of ParaboxExtension"
                 )
             } catch (e: ClassNotFoundException) {
@@ -126,6 +130,7 @@ object ExtensionLoader {
                     appIcon,
                     null,
                     "${packageInfo.packageName}_$index",
+                    true,
                     e.message ?: "target class not found"
                 )
             }

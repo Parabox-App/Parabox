@@ -11,6 +11,9 @@ interface ParaboxExtension {
     fun getIconResId(): Int? {
         return null
     }
+    fun getSingleton(): Boolean {
+        return true
+    }
     fun getInitHandler(): ParaboxInitHandler
     fun getConnectionClassName(): String
 }

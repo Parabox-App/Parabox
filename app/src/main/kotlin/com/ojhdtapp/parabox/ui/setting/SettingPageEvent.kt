@@ -20,6 +20,7 @@ sealed interface SettingPageEvent : UiEvent{
     data class LoadConnectionConfig(val configList: List<ParaboxConfigItem>, val loadState: LoadState): SettingPageEvent
     data class WriteConnectionConfigCache(val configItem: ParaboxConfigItem, val value: Any): SettingPageEvent
     data object SubmitConnectionConfig: SettingPageEvent
+    object CheckShouldExtensionInitActionSkip: SettingPageEvent
     data class SubmitExtensionInitActionResult(val result: Any): SettingPageEvent
     object RevertExtensionInitAction: SettingPageEvent
     data class InitNewExtensionConnectionDone(val isDone: Boolean) : SettingPageEvent

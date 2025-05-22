@@ -8,6 +8,7 @@ import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.deepCopy
 import com.ojhdtapp.parabox.domain.model.Connection
 import com.ojhdtapp.parabox.domain.model.Extension
+import com.ojhdtapp.parabox.domain.model.ExtensionUiWrapper
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.domain.repository.ConnectionInfoRepository
 import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
@@ -46,14 +47,34 @@ class SettingPageViewModel @Inject constructor(
             }
 
             is SettingPageEvent.UpdateConnection -> {
+                val newList = state.extensionList.map { ext ->
+                    val added = event.list.any {
+                        it.key == ext.extension.key
+                    }
+                    ExtensionUiWrapper(
+                        ext.extension,
+                        added
+                    )
+                }
                 state.copy(
-                    connectionList = event.list
+                    connectionList = event.list,
+                    extensionList = newList
                 )
             }
 
             is SettingPageEvent.UpdateExtension -> {
+                val newList = event.list.map { ext ->
+                    val added = state.connectionList.any {
+                        it.key == ext.key
+                    }
+                    ExtensionUiWrapper(
+                        ext,
+                        added
+                    )
+                }
+
                 state.copy(
-                    extensionList = event.list
+                    extensionList = newList
                 )
             }
 
@@ -72,6 +93,11 @@ class SettingPageViewModel @Inject constructor(
 
             is SettingPageEvent.InitNewConnection -> {
                 initNewExtensionConnection(event.extension)
+                state
+            }
+
+            is SettingPageEvent.CheckShouldExtensionInitActionSkip -> {
+                checkShouldExtensionInitActionSkip()
                 state
             }
 
@@ -274,6 +300,12 @@ class SettingPageViewModel @Inject constructor(
         }
         viewModelScope.launch(Dispatchers.IO) {
             extensionManager.initNewExtensionConnection(extension)
+        }
+    }
+
+    private fun checkShouldExtensionInitActionSkip() {
+        viewModelScope.launch(Dispatchers.IO) {
+            extensionManager.checkShouldExtensionInitActionSkip()
         }
     }
 

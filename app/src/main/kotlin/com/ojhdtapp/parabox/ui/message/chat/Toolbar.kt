@@ -335,7 +335,7 @@ fun Toolbar(
                                                     modifier = Modifier
                                                         .fillMaxSize()
                                                         .graphicsLayer {
-                                                            alpha = carouselItemInfo.size / carouselItemInfo.maxSize
+                                                            alpha = carouselItemDrawInfo.size / carouselItemDrawInfo.maxSize
                                                         },
                                                     horizontalAlignment = Alignment.CenterHorizontally,
                                                     verticalArrangement = Arrangement.Center
@@ -362,7 +362,7 @@ fun Toolbar(
                                                 }
                                             } else {
                                                 Box(modifier = Modifier.graphicsLayer {
-                                                    alpha = carouselItemInfo.size / carouselItemInfo.maxSize
+                                                    alpha = carouselItemDrawInfo.size / carouselItemDrawInfo.maxSize
                                                 }) {
                                                     AsyncImage(
                                                         model = ImageRequest.Builder(

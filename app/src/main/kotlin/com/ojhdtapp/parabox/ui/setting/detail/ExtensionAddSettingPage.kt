@@ -10,11 +10,14 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,6 +28,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Surface
@@ -32,7 +36,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -41,11 +48,13 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
 import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,7 +62,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -67,6 +83,7 @@ import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.pop
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
+import com.ojhdtapp.parabox.domain.model.Country
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.navigation.DefaultSettingComponent
@@ -171,7 +188,7 @@ fun ExtensionAddSettingPage(
     }
 }
 
-@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+@OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun Content(
     modifier: Modifier = Modifier,
@@ -229,7 +246,64 @@ private fun Content(
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                     }
+                                    LaunchedEffect(Unit) {
+                                        onEvent(SettingPageEvent.CheckShouldExtensionInitActionSkip)
+                                    }
                                     when (paraboxInitAction) {
+                                        is ParaboxInitAction.InfoAction -> {
+                                           // 什么都不用做
+                                        }
+                                        is ParaboxInitAction.LoadingAction -> {
+                                            LaunchedEffect(Unit) {
+                                                onEvent(SettingPageEvent.SubmitExtensionInitActionResult(""))
+                                            }
+                                            if (paraboxInitAction.errMsg.isNotEmpty()) {
+                                                ContainedLoadingIndicator()
+                                            } else {
+                                                Column {
+                                                    Text(
+                                                        text = paraboxInitAction.errMsg,
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        color = MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                    Row {
+                                                        if (state.initActionState.currentIndex > 0) {
+                                                            OutlinedButton(onClick = {
+                                                                onEvent(SettingPageEvent.RevertExtensionInitAction)
+                                                            }) {
+                                                                Text(text = stringResource(R.string.last_step))
+                                                            }
+                                                            Spacer(modifier = Modifier.width(8.dp))
+                                                        }
+                                                        Button(
+                                                            enabled = !paraboxInitAction.isLoading,
+                                                            onClick = {
+                                                            onEvent(SettingPageEvent.SubmitExtensionInitActionResult(""))
+                                                        }) {
+                                                            if (paraboxInitAction.isLoading) {
+                                                                CircularWavyProgressIndicator(
+                                                                    modifier = Modifier.size(24.dp),
+                                                                    stroke = Stroke(
+                                                                        width = with(LocalDensity.current) {
+                                                                            2.dp.toPx()
+                                                                        },
+                                                                        cap = StrokeCap.Round
+                                                                    ),
+                                                                    trackStroke = Stroke(
+                                                                        width = with(LocalDensity.current) {
+                                                                            2.dp.toPx()
+                                                                        },
+                                                                        cap = StrokeCap.Round
+                                                                    )
+                                                                )
+                                                            } else {
+                                                                Text(text = stringResource(R.string.refresh))
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
                                         is ParaboxInitAction.TextInputAction -> {
                                             var text by remember { mutableStateOf("") }
                                             OutlinedTextField(
@@ -265,10 +339,147 @@ private fun Content(
                                                     Spacer(modifier = Modifier.width(8.dp))
                                                 }
                                                 if (state.initActionState.currentIndex <= state.initActionState.actionList.size - 1) {
-                                                    Button(onClick = {
+                                                    Button(
+                                                        enabled = !paraboxInitAction.isLoading,
+                                                        onClick = {
                                                         onEvent(SettingPageEvent.SubmitExtensionInitActionResult(text))
                                                     }) {
-                                                        Text(text = stringResource(R.string.next_step))
+                                                        if (paraboxInitAction.isLoading) {
+                                                            CircularWavyProgressIndicator(
+                                                                modifier = Modifier.size(24.dp),
+                                                                stroke = Stroke(
+                                                                    width = with(LocalDensity.current) {
+                                                                        2.dp.toPx()
+                                                                    },
+                                                                    cap = StrokeCap.Round
+                                                                ),
+                                                                trackStroke = Stroke(
+                                                                    width = with(LocalDensity.current) {
+                                                                        2.dp.toPx()
+                                                                    },
+                                                                    cap = StrokeCap.Round
+                                                                )
+                                                            )
+                                                        } else {
+                                                            Text(text = stringResource(R.string.next_step))
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        is ParaboxInitAction.PhoneInputAction -> {
+                                            var phoneNumber by remember { mutableStateOf("") }
+                                            var selectedCountry by remember {
+                                                mutableStateOf(Country.countryList.first())
+                                            }
+                                            var isMenuVisible by remember {
+                                                mutableStateOf(false)
+                                            }
+                                            OutlinedTextField(
+                                                value = phoneNumber,
+                                                onValueChange = { phoneNumber = it },
+                                                label = {
+                                                    Text(text = "电话号码")
+                                                },
+                                                isError = paraboxInitAction.errMsg.isNotEmpty(),
+                                                supportingText = {
+                                                    AnimatedVisibility(
+                                                        visible = paraboxInitAction.errMsg.isNotEmpty(),
+                                                    ) {
+                                                        Text(text = paraboxInitAction.errMsg, style = MaterialTheme.typography.bodySmall)
+                                                    }
+                                                },
+                                                keyboardOptions = KeyboardOptions.Default.copy(
+                                                    keyboardType = KeyboardType.Number,
+                                                    imeAction = ImeAction.Done
+                                                ),
+                                                leadingIcon = {
+                                                    Box(
+                                                        modifier = Modifier.size(56.dp, 48.dp)
+                                                            .clip(RoundedCornerShape(16.dp))
+                                                            .clickable{
+                                                            isMenuVisible = true
+                                                        },
+                                                        contentAlignment = Alignment.Center
+                                                    ){
+                                                        CascadeDropdownMenu(
+                                                            expanded = isMenuVisible,
+                                                            onDismissRequest = { isMenuVisible = false },
+                                                            offset = DpOffset(16.dp, 0.dp),
+                                                            properties = PopupProperties(
+                                                                dismissOnBackPress = true,
+                                                                dismissOnClickOutside = true,
+                                                                focusable = true
+                                                            ),
+                                                            shape = MaterialTheme.shapes.medium,
+                                                        ) {
+                                                            Country.countryList.forEach {
+                                                                androidx.compose.material3.DropdownMenuItem(
+                                                                    text = { Text(text = it.name) },
+                                                                    leadingIcon = {
+                                                                        Text(text = "${it.flag} ")
+                                                                    },
+                                                                    onClick = {
+                                                                        phoneNumber = ""
+                                                                        selectedCountry = it
+                                                                        isMenuVisible = false
+                                                                    }
+                                                                )
+                                                            }
+                                                        }
+                                                        Text(text = selectedCountry.code)
+                                                    }
+                                                },
+                                                prefix = {
+                                                    Text(text = selectedCountry.flag)
+                                                },
+                                                keyboardActions = KeyboardActions(
+                                                    onDone = {
+                                                        if (phoneNumber.isNotBlank()) {
+                                                            onEvent(SettingPageEvent.SubmitExtensionInitActionResult("${selectedCountry.code}$phoneNumber"))
+                                                        } else {
+                                                            onEvent(SettingPageEvent.SubmitExtensionInitActionResult(""))
+                                                        }
+                                                    }),
+                                            )
+                                            Row() {
+                                                if (state.initActionState.currentIndex > 0) {
+                                                    OutlinedButton(onClick = {
+                                                        onEvent(SettingPageEvent.RevertExtensionInitAction)
+                                                    }) {
+                                                        Text(text = stringResource(R.string.last_step))
+                                                    }
+                                                    Spacer(modifier = Modifier.width(8.dp))
+                                                }
+                                                if (state.initActionState.currentIndex <= state.initActionState.actionList.size - 1) {
+                                                    Button(
+                                                        enabled =!paraboxInitAction.isLoading,
+                                                        onClick = {
+                                                        if (phoneNumber.isNotBlank()) {
+                                                            onEvent(SettingPageEvent.SubmitExtensionInitActionResult("${selectedCountry.code}$phoneNumber"))
+                                                        } else {
+                                                            onEvent(SettingPageEvent.SubmitExtensionInitActionResult(""))
+                                                        }
+                                                    }) {
+                                                        if (paraboxInitAction.isLoading) {
+                                                            CircularWavyProgressIndicator(
+                                                                modifier = Modifier.size(24.dp),
+                                                                stroke = Stroke(
+                                                                    width = with(LocalDensity.current) {
+                                                                        2.dp.toPx()
+                                                                    },
+                                                                    cap = StrokeCap.Round
+                                                                ),
+                                                                trackStroke = Stroke(
+                                                                    width = with(LocalDensity.current) {
+                                                                        2.dp.toPx()
+                                                                    },
+                                                                    cap = StrokeCap.Round
+                                                                )
+                                                            )
+                                                        } else {
+                                                            Text(text = stringResource(R.string.next_step))
+                                                        }
                                                     }
                                                 }
                                             }

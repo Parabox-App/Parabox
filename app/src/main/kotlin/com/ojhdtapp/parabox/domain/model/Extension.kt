@@ -8,6 +8,7 @@ sealed interface Extension {
     val icon: ImageBitmap?
     val des: String?
     val key: String
+    val singleton: Boolean
     sealed interface Success : Extension {
         // singleton
         val initHandler: ParaboxInitHandler
@@ -16,6 +17,7 @@ sealed interface Extension {
             override val icon: ImageBitmap?,
             override val des: String?,
             override val key: String,
+            override val singleton: Boolean,
             override val initHandler: ParaboxInitHandler
         ) : Success, BuiltInExtension
         data class External(
@@ -23,6 +25,7 @@ sealed interface Extension {
             override val icon: ImageBitmap?,
             override val des: String?,
             override val key: String,
+            override val singleton: Boolean,
             override val initHandler: ParaboxInitHandler,
             override val connectionClassName: String,
             override val version: String,
@@ -35,6 +38,7 @@ sealed interface Extension {
         override val icon: ImageBitmap?,
         override val des: String?,
         override val key: String,
+        override val singleton: Boolean,
         val errMsg: String
     ): Extension
 }

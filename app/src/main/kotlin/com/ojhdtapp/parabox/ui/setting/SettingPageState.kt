@@ -6,6 +6,7 @@ import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.ExtensionInfo
 import com.ojhdtapp.parabox.domain.model.Connection
 import com.ojhdtapp.parabox.domain.model.Extension
+import com.ojhdtapp.parabox.domain.model.ExtensionUiWrapper
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.ui.base.UiState
 import com.ojhdtapp.paraboxdevelopmentkit.model.config_item.ParaboxConfigItem
@@ -15,7 +16,7 @@ import org.json.JSONObject
 data class SettingPageState(
     @Deprecated("using decompose")
     val selected: Setting = Setting.GENERAL,
-    val extensionList: List<Extension> = emptyList(),
+    val extensionList: List<ExtensionUiWrapper> = emptyList(),
     val connectionList: List<Connection> = emptyList(),
     val initActionState: InitActionState = InitActionState(),
     val configState: ConfigState = ConfigState(),

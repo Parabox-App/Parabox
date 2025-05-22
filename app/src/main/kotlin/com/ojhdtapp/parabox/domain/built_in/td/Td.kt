@@ -6,10 +6,11 @@ import org.drinkless.tdlib.TdApi
 
 object Td {
     val extension = Extension.Success.BuiltIn(
-        name = "Telegram",
+        name = "TDLib",
         icon = null,
-        des = "Telegram",
+        des = "跨平台、功能齐全的Telegram客户端",
         key = "td",
+        singleton = true,
         initHandler = TdInitHandler()
     )
 }

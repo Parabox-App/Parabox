@@ -70,6 +70,7 @@ class ExtensionManager @Inject constructor(
     val initActionStateFlow = _initActionStateFlow.asStateFlow()
 
     private var getInitActionJob: Job? = null
+    private var awaitInitActionSkipCheckJob: Job? = null
     private var awaitInitActionResJob: Job? = null
 
     // Package Broadcast Receiver
@@ -122,6 +123,7 @@ class ExtensionManager @Inject constructor(
     }
 
     suspend fun revertInitAction() {
+        awaitInitActionSkipCheckJob?.cancel()
         awaitInitActionResJob?.cancel()
         if (initializingExtension != null && initActionStateFlow.value != null) {
             _initActionStateFlow.value = initActionStateFlow.value!!.copy(
@@ -130,11 +132,29 @@ class ExtensionManager @Inject constructor(
         }
     }
 
+    suspend fun checkShouldExtensionInitActionSkip() {
+        if (initializingExtension == null || initActionStateFlow.value == null) {
+            Log.e("parabox", "checkShouldExtensionInitActionSkip: packageInfo or initHandler is null")
+            return
+        }
+        awaitInitActionSkipCheckJob?.cancel()
+        coroutineScope {
+            val currentActionIndex = initActionStateFlow.value!!.currentIndex
+            val action = initActionStateFlow.value!!.actionList.getOrNull(currentActionIndex)?: return@coroutineScope
+            awaitInitActionSkipCheckJob = launch(Dispatchers.IO) {
+                if (action.onSkipCheck()) {
+                    increaseInitActionStep()
+                }
+            }
+        }
+    }
+
     suspend fun submitInitActionResult(result: Any) {
         if (initializingExtension == null || initActionStateFlow.value == null) {
             Log.e("parabox", "submitInitActionResult: packageInfo or initHandler is null")
             return
         }
+        awaitInitActionSkipCheckJob?.cancel()
         awaitInitActionResJob?.cancel()
         coroutineScope {
             val currentActionIndex = initActionStateFlow.value!!.currentIndex
@@ -142,142 +162,97 @@ class ExtensionManager @Inject constructor(
             awaitInitActionResJob = launch(Dispatchers.IO) {
                 when (action) {
                     is ParaboxInitAction.InfoAction -> {
+                        updateAction(action.copy(isLoading = true), currentActionIndex)
                         val res = action.onResult()
                         if (res is ParaboxInitActionResult.Done) {
-                            _initActionStateFlow.value = initActionStateFlow.value!!.copy(
-                                actionList = initActionStateFlow.value!!.actionList.toMutableList().apply {
-                                    set(
-                                        currentActionIndex, action.copy(
-                                            errMsg = ""
-                                        )
-                                    )
-                                }
-                            )
+                            updateAction(action.copy(isLoading = false, errMsg = ""), currentActionIndex)
                             initializingExtension!!.initHandler.data.put(action.key, result.toString())
                             increaseInitActionStep()
                         } else {
-                            _initActionStateFlow.value = initActionStateFlow.value!!.copy(
-                                actionList = initActionStateFlow.value!!.actionList.toMutableList().apply {
-                                    set(
-                                        currentActionIndex, action.copy(
-                                            errMsg = (res as ParaboxInitActionResult.Error).message
-                                        )
-                                    )
-                                }
-                            )
+                            updateAction(action.copy(isLoading = false, errMsg = (res as ParaboxInitActionResult.Error).message), currentActionIndex)
+                        }
+                    }
+
+                    is ParaboxInitAction.LoadingAction -> {
+                        updateAction(action.copy(isLoading = true), currentActionIndex)
+                        val res = action.onResult()
+                        if (res is ParaboxInitActionResult.Done) {
+                            updateAction(action.copy(isLoading = false, errMsg = ""), currentActionIndex)
+                            initializingExtension!!.initHandler.data.put(action.key, result.toString())
+                            increaseInitActionStep()
+                        } else {
+                            updateAction(action.copy(isLoading = false, errMsg = (res as ParaboxInitActionResult.Error).message), currentActionIndex)
                         }
                     }
 
                     is ParaboxInitAction.TextInputAction -> {
+                        updateAction(action.copy(isLoading = true), currentActionIndex)
                         val res = action.onResult(result as String)
                         if (res is ParaboxInitActionResult.Done) {
-                            _initActionStateFlow.value = initActionStateFlow.value!!.copy(
-                                actionList = initActionStateFlow.value!!.actionList.toMutableList().apply {
-                                    set(
-                                        currentActionIndex, action.copy(
-                                            errMsg = ""
-                                        )
-                                    )
-                                }
-                            )
+                            updateAction(action.copy(isLoading = false, errMsg = ""), currentActionIndex)
                             initializingExtension!!.initHandler.data.put(action.key, result.toString())
                             increaseInitActionStep()
                         } else {
-                            _initActionStateFlow.value = initActionStateFlow.value!!.copy(
-                                actionList = initActionStateFlow.value!!.actionList.toMutableList().apply {
-                                    set(
-                                        currentActionIndex, action.copy(
-                                            errMsg = (res as ParaboxInitActionResult.Error).message
-                                        )
-                                    )
-                                }
-                            )
+                            updateAction(action.copy(isLoading = false, errMsg = (res as ParaboxInitActionResult.Error).message), currentActionIndex)
                         }
                     }
-
+                    is ParaboxInitAction.PhoneInputAction -> {
+                        updateAction(action.copy(isLoading = true), currentActionIndex)
+                        val res = action.onResult(result as String)
+                        if (res is ParaboxInitActionResult.Done) {
+                            updateAction(action.copy(isLoading = false, errMsg = ""), currentActionIndex)
+                            initializingExtension!!.initHandler.data.put(action.key, result.toString())
+                            increaseInitActionStep()
+                        } else {
+                            updateAction(action.copy(isLoading = false, errMsg = (res as ParaboxInitActionResult.Error).message), currentActionIndex)
+                        }
+                    }
                     is ParaboxInitAction.SelectAction -> {
+                        updateAction(action.copy(isLoading = true), currentActionIndex)
                         val res = action.onResult(result as Int)
                         if (res is ParaboxInitActionResult.Done) {
-                            _initActionStateFlow.value = initActionStateFlow.value!!.copy(
-                                actionList = initActionStateFlow.value!!.actionList.toMutableList().apply {
-                                    set(
-                                        currentActionIndex, action.copy(
-                                            errMsg = ""
-                                        )
-                                    )
-                                }
-                            )
+                            updateAction(action.copy(isLoading = false, errMsg = ""), currentActionIndex)
                             initializingExtension!!.initHandler.data.put(action.key, action.options[result])
                             increaseInitActionStep()
                         } else {
-                            _initActionStateFlow.value = initActionStateFlow.value!!.copy(
-                                actionList = initActionStateFlow.value!!.actionList.toMutableList().apply {
-                                    set(
-                                        currentActionIndex, action.copy(
-                                            errMsg = (res as ParaboxInitActionResult.Error).message
-                                        )
-                                    )
-                                }
-                            )
+                            updateAction(action.copy(isLoading = false, errMsg = (res as ParaboxInitActionResult.Error).message), currentActionIndex)
                         }
                     }
 
                     is ParaboxInitAction.TextInputWithImageAction -> {
+                        updateAction(action.copy(isLoading = true), currentActionIndex)
                         val res = action.onResult(result as String)
                         if (res is ParaboxInitActionResult.Done) {
-                            _initActionStateFlow.value = initActionStateFlow.value!!.copy(
-                                actionList = initActionStateFlow.value!!.actionList.toMutableList().apply {
-                                    set(
-                                        currentActionIndex, action.copy(
-                                            errMsg = ""
-                                        )
-                                    )
-                                }
-                            )
+                            updateAction(action.copy(isLoading = false, errMsg = ""), currentActionIndex)
                             initializingExtension!!.initHandler.data.put(action.key, result.toString())
                             increaseInitActionStep()
                         } else {
-                            _initActionStateFlow.value = initActionStateFlow.value!!.copy(
-                                actionList = initActionStateFlow.value!!.actionList.toMutableList().apply {
-                                    set(
-                                        currentActionIndex, action.copy(
-                                            errMsg = (res as ParaboxInitActionResult.Error).message
-                                        )
-                                    )
-                                }
-                            )
+                            updateAction(action.copy(isLoading = false, errMsg = (res as ParaboxInitActionResult.Error).message), currentActionIndex)
                         }
                     }
 
                     is ParaboxInitAction.SwitchAction -> {
+                        updateAction(action.copy(isLoading = true), currentActionIndex)
                         val res = action.onResult(result as Boolean)
                         if (res is ParaboxInitActionResult.Done) {
-                            _initActionStateFlow.value = initActionStateFlow.value!!.copy(
-                                actionList = initActionStateFlow.value!!.actionList.toMutableList().apply {
-                                    set(
-                                        currentActionIndex, action.copy(
-                                            errMsg = ""
-                                        )
-                                    )
-                                }
-                            )
+                            updateAction(action.copy(isLoading = false, errMsg = ""), currentActionIndex)
                             initializingExtension!!.initHandler.data.put(action.key, result as Boolean)
                             increaseInitActionStep()
                         } else {
-                            _initActionStateFlow.value = initActionStateFlow.value!!.copy(
-                                actionList = initActionStateFlow.value!!.actionList.toMutableList().apply {
-                                    set(
-                                        currentActionIndex, action.copy(
-                                            errMsg = (res as ParaboxInitActionResult.Error).message
-                                        )
-                                    )
-                                }
-                            )
+                            updateAction(action.copy(isLoading = false, errMsg = (res as ParaboxInitActionResult.Error).message), currentActionIndex)
                         }
                     }
                 }
             }
         }
+    }
+
+    private fun updateAction(action: ParaboxInitAction, index: Int) {
+        _initActionStateFlow.value = initActionStateFlow.value!!.copy(
+            actionList = initActionStateFlow.value!!.actionList.toMutableList().apply {
+                set(index, action)
+            }
+        )
     }
 
     suspend fun resetInitAction(isDone: Boolean) {
@@ -330,6 +305,8 @@ class ExtensionManager @Inject constructor(
         initializingExtension = null
         getInitActionJob?.cancel()
         getInitActionJob = null
+        awaitInitActionSkipCheckJob?.cancel()
+        awaitInitActionSkipCheckJob = null
         awaitInitActionResJob?.cancel()
         awaitInitActionResJob = null
     }
@@ -589,23 +566,26 @@ class ExtensionManager @Inject constructor(
         }
     }
 
+    private val aliasAction = ParaboxInitAction.TextInputAction(
+        key = ALIAS_KEY,
+        title = "输入别名",
+        errMsg = "",
+        description = "别名将用于区分同一扩展提供的不同连接。",
+        label = "别名",
+        onResult = { alias ->
+            if (alias.isEmpty()) {
+                ParaboxInitActionResult.Error("别名不能为空")
+            } else if (alias in connectionFlow.value.map { it.alias }){
+                ParaboxInitActionResult.Error("别名 ${alias} 已存在")
+            } else {
+                ParaboxInitActionResult.Done
+            }
+        }
+    )
+
     companion object ExtensionManager {
         private const val TAG = "ExtensionManager"
         private const val ALIAS_KEY = "alias"
-        private val aliasAction = ParaboxInitAction.TextInputAction(
-            key = ALIAS_KEY,
-            title = "输入别名",
-            errMsg = "",
-            description = "别名将用于区分同一扩展提供的不同连接。",
-            label = "别名",
-            onResult = { alias ->
-                if (alias.isEmpty()) {
-                    ParaboxInitActionResult.Error("别名不能为空")
-                } else {
-                    ParaboxInitActionResult.Done
-                }
-            }
-        )
         private val packageReceiverFilter = IntentFilter().apply {
             addAction(Intent.ACTION_PACKAGE_ADDED)
             addAction(Intent.ACTION_PACKAGE_REPLACED)

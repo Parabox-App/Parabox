@@ -215,6 +215,7 @@ class FileUtil @Inject constructor(
 
         const val EXTERNAL_FILES_DIR_MEME = "meme"
         const val EXTERNAL_FILES_DIR_CAMERA = "camera"
+        const val EXTERNAL_FILES_DIR_EXT_PREFIX = "ext_"
         const val DEFAULT_IMAGE_NAME = "image"
         const val DEFAULT_IMAGE_EXTENSION = "jpg"
         const val DEFAULT_AUDIO_NAME = "audio"

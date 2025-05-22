@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.setting.detail
 
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -49,6 +50,7 @@ import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
 import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -205,13 +207,20 @@ private fun Content(
 //                }
 //            }
 //        }
-        items(items = state.extensionList, key = { it.key }) {
+        items(items = state.extensionList, key = { it.extension.key }) {
+            val enabled by remember {
+                derivedStateOf {
+                    Log.d("hahaha", "${it.extension} ${it.added} ${it.extension is Extension.Success}")
+                    it.extension is Extension.Success && !(it.added && it.extension.singleton)
+                }
+            }
             ConnectionCard(
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
-                model = it,
+                model = it.extension,
+                enabled = enabled,
                 onClick = {
-                    if (it is Extension.Success) {
-                        onEvent(SettingPageEvent.InitNewConnection(it))
+                    if (enabled) {
+                        onEvent(SettingPageEvent.InitNewConnection(it.extension as Extension.Success))
                         navigation.pushNew(DefaultSettingComponent.SettingConfig.ExtensionAddSetting)
                     }
                 }
@@ -376,6 +385,7 @@ private fun Content(
 private fun ConnectionCard(
     modifier: Modifier = Modifier,
     model: Extension,
+    enabled: Boolean = true,
     onClick: () -> Unit
 ) {
     Card(
@@ -385,11 +395,11 @@ private fun ConnectionCard(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer
         ),
-        enabled = model is Extension.Success
+        enabled = enabled
     ) {
         Row(
             modifier = Modifier
-                .padding(vertical = 16.dp)
+                .height(90.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -420,10 +430,13 @@ private fun ConnectionCard(
             }
             Spacer(modifier = Modifier.width(24.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = model.name, fontSize = MaterialTheme.fontSize.title, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(text = model.name, style = MaterialTheme.typography.titleMedium, color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Spacer(modifier = Modifier.height(4.dp))
-                when(model) {
-                    is Extension.Error -> {
+                when {
+                    !enabled -> {
+                        Text(text = "已建立该类型连接", color = MaterialTheme.colorScheme.outline, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
+                    }
+                    model is Extension.Error -> {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = "错误",
@@ -441,10 +454,10 @@ private fun ConnectionCard(
                             )
                         }
                     }
-                    is Extension.Success.BuiltIn -> {
+                    model is Extension.Success.BuiltIn -> {
                         Text(text = model.des?: "无说明文本", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
                     }
-                    is Extension.Success.External -> {
+                    model is Extension.Success.External -> {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = "扩展",

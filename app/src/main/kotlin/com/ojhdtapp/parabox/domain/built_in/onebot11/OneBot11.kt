@@ -8,6 +8,7 @@ object OneBot11  {
         icon = null,
         des = "通用聊天机器人应用接口标准（版本11）",
         key = "onebot11",
+        singleton = false,
         initHandler = OneBot11InitHandler()
     )
 }
