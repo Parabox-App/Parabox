@@ -348,6 +348,45 @@ private fun Content(
                 is ParaboxConfigItem.SelectConfigItem -> {
 
                 }
+
+                is ParaboxConfigItem.ActionConfigItem -> {
+                    var openDialog by remember { mutableStateOf(false) }
+                    if (openDialog) {
+                        AlertDialog(
+                            onDismissRequest = {
+                                openDialog = false
+                            },
+                            title = { Text(text = paraboxConfig.confirmModel!!.title) },
+                            text = { Text(text = paraboxConfig.confirmModel!!.description) },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    openDialog = false
+                                    coroutineScope.launch {
+                                        paraboxConfig.action()
+                                    }
+                                }) { Text(paraboxConfig.confirmModel!!.confirmText) }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { openDialog = false }) { Text(paraboxConfig.confirmModel!!.cancelText) }
+                            }
+                        )
+                    }
+                    SettingItem(
+                        title = paraboxConfig.title,
+                        subTitle = paraboxConfig.description,
+                        selected = false,
+                        layoutType = layoutType,
+                        onClick = {
+                            if (paraboxConfig.confirmModel == null) {
+                                coroutineScope.launch {
+                                    paraboxConfig.action()
+                                }
+                            } else {
+                                openDialog = true
+                            }
+                        }
+                    )
+                }
             }
         }
     }

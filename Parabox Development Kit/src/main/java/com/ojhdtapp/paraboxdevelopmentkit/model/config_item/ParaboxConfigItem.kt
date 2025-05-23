@@ -38,4 +38,19 @@ sealed interface ParaboxConfigItem {
         override val description: String,
         val defaultValue: Boolean,
     ) : ParaboxConfigItem
+
+    data class ActionConfigItem(
+        override val key: String,
+        override val title: String,
+        override val description: String,
+        val confirmModel: ConfirmModel? = null,
+        val action: () -> Unit,
+    ) : ParaboxConfigItem {
+        data class ConfirmModel(
+            val title: String,
+            val description: String,
+            val confirmText: String,
+            val cancelText: String,
+        )
+    }
 }

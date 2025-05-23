@@ -1,20 +1,135 @@
 package com.ojhdtapp.parabox.domain.built_in.td
 
+import android.os.Build
+import android.util.Log
+import com.ojhdtapp.parabox.BuildConfig
+import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnection
+import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnectionStatus
 import com.ojhdtapp.paraboxdevelopmentkit.model.SendMessage
 import org.drinkless.tdlib.Client
 import org.drinkless.tdlib.TdApi
+import java.util.Locale
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
-class TdConnection : ParaboxConnection(), Client.ResultHandler {
+class TdConnection : ParaboxConnection(), Client.ResultHandler, Client.ExceptionHandler {
+    private var client: Client? = null
+
+    private var initCot: Continuation<Boolean>? = null
     override suspend fun onInitialize(): Boolean {
-        TODO("Not yet implemented")
+        return suspendCoroutine<Boolean> { cot ->
+            client = Client.create(this, this, this)
+            client!!.send(TdApi.SetLogVerbosityLevel(1), this)
+            client!!.send(TdApi.SetDatabaseEncryptionKey(), this)
+            initCot = cot
+            client!!.send(TdApi.GetAuthorizationState(), this)
+        }
     }
 
     override suspend fun onSendMessage(message: SendMessage) {
         TODO("Not yet implemented")
     }
 
+    private fun handleAuthorizationState(updateAuthorizationState: TdApi.UpdateAuthorizationState) {
+        when(updateAuthorizationState.authorizationState) {
+            is TdApi.AuthorizationStateWaitTdlibParameters -> {
+                setTdLibParameters()
+            }
+            is TdApi.AuthorizationStateReady -> {
+                initCot?.resume(true)
+                updateStatus(ParaboxConnectionStatus.Active)
+            }
+            else -> {
+                initCot?.resume(false)
+                    updateStatus(ParaboxConnectionStatus.Error("用户登录态失效，请登出后重新添加连接（${updateAuthorizationState.authorizationState}）"))
+            }
+        }
+    }
+
+    private fun handleUserStatus(updateUserStatus: TdApi.UpdateUserStatus) {
+        when(updateUserStatus.status) {
+            is TdApi.UserStatusOffline -> {
+                updateStatus(ParaboxConnectionStatus.Error("用户离线"))
+            }
+            is TdApi.UserStatusOnline -> {
+                updateStatus(ParaboxConnectionStatus.Active)
+            }
+            else -> {
+
+            }
+        }
+    }
+
+    private fun handleConnectionState(updateConnectionState: TdApi.UpdateConnectionState) {
+        when(updateConnectionState.state) {
+            is TdApi.ConnectionStateReady -> {
+                updateStatus(ParaboxConnectionStatus.Active)
+            }
+            else -> {
+                updateStatus(ParaboxConnectionStatus.Initializing)
+            }
+        }
+    }
+
+    private fun handleNewMessage(updateNewMessage: TdApi.UpdateNewMessage) {
+
+    }
+
     override fun onResult(`object`: TdApi.Object?) {
+        Log.d("TdConnection", "onResult: $`object`")
+        when(`object`) {
+            is TdApi.AuthorizationStateWaitTdlibParameters -> {
+                setTdLibParameters()
+            }
+            is TdApi.UpdateAuthorizationState -> {
+                handleAuthorizationState(`object`)
+            }
+            is TdApi.UpdateUserStatus -> {
+                handleUserStatus(`object`)
+            }
+            is TdApi.UpdateConnectionState -> {
+                handleConnectionState(`object`)
+            }
+            is TdApi.UpdateNewMessage -> {
+                handleNewMessage(`object`)
+            }
+
+            is TdApi.UpdateUnreadChatCount -> {
+
+            }
+            is TdApi.UpdateUnreadMessageCount -> {
+
+            }
+
+        }
+
+    }
+
+    override fun onException(e: Throwable?) {
         TODO("Not yet implemented")
+    }
+
+    private fun setTdLibParameters() {
+        client?.send(
+            TdApi.SetTdlibParameters(
+                false,
+                context.getExternalFilesDir(FileUtil.EXTERNAL_FILES_DIR_EXT_PREFIX + "td")?.absolutePath,
+                context.getExternalFilesDir(FileUtil.EXTERNAL_FILES_DIR_EXT_PREFIX + "td")?.absolutePath,
+                byteArrayOf(),
+                true,
+                true,
+                true,
+                false,
+                context.resources.getInteger(R.integer.telegram_api_id),
+                context.resources.getString(R.string.telegram_api_hash),
+                Locale.getDefault().language,
+                Build.MODEL,
+                Build.VERSION.RELEASE,
+                BuildConfig.VERSION_NAME
+            ), this
+        )
     }
 }

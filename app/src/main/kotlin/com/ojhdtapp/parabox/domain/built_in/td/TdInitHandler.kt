@@ -176,7 +176,28 @@ class TdInitHandler : ParaboxInitHandler(), Client.ResultHandler, Client.Excepti
     }
 
     override suspend fun getConfig(): List<ParaboxConfigItem> {
-        TODO("Not yet implemented")
+        return listOf(
+            ParaboxConfigItem.Category(
+                key = "category_user",
+                title = "用户",
+                description = "用户配置"
+            ),
+            ParaboxConfigItem.ActionConfigItem(
+                key = "logout",
+                title = "登出",
+                description = "登出当前账号",
+                confirmModel = ParaboxConfigItem.ActionConfigItem.ConfirmModel(
+                    title = "登出",
+                    description = "确定要登出当前账号？",
+                    confirmText = "确定",
+                    cancelText = "取消"
+                ),
+                action = {
+                    client.send(TdApi.LogOut(), this)
+                    ParaboxInitActionResult.Done
+                }
+            )
+        )
     }
 
     override fun onDestroy() {
