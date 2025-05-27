@@ -20,6 +20,10 @@ import com.ojhdtapp.parabox.domain.model.QueryMessage
 
 @Dao
 interface MessageDao {
+    @Query("SELECT messageId FROM message_entity " +
+            "WHERE pkg = :pkg AND uid = :uid LIMIT 1")
+    fun checkMessage(pkg: String, uid: String) : Long?
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertMessage(message: MessageEntity): Long
 

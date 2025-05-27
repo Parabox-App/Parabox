@@ -25,9 +25,12 @@ import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxBridge
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnectionStatus
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
 import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
+import com.ojhdtapp.paraboxdevelopmentkit.model.chat.ParaboxChat
 import com.ojhdtapp.paraboxdevelopmentkit.model.config_item.ParaboxConfigItem
+import com.ojhdtapp.paraboxdevelopmentkit.model.contact.ParaboxContact
 import com.ojhdtapp.paraboxdevelopmentkit.model.init_actions.ParaboxInitAction
 import com.ojhdtapp.paraboxdevelopmentkit.model.init_actions.ParaboxInitActionResult
+import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ReceivePureMessage
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
@@ -423,6 +426,25 @@ class ExtensionManager @Inject constructor(
                             val bridge = object : ParaboxBridge {
                                 override suspend fun receiveMessage(message: ReceiveMessage): ParaboxResult {
                                     return mainRepository.receiveMessage(msg = message, ext = connectionSuccess)
+                                }
+
+                                override suspend fun receivePureMessage(msg: ReceivePureMessage): ParaboxResult {
+                                    return mainRepository.receivePureMessage(msg = msg, ext = connectionSuccess)
+                                }
+
+                                override suspend fun receiveContact(contact: ParaboxContact): ParaboxResult {
+                                    return mainRepository.receiveContact(contact = contact, ext = connectionSuccess)
+                                }
+
+                                override suspend fun receiveChat(chat: ParaboxChat): ParaboxResult {
+                                    return mainRepository.receiveChat(chat = chat, ext = connectionSuccess)
+                                }
+
+                                override suspend fun updateChatLatestMessage(
+                                    chatUid: String,
+                                    messageUid: String
+                                ): ParaboxResult {
+                                    return mainRepository.updateChatLatestMessage(chatUid = chatUid, messageUid = messageUid, ext = connectionSuccess)
                                 }
 
                                 override suspend fun recallMessage(uuid: String): ParaboxResult {

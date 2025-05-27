@@ -5,10 +5,17 @@ import com.ojhdtapp.parabox.domain.model.Connection
 import com.ojhdtapp.parabox.domain.model.RecentQuery
 import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
+import com.ojhdtapp.paraboxdevelopmentkit.model.chat.ParaboxChat
+import com.ojhdtapp.paraboxdevelopmentkit.model.contact.ParaboxContact
+import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ReceivePureMessage
 import kotlinx.coroutines.flow.Flow
 
 interface MainRepository {
     suspend fun receiveMessage(msg: ReceiveMessage, ext: Connection.ConnectionSuccess): ParaboxResult
+    suspend fun receivePureMessage(msg: ReceivePureMessage, ext: Connection.ConnectionSuccess): ParaboxResult
+    suspend fun receiveContact(contact: ParaboxContact, ext: Connection.ConnectionSuccess): ParaboxResult
+    suspend fun receiveChat(chat: ParaboxChat, ext: Connection.ConnectionSuccess): ParaboxResult
+    suspend fun updateChatLatestMessage(chatUid: String, messageUid: String, ext: Connection.ConnectionSuccess): ParaboxResult
 
     fun getRecentQuery(): Flow<Resource<List<RecentQuery>>>
 

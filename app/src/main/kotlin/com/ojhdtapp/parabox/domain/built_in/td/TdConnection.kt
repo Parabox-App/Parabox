@@ -7,7 +7,12 @@ import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnection
 import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnectionStatus
+import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxBasicInfo
 import com.ojhdtapp.paraboxdevelopmentkit.model.SendMessage
+import com.ojhdtapp.paraboxdevelopmentkit.model.contact.ParaboxContact
+import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
+import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo.ParaboxEmptyInfo
+import kotlinx.coroutines.launch
 import org.drinkless.tdlib.Client
 import org.drinkless.tdlib.TdApi
 import java.util.Locale
@@ -78,6 +83,19 @@ class TdConnection : ParaboxConnection(), Client.ResultHandler, Client.Exception
 
     }
 
+    private fun handleUser(updateNewUser: TdApi.UpdateUser) {
+        val contact = ParaboxContact(
+            basicInfo = ParaboxBasicInfo(
+                name = updateNewUser.user.firstName + (updateNewUser.user.lastName.takeIf { it.isNotBlank() }?.let { " ${it}" } ?: ""),
+                avatar = ParaboxEmptyInfo
+            ),
+            uid = updateNewUser.user.id.toString()
+        )
+        coroutineScope.launch {
+            receiveContact(contact)
+        }
+    }
+
     override fun onResult(`object`: TdApi.Object?) {
         Log.d("TdConnection", "onResult: $`object`")
         when(`object`) {
@@ -95,6 +113,10 @@ class TdConnection : ParaboxConnection(), Client.ResultHandler, Client.Exception
             }
             is TdApi.UpdateNewMessage -> {
                 handleNewMessage(`object`)
+            }
+
+            is TdApi.UpdateUser -> {
+                handleUser(`object`)
             }
 
             is TdApi.UpdateUnreadChatCount -> {

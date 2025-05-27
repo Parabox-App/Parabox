@@ -9,6 +9,7 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.SendMessage
 import com.ojhdtapp.paraboxdevelopmentkit.model.chat.ParaboxChat
 import com.ojhdtapp.paraboxdevelopmentkit.model.contact.ParaboxContact
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxForward
+import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ReceivePureMessage
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -53,6 +54,22 @@ abstract class ParaboxConnection {
         } else {
             bridge.receiveMessage(message)
         }
+    }
+
+    suspend fun receivePureMessage(msg: ReceivePureMessage): ParaboxResult {
+        return bridge.receivePureMessage(msg)
+    }
+
+    suspend fun receiveContact(contact: ParaboxContact): ParaboxResult {
+        return bridge.receiveContact(contact)
+    }
+
+    suspend fun receiveChat(chat: ParaboxChat): ParaboxResult {
+        return bridge.receiveChat(chat)
+    }
+
+    suspend fun updateChatLatestMessage(chatUid: String, messageUid: String): ParaboxResult {
+        return bridge.updateChatLatestMessage(chatUid, messageUid)
     }
 
     suspend fun recallMessage(uuid: String): ParaboxResult {
