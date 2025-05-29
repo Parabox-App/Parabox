@@ -126,6 +126,7 @@ class Converters(
                     subclass(ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo::class, ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo.serializer())
                     subclass(ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo::class, ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo.serializer())
                     subclass(ParaboxResourceInfo.ParaboxRemoteInfo.DriveRemoteInfo::class, ParaboxResourceInfo.ParaboxRemoteInfo.DriveRemoteInfo.serializer())
+                    subclass(ParaboxResourceInfo.ParaboxRemoteInfo.CustomRemoteInfo::class, ParaboxResourceInfo.ParaboxRemoteInfo.CustomRemoteInfo.serializer())
                     subclass(ParaboxResourceInfo.ParaboxSyncedInfo::class, ParaboxResourceInfo.ParaboxSyncedInfo.serializer())
                 }
             }

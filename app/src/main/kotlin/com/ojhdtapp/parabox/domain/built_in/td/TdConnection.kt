@@ -10,17 +10,25 @@ import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnectionStatus
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxBasicInfo
 import com.ojhdtapp.paraboxdevelopmentkit.model.SendMessage
 import com.ojhdtapp.paraboxdevelopmentkit.model.contact.ParaboxContact
+import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxCloudService
+import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxCloudStatus
+import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxCustomCloudService
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo.ParaboxEmptyInfo
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import org.drinkless.tdlib.Client
 import org.drinkless.tdlib.TdApi
+import org.json.JSONObject
 import java.util.Locale
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
-class TdConnection : ParaboxConnection(), Client.ResultHandler, Client.ExceptionHandler {
+class TdConnection : ParaboxConnection(), ParaboxCustomCloudService, Client.ResultHandler, Client.ExceptionHandler {
     private var client: Client? = null
 
     private var initCot: Continuation<Boolean>? = null
@@ -87,7 +95,15 @@ class TdConnection : ParaboxConnection(), Client.ResultHandler, Client.Exception
         val contact = ParaboxContact(
             basicInfo = ParaboxBasicInfo(
                 name = updateNewUser.user.firstName + (updateNewUser.user.lastName.takeIf { it.isNotBlank() }?.let { " ${it}" } ?: ""),
-                avatar = ParaboxEmptyInfo
+                avatar = updateNewUser.user.profilePhoto?.let {
+                    ParaboxResourceInfo.ParaboxRemoteInfo.CustomRemoteInfo(
+                        key = "td",
+                        id = it.small.remote.id,
+                        extra = JSONObject().apply {
+                            put("uniqueId", it.small.remote.uniqueId)
+                        }.toString()
+                    )
+                } ?: ParaboxResourceInfo.ParaboxEmptyInfo
             ),
             uid = updateNewUser.user.id.toString()
         )
@@ -153,5 +169,22 @@ class TdConnection : ParaboxConnection(), Client.ResultHandler, Client.Exception
                 BuildConfig.VERSION_NAME
             ), this
         )
+    }
+
+    override suspend fun download(remoteResource: ParaboxResourceInfo.ParaboxRemoteInfo.CustomRemoteInfo): Flow<ParaboxCloudStatus> {
+        if (client == null) {
+            return MutableStateFlow(ParaboxCloudStatus.Failed)
+        } else {
+            return flow {
+                emit(ParaboxCloudStatus.Waiting(remoteResource))
+                client!!.send(TdApi.DownloadFile().apply {
+                    fileId = remoteResource.id.toInt()
+                }, object : Client.ResultHandler {
+                    override fun onResult(`object`: TdApi.Object?) {
+                        Log.d("hahaha", "download onResult: $`object`")
+                    }
+                })
+            }
+        }
     }
 }

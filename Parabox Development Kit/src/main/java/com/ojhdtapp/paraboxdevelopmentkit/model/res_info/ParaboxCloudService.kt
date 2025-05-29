@@ -6,6 +6,8 @@ import kotlinx.coroutines.flow.Flow
 interface ParaboxCloudService {
     suspend fun upload(localResource: ParaboxResourceInfo.ParaboxLocalInfo): Flow<ParaboxCloudStatus>
     suspend fun download(remoteResource: ParaboxResourceInfo.ParaboxRemoteInfo): Flow<ParaboxCloudStatus>
+    fun isDownloadMatched(resourceInfo: ParaboxResourceInfo): Boolean
+    fun isUploadMatched(resourceInfo: ParaboxResourceInfo): Boolean
 }
 
 sealed interface ParaboxCloudStatus {

@@ -16,6 +16,7 @@ import com.ojhdtapp.parabox.data.repository.ChatRepositoryImpl
 import com.ojhdtapp.parabox.data.repository.ConnectionInfoRepositoryImpl
 import com.ojhdtapp.parabox.data.repository.ContactRepositoryImpl
 import com.ojhdtapp.parabox.data.repository.MessageRepositoryImpl
+import com.ojhdtapp.parabox.domain.cloud.CloudServiceManager
 import com.ojhdtapp.parabox.domain.cloud.KtorCloudServiceImpl
 import com.ojhdtapp.parabox.domain.repository.ChatRepository
 import com.ojhdtapp.parabox.domain.repository.ConnectionInfoRepository
@@ -79,13 +80,20 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideCloudService(
+    fun provideKtorCloudService(
         @ApplicationContext applicationContext: Context,
         fileUtil: FileUtil,
         ktorClient: HttpClient
-    ): ParaboxCloudService {
+    ): KtorCloudServiceImpl {
         return KtorCloudServiceImpl(applicationContext, fileUtil, ktorClient)
     }
+
+    @Provides
+    @Singleton
+    fun provideCloudServiceManager(
+        @ApplicationContext applicationContext: Context,
+        ktorCloudService: KtorCloudServiceImpl
+    ): CloudServiceManager = CloudServiceManager(applicationContext, ktorCloudService)
 
     @Provides
     @Singleton
@@ -96,9 +104,10 @@ object AppModule {
     @Singleton
     fun provideExtensionManager(
         @ApplicationContext applicationContext: Context,
+        cloudServiceManager: CloudServiceManager,
         mainRepository: MainRepository,
         connectionInfoRepository: ConnectionInfoRepository
-    ): ExtensionManager = ExtensionManager(applicationContext, mainRepository, connectionInfoRepository)
+    ): ExtensionManager = ExtensionManager(applicationContext, cloudServiceManager, mainRepository, connectionInfoRepository)
 
     @Provides
     @Singleton

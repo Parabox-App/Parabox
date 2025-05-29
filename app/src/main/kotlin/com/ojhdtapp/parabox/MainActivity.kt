@@ -59,6 +59,7 @@ import com.ojhdtapp.parabox.core.util.audio.LocalAudioPlayer
 import com.ojhdtapp.parabox.core.util.audio.LocalAudioRecorder
 import com.ojhdtapp.parabox.core.util.backup.LocalRoomBackup
 import com.ojhdtapp.parabox.data.local.AppDatabase
+import com.ojhdtapp.parabox.domain.cloud.CloudServiceManager
 import com.ojhdtapp.parabox.domain.cloud.LocalCloudService
 import com.ojhdtapp.parabox.domain.service.ExtensionServiceConnection
 import com.ojhdtapp.parabox.ui.MainSharedEvent
@@ -109,7 +110,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var appDatabase: AppDatabase
 
     @Inject
-    lateinit var cloudService: ParaboxCloudService
+    lateinit var cloudService: CloudServiceManager
 
     lateinit var roomBackup: RoomBackup
 

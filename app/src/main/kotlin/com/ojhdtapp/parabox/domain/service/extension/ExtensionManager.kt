@@ -15,6 +15,8 @@ import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.local.ConnectionInfo
 import com.ojhdtapp.parabox.data.local.ConnectionInfoType
 import com.ojhdtapp.parabox.domain.built_in.BuiltInExtensionUtil
+import com.ojhdtapp.parabox.domain.cloud.CloudServiceManager
+import com.ojhdtapp.parabox.domain.cloud.ParaboxCustomCloudServiceWrapper
 import com.ojhdtapp.parabox.domain.model.Connection
 import com.ojhdtapp.parabox.domain.model.Extension
 import com.ojhdtapp.parabox.domain.repository.ConnectionInfoRepository
@@ -30,6 +32,8 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.config_item.ParaboxConfigItem
 import com.ojhdtapp.paraboxdevelopmentkit.model.contact.ParaboxContact
 import com.ojhdtapp.paraboxdevelopmentkit.model.init_actions.ParaboxInitAction
 import com.ojhdtapp.paraboxdevelopmentkit.model.init_actions.ParaboxInitActionResult
+import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxCloudService
+import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxCustomCloudService
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ReceivePureMessage
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -56,6 +60,7 @@ import javax.inject.Inject
 
 class ExtensionManager @Inject constructor(
     @ApplicationContext val context: Context,
+    val cloudServiceManager: CloudServiceManager,
     val mainRepository: MainRepository,
     val connectionInfoRepository: ConnectionInfoRepository
 ) : DefaultLifecycleObserver {
@@ -340,6 +345,11 @@ class ExtensionManager @Inject constructor(
             ConnectionInfoType.Extend -> {
                 ExtensionLoader.createExternalConnection(context, connectionInfo)
             }
+        }
+        if (extension is ParaboxCustomCloudService) {
+            cloudServiceManager.registerCloudService(
+                ParaboxCustomCloudServiceWrapper(extension, extension.key)
+            )
         }
         _connectionFlow.update {
             it + extension

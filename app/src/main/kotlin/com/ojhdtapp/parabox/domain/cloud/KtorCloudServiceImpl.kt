@@ -98,6 +98,14 @@ class KtorCloudServiceImpl(
         }
     }
 
+    override fun isDownloadMatched(resourceInfo: ParaboxResourceInfo): Boolean {
+        return resourceInfo is ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo
+    }
+
+    override fun isUploadMatched(resourceInfo: ParaboxResourceInfo): Boolean {
+        return false
+    }
+
     suspend fun download(
         urlAdr: String,
         dest: File,
@@ -222,8 +230,4 @@ class KtorCloudServiceImpl(
     companion object {
         private const val MAX_THREAD = 4
     }
-}
-
-val LocalCloudService = staticCompositionLocalOf<ParaboxCloudService> {
-    error("No cloud service provided")
 }

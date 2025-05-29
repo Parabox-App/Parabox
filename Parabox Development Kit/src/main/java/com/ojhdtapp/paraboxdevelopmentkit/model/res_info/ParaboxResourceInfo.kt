@@ -71,6 +71,14 @@ sealed interface ParaboxResourceInfo : Parcelable {
                 return null
             }
         }
+
+        @Parcelize
+        @Serializable
+        data class CustomRemoteInfo(val key: String, val id: String, val extra: String) : ParaboxRemoteInfo {
+            override fun getModel(): Any? {
+                return null
+            }
+        }
     }
 
     @Parcelize
