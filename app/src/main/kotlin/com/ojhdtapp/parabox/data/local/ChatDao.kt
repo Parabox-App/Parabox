@@ -32,6 +32,9 @@ interface ChatDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insertChat(chat: ChatEntity): Long
 
+    @Update(entity = ChatEntity::class)
+    fun updateChat(entity: ChatEntity): Int
+
     @Transaction
     @Query(
         "SELECT chat_entity.* FROM chat_entity " +

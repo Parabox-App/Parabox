@@ -29,4 +29,8 @@ class UpdateChat @Inject constructor(
     fun notificationEnabled(chatId: Long, value: Boolean): Boolean {
         return chatRepository.updateNotificationEnabled(chatId, value)
     }
+
+    suspend fun syncAvatarResource(chatId: Long): Boolean {
+        return chatRepository.syncAvatarResource(chatId)
+    }
 }

@@ -17,4 +17,5 @@ interface ContactRepository {
     fun getContactPagingSource() : PagingSource<Int, ContactEntity>
     fun getContactWithExtensionInfoPagingSource(friendOnly: Boolean) : PagingSource<Int, ContactWithExtensionInfoEntity>
     fun getContactInChatWithExtensionInfoPagingSource(chatIds: List<Long>) : PagingSource<Int, ContactWithExtensionInfoEntity>
+    suspend fun syncAvatarResource(contactId: Long): Boolean
 }

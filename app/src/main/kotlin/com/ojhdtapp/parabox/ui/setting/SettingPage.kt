@@ -212,7 +212,7 @@ fun SettingPage(
             }
             item {
                 SettingItem(
-                    title = "存储",
+                    title = "数据与存储",
                     leadingIcon = {
                         Icon(imageVector = Icons.Outlined.Storage, contentDescription = "storage settings", tint = MaterialTheme.colorScheme.onSurface)
                     },

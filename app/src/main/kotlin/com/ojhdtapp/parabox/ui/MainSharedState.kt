@@ -43,6 +43,7 @@ data class MainSharedState(
         val enableForegroundNotification: Boolean = false,
         val theme: Theme = Theme.WILLOW,
         val darkMode: DataStoreKeys.DarkMode = DataStoreKeys.DarkMode.FOLLOW_SYSTEM,
+        val enableDataSavingMode: Boolean = false,
     )
     data class Search(
         val query: String = "",

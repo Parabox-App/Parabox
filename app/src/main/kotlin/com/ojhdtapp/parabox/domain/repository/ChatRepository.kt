@@ -23,4 +23,5 @@ interface ChatRepository {
     fun updateNotificationEnabled(chatId: Long, value: Boolean): Boolean
     fun containsContact(contactId: Long) : Flow<Resource<List<Chat>>>
     fun withCustomTag(customTagChatFilter: ChatFilter.Tag) : Flow<Resource<List<Chat>>>
+    suspend fun syncAvatarResource(chatId: Long): Boolean
 }

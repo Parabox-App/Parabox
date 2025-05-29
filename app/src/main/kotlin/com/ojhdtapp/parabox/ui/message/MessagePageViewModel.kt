@@ -29,6 +29,7 @@ import com.ojhdtapp.parabox.domain.use_case.GetChat
 import com.ojhdtapp.parabox.domain.use_case.GetContact
 import com.ojhdtapp.parabox.domain.use_case.GetMessage
 import com.ojhdtapp.parabox.domain.use_case.UpdateChat
+import com.ojhdtapp.parabox.domain.use_case.UpdateContact
 import com.ojhdtapp.parabox.ui.base.BaseViewModel
 import com.ojhdtapp.parabox.ui.message.chat.AudioRecorderState
 import com.ojhdtapp.parabox.ui.message.chat.EditAreaMode
@@ -73,6 +74,7 @@ class MessagePageViewModel @Inject constructor(
     val getMessage: GetMessage,
     val getContact: GetContact,
     val updateChat: UpdateChat,
+    val updateContact: UpdateContact,
     val locationUtil: LocationUtil,
     val fileUtil: FileUtil,
     val extensionManager: ExtensionManager

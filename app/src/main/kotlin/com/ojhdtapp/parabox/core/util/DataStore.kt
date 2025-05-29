@@ -66,6 +66,7 @@ object DataStoreKeys {
     val SETTINGS_ALLOW_BUBBLE_HOME = booleanPreferencesKey("settings_allow_bubble_home")
     val SETTINGS_ALLOW_FOREGROUND_NOTIFICATION =
         booleanPreferencesKey("settings_allow_foreground_notification")
+    val SETTINGS_ENABLE_DATA_SAVING_MODE = booleanPreferencesKey("settings_enable_data_saving_mode")
 
 
     val GOOGLE_MAIL = stringPreferencesKey("google_mail")

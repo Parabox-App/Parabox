@@ -136,22 +136,25 @@ object AppModule {
     @Singleton
     fun provideContactRepository(
         @ApplicationContext applicationContext: Context,
-        database: AppDatabase
-    ): ContactRepository = ContactRepositoryImpl(context = applicationContext, db = database)
+        database: AppDatabase,
+        cloudService: CloudServiceManager
+    ): ContactRepository = ContactRepositoryImpl(context = applicationContext, db = database, cloudService = cloudService)
 
     @Provides
     @Singleton
     fun provideChatRepository(
         @ApplicationContext applicationContext: Context,
-        database: AppDatabase
-    ): ChatRepository = ChatRepositoryImpl(context = applicationContext, db = database)
+        database: AppDatabase,
+        cloudService: CloudServiceManager
+    ): ChatRepository = ChatRepositoryImpl(context = applicationContext, db = database, cloudService = cloudService)
 
     @Provides
     @Singleton
     fun provideMessageRepository(
         @ApplicationContext applicationContext: Context,
-        database: AppDatabase
-    ): MessageRepository = MessageRepositoryImpl(context = applicationContext, db = database)
+        database: AppDatabase,
+        cloudService: CloudServiceManager
+    ): MessageRepository = MessageRepositoryImpl(context = applicationContext, db = database, cloudService = cloudService)
 
     @Provides
     @Singleton

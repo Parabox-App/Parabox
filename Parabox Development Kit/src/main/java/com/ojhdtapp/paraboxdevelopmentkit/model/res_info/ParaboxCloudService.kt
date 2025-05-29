@@ -15,20 +15,20 @@ sealed interface ParaboxCloudStatus {
         val resourceInfo: ParaboxResourceInfo
     ) : ParaboxCloudStatus
     data class Uploading(
-        val localUri: Uri,
+        val localResource: ParaboxResourceInfo.ParaboxLocalInfo,
         val progress: Float,
         val total: Long,
         val speed: Long,
     ) : ParaboxCloudStatus
     data class Downloading(
-        val remotePath: String,
+        val remoteResource: ParaboxResourceInfo.ParaboxRemoteInfo,
         val progress: Float,
         val total: Long,
         val speed: Long,
     ) : ParaboxCloudStatus
     data class Synced(
-        val localUri: Uri,
-        val remoteUrl: String,
+        val localResource: ParaboxResourceInfo.ParaboxLocalInfo,
+        val remoteResource: ParaboxResourceInfo.ParaboxRemoteInfo,
 
     ) : ParaboxCloudStatus
     data object Failed : ParaboxCloudStatus

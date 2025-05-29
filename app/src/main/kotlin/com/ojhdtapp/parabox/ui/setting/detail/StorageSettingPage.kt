@@ -4,12 +4,14 @@ import android.Manifest
 import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,6 +19,8 @@ import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.AdminPanelSettings
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.DataSaverOn
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.FileOpen
 import androidx.compose.material.icons.outlined.NotificationsActive
@@ -27,6 +31,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
@@ -97,7 +102,7 @@ fun StorageSettingPage(
                     Text(
                         modifier = Modifier.padding(horizontal = 24.dp, vertical = 32.dp),
                         color = MaterialTheme.colorScheme.onSurface,
-                        text = "存储",
+                        text = "数据与存储",
                         style = MaterialTheme.typography.headlineMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -120,7 +125,7 @@ fun StorageSettingPage(
                     title = {
                         Text(
                             modifier = Modifier.padding(start = 8.dp),
-                            text = "存储",
+                            text = "数据与存储",
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -163,7 +168,7 @@ private fun Content(
     val coroutineScope = rememberCoroutineScope()
     val roomBackup = LocalRoomBackup.current
     val cacheUtil = LocalCacheUtil.current
-    val appDatabase = (LocalContext.current as? MainActivity)?.appDatabase
+    val appDatabase = (LocalActivity.current as? MainActivity)?.appDatabase
     val cacheSize by cacheUtil.cacheSizeStateFlow.collectAsState()
     var cleaningCache by remember {
         mutableStateOf(false)
@@ -172,6 +177,52 @@ private fun Content(
         cacheUtil.getCacheSize()
     }
     LazyColumn(modifier = modifier) {
+        item {
+            SettingHeader(
+                text = "媒体资源",
+            )
+        }
+        item {
+            SettingItem(
+                title = "省流量模式",
+                subTitle = "将不再自动下载头像，图片，视频等媒体文件",
+                selected = false,
+                layoutType = layoutType,
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Outlined.DataSaverOn,
+                        contentDescription = "data_saving_mode",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                },
+                trailingIcon = {
+                    Switch(
+                        thumbContent = {
+                            if (mainSharedState.datastore.enableDataSavingMode) {
+                                Icon(
+                                    modifier = Modifier.size(SwitchDefaults.IconSize),
+                                    imageVector = Icons.Outlined.Check,
+                                    contentDescription = "check"
+                                )
+                            }
+                        },
+                        checked = mainSharedState.datastore.enableDataSavingMode, onCheckedChange = {
+                            onMainSharedEvent(
+                                MainSharedEvent.UpdateSettingSwitch(
+                                    DataStoreKeys.SETTINGS_ENABLE_DATA_SAVING_MODE,
+                                    it
+                                )
+                            )
+                        })
+                }) {
+                onMainSharedEvent(
+                    MainSharedEvent.UpdateSettingSwitch(
+                        DataStoreKeys.SETTINGS_ENABLE_DATA_SAVING_MODE,
+                        !mainSharedState.datastore.enableDataSavingMode
+                    )
+                )
+            }
+        }
         item {
             SettingHeader(
                 text = stringResource(id = R.string.backup_and_restore),

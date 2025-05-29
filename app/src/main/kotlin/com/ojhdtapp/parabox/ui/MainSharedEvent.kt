@@ -57,7 +57,8 @@ sealed interface MainSharedEvent : UiEvent {
     data class RootNavigate(val target: RootNavigateTarget) : MainSharedEvent
     data class ShowChangeLog(val show: Boolean): MainSharedEvent
     data class GetChangeLogDone(val res: List<ChangeLog>, val isSuccess: Boolean) : MainSharedEvent
-
+    data class SyncContactAvatar(val contactId: Long) : MainSharedEvent
+    data class SyncChatAvatar(val chatId: Long) : MainSharedEvent
 }
 
 enum class MenuNavigateTarget {

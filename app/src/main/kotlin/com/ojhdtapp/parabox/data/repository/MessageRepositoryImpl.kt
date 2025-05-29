@@ -7,6 +7,7 @@ import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.entity.MessageEntity
 import com.ojhdtapp.parabox.data.local.entity.MessageWithSenderEntity
+import com.ojhdtapp.parabox.domain.cloud.CloudServiceManager
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.QueryMessage
 import com.ojhdtapp.parabox.domain.model.filter.MessageFilter
@@ -18,6 +19,7 @@ import javax.inject.Inject
 class MessageRepositoryImpl @Inject constructor(
     val context: Context,
     private val db: AppDatabase,
+    val cloudService: CloudServiceManager
 ) : MessageRepository {
     override fun getMessagePagingSource(
         chatIdList: List<Long>,

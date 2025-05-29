@@ -162,7 +162,7 @@ fun AudioLayout(
                 }
                 if (resourceInfo is ParaboxResourceInfo.ParaboxRemoteInfo) {
                     val syncResource = cloudService.download(resourceInfo).awaitUntilSuccess(5000)
-                    syncResource?.localUri?.let { uri ->
+                    (syncResource?.localResource as? ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo)?.uri?.let { uri ->
                         disabled = false
                         player.play(uri).collectLatest {
                             playerState = it

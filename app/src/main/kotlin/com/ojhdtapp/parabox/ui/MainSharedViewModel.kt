@@ -570,6 +570,20 @@ class MainSharedViewModel @Inject constructor(
                     )
                 )
             }
+
+            is MainSharedEvent.SyncChatAvatar -> {
+                viewModelScope.launch {
+
+                }
+                return state
+            }
+
+            is MainSharedEvent.SyncContactAvatar -> {
+                viewModelScope.launch {
+                    
+                }
+                return state
+            }
         }
     }
 
@@ -881,6 +895,7 @@ class MainSharedViewModel @Inject constructor(
                             ?: Theme.WILLOW,
                         darkMode = it[DataStoreKeys.SETTINGS_DARK_MODE]?.let { DataStoreKeys.DarkMode.fromOrdinal(it) }
                             ?: DataStoreKeys.DarkMode.FOLLOW_SYSTEM,
+                        enableDataSavingMode = it[DataStoreKeys.SETTINGS_ENABLE_DATA_SAVING_MODE] ?: false,
                     )
                 ))
             }

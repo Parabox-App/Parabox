@@ -4,11 +4,14 @@ import android.content.Context
 import androidx.paging.PagingSource
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.local.AppDatabase
+import com.ojhdtapp.parabox.data.local.entity.ContactBasicInfoUpdate
 import com.ojhdtapp.parabox.data.local.entity.ContactEntity
 import com.ojhdtapp.parabox.data.local.entity.ContactWithExtensionInfoEntity
+import com.ojhdtapp.parabox.domain.cloud.CloudServiceManager
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.ContactWithExtensionInfo
 import com.ojhdtapp.parabox.domain.repository.ContactRepository
+import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -18,6 +21,7 @@ import javax.inject.Inject
 class ContactRepositoryImpl @Inject constructor(
     val context: Context,
     private val db: AppDatabase,
+    val cloudService: CloudServiceManager
 ) : ContactRepository {
     override fun queryContactWithLimit(query: String, limit: Int): Flow<Resource<List<Contact>>> {
         return flow {
@@ -121,5 +125,27 @@ class ContactRepositoryImpl @Inject constructor(
 
     override fun getContactInChatWithExtensionInfoPagingSource(chatIds: List<Long>): PagingSource<Int, ContactWithExtensionInfoEntity> {
         return db.contactDao.getContactInChatWithExtensionInfoPagingSource(chatIds)
+    }
+
+    override suspend fun syncAvatarResource(contactId: Long): Boolean {
+        return withContext(Dispatchers.IO) {
+            val contactEntity = db.contactDao.getContactById(contactId)
+            if (contactEntity?.avatar is ParaboxResourceInfo.ParaboxRemoteInfo) {
+                val downloadRes = cloudService.fastDownload(contactEntity.avatar, CloudServiceManager.TIMEOUT_MILLS)
+                if (downloadRes != null) {
+                    val updateRes = db.contactDao.updateBasicInfo(
+                        ContactBasicInfoUpdate(
+                            contactId = contactId,
+                            name = contactEntity.name,
+                            avatar = downloadRes
+                        )
+                    )
+                    if (updateRes > 0) {
+                        return@withContext true
+                    }
+                }
+            }
+            return@withContext false
+        }
     }
 }

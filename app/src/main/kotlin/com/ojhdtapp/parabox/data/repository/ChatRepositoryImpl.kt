@@ -14,9 +14,11 @@ import com.ojhdtapp.parabox.data.local.entity.ChatPinUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatTagsUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatUnreadMessagesNumUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatWithLatestMessageEntity
+import com.ojhdtapp.parabox.domain.cloud.CloudServiceManager
 import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.domain.repository.ChatRepository
+import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
@@ -28,6 +30,7 @@ import javax.inject.Inject
 class ChatRepositoryImpl @Inject constructor(
     val context: Context,
     private val db: AppDatabase,
+    val cloudService: CloudServiceManager
 ) : ChatRepository {
     override fun getChatPagingSource(filter: List<ChatFilter>): PagingSource<Int, ChatWithLatestMessageEntity> {
         val queryStr = buildString {
@@ -213,6 +216,26 @@ class ChatRepositoryImpl @Inject constructor(
                 e.printStackTrace()
                 emit(Resource.Error("unknown error" + e.message))
             }
+        }
+    }
+
+    override suspend fun syncAvatarResource(chatId: Long): Boolean {
+        return withContext(Dispatchers.IO) {
+            val chatEntity = db.chatDao.getChatByIdWithoutObserve(chatId)
+            if (chatEntity?.avatar is ParaboxResourceInfo.ParaboxRemoteInfo) {
+                val downloadRes = cloudService.fastDownload(chatEntity.avatar, CloudServiceManager.TIMEOUT_MILLS)
+                if (downloadRes != null) {
+                    val updateRes = db.chatDao.updateChat(
+                        chatEntity.copy(
+                            avatar = downloadRes
+                        )
+                    )
+                    if (updateRes > 0) {
+                        return@withContext true
+                    }
+                }
+            }
+            return@withContext false
         }
     }
 }

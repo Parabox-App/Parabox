@@ -64,11 +64,11 @@ class KtorCloudServiceImpl(
                                     FileUtil.DEFAULT_AUDIO_NAME,
                                     FileUtil.DEFAULT_AUDIO_EXTENSION
                                 )
-                                val res = download(remoteResource.url, destFile, stateFlow)
+                                val res = download(remoteResource, destFile, stateFlow)
                                 if (res) {
                                     stateFlow.value = ParaboxCloudStatus.Synced(
-                                        localUri = fileUtil.getUriForFile(destFile)!!,
-                                        remoteUrl = remoteResource.url
+                                        localResource = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(fileUtil.getUriForFile(destFile)!!),
+                                        remoteResource = remoteResource
                                     )
                                 } else {
                                     stateFlow.value = ParaboxCloudStatus.Failed
@@ -107,7 +107,7 @@ class KtorCloudServiceImpl(
     }
 
     suspend fun download(
-        urlAdr: String,
+        remoteResource: ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo,
         dest: File,
         stateFlow: MutableStateFlow<ParaboxCloudStatus>,
         threadCount: Int = MAX_THREAD,
@@ -115,7 +115,7 @@ class KtorCloudServiceImpl(
     ): Boolean {
         return coroutineScope {
             var threadCnt = if(threadCount == 0 || threadCount < 0) MAX_THREAD else threadCount
-            val url = URL(urlAdr)
+            val url = URL(remoteResource.url)
             val connection = withContext(Dispatchers.IO) { url.openConnection() } as HttpURLConnection
             headers.forEach { (k, v) ->
                 connection.setRequestProperty(k, v)
@@ -156,7 +156,7 @@ class KtorCloudServiceImpl(
                 withTimeoutOrNull(1.minutes) {
                     while (progress.value < contentLength) {
                         stateFlow.value = ParaboxCloudStatus.Downloading(
-                            remotePath = urlAdr,
+                            remoteResource = remoteResource,
                             progress = progress.value.toFloat() / contentLength,
                             total = contentLength.toLong(),
                             speed = 0
