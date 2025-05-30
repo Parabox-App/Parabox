@@ -2,6 +2,7 @@ package com.ojhdtapp.paraboxdevelopmentkit.extension
 
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxBasicInfo
 import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
@@ -12,6 +13,7 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxForward
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ReceivePureMessage
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -31,7 +33,7 @@ abstract class ParaboxConnection {
 
     suspend fun init(mContext: Context, coroutineJob: Job, mbridge: ParaboxBridge, mExtra: JSONObject) {
         coroutineScope {
-            coroutineScope = this
+            coroutineScope = CoroutineScope(Dispatchers.IO + coroutineJob)
             job = coroutineJob
             context = mContext
             bridge = mbridge

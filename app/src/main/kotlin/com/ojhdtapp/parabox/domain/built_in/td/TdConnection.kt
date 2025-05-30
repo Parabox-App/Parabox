@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.domain.built_in.td
 
+import android.net.Uri
 import android.os.Build
 import android.util.Log
 import com.ojhdtapp.parabox.BuildConfig
@@ -15,8 +16,12 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxCloudStatus
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxCustomCloudService
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo.ParaboxEmptyInfo
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
@@ -98,7 +103,7 @@ class TdConnection : ParaboxConnection(), ParaboxCustomCloudService, Client.Resu
                 avatar = updateNewUser.user.profilePhoto?.let {
                     ParaboxResourceInfo.ParaboxRemoteInfo.CustomRemoteInfo(
                         key = "td",
-                        id = it.small.remote.id,
+                        id = it.small.id.toString(),
                         extra = JSONObject().apply {
                             put("uniqueId", it.small.remote.uniqueId)
                         }.toString()
@@ -107,7 +112,7 @@ class TdConnection : ParaboxConnection(), ParaboxCustomCloudService, Client.Resu
             ),
             uid = updateNewUser.user.id.toString()
         )
-        coroutineScope.launch {
+        coroutineScope.launch(Dispatchers.IO) {
             receiveContact(contact)
         }
     }
@@ -141,13 +146,16 @@ class TdConnection : ParaboxConnection(), ParaboxCustomCloudService, Client.Resu
             is TdApi.UpdateUnreadMessageCount -> {
 
             }
-
+            is TdApi.UpdateFile -> {
+                Log.d("hahaha", "updateFile=${`object`}")
+            }
         }
 
     }
 
     override fun onException(e: Throwable?) {
-        TODO("Not yet implemented")
+        Log.e("TdConnection", "onException: $e")
+        Log.d("hahaha", "onException: $e")
     }
 
     private fun setTdLibParameters() {
@@ -173,17 +181,47 @@ class TdConnection : ParaboxConnection(), ParaboxCustomCloudService, Client.Resu
 
     override suspend fun download(remoteResource: ParaboxResourceInfo.ParaboxRemoteInfo.CustomRemoteInfo): Flow<ParaboxCloudStatus> {
         if (client == null) {
-            return MutableStateFlow(ParaboxCloudStatus.Failed)
-        } else {
             return flow {
-                emit(ParaboxCloudStatus.Waiting(remoteResource))
-                client!!.send(TdApi.DownloadFile().apply {
-                    fileId = remoteResource.id.toInt()
-                }, object : Client.ResultHandler {
+                emit(ParaboxCloudStatus.Failed)
+            }
+        } else {
+            return callbackFlow {
+                trySend(ParaboxCloudStatus.Waiting(remoteResource))
+                client!!.send(TdApi.DownloadFile(
+                    remoteResource.id.toInt(),
+                    32, 0, 0,
+                    false
+                ), object : Client.ResultHandler {
                     override fun onResult(`object`: TdApi.Object?) {
                         Log.d("hahaha", "download onResult: $`object`")
+                        if (`object` is TdApi.UpdateFile) {
+                            val file = `object`.file
+                            trySend(ParaboxCloudStatus.Downloading(
+                                remoteResource = remoteResource,
+                                progress = (file.local.downloadOffset / file.local.downloadedSize).toFloat(),
+                                total = file.remote.uploadedSize,
+                                speed = 0
+                            ))
+                            if (file.local.isDownloadingCompleted) {
+                                val filePath = file.local.path
+                                val uri = Uri.parse(filePath)
+                                val localResource = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(uri)
+                                trySend(ParaboxCloudStatus.Synced(
+                                    remoteResource = remoteResource,
+                                    localResource = localResource
+                                ))
+                            }
+                        }
+                    }
+                }, object : Client.ExceptionHandler  {
+                    override fun onException(e: Throwable?) {
+                        Log.d("hahaha", "download onException: $e")
+                        trySend(ParaboxCloudStatus.Failed)
+                        close()
                     }
                 })
+                awaitClose {
+                }
             }
         }
     }

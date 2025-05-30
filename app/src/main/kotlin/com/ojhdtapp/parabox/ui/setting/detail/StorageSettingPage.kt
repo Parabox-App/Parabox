@@ -21,10 +21,12 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.DataSaverOn
+import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.FileOpen
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Restore
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -33,6 +35,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
@@ -332,6 +335,54 @@ private fun Content(
                         cacheUtil.getCacheSize()
                     }
                 }
+            }
+        }
+        item {
+            var showDialog by remember {
+                mutableStateOf(false)
+            }
+            if (showDialog) {
+                AlertDialog(
+                    onDismissRequest = {
+                        showDialog = false
+                    },
+                    title = {
+                        Text(text = "清空聊天记录")
+                    },
+                    text = {
+                        Text(text = "清空聊天记录后，将无法恢复，请谨慎操作")
+                    },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            showDialog = false
+                        }) {
+                            Text(text = stringResource(R.string.confirm))
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = {
+                            showDialog = false
+                        }) {
+                            Text(text = stringResource(R.string.cancel))
+                        }
+                    }
+                )
+            }
+            SettingItem(
+                title = "清空聊天记录",
+                subTitle = "将清空所有聊天记录，包括群聊，私聊，系统消息等",
+                disabled = false,
+                warning = true,
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Outlined.DeleteForever,
+                        contentDescription = "clear chat history",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                },
+                selected = false, layoutType = layoutType
+            ) {
+                showDialog = true
             }
         }
     }

@@ -22,4 +22,8 @@ interface MainRepository {
     suspend fun submitRecentQuery(value: String): Boolean
 
     suspend fun deleteRecentQuery(id: Long): Boolean
+
+    companion object {
+        const val TAG = "MainRepository"
+    }
 }

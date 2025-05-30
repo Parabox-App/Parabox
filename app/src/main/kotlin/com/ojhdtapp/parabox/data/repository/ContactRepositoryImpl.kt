@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.data.repository
 
 import android.content.Context
+import android.util.Log
 import androidx.paging.PagingSource
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.data.local.AppDatabase
@@ -128,6 +129,7 @@ class ContactRepositoryImpl @Inject constructor(
     }
 
     override suspend fun syncAvatarResource(contactId: Long): Boolean {
+        Log.d(ContactRepository.TAG, "syncAvatarResource: $contactId")
         return withContext(Dispatchers.IO) {
             val contactEntity = db.contactDao.getContactById(contactId)
             if (contactEntity?.avatar is ParaboxResourceInfo.ParaboxRemoteInfo) {

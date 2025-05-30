@@ -20,6 +20,8 @@ import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
 import com.ojhdtapp.parabox.domain.use_case.GetChat
 import com.ojhdtapp.parabox.domain.use_case.GetContact
 import com.ojhdtapp.parabox.domain.use_case.Query
+import com.ojhdtapp.parabox.domain.use_case.UpdateChat
+import com.ojhdtapp.parabox.domain.use_case.UpdateContact
 import com.ojhdtapp.parabox.ui.base.BaseViewModel
 import com.ojhdtapp.parabox.ui.base.UiEffect
 import com.ojhdtapp.parabox.ui.theme.Theme
@@ -37,7 +39,9 @@ class MainSharedViewModel @Inject constructor(
     val extensionManager: ExtensionManager,
     val gson: Gson,
     val getChat: GetChat,
-    val getContact: GetContact
+    val getContact: GetContact,
+    val updateChat: UpdateChat,
+    val updateContact: UpdateContact
 ) : BaseViewModel<MainSharedState, MainSharedEvent, UiEffect>() {
 
     override fun initialState(): MainSharedState {
@@ -572,15 +576,20 @@ class MainSharedViewModel @Inject constructor(
             }
 
             is MainSharedEvent.SyncChatAvatar -> {
-                viewModelScope.launch {
-
+                if (!state.datastore.enableDataSavingMode) {
+                    viewModelScope.launch(Dispatchers.IO) {
+                        updateChat.syncAvatarResource(event.chatId)
+                    }
                 }
                 return state
             }
 
             is MainSharedEvent.SyncContactAvatar -> {
-                viewModelScope.launch {
-                    
+                Log.d(TAG, "SyncContactAvatar: $event.contactId")
+                if (!state.datastore.enableDataSavingMode) {
+                    viewModelScope.launch(Dispatchers.IO) {
+                        updateContact.syncAvatarResource(event.contactId)
+                    }
                 }
                 return state
             }
@@ -900,5 +909,9 @@ class MainSharedViewModel @Inject constructor(
                 ))
             }
         }
+    }
+
+    companion object {
+        const val TAG = "MainSharedViewModel"
     }
 }

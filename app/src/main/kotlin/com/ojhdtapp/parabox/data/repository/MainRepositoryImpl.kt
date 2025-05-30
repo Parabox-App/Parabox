@@ -39,7 +39,7 @@ class MainRepositoryImpl @Inject constructor(
     val notificationUtil: NotificationUtil
 ) : MainRepository {
     override suspend fun receiveMessage(msg: ReceiveMessage, ext: Connection.ConnectionSuccess): ParaboxResult {
-        Log.d("parabox", "receiving msg from ${ext.name}")
+        Log.d(MainRepository.TAG, "receiving msg from ${ext.name}")
         return coroutineScope {
             try {
                 val info = ext.toExtensionInfo()
@@ -71,7 +71,7 @@ class MainRepositoryImpl @Inject constructor(
                     db.messageDao.insertMessage(messageEntity)
                 }
                 Log.d(
-                    "parabox",
+                    MainRepository.TAG,
                     "chatId:${chatIdDeferred.await()};contactId:${contactIdDeferred.await()};messageId:${messageIdDeferred.await()}"
                 )
                 db.chatDao.updateLatestMessageId(
@@ -180,7 +180,7 @@ class MainRepositoryImpl @Inject constructor(
                 val messageEntity = buildMessageEntity(msg, info, contactId, chatId)
                 val messageId = db.messageDao.insertMessage(messageEntity)
                 Log.d(
-                    "parabox",
+                    MainRepository.TAG,
                     "chatId:${chatId};contactId:${contactId};messageId:${messageId}"
                 )
 
@@ -247,6 +247,7 @@ class MainRepositoryImpl @Inject constructor(
                     ext.toExtensionInfo())
                 ParaboxResult(ParaboxResult.SUCCESS, ParaboxResult.SUCCESS_MSG)
             } catch (e: Exception) {
+                Log.e(MainRepository.TAG, "receive pure-message from ${ext.name} failed, ${e.message}")
                 ParaboxResult(ParaboxResult.ERROR_UNKNOWN, e.message ?: ParaboxResult.ERROR_UNKNOWN_MSG)
             }
         }
@@ -256,6 +257,7 @@ class MainRepositoryImpl @Inject constructor(
         contact: ParaboxContact,
         ext: Connection.ConnectionSuccess
     ): ParaboxResult {
+        Log.d(MainRepository.TAG, "receiving contact from ${ext.name}")
         return coroutineScope {
             try {
                 val info = ext.toExtensionInfo()
@@ -288,6 +290,7 @@ class MainRepositoryImpl @Inject constructor(
                 }
                 ParaboxResult(ParaboxResult.SUCCESS, ParaboxResult.SUCCESS_MSG)
             } catch (e: Exception) {
+                Log.e(MainRepository.TAG , "receiving contact from ${ext.name} failed: ${e.message}")
                 ParaboxResult(ParaboxResult.ERROR_UNKNOWN, e.message?: ParaboxResult.ERROR_UNKNOWN_MSG)
             }
         }
@@ -297,6 +300,7 @@ class MainRepositoryImpl @Inject constructor(
         chat: ParaboxChat,
         ext: Connection.ConnectionSuccess
     ): ParaboxResult {
+        Log.d(MainRepository.TAG, "receiving chat from ${ext.name}")
         return coroutineScope {
             try {
                 val info = ext.toExtensionInfo()
@@ -333,6 +337,7 @@ class MainRepositoryImpl @Inject constructor(
                 }
                 ParaboxResult(ParaboxResult.SUCCESS, ParaboxResult.SUCCESS_MSG)
             } catch (e: Exception) {
+                Log.e(MainRepository.TAG, "receive chat from ${ext.name} failed: ${e.message}")
                 ParaboxResult(ParaboxResult.ERROR_UNKNOWN, e.message?: ParaboxResult.ERROR_UNKNOWN_MSG)
             }
         }

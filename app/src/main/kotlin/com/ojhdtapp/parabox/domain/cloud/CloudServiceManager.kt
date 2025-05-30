@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.onEach
 import java.util.concurrent.ConcurrentSkipListSet
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CopyOnWriteArraySet
 
 class CloudServiceManager(
     context: Context,
@@ -20,7 +22,7 @@ class CloudServiceManager(
 ) : ParaboxCloudService {
     private val customCloudService = mutableSetOf<ParaboxCloudService>()
 
-    private val runningDownloadTask = ConcurrentSkipListSet<ParaboxResourceInfo.ParaboxRemoteInfo>()
+    private val runningDownloadTask = CopyOnWriteArraySet<ParaboxResourceInfo.ParaboxRemoteInfo>()
 
     fun registerCloudService(cloudService: ParaboxCloudService): Boolean {
         Log.d(TAG, "registerCloudService: $cloudService")
@@ -33,6 +35,7 @@ class CloudServiceManager(
     }
 
     suspend fun fastDownload(remoteResource: ParaboxResourceInfo.ParaboxRemoteInfo, timeoutMills: Long): ParaboxResourceInfo.ParaboxSyncedInfo? {
+        Log.d(TAG, "fastDownload: $remoteResource")
         return download(remoteResource).awaitUntilSuccess(timeoutMills)?.let { ParaboxResourceInfo.ParaboxSyncedInfo(it.localResource, it.remoteResource) } ?: run {
             runningDownloadTask.remove(remoteResource)
             null
@@ -48,8 +51,10 @@ class CloudServiceManager(
 
     override suspend fun download(remoteResource: ParaboxResourceInfo.ParaboxRemoteInfo): Flow<ParaboxCloudStatus> {
         if (runningDownloadTask.contains(remoteResource)) {
+            Log.d(TAG, "download: $remoteResource is already running")
             return MutableStateFlow(ParaboxCloudStatus.Failed)
         } else {
+            Log.d(TAG, "download: $remoteResource")
             runningDownloadTask.add(remoteResource)
         }
         if (remoteResource is ParaboxResourceInfo.ParaboxRemoteInfo.CustomRemoteInfo) {
@@ -57,6 +62,7 @@ class CloudServiceManager(
                 if (it.isDownloadMatched(remoteResource)) {
                     return it.download(remoteResource).onEach {
                         if (it is ParaboxCloudStatus.Synced || it is ParaboxCloudStatus.Failed) {
+                            Log.d(TAG, "download: $remoteResource is downloaded , res is $it")
                             runningDownloadTask.remove(remoteResource)
                         }
                     }
@@ -70,6 +76,7 @@ class CloudServiceManager(
                 }
             }
         }
+        Log.e(TAG, "download: $remoteResource is not matched by any cloudService")
         return MutableStateFlow(ParaboxCloudStatus.Failed)
     }
 

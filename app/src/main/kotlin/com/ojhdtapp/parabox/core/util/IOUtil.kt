@@ -3,6 +3,7 @@ package com.ojhdtapp.parabox.core.util
 import android.content.Context
 import android.net.Uri
 import android.os.ParcelFileDescriptor
+import android.util.Log
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxCloudStatus
 import kotlinx.coroutines.coroutineScope
@@ -38,6 +39,7 @@ suspend fun Flow<ParaboxCloudStatus>.awaitUntilSuccess(timeoutMills: Long? = 0L)
         suspendCoroutine<ParaboxCloudStatus.Synced> { cot ->
             launch {
                 this@awaitUntilSuccess.collectLatest {
+                    Log.d("hahaha", "download state= ${it}")
                     if (it is ParaboxCloudStatus.Synced) {
                         cot.resume(it)
                     }

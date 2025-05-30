@@ -210,7 +210,6 @@ private fun Content(
         items(items = state.extensionList, key = { it.extension.key }) {
             val enabled by remember {
                 derivedStateOf {
-                    Log.d("hahaha", "${it.extension} ${it.added} ${it.extension is Extension.Success}")
                     it.extension is Extension.Success && !(it.added && it.extension.singleton)
                 }
             }

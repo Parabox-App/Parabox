@@ -48,6 +48,7 @@ import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.RootNavigateTarget
 import com.ojhdtapp.parabox.ui.SettingNavigateTarget
 import com.ojhdtapp.parabox.ui.common.*
+import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -494,6 +495,9 @@ fun MessagePage(
                                                 item.message.senderId
                                             )
                                         )
+                                    }
+                                    if (item.chat.avatar is ParaboxResourceInfo.ParaboxRemoteInfo) {
+                                        mainSharedViewModel.sendEvent(MainSharedEvent.SyncChatAvatar(item.chat.chatId))
                                     }
                                 })
                                 ChatItem(

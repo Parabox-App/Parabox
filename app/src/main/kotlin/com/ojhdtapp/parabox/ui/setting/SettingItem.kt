@@ -35,6 +35,7 @@ fun SettingItem(
     selected: Boolean,
     layoutType: LayoutType,
     disabled: Boolean = false,
+    warning: Boolean = false,
     clickableOnly: Boolean = false,
     onLongClick: () -> Unit = {},
     onClick: () -> Unit,
@@ -60,13 +61,21 @@ fun SettingItem(
                 Spacer(modifier = Modifier.width(24.dp))
             }
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = title, fontSize = MaterialTheme.fontSize.title, color = if (disabled) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(text = title, fontSize = MaterialTheme.fontSize.title,
+                    color = when {
+                    disabled -> MaterialTheme.colorScheme.outline
+                        warning -> MaterialTheme.colorScheme.error
+                        else -> MaterialTheme.colorScheme.onSurface },
+                    maxLines = 1, overflow = TextOverflow.Ellipsis)
                 if (subTitle != null) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = subTitle,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = if (disabled) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurfaceVariant
+                        color = when {
+                            disabled -> MaterialTheme.colorScheme.outline
+                            warning -> MaterialTheme.colorScheme.error
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant },
                     )
                 }
             }

@@ -337,7 +337,7 @@ class ExtensionManager @Inject constructor(
     }
 
     fun createAndTryAppendConnection(connectionInfo: ConnectionInfo) {
-        val extension = when (connectionInfo.type) {
+        val connection = when (connectionInfo.type) {
             ConnectionInfoType.BuiltIn -> {
                 createBuiltInConnection(connectionInfo)
             }
@@ -346,13 +346,13 @@ class ExtensionManager @Inject constructor(
                 ExtensionLoader.createExternalConnection(context, connectionInfo)
             }
         }
-        if (extension is ParaboxCustomCloudService) {
+        if (connection is Connection.ConnectionPending && connection.connection is ParaboxCustomCloudService) {
             cloudServiceManager.registerCloudService(
-                ParaboxCustomCloudServiceWrapper(extension, extension.key)
+                ParaboxCustomCloudServiceWrapper(connection.connection as ParaboxCustomCloudService, connection.key)
             )
         }
         _connectionFlow.update {
-            it + extension
+            it + connection
         }
         Log.d("parabox", "append extension=${_connectionFlow.value}")
     }

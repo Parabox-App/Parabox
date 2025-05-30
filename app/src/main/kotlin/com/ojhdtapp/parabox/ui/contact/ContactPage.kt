@@ -46,6 +46,7 @@ import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
 import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -75,6 +76,7 @@ import com.ojhdtapp.parabox.ui.common.SearchContent
 import com.ojhdtapp.parabox.ui.common.clearFocusOnKeyboardDismiss
 import com.ojhdtapp.parabox.ui.message.chat.PlainContactItem
 import com.ojhdtapp.parabox.ui.message.chat.EmptyPlainContactItem
+import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 import kotlinx.coroutines.launch
 import me.saket.cascade.CascadeDropdownMenu
 import my.nanihadesuka.compose.InternalLazyColumnScrollbar
@@ -408,6 +410,11 @@ fun ContactPage(
                         if (item == null) {
                             EmptyPlainContactItem()
                         } else {
+                            LaunchedEffect(item.contact) {
+                                if (item.contact.avatar is ParaboxResourceInfo.ParaboxRemoteInfo) {
+                                    onMainSharedEvent(MainSharedEvent.SyncContactAvatar(item.contact.contactId))
+                                }
+                            }
                             PlainContactItem(
                                 name = item.contact.name,
                                 lastName = (index - 1).takeIf { it >= 0 }
