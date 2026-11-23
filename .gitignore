@@ -18,3 +18,5 @@ app/release
 .idea/deploymentTargetDropDown.xml
 secrets.properties
 /.idea
+
+/.kotlin/

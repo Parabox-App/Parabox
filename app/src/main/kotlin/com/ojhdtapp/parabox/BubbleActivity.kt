@@ -40,7 +40,6 @@ import com.ojhdtapp.parabox.ui.theme.LocalFontSize
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.jetbrains.kotlin.library.impl.toSpaceSeparatedString
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -63,7 +62,7 @@ class BubbleActivity : AppCompatActivity() {
             val messagePageViewModel = hiltViewModel<MessagePageViewModel>()
             val mainSharedState by mainSharedViewModel.uiState.collectAsState()
             LaunchedEffect(Unit) {
-                Log.d("parabox", "new intent host=${intent.data?.host},scheme=${intent.data?.scheme},path=${intent.data?.host},query=${intent.data?.encodedQuery},pathSegments=${intent.data?.pathSegments?.toSpaceSeparatedString()}")
+                Log.d("parabox", "new intent host=${intent.data?.host},scheme=${intent.data?.scheme},path=${intent.data?.host},query=${intent.data?.encodedQuery},pathSegments=${intent.data?.pathSegments?.joinToString(" ")}")
                 if (intent.data?.host == "chat") {
                     val chatId = intent.data?.lastPathSegment?.toLongOrNull()
                     if (chatId != null) {
