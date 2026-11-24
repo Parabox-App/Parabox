@@ -161,4 +161,110 @@ class ExtensionSessionClientTest {
             server.shutdownNow()
         }
     }
+
+    @Test
+    fun sendMessageAutoRecoversAfterUninitializedAndInitFailureReconnects() = runBlocking {
+        val serverName = InProcessServerBuilder.generateName()
+        val initAttempts = AtomicInteger(0)
+        val provider = object : ParaboxExtensionProvider {
+            override val descriptor = ParaboxExtensionDescriptor(
+                key = "recover_test",
+                name = "Recover Test",
+            )
+
+            override suspend fun onInitStep(
+                wizardSessionId: String,
+                currentStepIndex: Int,
+                submittedKey: String?,
+                submittedValue: Any?,
+                accumulatedExtra: JSONObject,
+            ): ParaboxInitStepResult = ParaboxInitStepResult(emptyList(), 0, completed = true, updatedExtra = accumulatedExtra)
+
+            override fun createSession(
+                sessionId: String,
+                extra: JSONObject,
+                hostPackageName: String,
+            ): ParaboxSession = object : ParaboxSession(sessionId, extra, hostPackageName) {
+                override suspend fun onInitialize(): Boolean {
+                    val attempt = initAttempts.incrementAndGet()
+                    if (attempt == 1) {
+                        // Fail first init to verify engine closes stream and client auto-reconnects
+                        updateStatus(ParaboxConnectionStatus.Error("transient init failure"))
+                        return false
+                    }
+                    updateStatus(ParaboxConnectionStatus.Active)
+                    return true
+                }
+
+                override suspend fun onSendMessage(message: SendMessage): ParaboxResult {
+                    return ParaboxResult(ParaboxResult.SUCCESS, ParaboxResult.SUCCESS_MSG, messageUuid = "tg:100")
+                }
+            }
+        }
+
+        val engine = ParaboxExtensionGrpcEngine(listOf(provider))
+        val server = InProcessServerBuilder.forName(serverName)
+            .addService(engine)
+            .build()
+            .start()
+
+        val inProcTransport = InProcessExtensionTransport()
+        val transport = object : ExtensionTransport {
+            override fun acquireChannel(endpoint: ExtensionEndpoint): ManagedChannel =
+                inProcTransport.acquireChannel(endpoint as ExtensionEndpoint.InProcess)
+            override fun invalidateChannel(endpoint: ExtensionEndpoint) =
+                inProcTransport.invalidateChannel(endpoint as ExtensionEndpoint.InProcess)
+            override fun invalidatePackage(packageName: String) = Unit
+            override fun shutdownAll() = inProcTransport.shutdownAll()
+        }
+
+        val client = ExtensionSessionClient(
+            sessionId = "conn-recover-1",
+            endpoint = ExtensionEndpoint.InProcess(serverName, "recover_test"),
+            extra = JSONObject(),
+            hostPackageName = "com.ojhdtapp.parabox",
+            transport = transport,
+            inboundHandler = object : SessionInboundHandler {
+                override suspend fun onReceiveMessage(message: ReceiveMessage) =
+                    ParaboxResult(ParaboxResult.SUCCESS, ParaboxResult.SUCCESS_MSG)
+                override suspend fun onRecallMessage(messageUuid: String) =
+                    ParaboxResult(ParaboxResult.SUCCESS, ParaboxResult.SUCCESS_MSG)
+            },
+            ioDispatcher = Dispatchers.IO,
+            initialBackoffMs = 50L,
+            maxBackoffMs = 200L,
+            heartbeatIntervalMs = 500L,
+            heartbeatTimeoutMs = 500L,
+            recoverTimeoutMs = 5_000L,
+        )
+
+        try {
+            client.start()
+            // First init fails -> engine closes stream -> client reconnects -> 2nd init succeeds
+            withTimeout(5_000) {
+                client.status.first { it is ParaboxConnectionStatus.Active }
+            }
+            assertEquals(2, initAttempts.get())
+
+            // Simulate remote activeSessions cleared while stream hasn't noticed yet
+            engine.shutdownAllSessions()
+
+            // sendMessage should receive ERROR_UNINITIALIZED, forceReconnect, and transparently succeed
+            val res = client.sendMessage(
+                SendMessage(
+                    contents = listOf(ParaboxPlainText("recover me")),
+                    chat = ParaboxChat(ParaboxBasicInfo("C", ParaboxResourceInfo.ParaboxEmptyInfo), ParaboxChat.TYPE_PRIVATE, "c1"),
+                    timestamp = 200L,
+                    uuid = "m-recover",
+                )
+            )
+            assertEquals(ParaboxResult.SUCCESS, res.code)
+            assertEquals("tg:100", res.messageUuid)
+            assertTrue("Expected session to re-initialize on Uninitialized recovery", initAttempts.get() >= 3)
+        } finally {
+            client.close()
+            transport.shutdownAll()
+            server.shutdownNow()
+        }
+    }
 }

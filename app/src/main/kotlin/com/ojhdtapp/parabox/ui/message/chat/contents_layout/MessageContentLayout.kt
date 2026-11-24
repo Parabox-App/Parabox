@@ -1,11 +1,20 @@
 package com.ojhdtapp.parabox.ui.message.chat.contents_layout
 
 import android.graphics.BitmapFactory
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.PlayArrow
@@ -24,6 +33,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -31,6 +41,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
 import androidx.core.graphics.drawable.toBitmap
@@ -263,19 +275,57 @@ fun QuoteReplyLayout(
     senderName: String? = null,
     summary: String = "",
     textColor: Color = MaterialTheme.colorScheme.onSecondaryContainer,
+    onClick: (() -> Unit)? = null,
 ) {
-    val label = buildString {
-        append("回复")
-        if (!senderName.isNullOrBlank()) append(" $senderName")
-        if (summary.isNotBlank()) append("：$summary")
+    val cleanSender = senderName?.trim().orEmpty()
+    val cleanSummary = summary.trim()
+    val clickModifier = if (onClick != null) {
+        Modifier.clickable(onClick = onClick)
+    } else {
+        Modifier
     }
-    Text(
-        modifier = modifier.padding(horizontal = 9.dp, vertical = 6.dp),
-        text = label,
-        style = MaterialTheme.typography.labelMedium,
-        color = textColor.copy(alpha = 0.78f),
-        maxLines = 2,
-    )
+    Row(
+        modifier = modifier
+            .padding(horizontal = 6.dp, vertical = 4.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(textColor.copy(alpha = 0.08f))
+            .then(clickModifier)
+            .height(IntrinsicSize.Min)
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .width(3.dp)
+                .fillMaxHeight()
+                .clip(RoundedCornerShape(2.dp))
+                .background(textColor.copy(alpha = 0.55f))
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Column {
+            if (cleanSender.isNotEmpty()) {
+                Text(
+                    text = cleanSender,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = textColor.copy(alpha = 0.9f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Text(
+                text = when {
+                    cleanSummary.isNotEmpty() -> cleanSummary
+                    cleanSender.isNotEmpty() -> "[消息]"
+                    else -> "回复了一条消息"
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = textColor.copy(alpha = 0.78f),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
 }
 
 @Composable

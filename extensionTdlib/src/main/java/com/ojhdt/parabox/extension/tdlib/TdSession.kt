@@ -16,6 +16,8 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
 import com.ojhdtapp.paraboxdevelopmentkit.model.SendMessage
 import com.ojhdtapp.paraboxdevelopmentkit.model.chat.ParaboxChat
 import com.ojhdtapp.paraboxdevelopmentkit.model.contact.ParaboxContact
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxPlainText
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxQuoteReply
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 import com.ojhdtapp.paraboxdevelopmentkit.v2.ParaboxConnectionStatus
 import com.ojhdtapp.paraboxdevelopmentkit.v2.ParaboxSession
@@ -80,8 +82,12 @@ class TdSession(
             }
         }
 
+        if (authState == null) {
+            updateStatus(ParaboxConnectionStatus.Reconnecting(1, "TDLib 启动超时，正在重试"))
+            return false
+        }
         if (authState !is TdApi.AuthorizationStateReady) {
-            val detail = authState?.javaClass?.simpleName ?: "Timeout"
+            val detail = authState.javaClass.simpleName
             updateStatus(ParaboxConnectionStatus.Error("Telegram 登录态失效（$detail），请重新新建连接登录"))
             return false
         }
@@ -180,7 +186,7 @@ class TdSession(
         emitMessage(receiveMessage)
     }
 
-    private suspend fun buildReceiveMessage(
+    internal suspend fun buildReceiveMessage(
         tdClient: TdClientApi,
         message: TdApi.Message,
     ): ReceiveMessage? {
@@ -189,6 +195,7 @@ class TdSession(
         val chatName = chat?.title?.ifBlank { null }
 
         val senderContact = resolveSender(tdClient, message.senderId)
+        val resolvedQuoteReply = resolveQuoteReply(tdClient, message)
         val elements = TdMessageMapper.mapMessageContentToElements(
             message = message,
             client = tdClient,
@@ -196,6 +203,7 @@ class TdSession(
             hostPackageName = hostPackageName,
             autoDownloadMedia = autoDownloadMedia,
             maxDownloadBytes = maxDownloadBytes,
+            resolvedQuoteReply = resolvedQuoteReply,
         )
 
         return ReceiveMessage(
@@ -212,6 +220,131 @@ class TdSession(
             timestamp = message.date.toLong() * 1000L,
             uuid = TdMessageMapper.formatMessageUuid(message.chatId, message.id),
         )
+    }
+
+    private suspend fun resolveQuoteReply(
+        tdClient: TdClientApi,
+        message: TdApi.Message,
+    ): ParaboxQuoteReply? {
+        val reply = message.replyTo as? TdApi.MessageReplyToMessage ?: return null
+        val quoteText = reply.quote?.text?.text?.takeIf { it.isNotBlank() }
+
+        val repliedMsg = fetchRepliedMessage(tdClient, message.chatId, message.id, reply)
+        if (repliedMsg != null) {
+            val sender = resolveSender(tdClient, repliedMsg.senderId)
+            val timestamp = repliedMsg.date.takeIf { it > 0 }?.toLong()?.times(1000L)
+                ?: reply.originSendDate.takeIf { it > 0 }?.toLong()?.times(1000L)
+            val id = when {
+                repliedMsg.chatId != 0L && repliedMsg.id != 0L ->
+                    TdMessageMapper.formatMessageUuid(repliedMsg.chatId, repliedMsg.id)
+                reply.chatId != 0L && reply.messageId != 0L ->
+                    TdMessageMapper.formatMessageUuid(reply.chatId, reply.messageId)
+                else -> null
+            }
+            val previewElements = if (quoteText != null) {
+                listOf(ParaboxPlainText(quoteText))
+            } else {
+                TdMessageMapper.mapContentToQuotePreviewElements(repliedMsg.content, repliedMsg.date)
+            }
+            return ParaboxQuoteReply(
+                sender = sender,
+                timestamp = timestamp,
+                id = id,
+                messages = previewElements,
+            )
+        }
+
+        val fallbackSender = resolveMessageOrigin(tdClient, reply.origin)
+        val fallbackTimestamp = reply.originSendDate.takeIf { it > 0 }?.toLong()?.times(1000L)
+        val fallbackId = if (reply.chatId != 0L && reply.messageId != 0L) {
+            TdMessageMapper.formatMessageUuid(reply.chatId, reply.messageId)
+        } else {
+            null
+        }
+        val fallbackMessages = if (quoteText != null) {
+            listOf(ParaboxPlainText(quoteText))
+        } else {
+            TdMessageMapper.mapContentToQuotePreviewElements(reply.content, reply.originSendDate)
+        }
+        return ParaboxQuoteReply(
+            sender = fallbackSender,
+            timestamp = fallbackTimestamp,
+            id = fallbackId,
+            messages = fallbackMessages,
+        )
+    }
+
+    private suspend fun fetchRepliedMessage(
+        tdClient: TdClientApi,
+        chatId: Long,
+        messageId: Long,
+        reply: TdApi.MessageReplyToMessage,
+    ): TdApi.Message? {
+        val viaReplied = withTimeoutOrNull(QUOTE_FETCH_TIMEOUT_MS) {
+            runCatching {
+                tdClient.send<TdApi.Message>(TdApi.GetRepliedMessage(chatId, messageId))
+            }.getOrNull()
+        }
+        if (viaReplied != null) return viaReplied
+
+        if (reply.chatId != 0L && reply.messageId != 0L) {
+            return withTimeoutOrNull(QUOTE_FETCH_TIMEOUT_MS) {
+                runCatching {
+                    tdClient.send<TdApi.Message>(TdApi.GetMessage(reply.chatId, reply.messageId))
+                }.getOrNull()
+            }
+        }
+        return null
+    }
+
+    private suspend fun resolveMessageOrigin(
+        tdClient: TdClientApi,
+        origin: TdApi.MessageOrigin?,
+    ): ParaboxContact? {
+        return when (origin) {
+            is TdApi.MessageOriginUser -> {
+                val user = getOrFetchUser(tdClient, origin.senderUserId)
+                TdMessageMapper.buildContact(
+                    uid = origin.senderUserId.toString(),
+                    name = user?.let { TdMessageMapper.formatUserDisplayName(it) },
+                )
+            }
+            is TdApi.MessageOriginHiddenUser -> {
+                TdMessageMapper.buildContact(
+                    uid = "0",
+                    name = origin.senderName?.ifBlank { null },
+                )
+            }
+            is TdApi.MessageOriginChat -> {
+                val chat = getOrFetchChat(tdClient, origin.senderChatId)
+                val chatTitle = chat?.title?.ifBlank { null }
+                val signature = origin.authorSignature?.ifBlank { null }
+                val displayName = when {
+                    chatTitle != null && signature != null -> "$chatTitle ($signature)"
+                    chatTitle != null -> chatTitle
+                    else -> signature
+                }
+                TdMessageMapper.buildContact(
+                    uid = origin.senderChatId.toString(),
+                    name = displayName,
+                )
+            }
+            is TdApi.MessageOriginChannel -> {
+                val chat = getOrFetchChat(tdClient, origin.chatId)
+                val chatTitle = chat?.title?.ifBlank { null }
+                val signature = origin.authorSignature?.ifBlank { null }
+                val displayName = when {
+                    chatTitle != null && signature != null -> "$chatTitle ($signature)"
+                    chatTitle != null -> chatTitle
+                    else -> signature
+                }
+                TdMessageMapper.buildContact(
+                    uid = origin.chatId.toString(),
+                    name = displayName,
+                )
+            }
+            else -> null
+        }
     }
 
     private suspend fun resolveSender(
@@ -541,5 +674,6 @@ class TdSession(
         private const val TAG = "TdSession"
         private const val AVATAR_MAX_BYTES = 2L * 1024L * 1024L
         private const val STREAM_CHUNK_BYTES = 64 * 1024
+        private const val QUOTE_FETCH_TIMEOUT_MS = 3_000L
     }
 }

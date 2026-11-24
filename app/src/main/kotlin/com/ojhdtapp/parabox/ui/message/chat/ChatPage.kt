@@ -320,6 +320,56 @@ fun NormalChatPage(
     val editState = state.chatDetail.editAreaState
     val snackBarHostState = remember { SnackbarHostState() }
     var snackBarJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    var highlightedMessageUid by remember { mutableStateOf<String?>(null) }
+    var highlightJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+
+    val resolveQuoteFallback: (String) -> Pair<String?, String>? = remember(messageLazyPagingItems) {
+        { quoteUid ->
+            val snapshot = messageLazyPagingItems.itemSnapshotList
+            var found: Pair<String?, String>? = null
+            for (i in 0 until snapshot.size) {
+                val entry = snapshot[i] as? ChatPageUiModel.MessageWithSender ?: continue
+                if (entry.message.uid == quoteUid) {
+                    found = entry.sender.name to entry.message.contentString
+                    break
+                }
+            }
+            found
+        }
+    }
+
+    fun jumpToMessageByUid(targetUid: String) {
+        coroutineScope.launch {
+            val snapshot = messageLazyPagingItems.itemSnapshotList
+            var targetIndex = -1
+            for (i in 0 until snapshot.size) {
+                val entry = snapshot[i] as? ChatPageUiModel.MessageWithSender ?: continue
+                if (entry.message.uid == targetUid) {
+                    targetIndex = i
+                    break
+                }
+            }
+            if (targetIndex >= 0) {
+                lazyListState.animateScrollToItem(targetIndex)
+                highlightJob?.cancel()
+                highlightedMessageUid = targetUid
+                highlightJob = launch {
+                    delay(1500)
+                    if (highlightedMessageUid == targetUid) {
+                        highlightedMessageUid = null
+                    }
+                }
+            } else {
+                snackBarJob?.cancel()
+                snackBarJob = launch {
+                    snackBarHostState.showSnackbar(
+                        message = "原消息不在当前已加载记录中",
+                        withDismissAction = true,
+                    )
+                }
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.uiEffect.flowWithLifecycle(lifecycleOwner.lifecycle, Lifecycle.State.STARTED)
@@ -483,6 +533,7 @@ fun NormalChatPage(
                                                         isLast = !((after as? ChatPageUiModel.MessageWithSender)?.sender?.platformEqual(
                                                             item.sender,
                                                         ) ?: false),
+                                                        isHighlighted = highlightedMessageUid != null && item.message.uid == highlightedMessageUid,
                                                         shouldDisplayTime = mainSharedState.datastore.displayTimeOnEachMsg,
                                                         onImageClick = { elementId ->
                                                             coroutineScope.launch {
@@ -494,6 +545,10 @@ fun NormalChatPage(
                                                                 )
                                                             }
                                                         },
+                                                        onQuoteReplyClick = { quoteUid ->
+                                                            jumpToMessageByUid(quoteUid)
+                                                        },
+                                                        resolveQuoteFallback = resolveQuoteFallback,
                                                         onAvatarClick = {
                                                             onMainSharedEvent(MainSharedEvent.LoadContactDetailDialog(item.sender.contactId))
                                                         },
@@ -534,6 +589,9 @@ fun NormalChatPage(
                                 modifier = Modifier.background(composerBackground),
                                 compact = compact,
                                 state = state.chatDetail.editAreaState,
+                                onQuoteReplyClick = { quoteUid ->
+                                    jumpToMessageByUid(quoteUid)
+                                },
                                 onEvent = onEvent,
                             )
                         }

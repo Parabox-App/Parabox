@@ -84,7 +84,7 @@ class ExtensionService : LifecycleService() {
     override fun onDestroy() {
         Log.d("parabox", "extension service death")
         stopForeground(STOP_FOREGROUND_DETACH)
-        lifecycle.removeObserver(notificationUtil)
+        lifecycle.removeObserver(extensionManager)
         super.onDestroy()
     }
 

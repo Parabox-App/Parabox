@@ -65,6 +65,141 @@ object TdMessageMapper {
         else -> ParaboxChat.TYPE_OTHER
     }
 
+    fun mapContentToQuotePreviewElements(
+        content: TdApi.MessageContent?,
+        messageDateSeconds: Int = 0,
+    ): List<ParaboxMessageElement> {
+        if (content == null) return emptyList()
+        val elements = mutableListOf<ParaboxMessageElement>()
+        when (content) {
+            is TdApi.MessageText -> {
+                val text = content.text?.text.orEmpty()
+                if (text.isNotEmpty()) {
+                    elements.add(ParaboxPlainText(text))
+                }
+            }
+
+            is TdApi.MessagePhoto -> {
+                val bestSize = content.photo?.sizes?.maxByOrNull { it.width * it.height }
+                elements.add(
+                    ParaboxImage(
+                        width = bestSize?.width ?: 0,
+                        height = bestSize?.height ?: 0,
+                        fileName = bestSize?.photo?.id?.let { "tg_photo_$it.jpg" },
+                        resourceInfo = ParaboxResourceInfo.ParaboxEmptyInfo,
+                    )
+                )
+                val caption = content.caption?.text.orEmpty()
+                if (caption.isNotBlank()) {
+                    elements.add(ParaboxPlainText(caption))
+                }
+            }
+
+            is TdApi.MessageVoiceNote -> {
+                val voice = content.voiceNote
+                elements.add(
+                    ParaboxAudio(
+                        length = (voice?.duration ?: 0).toLong(),
+                        fileName = voice?.voice?.id?.let { "tg_voice_$it.ogg" },
+                        fileSize = voice?.voice?.expectedSize ?: 0L,
+                        resourceInfo = ParaboxResourceInfo.ParaboxEmptyInfo,
+                    )
+                )
+                val caption = content.caption?.text.orEmpty()
+                if (caption.isNotBlank()) elements.add(ParaboxPlainText(caption))
+            }
+
+            is TdApi.MessageAudio -> {
+                val audio = content.audio
+                elements.add(
+                    ParaboxAudio(
+                        length = (audio?.duration ?: 0).toLong(),
+                        fileName = audio?.fileName?.ifBlank { null },
+                        fileSize = audio?.audio?.expectedSize ?: 0L,
+                        resourceInfo = ParaboxResourceInfo.ParaboxEmptyInfo,
+                    )
+                )
+                val caption = content.caption?.text.orEmpty()
+                if (caption.isNotBlank()) elements.add(ParaboxPlainText(caption))
+            }
+
+            is TdApi.MessageVideo -> {
+                val video = content.video
+                elements.add(
+                    ParaboxVideo(
+                        length = (video?.duration ?: 0).toLong(),
+                        fileName = video?.fileName?.ifBlank { null },
+                        fileSize = video?.video?.expectedSize ?: 0L,
+                        resourceInfo = ParaboxResourceInfo.ParaboxEmptyInfo,
+                    )
+                )
+                val caption = content.caption?.text.orEmpty()
+                if (caption.isNotBlank()) elements.add(ParaboxPlainText(caption))
+            }
+
+            is TdApi.MessageVideoNote -> {
+                val note = content.videoNote
+                elements.add(
+                    ParaboxVideo(
+                        length = (note?.duration ?: 0).toLong(),
+                        fileName = note?.video?.id?.let { "tg_videonote_$it.mp4" },
+                        fileSize = note?.video?.expectedSize ?: 0L,
+                        resourceInfo = ParaboxResourceInfo.ParaboxEmptyInfo,
+                    )
+                )
+            }
+
+            is TdApi.MessageDocument -> {
+                val doc = content.document
+                val fileName = doc?.fileName?.ifBlank { "document" } ?: "document"
+                val ext = fileName.substringAfterLast('.', "")
+                elements.add(
+                    ParaboxFile(
+                        name = fileName,
+                        extension = ext,
+                        size = doc?.document?.expectedSize ?: 0L,
+                        lastModifiedTime = messageDateSeconds.takeIf { it > 0 }?.toLong()?.times(1000L) ?: 0L,
+                        resourceInfo = ParaboxResourceInfo.ParaboxEmptyInfo,
+                    )
+                )
+                val caption = content.caption?.text.orEmpty()
+                if (caption.isNotBlank()) elements.add(ParaboxPlainText(caption))
+            }
+
+            is TdApi.MessageLocation -> {
+                val loc = content.location
+                if (loc != null) {
+                    elements.add(
+                        ParaboxLocation(
+                            latitude = loc.latitude,
+                            longitude = loc.longitude,
+                            name = null,
+                            description = null,
+                        )
+                    )
+                } else {
+                    elements.add(ParaboxUnsupported)
+                }
+            }
+
+            is TdApi.MessageSticker -> {
+                val emoji = content.sticker?.emoji.orEmpty()
+                elements.add(ParaboxPlainText("[贴纸${if (emoji.isNotEmpty()) " $emoji" else ""}]"))
+            }
+
+            is TdApi.MessageAnimation -> {
+                val caption = content.caption?.text.orEmpty()
+                val label = if (caption.isNotBlank()) "[动图] $caption" else "[动图]"
+                elements.add(ParaboxPlainText(label))
+            }
+
+            else -> {
+                elements.add(ParaboxUnsupported)
+            }
+        }
+        return elements
+    }
+
     suspend fun mapMessageContentToElements(
         message: TdApi.Message,
         client: TdClientApi,
@@ -72,26 +207,36 @@ object TdMessageMapper {
         hostPackageName: String,
         autoDownloadMedia: Boolean,
         maxDownloadBytes: Long,
+        resolvedQuoteReply: ParaboxQuoteReply? = null,
     ): List<ParaboxMessageElement> {
         val elements = mutableListOf<ParaboxMessageElement>()
 
         // Preserve quote-reply metadata if present
-        val reply = message.replyTo
-        if (reply is TdApi.MessageReplyToMessage) {
-            val quoteText = reply.quote?.text?.text?.takeIf { it.isNotBlank() }
-            val quoteMessages = if (quoteText != null) {
-                listOf(ParaboxPlainText(quoteText))
-            } else {
-                emptyList()
-            }
-            elements.add(
-                ParaboxQuoteReply(
-                    sender = null,
-                    timestamp = reply.originSendDate.takeIf { it > 0 }?.toLong()?.times(1000L),
-                    id = formatMessageUuid(reply.chatId, reply.messageId),
-                    messages = quoteMessages,
+        if (resolvedQuoteReply != null) {
+            elements.add(resolvedQuoteReply)
+        } else {
+            val reply = message.replyTo
+            if (reply is TdApi.MessageReplyToMessage) {
+                val quoteText = reply.quote?.text?.text?.takeIf { it.isNotBlank() }
+                val quoteMessages = if (quoteText != null) {
+                    listOf(ParaboxPlainText(quoteText))
+                } else {
+                    mapContentToQuotePreviewElements(reply.content, reply.originSendDate)
+                }
+                val quoteId = if (reply.chatId != 0L && reply.messageId != 0L) {
+                    formatMessageUuid(reply.chatId, reply.messageId)
+                } else {
+                    null
+                }
+                elements.add(
+                    ParaboxQuoteReply(
+                        sender = null,
+                        timestamp = reply.originSendDate.takeIf { it > 0 }?.toLong()?.times(1000L),
+                        id = quoteId,
+                        messages = quoteMessages,
+                    )
                 )
-            )
+            }
         }
 
         when (val content = message.content) {

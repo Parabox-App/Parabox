@@ -146,6 +146,7 @@ fun EditArea(
     modifier: Modifier = Modifier,
     state: MessagePageState.EditAreaState,
     compact: Boolean,
+    onQuoteReplyClick: (quoteMessageUid: String) -> Unit = {},
     onEvent: (e: MessagePageEvent) -> Unit
 ) {
     val context = LocalContext.current
@@ -503,10 +504,17 @@ fun EditArea(
                                             enter = expandVertically(),
                                             exit = shrinkVertically()
                                         ) {
-                                            QuoteReplySendingLayout(model = state.chosenQuoteReply, onClick = { /*TODO*/ },
+                                            QuoteReplySendingLayout(
+                                                model = state.chosenQuoteReply,
+                                                onClick = {
+                                                    state.chosenQuoteReply?.message?.uid
+                                                        ?.takeIf { it.isNotBlank() }
+                                                        ?.let(onQuoteReplyClick)
+                                                },
                                                 onCancel = {
                                                     onEvent(MessagePageEvent.ChooseQuoteReply(null))
-                                                })
+                                                }
+                                            )
                                         }
                                         // image
                                         AnimatedVisibility(visible = state.chosenImageList.isNotEmpty(),

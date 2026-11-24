@@ -9,6 +9,7 @@ import io.grpc.binder.BindServiceFlags
 import io.grpc.binder.BinderChannelBuilder
 import io.grpc.binder.SecurityPolicies
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 
 class BinderExtensionTransport(
     private val context: Context,
@@ -46,10 +47,13 @@ class BinderExtensionTransport(
                 )
                 val bindFlags = BindServiceFlags.DEFAULTS.toBuilder()
                     .setImportant(true)
+                    .setAboveClient(true)
+                    .setIncludeCapabilities(true)
                     .build()
                 BinderChannelBuilder.forAddress(address, context)
                     .securityPolicy(securityPolicy)
                     .setBindServiceFlags(bindFlags)
+                    .idleTimeout(24, TimeUnit.HOURS)
                     .build()
             }
         }!!

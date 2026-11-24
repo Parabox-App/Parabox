@@ -263,4 +263,71 @@ class TdMessageMapperTest {
         assertEquals(1, failedOutbound.failedMediaCount)
         assertFalse(failedOutbound.errorReason.isNullOrBlank())
     }
+
+    @Test
+    fun quotePreviewElementsAndUnknownChatReplyId() = runBlocking {
+        // Photo + caption preview does not require downloading media
+        val photoContent = TdApi.MessagePhoto(
+            TdApi.Photo().apply {
+                sizes = arrayOf(
+                    TdApi.PhotoSize().apply {
+                        width = 640
+                        height = 480
+                        photo = TdApi.File().apply { id = 77 }
+                    }
+                )
+            },
+            TdApi.FormattedText("Sunset", emptyArray()),
+            false,
+            false,
+            false,
+        )
+        val photoPreview = TdMessageMapper.mapContentToQuotePreviewElements(photoContent)
+        assertEquals(2, photoPreview.size)
+        val img = photoPreview[0] as ParaboxImage
+        assertEquals(ParaboxResourceInfo.ParaboxEmptyInfo, img.resourceInfo)
+        assertEquals("Sunset", (photoPreview[1] as ParaboxPlainText).text)
+
+        // Document preview
+        val docContent = TdApi.MessageDocument(
+            TdApi.Document().apply {
+                fileName = "spec.pdf"
+                document = TdApi.File().apply { expectedSize = 1024L }
+            },
+            TdApi.FormattedText("", emptyArray()),
+        )
+        val docPreview = TdMessageMapper.mapContentToQuotePreviewElements(docContent, 1700000000)
+        assertEquals(1, docPreview.size)
+        val fileElem = docPreview[0] as ParaboxFile
+        assertEquals("spec.pdf", fileElem.name)
+        assertEquals(ParaboxResourceInfo.ParaboxEmptyInfo, fileElem.resourceInfo)
+
+        // Unknown chat (chatId == 0) should yield null quote id and preserve fallback content
+        val unknownReplyMsg = TdApi.Message().apply {
+            id = 888L
+            chatId = -10010L
+            date = 1700000100
+            replyTo = TdApi.MessageReplyToMessage(
+                0L,
+                0L,
+                null,
+                TdApi.MessageOriginHiddenUser("Hidden Friend"),
+                1700000050,
+                TdApi.MessageText(TdApi.FormattedText("External quote", emptyArray()), null, null),
+            )
+            content = TdApi.MessageText(TdApi.FormattedText("Reply text", emptyArray()), null, null)
+        }
+        val elements = TdMessageMapper.mapMessageContentToElements(
+            message = unknownReplyMsg,
+            client = dummyClient,
+            mediaBridge = dummyMediaBridge,
+            hostPackageName = "com.ojhdtapp.parabox",
+            autoDownloadMedia = true,
+            maxDownloadBytes = 10_000_000L,
+        )
+        val quote = elements[0] as ParaboxQuoteReply
+        assertEquals(null, quote.id)
+        assertEquals(1700000050L * 1000L, quote.timestamp)
+        assertEquals(listOf(ParaboxPlainText("External quote")), quote.messages)
+    }
 }

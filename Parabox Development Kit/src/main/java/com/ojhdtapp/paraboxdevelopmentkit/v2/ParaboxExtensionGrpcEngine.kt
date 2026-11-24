@@ -251,11 +251,15 @@ class ParaboxExtensionGrpcEngine(
                             try {
                                 session.updateStatus(ParaboxConnectionStatus.Initializing)
                                 val ok = session.onInitialize()
-                                if (!ok && session.status.value is ParaboxConnectionStatus.Initializing) {
-                                    session.updateStatus(ParaboxConnectionStatus.Error("Initialization failed"))
+                                if (!ok) {
+                                    if (session.status.value is ParaboxConnectionStatus.Initializing) {
+                                        session.updateStatus(ParaboxConnectionStatus.Error("Initialization failed"))
+                                    }
+                                    close()
                                 }
                             } catch (e: Exception) {
                                 session.updateStatus(ParaboxConnectionStatus.Error(e.message ?: "Initialization error"))
+                                close()
                             }
                         }
                     }

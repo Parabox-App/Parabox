@@ -108,8 +108,11 @@ fun MessageItem(
     previewerState: ImagePreviewerState,
     isFirst: Boolean = true,
     isLast: Boolean = true,
+    isHighlighted: Boolean = false,
     shouldDisplayTime: Boolean = false,
     onImageClick: (elementId: Long) -> Unit,
+    onQuoteReplyClick: (quoteMessageUid: String) -> Unit = {},
+    resolveQuoteFallback: ((quoteMessageUid: String) -> Pair<String?, String>?)? = null,
     onAvatarClick: () -> Unit,
     onAvatarLongClick: () -> Unit,
     onEvent: (e: MessagePageEvent) -> Unit,
@@ -173,6 +176,7 @@ fun MessageItem(
     val bottomStartRadius by animateDpAsState(targetValue = if (isLast) 24.dp else 3.dp)
     val backgroundColor by animateColorAsState(
         targetValue = when {
+            isHighlighted -> MaterialTheme.colorScheme.tertiaryContainer
             isSelected -> MaterialTheme.colorScheme.primaryContainer
             isSentByMe -> MaterialTheme.colorScheme.primaryContainer
             else -> MaterialTheme.colorScheme.secondaryContainer
@@ -180,6 +184,7 @@ fun MessageItem(
     )
     val textColor by animateColorAsState(
         targetValue = when {
+            isHighlighted -> MaterialTheme.colorScheme.onTertiaryContainer
             isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
             isSentByMe -> MaterialTheme.colorScheme.onPrimaryContainer
             else -> MaterialTheme.colorScheme.onSecondaryContainer
@@ -413,6 +418,8 @@ fun MessageItem(
                                         atCache = state.atCache,
                                         previewerState = previewerState,
                                         onImageClick = onImageClick,
+                                        onQuoteReplyClick = onQuoteReplyClick,
+                                        resolveQuoteFallback = resolveQuoteFallback,
                                     )
                                 }
                             }
@@ -456,6 +463,8 @@ private fun ParaboxMessageElement.toLayout(
     previewerState: ImagePreviewerState,
     atCache: Map<String, Resource<Contact>>,
     onImageClick: (elementId: Long) -> Unit,
+    onQuoteReplyClick: (quoteMessageUid: String) -> Unit,
+    resolveQuoteFallback: ((quoteMessageUid: String) -> Pair<String?, String>?)?,
 ) {
     when (this) {
         is ParaboxPlainText -> PlainTextLayout(text = buildAnnotatedString {
@@ -531,11 +540,22 @@ private fun ParaboxMessageElement.toLayout(
             longitude = longitude,
             textColor = textColor,
         )
-        is ParaboxQuoteReply -> QuoteReplyLayout(
-            senderName = sender?.basicInfo?.name,
-            summary = messages.joinToString(" ") { it.contentToString() },
-            textColor = textColor,
-        )
+        is ParaboxQuoteReply -> {
+            val rawSenderName = sender?.basicInfo?.name?.takeIf { it.isNotBlank() }
+            val rawSummary = messages.joinToString(" ") { it.contentToString() }.trim()
+            val quoteId = id?.takeIf { it.isNotBlank() }
+            val fallback = if ((rawSenderName == null || rawSummary.isEmpty()) && quoteId != null) {
+                resolveQuoteFallback?.invoke(quoteId)
+            } else {
+                null
+            }
+            QuoteReplyLayout(
+                senderName = rawSenderName ?: fallback?.first,
+                summary = rawSummary.ifEmpty { fallback?.second.orEmpty() },
+                textColor = textColor,
+                onClick = quoteId?.let { targetUid -> { onQuoteReplyClick(targetUid) } },
+            )
+        }
         is ParaboxForward -> {}
         is ParaboxUnsupported -> UnsupportedLayout()
     }

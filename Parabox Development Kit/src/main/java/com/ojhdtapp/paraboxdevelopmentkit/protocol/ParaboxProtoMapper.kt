@@ -73,15 +73,18 @@ object ParaboxProtoMapper {
 
     // ---- ActionResult ----
 
-    fun ParaboxResult.toProto(): ActionResult = ActionResult.newBuilder()
-        .setCode(code)
-        .setMessage(message)
-        .apply {
-            if (!messageUuid.isNullOrBlank()) {
-                setMessageUuid(messageUuid)
+    fun ParaboxResult.toProto(): ActionResult {
+        val uuid = messageUuid
+        return ActionResult.newBuilder()
+            .setCode(code)
+            .setMessage(message)
+            .apply {
+                if (!uuid.isNullOrBlank()) {
+                    setMessageUuid(uuid)
+                }
             }
-        }
-        .build()
+            .build()
+    }
 
     fun ActionResult.toDomain(): ParaboxResult = ParaboxResult(
         code = code,

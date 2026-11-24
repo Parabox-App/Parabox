@@ -6,6 +6,7 @@ import com.ojhdtapp.parabox.domain.service.extension.transport.ExtensionTranspor
 import com.ojhdtapp.parabox.protocol.v2.BasicInfoRequest
 import com.ojhdtapp.parabox.protocol.v2.ExtensionSessionFrame
 import com.ojhdtapp.parabox.protocol.v2.ForwardNodeRequest
+import com.ojhdtapp.parabox.protocol.v2.HeartbeatFrame
 import com.ojhdtapp.parabox.protocol.v2.HostSessionFrame
 import com.ojhdtapp.parabox.protocol.v2.LifecycleEventProto
 import com.ojhdtapp.parabox.protocol.v2.MessageAckFrame
@@ -40,13 +41,16 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 import kotlin.math.min
@@ -68,6 +72,9 @@ class ExtensionSessionClient(
     private val initialBackoffMs: Long = 1_000L,
     private val maxBackoffMs: Long = 30_000L,
     private val rpcTimeoutSeconds: Long = 15L,
+    private val heartbeatIntervalMs: Long = 25_000L,
+    private val heartbeatTimeoutMs: Long = 10_000L,
+    private val recoverTimeoutMs: Long = 10_000L,
 ) {
     private val _status = MutableStateFlow<ParaboxConnectionStatus>(ParaboxConnectionStatus.Pending)
     val status: StateFlow<ParaboxConnectionStatus> = _status.asStateFlow()
@@ -78,13 +85,20 @@ class ExtensionSessionClient(
     @Volatile
     private var activeOutboundChannel: Channel<HostSessionFrame>? = null
 
+    @Volatile
+    private var activeStreamJob: Job? = null
+
+    private val reconnectSignal = Channel<Unit>(Channel.CONFLATED)
+
     fun start() {
         if (streamSupervisorJob?.isActive == true) return
         streamSupervisorJob = clientScope.launch {
             var attempt = 0
             while (isActive) {
                 val outbound = Channel<HostSessionFrame>(Channel.UNLIMITED)
+                val pongChannel = Channel<Long>(Channel.CONFLATED)
                 activeOutboundChannel = outbound
+                var forceImmediateReconnect = false
                 try {
                     if (attempt == 0) {
                         _status.value = ParaboxConnectionStatus.Initializing
@@ -107,74 +121,119 @@ class ExtensionSessionClient(
                             .build()
                     )
 
-                    stub.openSession(outbound.consumeAsFlow()).collect { frame ->
-                        when (frame.payloadCase) {
-                            ExtensionSessionFrame.PayloadCase.STATUS_CHANGED -> {
-                                val nextStatus = frame.statusChanged.toDomain()
-                                if (nextStatus is ParaboxConnectionStatus.Active) {
-                                    attempt = 0
-                                }
-                                _status.value = nextStatus
-                            }
-
-                            ExtensionSessionFrame.PayloadCase.RECEIVE_MESSAGE -> {
-                                val event = frame.receiveMessage
+                    coroutineScope {
+                        val streamJob = launch {
+                            val heartbeatJob = if (heartbeatIntervalMs > 0L) {
                                 launch {
-                                    val result = try {
-                                        inboundHandler.onReceiveMessage(event.message.toDomain())
-                                    } catch (e: Exception) {
-                                        ParaboxResult(
-                                            ParaboxResult.ERROR_UNKNOWN,
-                                            e.message ?: ParaboxResult.ERROR_UNKNOWN_MSG,
-                                        )
+                                    while (isActive) {
+                                        delay(heartbeatIntervalMs)
+                                        val sent = outbound.trySend(
+                                            HostSessionFrame.newBuilder()
+                                                .setPing(
+                                                    HeartbeatFrame.newBuilder()
+                                                        .setTimestampMs(System.currentTimeMillis())
+                                                        .build()
+                                                )
+                                                .build()
+                                        ).isSuccess
+                                        if (!sent) break
+                                        val pong = withTimeoutOrNull(heartbeatTimeoutMs) {
+                                            pongChannel.receive()
+                                        }
+                                        if (pong == null) {
+                                            throw IllegalStateException("扩展心跳超时，触发重连")
+                                        }
                                     }
-                                    outbound.trySend(
-                                        HostSessionFrame.newBuilder()
-                                            .setAck(
-                                                MessageAckFrame.newBuilder()
-                                                    .setAckId(event.ackId)
-                                                    .setResult(result.toProto())
-                                                    .build()
-                                            )
-                                            .build()
-                                    )
                                 }
+                            } else {
+                                null
                             }
 
-                            ExtensionSessionFrame.PayloadCase.RECALL_MESSAGE -> {
-                                val event = frame.recallMessage
-                                launch {
-                                    val result = try {
-                                        inboundHandler.onRecallMessage(event.messageUuid)
-                                    } catch (e: Exception) {
-                                        ParaboxResult(
-                                            ParaboxResult.ERROR_UNKNOWN,
-                                            e.message ?: ParaboxResult.ERROR_UNKNOWN_MSG,
-                                        )
-                                    }
-                                    outbound.trySend(
-                                        HostSessionFrame.newBuilder()
-                                            .setAck(
-                                                MessageAckFrame.newBuilder()
-                                                    .setAckId(event.ackId)
-                                                    .setResult(result.toProto())
-                                                    .build()
-                                            )
-                                            .build()
-                                    )
-                                }
-                            }
+                            try {
+                                stub.openSession(outbound.consumeAsFlow()).collect { frame ->
+                                    when (frame.payloadCase) {
+                                        ExtensionSessionFrame.PayloadCase.STATUS_CHANGED -> {
+                                            val nextStatus = frame.statusChanged.toDomain()
+                                            if (nextStatus is ParaboxConnectionStatus.Active) {
+                                                attempt = 0
+                                            }
+                                            _status.value = nextStatus
+                                        }
 
-                            ExtensionSessionFrame.PayloadCase.PONG,
-                            ExtensionSessionFrame.PayloadCase.PAYLOAD_NOT_SET,
-                            null -> Unit
+                                        ExtensionSessionFrame.PayloadCase.RECEIVE_MESSAGE -> {
+                                            val event = frame.receiveMessage
+                                            launch {
+                                                val result = try {
+                                                    inboundHandler.onReceiveMessage(event.message.toDomain())
+                                                } catch (e: Exception) {
+                                                    ParaboxResult(
+                                                        ParaboxResult.ERROR_UNKNOWN,
+                                                        e.message ?: ParaboxResult.ERROR_UNKNOWN_MSG,
+                                                    )
+                                                }
+                                                outbound.trySend(
+                                                    HostSessionFrame.newBuilder()
+                                                        .setAck(
+                                                            MessageAckFrame.newBuilder()
+                                                                .setAckId(event.ackId)
+                                                                .setResult(result.toProto())
+                                                                .build()
+                                                        )
+                                                        .build()
+                                                )
+                                            }
+                                        }
+
+                                        ExtensionSessionFrame.PayloadCase.RECALL_MESSAGE -> {
+                                            val event = frame.recallMessage
+                                            launch {
+                                                val result = try {
+                                                    inboundHandler.onRecallMessage(event.messageUuid)
+                                                } catch (e: Exception) {
+                                                    ParaboxResult(
+                                                        ParaboxResult.ERROR_UNKNOWN,
+                                                        e.message ?: ParaboxResult.ERROR_UNKNOWN_MSG,
+                                                    )
+                                                }
+                                                outbound.trySend(
+                                                    HostSessionFrame.newBuilder()
+                                                        .setAck(
+                                                            MessageAckFrame.newBuilder()
+                                                                .setAckId(event.ackId)
+                                                                .setResult(result.toProto())
+                                                                .build()
+                                                        )
+                                                        .build()
+                                                )
+                                            }
+                                        }
+
+                                        ExtensionSessionFrame.PayloadCase.PONG -> {
+                                            pongChannel.trySend(frame.pong.timestampMs)
+                                        }
+
+                                        ExtensionSessionFrame.PayloadCase.PAYLOAD_NOT_SET,
+                                        null -> Unit
+                                    }
+                                }
+                            } finally {
+                                heartbeatJob?.cancel()
+                            }
                         }
+                        activeStreamJob = streamJob
+                        streamJob.join()
                     }
 
                     // Stream completed cleanly without cancellation: reconnect unless closed
                     if (!isActive) break
                     attempt += 1
                     _status.value = ParaboxConnectionStatus.Reconnecting(attempt, "会话流已断开，准备重连")
+                } catch (e: ForceReconnectException) {
+                    if (!isActive) break
+                    attempt = 0
+                    forceImmediateReconnect = true
+                    _status.value = ParaboxConnectionStatus.Reconnecting(1, "正在重建扩展会话")
+                    transport.invalidateChannel(endpoint)
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
@@ -184,20 +243,42 @@ class ExtensionSessionClient(
                     _status.value = ParaboxConnectionStatus.Reconnecting(attempt, reason)
                     transport.invalidateChannel(endpoint)
                 } finally {
+                    activeStreamJob = null
+                    pongChannel.close()
                     outbound.close()
                     if (activeOutboundChannel === outbound) {
                         activeOutboundChannel = null
                     }
                 }
 
-                val shift = (attempt - 1).coerceIn(0, 6)
-                val backoff = min(maxBackoffMs, initialBackoffMs * (1L shl shift))
-                delay(backoff)
+                if (!forceImmediateReconnect) {
+                    val shift = (attempt - 1).coerceIn(0, 6)
+                    val backoff = min(maxBackoffMs, initialBackoffMs * (1L shl shift))
+                    withTimeoutOrNull(backoff) {
+                        reconnectSignal.receive()
+                    }
+                }
             }
         }
     }
 
+    fun forceReconnect() {
+        _status.value = ParaboxConnectionStatus.Reconnecting(1, "正在重建扩展会话")
+        val current = activeStreamJob
+        if (current != null && current.isActive) {
+            current.cancel(ForceReconnectException())
+        }
+        reconnectSignal.trySend(Unit)
+    }
+
+    private class ForceReconnectException : CancellationException("Force reconnect requested")
+
     fun sendLifecycleEvent(event: LifecycleEventProto) {
+        if (event == LifecycleEventProto.LIFECYCLE_RESUME &&
+            (_status.value is ParaboxConnectionStatus.Reconnecting || _status.value is ParaboxConnectionStatus.Error)
+        ) {
+            reconnectSignal.trySend(Unit)
+        }
         activeOutboundChannel?.trySend(
             HostSessionFrame.newBuilder()
                 .setLifecycle(event)
@@ -223,6 +304,26 @@ class ExtensionSessionClient(
     }
 
     suspend fun sendMessage(message: SendMessage): ParaboxResult {
+        val firstResult = executeSendMessage(message)
+        if (firstResult.code == ParaboxResult.ERROR_UNINITIALIZED ||
+            firstResult.code == ParaboxResult.ERROR_DISCONNECTED
+        ) {
+            forceReconnect()
+            val recovered = withTimeoutOrNull(recoverTimeoutMs) {
+                _status.first { it is ParaboxConnectionStatus.Active }
+            } != null
+            if (recovered) {
+                return executeSendMessage(message)
+            }
+            return ParaboxResult(
+                ParaboxResult.ERROR_DISCONNECTED,
+                "扩展会话已中断且正在重建，请稍后重试",
+            )
+        }
+        return firstResult
+    }
+
+    private suspend fun executeSendMessage(message: SendMessage): ParaboxResult {
         return try {
             if (endpoint is ExtensionEndpoint.BinderService && uriPermissionGranter != null) {
                 grantUrisForElements(endpoint.packageName, message.contents)
