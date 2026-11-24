@@ -286,6 +286,9 @@
     <string name="user_interface_monet_subtitle_on">应用色彩将响应壁纸变化</string>
     <string name="user_interface_monet_subtitle_off">应用色彩响应壁纸变化（需要系统版本为 Android 12 或更高）</string>
     <string name="user_interface_color">主题色</string>
+    <string name="navigation_bar_style">底部导航栏样式</string>
+    <string name="navigation_bar_classic">传统导航栏</string>
+    <string name="navigation_bar_floating">悬浮导航栏</string>
     <string name="color_willow">柳染</string>
     <string name="color_purple">藤紫</string>
     <string name="color_sakura">樱花</string>

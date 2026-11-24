@@ -4,7 +4,6 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -77,9 +76,6 @@ fun EmptyChatNoticeBlock(
             TextButton(onClick = onClick) {
                 Text(text = "新增连接")
             }
-        }
-        if (mainSharedState.showNavigationBar) {
-            Spacer(modifier = Modifier.height(80.dp))
         }
     }
 }

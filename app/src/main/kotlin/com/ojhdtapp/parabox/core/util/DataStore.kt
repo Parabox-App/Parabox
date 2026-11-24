@@ -59,6 +59,7 @@ object DataStoreKeys {
     val SETTINGS_ENABLE_DYNAMIC_COLOR = booleanPreferencesKey("settings_enable_dynamic_color")
     val SETTINGS_THEME = intPreferencesKey("settings_theme")
     val SETTINGS_DARK_MODE = intPreferencesKey("settings_dark_mode")
+    val SETTINGS_USE_FLOATING_NAVIGATION = booleanPreferencesKey("settings_use_floating_navigation")
     val SETTINGS_ML_KIT_ENTITY_EXTRACTION =
         booleanPreferencesKey("settings_ml_kit_entity_extraction")
     val SETTINGS_ML_KIT_SMART_REPLY = booleanPreferencesKey("settings_ml_kit_smart_reply")

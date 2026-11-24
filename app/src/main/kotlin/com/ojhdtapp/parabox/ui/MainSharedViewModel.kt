@@ -116,14 +116,12 @@ class MainSharedViewModel @Inject constructor(
                         getRecentSearch()
                     }
                     return state.copy(
-                        showNavigationBar = false,
                         search = MainSharedState.Search(
                             isActive = true
                         )
                     )
                 } else {
                     return state.copy(
-                        showNavigationBar = true,
                         search = state.search.copy(
                             query = "",
                             isActive = false
@@ -222,12 +220,6 @@ class MainSharedViewModel @Inject constructor(
             is MainSharedEvent.SearchAvatarClicked -> {
                 return state.copy(
                     openMainDialog = !state.openMainDialog
-                )
-            }
-
-            is MainSharedEvent.ShowNavigationBar -> {
-                return state.copy(
-                    showNavigationBar = event.show
                 )
             }
 
@@ -875,6 +867,7 @@ class MainSharedViewModel @Inject constructor(
                         enableInnerBrowser = it[DataStoreKeys.SETTINGS_ENABLE_INNER_BROWSER] ?: true,
                         sendViaEnter = it[DataStoreKeys.SETTINGS_SEND_VIA_ENTER] ?: false,
                         enableDynamicColor = it[DataStoreKeys.SETTINGS_ENABLE_DYNAMIC_COLOR] ?: true,
+                        useFloatingNavigation = it[DataStoreKeys.SETTINGS_USE_FLOATING_NAVIGATION] ?: true,
                         enableForegroundNotification = it[DataStoreKeys.SETTINGS_ALLOW_FOREGROUND_NOTIFICATION]
                             ?: false,
                         theme = it[DataStoreKeys.SETTINGS_THEME]?.let { Theme.fromOrdinal(it) }

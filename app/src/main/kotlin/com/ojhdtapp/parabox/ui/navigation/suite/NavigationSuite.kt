@@ -8,13 +8,21 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DismissibleDrawerSheet
 import androidx.compose.material3.DismissibleNavigationDrawer
+import androidx.compose.material3.DrawerDefaults
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.MaterialTheme
@@ -23,12 +31,22 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.window.core.layout.WindowSizeClass
@@ -39,10 +57,11 @@ import com.ojhdtapp.parabox.ui.menu.MenuNavigationType
 import com.ojhdtapp.parabox.ui.menu.MenuPageEvent
 import com.ojhdtapp.parabox.ui.navigation.MenuTab
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 /**
  * Unified adaptive navigation shell using Material 3 Drawers (with native built-in predictive back),
- * NavigationRail, and NavigationBar driven directly by [currentWindowAdaptiveInfo] and Navigation 3 state.
+ * NavigationRail, and a floating bottom bar driven by [currentWindowAdaptiveInfo] and Navigation 3 state.
  *
  * Note: Intentionally registers NO manual BackHandler so Material 3's ModalDrawerSheet /
  * DismissibleDrawerSheet predictive back animations run uninterrupted.
@@ -81,11 +100,28 @@ fun NavigationSuite(
         isAtTopLevel &&
         !mainSharedState.search.isActive
 
-    // Keep MainSharedState.showNavigationBar in sync for pages that add bottom spacer padding.
-    LaunchedEffect(showBottomBar) {
-        if (mainSharedState.showNavigationBar != showBottomBar) {
-            mainSharedViewModel.sendEvent(MainSharedEvent.ShowNavigationBar(showBottomBar))
+    var bottomBarCollapsed by rememberSaveable { mutableStateOf(false) }
+    val collapseThreshold = with(LocalDensity.current) { 24.dp.toPx() }
+    val bottomBarScrollConnection = if (showBottomBar && mainSharedState.datastore.useFloatingNavigation) {
+        remember(currentTab, collapseThreshold) {
+            val scroll = BottomBarScroll()
+            object : NestedScrollConnection {
+                override fun onPostScroll(
+                    consumed: Offset,
+                    available: Offset,
+                    source: NestedScrollSource,
+                ): Offset {
+                    if (source == NestedScrollSource.UserInput && abs(consumed.y) > abs(consumed.x)) {
+                        scroll.onScroll(consumed.y, collapseThreshold, bottomBarCollapsed)?.let {
+                            bottomBarCollapsed = it
+                        }
+                    }
+                    return Offset.Zero
+                }
+            }
         }
+    } else {
+        null
     }
 
     // One-way sync: when DrawerState settles (e.g. via swipe or native predictive back), reflect to shared state.
@@ -138,6 +174,9 @@ fun NavigationSuite(
                         .fillMaxHeight()
                         .verticalScroll(rememberScrollState()),
                     drawerState = drawerState,
+                    windowInsets = DrawerDefaults.windowInsets.union(
+                        WindowInsets.displayCutout.only(WindowInsetsSides.Start),
+                    ),
                 ) {
                     MenuNavigationDrawerContent(
                         currentTab = currentTab,
@@ -157,6 +196,8 @@ fun NavigationSuite(
                 currentTab = currentTab,
                 navigationType = navigationType,
                 showBottomBar = showBottomBar,
+                bottomBarCollapsed = bottomBarCollapsed,
+                bottomBarScrollConnection = bottomBarScrollConnection,
                 drawerState = drawerState,
                 mainSharedState = mainSharedState,
                 onSelectTab = onSelectTab,
@@ -176,6 +217,9 @@ fun NavigationSuite(
                         .fillMaxHeight()
                         .verticalScroll(rememberScrollState()),
                     drawerState = drawerState,
+                    windowInsets = DrawerDefaults.windowInsets.union(
+                        WindowInsets.displayCutout.only(WindowInsetsSides.Start),
+                    ),
                 ) {
                     MenuNavigationDrawerContent(
                         currentTab = currentTab,
@@ -195,6 +239,8 @@ fun NavigationSuite(
                 currentTab = currentTab,
                 navigationType = navigationType,
                 showBottomBar = showBottomBar,
+                bottomBarCollapsed = bottomBarCollapsed,
+                bottomBarScrollConnection = bottomBarScrollConnection,
                 drawerState = drawerState,
                 mainSharedState = mainSharedState,
                 onSelectTab = onSelectTab,
@@ -211,6 +257,8 @@ fun MenuAppContent(
     currentTab: MenuTab,
     navigationType: MenuNavigationType,
     showBottomBar: Boolean,
+    bottomBarCollapsed: Boolean,
+    bottomBarScrollConnection: NestedScrollConnection?,
     drawerState: DrawerState,
     mainSharedState: MainSharedState,
     onSelectTab: (MenuTab) -> Unit,
@@ -232,21 +280,59 @@ fun MenuAppContent(
             )
         }
         Box(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .let {
+                    if (navigationType == MenuNavigationType.NAVIGATION_RAIL) {
+                        it.consumeWindowInsets(
+                            WindowInsets.systemBars
+                                .union(WindowInsets.displayCutout)
+                                .only(WindowInsetsSides.Start),
+                        )
+                    } else {
+                        it
+                    }
+                },
             contentAlignment = Alignment.BottomCenter,
         ) {
-            content()
+            val useFloatingNavigation = mainSharedState.datastore.useFloatingNavigation
+            val bottomBarClearance = when {
+                !showBottomBar -> 0.dp
+                useFloatingNavigation -> floatingBottomBarClearance()
+                else -> ClassicBottomBarHeight
+            }
+            CompositionLocalProvider(LocalBottomBarClearance provides bottomBarClearance) {
+                Box(
+                    modifier = bottomBarScrollConnection?.let { Modifier.nestedScroll(it) }
+                        ?: Modifier,
+                ) {
+                    content()
+                }
+            }
             androidx.compose.animation.AnimatedVisibility(
                 visible = showBottomBar,
                 enter = slideInVertically { it },
                 exit = slideOutVertically { it },
             ) {
-                MenuNavigationBar(
-                    currentTab = currentTab,
-                    mainSharedState = mainSharedState,
-                    onSelectTab = onSelectTab,
-                    onEvent = onEvent,
-                )
+                val unreadCount = mainSharedState.datastore.messageBadgeNum
+                if (useFloatingNavigation) {
+                    FloatingMenuNavigationBar(
+                        currentTab = currentTab,
+                        unreadCount = unreadCount,
+                        collapsed = bottomBarCollapsed,
+                        enabled = showBottomBar,
+                        onSelectTab = onSelectTab,
+                        onEvent = onEvent,
+                    )
+                } else {
+                    ClassicMenuNavigationBar(
+                        currentTab = currentTab,
+                        unreadCount = unreadCount,
+                        enabled = showBottomBar,
+                        onSelectTab = onSelectTab,
+                        onEvent = onEvent,
+                    )
+                }
             }
         }
     }

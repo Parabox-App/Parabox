@@ -284,6 +284,9 @@
     <string name="user_interface_monet_subtitle_on">App colors will respond to wallpaper changes</string>
     <string name="user_interface_monet_subtitle_off">App color responsive wallpaper changes (requires Android 12 or higher)</string>
     <string name="user_interface_color">Theme color</string>
+    <string name="navigation_bar_style">Bottom navigation style</string>
+    <string name="navigation_bar_classic">Classic navigation bar</string>
+    <string name="navigation_bar_floating">Floating navigation bar</string>
     <string name="color_willow">Willow</string>
     <string name="color_purple">Purple</string>
     <string name="color_sakura">Sakura</string>

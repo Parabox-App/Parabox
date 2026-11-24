@@ -20,10 +20,15 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
@@ -433,6 +438,11 @@ class MainActivity : AppCompatActivity() {
                                         NavDisplay(
                                             modifier = Modifier
                                                 .fillMaxSize()
+                                                .windowInsetsPadding(
+                                                    WindowInsets.systemBars
+                                                        .union(WindowInsets.displayCutout)
+                                                        .only(WindowInsetsSides.Horizontal),
+                                                )
                                                 .padding(horizontal = if (layoutType == LayoutType.NORMAL) 0.dp else 16.dp),
                                             backStack = menuBackStack,
                                             sceneStrategy = listDetailStrategy,

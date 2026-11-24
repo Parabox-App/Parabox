@@ -287,6 +287,53 @@ private fun Content(
             }
         }
         item {
+            Box {
+                var showNavigationStyleMenu by remember { mutableStateOf(false) }
+                val useFloatingNavigation = mainSharedState.datastore.useFloatingNavigation
+                CascadeDropdownMenu(
+                    expanded = showNavigationStyleMenu,
+                    onDismissRequest = { showNavigationStyleMenu = false },
+                    offset = DpOffset(16.dp, 0.dp),
+                    properties = PopupProperties(focusable = true),
+                    shape = MaterialTheme.shapes.medium,
+                ) {
+                    listOf(
+                        R.string.navigation_bar_classic to false,
+                        R.string.navigation_bar_floating to true,
+                    ).forEach { (label, useFloating) ->
+                        androidx.compose.material3.DropdownMenuItem(
+                            text = { Text(stringResource(label)) },
+                            trailingIcon = {
+                                if (useFloating == useFloatingNavigation) {
+                                    Icon(Icons.Outlined.Check, contentDescription = null)
+                                }
+                            },
+                            onClick = {
+                                onMainSharedEvent(
+                                    MainSharedEvent.UpdateSettingSwitch(
+                                        DataStoreKeys.SETTINGS_USE_FLOATING_NAVIGATION,
+                                        useFloating,
+                                    ),
+                                )
+                                showNavigationStyleMenu = false
+                            },
+                        )
+                    }
+                }
+                SettingItem(
+                    title = stringResource(R.string.navigation_bar_style),
+                    subTitle = stringResource(
+                        if (useFloatingNavigation) R.string.navigation_bar_floating
+                        else R.string.navigation_bar_classic,
+                    ),
+                    selected = false,
+                    layoutType = layoutType,
+                ) {
+                    showNavigationStyleMenu = true
+                }
+            }
+        }
+        item {
             SettingHeader(text = "语言")
         }
         item {

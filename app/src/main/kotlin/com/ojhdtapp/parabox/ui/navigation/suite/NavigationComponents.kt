@@ -3,9 +3,14 @@ package com.ojhdtapp.parabox.ui.navigation.suite
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.union
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.outlined.Chat
@@ -27,9 +32,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailDefaults
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,89 +50,60 @@ import com.ojhdtapp.parabox.ui.menu.MenuNavigationType
 import com.ojhdtapp.parabox.ui.menu.MenuPageEvent
 import com.ojhdtapp.parabox.ui.navigation.MenuTab
 
+internal val ClassicBottomBarHeight = 80.dp
+
+internal fun MenuTab.labelResId(): Int = when (this) {
+    MenuTab.Message -> R.string.conversation
+    MenuTab.File -> R.string.work
+    MenuTab.Contact -> R.string.contact_person
+}
+
+internal fun MenuTab.icon(selected: Boolean) = when (this) {
+    MenuTab.Message -> if (selected) Icons.AutoMirrored.Filled.Chat else Icons.AutoMirrored.Outlined.Chat
+    MenuTab.File -> if (selected) Icons.Filled.Work else Icons.Outlined.WorkOutline
+    MenuTab.Contact -> if (selected) Icons.Filled.Contacts else Icons.Outlined.Contacts
+}
+
 @Composable
-fun MenuNavigationBar(
-    modifier: Modifier = Modifier,
+internal fun ClassicMenuNavigationBar(
     currentTab: MenuTab,
-    mainSharedState: MainSharedState,
+    unreadCount: Int,
+    enabled: Boolean,
     onSelectTab: (MenuTab) -> Unit,
-    onEvent: (event: MenuPageEvent) -> Unit,
+    onEvent: (MenuPageEvent) -> Unit,
 ) {
     NavigationBar(
-        modifier = modifier,
         containerColor = MaterialTheme.colorScheme.surface,
+        windowInsets = NavigationBarDefaults.windowInsets.union(
+            WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom),
+        ),
     ) {
-        NavigationBarItem(
-            selected = currentTab == MenuTab.Message,
-            onClick = {
-                onEvent(MenuPageEvent.OnBarItemClicked(currentTab == MenuTab.Message))
-                onSelectTab(MenuTab.Message)
-            },
-            icon = {
-                BadgedBox(badge = {
-                    if (mainSharedState.datastore.messageBadgeNum > 0) {
-                        Badge(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                        ) { Text(text = "${mainSharedState.datastore.messageBadgeNum}") }
+        MenuTab.entries.forEach { tab ->
+            val selected = currentTab == tab
+            val title = stringResource(tab.labelResId())
+            NavigationBarItem(
+                selected = selected,
+                enabled = enabled,
+                onClick = {
+                    onEvent(MenuPageEvent.OnBarItemClicked(selected))
+                    onSelectTab(tab)
+                },
+                icon = {
+                    BadgedBox(badge = {
+                        if (tab == MenuTab.Message && unreadCount > 0) {
+                            Badge(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                            ) { Text(unreadCount.toString()) }
+                        }
+                    }) {
+                        Icon(tab.icon(selected), contentDescription = title)
                     }
-                }) {
-                    Icon(
-                        imageVector = if (currentTab == MenuTab.Message) Icons.AutoMirrored.Default.Chat else Icons.AutoMirrored.Outlined.Chat,
-                        contentDescription = stringResource(id = R.string.conversation),
-                    )
-                }
-            },
-            label = {
-                Text(
-                    text = stringResource(id = R.string.conversation),
-                    style = MaterialTheme.typography.labelLarge,
-                )
-            },
-            alwaysShowLabel = false,
-        )
-
-        NavigationBarItem(
-            selected = currentTab == MenuTab.File,
-            onClick = {
-                onEvent(MenuPageEvent.OnBarItemClicked(currentTab == MenuTab.File))
-                onSelectTab(MenuTab.File)
-            },
-            icon = {
-                Icon(
-                    imageVector = if (currentTab == MenuTab.File) Icons.Default.Work else Icons.Outlined.WorkOutline,
-                    contentDescription = stringResource(id = R.string.work),
-                )
-            },
-            label = {
-                Text(
-                    text = stringResource(id = R.string.work),
-                    style = MaterialTheme.typography.labelLarge,
-                )
-            },
-            alwaysShowLabel = false,
-        )
-
-        NavigationBarItem(
-            selected = currentTab == MenuTab.Contact,
-            onClick = {
-                onEvent(MenuPageEvent.OnBarItemClicked(currentTab == MenuTab.Contact))
-                onSelectTab(MenuTab.Contact)
-            },
-            icon = {
-                Icon(
-                    imageVector = if (currentTab == MenuTab.Contact) Icons.Default.Contacts else Icons.Outlined.Contacts,
-                    contentDescription = stringResource(id = R.string.contact_person),
-                )
-            },
-            label = {
-                Text(
-                    text = stringResource(id = R.string.contact_person),
-                    style = MaterialTheme.typography.labelLarge,
-                )
-            },
-            alwaysShowLabel = false,
-        )
+                },
+                label = { Text(title, style = MaterialTheme.typography.labelLarge) },
+                alwaysShowLabel = false,
+            )
+        }
     }
 }
 
@@ -281,6 +259,9 @@ fun MenuNavigationRail(
 ) {
     NavigationRail(
         modifier = modifier,
+        windowInsets = NavigationRailDefaults.windowInsets.union(
+            WindowInsets.displayCutout.only(WindowInsetsSides.Start),
+        ),
         header = {
             IconButton(
                 modifier = Modifier.statusBarsPadding(),

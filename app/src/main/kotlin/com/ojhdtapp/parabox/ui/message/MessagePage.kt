@@ -45,6 +45,8 @@ import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.RootNavigateTarget
 import com.ojhdtapp.parabox.ui.SettingNavigateTarget
 import com.ojhdtapp.parabox.ui.common.*
+import com.ojhdtapp.parabox.ui.navigation.suite.LocalBottomBarClearance
+import com.ojhdtapp.parabox.ui.navigation.suite.withBottomBarClearance
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -152,8 +154,12 @@ fun MessagePage(
         atEnd = mainSharedState.search.isActive
     )
 
+    val bottomBarClearance = LocalBottomBarClearance.current
     Scaffold(
         modifier = modifier,
+        contentWindowInsets = ScaffoldDefaults.contentWindowInsets.union(
+            WindowInsets.displayCutout.only(WindowInsetsSides.Bottom),
+        ),
         snackbarHost = { SnackbarHost(modifier = Modifier.offset(y = 80.dp), hostState = snackBarHostState) },
         containerColor = Color.Transparent,
         topBar = {
@@ -223,7 +229,11 @@ fun MessagePage(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = horizontalPadding)
-                        .statusBarsPadding()
+                        .windowInsetsPadding(
+                            WindowInsets.statusBars
+                                .union(WindowInsets.displayCutout)
+                                .only(WindowInsetsSides.Top),
+                        )
                         .clearFocusOnKeyboardDismiss(),
                     shape = SearchBarDefaults.dockedShape,
                     colors = SearchBarDefaults.colors(dividerColor = Color.Transparent),
@@ -308,7 +318,9 @@ fun MessagePage(
                     colors = SearchBarDefaults.colors(dividerColor = Color.Transparent),
                     tonalElevation = SearchBarDefaults.TonalElevation,
                     shadowElevation = searchBarShadowElevation,
-                    windowInsets = SearchBarDefaults.windowInsets,
+                    windowInsets = SearchBarDefaults.windowInsets.union(
+                        WindowInsets.displayCutout.only(WindowInsetsSides.Top),
+                    ),
                     content = {
                         SearchContent(
                             layoutType = layoutType,
@@ -319,13 +331,15 @@ fun MessagePage(
                 )
             }
 
-        }) {
+        }) { scaffoldPadding ->
         Column(modifier = Modifier.fillMaxSize()) {
             LazyColumn(
                 modifier = Modifier.fillMaxWidth(),
                 state = listState,
                 verticalArrangement = Arrangement.spacedBy(2.dp),
-                contentPadding = it
+                contentPadding = scaffoldPadding.withBottomBarClearance(
+                    if (chatLazyPagingData.itemCount > 0) bottomBarClearance else 0.dp,
+                ),
             ) {
                 item(
                     contentType = Unit
@@ -508,17 +522,13 @@ fun MessagePage(
                         }
                     }
                 }
-                item {
-                    if (chatLazyPagingData.itemCount > 0 &&mainSharedState.showNavigationBar) {
-                        Spacer(modifier = Modifier.height(80.dp))
-                    }
-                }
             }
             if (chatLazyPagingData.itemCount == 0) {
                 EmptyChatNoticeBlock(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f),
+                        .weight(1f)
+                        .padding(bottom = bottomBarClearance),
                     mainSharedState = mainSharedState
                 ) {
                     coroutineScope.launch {
