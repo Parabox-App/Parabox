@@ -21,6 +21,7 @@ service ParaboxExtensionService {
   rpc NextInitStep(InitStepRequest) returns (InitStepResponse);
   rpc GetConfigSchema(GetConfigSchemaRequest) returns (ConfigSchemaResponse);
   rpc ValidateConfig(ValidateConfigRequest) returns (ValidationResult);
+  rpc ExecuteConfigAction(ExecuteConfigActionRequest) returns (ActionResult);
 
   // 3. Long-lived bi-directional session stream (multi-account / multi-instance isolated)
   rpc OpenSession(stream HostSessionFrame) returns (stream ExtensionSessionFrame);
@@ -175,6 +176,7 @@ message ConfigItemProto {
     TextInputConfigProto text_input = 11;
     SelectConfigProto select = 12;
     SwitchConfigProto switch_item = 13;
+    ActionConfigProto action_item = 14;
   }
 }
 
@@ -197,6 +199,14 @@ message SwitchConfigProto {
   bool default_value = 1;
 }
 
+message ActionConfigProto {
+  bool has_confirm = 1;
+  string confirm_title = 2;
+  string confirm_description = 3;
+  string confirm_text = 4;
+  string cancel_text = 5;
+}
+
 message ConfigSchemaResponse {
   repeated ConfigItemProto items = 1;
 }
@@ -205,6 +215,13 @@ message ValidateConfigRequest {
   string extension_key = 1;
   string config_key = 2;
   ConfigValueProto value = 3;
+  string current_extra_json = 4;
+}
+
+message ExecuteConfigActionRequest {
+  string extension_key = 1;
+  string session_id = 2;
+  string action_key = 3;
   string current_extra_json = 4;
 }
 

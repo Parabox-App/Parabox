@@ -47,6 +47,9 @@ object ParaboxExtensionServiceGrpc {
     val validateConfigMethod: MethodDescriptor<ValidateConfigRequest, ValidationResult> =
         unaryMethod("ValidateConfig", ValidateConfigRequest.getDefaultInstance(), ValidationResult.getDefaultInstance())
 
+    val executeConfigActionMethod: MethodDescriptor<ExecuteConfigActionRequest, ActionResult> =
+        unaryMethod("ExecuteConfigAction", ExecuteConfigActionRequest.getDefaultInstance(), ActionResult.getDefaultInstance())
+
     val openSessionMethod: MethodDescriptor<HostSessionFrame, ExtensionSessionFrame> =
         MethodDescriptor.newBuilder<HostSessionFrame, ExtensionSessionFrame>()
             .setType(MethodDescriptor.MethodType.BIDI_STREAMING)
@@ -94,6 +97,7 @@ object ParaboxExtensionServiceGrpc {
         .addMethod(nextInitStepMethod)
         .addMethod(getConfigSchemaMethod)
         .addMethod(validateConfigMethod)
+        .addMethod(executeConfigActionMethod)
         .addMethod(openSessionMethod)
         .addMethod(sendMessageMethod)
         .addMethod(recallMessageMethod)
@@ -146,6 +150,13 @@ object ParaboxExtensionServiceGrpcKt {
             headers: Metadata = Metadata(),
         ): ValidationResult = ClientCalls.unaryRpc(
             channel, ParaboxExtensionServiceGrpc.validateConfigMethod, request, callOptions, headers
+        )
+
+        suspend fun executeConfigAction(
+            request: ExecuteConfigActionRequest,
+            headers: Metadata = Metadata(),
+        ): ActionResult = ClientCalls.unaryRpc(
+            channel, ParaboxExtensionServiceGrpc.executeConfigActionMethod, request, callOptions, headers
         )
 
         fun openSession(
@@ -235,6 +246,9 @@ object ParaboxExtensionServiceGrpcKt {
         open suspend fun validateConfig(request: ValidateConfigRequest): ValidationResult =
             throw UnsupportedOperationException("Method ValidateConfig is unimplemented")
 
+        open suspend fun executeConfigAction(request: ExecuteConfigActionRequest): ActionResult =
+            throw UnsupportedOperationException("Method ExecuteConfigAction is unimplemented")
+
         open fun openSession(requests: Flow<HostSessionFrame>): Flow<ExtensionSessionFrame> =
             throw UnsupportedOperationException("Method OpenSession is unimplemented")
 
@@ -293,6 +307,13 @@ object ParaboxExtensionServiceGrpcKt {
                         context = this.context,
                         descriptor = ParaboxExtensionServiceGrpc.validateConfigMethod,
                         implementation = ::validateConfig,
+                    )
+                )
+                .addMethod(
+                    ServerCalls.unaryServerMethodDefinition(
+                        context = this.context,
+                        descriptor = ParaboxExtensionServiceGrpc.executeConfigActionMethod,
+                        implementation = ::executeConfigAction,
                     )
                 )
                 .addMethod(

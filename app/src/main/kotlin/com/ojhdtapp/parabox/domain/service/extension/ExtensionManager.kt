@@ -23,6 +23,7 @@ import com.ojhdtapp.parabox.domain.repository.ConnectionInfoRepository
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import com.ojhdtapp.parabox.domain.service.extension.transport.ExtensionEndpoint
 import com.ojhdtapp.parabox.domain.service.extension.transport.ExtensionTransport
+import com.ojhdtapp.parabox.protocol.v2.ExecuteConfigActionRequest
 import com.ojhdtapp.parabox.protocol.v2.GetConfigSchemaRequest
 import com.ojhdtapp.parabox.protocol.v2.InitStepRequest
 import com.ojhdtapp.parabox.protocol.v2.ParaboxExtensionServiceGrpcKt
@@ -155,7 +156,7 @@ class ExtensionManager @Inject constructor(
         wizardExtra = JSONObject()
 
         val initialSteps = try {
-            val stub = createUnaryStub(extension.endpoint)
+            val stub = createUnaryStub(extension.endpoint, WIZARD_RPC_TIMEOUT_SECONDS)
             val resp = stub.nextInitStep(
                 InitStepRequest.newBuilder()
                     .setWizardSessionId(wizardSessionId)
@@ -220,7 +221,7 @@ class ExtensionManager @Inject constructor(
 
             _initActionStateFlow.update { it?.copy(isLoading = true) }
             try {
-                val stub = createUnaryStub(ext.endpoint)
+                val stub = createUnaryStub(ext.endpoint, WIZARD_RPC_TIMEOUT_SECONDS)
                 val remoteIndex = currentIndex - 1
                 val resp = stub.nextInitStep(
                     InitStepRequest.newBuilder()
@@ -381,6 +382,29 @@ class ExtensionManager @Inject constructor(
         }
     }
 
+    suspend fun executeConnectionConfigAction(
+        connection: Connection,
+        actionKey: String,
+        currentExtra: JSONObject,
+    ): ParaboxResult {
+        val endpoint = resolveEndpointForConnection(connection)
+            ?: return ParaboxResult(ParaboxResult.ERROR_UNINITIALIZED, "未找到可用的扩展服务")
+        return try {
+            val stub = createUnaryStub(endpoint, WIZARD_RPC_TIMEOUT_SECONDS)
+            stub.executeConfigAction(
+                ExecuteConfigActionRequest.newBuilder()
+                    .setExtensionKey(connection.key)
+                    .setSessionId("conn-${connection.connectionId}")
+                    .setActionKey(actionKey)
+                    .setCurrentExtraJson(currentExtra.toString())
+                    .build()
+            ).toDomain()
+        } catch (e: Exception) {
+            Log.e(TAG, "executeConnectionConfigAction failed", e)
+            ParaboxResult(ParaboxResult.ERROR_UNKNOWN, e.message ?: "操作执行失败")
+        }
+    }
+
     fun restartConnection(connectionId: Long, needReloadExtra: Boolean) {
         _connectionFlow.value.find { it.connectionId == connectionId }?.also { conn ->
             when (conn) {
@@ -516,6 +540,9 @@ class ExtensionManager @Inject constructor(
             hostPackageName = context.packageName,
             transport = transport,
             inboundHandler = inboundHandler,
+            uriPermissionGranter = { targetPkg, uri ->
+                context.grantUriPermission(targetPkg, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            },
         )
         connectionSuccess = pending.toSuccess(sessionClient, updatedExtra)
         lifecycle.addObserver(connectionSuccess)
@@ -539,10 +566,11 @@ class ExtensionManager @Inject constructor(
 
     private fun createUnaryStub(
         endpoint: ExtensionEndpoint,
+        timeoutSeconds: Long = RPC_TIMEOUT_SECONDS,
     ): ParaboxExtensionServiceGrpcKt.ParaboxExtensionServiceCoroutineStub {
         val channel = transport.acquireChannel(endpoint)
         return ParaboxExtensionServiceGrpcKt.ParaboxExtensionServiceCoroutineStub(channel)
-            .withDeadlineAfter(RPC_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .withDeadlineAfter(timeoutSeconds, TimeUnit.SECONDS)
     }
 
     private fun replaceExternalExtensionsForPackage(packageName: String, replacements: List<Extension>) {
@@ -641,6 +669,7 @@ class ExtensionManager @Inject constructor(
         private const val TAG = "ExtensionManager"
         private const val ALIAS_KEY = "alias"
         private const val RPC_TIMEOUT_SECONDS = 12L
+        private const val WIZARD_RPC_TIMEOUT_SECONDS = 45L
 
         private val aliasAction = ParaboxInitAction.TextInputAction(
             key = ALIAS_KEY,

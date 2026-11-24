@@ -6,6 +6,7 @@ import com.ojhdtapp.parabox.domain.model.Connection
 import com.ojhdtapp.parabox.domain.model.Extension
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.ui.base.UiEvent
+import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
 import com.ojhdtapp.paraboxdevelopmentkit.model.config_item.ParaboxConfigItem
 import com.ojhdtapp.paraboxdevelopmentkit.model.init_actions.ParaboxInitActionResult
 
@@ -36,5 +37,9 @@ sealed interface SettingPageEvent : UiEvent{
         val configItem: ParaboxConfigItem,
         val value: Any,
         val onResult: (ParaboxInitActionResult) -> Unit,
+    ): SettingPageEvent
+    data class ExecuteConnectionConfigAction(
+        val configItem: ParaboxConfigItem.ActionConfigItem,
+        val onResult: (ParaboxResult) -> Unit,
     ): SettingPageEvent
 }

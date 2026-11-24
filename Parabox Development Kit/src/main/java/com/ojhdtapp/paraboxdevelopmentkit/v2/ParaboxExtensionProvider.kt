@@ -1,6 +1,7 @@
 package com.ojhdtapp.paraboxdevelopmentkit.v2
 
 import com.ojhdtapp.parabox.protocol.v2.ExtensionCapability
+import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
 import com.ojhdtapp.paraboxdevelopmentkit.model.config_item.ParaboxConfigItem
 import com.ojhdtapp.paraboxdevelopmentkit.model.init_actions.ParaboxInitAction
 import com.ojhdtapp.paraboxdevelopmentkit.model.init_actions.ParaboxInitActionResult
@@ -51,6 +52,15 @@ interface ParaboxExtensionProvider {
         value: Any?,
         currentExtra: JSONObject,
     ): ParaboxInitActionResult = ParaboxInitActionResult.Done
+
+    /**
+     * Execute an explicit user-triggered ActionConfigItem (e.g., logout or clear cache).
+     */
+    suspend fun onConfigAction(
+        actionKey: String,
+        sessionId: String,
+        currentExtra: JSONObject,
+    ): ParaboxResult = ParaboxResult(ParaboxResult.ERROR_UNKNOWN, "Action not supported: $actionKey")
 
     /**
      * Create an isolated session instance for one ConnectionInfo.

@@ -141,6 +141,12 @@ class ParaboxProtoMapperTest {
             ParaboxConfigItem.TextInputConfigItem("host", "Host", "desc", "IP", ParaboxInitAction.KeyboardType.TEXT, "127.0.0.1"),
             ParaboxConfigItem.SelectConfigItem("mode", "Mode", "desc", listOf("WS", "HTTP"), 0),
             ParaboxConfigItem.SwitchConfigItem("reconnect", "Auto Reconnect", "desc", true),
+            ParaboxConfigItem.ActionConfigItem(
+                key = "logout",
+                title = "Logout",
+                description = "Sign out account",
+                confirmModel = ParaboxConfigItem.ActionConfigItem.ConfirmModel("Confirm", "Sign out?", "Yes", "No"),
+            ),
         )
         assertEquals(configs, configs.map { it.toProto().toDomain() })
     }

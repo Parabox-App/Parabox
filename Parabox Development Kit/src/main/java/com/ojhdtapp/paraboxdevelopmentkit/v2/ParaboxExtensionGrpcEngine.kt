@@ -7,6 +7,7 @@ import com.ojhdtapp.parabox.protocol.v2.BasicInfoResponse
 import com.ojhdtapp.parabox.protocol.v2.ChatListResponse
 import com.ojhdtapp.parabox.protocol.v2.ConfigSchemaResponse
 import com.ojhdtapp.parabox.protocol.v2.ContactListResponse
+import com.ojhdtapp.parabox.protocol.v2.ExecuteConfigActionRequest
 import com.ojhdtapp.parabox.protocol.v2.ExtensionDescriptor
 import com.ojhdtapp.parabox.protocol.v2.ExtensionManifest
 import com.ojhdtapp.parabox.protocol.v2.ExtensionSessionFrame
@@ -143,6 +144,21 @@ class ParaboxExtensionGrpcEngine(
                 .setValid(false)
                 .setErrorMessage(res.message)
                 .build()
+        }
+    }
+
+    override suspend fun executeConfigAction(request: ExecuteConfigActionRequest): ActionResult {
+        val provider = providerMap[request.extensionKey]
+            ?: return ParaboxResult(ParaboxResult.ERROR_UNKNOWN, "Unknown extension: ${request.extensionKey}").toProto()
+        val extra = parseJsonObject(request.currentExtraJson)
+        return try {
+            provider.onConfigAction(
+                actionKey = request.actionKey,
+                sessionId = request.sessionId,
+                currentExtra = extra,
+            ).toProto()
+        } catch (e: Exception) {
+            ParaboxResult(ParaboxResult.ERROR_UNKNOWN, e.message ?: ParaboxResult.ERROR_UNKNOWN_MSG).toProto()
         }
     }
 

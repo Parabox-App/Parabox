@@ -46,11 +46,11 @@ class MainRepositoryImpl @Inject constructor(
                 val chatEntity = buildChatEntity(msg, info)
                 val contactEntity = buildContactEntity(msg, info)
                 val chatIdDeferred = async {
-                    db.chatDao.checkChat(chatEntity.pkg, chatEntity.uid)
+                    db.chatDao.checkChat(chatEntity.pkg, info.connectionId, chatEntity.uid)
                         ?: db.chatDao.insertChat(chatEntity)
                 }
                 val contactIdDeferred = async {
-                    db.contactDao.checkContact(contactEntity.pkg, contactEntity.uid)
+                    db.contactDao.checkContact(contactEntity.pkg, info.connectionId, contactEntity.uid)
                         ?: db.contactDao.insertContact(contactEntity)
                 }
                 // crossRef contact and chat

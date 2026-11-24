@@ -1,6 +1,7 @@
 package com.ojhdtapp.paraboxdevelopmentkit.protocol
 
 import android.net.Uri
+import com.ojhdtapp.parabox.protocol.v2.ActionConfigProto
 import com.ojhdtapp.parabox.protocol.v2.ActionResult
 import com.ojhdtapp.parabox.protocol.v2.AnnotatedTextElementProto
 import com.ojhdtapp.parabox.protocol.v2.AtAllElementProto
@@ -604,6 +605,19 @@ object ParaboxProtoMapper {
             is ParaboxConfigItem.SwitchConfigItem -> builder.setSwitchItem(
                 SwitchConfigProto.newBuilder().setDefaultValue(defaultValue).build()
             )
+            is ParaboxConfigItem.ActionConfigItem -> builder.setActionItem(
+                ActionConfigProto.newBuilder()
+                    .also { b ->
+                        confirmModel?.let { cm ->
+                            b.setHasConfirm(true)
+                            b.setConfirmTitle(cm.title)
+                            b.setConfirmDescription(cm.description)
+                            b.setConfirmText(cm.confirmText)
+                            b.setCancelText(cm.cancelText)
+                        }
+                    }
+                    .build()
+            )
         }
         return builder.build()
     }
@@ -629,6 +643,21 @@ object ParaboxProtoMapper {
             title = title,
             description = description,
             defaultValue = switchItem.defaultValue,
+        )
+        ConfigItemProto.ItemTypeCase.ACTION_ITEM -> ParaboxConfigItem.ActionConfigItem(
+            key = key,
+            title = title,
+            description = description,
+            confirmModel = if (actionItem.hasConfirm) {
+                ParaboxConfigItem.ActionConfigItem.ConfirmModel(
+                    title = actionItem.confirmTitle,
+                    description = actionItem.confirmDescription,
+                    confirmText = actionItem.confirmText.ifEmpty { "确定" },
+                    cancelText = actionItem.cancelText.ifEmpty { "取消" },
+                )
+            } else {
+                null
+            },
         )
         ConfigItemProto.ItemTypeCase.CATEGORY,
         ConfigItemProto.ItemTypeCase.ITEMTYPE_NOT_SET,

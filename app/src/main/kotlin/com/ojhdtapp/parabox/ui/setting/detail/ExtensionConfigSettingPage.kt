@@ -88,6 +88,7 @@ import com.ojhdtapp.parabox.ui.common.TextInputDialog
 import com.ojhdtapp.parabox.ui.setting.SettingPageEvent
 import com.ojhdtapp.parabox.ui.setting.SettingPageState
 import com.ojhdtapp.parabox.ui.theme.Theme
+import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
 import com.ojhdtapp.paraboxdevelopmentkit.model.config_item.ParaboxConfigItem
 import com.ojhdtapp.paraboxdevelopmentkit.model.init_actions.ParaboxInitActionResult
 import kotlinx.coroutines.launch
@@ -407,6 +408,56 @@ private fun Content(
                         layoutType = layoutType,
                     ) {
                         openDialog = true
+                    }
+                }
+
+                is ParaboxConfigItem.ActionConfigItem -> {
+                    val actionContext = LocalContext.current
+                    var openConfirm by remember { mutableStateOf(false) }
+                    val executeAction = {
+                        onEvent(
+                            SettingPageEvent.ExecuteConnectionConfigAction(paraboxConfig) { res ->
+                                val msg = if (res.code == ParaboxResult.SUCCESS) {
+                                    res.message.ifBlank { "操作成功" }
+                                } else {
+                                    "操作失败：${res.message}"
+                                }
+                                Toast.makeText(actionContext, msg, Toast.LENGTH_SHORT).show()
+                            }
+                        )
+                    }
+                    val confirmModel = paraboxConfig.confirmModel
+                    if (openConfirm && confirmModel != null) {
+                        AlertDialog(
+                            onDismissRequest = { openConfirm = false },
+                            title = { Text(text = confirmModel.title) },
+                            text = { Text(text = confirmModel.description) },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    openConfirm = false
+                                    executeAction()
+                                }) {
+                                    Text(text = confirmModel.confirmText)
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { openConfirm = false }) {
+                                    Text(text = confirmModel.cancelText)
+                                }
+                            },
+                        )
+                    }
+                    SettingItem(
+                        title = paraboxConfig.title,
+                        subTitle = paraboxConfig.description,
+                        selected = false,
+                        layoutType = layoutType,
+                    ) {
+                        if (confirmModel != null) {
+                            openConfirm = true
+                        } else {
+                            executeAction()
+                        }
                     }
                 }
             }

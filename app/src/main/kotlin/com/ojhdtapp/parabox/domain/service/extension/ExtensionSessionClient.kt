@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.domain.service.extension
 
+import android.net.Uri
 import com.ojhdtapp.parabox.domain.service.extension.transport.ExtensionEndpoint
 import com.ojhdtapp.parabox.domain.service.extension.transport.ExtensionTransport
 import com.ojhdtapp.parabox.protocol.v2.BasicInfoRequest
@@ -20,7 +21,14 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
 import com.ojhdtapp.paraboxdevelopmentkit.model.SendMessage
 import com.ojhdtapp.paraboxdevelopmentkit.model.chat.ParaboxChat
 import com.ojhdtapp.paraboxdevelopmentkit.model.contact.ParaboxContact
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAudio
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxFile
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxForward
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxMessageElement
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxQuoteReply
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxVideo
+import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 import com.ojhdtapp.paraboxdevelopmentkit.protocol.ParaboxProtoMapper.toDomain
 import com.ojhdtapp.paraboxdevelopmentkit.protocol.ParaboxProtoMapper.toProto
 import com.ojhdtapp.paraboxdevelopmentkit.v2.ParaboxConnectionStatus
@@ -55,6 +63,7 @@ class ExtensionSessionClient(
     private val hostPackageName: String,
     private val transport: ExtensionTransport,
     private val inboundHandler: SessionInboundHandler,
+    private val uriPermissionGranter: ((targetPackage: String, uri: Uri) -> Unit)? = null,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val initialBackoffMs: Long = 1_000L,
     private val maxBackoffMs: Long = 30_000L,
@@ -215,6 +224,9 @@ class ExtensionSessionClient(
 
     suspend fun sendMessage(message: SendMessage): ParaboxResult {
         return try {
+            if (endpoint is ExtensionEndpoint.BinderService && uriPermissionGranter != null) {
+                grantUrisForElements(endpoint.packageName, message.contents)
+            }
             unaryStub().sendMessage(
                 SendMessageRequest.newBuilder()
                     .setSessionId(sessionId)
@@ -223,6 +235,32 @@ class ExtensionSessionClient(
             ).toDomain()
         } catch (e: Exception) {
             ParaboxResult(ParaboxResult.ERROR_UNKNOWN, e.message ?: ParaboxResult.ERROR_UNKNOWN_MSG)
+        }
+    }
+
+    private fun grantUrisForElements(targetPackage: String, elements: List<ParaboxMessageElement>) {
+        elements.forEach { elem ->
+            when (elem) {
+                is ParaboxImage -> grantResourceUri(targetPackage, elem.resourceInfo)
+                is ParaboxAudio -> grantResourceUri(targetPackage, elem.resourceInfo)
+                is ParaboxVideo -> grantResourceUri(targetPackage, elem.resourceInfo)
+                is ParaboxFile -> grantResourceUri(targetPackage, elem.resourceInfo)
+                is ParaboxQuoteReply -> grantUrisForElements(targetPackage, elem.messages)
+                is ParaboxForward -> elem.list.forEach { node -> grantUrisForElements(targetPackage, node.messages) }
+                else -> Unit
+            }
+        }
+    }
+
+    private fun grantResourceUri(targetPackage: String, resourceInfo: ParaboxResourceInfo) {
+        when (resourceInfo) {
+            is ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo -> {
+                runCatching { uriPermissionGranter?.invoke(targetPackage, resourceInfo.uri) }
+            }
+            is ParaboxResourceInfo.ParaboxSyncedInfo -> {
+                grantResourceUri(targetPackage, resourceInfo.local)
+            }
+            else -> Unit
         }
     }
 
