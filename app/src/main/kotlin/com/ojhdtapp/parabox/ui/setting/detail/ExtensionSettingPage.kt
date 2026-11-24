@@ -31,6 +31,7 @@ import androidx.compose.material.icons.outlined.Extension
 import androidx.compose.material.icons.outlined.Pending
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.RestartAlt
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -38,6 +39,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
@@ -74,9 +76,10 @@ import com.ojhdtapp.parabox.ui.navigation.SettingComponent
 import com.ojhdtapp.parabox.ui.setting.Setting
 import com.ojhdtapp.parabox.ui.setting.SettingHeader
 import com.ojhdtapp.parabox.ui.setting.SettingItem
+import com.ojhdtapp.parabox.domain.service.extension.SignatureVerifier
 import com.ojhdtapp.parabox.ui.setting.SettingPageEvent
 import com.ojhdtapp.parabox.ui.setting.SettingPageState
-import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnectionStatus
+import com.ojhdtapp.paraboxdevelopmentkit.v2.ParaboxConnectionStatus
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import me.saket.cascade.CascadeDropdownMenu
@@ -180,6 +183,48 @@ private fun Content(
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
     val context = LocalContext.current
+    var pendingTrustExtension by remember { mutableStateOf<Extension.Untrusted?>(null) }
+
+    pendingTrustExtension?.let { untrusted ->
+        AlertDialog(
+            onDismissRequest = { pendingTrustExtension = null },
+            title = {
+                Text(
+                    text = if (untrusted.signatureMismatch) "扩展签名已变更" else "授权外部扩展"
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = if (untrusted.signatureMismatch) {
+                            "检测到扩展 ${untrusted.name}（${untrusted.pkg}）的签名指纹与之前不一致，请确认来源可信后再重新授权。"
+                        } else {
+                            "是否信任扩展 ${untrusted.name}（${untrusted.pkg}）？授权后 Parabox 将通过独立进程 Binder IPC 与该扩展通信。"
+                        }
+                    )
+                    Text(
+                        text = "SHA-256 指纹：\n${SignatureVerifier.formatFingerprint(untrusted.signatureSha256)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onEvent(SettingPageEvent.TrustExtension(untrusted.pkg, untrusted.signatureSha256))
+                    pendingTrustExtension = null
+                }) {
+                    Text("信任并启用")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingTrustExtension = null }) {
+                    Text("取消")
+                }
+            },
+        )
+    }
+
     LazyColumn(modifier = modifier) {
         item {
             SettingHeader(text = "建立新连接")
@@ -190,9 +235,15 @@ private fun Content(
                     ConnectionCard(
                         model = it,
                         onClick = {
-                            if (it is Extension.Success) {
-                                onEvent(SettingPageEvent.InitNewConnection(it))
-                                navigation.pushNew(DefaultSettingComponent.SettingConfig.ExtensionAddSetting)
+                            when (it) {
+                                is Extension.Success -> {
+                                    onEvent(SettingPageEvent.InitNewConnection(it))
+                                    navigation.pushNew(DefaultSettingComponent.SettingConfig.ExtensionAddSetting)
+                                }
+                                is Extension.Untrusted -> {
+                                    pendingTrustExtension = it
+                                }
+                                is Extension.Error -> Unit
                             }
                         }
                     )
@@ -234,7 +285,7 @@ private fun Content(
                     ),
                     shape = MaterialTheme.shapes.medium,
                 ) {
-                    if (it is Connection.ConnectionSuccess) {
+                    if (it is Connection.ConnectionSuccess || it is Connection.ConnectionFail) {
                         androidx.compose.material3.DropdownMenuItem(
                             text = { Text("重新启动") },
                             onClick = {
@@ -257,7 +308,7 @@ private fun Content(
                         }
                     )
                 }
-                LaunchedEffect(Unit) {
+                LaunchedEffect(it) {
                     when (it) {
                         is Connection.ConnectionPending -> {
                             status = "等待实例化"
@@ -265,13 +316,13 @@ private fun Content(
                         }
 
                         is Connection.ConnectionFail -> {
-                            status = "实例化失败"
+                            status = if (it.reason.isNotBlank()) "连接失败（${it.reason}）" else "实例化失败"
                             statusIcon = Icons.Outlined.ErrorOutline
                         }
 
                         is Connection.ConnectionSuccess -> {
-                            it.getStatus().collectLatest {
-                                when (it) {
+                            it.getStatus().collectLatest { connStatus ->
+                                when (connStatus) {
                                     is ParaboxConnectionStatus.Pending -> {
                                         status = "等待初始化"
                                         statusIcon = Icons.Outlined.Pending
@@ -287,8 +338,13 @@ private fun Content(
                                         statusIcon = Icons.Outlined.CheckCircle
                                     }
 
+                                    is ParaboxConnectionStatus.Reconnecting -> {
+                                        status = "重连中（第 ${connStatus.attempt} 次）"
+                                        statusIcon = Icons.Outlined.Pending
+                                    }
+
                                     is ParaboxConnectionStatus.Error -> {
-                                        status = "错误（${it.message}）"
+                                        status = "错误（${connStatus.message}）"
                                         statusIcon = Icons.Outlined.ErrorOutline
                                     }
                                 }
@@ -358,7 +414,7 @@ private fun ConnectionCard(
     Card(
         onClick = onClick,
         modifier = modifier,
-        enabled = model is Extension.Success
+        enabled = model is Extension.Success || model is Extension.Untrusted
     ) {
         Row(modifier = Modifier.padding(16.dp)) {
             Column(modifier = Modifier.width(144.dp)) {
@@ -406,6 +462,24 @@ private fun ConnectionCard(
                     }
                     is Extension.Success.BuiltIn -> {
                         Text(text = model.des?: "无说明文本", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
+                    }
+                    is Extension.Untrusted -> {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = if (model.signatureMismatch) "签名变更" else "待授权",
+                                color = MaterialTheme.colorScheme.tertiary,
+                                style = MaterialTheme.typography.bodyMedium,
+                                maxLines = 1,
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = model.des ?: model.pkg,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                style = MaterialTheme.typography.bodyMedium,
+                                maxLines = 1,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
                     is Extension.Success.External -> {
                         Row(verticalAlignment = Alignment.CenterVertically) {

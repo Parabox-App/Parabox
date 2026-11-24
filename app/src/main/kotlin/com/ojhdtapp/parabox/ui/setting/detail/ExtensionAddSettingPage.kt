@@ -1,15 +1,13 @@
 package com.ojhdtapp.parabox.ui.setting.detail
 
-import android.app.LocaleManager
-import android.os.Build
-import android.os.LocaleList
-import android.util.Log
+import android.app.Activity
+import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.BackHandler
-import androidx.appcompat.app.AppCompatDelegate
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,56 +28,50 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
 import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.PopupProperties
-import androidx.core.os.LocaleListCompat
+import coil.compose.AsyncImage
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.pop
 import com.ojhdtapp.parabox.R
-import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
+import com.ojhdtapp.parabox.ui.common.LayoutType
 import com.ojhdtapp.parabox.ui.navigation.DefaultSettingComponent
 import com.ojhdtapp.parabox.ui.navigation.SettingComponent
 import com.ojhdtapp.parabox.ui.setting.Setting
-import com.ojhdtapp.parabox.ui.setting.SettingHeader
-import com.ojhdtapp.parabox.ui.setting.SettingItem
-import com.ojhdtapp.parabox.ui.common.LayoutType
 import com.ojhdtapp.parabox.ui.setting.SettingPageEvent
 import com.ojhdtapp.parabox.ui.setting.SettingPageState
-import com.ojhdtapp.parabox.ui.theme.Theme
 import com.ojhdtapp.paraboxdevelopmentkit.model.init_actions.ParaboxInitAction
-import me.saket.cascade.CascadeDropdownMenu
+import com.ojhdtapp.paraboxdevelopmentkit.v2.ParaboxExtensionConstants
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
 @Composable
@@ -230,19 +222,34 @@ private fun Content(
                                         )
                                     }
                                     when (paraboxInitAction) {
+                                        is ParaboxInitAction.InfoAction -> {
+                                            if (paraboxInitAction.errMsg.isNotEmpty()) {
+                                                Text(
+                                                    text = paraboxInitAction.errMsg,
+                                                    color = MaterialTheme.colorScheme.error,
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                )
+                                            }
+                                            WizardStepButtons(
+                                                currentIndex = state.initActionState.currentIndex,
+                                                totalSteps = state.initActionState.actionList.size,
+                                                isLoading = state.initActionState.isLoading,
+                                                onRevert = { onEvent(SettingPageEvent.RevertExtensionInitAction) },
+                                                onSubmit = { onEvent(SettingPageEvent.SubmitExtensionInitActionResult("ok")) },
+                                            )
+                                        }
+
                                         is ParaboxInitAction.TextInputAction -> {
-                                            var text by remember { mutableStateOf("") }
+                                            var text by remember(paraboxInitAction.key) {
+                                                mutableStateOf(paraboxInitAction.defaultValue.orEmpty())
+                                            }
                                             OutlinedTextField(
                                                 value = text,
                                                 onValueChange = { text = it },
-                                                label = {
-                                                    Text(text = paraboxInitAction.label)
-                                                },
+                                                label = { Text(text = paraboxInitAction.label) },
                                                 isError = paraboxInitAction.errMsg.isNotEmpty(),
                                                 supportingText = {
-                                                    AnimatedVisibility(
-                                                        visible = paraboxInitAction.errMsg.isNotEmpty(),
-                                                    ) {
+                                                    AnimatedVisibility(visible = paraboxInitAction.errMsg.isNotEmpty()) {
                                                         Text(text = paraboxInitAction.errMsg, style = MaterialTheme.typography.bodySmall)
                                                     }
                                                 },
@@ -252,28 +259,175 @@ private fun Content(
                                                 ),
                                                 keyboardActions = KeyboardActions(
                                                     onDone = {
-                                                        onEvent(SettingPageEvent.SubmitExtensionInitActionResult(text))
-                                                    }),
-                                            )
-                                            Row() {
-                                                if (state.initActionState.currentIndex > 0) {
-                                                    OutlinedButton(onClick = {
-                                                        onEvent(SettingPageEvent.RevertExtensionInitAction)
-                                                    }) {
-                                                        Text(text = stringResource(R.string.last_step))
+                                                        if (!state.initActionState.isLoading) {
+                                                            onEvent(SettingPageEvent.SubmitExtensionInitActionResult(text))
+                                                        }
                                                     }
-                                                    Spacer(modifier = Modifier.width(8.dp))
-                                                }
-                                                if (state.initActionState.currentIndex <= state.initActionState.actionList.size - 1) {
-                                                    Button(onClick = {
-                                                        onEvent(SettingPageEvent.SubmitExtensionInitActionResult(text))
-                                                    }) {
-                                                        Text(text = stringResource(R.string.next_step))
+                                                ),
+                                            )
+                                            WizardStepButtons(
+                                                currentIndex = state.initActionState.currentIndex,
+                                                totalSteps = state.initActionState.actionList.size,
+                                                isLoading = state.initActionState.isLoading,
+                                                onRevert = { onEvent(SettingPageEvent.RevertExtensionInitAction) },
+                                                onSubmit = { onEvent(SettingPageEvent.SubmitExtensionInitActionResult(text)) },
+                                            )
+                                        }
+
+                                        is ParaboxInitAction.TextInputWithImageAction -> {
+                                            var text by remember(paraboxInitAction.key) {
+                                                mutableStateOf(paraboxInitAction.defaultValue.orEmpty())
+                                            }
+                                            AsyncImage(
+                                                model = paraboxInitAction.image.getModel(),
+                                                contentDescription = paraboxInitAction.title,
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(140.dp),
+                                            )
+                                            OutlinedTextField(
+                                                value = text,
+                                                onValueChange = { text = it },
+                                                label = { Text(text = paraboxInitAction.label) },
+                                                isError = paraboxInitAction.errMsg.isNotEmpty(),
+                                                supportingText = {
+                                                    AnimatedVisibility(visible = paraboxInitAction.errMsg.isNotEmpty()) {
+                                                        Text(text = paraboxInitAction.errMsg, style = MaterialTheme.typography.bodySmall)
+                                                    }
+                                                },
+                                                keyboardOptions = KeyboardOptions.Default.copy(
+                                                    keyboardType = paraboxInitAction.type.toComposeKeyboardType(),
+                                                    imeAction = ImeAction.Done
+                                                ),
+                                            )
+                                            WizardStepButtons(
+                                                currentIndex = state.initActionState.currentIndex,
+                                                totalSteps = state.initActionState.actionList.size,
+                                                isLoading = state.initActionState.isLoading,
+                                                onRevert = { onEvent(SettingPageEvent.RevertExtensionInitAction) },
+                                                onSubmit = { onEvent(SettingPageEvent.SubmitExtensionInitActionResult(text)) },
+                                            )
+                                        }
+
+                                        is ParaboxInitAction.SelectAction -> {
+                                            var selectedIndex by remember(paraboxInitAction.key) {
+                                                mutableIntStateOf(paraboxInitAction.defaultValue ?: 0)
+                                            }
+                                            Column {
+                                                paraboxInitAction.options.forEachIndexed { optIdx, option ->
+                                                    Row(
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .clickable { selectedIndex = optIdx }
+                                                            .padding(vertical = 4.dp),
+                                                    ) {
+                                                        RadioButton(
+                                                            selected = selectedIndex == optIdx,
+                                                            onClick = { selectedIndex = optIdx },
+                                                        )
+                                                        Spacer(modifier = Modifier.width(8.dp))
+                                                        Text(text = option, style = MaterialTheme.typography.bodyMedium)
                                                     }
                                                 }
                                             }
+                                            if (paraboxInitAction.errMsg.isNotEmpty()) {
+                                                Text(
+                                                    text = paraboxInitAction.errMsg,
+                                                    color = MaterialTheme.colorScheme.error,
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                )
+                                            }
+                                            WizardStepButtons(
+                                                currentIndex = state.initActionState.currentIndex,
+                                                totalSteps = state.initActionState.actionList.size,
+                                                isLoading = state.initActionState.isLoading,
+                                                onRevert = { onEvent(SettingPageEvent.RevertExtensionInitAction) },
+                                                onSubmit = { onEvent(SettingPageEvent.SubmitExtensionInitActionResult(selectedIndex)) },
+                                            )
                                         }
-                                        else -> {}
+
+                                        is ParaboxInitAction.SwitchAction -> {
+                                            var checked by remember(paraboxInitAction.key) {
+                                                mutableStateOf(paraboxInitAction.defaultValue)
+                                            }
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                            ) {
+                                                Switch(checked = checked, onCheckedChange = { checked = it })
+                                                Text(
+                                                    text = if (checked) "已开启" else "已关闭",
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                )
+                                            }
+                                            if (paraboxInitAction.errMsg.isNotEmpty()) {
+                                                Text(
+                                                    text = paraboxInitAction.errMsg,
+                                                    color = MaterialTheme.colorScheme.error,
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                )
+                                            }
+                                            WizardStepButtons(
+                                                currentIndex = state.initActionState.currentIndex,
+                                                totalSteps = state.initActionState.actionList.size,
+                                                isLoading = state.initActionState.isLoading,
+                                                onRevert = { onEvent(SettingPageEvent.RevertExtensionInitAction) },
+                                                onSubmit = { onEvent(SettingPageEvent.SubmitExtensionInitActionResult(checked)) },
+                                            )
+                                        }
+
+                                        is ParaboxInitAction.ExternalAuthAction -> {
+                                            val context = LocalContext.current
+                                            val launcher = rememberLauncherForActivityResult(
+                                                contract = ActivityResultContracts.StartActivityForResult()
+                                            ) { res ->
+                                                if (res.resultCode == Activity.RESULT_OK) {
+                                                    val payload = res.data?.getStringExtra(
+                                                        ParaboxExtensionConstants.EXTRA_AUTH_RESULT_KEY
+                                                    ) ?: res.data?.dataString.orEmpty()
+                                                    onEvent(SettingPageEvent.SubmitExtensionInitActionResult(payload))
+                                                }
+                                            }
+                                            Button(
+                                                enabled = !state.initActionState.isLoading,
+                                                onClick = {
+                                                    val intent = when {
+                                                        paraboxInitAction.activityAction.isNotBlank() -> Intent(
+                                                            paraboxInitAction.activityAction
+                                                        ).apply {
+                                                            if (paraboxInitAction.targetPackage.isNotBlank()) {
+                                                                setPackage(paraboxInitAction.targetPackage)
+                                                            }
+                                                        }
+                                                        paraboxInitAction.authUrl.isNotBlank() -> Intent(
+                                                            Intent.ACTION_VIEW,
+                                                            Uri.parse(paraboxInitAction.authUrl),
+                                                        )
+                                                        else -> null
+                                                    }
+                                                    if (intent != null && intent.resolveActivity(context.packageManager) != null) {
+                                                        launcher.launch(intent)
+                                                    }
+                                                }
+                                            ) {
+                                                Text(text = paraboxInitAction.buttonLabel)
+                                            }
+                                            if (paraboxInitAction.errMsg.isNotEmpty()) {
+                                                Text(
+                                                    text = paraboxInitAction.errMsg,
+                                                    color = MaterialTheme.colorScheme.error,
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                )
+                                            }
+                                            if (state.initActionState.currentIndex > 0) {
+                                                OutlinedButton(onClick = {
+                                                    onEvent(SettingPageEvent.RevertExtensionInitAction)
+                                                }) {
+                                                    Text(text = stringResource(R.string.last_step))
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -339,6 +493,33 @@ private fun Content(
             }
         }
     }
+
+@Composable
+private fun WizardStepButtons(
+    currentIndex: Int,
+    totalSteps: Int,
+    isLoading: Boolean,
+    onRevert: () -> Unit,
+    onSubmit: () -> Unit,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        if (currentIndex > 0) {
+            OutlinedButton(enabled = !isLoading, onClick = onRevert) {
+                Text(text = stringResource(R.string.last_step))
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+        if (currentIndex <= totalSteps - 1) {
+            Button(enabled = !isLoading, onClick = onSubmit) {
+                if (isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                Text(text = stringResource(R.string.next_step))
+            }
+        }
+    }
+}
 
 fun ParaboxInitAction.KeyboardType.toComposeKeyboardType(): KeyboardType {
     return when (this) {

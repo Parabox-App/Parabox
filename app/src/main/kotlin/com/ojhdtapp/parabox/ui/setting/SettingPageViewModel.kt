@@ -15,6 +15,8 @@ import com.ojhdtapp.parabox.domain.use_case.GetChat
 import com.ojhdtapp.parabox.domain.use_case.UpdateChat
 import com.ojhdtapp.parabox.ui.base.BaseViewModel
 import com.ojhdtapp.paraboxdevelopmentkit.model.config_item.ParaboxConfigItem
+import com.ojhdtapp.paraboxdevelopmentkit.model.init_actions.ParaboxInitActionResult
+import kotlinx.coroutines.withContext
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -205,6 +207,32 @@ class SettingPageViewModel @Inject constructor(
                 extensionManager.reloadExtension()
                 state
             }
+
+            is SettingPageEvent.TrustExtension -> {
+                extensionManager.trustExtension(event.pkg, event.signatureSha256)
+                state
+            }
+
+            is SettingPageEvent.ValidateConnectionConfigItem -> {
+                val original = state.configState.originalConnection
+                val extra = state.configState.cacheExtra ?: original?.extra ?: JSONObject()
+                if (original == null) {
+                    event.onResult(ParaboxInitActionResult.Error("连接信息不存在"))
+                } else {
+                    viewModelScope.launch(Dispatchers.IO) {
+                        val res = extensionManager.validateConnectionConfig(
+                            connection = original,
+                            configKey = event.configItem.key,
+                            value = event.value,
+                            currentExtra = extra,
+                        )
+                        withContext(Dispatchers.Main) {
+                            event.onResult(res)
+                        }
+                    }
+                }
+                state
+            }
         }
     }
 
@@ -265,7 +293,8 @@ class SettingPageViewModel @Inject constructor(
                             SettingPageState.InitActionState(
                                 name = it.name,
                                 actionList = it.actionList,
-                                currentIndex = it.currentIndex
+                                currentIndex = it.currentIndex,
+                                isLoading = it.isLoading,
                             )
                         )
                     )

@@ -23,7 +23,7 @@
 
     <queries>
         <intent>
-            <action android:name="com.ojhdtapp.parabox.EXTENSION" />
+            <action android:name="com.ojhdtapp.parabox.EXTENSION_SERVICE_V2" />
         </intent>
         <intent>
             <action android:name="android.intent.action.INSERT" />

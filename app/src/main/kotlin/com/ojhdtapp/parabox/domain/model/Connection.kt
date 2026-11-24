@@ -1,15 +1,19 @@
 package com.ojhdtapp.parabox.domain.model
 
-import android.content.Context
-import android.os.Bundle
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.ojhdtapp.parabox.data.local.ConnectionInfo
 import com.ojhdtapp.parabox.data.local.ConnectionInfoType
-import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxBridge
-import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnection
-import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnectionStatus
-import kotlinx.coroutines.Job
+import com.ojhdtapp.parabox.domain.service.extension.ExtensionSessionClient
+import com.ojhdtapp.parabox.protocol.v2.LifecycleEventProto
+import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxBasicInfo
+import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
+import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
+import com.ojhdtapp.paraboxdevelopmentkit.model.SendMessage
+import com.ojhdtapp.paraboxdevelopmentkit.model.chat.ParaboxChat
+import com.ojhdtapp.paraboxdevelopmentkit.model.contact.ParaboxContact
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxForward
+import com.ojhdtapp.paraboxdevelopmentkit.v2.ParaboxConnectionStatus
 import kotlinx.coroutines.flow.StateFlow
 import org.json.JSONObject
 
@@ -20,53 +24,54 @@ sealed interface Connection {
     val connectionId: Long
     val key: String
 
-    fun toExtensionInfo() : ConnectionInfo
+    fun toExtensionInfo(): ConnectionInfo
+
     sealed interface ConnectionPending : Connection {
-        val connection: ParaboxConnection
         val needReloadExtra: Boolean
 
-        fun toFail() : ConnectionFail
-        fun toSuccess(job: Job, updateExtra: JSONObject? = null): ConnectionSuccess
+        fun toFail(reason: String = ""): ConnectionFail
+        fun toSuccess(sessionClient: ExtensionSessionClient, updateExtra: JSONObject? = null): ConnectionSuccess
+
         class BuiltInConnectionPending(
             override val alias: String,
             override val name: String,
             override val extra: JSONObject,
             override val connectionId: Long,
-            override val connection: ParaboxConnection,
             override val key: String,
-            override val needReloadExtra: Boolean = false
-        ) : ConnectionPending, BuiltInConnection{
-            constructor(connectionInfo: ConnectionInfo, ext: ParaboxConnection) : this(
-                connectionInfo.alias,
-                connectionInfo.name,
-                connectionInfo.extra,
-                connectionInfo.connectionId,
-                ext,
-                connectionInfo.key
+            override val needReloadExtra: Boolean = false,
+        ) : ConnectionPending, BuiltInConnection {
+            constructor(connectionInfo: ConnectionInfo, needReloadExtra: Boolean = false) : this(
+                alias = connectionInfo.alias,
+                name = connectionInfo.name,
+                extra = connectionInfo.extra,
+                connectionId = connectionInfo.connectionId,
+                key = connectionInfo.key,
+                needReloadExtra = needReloadExtra,
             )
 
-            override fun toFail(): ConnectionFail {
-                return ConnectionFail.BuiltInConnectionFail(
-                    alias, name, extra, connectionId, key
-                )
-            }
+            override fun toFail(reason: String): ConnectionFail =
+                ConnectionFail.BuiltInConnectionFail(alias, name, extra, connectionId, key, reason)
 
-            override fun toSuccess(job: Job, updateExtra: JSONObject?): ConnectionSuccess {
-                return ConnectionSuccess.BuiltInConnectionSuccess(
-                    alias, name, updateExtra ?: extra, connectionId, connection, job, key
-                )
-            }
+            override fun toSuccess(
+                sessionClient: ExtensionSessionClient,
+                updateExtra: JSONObject?,
+            ): ConnectionSuccess = ConnectionSuccess.BuiltInConnectionSuccess(
+                alias = alias,
+                name = name,
+                extra = updateExtra ?: extra,
+                connectionId = connectionId,
+                sessionClient = sessionClient,
+                key = key,
+            )
 
-            override fun toExtensionInfo(): ConnectionInfo {
-                return ConnectionInfo(
-                    alias = alias,
-                    name = name,
-                    type = ConnectionInfoType.BuiltIn,
-                    extra = extra,
-                    key = key,
-                    connectionId = connectionId
-                )
-            }
+            override fun toExtensionInfo(): ConnectionInfo = ConnectionInfo(
+                alias = alias,
+                name = name,
+                type = ConnectionInfoType.BuiltIn,
+                extra = extra,
+                key = key,
+                connectionId = connectionId,
+            )
         }
 
         class ExtendConnectionPending(
@@ -74,78 +79,90 @@ sealed interface Connection {
             override val name: String,
             override val extra: JSONObject,
             override val connectionId: Long,
-            override val connection: ParaboxConnection,
             override val pkg: String,
+            val serviceClassName: String,
             override val version: String,
             override val versionCode: Long,
             override val key: String,
-            override val needReloadExtra: Boolean = false
+            override val needReloadExtra: Boolean = false,
         ) : ConnectionPending, ExternalConnection {
-            constructor(connectionInfo: ConnectionInfo, connection: ParaboxConnection) : this(
-                connectionInfo.alias,
-                connectionInfo.name,
-                connectionInfo.extra,
-                connectionInfo.connectionId,
-                connection,
-                connectionInfo.pkg,
-                connectionInfo.version,
-                connectionInfo.versionCode,
-                connectionInfo.key
+            constructor(connectionInfo: ConnectionInfo, needReloadExtra: Boolean = false) : this(
+                alias = connectionInfo.alias,
+                name = connectionInfo.name,
+                extra = connectionInfo.extra,
+                connectionId = connectionInfo.connectionId,
+                pkg = connectionInfo.pkg,
+                serviceClassName = connectionInfo.connectionClassName,
+                version = connectionInfo.version,
+                versionCode = connectionInfo.versionCode,
+                key = connectionInfo.key,
+                needReloadExtra = needReloadExtra,
             )
 
-            override fun toFail(): ConnectionFail {
-                return ConnectionFail.ExtendConnectionFail(
-                    alias, name, extra, connectionId, pkg, version, versionCode, key
+            override fun toFail(reason: String): ConnectionFail =
+                ConnectionFail.ExtendConnectionFail(
+                    alias, name, extra, connectionId, pkg, serviceClassName, version, versionCode, key, reason
                 )
-            }
 
-            override fun toSuccess(job: Job, updateExtra: JSONObject?): ConnectionSuccess {
-                return ConnectionSuccess.ExtendConnectionSuccess(
-                    alias, name, updateExtra ?: extra, connectionId, connection, job, pkg, version, versionCode, key
-                )
-            }
+            override fun toSuccess(
+                sessionClient: ExtensionSessionClient,
+                updateExtra: JSONObject?,
+            ): ConnectionSuccess = ConnectionSuccess.ExtendConnectionSuccess(
+                alias = alias,
+                name = name,
+                extra = updateExtra ?: extra,
+                connectionId = connectionId,
+                sessionClient = sessionClient,
+                pkg = pkg,
+                serviceClassName = serviceClassName,
+                version = version,
+                versionCode = versionCode,
+                key = key,
+            )
 
-            override fun toExtensionInfo(): ConnectionInfo {
-                return ConnectionInfo(
-                    alias = alias,
-                    name = name,
-                    type = ConnectionInfoType.Extend,
-                    extra = extra,
-                    pkg = pkg,
-                    version = version,
-                    versionCode = versionCode,
-                    connectionId = connectionId
-                )
-            }
+            override fun toExtensionInfo(): ConnectionInfo = ConnectionInfo(
+                alias = alias,
+                name = name,
+                type = ConnectionInfoType.Extend,
+                extra = extra,
+                pkg = pkg,
+                connectionClassName = serviceClassName,
+                version = version,
+                versionCode = versionCode,
+                key = key,
+                connectionId = connectionId,
+            )
         }
     }
 
-    sealed interface ConnectionFail : Connection{
+    sealed interface ConnectionFail : Connection {
+        val reason: String
+
         class BuiltInConnectionFail(
             override val alias: String,
             override val name: String,
             override val extra: JSONObject,
             override val connectionId: Long,
-            override val key: String
+            override val key: String,
+            override val reason: String = "",
         ) : ConnectionFail, BuiltInConnection {
-            constructor(connectionInfo: ConnectionInfo): this(
+            constructor(connectionInfo: ConnectionInfo, reason: String = "") : this(
                 connectionInfo.alias,
                 connectionInfo.name,
                 connectionInfo.extra,
                 connectionInfo.connectionId,
-                connectionInfo.key
+                connectionInfo.key,
+                reason,
             )
 
-            override fun toExtensionInfo(): ConnectionInfo {
-                return ConnectionInfo(
-                    alias = alias,
-                    name = name,
-                    type = ConnectionInfoType.BuiltIn,
-                    extra = extra,
-                    key = key,
-                    connectionId = connectionId
-                )
-            }
+            override fun toExtensionInfo(): ConnectionInfo = ConnectionInfo(
+                alias = alias,
+                name = name,
+                type = ConnectionInfoType.BuiltIn,
+                extra = extra,
+                key = key,
+                connectionId = connectionId,
+            )
         }
 
         class ExtendConnectionFail(
@@ -154,67 +171,71 @@ sealed interface Connection {
             override val extra: JSONObject,
             override val connectionId: Long,
             override val pkg: String,
+            val serviceClassName: String,
             override val version: String,
             override val versionCode: Long,
-            override val key: String
+            override val key: String,
+            override val reason: String = "",
         ) : ConnectionFail, ExternalConnection {
-            constructor(connectionInfo: ConnectionInfo) : this(
+            constructor(connectionInfo: ConnectionInfo, reason: String = "") : this(
                 connectionInfo.alias,
                 connectionInfo.name,
                 connectionInfo.extra,
                 connectionInfo.connectionId,
                 connectionInfo.pkg,
+                connectionInfo.connectionClassName,
                 connectionInfo.version,
                 connectionInfo.versionCode,
-                connectionInfo.key
+                connectionInfo.key,
+                reason,
             )
-            override fun toExtensionInfo(): ConnectionInfo {
-                return ConnectionInfo(
-                    alias = alias,
-                    name = name,
-                    type = ConnectionInfoType.Extend,
-                    extra = extra,
-                    pkg = pkg,
-                    version = version,
-                    versionCode = versionCode,
-                    connectionId = connectionId
-                )
-            }
+
+            override fun toExtensionInfo(): ConnectionInfo = ConnectionInfo(
+                alias = alias,
+                name = name,
+                type = ConnectionInfoType.Extend,
+                extra = extra,
+                pkg = pkg,
+                connectionClassName = serviceClassName,
+                version = version,
+                versionCode = versionCode,
+                key = key,
+                connectionId = connectionId,
+            )
         }
     }
 
     sealed class ConnectionSuccess : DefaultLifecycleObserver, Connection {
-        abstract val realConnection: ParaboxConnection
-        abstract val job: Job
+        abstract val sessionClient: ExtensionSessionClient
 
-        abstract fun toPending(needReloadExtra: Boolean = false) : ConnectionPending
+        abstract fun toPending(needReloadExtra: Boolean = false): ConnectionPending
 
         class BuiltInConnectionSuccess(
             override val alias: String,
             override val name: String,
             override val extra: JSONObject,
             override val connectionId: Long,
-            override val realConnection: ParaboxConnection,
-            override val job: Job,
-            override val key: String
+            override val sessionClient: ExtensionSessionClient,
+            override val key: String,
         ) : ConnectionSuccess(), BuiltInConnection {
-            override fun toPending(needReloadExtra: Boolean): ConnectionPending {
-                return ConnectionPending.BuiltInConnectionPending(
-                    alias, name, extra, connectionId, realConnection, key, needReloadExtra
-                )
-            }
-
-            override fun toExtensionInfo(): ConnectionInfo {
-                return ConnectionInfo(
+            override fun toPending(needReloadExtra: Boolean): ConnectionPending =
+                ConnectionPending.BuiltInConnectionPending(
                     alias = alias,
                     name = name,
-                    type = ConnectionInfoType.BuiltIn,
                     extra = extra,
+                    connectionId = connectionId,
                     key = key,
-                    connectionId = connectionId
+                    needReloadExtra = needReloadExtra,
                 )
-            }
 
+            override fun toExtensionInfo(): ConnectionInfo = ConnectionInfo(
+                alias = alias,
+                name = name,
+                type = ConnectionInfoType.BuiltIn,
+                extra = extra,
+                key = key,
+                connectionId = connectionId,
+            )
         }
 
         class ExtendConnectionSuccess(
@@ -222,72 +243,94 @@ sealed interface Connection {
             override val name: String,
             override val extra: JSONObject,
             override val connectionId: Long,
-            override val realConnection: ParaboxConnection,
-            override val job: Job,
+            override val sessionClient: ExtensionSessionClient,
             override val pkg: String,
+            val serviceClassName: String,
             override val version: String,
             override val versionCode: Long,
-            override val key: String
+            override val key: String,
         ) : ConnectionSuccess(), ExternalConnection {
-            override fun toPending(needReloadExtra: Boolean): ConnectionPending {
-                return ConnectionPending.ExtendConnectionPending(
-                    alias, name, extra, connectionId, realConnection, pkg, version, versionCode, key, needReloadExtra
-                )
-            }
-            override fun toExtensionInfo(): ConnectionInfo {
-                return ConnectionInfo(
+            override fun toPending(needReloadExtra: Boolean): ConnectionPending =
+                ConnectionPending.ExtendConnectionPending(
                     alias = alias,
                     name = name,
-                    type = ConnectionInfoType.Extend,
                     extra = extra,
+                    connectionId = connectionId,
                     pkg = pkg,
+                    serviceClassName = serviceClassName,
                     version = version,
                     versionCode = versionCode,
-                    connectionId = connectionId
+                    key = key,
+                    needReloadExtra = needReloadExtra,
                 )
-            }
+
+            override fun toExtensionInfo(): ConnectionInfo = ConnectionInfo(
+                alias = alias,
+                name = name,
+                type = ConnectionInfoType.Extend,
+                extra = extra,
+                pkg = pkg,
+                connectionClassName = serviceClassName,
+                version = version,
+                versionCode = versionCode,
+                key = key,
+                connectionId = connectionId,
+            )
         }
 
-        suspend fun init(context: Context, bridge: ParaboxBridge) {
-            realConnection.init(context, job, bridge, extra)
-        }
-
-        fun getStatus(): StateFlow<ParaboxConnectionStatus> {
-            return realConnection.status
-        }
+        fun getStatus(): StateFlow<ParaboxConnectionStatus> = sessionClient.status
 
         fun updateStatus(status: ParaboxConnectionStatus) {
-            realConnection.updateStatus(status)
+            sessionClient.updateLocalStatus(status)
+        }
+
+        suspend fun sendMessage(message: SendMessage): ParaboxResult = sessionClient.sendMessage(message)
+
+        suspend fun recallMessage(messageUuid: String): ParaboxResult = sessionClient.recallMessage(messageUuid)
+
+        suspend fun getContacts(): List<ParaboxContact> = sessionClient.getContacts()
+
+        suspend fun getChats(): List<ParaboxChat> = sessionClient.getChats()
+
+        suspend fun queryMessageHistory(uuid: String): List<ReceiveMessage> = sessionClient.queryMessageHistory(uuid)
+
+        suspend fun getGroupBasicInfo(groupId: String): ParaboxBasicInfo? = sessionClient.getGroupBasicInfo(groupId)
+
+        suspend fun getUserBasicInfo(userId: String): ParaboxBasicInfo? = sessionClient.getUserBasicInfo(userId)
+
+        suspend fun queryForwardNode(nodeId: String): ParaboxForward.ForwardNode? = sessionClient.queryForwardNode(nodeId)
+
+        fun closeSession() {
+            sessionClient.close()
         }
 
         override fun onCreate(owner: LifecycleOwner) {
-            realConnection.onCreate()
+            sessionClient.sendLifecycleEvent(LifecycleEventProto.LIFECYCLE_CREATE)
         }
 
         override fun onStart(owner: LifecycleOwner) {
-            realConnection.onStart()
+            sessionClient.sendLifecycleEvent(LifecycleEventProto.LIFECYCLE_START)
         }
 
         override fun onResume(owner: LifecycleOwner) {
-            realConnection.onResume()
+            sessionClient.sendLifecycleEvent(LifecycleEventProto.LIFECYCLE_RESUME)
         }
 
         override fun onPause(owner: LifecycleOwner) {
-            realConnection.onPause()
+            sessionClient.sendLifecycleEvent(LifecycleEventProto.LIFECYCLE_PAUSE)
         }
 
         override fun onStop(owner: LifecycleOwner) {
-            realConnection.onStop()
+            sessionClient.sendLifecycleEvent(LifecycleEventProto.LIFECYCLE_STOP)
         }
 
         override fun onDestroy(owner: LifecycleOwner) {
-            realConnection.onDestroy()
+            sessionClient.sendLifecycleEvent(LifecycleEventProto.LIFECYCLE_DESTROY)
         }
     }
 }
 
-interface BuiltInConnection {
-}
+interface BuiltInConnection
 
 interface ExternalConnection {
     val pkg: String

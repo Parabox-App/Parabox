@@ -7,6 +7,7 @@ import com.ojhdtapp.parabox.domain.model.Extension
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.ui.base.UiEvent
 import com.ojhdtapp.paraboxdevelopmentkit.model.config_item.ParaboxConfigItem
+import com.ojhdtapp.paraboxdevelopmentkit.model.init_actions.ParaboxInitActionResult
 
 sealed interface SettingPageEvent : UiEvent{
     @Deprecated("using decompose")
@@ -30,4 +31,10 @@ sealed interface SettingPageEvent : UiEvent{
     data class NotificationDisabledChatLoadDone(val chats: List<Chat>, val loadState: LoadState) : SettingPageEvent
     data class UpdateChatNotificationEnabled(val chatId: Long, val value: Boolean): SettingPageEvent
     data object ReloadExtension: SettingPageEvent
+    data class TrustExtension(val pkg: String, val signatureSha256: String): SettingPageEvent
+    data class ValidateConnectionConfigItem(
+        val configItem: ParaboxConfigItem,
+        val value: Any,
+        val onResult: (ParaboxInitActionResult) -> Unit,
+    ): SettingPageEvent
 }

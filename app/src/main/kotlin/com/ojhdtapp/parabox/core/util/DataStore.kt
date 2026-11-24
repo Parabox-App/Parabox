@@ -101,6 +101,7 @@ object DataStoreKeys {
     const val DEFAULT_USER_NAME = "Me"
 
     val CHAT_FILTERS = stringPreferencesKey("chat_filters")
+    val TRUSTED_EXTENSION_SIGNATURES = stringPreferencesKey("trusted_extension_signatures")
 
     enum class DarkMode(val nameResId: Int) {
         NO(R.string.darkmode_night_no),

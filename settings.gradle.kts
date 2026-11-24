@@ -23,5 +23,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "Parabox"
 include(":app")
+include(":parabox-protocol")
 include(":Parabox Development Kit")
 include(":app:hidden-api")
+include(":extensionDemo")

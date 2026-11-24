@@ -568,7 +568,10 @@ class MessagePageViewModel @Inject constructor(
                 viewModelScope.launch {
                     extensionManager.connectionFlow.value.firstOrNull { it.connectionId == uiState.value.chatDetail.chat?.extensionId }?.let {
                         if (it is Connection.ConnectionSuccess) {
-                            it.realConnection.onSendMessage(sendMessage)
+                            val res = it.sendMessage(sendMessage)
+                            if (res.code != com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult.SUCCESS) {
+                                sendEffect(MessagePageEffect.ShowSnackBar("发送失败：${res.message}"))
+                            }
                         }
                     }
                 }

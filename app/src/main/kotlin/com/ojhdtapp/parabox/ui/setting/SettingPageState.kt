@@ -25,7 +25,8 @@ data class SettingPageState(
     data class InitActionState(
         val name: String? = null,
         val actionList: List<ParaboxInitAction> = emptyList(),
-        val currentIndex: Int = -1
+        val currentIndex: Int = -1,
+        val isLoading: Boolean = false,
     )
     data class ConfigState(
         val originalConnection: Connection? = null,

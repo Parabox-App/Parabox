@@ -41,6 +41,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.clickable
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -288,17 +290,18 @@ private fun Content(
                         label = paraboxConfig.label,
                         keyboardType = paraboxConfig.type.toComposeKeyboardType(),
                         errMsg = errMsg,
-                        onConfirm = {
-                            coroutineScope.launch {
-                                val result = paraboxConfig.onResult(it)
-                                if (result is ParaboxInitActionResult.Error) {
-                                    errMsg = result.message
-                                } else {
-                                    errMsg = null
-                                    onEvent(SettingPageEvent.WriteConnectionConfigCache(paraboxConfig, it))
-                                    openDialog = false
+                        onConfirm = { value ->
+                            onEvent(
+                                SettingPageEvent.ValidateConnectionConfigItem(paraboxConfig, value) { result ->
+                                    if (result is ParaboxInitActionResult.Error) {
+                                        errMsg = result.message
+                                    } else {
+                                        errMsg = null
+                                        onEvent(SettingPageEvent.WriteConnectionConfigCache(paraboxConfig, value))
+                                        openDialog = false
+                                    }
                                 }
-                            }
+                            )
                         },
                         onDismiss = {
                             openDialog = false
@@ -339,14 +342,72 @@ private fun Content(
                         checked = !checked
                         onEvent(
                             SettingPageEvent.WriteConnectionConfigCache(
-                                paraboxConfig, !checked
+                                paraboxConfig, checked
                             )
                         )
                     }
                 }
 
                 is ParaboxConfigItem.SelectConfigItem -> {
-
+                    var openDialog by remember { mutableStateOf(false) }
+                    val currentValue = state.configState.cacheExtra?.optStringOrNull(paraboxConfig.key)
+                        ?: paraboxConfig.defaultValue?.let { paraboxConfig.options.getOrNull(it) }
+                        ?: paraboxConfig.options.firstOrNull().orEmpty()
+                    if (openDialog) {
+                        AlertDialog(
+                            onDismissRequest = { openDialog = false },
+                            title = { Text(text = paraboxConfig.title) },
+                            text = {
+                                Column {
+                                    paraboxConfig.options.forEach { option ->
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    onEvent(
+                                                        SettingPageEvent.WriteConnectionConfigCache(
+                                                            paraboxConfig,
+                                                            option,
+                                                        )
+                                                    )
+                                                    openDialog = false
+                                                }
+                                                .padding(vertical = 4.dp),
+                                        ) {
+                                            RadioButton(
+                                                selected = currentValue == option,
+                                                onClick = {
+                                                    onEvent(
+                                                        SettingPageEvent.WriteConnectionConfigCache(
+                                                            paraboxConfig,
+                                                            option,
+                                                        )
+                                                    )
+                                                    openDialog = false
+                                                },
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(text = option)
+                                        }
+                                    }
+                                }
+                            },
+                            confirmButton = {
+                                TextButton(onClick = { openDialog = false }) {
+                                    Text("关闭")
+                                }
+                            },
+                        )
+                    }
+                    SettingItem(
+                        title = paraboxConfig.title,
+                        subTitle = currentValue.ifBlank { paraboxConfig.description },
+                        selected = false,
+                        layoutType = layoutType,
+                    ) {
+                        openDialog = true
+                    }
                 }
             }
         }

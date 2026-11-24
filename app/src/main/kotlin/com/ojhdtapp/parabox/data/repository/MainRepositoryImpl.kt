@@ -82,7 +82,7 @@ class MainRepositoryImpl @Inject constructor(
                         val originalContact = db.contactDao.getContactById(contactIdDeferred.await())
                         if (originalContact?.name?.isNotEmpty() != true || originalContact.avatar is ParaboxResourceInfo.ParaboxEmptyInfo) {
                             val basicInfo = try {
-                                ext.realConnection.onGetUserBasicInfo(msg.sender.uid)
+                                ext.getUserBasicInfo(msg.sender.uid)
                             } catch (e: Exception) {
                                 e.printStackTrace()
                                 null
@@ -106,8 +106,8 @@ class MainRepositoryImpl @Inject constructor(
                         if (originalChat?.name?.isNotEmpty() != true || originalChat.avatar is ParaboxResourceInfo.ParaboxEmptyInfo) {
                             val basicInfo = try {
                                 when (originalChat?.type) {
-                                    ParaboxChat.TYPE_PRIVATE -> ext.realConnection.onGetUserBasicInfo(msg.sender.uid)
-                                    ParaboxChat.TYPE_GROUP -> ext.realConnection.onGetGroupBasicInfo(msg.chat.uid)
+                                    ParaboxChat.TYPE_PRIVATE -> ext.getUserBasicInfo(msg.sender.uid)
+                                    ParaboxChat.TYPE_GROUP -> ext.getGroupBasicInfo(msg.chat.uid)
                                     else -> null
                                 }
                             } catch (e: Exception) {

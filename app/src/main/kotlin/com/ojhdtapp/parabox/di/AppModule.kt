@@ -22,7 +22,14 @@ import com.ojhdtapp.parabox.domain.repository.ConnectionInfoRepository
 import com.ojhdtapp.parabox.domain.repository.ContactRepository
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import com.ojhdtapp.parabox.domain.repository.MessageRepository
+import com.ojhdtapp.parabox.domain.service.extension.DataStoreExtensionTrustStore
+import com.ojhdtapp.parabox.domain.service.extension.ExtensionDiscovery
 import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
+import com.ojhdtapp.parabox.domain.service.extension.ExtensionTrustStore
+import com.ojhdtapp.parabox.domain.service.extension.transport.BinderExtensionTransport
+import com.ojhdtapp.parabox.domain.service.extension.transport.CompositeExtensionTransport
+import com.ojhdtapp.parabox.domain.service.extension.transport.ExtensionTransport
+import com.ojhdtapp.parabox.domain.service.extension.transport.InProcessExtensionTransport
 import com.ojhdtapp.parabox.domain.use_case.GetChat
 import com.ojhdtapp.parabox.domain.use_case.GetContact
 import com.ojhdtapp.parabox.domain.use_case.GetLocation
@@ -94,11 +101,44 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideExtensionTrustStore(
+        @ApplicationContext applicationContext: Context,
+    ): ExtensionTrustStore = DataStoreExtensionTrustStore(applicationContext)
+
+    @Provides
+    @Singleton
+    fun provideExtensionTransport(
+        @ApplicationContext applicationContext: Context,
+    ): ExtensionTransport = CompositeExtensionTransport(
+        inProcessTransport = InProcessExtensionTransport(),
+        binderTransport = BinderExtensionTransport(applicationContext),
+    )
+
+    @Provides
+    @Singleton
+    fun provideExtensionDiscovery(
+        @ApplicationContext applicationContext: Context,
+        transport: ExtensionTransport,
+        trustStore: ExtensionTrustStore,
+    ): ExtensionDiscovery = ExtensionDiscovery(applicationContext, transport, trustStore)
+
+    @Provides
+    @Singleton
     fun provideExtensionManager(
         @ApplicationContext applicationContext: Context,
         mainRepository: MainRepository,
-        connectionInfoRepository: ConnectionInfoRepository
-    ): ExtensionManager = ExtensionManager(applicationContext, mainRepository, connectionInfoRepository)
+        connectionInfoRepository: ConnectionInfoRepository,
+        transport: ExtensionTransport,
+        trustStore: ExtensionTrustStore,
+        discovery: ExtensionDiscovery,
+    ): ExtensionManager = ExtensionManager(
+        context = applicationContext,
+        mainRepository = mainRepository,
+        connectionInfoRepository = connectionInfoRepository,
+        transport = transport,
+        trustStore = trustStore,
+        discovery = discovery,
+    )
 
     @Provides
     @Singleton
