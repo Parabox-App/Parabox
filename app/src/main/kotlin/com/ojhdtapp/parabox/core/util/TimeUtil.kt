@@ -133,3 +133,18 @@ fun Int.toMediaTimeString(): String {
     val second = df.format(this % 60)
     return "$minute:$second"
 }
+
+/**
+ * Formats audio duration/position in milliseconds to a zero-padded `m:ss` (or `h:mm:ss`) string.
+ */
+fun Int.formatAudioTimeMs(): String {
+    val totalSeconds = (this.coerceAtLeast(0) + 500) / 1000
+    val hours = totalSeconds / 3600
+    val minutes = (totalSeconds % 3600) / 60
+    val seconds = totalSeconds % 60
+    return if (hours > 0) {
+        String.format(Locale.US, "%d:%02d:%02d", hours, minutes, seconds)
+    } else {
+        String.format(Locale.US, "%d:%02d", minutes, seconds)
+    }
+}

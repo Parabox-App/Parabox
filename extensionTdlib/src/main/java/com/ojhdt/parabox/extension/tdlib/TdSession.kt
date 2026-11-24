@@ -708,6 +708,12 @@ class TdSession(
             "tgs" -> return "application/x-tgsticker"
             "webm" -> return "video/webm"
             "mp4" -> return "video/mp4"
+            "ogg", "oga", "opus" -> return "audio/ogg"
+            "mp3" -> return "audio/mpeg"
+            "m4a", "aac" -> return "audio/mp4"
+            "wav" -> return "audio/wav"
+            "flac" -> return "audio/flac"
+            "amr" -> return "audio/amr"
         }
         return runCatching {
             val header = ByteArray(12)
@@ -720,13 +726,27 @@ class TdSession(
                     "image/png"
                 n >= 12 && String(header, 0, 4) == "RIFF" && String(header, 8, 4) == "WEBP" ->
                     "image/webp"
+                n >= 12 && String(header, 0, 4) == "RIFF" && String(header, 8, 4) == "WAVE" ->
+                    "audio/wav"
                 n >= 6 && (String(header, 0, 6) == "GIF87a" || String(header, 0, 6) == "GIF89a") ->
                     "image/gif"
+                n >= 4 && String(header, 0, 4) == "OggS" ->
+                    "audio/ogg"
+                n >= 4 && String(header, 0, 4) == "fLaC" ->
+                    "audio/flac"
+                n >= 5 && String(header, 0, 5) == "#!AMR" ->
+                    "audio/amr"
+                n >= 3 && String(header, 0, 3) == "ID3" ->
+                    "audio/mpeg"
+                n >= 2 && header[0] == 0xFF.toByte() && (header[1].toInt() and 0xE0) == 0xE0 ->
+                    "audio/mpeg"
                 n >= 2 && header[0] == 0x1F.toByte() && header[1] == 0x8B.toByte() ->
                     "application/x-tgsticker"
                 n >= 4 && header[0] == 0x1A.toByte() && header[1] == 0x45.toByte() &&
                     header[2] == 0xDF.toByte() && header[3] == 0xA3.toByte() ->
                     "video/webm"
+                n >= 12 && String(header, 4, 4) == "ftyp" && String(header, 8, 3) == "M4A" ->
+                    "audio/mp4"
                 n >= 8 && String(header, 4, 4) == "ftyp" ->
                     "video/mp4"
                 else -> "application/octet-stream"

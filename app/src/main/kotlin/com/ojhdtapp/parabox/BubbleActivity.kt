@@ -23,7 +23,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import androidx.navigationevent.setViewTreeNavigationEventDispatcherOwner
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
+import com.ojhdtapp.parabox.core.util.audio.AudioPlayer
 import com.ojhdtapp.parabox.core.util.audio.AudioRecorder
+import com.ojhdtapp.parabox.core.util.audio.LocalAudioPlayer
 import com.ojhdtapp.parabox.core.util.audio.LocalAudioRecorder
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
@@ -48,6 +50,9 @@ import javax.inject.Inject
 class BubbleActivity : AppCompatActivity() {
     @Inject
     lateinit var database: AppDatabase
+
+    @Inject
+    lateinit var audioPlayer: AudioPlayer
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -117,6 +122,7 @@ class BubbleActivity : AppCompatActivity() {
                         LocalNavigationEventDispatcherOwner provides this,
                         LocalFixedInsets provides fixedInsets,
                         LocalAudioRecorder provides AudioRecorder,
+                        LocalAudioPlayer provides audioPlayer,
                         LocalSystemUiController provides SystemUiController(this),
                         LocalMinimumInteractiveComponentSize provides 32.dp,
                         LocalFontSize provides FontSize()
@@ -134,6 +140,13 @@ class BubbleActivity : AppCompatActivity() {
                     )
                 }
             }
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (::audioPlayer.isInitialized) {
+            audioPlayer.pause()
         }
     }
 }

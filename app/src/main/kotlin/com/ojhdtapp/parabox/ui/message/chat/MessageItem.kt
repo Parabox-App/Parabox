@@ -417,6 +417,7 @@ fun MessageItem(
                                 simplifyContent.forEachIndexed { index, paraboxMessageElement ->
                                     paraboxMessageElement?.toLayout(
                                         textColor = textColor,
+                                        isSentByMe = isSentByMe,
                                         elementId = messageWithSender.message.contentsId[index],
                                         pkg = messageWithSender.message.pkg,
                                         atCache = state.atCache,
@@ -462,6 +463,7 @@ fun MessageItemSelf(
 @Composable
 private fun ParaboxMessageElement.toLayout(
     textColor: Color,
+    isSentByMe: Boolean,
     elementId: Long,
     pkg: String,
     previewerState: ImagePreviewerState,
@@ -537,8 +539,12 @@ private fun ParaboxMessageElement.toLayout(
         }
 
         is ParaboxAudio -> AudioLayout(
+            elementId = elementId,
             resourceInfo = resourceInfo,
-            length = length,
+            lengthSeconds = length,
+            fileName = fileName,
+            textColor = textColor,
+            isSentByMe = isSentByMe,
         )
         is ParaboxVideo -> VideoLayout(
             fileName = fileName,

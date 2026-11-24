@@ -275,19 +275,18 @@ object TdMessageMapper {
 
             is TdApi.MessageVoiceNote -> {
                 val voice = content.voiceNote
-                val resInfo = if (autoDownloadMedia && voice?.voice != null) {
-                    mediaBridge.downloadAndShareFile(
-                        client = client,
-                        tdFile = voice.voice,
-                        hostPackageName = hostPackageName,
-                        maxSizeBytes = maxDownloadBytes,
-                    )
-                } else {
-                    ParaboxResourceInfo.ParaboxEmptyInfo
-                }
+                val resInfo = resolveLazyOrFallback(
+                    sessionId = sessionId,
+                    tdFile = voice?.voice,
+                    client = client,
+                    mediaBridge = mediaBridge,
+                    hostPackageName = hostPackageName,
+                    autoDownloadMedia = autoDownloadMedia,
+                    maxDownloadBytes = maxDownloadBytes,
+                )
                 elements.add(
                     ParaboxAudio(
-                        length = (voice?.duration ?: 0).toLong(),
+                        length = (voice?.duration ?: 0).toLong().coerceAtLeast(0L),
                         fileName = voice?.voice?.id?.let { "tg_voice_$it.ogg" },
                         fileSize = voice?.voice?.expectedSize ?: 0L,
                         resourceInfo = resInfo,
@@ -299,20 +298,27 @@ object TdMessageMapper {
 
             is TdApi.MessageAudio -> {
                 val audio = content.audio
-                val resInfo = if (autoDownloadMedia && audio?.audio != null) {
-                    mediaBridge.downloadAndShareFile(
-                        client = client,
-                        tdFile = audio.audio,
-                        hostPackageName = hostPackageName,
-                        maxSizeBytes = maxDownloadBytes,
-                    )
-                } else {
-                    ParaboxResourceInfo.ParaboxEmptyInfo
+                val resInfo = resolveLazyOrFallback(
+                    sessionId = sessionId,
+                    tdFile = audio?.audio,
+                    client = client,
+                    mediaBridge = mediaBridge,
+                    hostPackageName = hostPackageName,
+                    autoDownloadMedia = autoDownloadMedia,
+                    maxDownloadBytes = maxDownloadBytes,
+                )
+                val ext = when (audio?.mimeType?.lowercase()) {
+                    "audio/ogg", "audio/opus" -> "ogg"
+                    "audio/mp4", "audio/m4a", "audio/aac", "audio/x-m4a" -> "m4a"
+                    "audio/wav", "audio/x-wav" -> "wav"
+                    "audio/flac" -> "flac"
+                    else -> "mp3"
                 }
+                val fallbackName = audio?.audio?.id?.takeIf { it != 0 }?.let { "tg_audio_$it.$ext" }
                 elements.add(
                     ParaboxAudio(
-                        length = (audio?.duration ?: 0).toLong(),
-                        fileName = audio?.fileName?.ifBlank { null },
+                        length = (audio?.duration ?: 0).toLong().coerceAtLeast(0L),
+                        fileName = audio?.fileName?.ifBlank { null } ?: fallbackName,
                         fileSize = audio?.audio?.expectedSize ?: 0L,
                         resourceInfo = resInfo,
                     )

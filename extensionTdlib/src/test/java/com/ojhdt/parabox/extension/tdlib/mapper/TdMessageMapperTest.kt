@@ -572,4 +572,101 @@ class TdMessageMapperTest {
         // Zero eager downloads across all photo/sticker/animation messages
         assertEquals(0, downloadCalls)
     }
+
+    @Test
+    fun inboundVoiceAndAudioUseLazyExtensionUriWithoutImmediateDownload() = runBlocking {
+        var downloadCount = 0
+        val countingBridge = object : TdMediaBridge {
+            override suspend fun downloadAndShareFile(
+                client: TdClientApi,
+                tdFile: TdApi.File,
+                hostPackageName: String,
+                maxSizeBytes: Long,
+                timeoutMs: Long,
+            ): ParaboxResourceInfo {
+                downloadCount++
+                return ParaboxResourceInfo.ParaboxEmptyInfo
+            }
+
+            override suspend fun stageResourceForUpload(
+                accountId: String,
+                resourceInfo: ParaboxResourceInfo,
+                suggestedName: String?,
+            ): File? = null
+        }
+
+        val voiceMsg = TdApi.Message().apply {
+            id = 901L
+            chatId = -10010L
+            date = 1700000200
+            content = TdApi.MessageVoiceNote(
+                TdApi.VoiceNote().apply {
+                    duration = 14
+                    mimeType = "audio/ogg"
+                    voice = TdApi.File().apply {
+                        id = 123
+                        expectedSize = 24576L
+                        remote = TdApi.RemoteFile().apply { id = "AwACAgIAAxkBAvoice1" }
+                    }
+                },
+                TdApi.FormattedText("", emptyArray()),
+                false,
+            )
+        }
+        val voiceElems = TdMessageMapper.mapMessageContentToElements(
+            message = voiceMsg,
+            client = dummyClient,
+            mediaBridge = countingBridge,
+            hostPackageName = "com.ojhdtapp.parabox",
+            autoDownloadMedia = true,
+            maxDownloadBytes = 10_000_000L,
+            sessionId = "conn-7",
+        )
+        assertEquals(1, voiceElems.size)
+        val voiceAudio = voiceElems[0] as ParaboxAudio
+        assertEquals(14L, voiceAudio.length)
+        assertEquals("tg_voice_123.ogg", voiceAudio.fileName)
+        assertEquals(
+            ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo("parabox-ext://conn-7/remote/AwACAgIAAxkBAvoice1"),
+            voiceAudio.resourceInfo,
+        )
+
+        val musicMsg = TdApi.Message().apply {
+            id = 902L
+            chatId = -10010L
+            date = 1700000205
+            content = TdApi.MessageAudio(
+                TdApi.Audio().apply {
+                    duration = 185
+                    fileName = "demo_track.mp3"
+                    mimeType = "audio/mpeg"
+                    audio = TdApi.File().apply {
+                        id = 456
+                        expectedSize = 3_145_728L
+                        remote = TdApi.RemoteFile().apply { id = "CQACAgIAAxkBAmusic2" }
+                    }
+                },
+                TdApi.FormattedText("Listen to this", emptyArray()),
+            )
+        }
+        val musicElems = TdMessageMapper.mapMessageContentToElements(
+            message = musicMsg,
+            client = dummyClient,
+            mediaBridge = countingBridge,
+            hostPackageName = "com.ojhdtapp.parabox",
+            autoDownloadMedia = false,
+            maxDownloadBytes = 10_000_000L,
+            sessionId = "conn-7",
+        )
+        assertEquals(2, musicElems.size)
+        val musicAudio = musicElems[0] as ParaboxAudio
+        assertEquals(185L, musicAudio.length)
+        assertEquals("demo_track.mp3", musicAudio.fileName)
+        assertEquals(
+            ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo("parabox-ext://conn-7/remote/CQACAgIAAxkBAmusic2"),
+            musicAudio.resourceInfo,
+        )
+        assertEquals(ParaboxPlainText("Listen to this"), musicElems[1])
+        assertEquals(0, downloadCount)
+    }
 }

@@ -137,6 +137,9 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var cloudService: ParaboxCloudService
 
+    @Inject
+    lateinit var audioPlayer: AudioPlayer
+
     lateinit var roomBackup: RoomBackup
 
     private lateinit var extensionServiceConnection: ExtensionServiceConnection
@@ -244,7 +247,7 @@ class MainActivity : AppCompatActivity() {
                         LocalFixedInsets provides fixedInsets,
                         LocalFileUtil provides fileUtil,
                         LocalAudioRecorder provides AudioRecorder,
-                        LocalAudioPlayer provides AudioPlayer(applicationContext),
+                        LocalAudioPlayer provides audioPlayer,
                         LocalSystemUiController provides SystemUiController(this),
                         LocalMinimumInteractiveComponentSize provides 32.dp,
                         LocalFontSize provides FontSize(),
@@ -569,6 +572,13 @@ class MainActivity : AppCompatActivity() {
                     )
                 }
             }
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (::audioPlayer.isInitialized) {
+            audioPlayer.pause()
         }
     }
 
