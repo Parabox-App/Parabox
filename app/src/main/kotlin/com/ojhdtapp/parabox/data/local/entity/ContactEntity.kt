@@ -3,6 +3,7 @@ package com.ojhdtapp.parabox.data.local.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.ojhdtapp.parabox.core.util.ExtensionResourceUri
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 
@@ -17,8 +18,15 @@ data class ContactEntity(
     @PrimaryKey(autoGenerate = true) val contactId: Long = 0,
 ){
     fun toContact(): Contact{
+        val displayAvatar = ExtensionResourceUri.resolveDisplayAvatarInfo(
+            avatar = avatar,
+            pkg = pkg,
+            extensionId = connectionId,
+            uid = uid,
+            isChat = false,
+        )
         return Contact(
-            name, avatar, pkg, uid, connectionId, isFriend, contactId
+            name, displayAvatar, pkg, uid, connectionId, isFriend, contactId
         )
     }
 }

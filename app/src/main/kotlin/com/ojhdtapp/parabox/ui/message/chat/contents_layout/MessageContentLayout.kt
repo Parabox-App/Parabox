@@ -1,6 +1,11 @@
 package com.ojhdtapp.parabox.ui.message.chat.contents_layout
 
 import android.graphics.BitmapFactory
+import android.graphics.SurfaceTexture
+import android.media.MediaPlayer
+import android.view.Surface
+import android.view.TextureView
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -10,6 +15,7 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -19,11 +25,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Replay
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,12 +52,20 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.graphics.drawable.toBitmap
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.ojhdtapp.parabox.R
+import com.ojhdtapp.parabox.core.util.CachedMediaHandle
+import com.ojhdtapp.parabox.core.util.ExtensionMediaLoader
 import com.ojhdtapp.parabox.core.util.LocalFileUtil
 import com.ojhdtapp.parabox.core.util.audio.AudioPlayer
 import com.ojhdtapp.parabox.core.util.audio.LocalAudioPlayer
@@ -138,6 +155,233 @@ fun ImageLayout(
         painter = painter,
         previewerState = previewerState,
     )
+}
+
+private fun computeAnimatedMediaBoxSize(
+    widthPx: Int,
+    heightPx: Int,
+    defaultDp: Dp,
+    minDp: Dp,
+    maxDp: Dp,
+): Pair<Dp, Dp> {
+    if (widthPx <= 0 || heightPx <= 0) return defaultDp to defaultDp
+    val ratio = heightPx.toFloat() / widthPx.toFloat()
+    val w = defaultDp.coerceIn(minDp, maxDp)
+    val h = (w * ratio).coerceIn(minDp, maxDp)
+    return w to h
+}
+
+@Composable
+fun TgsStickerLayout(
+    modifier: Modifier = Modifier,
+    model: Any?,
+    widthPx: Int = 0,
+    heightPx: Int = 0,
+) {
+    val context = LocalContext.current
+    val (boxWidth, boxHeight) = remember(widthPx, heightPx) {
+        computeAnimatedMediaBoxSize(
+            widthPx = widthPx,
+            heightPx = heightPx,
+            defaultDp = 160.dp,
+            minDp = 96.dp,
+            maxDp = 220.dp,
+        )
+    }
+    var lottieJson by remember(model) { mutableStateOf<String?>(null) }
+    var loadFailed by remember(model) { mutableStateOf(false) }
+
+    LaunchedEffect(model) {
+        loadFailed = false
+        lottieJson = null
+        val json = ExtensionMediaLoader.loadTgsJson(context, model)
+        if (json != null) {
+            lottieJson = json
+        } else {
+            loadFailed = true
+        }
+    }
+
+    Box(
+        modifier = modifier.size(boxWidth, boxHeight),
+        contentAlignment = Alignment.Center,
+    ) {
+        when {
+            lottieJson != null -> {
+                val composition by rememberLottieComposition(
+                    spec = LottieCompositionSpec.JsonString(lottieJson!!),
+                    cacheKey = model?.toString(),
+                )
+                LottieAnimation(
+                    composition = composition,
+                    iterations = LottieConstants.IterateForever,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+            loadFailed -> {
+                Image(
+                    painter = painterResource(id = R.drawable.image_lost),
+                    contentDescription = "sticker_error",
+                    modifier = Modifier.size(64.dp),
+                )
+            }
+            else -> {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    strokeWidth = 2.dp,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun LoopingVideoLayout(
+    modifier: Modifier = Modifier,
+    model: Any?,
+    widthPx: Int = 0,
+    heightPx: Int = 0,
+) {
+    val context = LocalContext.current
+    var resolvedWidthPx by remember(model, widthPx) { mutableStateOf(widthPx) }
+    var resolvedHeightPx by remember(model, heightPx) { mutableStateOf(heightPx) }
+    val (boxWidth, boxHeight) = remember(resolvedWidthPx, resolvedHeightPx) {
+        computeAnimatedMediaBoxSize(
+            widthPx = resolvedWidthPx,
+            heightPx = resolvedHeightPx,
+            defaultDp = 200.dp,
+            minDp = 96.dp,
+            maxDp = 280.dp,
+        )
+    }
+
+    var cachedHandle by remember(model) { mutableStateOf<CachedMediaHandle?>(null) }
+    var loadFailed by remember(model) { mutableStateOf(false) }
+
+    LaunchedEffect(model) {
+        loadFailed = false
+        val handle = ExtensionMediaLoader.openCachedMedia(context, model)
+        if (handle != null) {
+            cachedHandle = handle
+        } else {
+            loadFailed = true
+        }
+    }
+
+    DisposableEffect(cachedHandle) {
+        val handle = cachedHandle
+        onDispose {
+            handle?.close()
+        }
+    }
+
+    Box(
+        modifier = modifier
+            .size(boxWidth, boxHeight)
+            .clip(RoundedCornerShape(16.dp)),
+        contentAlignment = Alignment.Center,
+    ) {
+        val file = cachedHandle?.file
+        when {
+            file != null -> {
+                val playerRef = remember(file.absolutePath) { arrayOfNulls<MediaPlayer>(1) }
+                val surfaceRef = remember(file.absolutePath) { arrayOfNulls<Surface>(1) }
+
+                DisposableEffect(file.absolutePath) {
+                    onDispose {
+                        runCatching {
+                            playerRef[0]?.stop()
+                        }
+                        runCatching {
+                            playerRef[0]?.release()
+                        }
+                        playerRef[0] = null
+                        runCatching {
+                            surfaceRef[0]?.release()
+                        }
+                        surfaceRef[0] = null
+                    }
+                }
+
+                AndroidView(
+                    modifier = Modifier.fillMaxSize(),
+                    factory = { ctx ->
+                        TextureView(ctx).apply {
+                            isOpaque = false
+                            surfaceTextureListener = object : TextureView.SurfaceTextureListener {
+                                override fun onSurfaceTextureAvailable(
+                                    surfaceTexture: SurfaceTexture,
+                                    width: Int,
+                                    height: Int,
+                                ) {
+                                    runCatching {
+                                        playerRef[0]?.release()
+                                        surfaceRef[0]?.release()
+                                        val surface = Surface(surfaceTexture)
+                                        surfaceRef[0] = surface
+                                        val mp = MediaPlayer().apply {
+                                            setDataSource(file.absolutePath)
+                                            setSurface(surface)
+                                            setVolume(0f, 0f)
+                                            isLooping = true
+                                            setOnVideoSizeChangedListener { _, vw, vh ->
+                                                if (vw > 0 && vh > 0) {
+                                                    resolvedWidthPx = vw
+                                                    resolvedHeightPx = vh
+                                                }
+                                            }
+                                            setOnPreparedListener { player ->
+                                                player.start()
+                                            }
+                                            setOnErrorListener { _, _, _ ->
+                                                loadFailed = true
+                                                true
+                                            }
+                                            prepareAsync()
+                                        }
+                                        playerRef[0] = mp
+                                    }.onFailure {
+                                        loadFailed = true
+                                    }
+                                }
+
+                                override fun onSurfaceTextureSizeChanged(
+                                    surface: SurfaceTexture,
+                                    width: Int,
+                                    height: Int,
+                                ) = Unit
+
+                                override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
+                                    runCatching { playerRef[0]?.stop() }
+                                    runCatching { playerRef[0]?.release() }
+                                    playerRef[0] = null
+                                    runCatching { surfaceRef[0]?.release() }
+                                    surfaceRef[0] = null
+                                    return true
+                                }
+
+                                override fun onSurfaceTextureUpdated(surface: SurfaceTexture) = Unit
+                            }
+                        }
+                    },
+                )
+            }
+            loadFailed -> {
+                Image(
+                    painter = painterResource(id = R.drawable.image_lost),
+                    contentDescription = "animation_error",
+                    modifier = Modifier.size(64.dp),
+                )
+            }
+            else -> {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    strokeWidth = 2.dp,
+                )
+            }
+        }
+    }
 }
 
 @Composable

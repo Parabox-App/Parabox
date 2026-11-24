@@ -6,6 +6,8 @@ import com.ojhdtapp.parabox.data.local.ConnectionInfo
 import com.ojhdtapp.parabox.data.local.ConnectionInfoType
 import com.ojhdtapp.parabox.domain.service.extension.ExtensionSessionClient
 import com.ojhdtapp.parabox.protocol.v2.LifecycleEventProto
+import com.ojhdtapp.parabox.protocol.v2.ResourceChunk
+import kotlinx.coroutines.flow.Flow
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxBasicInfo
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
 import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
@@ -299,6 +301,9 @@ sealed interface Connection {
         suspend fun getUserBasicInfo(userId: String): ParaboxBasicInfo? = sessionClient.getUserBasicInfo(userId)
 
         suspend fun queryForwardNode(nodeId: String): ParaboxForward.ForwardNode? = sessionClient.queryForwardNode(nodeId)
+
+        fun streamResource(resourceId: String, offset: Long = 0L): Flow<ResourceChunk> =
+            sessionClient.streamResource(resourceId, offset)
 
         fun closeSession() {
             sessionClient.close()

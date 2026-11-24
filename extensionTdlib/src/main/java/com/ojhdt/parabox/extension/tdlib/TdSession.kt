@@ -9,6 +9,7 @@ import com.ojhdt.parabox.extension.tdlib.core.TdProxyConfig
 import com.ojhdt.parabox.extension.tdlib.core.send
 import com.ojhdt.parabox.extension.tdlib.mapper.TdMediaBridge
 import com.ojhdt.parabox.extension.tdlib.mapper.TdMessageMapper
+import com.ojhdt.parabox.extension.tdlib.mapper.TdResourceUri
 import com.ojhdtapp.parabox.protocol.v2.ResourceChunk
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxBasicInfo
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
@@ -204,7 +205,14 @@ class TdSession(
             autoDownloadMedia = autoDownloadMedia,
             maxDownloadBytes = maxDownloadBytes,
             resolvedQuoteReply = resolvedQuoteReply,
+            sessionId = sessionId,
         )
+
+        val chatAvatar = if (chat?.photo?.small != null) {
+            TdResourceUri.chatAvatar(sessionId, message.chatId)
+        } else {
+            ParaboxResourceInfo.ParaboxEmptyInfo
+        }
 
         return ReceiveMessage(
             contents = elements,
@@ -212,7 +220,7 @@ class TdSession(
             chat = ParaboxChat(
                 basicInfo = ParaboxBasicInfo(
                     name = chatName,
-                    avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
+                    avatar = chatAvatar,
                 ),
                 type = chatType,
                 uid = message.chatId.toString(),
@@ -354,16 +362,28 @@ class TdSession(
         return when (sender) {
             is TdApi.MessageSenderUser -> {
                 val user = getOrFetchUser(tdClient, sender.userId)
+                val avatar = if (user?.profilePhoto?.small != null) {
+                    TdResourceUri.userAvatar(sessionId, sender.userId)
+                } else {
+                    ParaboxResourceInfo.ParaboxEmptyInfo
+                }
                 TdMessageMapper.buildContact(
                     uid = sender.userId.toString(),
                     name = user?.let { TdMessageMapper.formatUserDisplayName(it) },
+                    avatar = avatar,
                 )
             }
             is TdApi.MessageSenderChat -> {
                 val chat = getOrFetchChat(tdClient, sender.chatId)
+                val avatar = if (chat?.photo?.small != null) {
+                    TdResourceUri.chatAvatar(sessionId, sender.chatId)
+                } else {
+                    ParaboxResourceInfo.ParaboxEmptyInfo
+                }
                 TdMessageMapper.buildContact(
                     uid = sender.chatId.toString(),
                     name = chat?.title?.ifBlank { null },
+                    avatar = avatar,
                 )
             }
             else -> TdMessageMapper.buildContact(uid = "0", name = "Unknown")
@@ -527,10 +547,15 @@ class TdSession(
         val users = runCatching { tdClient.send<TdApi.Users>(TdApi.GetContacts()) }.getOrNull() ?: return emptyList()
         return users.userIds.toList().mapNotNull { uid ->
             val user = getOrFetchUser(tdClient, uid) ?: return@mapNotNull null
+            val avatar = if (user.profilePhoto?.small != null) {
+                TdResourceUri.userAvatar(sessionId, uid)
+            } else {
+                ParaboxResourceInfo.ParaboxEmptyInfo
+            }
             ParaboxContact(
                 basicInfo = ParaboxBasicInfo(
                     name = TdMessageMapper.formatUserDisplayName(user),
-                    avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
+                    avatar = avatar,
                 ),
                 uid = uid.toString(),
             )
@@ -544,10 +569,15 @@ class TdSession(
         }.getOrNull() ?: return emptyList()
         return chats.chatIds.toList().mapNotNull { cid ->
             val chat = getOrFetchChat(tdClient, cid) ?: return@mapNotNull null
+            val avatar = if (chat.photo?.small != null) {
+                TdResourceUri.chatAvatar(sessionId, cid)
+            } else {
+                ParaboxResourceInfo.ParaboxEmptyInfo
+            }
             ParaboxChat(
                 basicInfo = ParaboxBasicInfo(
                     name = chat.title.ifBlank { null },
-                    avatar = ParaboxResourceInfo.ParaboxEmptyInfo,
+                    avatar = avatar,
                 ),
                 type = TdMessageMapper.mapChatType(chat.type),
                 uid = cid.toString(),
@@ -570,15 +600,8 @@ class TdSession(
         val tdClient = client ?: return null
         val uid = userId.toLongOrNull() ?: return null
         val user = getOrFetchUser(tdClient, uid) ?: return null
-        val avatarFile = user.profilePhoto?.small
-        val avatar = if (avatarFile != null) {
-            mediaBridge.downloadAndShareFile(
-                client = tdClient,
-                tdFile = avatarFile,
-                hostPackageName = hostPackageName,
-                maxSizeBytes = AVATAR_MAX_BYTES,
-                timeoutMs = 10_000L,
-            )
+        val avatar = if (user.profilePhoto?.small != null) {
+            TdResourceUri.userAvatar(sessionId, uid)
         } else {
             ParaboxResourceInfo.ParaboxEmptyInfo
         }
@@ -592,15 +615,8 @@ class TdSession(
         val tdClient = client ?: return null
         val chatId = groupId.toLongOrNull() ?: return null
         val chat = getOrFetchChat(tdClient, chatId) ?: return null
-        val avatarFile = chat.photo?.small
-        val avatar = if (avatarFile != null) {
-            mediaBridge.downloadAndShareFile(
-                client = tdClient,
-                tdFile = avatarFile,
-                hostPackageName = hostPackageName,
-                maxSizeBytes = AVATAR_MAX_BYTES,
-                timeoutMs = 10_000L,
-            )
+        val avatar = if (chat.photo?.small != null) {
+            TdResourceUri.chatAvatar(sessionId, chatId)
         } else {
             ParaboxResourceInfo.ParaboxEmptyInfo
         }
@@ -612,34 +628,110 @@ class TdSession(
 
     override fun onStreamResource(resourceId: String, offset: Long): Flow<ResourceChunk> = flow {
         val tdClient = client ?: return@flow
-        val fileId = resourceId.toIntOrNull() ?: return@flow
-        val tdFile = runCatching {
-            tdClient.send<TdApi.File>(TdApi.DownloadFile(fileId, 16, 0, 0, true))
-        }.getOrNull() ?: return@flow
+        val isAvatar = resourceId.startsWith(TdResourceUri.PREFIX_AVATAR_USER) ||
+            resourceId.startsWith(TdResourceUri.PREFIX_AVATAR_CHAT)
+        val resolvedFile: TdApi.File = when {
+            resourceId.startsWith(TdResourceUri.PREFIX_AVATAR_USER) -> {
+                val uid = resourceId.removePrefix(TdResourceUri.PREFIX_AVATAR_USER).toLongOrNull() ?: return@flow
+                getOrFetchUser(tdClient, uid)?.profilePhoto?.small ?: return@flow
+            }
+            resourceId.startsWith(TdResourceUri.PREFIX_AVATAR_CHAT) -> {
+                val cid = resourceId.removePrefix(TdResourceUri.PREFIX_AVATAR_CHAT).toLongOrNull() ?: return@flow
+                getOrFetchChat(tdClient, cid)?.photo?.small ?: return@flow
+            }
+            resourceId.startsWith(TdResourceUri.PREFIX_REMOTE_FILE) -> {
+                val remoteId = resourceId.removePrefix(TdResourceUri.PREFIX_REMOTE_FILE)
+                if (remoteId.isBlank()) return@flow
+                runCatching {
+                    tdClient.send<TdApi.File>(TdApi.GetRemoteFile(remoteId, null))
+                }.getOrNull() ?: return@flow
+            }
+            else -> {
+                val fileId = resourceId.toIntOrNull() ?: return@flow
+                TdApi.File().apply { id = fileId }
+            }
+        }
+
+        val maxBytes = if (isAvatar) AVATAR_MAX_BYTES else maxDownloadBytes
+        val expectedSize = resolvedFile.expectedSize.takeIf { it > 0L } ?: resolvedFile.size
+        if (maxBytes > 0L && expectedSize > maxBytes) return@flow
+
+        val tdFile = withTimeoutOrNull(STREAM_DOWNLOAD_TIMEOUT_MS) {
+            runCatching {
+                tdClient.send<TdApi.File>(TdApi.DownloadFile(resolvedFile.id, 32, 0, 0, true))
+            }.getOrNull()
+        } ?: return@flow
+
         val path = tdFile.local?.path.orEmpty()
         val file = File(path)
         if (path.isBlank() || !file.exists()) return@flow
 
+        val mimeType = detectMimeType(file)
         val totalSize = file.length()
         val startOffset = offset.coerceIn(0L, totalSize)
-        RandomAccessFile(file, "r").use { raf ->
-            raf.seek(startOffset)
-            val buffer = ByteArray(STREAM_CHUNK_BYTES)
-            var remaining = totalSize - startOffset
-            while (remaining > 0) {
-                val read = raf.read(buffer, 0, minOf(buffer.size.toLong(), remaining).toInt())
-                if (read <= 0) break
-                remaining -= read
-                emit(
-                    ResourceChunk.newBuilder()
-                        .setData(ByteString.copyFrom(buffer, 0, read))
-                        .setTotalSize(totalSize)
-                        .setMimeType("application/octet-stream")
-                        .setEof(remaining <= 0)
-                        .build()
-                )
+        try {
+            RandomAccessFile(file, "r").use { raf ->
+                raf.seek(startOffset)
+                val buffer = ByteArray(STREAM_CHUNK_BYTES)
+                var remaining = totalSize - startOffset
+                while (remaining > 0) {
+                    val read = raf.read(buffer, 0, minOf(buffer.size.toLong(), remaining).toInt())
+                    if (read <= 0) break
+                    remaining -= read
+                    emit(
+                        ResourceChunk.newBuilder()
+                            .setData(ByteString.copyFrom(buffer, 0, read))
+                            .setTotalSize(totalSize)
+                            .setMimeType(mimeType)
+                            .setEof(remaining <= 0)
+                            .build()
+                    )
+                }
+            }
+        } finally {
+            // Reclaim TDLib local cache immediately after streaming; host Coil LRU holds the bounded cache.
+            if (tdFile.id != 0) {
+                runCatching {
+                    tdClient.send<TdApi.Ok>(TdApi.DeleteFile(tdFile.id))
+                }
             }
         }
+    }
+
+    private fun detectMimeType(file: File): String {
+        val ext = file.extension.lowercase()
+        when (ext) {
+            "jpg", "jpeg" -> return "image/jpeg"
+            "png" -> return "image/png"
+            "webp" -> return "image/webp"
+            "gif" -> return "image/gif"
+            "tgs" -> return "application/x-tgsticker"
+            "webm" -> return "video/webm"
+            "mp4" -> return "video/mp4"
+        }
+        return runCatching {
+            val header = ByteArray(12)
+            val n = file.inputStream().use { it.read(header) }
+            when {
+                n >= 3 && header[0] == 0xFF.toByte() && header[1] == 0xD8.toByte() && header[2] == 0xFF.toByte() ->
+                    "image/jpeg"
+                n >= 4 && header[0] == 0x89.toByte() && header[1] == 0x50.toByte() &&
+                    header[2] == 0x4E.toByte() && header[3] == 0x47.toByte() ->
+                    "image/png"
+                n >= 12 && String(header, 0, 4) == "RIFF" && String(header, 8, 4) == "WEBP" ->
+                    "image/webp"
+                n >= 6 && (String(header, 0, 6) == "GIF87a" || String(header, 0, 6) == "GIF89a") ->
+                    "image/gif"
+                n >= 2 && header[0] == 0x1F.toByte() && header[1] == 0x8B.toByte() ->
+                    "application/x-tgsticker"
+                n >= 4 && header[0] == 0x1A.toByte() && header[1] == 0x45.toByte() &&
+                    header[2] == 0xDF.toByte() && header[3] == 0xA3.toByte() ->
+                    "video/webm"
+                n >= 8 && String(header, 4, 4) == "ftyp" ->
+                    "video/mp4"
+                else -> "application/octet-stream"
+            }
+        }.getOrDefault("application/octet-stream")
     }
 
     override suspend fun onClose() {
@@ -674,6 +766,7 @@ class TdSession(
         private const val TAG = "TdSession"
         private const val AVATAR_MAX_BYTES = 2L * 1024L * 1024L
         private const val STREAM_CHUNK_BYTES = 64 * 1024
+        private const val STREAM_DOWNLOAD_TIMEOUT_MS = 20_000L
         private const val QUOTE_FETCH_TIMEOUT_MS = 3_000L
     }
 }

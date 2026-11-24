@@ -62,6 +62,8 @@ import androidx.compose.ui.unit.dp
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.toFormattedTime
 import com.ojhdtapp.parabox.domain.model.Contact
+import com.ojhdtapp.parabox.core.util.AnimatedMediaKind
+import com.ojhdtapp.parabox.core.util.ExtensionMediaLoader
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.contains
 import com.ojhdtapp.parabox.ui.common.CommonAvatar
@@ -73,9 +75,11 @@ import com.ojhdtapp.parabox.ui.message.chat.contents_layout.AudioLayout
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.FileLayout
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.ImageLayout
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.LocationLayout
+import com.ojhdtapp.parabox.ui.message.chat.contents_layout.LoopingVideoLayout
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.MessageContentContainer
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.PlainTextLayout
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.QuoteReplyLayout
+import com.ojhdtapp.parabox.ui.message.chat.contents_layout.TgsStickerLayout
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.UnsupportedLayout
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.VideoLayout
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.model.ChatPageUiModel
@@ -513,12 +517,24 @@ private fun ParaboxMessageElement.toLayout(
         }
 
 
-        is ParaboxImage -> ImageLayout(
-            model = resourceInfo.getModel(),
-            elementId = elementId,
-            previewerState = previewerState,
-            onClick = onImageClick
-        )
+        is ParaboxImage -> when (ExtensionMediaLoader.detectAnimatedMediaKind(fileName)) {
+            AnimatedMediaKind.TGS_LOTTIE -> TgsStickerLayout(
+                model = resourceInfo.getModel(),
+                widthPx = width,
+                heightPx = height,
+            )
+            AnimatedMediaKind.LOOPING_VIDEO -> LoopingVideoLayout(
+                model = resourceInfo.getModel(),
+                widthPx = width,
+                heightPx = height,
+            )
+            AnimatedMediaKind.IMAGE -> ImageLayout(
+                model = resourceInfo.getModel(),
+                elementId = elementId,
+                previewerState = previewerState,
+                onClick = onImageClick
+            )
+        }
 
         is ParaboxAudio -> AudioLayout(
             resourceInfo = resourceInfo,

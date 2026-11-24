@@ -13,6 +13,8 @@ import com.ojhdtapp.parabox.protocol.v2.MessageAckFrame
 import com.ojhdtapp.parabox.protocol.v2.ParaboxExtensionServiceGrpcKt
 import com.ojhdtapp.parabox.protocol.v2.QueryHistoryRequest
 import com.ojhdtapp.parabox.protocol.v2.RecallMessageRequest
+import com.ojhdtapp.parabox.protocol.v2.ResourceChunk
+import com.ojhdtapp.parabox.protocol.v2.ResourceStreamRequest
 import com.ojhdtapp.parabox.protocol.v2.SendMessageRequest
 import com.ojhdtapp.parabox.protocol.v2.SessionInitFrame
 import com.ojhdtapp.parabox.protocol.v2.SessionScopedRequest
@@ -43,6 +45,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -350,6 +353,7 @@ class ExtensionSessionClient(
 
     companion object {
         private const val SEND_MESSAGE_TIMEOUT_SECONDS = 60L
+        private const val STREAM_RESOURCE_TIMEOUT_SECONDS = 30L
     }
 
     private fun grantUrisForElements(targetPackage: String, elements: List<ParaboxMessageElement>) {
@@ -452,5 +456,15 @@ class ExtensionSessionClient(
             )
             if (resp.found && resp.hasNode()) resp.node.toDomain() else null
         }.getOrNull()
+    }
+
+    fun streamResource(resourceId: String, offset: Long = 0L): Flow<ResourceChunk> {
+        return unaryStub(timeoutSeconds = STREAM_RESOURCE_TIMEOUT_SECONDS).streamResource(
+            ResourceStreamRequest.newBuilder()
+                .setSessionId(sessionId)
+                .setResourceId(resourceId)
+                .setOffset(offset)
+                .build()
+        )
     }
 }

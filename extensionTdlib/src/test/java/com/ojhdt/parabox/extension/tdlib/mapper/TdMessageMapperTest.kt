@@ -330,4 +330,246 @@ class TdMessageMapperTest {
         assertEquals(1700000050L * 1000L, quote.timestamp)
         assertEquals(listOf(ParaboxPlainText("External quote")), quote.messages)
     }
+
+    @Test
+    fun inboundPhotoStickerAndAnimationUseLazyUrisWithoutEagerDownload() = runBlocking {
+        var downloadCalls = 0
+        val countingBridge = object : TdMediaBridge {
+            override suspend fun downloadAndShareFile(
+                client: TdClientApi,
+                tdFile: TdApi.File,
+                hostPackageName: String,
+                maxSizeBytes: Long,
+                timeoutMs: Long,
+            ): ParaboxResourceInfo {
+                downloadCalls++
+                return ParaboxResourceInfo.ParaboxEmptyInfo
+            }
+
+            override suspend fun stageResourceForUpload(
+                accountId: String,
+                resourceInfo: ParaboxResourceInfo,
+                suggestedName: String?,
+            ): File? = null
+        }
+
+        fun makeFile(id: Int, remoteId: String): TdApi.File = TdApi.File().apply {
+            this.id = id
+            this.remote = TdApi.RemoteFile().apply { this.id = remoteId }
+        }
+
+        // 1. Photo -> lazy remote URI, 0 eager downloads
+        val photoMsg = TdApi.Message().apply {
+            id = 1L
+            chatId = -10010L
+            content = TdApi.MessagePhoto(
+                TdApi.Photo().apply {
+                    sizes = arrayOf(
+                        TdApi.PhotoSize().apply {
+                            width = 800
+                            height = 600
+                            photo = makeFile(11, "rem-photo-1")
+                        }
+                    )
+                },
+                TdApi.FormattedText("Hi", emptyArray()),
+                false,
+                false,
+                false,
+            )
+        }
+        val photoElements = TdMessageMapper.mapMessageContentToElements(
+            message = photoMsg,
+            client = dummyClient,
+            mediaBridge = countingBridge,
+            hostPackageName = "com.ojhdtapp.parabox",
+            autoDownloadMedia = true,
+            maxDownloadBytes = 10_000_000L,
+            sessionId = "conn-7",
+        )
+        assertEquals(2, photoElements.size)
+        val photoImg = photoElements[0] as ParaboxImage
+        assertEquals(
+            ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo("parabox-ext://conn-7/remote/rem-photo-1"),
+            photoImg.resourceInfo,
+        )
+        assertEquals(ParaboxPlainText("Hi"), photoElements[1])
+
+        // 2. WebP Sticker -> lazy remote URI on sticker file directly
+        val webpStickerMsg = TdApi.Message().apply {
+            id = 2L
+            chatId = -10010L
+            content = TdApi.MessageSticker(
+                TdApi.Sticker().apply {
+                    width = 512
+                    height = 512
+                    emoji = "🔥"
+                    format = TdApi.StickerFormatWebp()
+                    sticker = makeFile(21, "rem-webp-1")
+                },
+                false,
+            )
+        }
+        val webpElements = TdMessageMapper.mapMessageContentToElements(
+            message = webpStickerMsg,
+            client = dummyClient,
+            mediaBridge = countingBridge,
+            hostPackageName = "com.ojhdtapp.parabox",
+            autoDownloadMedia = true,
+            maxDownloadBytes = 10_000_000L,
+            sessionId = "conn-7",
+        )
+        assertEquals(1, webpElements.size)
+        assertEquals(
+            ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo("parabox-ext://conn-7/remote/rem-webp-1"),
+            (webpElements[0] as ParaboxImage).resourceInfo,
+        )
+
+        // 3. TGS Sticker -> lazy remote URI directly on .tgs file
+        val tgsStickerMsg = TdApi.Message().apply {
+            id = 3L
+            chatId = -10010L
+            content = TdApi.MessageSticker(
+                TdApi.Sticker().apply {
+                    width = 512
+                    height = 512
+                    emoji = "✨"
+                    format = TdApi.StickerFormatTgs()
+                    sticker = makeFile(31, "rem-tgs-1")
+                    thumbnail = TdApi.Thumbnail().apply {
+                        width = 128
+                        height = 128
+                        format = TdApi.ThumbnailFormatWebp()
+                        file = makeFile(32, "rem-tgs-thumb-1")
+                    }
+                },
+                false,
+            )
+        }
+        val tgsElements = TdMessageMapper.mapMessageContentToElements(
+            message = tgsStickerMsg,
+            client = dummyClient,
+            mediaBridge = countingBridge,
+            hostPackageName = "com.ojhdtapp.parabox",
+            autoDownloadMedia = true,
+            maxDownloadBytes = 10_000_000L,
+            sessionId = "conn-7",
+        )
+        assertEquals(1, tgsElements.size)
+        val tgsImage = tgsElements[0] as ParaboxImage
+        assertEquals("tg_sticker_31.tgs", tgsImage.fileName)
+        assertEquals(
+            ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo("parabox-ext://conn-7/remote/rem-tgs-1"),
+            tgsImage.resourceInfo,
+        )
+
+        // 3b. WebM Video Sticker -> lazy remote URI directly on .webm file
+        val webmStickerMsg = TdApi.Message().apply {
+            id = 33L
+            chatId = -10010L
+            content = TdApi.MessageSticker(
+                TdApi.Sticker().apply {
+                    width = 512
+                    height = 512
+                    emoji = "🎬"
+                    format = TdApi.StickerFormatWebm()
+                    sticker = makeFile(35, "rem-webm-1")
+                },
+                false,
+            )
+        }
+        val webmElements = TdMessageMapper.mapMessageContentToElements(
+            message = webmStickerMsg,
+            client = dummyClient,
+            mediaBridge = countingBridge,
+            hostPackageName = "com.ojhdtapp.parabox",
+            autoDownloadMedia = true,
+            maxDownloadBytes = 10_000_000L,
+            sessionId = "conn-7",
+        )
+        assertEquals(1, webmElements.size)
+        val webmImage = webmElements[0] as ParaboxImage
+        assertEquals("tg_sticker_35.webm", webmImage.fileName)
+        assertEquals(
+            ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo("parabox-ext://conn-7/remote/rem-webm-1"),
+            webmImage.resourceInfo,
+        )
+
+        // 4. GIF Animation -> direct lazy remote URI; MP4 Animation -> direct lazy .mp4 URI
+        val gifAnimMsg = TdApi.Message().apply {
+            id = 4L
+            chatId = -10010L
+            content = TdApi.MessageAnimation(
+                TdApi.Animation().apply {
+                    width = 320
+                    height = 240
+                    fileName = "party.gif"
+                    mimeType = "image/gif"
+                    animation = makeFile(41, "rem-gif-1")
+                },
+                TdApi.FormattedText("", emptyArray()),
+                false,
+                false,
+                false,
+            )
+        }
+        val gifElements = TdMessageMapper.mapMessageContentToElements(
+            message = gifAnimMsg,
+            client = dummyClient,
+            mediaBridge = countingBridge,
+            hostPackageName = "com.ojhdtapp.parabox",
+            autoDownloadMedia = true,
+            maxDownloadBytes = 10_000_000L,
+            sessionId = "conn-7",
+        )
+        assertEquals(1, gifElements.size)
+        assertEquals(
+            ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo("parabox-ext://conn-7/remote/rem-gif-1"),
+            (gifElements[0] as ParaboxImage).resourceInfo,
+        )
+
+        val mp4AnimMsg = TdApi.Message().apply {
+            id = 5L
+            chatId = -10010L
+            content = TdApi.MessageAnimation(
+                TdApi.Animation().apply {
+                    width = 320
+                    height = 240
+                    fileName = "clip.mp4"
+                    mimeType = "video/mp4"
+                    animation = makeFile(51, "rem-mp4-1")
+                    thumbnail = TdApi.Thumbnail().apply {
+                        width = 320
+                        height = 240
+                        format = TdApi.ThumbnailFormatJpeg()
+                        file = makeFile(52, "rem-mp4-thumb-1")
+                    }
+                },
+                TdApi.FormattedText("Loop", emptyArray()),
+                false,
+                false,
+                false,
+            )
+        }
+        val mp4Elements = TdMessageMapper.mapMessageContentToElements(
+            message = mp4AnimMsg,
+            client = dummyClient,
+            mediaBridge = countingBridge,
+            hostPackageName = "com.ojhdtapp.parabox",
+            autoDownloadMedia = true,
+            maxDownloadBytes = 10_000_000L,
+            sessionId = "conn-7",
+        )
+        assertEquals(2, mp4Elements.size)
+        val mp4Image = mp4Elements[0] as ParaboxImage
+        assertEquals("clip.mp4", mp4Image.fileName)
+        assertEquals(
+            ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo("parabox-ext://conn-7/remote/rem-mp4-1"),
+            mp4Image.resourceInfo,
+        )
+        assertEquals(ParaboxPlainText("Loop"), mp4Elements[1])
+
+        // Zero eager downloads across all photo/sticker/animation messages
+        assertEquals(0, downloadCalls)
+    }
 }

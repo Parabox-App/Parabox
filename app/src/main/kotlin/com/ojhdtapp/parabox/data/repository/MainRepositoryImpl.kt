@@ -2,6 +2,7 @@ import android.content.Context
 import android.util.Log
 import androidx.datastore.preferences.core.edit
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
+import com.ojhdtapp.parabox.core.util.ExtensionResourceUri
 import com.ojhdtapp.parabox.core.util.NotificationUtil
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.dataStore
@@ -85,12 +86,23 @@ class MainRepositoryImpl @Inject constructor(
                 if (contactIdDeferred.await() != -1L) {
                     launch(Dispatchers.IO) {
                         val originalContact = db.contactDao.getContactById(contactIdDeferred.await())
-                        if (originalContact?.name?.isNotEmpty() != true || originalContact.avatar is ParaboxResourceInfo.ParaboxEmptyInfo) {
-                            val basicInfo = try {
-                                ext.getUserBasicInfo(msg.sender.uid)
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                                null
+                        val needsAvatarRefresh = originalContact == null ||
+                            originalContact.avatar is ParaboxResourceInfo.ParaboxEmptyInfo ||
+                            ExtensionResourceUri.isExpiredTdlibFileProviderUri(originalContact.avatar)
+                        if (originalContact?.name?.isNotEmpty() != true || needsAvatarRefresh) {
+                            val incomingAvatar = msg.sender.basicInfo.avatar.takeIf { it !is ParaboxResourceInfo.ParaboxEmptyInfo }
+                            val basicInfo = if (incomingAvatar != null && originalContact?.name?.isNotEmpty() == true) {
+                                com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxBasicInfo(
+                                    name = originalContact.name,
+                                    avatar = incomingAvatar,
+                                )
+                            } else {
+                                try {
+                                    ext.getUserBasicInfo(msg.sender.uid)
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                    null
+                                }
                             }
                             if (basicInfo != null) {
                                 db.contactDao.updateBasicInfo(
@@ -108,16 +120,27 @@ class MainRepositoryImpl @Inject constructor(
                 if (chatIdDeferred.await() != -1L) {
                     launch(Dispatchers.IO) {
                         val originalChat = db.chatDao.getChatByIdWithoutObserve(chatIdDeferred.await())
-                        if (originalChat?.name?.isNotEmpty() != true || originalChat.avatar is ParaboxResourceInfo.ParaboxEmptyInfo) {
-                            val basicInfo = try {
-                                when (originalChat?.type) {
-                                    ParaboxChat.TYPE_PRIVATE -> ext.getUserBasicInfo(msg.sender.uid)
-                                    ParaboxChat.TYPE_GROUP -> ext.getGroupBasicInfo(msg.chat.uid)
-                                    else -> null
+                        val needsAvatarRefresh = originalChat == null ||
+                            originalChat.avatar is ParaboxResourceInfo.ParaboxEmptyInfo ||
+                            ExtensionResourceUri.isExpiredTdlibFileProviderUri(originalChat.avatar)
+                        if (originalChat?.name?.isNotEmpty() != true || needsAvatarRefresh) {
+                            val incomingAvatar = msg.chat.basicInfo.avatar.takeIf { it !is ParaboxResourceInfo.ParaboxEmptyInfo }
+                            val basicInfo = if (incomingAvatar != null && originalChat?.name?.isNotEmpty() == true) {
+                                com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxBasicInfo(
+                                    name = originalChat.name,
+                                    avatar = incomingAvatar,
+                                )
+                            } else {
+                                try {
+                                    when (originalChat?.type) {
+                                        ParaboxChat.TYPE_PRIVATE -> ext.getUserBasicInfo(msg.sender.uid)
+                                        ParaboxChat.TYPE_GROUP -> ext.getGroupBasicInfo(msg.chat.uid)
+                                        else -> null
+                                    }
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                    null
                                 }
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                                null
                             }
                             if (basicInfo != null) {
                                 db.chatDao.updateBasicInfo(

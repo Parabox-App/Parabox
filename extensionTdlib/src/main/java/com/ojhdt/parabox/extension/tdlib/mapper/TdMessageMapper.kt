@@ -208,6 +208,7 @@ object TdMessageMapper {
         autoDownloadMedia: Boolean,
         maxDownloadBytes: Long,
         resolvedQuoteReply: ParaboxQuoteReply? = null,
+        sessionId: String = "",
     ): List<ParaboxMessageElement> {
         val elements = mutableListOf<ParaboxMessageElement>()
 
@@ -249,16 +250,15 @@ object TdMessageMapper {
 
             is TdApi.MessagePhoto -> {
                 val bestSize = content.photo?.sizes?.maxByOrNull { it.width * it.height }
-                val resInfo = if (autoDownloadMedia && bestSize?.photo != null) {
-                    mediaBridge.downloadAndShareFile(
-                        client = client,
-                        tdFile = bestSize.photo,
-                        hostPackageName = hostPackageName,
-                        maxSizeBytes = maxDownloadBytes,
-                    )
-                } else {
-                    ParaboxResourceInfo.ParaboxEmptyInfo
-                }
+                val resInfo = resolveLazyOrFallback(
+                    sessionId = sessionId,
+                    tdFile = bestSize?.photo,
+                    client = client,
+                    mediaBridge = mediaBridge,
+                    hostPackageName = hostPackageName,
+                    autoDownloadMedia = autoDownloadMedia,
+                    maxDownloadBytes = maxDownloadBytes,
+                )
                 elements.add(
                     ParaboxImage(
                         width = bestSize?.width ?: 0,
@@ -411,14 +411,79 @@ object TdMessageMapper {
             }
 
             is TdApi.MessageSticker -> {
-                val emoji = content.sticker?.emoji.orEmpty()
-                elements.add(ParaboxPlainText("[贴纸${if (emoji.isNotEmpty()) " $emoji" else ""}]"))
+                val sticker = content.sticker
+                val (targetFile, ext) = when (sticker?.format) {
+                    is TdApi.StickerFormatTgs -> (sticker.sticker ?: sticker.thumbnail?.file) to
+                        if (sticker.sticker != null) "tgs" else "webp"
+                    is TdApi.StickerFormatWebm -> (sticker.sticker ?: sticker.thumbnail?.file) to
+                        if (sticker.sticker != null) "webm" else "webp"
+                    else -> (sticker?.sticker ?: sticker?.thumbnail?.file) to "webp"
+                }
+                val resInfo = resolveLazyOrFallback(
+                    sessionId = sessionId,
+                    tdFile = targetFile,
+                    client = client,
+                    mediaBridge = mediaBridge,
+                    hostPackageName = hostPackageName,
+                    autoDownloadMedia = autoDownloadMedia,
+                    maxDownloadBytes = maxDownloadBytes,
+                )
+                if (resInfo !is ParaboxResourceInfo.ParaboxEmptyInfo) {
+                    elements.add(
+                        ParaboxImage(
+                            width = sticker?.width ?: 128,
+                            height = sticker?.height ?: 128,
+                            fileName = targetFile?.id?.let { "tg_sticker_$it.$ext" } ?: "tg_sticker.$ext",
+                            resourceInfo = resInfo,
+                        )
+                    )
+                } else {
+                    val emoji = sticker?.emoji.orEmpty()
+                    elements.add(ParaboxPlainText("[贴纸${if (emoji.isNotEmpty()) " $emoji" else ""}]"))
+                }
             }
 
             is TdApi.MessageAnimation -> {
+                val anim = content.animation
+                val mime = anim?.mimeType.orEmpty().lowercase()
+                val rawName = anim?.fileName?.ifBlank { null }
+                val targetFile = anim?.animation ?: anim?.thumbnail?.file
+                val defaultExt = when {
+                    mime == "image/gif" -> "gif"
+                    mime == "image/webp" -> "webp"
+                    mime == "video/webm" -> "webm"
+                    anim?.animation != null -> "mp4"
+                    else -> "jpg"
+                }
+                val resolvedFileName = when {
+                    rawName != null && rawName.contains('.') -> rawName
+                    targetFile?.id != null -> "tg_anim_${targetFile.id}.$defaultExt"
+                    else -> "tg_anim.$defaultExt"
+                }
+                val resInfo = resolveLazyOrFallback(
+                    sessionId = sessionId,
+                    tdFile = targetFile,
+                    client = client,
+                    mediaBridge = mediaBridge,
+                    hostPackageName = hostPackageName,
+                    autoDownloadMedia = autoDownloadMedia,
+                    maxDownloadBytes = maxDownloadBytes,
+                )
                 val caption = content.caption?.text.orEmpty()
-                val label = if (caption.isNotBlank()) "[动图] $caption" else "[动图]"
-                elements.add(ParaboxPlainText(label))
+                if (resInfo !is ParaboxResourceInfo.ParaboxEmptyInfo) {
+                    elements.add(
+                        ParaboxImage(
+                            width = anim?.width ?: 0,
+                            height = anim?.height ?: 0,
+                            fileName = resolvedFileName,
+                            resourceInfo = resInfo,
+                        )
+                    )
+                    if (caption.isNotBlank()) elements.add(ParaboxPlainText(caption))
+                } else {
+                    val label = if (caption.isNotBlank()) "[动图] $caption" else "[动图]"
+                    elements.add(ParaboxPlainText(label))
+                }
             }
 
             else -> {
@@ -717,6 +782,32 @@ object TdMessageMapper {
         mediaBridge: TdMediaBridge,
     ): java.io.File? {
         return mediaBridge.stageResourceForUpload(accountId, resourceInfo, fileName)
+    }
+
+    private suspend fun resolveLazyOrFallback(
+        sessionId: String,
+        tdFile: TdApi.File?,
+        client: TdClientApi,
+        mediaBridge: TdMediaBridge,
+        hostPackageName: String,
+        autoDownloadMedia: Boolean,
+        maxDownloadBytes: Long,
+    ): ParaboxResourceInfo {
+        if (tdFile == null) return ParaboxResourceInfo.ParaboxEmptyInfo
+        val remoteId = tdFile.remote?.id
+        if (sessionId.isNotBlank() && !remoteId.isNullOrBlank()) {
+            return TdResourceUri.remoteFile(sessionId, remoteId)
+        }
+        return if (autoDownloadMedia) {
+            mediaBridge.downloadAndShareFile(
+                client = client,
+                tdFile = tdFile,
+                hostPackageName = hostPackageName,
+                maxSizeBytes = maxDownloadBytes,
+            )
+        } else {
+            ParaboxResourceInfo.ParaboxEmptyInfo
+        }
     }
 
     fun buildContact(uid: String, name: String?, avatar: ParaboxResourceInfo = ParaboxResourceInfo.ParaboxEmptyInfo) =

@@ -158,7 +158,7 @@ dependencies {
     implementation("androidx.navigationevent:navigationevent-compose:1.0.0")
 
     // Lottie
-    val lottieVersion = "5.0.3"
+    val lottieVersion = "6.6.2"
     implementation("com.airbnb.android:lottie-compose:$lottieVersion")
 
     // LazyColumnScrollbar

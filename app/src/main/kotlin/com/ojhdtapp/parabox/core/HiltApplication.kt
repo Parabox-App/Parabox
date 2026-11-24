@@ -19,17 +19,24 @@ import coil.memory.MemoryCache
 import coil.request.CachePolicy
 import coil.util.DebugLogger
 import com.ojhdtapp.parabox.BuildConfig
+import com.ojhdtapp.parabox.core.util.ExtensionResourceFetcher
+import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
 import dagger.hilt.android.HiltAndroidApp
 import org.lsposed.hiddenapibypass.HiddenApiBypass
 import top.canyie.pine.Pine
 import top.canyie.pine.PineConfig
 import top.canyie.pine.callback.MethodReplacement
+import java.io.File
 import javax.inject.Inject
 
 @HiltAndroidApp
 class HiltApplication : Application(), Configuration.Provider, ImageLoaderFactory {
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
+
+    @Inject
+    lateinit var extensionManager: ExtensionManager
+
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
             .setWorkerFactory(workerFactory)
@@ -38,6 +45,7 @@ class HiltApplication : Application(), Configuration.Provider, ImageLoaderFactor
     override fun newImageLoader(): ImageLoader {
         return ImageLoader(this).newBuilder()
             .components {
+                add(ExtensionResourceFetcher.Factory(extensionManager))
                 if (Build.VERSION.SDK_INT >= 28) {
                     add(ImageDecoderDecoder.Factory())
                 } else {
@@ -54,8 +62,8 @@ class HiltApplication : Application(), Configuration.Provider, ImageLoaderFactor
             .diskCachePolicy(CachePolicy.ENABLED)
             .diskCache {
                 DiskCache.Builder()
-                    .maxSizePercent(0.01)
-                    .directory(cacheDir)
+                    .maxSizeBytes(50L * 1024L * 1024L)
+                    .directory(File(cacheDir, "coil_media_cache"))
                     .build()
             }
             .logger(DebugLogger())

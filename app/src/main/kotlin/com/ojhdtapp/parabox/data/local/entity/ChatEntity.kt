@@ -3,6 +3,7 @@ package com.ojhdtapp.parabox.data.local.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.ojhdtapp.parabox.core.util.ExtensionResourceUri
 import com.ojhdtapp.parabox.domain.model.Chat
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 
@@ -25,9 +26,16 @@ data class ChatEntity(
     @PrimaryKey(autoGenerate = true) val chatId: Long = 0,
 ) {
     fun toChat(): Chat {
+        val displayAvatar = ExtensionResourceUri.resolveDisplayAvatarInfo(
+            avatar = avatar,
+            pkg = pkg,
+            extensionId = extensionId,
+            uid = uid,
+            isChat = true,
+        )
         return Chat(
             name,
-            avatar,
+            displayAvatar,
             latestMessageId,
             unreadMessageNum,
             isHidden,
