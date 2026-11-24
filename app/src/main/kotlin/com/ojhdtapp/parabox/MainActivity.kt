@@ -12,7 +12,6 @@ import android.util.Log
 import android.view.WindowManager
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -86,6 +85,7 @@ import com.ojhdtapp.parabox.ui.common.LayoutType
 import com.ojhdtapp.parabox.ui.common.LocalFixedInsets
 import com.ojhdtapp.parabox.ui.common.LocalSystemUiController
 import com.ojhdtapp.parabox.ui.common.SystemUiController
+import com.ojhdtapp.parabox.ui.common.enableTransparentNavigationBar
 import com.ojhdtapp.parabox.ui.contact.ContactDetailPage
 import com.ojhdtapp.parabox.ui.contact.ContactDetailPlaceholder
 import com.ojhdtapp.parabox.ui.contact.ContactPage
@@ -190,14 +190,14 @@ class MainActivity : AppCompatActivity() {
         setContent {
             val darkTheme = isSystemInDarkTheme()
             DisposableEffect(darkTheme) {
-                enableEdgeToEdge(
+                enableTransparentNavigationBar(
                     statusBarStyle = SystemBarStyle.auto(
                         android.graphics.Color.TRANSPARENT,
                         android.graphics.Color.TRANSPARENT,
                     ) { darkTheme },
                     navigationBarStyle = SystemBarStyle.auto(
-                        lightScrim,
-                        darkScrim,
+                        android.graphics.Color.TRANSPARENT,
+                        android.graphics.Color.TRANSPARENT,
                     ) { darkTheme },
                 )
                 onDispose {}
@@ -585,6 +585,4 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private val lightScrim = android.graphics.Color.argb(0xe6, 0xFF, 0xFF, 0xFF)
-    private val darkScrim = android.graphics.Color.argb(0x80, 0x1b, 0x1b, 0x1b)
 }

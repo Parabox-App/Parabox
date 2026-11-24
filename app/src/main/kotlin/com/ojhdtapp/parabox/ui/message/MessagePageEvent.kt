@@ -34,7 +34,7 @@ sealed interface MessagePageEvent : UiEvent {
     data class AppendEditAreaInput(val input: String): MessagePageEvent
     @Deprecated("Use AppendEditAreaInput instead")
     data class UpdateEditAreaInput(val input: String): MessagePageEvent
-    data class UpdateToolbarState(val state: ToolbarState): MessagePageEvent
+    data class ToggleToolbar(val toolbar: ToolbarState): MessagePageEvent
     data class UpdateEditAreaMode(val mode: EditAreaMode): MessagePageEvent
     data class UpdateAudioRecorderState(val state: AudioRecorderState): MessagePageEvent
     data class ExpandImagePreviewerMenu(val expand: Boolean): MessagePageEvent
@@ -49,9 +49,17 @@ sealed interface MessagePageEvent : UiEvent {
     data class ShowLocationPermissionDeniedDialog(val open: Boolean): MessagePageEvent
     data class UpdateIconShrink(val shouldShrink: Boolean): MessagePageEvent
     data object SendMessage: MessagePageEvent
-    data class SendAudioMessage(val audioFile: File): MessagePageEvent
+    data class SendAudioMessage(val audioFile: File, val durationMs: Long = 0L): MessagePageEvent
     data class SendMemeMessage(val imageUri: Uri): MessagePageEvent
     data class SendFileMessage(val fileUri: Uri, val size: Long, val name: String): MessagePageEvent
+    data class RetrySendMessage(val message: Message): MessagePageEvent
+    data class DeleteFailedMessage(val messageId: Long): MessagePageEvent
+    data class UpdateRecordedAudio(val file: File?, val durationMs: Long): MessagePageEvent
+    data class UpdateMessageSendStatus(
+        val messageId: Long,
+        val status: MessagePageState.MessageSendStatus?,
+    ): MessagePageEvent
+    data class ShowSendErrorNotice(val message: String): MessagePageEvent
     data class AddOrRemoveSelectedMessage(val msg: Message) : MessagePageEvent
     data object ClearSelectedMessage : MessagePageEvent
     data class UpdateLocation(val location: LatLng): MessagePageEvent

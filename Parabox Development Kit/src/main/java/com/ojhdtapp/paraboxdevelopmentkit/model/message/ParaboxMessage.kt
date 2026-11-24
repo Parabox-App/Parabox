@@ -60,7 +60,7 @@ data class ParaboxAudio(
     }
 
     override fun getType(): Int {
-        return ParaboxMessageElement.Companion.TYPE.VIDEO.ordinal
+        return ParaboxMessageElement.Companion.TYPE.AUDIO.ordinal
     }
 }
 
@@ -77,7 +77,7 @@ data class ParaboxVideo(
     }
 
     override fun getType(): Int {
-        return ParaboxMessageElement.Companion.TYPE.AUDIO.ordinal
+        return ParaboxMessageElement.Companion.TYPE.VIDEO.ordinal
     }
 }
 

@@ -13,42 +13,59 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imeNestedScroll
 import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsBottomHeight
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowDownward
-import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.times
 import androidx.compose.ui.util.lerp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -62,8 +79,6 @@ import com.ojhdtapp.parabox.ui.common.DismissibleBottomSheet
 import com.ojhdtapp.parabox.ui.common.LayoutType
 import com.ojhdtapp.parabox.ui.common.LocalSystemUiController
 import com.ojhdtapp.parabox.ui.common.PredictiveBackDefaults
-import com.ojhdtapp.parabox.ui.common.imeVisibleAsState
-import com.ojhdtapp.parabox.ui.common.rememberDismissibleBottomSheetState
 import com.ojhdtapp.parabox.ui.message.MessagePageEffect
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageState
@@ -270,7 +285,6 @@ fun NormalChatPage(
     val coroutineScope = rememberCoroutineScope()
     val lifecycleOwner = LocalLifecycleOwner.current
     val systemUiController = LocalSystemUiController.current
-    val sheetState = rememberDismissibleBottomSheetState(initialValue = DrawerValue.Closed)
     val lazyListState = rememberLazyListState()
     val fabExtended by remember {
         derivedStateOf {
@@ -296,26 +310,35 @@ fun NormalChatPage(
         )
     }
 
-    // Sync inline bottom toolbar state with ViewModel state
-    LaunchedEffect(sheetState.isOpen) {
-        if (state.chatDetail.editAreaState.expanded != sheetState.isOpen) {
-            onEvent(MessagePageEvent.OpenEditArea(sheetState.isOpen))
-        }
+    val imeInsets = WindowInsets.ime
+    val density = LocalDensity.current
+    val imeVisible = WindowInsets.isImeVisible
+    val hasImeInset by remember(imeInsets, density) {
+        derivedStateOf { imeInsets.getBottom(density) > 0 }
     }
-    LaunchedEffect(state.chatDetail.editAreaState.expanded) {
-        if (state.chatDetail.editAreaState.expanded && !sheetState.isOpen) {
-            sheetState.open()
-        } else if (!state.chatDetail.editAreaState.expanded && sheetState.isOpen) {
-            sheetState.close()
-        }
-    }
+    val imeOccupiesBottom = imeVisible || hasImeInset
+    val editState = state.chatDetail.editAreaState
+    val snackBarHostState = remember { SnackbarHostState() }
+    var snackBarJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
 
-    // Close edit toolbar whenever IME opens
-    val imeVisible by imeVisibleAsState()
-    LaunchedEffect(imeVisible) {
-        if (imeVisible) {
-            onEvent(MessagePageEvent.OpenEditArea(false))
-        }
+    LaunchedEffect(Unit) {
+        viewModel.uiEffect.flowWithLifecycle(lifecycleOwner.lifecycle, Lifecycle.State.STARTED)
+            .collectLatest { effect ->
+                if (effect is MessagePageEffect.ShowSnackBar) {
+                    snackBarJob?.cancel()
+                    snackBarJob = launch {
+                        delay(4000)
+                        snackBarHostState.currentSnackbarData?.dismiss()
+                    }
+                    val result = snackBarHostState.showSnackbar(
+                        message = effect.message,
+                        actionLabel = effect.label,
+                    )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        effect.callback?.invoke()
+                    }
+                }
+            }
     }
 
     // Single priority-ordered transient back handler (never shadows route navigation or sheets/previewers)
@@ -323,168 +346,198 @@ fun NormalChatPage(
         state.chatDetail.selectedMessageList.isNotEmpty() -> {
             { onEvent(MessagePageEvent.ClearSelectedMessage) }
         }
-        state.chatDetail.editAreaState.mode != EditAreaMode.NORMAL -> {
+        !editState.expanded && editState.mode != EditAreaMode.NORMAL -> {
             { onEvent(MessagePageEvent.UpdateEditAreaMode(EditAreaMode.NORMAL)) }
         }
-        state.chatDetail.editAreaState.chosenQuoteReply != null -> {
+        !editState.expanded && editState.chosenQuoteReply != null -> {
             { onEvent(MessagePageEvent.ChooseQuoteReply(null)) }
         }
         else -> null
     }
-    BackHandler(enabled = transientBackAction != null) {
+    BackHandler(enabled = transientBackAction != null && !imeOccupiesBottom) {
         transientBackAction?.invoke()
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
-        Scaffold(
-            topBar = {
-                NormalChatTopBar(
-                    chatDetail = state.chatDetail,
-                    layoutType = layoutType,
-                    shouldDisplayAvatar = mainSharedState.datastore.displayAvatarOnTopAppBar,
-                    onNavigateBack = {
-                        if (state.chatDetail.selectedMessageList.isNotEmpty()) {
-                            onEvent(MessagePageEvent.ClearSelectedMessage)
-                        } else {
-                            onNavigateBack()
-                        }
-                    },
-                    onToggleInfoArea = {
-                        if (onToggleInfoArea != null) {
-                            onToggleInfoArea()
-                        } else {
-                            onEvent(MessagePageEvent.OpenInfoArea(!state.chatDetail.infoAreaState.expanded))
-                        }
-                    },
-                    onEvent = onEvent,
-                )
-            },
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        ) { paddingValues ->
-            val bottomPadding by remember(imeVisible) {
-                derivedStateOf {
-                    if (imeVisible) {
-                        0.dp
-                    } else {
-                        paddingValues.calculateBottomPadding() * (1f - sheetState.openFraction)
-                    }
-                }
-            }
-            val sheetHeight by remember(state.chatDetail.editAreaState.mode) {
-                derivedStateOf {
-                    if (state.chatDetail.editAreaState.mode == EditAreaMode.LOCATION_PICKER) 320.dp else 160.dp
-                }
-            }
-            DismissibleBottomSheet(
-                sheetContent = {
-                    Crossfade(
-                        modifier = Modifier.background(MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)),
-                        targetState = state.chatDetail.editAreaState.mode == EditAreaMode.LOCATION_PICKER,
-                        label = "location toolbar",
-                    ) { isLocationPicker ->
-                        if (isLocationPicker) {
-                            LocationPicker(
-                                modifier = Modifier.height(320.dp),
-                                state = state.chatDetail.editAreaState,
-                                onEvent = onEvent,
-                            )
-                        } else {
-                            Toolbar(
-                                modifier = Modifier.height(160.dp),
-                                state = state.chatDetail.editAreaState,
-                                onEvent = onEvent,
-                            )
-                        }
-                    }
+    val composerBackground = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+    Box(
+        modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainerLow),
+    ) {
+        // Draw the composer surface behind the transparent system navigation bar.
+        Spacer(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .windowInsetsBottomHeight(WindowInsets.navigationBars.union(WindowInsets.displayCutout))
+                .background(composerBackground),
+        )
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(
+                    WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom),
+                ),
+        ) {
+            val compact = isCompactChatInput(maxHeight)
+            val showHeader = showChatHeader(maxHeight, imeOccupiesBottom)
+            Scaffold(
+                contentWindowInsets = WindowInsets(0, 0, 0, 0),
+                snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
+                topBar = {
+                    if (showHeader) NormalChatTopBar(
+                        chatDetail = state.chatDetail,
+                        layoutType = layoutType,
+                        shouldDisplayAvatar = mainSharedState.datastore.displayAvatarOnTopAppBar,
+                        onNavigateBack = {
+                            if (state.chatDetail.selectedMessageList.isNotEmpty()) {
+                                onEvent(MessagePageEvent.ClearSelectedMessage)
+                            } else {
+                                onNavigateBack()
+                            }
+                        },
+                        onToggleInfoArea = {
+                            if (onToggleInfoArea != null) {
+                                onToggleInfoArea()
+                            } else {
+                                onEvent(MessagePageEvent.OpenInfoArea(!state.chatDetail.infoAreaState.expanded))
+                            }
+                        },
+                        onEvent = onEvent,
+                    )
                 },
-                gesturesEnabled = state.chatDetail.editAreaState.audioRecorderState !is AudioRecorderState.Recording && !WindowInsets.isImeVisible,
-                predictiveBackEnabled = transientBackAction == null && !previewerState.canClose,
-                sheetHeight = sheetHeight,
-                sheetState = sheetState,
-            ) {
-                Column(modifier = Modifier.padding(top = paddingValues.calculateTopPadding())) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        SelectionContainer(modifier = Modifier.fillMaxSize()) {
-                            LazyColumn(
-                                modifier = Modifier.fillMaxSize(),
-                                state = lazyListState,
-                                contentPadding = PaddingValues(horizontal = 16.dp),
-                                reverseLayout = true,
-                            ) {
-                                items(
-                                    count = messageLazyPagingItems.itemCount,
-                                    key = messageLazyPagingItems.itemKey { it.id },
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            ) { paddingValues ->
+                BoxWithConstraints(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .consumeWindowInsets(paddingValues)
+                        .then(
+                            if (showHeader) Modifier else Modifier.windowInsetsPadding(
+                                WindowInsets.statusBars.union(WindowInsets.displayCutout)
+                                    .only(WindowInsetsSides.Top),
+                            ),
+                        ),
+                ) {
+                    val locationMode = editState.mode == EditAreaMode.LOCATION_PICKER
+                    val sheetHeight = chatPanelHeight(maxHeight, if (locationMode) 320.dp else 160.dp, compact)
+                    DismissibleBottomSheet(
+                        modifier = Modifier.fillMaxSize(),
+                        expanded = editState.expanded,
+                        imeOccupiesBottom = imeOccupiesBottom,
+                        onExpandedChange = { open ->
+                            onEvent(MessagePageEvent.OpenEditArea(open))
+                        },
+                        sheetContent = {
+                            Crossfade(
+                                modifier = Modifier.background(composerBackground),
+                                targetState = state.chatDetail.editAreaState.mode == EditAreaMode.LOCATION_PICKER,
+                                label = "location toolbar",
+                            ) { isLocationPicker ->
+                                if (isLocationPicker) {
+                                    LocationPicker(
+                                        modifier = Modifier.fillMaxSize(),
+                                        state = state.chatDetail.editAreaState,
+                                        onEvent = onEvent,
+                                    )
+                                } else {
+                                    Toolbar(
+                                        modifier = Modifier.fillMaxSize(),
+                                        panelHeight = sheetHeight,
+                                        state = state.chatDetail.editAreaState,
+                                        onEvent = onEvent,
+                                    )
+                                }
+                            }
+                        },
+                        gesturesEnabled = !locationMode && editState.audioRecorderState !is AudioRecorderState.Recording,
+                        predictiveBackEnabled = transientBackAction == null && !previewerState.canClose,
+                        sheetHeight = sheetHeight,
+                    ) {
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            Box(modifier = Modifier.weight(1f)) {
+                                SelectionContainer(modifier = Modifier.fillMaxSize()) {
+                                    LazyColumn(
+                                        modifier = Modifier.fillMaxSize().then(
+                                            if (editState.expanded) Modifier else Modifier.imeNestedScroll(),
+                                        ),
+                                        state = lazyListState,
+                                        contentPadding = PaddingValues(horizontal = 16.dp),
+                                        reverseLayout = true,
+                                    ) {
+                                        items(
+                                            count = messageLazyPagingItems.itemCount,
+                                            key = messageLazyPagingItems.itemKey { it.id },
+                                        ) {
+                                            val item = messageLazyPagingItems[it]
+                                            when (item) {
+                                                is ChatPageUiModel.MessageWithSender -> {
+                                                    val before = messageLazyPagingItems.peek(it + 1)
+                                                    val after = if (it > 0) messageLazyPagingItems.peek(it - 1) else null
+                                                    MessageItem(
+                                                        state = state.chatDetail,
+                                                        messageWithSender = item,
+                                                        previewerState = previewerState,
+                                                        isFirst = !((before as? ChatPageUiModel.MessageWithSender)?.sender?.platformEqual(
+                                                            item.sender,
+                                                        ) ?: false),
+                                                        isLast = !((after as? ChatPageUiModel.MessageWithSender)?.sender?.platformEqual(
+                                                            item.sender,
+                                                        ) ?: false),
+                                                        shouldDisplayTime = mainSharedState.datastore.displayTimeOnEachMsg,
+                                                        onImageClick = { elementId ->
+                                                            coroutineScope.launch {
+                                                                refreshImageSnapshotList(
+                                                                    elementId = elementId,
+                                                                    oldList = state.chatDetail.imagePreviewerState.imageSnapshotList,
+                                                                    messageLazyPagingItems = messageLazyPagingItems,
+                                                                    onEvent = onEvent,
+                                                                )
+                                                            }
+                                                        },
+                                                        onAvatarClick = {
+                                                            onMainSharedEvent(MainSharedEvent.LoadContactDetailDialog(item.sender.contactId))
+                                                        },
+                                                        onAvatarLongClick = {},
+                                                        onEvent = onEvent,
+                                                    )
+                                                }
+
+                                                is ChatPageUiModel.Divider -> {
+                                                    TimeDivider(timestamp = item.timestamp)
+                                                }
+
+                                                else -> Unit
+                                            }
+                                        }
+                                    }
+                                }
+                                androidx.compose.animation.AnimatedVisibility(
+                                    modifier = Modifier.align(Alignment.BottomEnd),
+                                    visible = fabExtended,
+                                    enter = slideInHorizontally { it * 2 },
+                                    exit = slideOutHorizontally { it * 2 },
                                 ) {
-                                    val item = messageLazyPagingItems[it]
-                                    when (item) {
-                                        is ChatPageUiModel.MessageWithSender -> {
-                                            val before = messageLazyPagingItems.peek(it + 1)
-                                            val after = if (it > 0) messageLazyPagingItems.peek(it - 1) else null
-                                            MessageItem(
-                                                state = state.chatDetail,
-                                                messageWithSender = item,
-                                                previewerState = previewerState,
-                                                isFirst = !((before as? ChatPageUiModel.MessageWithSender)?.sender?.platformEqual(
-                                                    item.sender,
-                                                ) ?: false),
-                                                isLast = !((after as? ChatPageUiModel.MessageWithSender)?.sender?.platformEqual(
-                                                    item.sender,
-                                                ) ?: false),
-                                                shouldDisplayTime = mainSharedState.datastore.displayTimeOnEachMsg,
-                                                onImageClick = { elementId ->
-                                                    coroutineScope.launch {
-                                                        refreshImageSnapshotList(
-                                                            elementId = elementId,
-                                                            oldList = state.chatDetail.imagePreviewerState.imageSnapshotList,
-                                                            messageLazyPagingItems = messageLazyPagingItems,
-                                                            onEvent = onEvent,
-                                                        )
-                                                    }
-                                                },
-                                                onAvatarClick = {
-                                                    onMainSharedEvent(MainSharedEvent.LoadContactDetailDialog(item.sender.contactId))
-                                                },
-                                                onAvatarLongClick = {},
-                                                onEvent = onEvent,
-                                            )
-                                        }
-
-                                        is ChatPageUiModel.Divider -> {
-                                            TimeDivider(timestamp = item.timestamp)
-                                        }
-
-                                        else -> Unit
+                                    FloatingActionButton(
+                                        modifier = Modifier.padding(end = 16.dp, bottom = 16.dp),
+                                        onClick = {
+                                            coroutineScope.launch {
+                                                lazyListState.animateScrollToItem(0)
+                                            }
+                                        },
+                                    ) {
+                                        Icon(imageVector = Icons.Outlined.ArrowDownward, contentDescription = "to_latest")
                                     }
                                 }
                             }
-                        }
-                        androidx.compose.animation.AnimatedVisibility(
-                            modifier = Modifier.align(Alignment.BottomEnd),
-                            visible = fabExtended,
-                            enter = slideInHorizontally { it * 2 },
-                            exit = slideOutHorizontally { it * 2 },
-                        ) {
-                            FloatingActionButton(
-                                modifier = Modifier.padding(end = 16.dp, bottom = 16.dp),
-                                onClick = {
-                                    coroutineScope.launch {
-                                        lazyListState.animateScrollToItem(0)
-                                    }
-                                },
-                            ) {
-                                Icon(imageVector = Icons.Outlined.ArrowDownward, contentDescription = "to_latest")
-                            }
+
+                            EditArea(
+                                modifier = Modifier.background(composerBackground),
+                                compact = compact,
+                                state = state.chatDetail.editAreaState,
+                                onEvent = onEvent,
+                            )
                         }
                     }
-
-                    EditArea(
-                        modifier = Modifier
-                            .padding(bottom = bottomPadding)
-                            .imePadding()
-                            .background(MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)),
-                        state = state.chatDetail.editAreaState,
-                        onEvent = onEvent,
-                    )
                 }
             }
         }
@@ -492,7 +545,7 @@ fun NormalChatPage(
         // Inline fallback for BubbleActivity (standalone single-page host without ListDetailSceneStrategy)
         if (handleInfoAreaInline) {
             val inlineBackProgress = remember { Animatable(0f) }
-            PredictiveBackHandler(enabled = state.chatDetail.infoAreaState.expanded && !previewerState.canClose) { backEvents ->
+            PredictiveBackHandler(enabled = state.chatDetail.infoAreaState.expanded && !previewerState.canClose && !imeOccupiesBottom) { backEvents ->
                 try {
                     backEvents.collect { event ->
                         inlineBackProgress.snapTo(PredictiveBackDefaults.Easing.transform(event.progress))

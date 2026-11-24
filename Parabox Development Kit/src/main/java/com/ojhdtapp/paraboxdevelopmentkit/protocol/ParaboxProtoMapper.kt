@@ -76,11 +76,17 @@ object ParaboxProtoMapper {
     fun ParaboxResult.toProto(): ActionResult = ActionResult.newBuilder()
         .setCode(code)
         .setMessage(message)
+        .apply {
+            if (!messageUuid.isNullOrBlank()) {
+                setMessageUuid(messageUuid)
+            }
+        }
         .build()
 
     fun ActionResult.toDomain(): ParaboxResult = ParaboxResult(
         code = code,
         message = message,
+        messageUuid = messageUuid.ifBlank { null },
     )
 
     // ---- ConnectionStatus ----

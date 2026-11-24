@@ -10,11 +10,15 @@ import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.data.local.buildChatEntity
 import com.ojhdtapp.parabox.data.local.buildContactEntity
 import com.ojhdtapp.parabox.data.local.buildMessageEntity
+import com.ojhdtapp.parabox.data.local.buildOutgoingMessageEntity
 import com.ojhdtapp.parabox.data.local.entity.ChatBasicInfoUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatLatestMessageIdUpdate
 import com.ojhdtapp.parabox.data.local.entity.ChatUnreadMessagesNumUpdate
 import com.ojhdtapp.parabox.data.local.entity.ContactBasicInfoUpdate
 import com.ojhdtapp.parabox.data.local.entity.ContactChatCrossRef
+import com.ojhdtapp.parabox.data.local.entity.ContactEntity
+import com.ojhdtapp.parabox.data.local.entity.MessageSendResultUpdate
+import com.ojhdtapp.parabox.data.local.entity.MessageVerifyStateUpdate
 import com.ojhdtapp.parabox.data.local.entity.RecentQueryEntity
 import com.ojhdtapp.parabox.data.local.entity.RecentQueryTimestampUpdate
 import com.ojhdtapp.parabox.domain.model.Connection
@@ -22,6 +26,7 @@ import com.ojhdtapp.parabox.domain.model.RecentQuery
 import com.ojhdtapp.parabox.domain.repository.MainRepository
 import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
+import com.ojhdtapp.paraboxdevelopmentkit.model.SendMessage
 import com.ojhdtapp.paraboxdevelopmentkit.model.chat.ParaboxChat
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 import javax.inject.Inject
@@ -149,6 +154,88 @@ class MainRepositoryImpl @Inject constructor(
                 ParaboxResult(ParaboxResult.ERROR_UNKNOWN, e.message ?: ParaboxResult.ERROR_UNKNOWN_MSG)
             }
         }
+    }
+
+    override suspend fun insertOutgoingMessage(
+        msg: SendMessage,
+        pkg: String,
+        extensionId: Long,
+        chatId: Long,
+    ): Long = withContext(Dispatchers.IO) {
+        val selfContactId = getOrCreateSelfContactId(pkg, extensionId)
+        val messageEntity = buildOutgoingMessageEntity(
+            msg = msg,
+            pkg = pkg,
+            extensionId = extensionId,
+            senderId = selfContactId,
+            chatId = chatId,
+        )
+        val messageId = db.messageDao.insertMessage(messageEntity)
+        if (messageId > 0L) {
+            db.chatDao.updateLatestMessageId(
+                ChatLatestMessageIdUpdate(
+                    chatId = chatId,
+                    latestMessageId = messageId,
+                )
+            )
+        }
+        messageId
+    }
+
+    override suspend fun markMessageSendSuccess(messageId: Long, remoteUid: String?) = withContext(Dispatchers.IO) {
+        if (!remoteUid.isNullOrBlank()) {
+            db.messageDao.updateSendResult(
+                MessageSendResultUpdate(
+                    messageId = messageId,
+                    verified = true,
+                    uid = remoteUid,
+                )
+            )
+        } else {
+            db.messageDao.updateVerifiedState(
+                MessageVerifyStateUpdate(
+                    messageId = messageId,
+                    verified = true,
+                )
+            )
+        }
+        Unit
+    }
+
+    override suspend fun resetMessageForRetry(messageId: Long, timestamp: Long) = withContext(Dispatchers.IO) {
+        db.messageDao.updateTimestampAndUnverify(messageId, timestamp)
+        Unit
+    }
+
+    override suspend fun deleteMessage(messageId: Long) = withContext(Dispatchers.IO) {
+        db.messageDao.deleteMessageById(messageId)
+        Unit
+    }
+
+    private suspend fun getOrCreateSelfContactId(pkg: String, extensionId: Long): Long {
+        val existing = db.contactDao.checkContact(pkg, extensionId, SELF_CONTACT_UID)
+        if (existing != null && existing > 0L) return existing
+        val localName = context.getDataStoreValue(DataStoreKeys.USER_NAME, "我").ifBlank { "我" }
+        val localAvatarStr = context.getDataStoreValue(DataStoreKeys.USER_AVATAR, "")
+        val localAvatar = if (localAvatarStr.isNotBlank()) {
+            ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(android.net.Uri.parse(localAvatarStr))
+        } else {
+            ParaboxResourceInfo.ParaboxEmptyInfo
+        }
+        return db.contactDao.insertContact(
+            ContactEntity(
+                name = localName,
+                avatar = localAvatar,
+                isFriend = false,
+                pkg = pkg,
+                connectionId = extensionId,
+                uid = SELF_CONTACT_UID,
+            )
+        )
+    }
+
+    companion object {
+        private const val SELF_CONTACT_UID = "__parabox_self__"
     }
 
     override fun getRecentQuery(): Flow<Resource<List<RecentQuery>>> {

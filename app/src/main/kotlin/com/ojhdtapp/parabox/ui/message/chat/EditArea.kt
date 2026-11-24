@@ -1,6 +1,7 @@
 package com.ojhdtapp.parabox.ui.message.chat
 
 import android.Manifest
+import android.view.inputmethod.EditorInfo
 import android.util.Log
 import android.view.MotionEvent
 import androidx.compose.animation.AnimatedContent
@@ -40,7 +41,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -48,7 +49,10 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.input.TextFieldDecorator
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.NavigateNext
@@ -82,6 +86,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -90,7 +95,11 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.InterceptPlatformTextInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.PlatformTextInputInterceptor
+import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
@@ -107,7 +116,6 @@ import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.core.util.audio.LocalAudioRecorder
 import com.ojhdtapp.parabox.core.util.launchSetting
-import com.ojhdtapp.parabox.ui.common.clearFocusOnKeyboardDismiss
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageState
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.ImageSendingLayout
@@ -118,6 +126,17 @@ import kotlinx.coroutines.flow.collectLatest
 import org.apache.commons.io.FileUtils
 import java.io.File
 
+@OptIn(ExperimentalComposeUiApi::class)
+private val inlineChatInput = PlatformTextInputInterceptor { request, nextHandler ->
+    nextHandler.startInputMethod(
+        PlatformTextInputMethodRequest { editorInfo ->
+            val connection = request.createInputConnection(editorInfo)
+            editorInfo.imeOptions = editorInfo.imeOptions or EditorInfo.IME_FLAG_NO_FULLSCREEN
+            connection
+        },
+    )
+}
+
 @OptIn(
     ExperimentalPermissionsApi::class, ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class,
     ExperimentalMaterial3Api::class
@@ -126,6 +145,7 @@ import java.io.File
 fun EditArea(
     modifier: Modifier = Modifier,
     state: MessagePageState.EditAreaState,
+    compact: Boolean,
     onEvent: (e: MessagePageEvent) -> Unit
 ) {
     val context = LocalContext.current
@@ -133,6 +153,9 @@ fun EditArea(
     val hapticFeedback = LocalHapticFeedback.current
     val audioRecorder = LocalAudioRecorder.current
     val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+    val verticalPadding = if (compact) 4.dp else 16.dp
+    val controlPadding = if (compact) 0.dp else 8.dp
     val audioPermissionState =
         rememberPermissionState(permission = Manifest.permission.RECORD_AUDIO)
     if (state.showVoicePermissionDeniedDialog) {
@@ -178,7 +201,7 @@ fun EditArea(
         Row(
             modifier = modifier
                 .fillMaxWidth()
-                .padding(vertical = 16.dp), verticalAlignment = Alignment.Bottom
+                .padding(vertical = verticalPadding), verticalAlignment = Alignment.Bottom
         ) {
             val isRecording by remember(state) {
                 derivedStateOf { state.mode == EditAreaMode.AUDIO_RECORDER && state.audioRecorderState is AudioRecorderState.Recording || state.audioRecorderState is AudioRecorderState.Confirmed }
@@ -187,7 +210,7 @@ fun EditArea(
                 targetState = state.mode,
                 label = "mode",
                 modifier = Modifier
-                    .padding(start = 16.dp, top = 8.dp, bottom = 8.dp),
+                    .padding(start = if (compact) 4.dp else 16.dp, top = controlPadding, bottom = controlPadding),
             ) {
                 if (it == EditAreaMode.LOCATION_PICKER) {
                     IconButton(onClick = { onEvent(MessagePageEvent.UpdateEditAreaMode(EditAreaMode.NORMAL)) }) {
@@ -209,14 +232,9 @@ fun EditArea(
                             IconButton(
                                 enabled = !isRecording,
                                 onClick = {
+                                    focusManager.clearFocus()
                                     keyboardController?.hide()
-                                    if (state.toolbarState == ToolbarState.Tools && state.expanded) {
-                                        onEvent(MessagePageEvent.OpenEditArea(false))
-                                    } else {
-                                        onEvent(MessagePageEvent.OpenEditArea(true))
-                                    }
-                                    onEvent(MessagePageEvent.UpdateToolbarState(ToolbarState.Tools))
-                                    onEvent(MessagePageEvent.UpdateEditAreaMode(EditAreaMode.NORMAL))
+                                    onEvent(MessagePageEvent.ToggleToolbar(ToolbarState.Tools))
                                 }) {
                                 Icon(
                                     imageVector = Icons.Outlined.AddCircleOutline,
@@ -229,7 +247,7 @@ fun EditArea(
 
             }
             AnimatedVisibility(
-                modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
+                modifier = Modifier.padding(vertical = controlPadding),
                 visible = !state.iconShrink,
                 enter = expandHorizontally(),
                 exit = shrinkHorizontally(),
@@ -250,14 +268,9 @@ fun EditArea(
                         IconButton(
                             enabled = !isRecording,
                             onClick = {
+                                focusManager.clearFocus()
                                 keyboardController?.hide()
-                                if (state.toolbarState == ToolbarState.Emoji && state.expanded) {
-                                    onEvent(MessagePageEvent.OpenEditArea(false))
-                                } else {
-                                    onEvent(MessagePageEvent.OpenEditArea(true))
-                                }
-                                onEvent(MessagePageEvent.UpdateToolbarState(ToolbarState.Emoji))
-                                onEvent(MessagePageEvent.UpdateEditAreaMode(EditAreaMode.NORMAL))
+                                onEvent(MessagePageEvent.ToggleToolbar(ToolbarState.Emoji))
                             }) {
                             Icon(
                                 imageVector = Icons.Outlined.EmojiEmotions,
@@ -399,34 +412,45 @@ fun EditArea(
                                                     audioRecorder.start(context, targetFile!!)
                                                 },
                                                     gestureEnd = {
-                                                        // TODO: audio fail notice
-                                                        audioRecorder.stop()
+                                                        val stoppedOk = audioRecorder.stop()
+                                                        val durationMs = System.currentTimeMillis() - startTimestamp
                                                         interactionSource.tryEmit(
                                                             PressInteraction.Release(
                                                                 press
                                                             )
                                                         )
-
-//                                                onStopRecording()
-                                                        if (currentState is AudioRecorderState.Confirmed) {
-                                                            if (System.currentTimeMillis() - startTimestamp > 1000) {
-                                                                onEvent(MessagePageEvent.SendAudioMessage(audioFile = targetFile!!))
-                                                            } else {
-
-                                                            }
+                                                        val recorded = targetFile
+                                                        if (!stoppedOk || recorded == null || !recorded.exists() || recorded.length() <= 0L) {
+                                                            onEvent(MessagePageEvent.ShowSendErrorNotice("录音失败，请重试"))
+                                                            onEvent(MessagePageEvent.UpdateRecordedAudio(null, 0L))
                                                             onEvent(
                                                                 MessagePageEvent.UpdateAudioRecorderState(
                                                                     AudioRecorderState.Ready
                                                                 )
                                                             )
-//                                                    onClearRecording()
-//                                                    sendAudio(context, packageNameList) {
-//                                                        onSend(it)
-//                                                        onAudioRecorderStateChanged(
-//                                                            AudioRecorderState.Ready
-//                                                        )
-//                                                    }
+                                                        } else if (durationMs <= 1000L) {
+                                                            recorded.delete()
+                                                            onEvent(MessagePageEvent.ShowSendErrorNotice("录音时间太短，已取消"))
+                                                            onEvent(MessagePageEvent.UpdateRecordedAudio(null, 0L))
+                                                            onEvent(
+                                                                MessagePageEvent.UpdateAudioRecorderState(
+                                                                    AudioRecorderState.Ready
+                                                                )
+                                                            )
+                                                        } else if (currentState is AudioRecorderState.Confirmed) {
+                                                            onEvent(
+                                                                MessagePageEvent.SendAudioMessage(
+                                                                    audioFile = recorded,
+                                                                    durationMs = durationMs,
+                                                                )
+                                                            )
+                                                            onEvent(
+                                                                MessagePageEvent.UpdateAudioRecorderState(
+                                                                    AudioRecorderState.Ready
+                                                                )
+                                                            )
                                                         } else {
+                                                            onEvent(MessagePageEvent.UpdateRecordedAudio(recorded, durationMs))
                                                             onEvent(
                                                                 MessagePageEvent.UpdateAudioRecorderState(
                                                                     AudioRecorderState.Done
@@ -467,39 +491,47 @@ fun EditArea(
                                 Column(
                                     verticalArrangement = Arrangement.Bottom
                                 ) {
-                                    // quote reply
-                                    AnimatedVisibility(visible = state.chosenQuoteReply != null,
-                                        enter = expandVertically(),
-                                        exit = shrinkVertically()
+                                    Column(
+                                        modifier = if (compact) {
+                                            Modifier.weight(1f, fill = false)
+                                                .heightIn(max = 48.dp)
+                                                .verticalScroll(rememberScrollState())
+                                        } else Modifier,
                                     ) {
-                                        QuoteReplySendingLayout(model = state.chosenQuoteReply, onClick = { /*TODO*/ },
-                                            onCancel = {
-                                                onEvent(MessagePageEvent.ChooseQuoteReply(null))
-                                            })
-                                    }
-                                    // image
-                                    AnimatedVisibility(visible = state.chosenImageList.isNotEmpty(),
-                                        enter = expandVertically(),
-                                        exit = shrinkVertically()
-                                    ) {
-                                        LazyRow(
-                                            modifier = Modifier
-                                                .padding(top = 16.dp),
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                            contentPadding = PaddingValues(horizontal = 16.dp)
+                                        // quote reply
+                                        AnimatedVisibility(visible = state.chosenQuoteReply != null,
+                                            enter = expandVertically(),
+                                            exit = shrinkVertically()
                                         ) {
-                                            itemsIndexed(
-                                                items = state.chosenImageList,
-                                                key = { index, item -> item }) { index, item ->
-                                                ImageSendingLayout(
-                                                    modifier = Modifier.animateItem(),
-                                                    model = item,
-                                                    previewIndex = index,
-                                                    onClick = { },
-                                                    onCancel = {
-                                                        onEvent(MessagePageEvent.ChooseImageUri(item))
-                                                    }
-                                                )
+                                            QuoteReplySendingLayout(model = state.chosenQuoteReply, onClick = { /*TODO*/ },
+                                                onCancel = {
+                                                    onEvent(MessagePageEvent.ChooseQuoteReply(null))
+                                                })
+                                        }
+                                        // image
+                                        AnimatedVisibility(visible = state.chosenImageList.isNotEmpty(),
+                                            enter = expandVertically(),
+                                            exit = shrinkVertically()
+                                        ) {
+                                            LazyRow(
+                                                modifier = Modifier
+                                                    .padding(top = 16.dp),
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                contentPadding = PaddingValues(horizontal = 16.dp)
+                                            ) {
+                                                itemsIndexed(
+                                                    items = state.chosenImageList,
+                                                    key = { index, item -> item }) { index, item ->
+                                                    ImageSendingLayout(
+                                                        modifier = Modifier.animateItem(),
+                                                        model = item,
+                                                        previewIndex = index,
+                                                        onClick = { },
+                                                        onCancel = {
+                                                            onEvent(MessagePageEvent.ChooseImageUri(item))
+                                                        }
+                                                    )
+                                                }
                                             }
                                         }
                                     }
@@ -518,66 +550,79 @@ fun EditArea(
                                                 }
                                             }
                                     }
-                                    BasicTextField(
-                                        modifier = Modifier
-                                            .defaultMinSize(
-                                                minWidth = TextFieldDefaults.MinWidth,
-                                                minHeight = TextFieldDefaults.MinHeight
-                                            )
-                                            .contentReceiver { transferableContent ->
-                                                transferableContent.consume {
-                                                    it.uri?.let {
-                                                        onEvent(MessagePageEvent.ChooseImageUri(it))
-                                                        true
-                                                    } ?: false
-                                                }
-                                            },
-                                        state = state.input,
-                                        textStyle = MaterialTheme.typography.bodyLarge.merge(
-                                            TextStyle(color = MaterialTheme.colorScheme.onSurface)
-                                        ),
-                                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                                        decorator = object : TextFieldDecorator {
-                                            @Composable
-                                            override fun Decoration(innerTextField: @Composable () -> Unit) {
-                                                TextFieldDefaults.DecorationBox(
-                                                    value = state.input.text.toString(),
-                                                    innerTextField = innerTextField,
-                                                    enabled = true,
-                                                    interactionSource = interactionSource,
-                                                    singleLine = false,
-                                                    visualTransformation = object : VisualTransformation {
-                                                        override fun filter(text: AnnotatedString): TransformedText {
-                                                            return TransformedText(text, object : OffsetMapping {
-                                                                override fun originalToTransformed(offset: Int): Int =
-                                                                    offset.coerceAtMost(text.length - 1)
-
-                                                                override fun transformedToOriginal(offset: Int): Int =
-                                                                    offset.coerceAtMost(text.length - 1)
-                                                            })
-                                                        }
-                                                    },
-                                                    placeholder = {
-                                                        Text(
-                                                            text = stringResource(R.string.input_placeholder),
-                                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                            maxLines = 1,
-                                                            overflow = TextOverflow.Clip,
-                                                        )
-                                                    },
-                                                    colors = TextFieldDefaults.colors(
-                                                        cursorColor = MaterialTheme.colorScheme.primary,
-                                                        focusedContainerColor = Color.Transparent,
-                                                        unfocusedContainerColor = Color.Transparent,
-                                                        disabledContainerColor = Color.Transparent,
-                                                        focusedIndicatorColor = Color.Transparent,
-                                                        unfocusedIndicatorColor = Color.Transparent,
-                                                        disabledIndicatorColor = Color.Transparent
-                                                    )
+                                    InterceptPlatformTextInput(inlineChatInput) {
+                                        BasicTextField(
+                                            modifier = Modifier
+                                                .defaultMinSize(
+                                                    minWidth = TextFieldDefaults.MinWidth,
+                                                    minHeight = if (compact) 48.dp else TextFieldDefaults.MinHeight
                                                 )
+                                                .onFocusChanged { focus ->
+                                                    if (focus.isFocused && state.expanded) {
+                                                        onEvent(MessagePageEvent.OpenEditArea(false))
+                                                    }
+                                                }
+                                                .contentReceiver { transferableContent ->
+                                                    transferableContent.consume {
+                                                        it.uri?.let {
+                                                            onEvent(MessagePageEvent.ChooseImageUri(it))
+                                                            true
+                                                        } ?: false
+                                                    }
+                                                },
+                                            state = state.input,
+                                            lineLimits = if (compact) TextFieldLineLimits.MultiLine(maxHeightInLines = 2)
+                                                else TextFieldLineLimits.Default,
+                                            textStyle = MaterialTheme.typography.bodyLarge.merge(
+                                                TextStyle(color = MaterialTheme.colorScheme.onSurface)
+                                            ),
+                                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                                            decorator = object : TextFieldDecorator {
+                                                @Composable
+                                                override fun Decoration(innerTextField: @Composable () -> Unit) {
+                                                    TextFieldDefaults.DecorationBox(
+                                                        value = state.input.text.toString(),
+                                                        innerTextField = innerTextField,
+                                                        enabled = true,
+                                                        interactionSource = interactionSource,
+                                                        singleLine = false,
+                                                        contentPadding = TextFieldDefaults.contentPaddingWithoutLabel(
+                                                            top = if (compact) 8.dp else 16.dp,
+                                                            bottom = if (compact) 8.dp else 16.dp,
+                                                        ),
+                                                        visualTransformation = object : VisualTransformation {
+                                                            override fun filter(text: AnnotatedString): TransformedText {
+                                                                return TransformedText(text, object : OffsetMapping {
+                                                                    override fun originalToTransformed(offset: Int): Int =
+                                                                        offset.coerceAtMost(text.length - 1)
+
+                                                                    override fun transformedToOriginal(offset: Int): Int =
+                                                                        offset.coerceAtMost(text.length - 1)
+                                                                })
+                                                            }
+                                                        },
+                                                        placeholder = {
+                                                            Text(
+                                                                text = stringResource(R.string.input_placeholder),
+                                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                                maxLines = 1,
+                                                                overflow = TextOverflow.Clip,
+                                                            )
+                                                        },
+                                                        colors = TextFieldDefaults.colors(
+                                                            cursorColor = MaterialTheme.colorScheme.primary,
+                                                            focusedContainerColor = Color.Transparent,
+                                                            unfocusedContainerColor = Color.Transparent,
+                                                            disabledContainerColor = Color.Transparent,
+                                                            focusedIndicatorColor = Color.Transparent,
+                                                            unfocusedIndicatorColor = Color.Transparent,
+                                                            disabledIndicatorColor = Color.Transparent
+                                                        )
+                                                    )
+                                                }
                                             }
-                                        }
-                                    )
+                                        )
+                                    }
                                 }
                             }
                         }

@@ -19,6 +19,7 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.contact.ParaboxContact
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 import com.ojhdtapp.paraboxdevelopmentkit.v2.ParaboxConnectionStatus
 import com.ojhdtapp.paraboxdevelopmentkit.v2.ParaboxSession
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
@@ -37,7 +38,13 @@ class TdSession(
     private val coordinator: TdClientCoordinator,
     private val mediaBridge: TdMediaBridge,
     private val initTimeoutMs: Long = 25_000L,
+    private val sendAckTimeoutMs: Long = 50_000L,
 ) : ParaboxSession(sessionId, extra, hostPackageName) {
+
+    private sealed interface SendAck {
+        data class Succeeded(val finalMessageId: Long) : SendAck
+        data class Failed(val code: Int, val message: String) : SendAck
+    }
 
     private val accountId: String = extra.optString(TdExtensionProvider.KEY_ACCOUNT_ID)
     private val autoDownloadMedia: Boolean = extra.optBoolean(TdExtensionProvider.KEY_AUTO_DOWNLOAD_MEDIA, true)
@@ -50,6 +57,7 @@ class TdSession(
 
     private val userCache = ConcurrentHashMap<Long, TdApi.User>()
     private val chatCache = ConcurrentHashMap<Long, TdApi.Chat>()
+    private val pendingSends = ConcurrentHashMap<Pair<Long, Long>, CompletableDeferred<SendAck>>()
 
     override suspend fun onInitialize(): Boolean {
         if (accountId.isBlank()) {
@@ -111,7 +119,24 @@ class TdSession(
                     is TdApi.UpdateNewMessage -> {
                         launch { handleNewMessage(tdClient, update.message) }
                     }
+                    is TdApi.UpdateMessageSendSucceeded -> {
+                        val key = update.message.chatId to update.oldMessageId
+                        pendingSends.computeIfAbsent(key) { CompletableDeferred() }
+                            .complete(SendAck.Succeeded(update.message.id))
+                    }
+                    is TdApi.UpdateMessageSendFailed -> {
+                        val key = update.message.chatId to update.oldMessageId
+                        val errCode = update.error?.code ?: -1
+                        val errMsg = update.error?.message.orEmpty()
+                        pendingSends.computeIfAbsent(key) { CompletableDeferred() }
+                            .complete(SendAck.Failed(errCode, errMsg))
+                    }
                     is TdApi.UpdateDeleteMessages -> {
+                        update.messageIds.forEach { msgId ->
+                            pendingSends[update.chatId to msgId]?.complete(
+                                SendAck.Failed(-1, "消息在发送过程中被 Telegram 丢弃或删除")
+                            )
+                        }
                         if (update.isPermanent && !update.fromCache) {
                             launch {
                                 update.messageIds.forEach { msgId ->
@@ -224,27 +249,130 @@ class TdSession(
             mediaBridge = mediaBridge,
         )
         if (outbound.contents.isEmpty()) {
-            return ParaboxResult(ParaboxResult.ERROR_UNKNOWN, "消息内容为空或媒体不可读")
+            cleanupStagedFiles(outbound.stagedFiles)
+            val code = if (outbound.failedMediaCount > 0) {
+                ParaboxResult.ERROR_MEDIA_UNREADABLE
+            } else {
+                ParaboxResult.ERROR_UNKNOWN
+            }
+            return ParaboxResult(code, outbound.errorReason ?: "消息内容为空或媒体不可读")
         }
 
         val replyTo = outbound.replyToMessageId?.let { TdApi.InputMessageReplyToMessage(it, null) }
         return try {
-            outbound.contents.forEachIndexed { index, inputContent ->
-                tdClient.send<TdApi.Message>(
-                    TdApi.SendMessage(
+            val queuedMessages: List<TdApi.Message> = if (outbound.canSendAsAlbum) {
+                val albumResult = tdClient.send<TdApi.Messages>(
+                    TdApi.SendMessageAlbum(
                         chatId,
                         0L,
-                        if (index == 0) replyTo else null,
+                        replyTo,
                         null,
-                        null,
-                        inputContent,
+                        outbound.contents.toTypedArray(),
                     )
                 )
+                albumResult.messages?.filterNotNull().orEmpty()
+            } else {
+                outbound.contents.mapIndexed { index, inputContent ->
+                    tdClient.send<TdApi.Message>(
+                        TdApi.SendMessage(
+                            chatId,
+                            0L,
+                            if (index == 0) replyTo else null,
+                            null,
+                            null,
+                            inputContent,
+                        )
+                    )
+                }
             }
-            ParaboxResult(ParaboxResult.SUCCESS, ParaboxResult.SUCCESS_MSG)
+
+            if (queuedMessages.isEmpty()) {
+                return ParaboxResult(ParaboxResult.ERROR_UNKNOWN, "Telegram 未返回发送任务")
+            }
+
+            var lastConfirmedId: Long? = null
+            for (queued in queuedMessages) {
+                when (val sendingState = queued.sendingState) {
+                    null -> {
+                        lastConfirmedId = queued.id
+                    }
+                    is TdApi.MessageSendingStateFailed -> {
+                        val errCode = sendingState.error?.code ?: -1
+                        val errMsg = sendingState.error?.message.orEmpty()
+                        return ParaboxResult(
+                            ParaboxResult.ERROR_UNKNOWN,
+                            formatTdError(errCode, errMsg),
+                        )
+                    }
+                    is TdApi.MessageSendingStatePending -> {
+                        val ack = awaitSendAck(chatId, queued.id)
+                        when (ack) {
+                            is SendAck.Succeeded -> {
+                                lastConfirmedId = ack.finalMessageId
+                            }
+                            is SendAck.Failed -> {
+                                return ParaboxResult(
+                                    ParaboxResult.ERROR_UNKNOWN,
+                                    formatTdError(ack.code, ack.message),
+                                )
+                            }
+                            null -> {
+                                return ParaboxResult(
+                                    ParaboxResult.ERROR_TIMEOUT,
+                                    "等待 Telegram 服务端确认超时，请检查网络连接",
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            val finalUuid = lastConfirmedId?.let { TdMessageMapper.formatMessageUuid(chatId, it) }
+            ParaboxResult(ParaboxResult.SUCCESS, ParaboxResult.SUCCESS_MSG, messageUuid = finalUuid)
         } catch (e: Exception) {
             Log.e(TAG, "[$accountId] onSendMessage failed", e)
             ParaboxResult(ParaboxResult.ERROR_UNKNOWN, e.message ?: ParaboxResult.ERROR_UNKNOWN_MSG)
+        } finally {
+            cleanupStagedFiles(outbound.stagedFiles)
+        }
+    }
+
+    private suspend fun awaitSendAck(chatId: Long, tempMessageId: Long): SendAck? {
+        val key = chatId to tempMessageId
+        val deferred = pendingSends.computeIfAbsent(key) { CompletableDeferred() }
+        return try {
+            withTimeoutOrNull(sendAckTimeoutMs) {
+                deferred.await()
+            }
+        } finally {
+            pendingSends.remove(key, deferred)
+        }
+    }
+
+    private fun formatTdError(code: Int, rawMessage: String): String {
+        val upper = rawMessage.uppercase()
+        return when {
+            code == 429 || upper.contains("TOO_MANY_REQUESTS") -> "发送过于频繁，请稍后再试 ($rawMessage)"
+            code == 403 || upper.contains("FORBIDDEN") || upper.contains("CHAT_WRITE_FORBIDDEN") ->
+                "无权在此会话发送消息 ($rawMessage)"
+            upper.contains("CHAT_NOT_FOUND") || upper.contains("PEER_ID_INVALID") ->
+                "目标会话不存在或已失效 ($rawMessage)"
+            upper.contains("MEDIA_EMPTY") || upper.contains("FILE_") ->
+                "媒体文件上传失败 ($rawMessage)"
+            rawMessage.isNotBlank() -> "Telegram 错误 ($code): $rawMessage"
+            else -> "Telegram 发送失败 (code=$code)"
+        }
+    }
+
+    private fun cleanupStagedFiles(files: List<File>) {
+        files.forEach { file ->
+            runCatching {
+                val parent = file.parentFile
+                file.delete()
+                if (parent != null && parent.isDirectory && parent.list()?.isEmpty() == true) {
+                    parent.delete()
+                }
+            }
         }
     }
 
@@ -389,6 +517,10 @@ class TdSession(
         }
         userCache.clear()
         chatCache.clear()
+        pendingSends.values.forEach { deferred ->
+            deferred.complete(SendAck.Failed(-2, "Telegram 会话已关闭"))
+        }
+        pendingSends.clear()
     }
 
     private suspend fun getOrFetchUser(tdClient: TdClientApi, userId: Long): TdApi.User? {

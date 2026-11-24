@@ -5,6 +5,9 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxBasicInfo
 import com.ojhdtapp.paraboxdevelopmentkit.model.SendMessage
 import com.ojhdtapp.paraboxdevelopmentkit.model.chat.ParaboxChat
 import com.ojhdtapp.paraboxdevelopmentkit.model.contact.ParaboxContact
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAnnotatedText
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAt
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAtAll
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAudio
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxFile
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
@@ -12,15 +15,25 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxLocation
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxMessageElement
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxPlainText
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxQuoteReply
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxText
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxUnsupported
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxVideo
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 import org.drinkless.tdlib.TdApi
+import java.io.File
 
 data class OutboundTdPayload(
     val contents: List<TdApi.InputMessageContent>,
     val replyToMessageId: Long? = null,
-)
+    val stagedFiles: List<File> = emptyList(),
+    val failedMediaCount: Int = 0,
+    val errorReason: String? = null,
+) {
+    val canSendAsAlbum: Boolean
+        get() = contents.size in 2..10 && contents.all {
+            it is TdApi.InputMessagePhoto || it is TdApi.InputMessageVideo
+        }
+}
 
 object TdMessageMapper {
 
@@ -274,19 +287,66 @@ object TdMessageMapper {
         return elements
     }
 
+    private const val MAX_TELEGRAM_PHOTO_BYTES = 10L * 1024L * 1024L
+    private val VOICE_NOTE_EXTENSIONS = setOf("ogg", "oga", "opus", "m4a", "mp3", "aac")
+
     suspend fun mapSendMessageToOutbound(
         sendMessage: SendMessage,
         accountId: String,
         mediaBridge: TdMediaBridge,
     ): OutboundTdPayload {
-        val textParts = mutableListOf<String>()
+        val textBuilder = StringBuilder()
+        val textEntities = mutableListOf<TdApi.TextEntity>()
         val mediaContents = mutableListOf<TdApi.InputMessageContent>()
+        val stagedFiles = mutableListOf<File>()
         var replyToMessageId: Long? = null
+        var failedMediaCount = 0
+
+        fun appendPlainSegment(segment: String) {
+            if (segment.isEmpty()) return
+            if (textBuilder.isNotEmpty() && !textBuilder.endsWith('\n') && !textBuilder.endsWith(' ')) {
+                textBuilder.append(' ')
+            }
+            textBuilder.append(segment)
+        }
+
+        fun appendTextElement(textElement: ParaboxText) {
+            when (textElement) {
+                is ParaboxPlainText -> {
+                    if (textElement.text.isNotEmpty()) {
+                        textBuilder.append(textElement.text)
+                    }
+                }
+                is ParaboxAt -> {
+                    val label = "@${textElement.target.basicInfo.name?.ifBlank { null } ?: textElement.target.uid}"
+                    if (textBuilder.isNotEmpty() && !textBuilder.endsWith(' ') && !textBuilder.endsWith('\n')) {
+                        textBuilder.append(' ')
+                    }
+                    val offset = textBuilder.length
+                    textBuilder.append(label)
+                    val userId = textElement.target.uid.toLongOrNull()
+                    if (userId != null && userId > 0L) {
+                        textEntities.add(
+                            TdApi.TextEntity(
+                                offset,
+                                label.length,
+                                TdApi.TextEntityTypeMentionName(userId),
+                            )
+                        )
+                    }
+                    textBuilder.append(' ')
+                }
+                is ParaboxAtAll -> {
+                    appendPlainSegment("@all")
+                }
+            }
+        }
 
         for (element in sendMessage.contents) {
             when (element) {
-                is ParaboxPlainText -> {
-                    if (element.text.isNotEmpty()) textParts.add(element.text)
+                is ParaboxText -> appendTextElement(element)
+                is ParaboxAnnotatedText -> {
+                    element.list.forEach { appendTextElement(it) }
                 }
                 is ParaboxQuoteReply -> {
                     val parsed = element.id?.let { parseMessageUuid(it) }
@@ -297,46 +357,87 @@ object TdMessageMapper {
                 is ParaboxImage -> {
                     val file = stageResource(accountId, element.resourceInfo, element.fileName, mediaBridge)
                     if (file != null) {
-                        mediaContents.add(
-                            TdApi.InputMessagePhoto(
-                                TdApi.InputFileLocal(file.absolutePath),
-                                null,
-                                intArrayOf(),
-                                element.width,
-                                element.height,
-                                null,
-                                false,
-                                null,
-                                false,
+                        stagedFiles.add(file)
+                        val meta = if (element.width <= 0 || element.height <= 0) {
+                            mediaBridge.probeImageMetadata(file)
+                        } else {
+                            MediaMetadata(element.width, element.height, 0, file.length())
+                        }
+                        if (meta.sizeBytes > MAX_TELEGRAM_PHOTO_BYTES) {
+                            mediaContents.add(
+                                TdApi.InputMessageDocument(
+                                    TdApi.InputFileLocal(file.absolutePath),
+                                    null,
+                                    false,
+                                    null,
+                                )
                             )
-                        )
+                        } else {
+                            mediaContents.add(
+                                TdApi.InputMessagePhoto(
+                                    TdApi.InputFileLocal(file.absolutePath),
+                                    null,
+                                    intArrayOf(),
+                                    meta.width,
+                                    meta.height,
+                                    null,
+                                    false,
+                                    null,
+                                    false,
+                                )
+                            )
+                        }
+                    } else {
+                        failedMediaCount++
                     }
                 }
                 is ParaboxAudio -> {
-                    val file = stageResource(accountId, element.resourceInfo, element.fileName, mediaBridge)
+                    val file = stageResource(accountId, element.resourceInfo, element.fileName ?: "voice.m4a", mediaBridge)
                     if (file != null) {
-                        mediaContents.add(
-                            TdApi.InputMessageVoiceNote(
-                                TdApi.InputFileLocal(file.absolutePath),
-                                element.length.toInt(),
-                                byteArrayOf(),
-                                null,
-                                null,
+                        stagedFiles.add(file)
+                        val durationSec = element.length.toInt().takeIf { it > 0 }
+                            ?: mediaBridge.probeAudioDurationSeconds(file)
+                        val ext = file.extension.lowercase()
+                        if (ext.isEmpty() || ext in VOICE_NOTE_EXTENSIONS) {
+                            mediaContents.add(
+                                TdApi.InputMessageVoiceNote(
+                                    TdApi.InputFileLocal(file.absolutePath),
+                                    durationSec,
+                                    byteArrayOf(),
+                                    null,
+                                    null,
+                                )
                             )
-                        )
+                        } else {
+                            mediaContents.add(
+                                TdApi.InputMessageAudio(
+                                    TdApi.InputFileLocal(file.absolutePath),
+                                    null,
+                                    durationSec,
+                                    file.nameWithoutExtension,
+                                    "",
+                                    null,
+                                )
+                            )
+                        }
+                    } else {
+                        failedMediaCount++
                     }
                 }
                 is ParaboxVideo -> {
-                    val file = stageResource(accountId, element.resourceInfo, element.fileName, mediaBridge)
+                    val file = stageResource(accountId, element.resourceInfo, element.fileName ?: "video.mp4", mediaBridge)
                     if (file != null) {
+                        stagedFiles.add(file)
+                        val meta = mediaBridge.probeVideoMetadata(file)
+                        val durationSec = element.length.toInt().takeIf { it > 0 } ?: meta.durationSeconds
                         mediaContents.add(
                             TdApi.InputMessageVideo(
                                 TdApi.InputFileLocal(file.absolutePath),
                                 null,
                                 intArrayOf(),
-                                element.length.toInt(),
-                                0,
-                                0,
+                                durationSec,
+                                meta.width,
+                                meta.height,
                                 true,
                                 null,
                                 false,
@@ -344,11 +445,14 @@ object TdMessageMapper {
                                 false,
                             )
                         )
+                    } else {
+                        failedMediaCount++
                     }
                 }
                 is ParaboxFile -> {
                     val file = stageResource(accountId, element.resourceInfo, element.name, mediaBridge)
                     if (file != null) {
+                        stagedFiles.add(file)
                         mediaContents.add(
                             TdApi.InputMessageDocument(
                                 TdApi.InputFileLocal(file.absolutePath),
@@ -357,6 +461,8 @@ object TdMessageMapper {
                                 null,
                             )
                         )
+                    } else {
+                        failedMediaCount++
                     }
                 }
                 is ParaboxLocation -> {
@@ -371,22 +477,45 @@ object TdMessageMapper {
                 }
                 else -> {
                     val fallback = element.contentToString()
-                    if (fallback.isNotBlank()) textParts.add(fallback)
+                    if (fallback.isNotBlank()) appendPlainSegment(fallback)
                 }
             }
         }
 
-        val combinedText = textParts.joinToString("\n").trim()
-        val resultContents = mutableListOf<TdApi.InputMessageContent>()
-        if (mediaContents.size == 1 && combinedText.isNotEmpty() && mediaContents[0] is TdApi.InputMessagePhoto) {
-            val photo = mediaContents[0] as TdApi.InputMessagePhoto
-            photo.caption = TdApi.FormattedText(combinedText, emptyArray())
-            resultContents.add(photo)
+        val rawText = textBuilder.toString()
+        val trimmedStart = rawText.length - rawText.trimStart().length
+        val finalText = rawText.trim()
+        val adjustedEntities = if (finalText.isNotEmpty() && textEntities.isNotEmpty()) {
+            textEntities.mapNotNull { entity ->
+                val newOffset = entity.offset - trimmedStart
+                if (newOffset >= 0 && newOffset + entity.length <= finalText.length) {
+                    TdApi.TextEntity(newOffset, entity.length, entity.type)
+                } else {
+                    null
+                }
+            }.toTypedArray()
         } else {
-            if (combinedText.isNotEmpty()) {
+            emptyArray()
+        }
+        val formattedText = if (finalText.isNotEmpty()) {
+            TdApi.FormattedText(finalText, adjustedEntities)
+        } else {
+            null
+        }
+
+        val resultContents = mutableListOf<TdApi.InputMessageContent>()
+        val isAlbum = mediaContents.size in 2..10 && mediaContents.all {
+            it is TdApi.InputMessagePhoto || it is TdApi.InputMessageVideo
+        }
+        if (formattedText != null && mediaContents.size == 1 && attachCaption(mediaContents[0], formattedText)) {
+            resultContents.add(mediaContents[0])
+        } else if (formattedText != null && isAlbum && attachCaption(mediaContents[0], formattedText)) {
+            resultContents.addAll(mediaContents)
+        } else {
+            if (formattedText != null) {
                 resultContents.add(
                     TdApi.InputMessageText(
-                        TdApi.FormattedText(combinedText, emptyArray()),
+                        formattedText,
                         null,
                         true,
                     )
@@ -395,10 +524,45 @@ object TdMessageMapper {
             resultContents.addAll(mediaContents)
         }
 
+        val errorReason = when {
+            resultContents.isEmpty() && failedMediaCount > 0 -> "媒体文件不可读或已被删除"
+            resultContents.isEmpty() -> "消息内容为空"
+            else -> null
+        }
+
         return OutboundTdPayload(
             contents = resultContents,
             replyToMessageId = replyToMessageId,
+            stagedFiles = stagedFiles,
+            failedMediaCount = failedMediaCount,
+            errorReason = errorReason,
         )
+    }
+
+    private fun attachCaption(content: TdApi.InputMessageContent, caption: TdApi.FormattedText): Boolean {
+        return when (content) {
+            is TdApi.InputMessagePhoto -> {
+                content.caption = caption
+                true
+            }
+            is TdApi.InputMessageVideo -> {
+                content.caption = caption
+                true
+            }
+            is TdApi.InputMessageDocument -> {
+                content.caption = caption
+                true
+            }
+            is TdApi.InputMessageAudio -> {
+                content.caption = caption
+                true
+            }
+            is TdApi.InputMessageVoiceNote -> {
+                content.caption = caption
+                true
+            }
+            else -> false
+        }
     }
 
     private suspend fun stageResource(

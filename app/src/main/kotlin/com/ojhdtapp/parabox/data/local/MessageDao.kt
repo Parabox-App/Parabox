@@ -13,6 +13,7 @@ import androidx.sqlite.db.SupportSQLiteQuery
 import com.ojhdtapp.parabox.data.local.entity.ChatEntity
 import com.ojhdtapp.parabox.data.local.entity.ContactEntity
 import com.ojhdtapp.parabox.data.local.entity.MessageEntity
+import com.ojhdtapp.parabox.data.local.entity.MessageSendResultUpdate
 import com.ojhdtapp.parabox.data.local.entity.MessageVerifyStateUpdate
 import com.ojhdtapp.parabox.data.local.entity.MessageWithSenderEntity
 import com.ojhdtapp.parabox.data.local.entity.QueryMessageEntity
@@ -48,6 +49,12 @@ interface MessageDao {
 
     @Update(entity = MessageEntity::class)
     fun updateVerifiedState(obj: MessageVerifyStateUpdate): Int
+
+    @Update(entity = MessageEntity::class)
+    fun updateSendResult(obj: MessageSendResultUpdate): Int
+
+    @Query("UPDATE message_entity SET verified = 0, timestamp = :timestamp WHERE messageId = :messageId")
+    fun updateTimestampAndUnverify(messageId: Long, timestamp: Long): Int
 
 //    @Query("SELECT * FROM message_entity WHERE name LIKE '%' || :query || '%' OR contentString LIKE '%' || :query || '%'")
 //    fun queryMessage(query: String): List<MessageEntity>

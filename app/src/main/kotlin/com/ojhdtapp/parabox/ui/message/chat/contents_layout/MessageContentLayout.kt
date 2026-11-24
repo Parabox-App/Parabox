@@ -24,6 +24,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -196,16 +197,85 @@ fun AudioLayout(
 
 @Composable
 fun FileLayout(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    fileName: String = "",
+    fileSize: Long = 0L,
+    textColor: Color = MaterialTheme.colorScheme.onSecondaryContainer,
 ) {
+    val label = buildString {
+        append("[文件] ")
+        append(fileName.ifBlank { "未知文件" })
+        if (fileSize > 0L) {
+            val kb = fileSize / 1024.0
+            val formatted = if (kb >= 1024.0) String.format("%.1f MB", kb / 1024.0) else String.format("%.1f KB", kb)
+            append(" ($formatted)")
+        }
+    }
+    Text(
+        modifier = modifier.padding(horizontal = 9.dp, vertical = 9.dp),
+        text = label,
+        color = textColor,
+    )
+}
 
+@Composable
+fun VideoLayout(
+    modifier: Modifier = Modifier,
+    fileName: String? = null,
+    length: Long = 0L,
+    textColor: Color = MaterialTheme.colorScheme.onSecondaryContainer,
+) {
+    val label = buildString {
+        append("[视频]")
+        if (!fileName.isNullOrBlank()) append(" $fileName")
+        if (length > 0L) append(" (${length}s)")
+    }
+    Text(
+        modifier = modifier.padding(horizontal = 9.dp, vertical = 9.dp),
+        text = label,
+        color = textColor,
+    )
 }
 
 @Composable
 fun LocationLayout(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    name: String? = null,
+    latitude: Double = 0.0,
+    longitude: Double = 0.0,
+    textColor: Color = MaterialTheme.colorScheme.onSecondaryContainer,
 ) {
+    val label = if (!name.isNullOrBlank()) {
+        "[位置] $name"
+    } else {
+        String.format("[位置] %.5f, %.5f", latitude, longitude)
+    }
+    Text(
+        modifier = modifier.padding(horizontal = 9.dp, vertical = 9.dp),
+        text = label,
+        color = textColor,
+    )
+}
 
+@Composable
+fun QuoteReplyLayout(
+    modifier: Modifier = Modifier,
+    senderName: String? = null,
+    summary: String = "",
+    textColor: Color = MaterialTheme.colorScheme.onSecondaryContainer,
+) {
+    val label = buildString {
+        append("回复")
+        if (!senderName.isNullOrBlank()) append(" $senderName")
+        if (summary.isNotBlank()) append("：$summary")
+    }
+    Text(
+        modifier = modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+        text = label,
+        style = MaterialTheme.typography.labelMedium,
+        color = textColor.copy(alpha = 0.78f),
+        maxLines = 2,
+    )
 }
 
 @Composable

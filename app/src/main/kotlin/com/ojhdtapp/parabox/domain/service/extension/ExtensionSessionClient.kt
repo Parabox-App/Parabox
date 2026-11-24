@@ -216,10 +216,10 @@ class ExtensionSessionClient(
         clientScope.cancel()
     }
 
-    private fun unaryStub(): ParaboxExtensionServiceGrpcKt.ParaboxExtensionServiceCoroutineStub {
+    private fun unaryStub(timeoutSeconds: Long = rpcTimeoutSeconds): ParaboxExtensionServiceGrpcKt.ParaboxExtensionServiceCoroutineStub {
         val channel = transport.acquireChannel(endpoint)
         return ParaboxExtensionServiceGrpcKt.ParaboxExtensionServiceCoroutineStub(channel)
-            .withDeadlineAfter(rpcTimeoutSeconds, TimeUnit.SECONDS)
+            .withDeadlineAfter(timeoutSeconds, TimeUnit.SECONDS)
     }
 
     suspend fun sendMessage(message: SendMessage): ParaboxResult {
@@ -227,15 +227,28 @@ class ExtensionSessionClient(
             if (endpoint is ExtensionEndpoint.BinderService && uriPermissionGranter != null) {
                 grantUrisForElements(endpoint.packageName, message.contents)
             }
-            unaryStub().sendMessage(
+            unaryStub(timeoutSeconds = SEND_MESSAGE_TIMEOUT_SECONDS).sendMessage(
                 SendMessageRequest.newBuilder()
                     .setSessionId(sessionId)
                     .setMessage(message.toProto())
                     .build()
             ).toDomain()
+        } catch (e: io.grpc.StatusException) {
+            when (e.status.code) {
+                io.grpc.Status.Code.DEADLINE_EXCEEDED ->
+                    ParaboxResult(ParaboxResult.ERROR_TIMEOUT, "发送超时，请检查网络或扩展状态")
+                io.grpc.Status.Code.UNAVAILABLE ->
+                    ParaboxResult(ParaboxResult.ERROR_DISCONNECTED, "扩展服务连接已断开")
+                else ->
+                    ParaboxResult(ParaboxResult.ERROR_UNKNOWN, e.status.description ?: e.message ?: ParaboxResult.ERROR_UNKNOWN_MSG)
+            }
         } catch (e: Exception) {
             ParaboxResult(ParaboxResult.ERROR_UNKNOWN, e.message ?: ParaboxResult.ERROR_UNKNOWN_MSG)
         }
+    }
+
+    companion object {
+        private const val SEND_MESSAGE_TIMEOUT_SECONDS = 60L
     }
 
     private fun grantUrisForElements(targetPackage: String, elements: List<ParaboxMessageElement>) {

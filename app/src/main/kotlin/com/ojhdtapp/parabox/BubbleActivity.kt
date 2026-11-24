@@ -31,6 +31,7 @@ import com.ojhdtapp.parabox.ui.common.FixedInsets
 import com.ojhdtapp.parabox.ui.common.LocalFixedInsets
 import com.ojhdtapp.parabox.ui.common.LocalSystemUiController
 import com.ojhdtapp.parabox.ui.common.SystemUiController
+import com.ojhdtapp.parabox.ui.common.enableTransparentNavigationBar
 import com.ojhdtapp.parabox.ui.common.LayoutType
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageViewModel
@@ -50,6 +51,7 @@ class BubbleActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableTransparentNavigationBar()
         window.decorView.setViewTreeNavigationEventDispatcherOwner(this)
         setContent {
             val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
@@ -66,7 +68,7 @@ class BubbleActivity : AppCompatActivity() {
                 Log.d("parabox", "new intent host=${intent.data?.host},scheme=${intent.data?.scheme},path=${intent.data?.host},query=${intent.data?.encodedQuery},pathSegments=${intent.data?.pathSegments?.joinToString(" ")}")
                 if (intent.data?.host == "chat") {
                     val chatId = intent.data?.lastPathSegment?.toLongOrNull()
-                    if (chatId != null) {
+                    if (chatId != null && messagePageViewModel.uiState.value.chatDetail.chat?.chatId != chatId) {
                         lifecycleScope.launch(Dispatchers.IO) {
                             val chat = database.chatDao.getChatByIdWithoutObserve(chatId)?.toChat()
                             if (chat != null) {
@@ -75,7 +77,7 @@ class BubbleActivity : AppCompatActivity() {
                                 Toast.makeText(this@BubbleActivity, "加载消息列表失败", Toast.LENGTH_SHORT).show()
                             }
                         }
-                    } else {
+                    } else if (chatId == null) {
                         Toast.makeText(this@BubbleActivity, "加载消息列表失败", Toast.LENGTH_SHORT).show()
                     }
                 }

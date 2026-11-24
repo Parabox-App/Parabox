@@ -7,10 +7,15 @@ import com.ojhdt.parabox.extension.tdlib.core.TdProxyProtocol
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxBasicInfo
 import com.ojhdtapp.paraboxdevelopmentkit.model.SendMessage
 import com.ojhdtapp.paraboxdevelopmentkit.model.chat.ParaboxChat
+import com.ojhdtapp.paraboxdevelopmentkit.model.contact.ParaboxContact
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAt
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAudio
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxFile
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxLocation
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxPlainText
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxQuoteReply
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxVideo
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -154,5 +159,108 @@ class TdMessageMapperTest {
         assertEquals(1, outbound.contents.size)
         val photo = outbound.contents[0] as TdApi.InputMessagePhoto
         assertEquals("Look at this", photo.caption.text)
+    }
+
+    @Test
+    fun outboundMentionAndMultiPhotoAlbumAndAudioVideoFile() = runBlocking {
+        val chat = ParaboxChat(ParaboxBasicInfo("Group", ParaboxResourceInfo.ParaboxEmptyInfo), ParaboxChat.TYPE_GROUP, "-10010")
+
+        // @mention -> TextEntityTypeMentionName
+        val mentionSend = SendMessage(
+            contents = listOf(
+                ParaboxAt(ParaboxContact(ParaboxBasicInfo("Alice", ParaboxResourceInfo.ParaboxEmptyInfo), "42")),
+                ParaboxPlainText("hello"),
+            ),
+            chat = chat,
+            timestamp = 1700000030L,
+            uuid = "out-3",
+        )
+        val mentionOutbound = TdMessageMapper.mapSendMessageToOutbound(mentionSend, "acct-1", dummyMediaBridge)
+        assertEquals(1, mentionOutbound.contents.size)
+        val textMsg = mentionOutbound.contents[0] as TdApi.InputMessageText
+        assertEquals("@Alice hello", textMsg.text.text)
+        assertEquals(1, textMsg.text.entities.size)
+        val mentionEntity = textMsg.text.entities[0]
+        assertEquals(0, mentionEntity.offset)
+        assertEquals("@Alice".length, mentionEntity.length)
+        assertTrue(mentionEntity.type is TdApi.TextEntityTypeMentionName)
+        assertEquals(42L, (mentionEntity.type as TdApi.TextEntityTypeMentionName).userId)
+
+        // Multi-photo album + caption
+        val albumSend = SendMessage(
+            contents = listOf(
+                ParaboxPlainText("Trip photos"),
+                ParaboxImage(100, 100, "a.jpg", ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo("https://example.com/a.jpg")),
+                ParaboxImage(100, 100, "b.jpg", ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo("https://example.com/b.jpg")),
+            ),
+            chat = chat,
+            timestamp = 1700000040L,
+            uuid = "out-4",
+        )
+        val albumOutbound = TdMessageMapper.mapSendMessageToOutbound(albumSend, "acct-1", dummyMediaBridge)
+        assertTrue(albumOutbound.canSendAsAlbum)
+        assertEquals(2, albumOutbound.contents.size)
+        assertEquals("Trip photos", (albumOutbound.contents[0] as TdApi.InputMessagePhoto).caption.text)
+
+        // Audio / Video / File with captions
+        val videoSend = SendMessage(
+            contents = listOf(
+                ParaboxPlainText("clip"),
+                ParaboxVideo(12L, "clip.mp4", 2048L, ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo("https://example.com/clip.mp4")),
+            ),
+            chat = chat,
+            timestamp = 1700000050L,
+            uuid = "out-5",
+        )
+        val videoOutbound = TdMessageMapper.mapSendMessageToOutbound(videoSend, "acct-1", dummyMediaBridge)
+        assertEquals(1, videoOutbound.contents.size)
+        val videoContent = videoOutbound.contents[0] as TdApi.InputMessageVideo
+        assertEquals("clip", videoContent.caption.text)
+        assertEquals(12, videoContent.duration)
+
+        val audioSend = SendMessage(
+            contents = listOf(
+                ParaboxAudio(5L, "voice.m4a", 1024L, ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo("https://example.com/voice.m4a")),
+            ),
+            chat = chat,
+            timestamp = 1700000060L,
+            uuid = "out-6",
+        )
+        val audioOutbound = TdMessageMapper.mapSendMessageToOutbound(audioSend, "acct-1", dummyMediaBridge)
+        assertEquals(1, audioOutbound.contents.size)
+        assertTrue(audioOutbound.contents[0] is TdApi.InputMessageVoiceNote)
+
+        val fileSend = SendMessage(
+            contents = listOf(
+                ParaboxFile("report.pdf", "pdf", 4096L, 1700000070L, ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo("https://example.com/report.pdf")),
+            ),
+            chat = chat,
+            timestamp = 1700000070L,
+            uuid = "out-7",
+        )
+        val fileOutbound = TdMessageMapper.mapSendMessageToOutbound(fileSend, "acct-1", dummyMediaBridge)
+        assertEquals(1, fileOutbound.contents.size)
+        assertTrue(fileOutbound.contents[0] is TdApi.InputMessageDocument)
+
+        // Unreadable media reports errorReason
+        val failingBridge = object : TdMediaBridge {
+            override suspend fun downloadAndShareFile(
+                client: TdClientApi,
+                tdFile: TdApi.File,
+                hostPackageName: String,
+                maxSizeBytes: Long,
+                timeoutMs: Long,
+            ) = ParaboxResourceInfo.ParaboxEmptyInfo
+
+            override suspend fun stageResourceForUpload(
+                accountId: String,
+                resourceInfo: ParaboxResourceInfo,
+                suggestedName: String?,
+            ): File? = null
+        }
+        val failedOutbound = TdMessageMapper.mapSendMessageToOutbound(fileSend, "acct-1", failingBridge)
+        assertTrue(failedOutbound.contents.isEmpty())
+        assertEquals(1, failedOutbound.failedMediaCount)
+        assertFalse(failedOutbound.errorReason.isNullOrBlank())
     }
 }

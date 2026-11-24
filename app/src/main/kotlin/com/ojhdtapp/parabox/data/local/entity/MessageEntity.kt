@@ -46,3 +46,13 @@ data class MessageVerifyStateUpdate(
     @ColumnInfo(name = "verified")
     val verified: Boolean
 )
+
+@Entity
+data class MessageSendResultUpdate(
+    @ColumnInfo(name = "messageId")
+    val messageId: Long,
+    @ColumnInfo(name = "verified")
+    val verified: Boolean,
+    @ColumnInfo(name = "uid")
+    val uid: String,
+)

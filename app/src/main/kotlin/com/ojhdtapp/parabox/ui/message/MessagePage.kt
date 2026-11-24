@@ -88,6 +88,7 @@ fun MessagePage(
             .collectLatest {
                 when (it) {
                     is MessagePageEffect.ShowSnackBar -> {
+                        if (layoutType == LayoutType.SPLIT && state.chatDetail.chat != null) return@collectLatest
                         snackBarJob?.cancel()
                         snackBarJob = launch {
                             delay(4000)

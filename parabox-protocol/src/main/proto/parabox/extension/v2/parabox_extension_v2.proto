@@ -309,6 +309,7 @@ message ExtensionSessionFrame {
 message ActionResult {
   int32 code = 1;
   string message = 2;
+  string message_uuid = 3;
 }
 
 message ResourceInfoProto {

@@ -19,7 +19,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -27,7 +29,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -37,6 +39,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -87,6 +90,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.getTextAfterSelection
 import androidx.compose.ui.text.input.getTextBeforeSelection
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.ImageLoader
 import coil.compose.AsyncImage
@@ -113,9 +118,11 @@ import com.ojhdtapp.parabox.ui.message.MessagePageState
 fun Toolbar(
     modifier: Modifier = Modifier,
     state: MessagePageState.EditAreaState,
+    panelHeight: Dp,
     onEvent: (MessagePageEvent) -> Unit,
 ) {
     val context = LocalContext.current
+    val compactPanel = panelHeight < 112.dp
     val coroutineScope = rememberCoroutineScope()
     val fileUtil = remember {
         FileUtil(context)
@@ -227,7 +234,6 @@ fun Toolbar(
                 Row(
                     modifier = Modifier
                         .fillMaxSize()
-                        .navigationBarsPadding()
                         .padding(bottom = 4.dp)
                 ) {
                     var memeState by remember {
@@ -237,57 +243,32 @@ fun Toolbar(
                         mutableIntStateOf(-1)
                     }
                     Spacer(modifier = Modifier.width(14.dp))
-                    Column(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .aspectRatio(0.5f)
-                    ) {
-                        Surface(
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(start = 2.dp, bottom = 2.dp),
-                            color = if (memeState) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
-                            tonalElevation = 3.dp,
-                            shape = RoundedCornerShape(16.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clickable {
-                                        memeState = true
-                                    },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.FavoriteBorder,
-                                    contentDescription = "favorite",
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
+                    val categories: @Composable (Modifier) -> Unit = { itemModifier ->
+                        EmojiCategoryButton(
+                            modifier = itemModifier,
+                            selected = memeState,
+                            icon = Icons.Outlined.FavoriteBorder,
+                            description = "favorite",
+                            onClick = { memeState = true },
+                        )
+                        EmojiCategoryButton(
+                            modifier = itemModifier,
+                            selected = !memeState,
+                            icon = Icons.Outlined.Face,
+                            description = "face",
+                            onClick = { memeState = false },
+                        )
+                    }
+                    if (compactPanel) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            categories(Modifier.width(48.dp).fillMaxHeight())
                         }
-
-                        Surface(
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(start = 2.dp, top = 2.dp),
-                            color = if (memeState) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.secondaryContainer,
-                            tonalElevation = 3.dp,
-                            shape = RoundedCornerShape(16.dp)
+                    } else {
+                        Column(
+                            modifier = Modifier.fillMaxHeight().aspectRatio(0.5f),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clickable {
-                                        memeState = false
-                                    },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Face,
-                                    contentDescription = "face",
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
+                            categories(Modifier.weight(1f).fillMaxWidth())
                         }
                     }
                     AnimatedContent(
@@ -426,7 +407,7 @@ fun Toolbar(
                             }
                         } else {
                             LazyHorizontalGrid(
-                                rows = GridCells.Fixed(2),
+                                rows = GridCells.Fixed(if (compactPanel) 1 else 2),
                                 contentPadding = PaddingValues(horizontal = 16.dp)
                             ) {
                                 items(
@@ -500,153 +481,181 @@ fun Toolbar(
             }
 
             ToolbarState.Tools -> {
-                Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .navigationBarsPadding()
-                        .padding(bottom = 4.dp)
-                ) {
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Surface(
+                BoxWithConstraints(Modifier.fillMaxSize()) {
+                    val tileWidth = ((maxWidth - 32.dp) / 4).coerceAtLeast(72.dp)
+                    Row(
                         modifier = Modifier
-                            .padding(horizontal = 2.dp)
-                            .weight(1f),
-                        color = MaterialTheme.colorScheme.secondaryContainer,
-                        tonalElevation = 3.dp,
-                        shape = RoundedCornerShape(24.dp),
-                        onClick = {
-                            chooseImageLauncher.launch(
-                                PickVisualMediaRequest(
-                                    ActivityResultContracts.PickVisualMedia.ImageOnly
+                            .fillMaxSize()
+                            .horizontalScroll(rememberScrollState())
+                            .padding(bottom = 4.dp)
+                    ) {
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Surface(
+                            modifier = Modifier
+                                .width(tileWidth)
+                                .padding(horizontal = 2.dp)
+                                .fillMaxHeight(),
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            tonalElevation = 3.dp,
+                            shape = RoundedCornerShape(24.dp),
+                            onClick = {
+                                chooseImageLauncher.launch(
+                                    PickVisualMediaRequest(
+                                        ActivityResultContracts.PickVisualMedia.ImageOnly
+                                    )
                                 )
-                            )
-                        }
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
+                            }
                         ) {
-                            Icon(
-                                modifier = Modifier.padding(bottom = 8.dp),
-                                imageVector = Icons.Outlined.Image,
-                                contentDescription = "image",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = stringResource(R.string.gallery),
-                                style = MaterialTheme.typography.labelLarge
-                            )
-                        }
-                    }
-
-                    Surface(
-                        modifier = Modifier
-                            .padding(horizontal = 2.dp)
-                            .weight(1f),
-                        color = MaterialTheme.colorScheme.secondaryContainer,
-                        tonalElevation = 3.dp,
-                        shape = RoundedCornerShape(24.dp),
-                        onClick = {
-                            val fileName =
-                                buildFileName(FileUtil.EXTERNAL_FILES_DIR_CAMERA, FileUtil.DEFAULT_IMAGE_EXTENSION)
-                            val path =
-                                fileUtil.createPathOnExternalFilesDir(FileUtil.EXTERNAL_FILES_DIR_CAMERA, fileName)
-                            fileUtil.getUriForFile(path)?.let {
-                                tempCameraUri = it
-                                cameraLauncher.launch(it)
-                            } ?: kotlin.run {
-                                Log.d("parabox", "tempCameraUri is null")
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    modifier = Modifier.padding(bottom = if (compactPanel) 0.dp else 8.dp),
+                                    imageVector = Icons.Outlined.Image,
+                                    contentDescription = "image",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = stringResource(R.string.gallery),
+                                    style = MaterialTheme.typography.labelLarge
+                                )
                             }
                         }
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Icon(
-                                modifier = Modifier.padding(bottom = 8.dp),
-                                imageVector = Icons.Outlined.PhotoCamera,
-                                contentDescription = "camera",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = stringResource(R.string.take_photos),
-                                style = MaterialTheme.typography.labelLarge
-                            )
-                        }
-                    }
 
-                    Surface(
-                        modifier = Modifier
-                            .padding(horizontal = 2.dp)
-                            .weight(1f),
-                        color = MaterialTheme.colorScheme.secondaryContainer,
-                        tonalElevation = 3.dp,
-                        shape = RoundedCornerShape(24.dp),
-                        onClick = {
-                            filePickerLauncher.launch(arrayOf("*/*"))
-                        }
-                    ) {
-                        Column(
+                        Surface(
                             modifier = Modifier
-                                .fillMaxSize(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
+                                .width(tileWidth)
+                                .padding(horizontal = 2.dp)
+                                .fillMaxHeight(),
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            tonalElevation = 3.dp,
+                            shape = RoundedCornerShape(24.dp),
+                            onClick = {
+                                val fileName =
+                                    buildFileName(FileUtil.EXTERNAL_FILES_DIR_CAMERA, FileUtil.DEFAULT_IMAGE_EXTENSION)
+                                val path =
+                                    fileUtil.createPathOnExternalFilesDir(FileUtil.EXTERNAL_FILES_DIR_CAMERA, fileName)
+                                fileUtil.getUriForFile(path)?.let {
+                                    tempCameraUri = it
+                                    cameraLauncher.launch(it)
+                                } ?: kotlin.run {
+                                    Log.d("parabox", "tempCameraUri is null")
+                                }
+                            }
                         ) {
-                            Icon(
-                                modifier = Modifier.padding(bottom = 8.dp),
-                                imageVector = Icons.Outlined.Folder,
-                                contentDescription = "file",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = stringResource(R.string.file),
-                                style = MaterialTheme.typography.labelLarge
-                            )
-                        }
-                    }
-
-                    Surface(
-                        modifier = Modifier
-                            .padding(horizontal = 2.dp)
-                            .weight(1f),
-                        color = MaterialTheme.colorScheme.secondaryContainer,
-                        tonalElevation = 3.dp,
-                        shape = RoundedCornerShape(24.dp),
-                        onClick = {
-                            if (locationPermissionState.allPermissionsGranted) {
-                                onEvent(MessagePageEvent.UpdateEditAreaMode(EditAreaMode.LOCATION_PICKER))
-                            } else {
-                                onEvent(MessagePageEvent.ShowLocationPermissionDeniedDialog(true))
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    modifier = Modifier.padding(bottom = if (compactPanel) 0.dp else 8.dp),
+                                    imageVector = Icons.Outlined.PhotoCamera,
+                                    contentDescription = "camera",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = stringResource(R.string.take_photos),
+                                    style = MaterialTheme.typography.labelLarge
+                                )
                             }
                         }
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Icon(
-                                modifier = Modifier.padding(bottom = 8.dp),
-                                imageVector = Icons.Outlined.Place,
-                                contentDescription = "location",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = stringResource(R.string.location),
-                                style = MaterialTheme.typography.labelLarge
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
 
+                        Surface(
+                            modifier = Modifier
+                                .width(tileWidth)
+                                .padding(horizontal = 2.dp)
+                                .fillMaxHeight(),
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            tonalElevation = 3.dp,
+                            shape = RoundedCornerShape(24.dp),
+                            onClick = {
+                                filePickerLauncher.launch(arrayOf("*/*"))
+                            }
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    modifier = Modifier.padding(bottom = if (compactPanel) 0.dp else 8.dp),
+                                    imageVector = Icons.Outlined.Folder,
+                                    contentDescription = "file",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = stringResource(R.string.file),
+                                    style = MaterialTheme.typography.labelLarge
+                                )
+                            }
+                        }
+
+                        Surface(
+                            modifier = Modifier
+                                .width(tileWidth)
+                                .padding(horizontal = 2.dp)
+                                .fillMaxHeight(),
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            tonalElevation = 3.dp,
+                            shape = RoundedCornerShape(24.dp),
+                            onClick = {
+                                if (locationPermissionState.allPermissionsGranted) {
+                                    onEvent(MessagePageEvent.UpdateEditAreaMode(EditAreaMode.LOCATION_PICKER))
+                                } else {
+                                    onEvent(MessagePageEvent.ShowLocationPermissionDeniedDialog(true))
+                                }
+                            }
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    modifier = Modifier.padding(bottom = if (compactPanel) 0.dp else 8.dp),
+                                    imageVector = Icons.Outlined.Place,
+                                    contentDescription = "location",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = stringResource(R.string.location),
+                                    style = MaterialTheme.typography.labelLarge
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                    }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun EmojiCategoryButton(
+    modifier: Modifier,
+    selected: Boolean,
+    icon: ImageVector,
+    description: String,
+    onClick: () -> Unit,
+) {
+    Surface(
+        modifier = modifier,
+        color = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
+        tonalElevation = 3.dp,
+        shape = RoundedCornerShape(16.dp),
+        onClick = onClick,
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = description, tint = MaterialTheme.colorScheme.primary)
         }
     }
 }

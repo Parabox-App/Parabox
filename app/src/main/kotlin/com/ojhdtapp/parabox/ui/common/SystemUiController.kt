@@ -1,24 +1,35 @@
 package com.ojhdtapp.parabox.ui.common
 
+import android.graphics.Color
+import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.staticCompositionLocalOf
 
+internal fun ComponentActivity.enableTransparentNavigationBar(
+    statusBarStyle: SystemBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
+    navigationBarStyle: SystemBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
+) {
+    enableEdgeToEdge(statusBarStyle, navigationBarStyle)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        // Edge-to-edge enables a system contrast scrim for three-button navigation.
+        window.isNavigationBarContrastEnforced = false
+    }
+}
+
 class SystemUiController(val activity: ComponentActivity) {
     fun setStatusBarColor(isLight: Boolean) {
-        val lightScrim = android.graphics.Color.argb(0xe6, 0xFF, 0xFF, 0xFF)
-        val darkScrim = android.graphics.Color.argb(0x80, 0x1b, 0x1b, 0x1b)
-        activity.enableEdgeToEdge(
+        activity.enableTransparentNavigationBar(
             statusBarStyle = if (isLight) SystemBarStyle.light(
-                android.graphics.Color.TRANSPARENT,
-                android.graphics.Color.TRANSPARENT,
-            ) else SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+                Color.TRANSPARENT,
+                Color.TRANSPARENT,
+            ) else SystemBarStyle.dark(Color.TRANSPARENT),
         )
     }
 
     fun reset() {
-        activity.enableEdgeToEdge()
+        activity.enableTransparentNavigationBar()
     }
 }
 
