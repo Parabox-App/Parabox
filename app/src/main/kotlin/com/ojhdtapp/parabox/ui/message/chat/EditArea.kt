@@ -60,6 +60,7 @@ import androidx.compose.material.icons.outlined.EmojiEmotions
 import androidx.compose.material.icons.outlined.Keyboard
 import androidx.compose.material.icons.outlined.KeyboardVoice
 import androidx.compose.material.icons.outlined.LocationOn
+import com.ojhdtapp.parabox.ui.common.ParaboxAlertDialog
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -135,7 +136,7 @@ fun EditArea(
     val audioPermissionState =
         rememberPermissionState(permission = Manifest.permission.RECORD_AUDIO)
     if (state.showVoicePermissionDeniedDialog) {
-        AlertDialog(
+        ParaboxAlertDialog(
             onDismissRequest = {
                 onEvent(MessagePageEvent.ShowVoicePermissionDeniedDialog(false))
             },

@@ -20,9 +20,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
-import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
-import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -57,15 +54,14 @@ import kotlinx.coroutines.launch
 
 @OptIn(
     ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalAnimationGraphicsApi::class,
-    ExperimentalMaterial3AdaptiveApi::class
 )
 @Composable
 fun MessagePage(
     modifier: Modifier = Modifier,
     viewModel: MessagePageViewModel,
     mainSharedViewModel: MainSharedViewModel,
-    scaffoldNavigator: ThreePaneScaffoldNavigator<Nothing>,
     layoutType: LayoutType,
+    onOpenChat: () -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -130,8 +126,7 @@ fun MessagePage(
 
                     is MainSharedEffect.LoadMessage -> {
                         viewModel.sendEvent(MessagePageEvent.LoadMessage(it.chat, it.scrollToMessageId))
-                        scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
-                        mainSharedViewModel.sendEvent(MainSharedEvent.ShowNavigationBar(false))
+                        onOpenChat()
                     }
 
                     else -> {}
@@ -373,10 +368,7 @@ fun MessagePage(
                                         chat = item,
                                         onClick = {
                                             viewModel.sendEvent(MessagePageEvent.LoadMessage(item))
-                                            coroutineScope.launch {
-                                                scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
-                                            }
-                                            mainSharedViewModel.sendEvent(MainSharedEvent.ShowNavigationBar(false))
+                                            onOpenChat()
                                         },
                                         onLongClick = {
                                             hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -505,10 +497,7 @@ fun MessagePage(
                                     enableMarqueeEffectOnChatName = mainSharedState.datastore.enableMarqueeEffectOnChatName,
                                     onClick = {
                                         viewModel.sendEvent(MessagePageEvent.LoadMessage(item.chat))
-                                        coroutineScope.launch {
-                                            scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
-                                        }
-                                        mainSharedViewModel.sendEvent(MainSharedEvent.ShowNavigationBar(false))
+                                        onOpenChat()
                                     },
                                     onLongClick = {
                                         isMenuVisible = true

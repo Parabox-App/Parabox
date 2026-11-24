@@ -32,8 +32,6 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material.icons.outlined.ArrowOutward
@@ -45,6 +43,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.surfaceColorAtElevation
@@ -1264,7 +1263,6 @@ fun DoneSearchChatContent(
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun SearchResultItem(
     modifier: Modifier = Modifier,
@@ -1278,7 +1276,7 @@ fun SearchResultItem(
     Surface(
         modifier = modifier,
         onClick = onClick,
-        elevation = 0.dp,
+        tonalElevation = 0.dp,
         color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
     ) {
         Row(
@@ -1331,7 +1329,6 @@ fun SearchResultItem(
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun EmptySearchResultItem(
     modifier: Modifier = Modifier,
@@ -1339,7 +1336,7 @@ fun EmptySearchResultItem(
 ) {
     Surface(
         modifier = modifier,
-        elevation = 0.dp,
+        tonalElevation = 0.dp,
         color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
     ) {
         Row(
@@ -1394,7 +1391,6 @@ fun EmptySearchResultItem(
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun SearchResultItemVertical(
     modifier: Modifier = Modifier,
@@ -1406,7 +1402,7 @@ fun SearchResultItemVertical(
     Surface(
         modifier = modifier,
         onClick = onClick,
-        elevation = 0.dp,
+        tonalElevation = 0.dp,
         shape = RoundedCornerShape(8.dp),
         color = Color.Transparent
     ) {

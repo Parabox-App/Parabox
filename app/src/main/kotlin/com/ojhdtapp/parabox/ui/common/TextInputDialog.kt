@@ -44,7 +44,7 @@ fun TextInputDialog(
         var input by remember {
             mutableStateOf(defaultValue ?: "")
         }
-        AlertDialog(
+        ParaboxAlertDialog(
             title = {
                 if (title != null) {
                     Text(text = title)

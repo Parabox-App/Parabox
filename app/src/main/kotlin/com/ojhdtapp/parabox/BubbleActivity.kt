@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
-import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -21,6 +20,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.lifecycleScope
+import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
+import androidx.navigationevent.setViewTreeNavigationEventDispatcherOwner
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.audio.AudioRecorder
 import com.ojhdtapp.parabox.core.util.audio.LocalAudioRecorder
@@ -47,9 +48,9 @@ class BubbleActivity : AppCompatActivity() {
     @Inject
     lateinit var database: AppDatabase
 
-    @OptIn(ExperimentalMaterial3AdaptiveApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.decorView.setViewTreeNavigationEventDispatcherOwner(this)
         setContent {
             val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
             val fixedInsets = remember {
@@ -111,6 +112,7 @@ class BubbleActivity : AppCompatActivity() {
             AppTheme {
                 CompositionLocalProvider(
                     values = arrayOf(
+                        LocalNavigationEventDispatcherOwner provides this,
                         LocalFixedInsets provides fixedInsets,
                         LocalAudioRecorder provides AudioRecorder,
                         LocalSystemUiController provides SystemUiController(this),
@@ -123,8 +125,8 @@ class BubbleActivity : AppCompatActivity() {
                         viewModel = messagePageViewModel,
                         state = state,
                         mainSharedState = mainSharedState,
-                        scaffoldNavigator = null,
                         layoutType = LayoutType.SINGLE_PAGE,
+                        onNavigateBack = { finish() },
                         onEvent = messagePageViewModel::sendEvent,
                         onMainSharedEvent = mainSharedViewModel::sendEvent
                     )

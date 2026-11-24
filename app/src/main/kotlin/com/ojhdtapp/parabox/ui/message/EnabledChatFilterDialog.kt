@@ -35,6 +35,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.ui.common.MyFilterChip
+import com.ojhdtapp.parabox.ui.common.ParaboxAlertDialog
 import com.ojhdtapp.parabox.ui.common.clearFocusOnKeyboardDismiss
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -64,7 +65,7 @@ fun EnabledChatFilterDialog(
             },
             onDismiss = { openCustomTagFilterDialog = false }
         )
-        AlertDialog(
+        ParaboxAlertDialog(
             onDismissRequest = onDismiss,
             confirmButton = {
                 TextButton(
@@ -152,7 +153,7 @@ fun NewChatFilterDialog(
         var text by remember {
             mutableStateOf("")
         }
-        AlertDialog(
+        ParaboxAlertDialog(
             onDismissRequest = onDismiss,
             confirmButton = {
                 TextButton(

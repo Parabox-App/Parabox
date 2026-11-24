@@ -1,63 +1,36 @@
 package com.ojhdtapp.parabox.ui.setting
 
-import android.app.Activity
-import androidx.activity.compose.BackHandler
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
-import androidx.compose.material3.adaptive.layout.AnimatedPane
-import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
-import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldRole
-import androidx.compose.material3.adaptive.layout.calculateDefaultEnterTransition
-import androidx.compose.material3.adaptive.navigation.NavigableListDetailPaneScaffold
-import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
-import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
-import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
+import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
+import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
+import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneStrategy
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.flowWithLifecycle
-import com.arkivanov.decompose.ExperimentalDecomposeApi
-import com.arkivanov.decompose.extensions.compose.stack.Children
-import com.arkivanov.decompose.extensions.compose.stack.animation.fade
-import com.arkivanov.decompose.extensions.compose.stack.animation.plus
-import com.arkivanov.decompose.extensions.compose.stack.animation.predictiveback.androidPredictiveBackAnimatable
-import com.arkivanov.decompose.extensions.compose.stack.animation.predictiveback.predictiveBackAnimation
-import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimation
-import com.arkivanov.decompose.extensions.compose.subscribeAsState
-import com.arkivanov.decompose.router.stack.ChildStack
-import com.arkivanov.decompose.router.stack.StackNavigation
-import com.arkivanov.decompose.router.stack.bringToFront
-import com.arkivanov.decompose.router.stack.pop
-import com.arkivanov.decompose.router.stack.replaceAll
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.ui.NavDisplay
 import com.ojhdtapp.parabox.ui.MainSharedEffect
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
-import com.ojhdtapp.parabox.ui.SettingNavigateTarget
 import com.ojhdtapp.parabox.ui.common.LayoutType
-import com.ojhdtapp.parabox.ui.navigation.DefaultRootComponent
-import com.ojhdtapp.parabox.ui.navigation.DefaultSettingComponent
-import com.ojhdtapp.parabox.ui.navigation.RootComponent
-import com.ojhdtapp.parabox.ui.navigation.SettingComponent
-import com.ojhdtapp.parabox.ui.navigation.slideWithOffset
+import com.ojhdtapp.parabox.ui.navigation.AppNavTransitions
+import com.ojhdtapp.parabox.ui.navigation.SceneKeys
+import com.ojhdtapp.parabox.ui.navigation.SettingRoute
+import com.ojhdtapp.parabox.ui.navigation.rememberAppPaneScaffoldDirective
+import com.ojhdtapp.parabox.ui.navigation.toLayoutType
+import com.ojhdtapp.parabox.ui.navigation.toSetting
+import com.ojhdtapp.parabox.ui.navigation.toSettingRoute
 import com.ojhdtapp.parabox.ui.setting.detail.AppearanceSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.CloudSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.ExperimentalSettingPage
@@ -73,325 +46,274 @@ import com.ojhdtapp.parabox.ui.setting.detail.OpenSourceLicenseSettingPage
 import com.ojhdtapp.parabox.ui.setting.detail.StorageSettingPage
 import kotlinx.coroutines.flow.collectLatest
 
-@OptIn(
-    ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3WindowSizeClassApi::class,
-    ExperimentalDecomposeApi::class
-)
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun SettingPageWrapperUi(
     modifier: Modifier = Modifier,
-    component: SettingComponent,
+    initialCategory: Setting? = null,
     mainSharedViewModel: MainSharedViewModel,
     viewModel: SettingPageViewModel,
-    navigation: StackNavigation<DefaultRootComponent.RootConfig>,
-    stackState: ChildStack<*, RootComponent.RootChild>
+    onExitSettings: () -> Unit,
 ) {
-//    val viewModel = hiltViewModel<SettingPageViewModel>()
     val state by viewModel.uiState.collectAsState()
     val mainSharedState by mainSharedViewModel.uiState.collectAsState()
-    val scaffoldNavigator = rememberListDetailPaneScaffoldNavigator<Setting>()
-    val layoutType by remember {
-        derivedStateOf {
-            if (scaffoldNavigator.scaffoldDirective.maxHorizontalPartitions == 1) {
-                LayoutType.NORMAL
-            } else {
-                LayoutType.SPLIT
-            }
+    val paneDirective = rememberAppPaneScaffoldDirective()
+    val layoutType = paneDirective.toLayoutType()
+
+    val settingBackStack = rememberNavBackStack(
+        *(if (initialCategory != null) {
+            arrayOf<NavKey>(SettingRoute.Home, initialCategory.toSettingRoute())
+        } else {
+            arrayOf<NavKey>(SettingRoute.Home)
+        }),
+    )
+
+    fun selectCategory(category: Setting) {
+        while (settingBackStack.size > 1) {
+            settingBackStack.removeLastOrNull()
+        }
+        settingBackStack.add(category.toSettingRoute())
+    }
+
+    fun pushSubSetting(route: SettingRoute) {
+        if (settingBackStack.lastOrNull() != route) {
+            settingBackStack.add(route)
         }
     }
-    val settingStackState by component.settingStack.subscribeAsState()
+
+    fun popSetting() {
+        if (settingBackStack.size > 1) {
+            settingBackStack.removeLastOrNull()
+        } else {
+            onExitSettings()
+        }
+    }
+
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(Unit) {
-        mainSharedViewModel.uiEffect.flowWithLifecycle(lifecycleOwner.lifecycle, Lifecycle.State.STARTED)
-            .collectLatest {
-                when (it) {
-                    is MainSharedEffect.SettingNavigate -> {
-                        when(it.target) {
-                            SettingNavigateTarget.GENERAL -> {
-                                component.settingNav.bringToFront(DefaultSettingComponent.SettingConfig.GeneralSetting) {
-                                    component.settingNav.replaceAll(DefaultSettingComponent.SettingConfig.GeneralSetting)
-                                }
-                                if (layoutType != LayoutType.SPLIT) {
-                                    scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.GENERAL)
-                                }
-                            }
-                            SettingNavigateTarget.ADDONS -> {
-                                component.settingNav.bringToFront(DefaultSettingComponent.SettingConfig.ExtensionSetting) {
-                                    component.settingNav.replaceAll(DefaultSettingComponent.SettingConfig.ExtensionSetting)
-                                }
-                                if (layoutType != LayoutType.SPLIT) {
-                                    scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.ADDONS)
-                                }
-                            }
-                            SettingNavigateTarget.LABELS -> {
-                                component.settingNav.bringToFront(DefaultSettingComponent.SettingConfig.LabelSetting) {
-                                    component.settingNav.replaceAll(DefaultSettingComponent.SettingConfig.LabelSetting)
-                                }
-                                if (layoutType != LayoutType.SPLIT) {
-                                    scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.LABELS)
-                                }
-                            }
-                            SettingNavigateTarget.APPEARANCE -> {
-                                component.settingNav.bringToFront(DefaultSettingComponent.SettingConfig.AppearanceSetting) {
-                                    component.settingNav.replaceAll(DefaultSettingComponent.SettingConfig.AppearanceSetting)
-                                }
-                                if (layoutType != LayoutType.SPLIT) {
-                                    scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.APPEARANCE)
-                                }
-                            }
-                            SettingNavigateTarget.NOTIFICATION -> {
-                                component.settingNav.bringToFront(DefaultSettingComponent.SettingConfig.NotificationSetting) {
-                                    component.settingNav.replaceAll(DefaultSettingComponent.SettingConfig.NotificationSetting)
-                                }
-                                if (layoutType != LayoutType.SPLIT) {
-                                    scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.NOTIFICATION)
-                                }
-                            }
-                            SettingNavigateTarget.STORAGE -> {
-                                component.settingNav.bringToFront(DefaultSettingComponent.SettingConfig.StorageSetting) {
-                                    component.settingNav.replaceAll(DefaultSettingComponent.SettingConfig.StorageSetting)
-                                }
-                                if (layoutType != LayoutType.SPLIT) {
-                                    scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.STORAGE)
-                                }
-                            }
-                            SettingNavigateTarget.CLOUD -> {
-                                component.settingNav.bringToFront(DefaultSettingComponent.SettingConfig.CloudSetting) {
-                                    component.settingNav.replaceAll(DefaultSettingComponent.SettingConfig.CloudSetting)
-                                }
-                                if (layoutType != LayoutType.SPLIT) {
-                                    scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.CLOUD)
-                                }
-                            }
-                            SettingNavigateTarget.EXPERIMENTAL -> {
-                                component.settingNav.bringToFront(DefaultSettingComponent.SettingConfig.ExperimentalSetting) {
-                                    component.settingNav.replaceAll(DefaultSettingComponent.SettingConfig.ExperimentalSetting)
-                                }
-                                if (layoutType != LayoutType.SPLIT) {
-                                    scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.EXPERIMENTAL)
-                                }
-                            }
-                            SettingNavigateTarget.HELP -> {
-                                component.settingNav.bringToFront(DefaultSettingComponent.SettingConfig.HelpAndSupportSetting) {
-                                    component.settingNav.replaceAll(DefaultSettingComponent.SettingConfig.HelpAndSupportSetting)
-                                }
-                                if (layoutType != LayoutType.SPLIT) {
-                                    scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.HELP)
-                                }
-                            }
-                        }
-                    }
-                    else -> {}
+        mainSharedViewModel.uiEffect
+            .flowWithLifecycle(lifecycleOwner.lifecycle, Lifecycle.State.STARTED)
+            .collectLatest { effect ->
+                if (effect is MainSharedEffect.SettingNavigate) {
+                    selectCategory(effect.target.toSetting())
                 }
             }
     }
-    NavigableListDetailPaneScaffold(
+
+    val selectedCategory = (settingBackStack.lastOrNull() as? SettingRoute)?.category ?: Setting.GENERAL
+    val listDetailStrategy = rememberListDetailSceneStrategy<NavKey>(
+        backNavigationBehavior = BackNavigationBehavior.PopUntilScaffoldValueChange,
+        directive = paneDirective,
+    )
+
+    NavDisplay(
         modifier = modifier
+            .fillMaxSize()
             .background(MaterialTheme.colorScheme.surfaceContainer)
-            .padding(
-                horizontal = if (layoutType == LayoutType.NORMAL) 0.dp else 16.dp,
-            ),
-        navigator = scaffoldNavigator,
-        listPane = {
-            AnimatedPane(
-                enterTransition = slideInHorizontally { -350 } + fadeIn(),
-                exitTransition = slideOutHorizontally { -350 } + fadeOut(),
-                modifier = Modifier.preferredWidth(352.dp),
+            .padding(horizontal = if (layoutType == LayoutType.NORMAL) 0.dp else 16.dp),
+        backStack = settingBackStack,
+        sceneStrategy = listDetailStrategy,
+        onBack = { popSetting() },
+        transitionSpec = { AppNavTransitions.forwardTransition() },
+        popTransitionSpec = { AppNavTransitions.popTransition() },
+        predictivePopTransitionSpec = { swipeEdge -> AppNavTransitions.predictivePopTransition(swipeEdge) },
+        entryProvider = entryProvider {
+            entry<SettingRoute.Home>(
+                metadata = ListDetailSceneStrategy.listPane(
+                    sceneKey = SceneKeys.SETTING,
+                    detailPlaceholder = {
+                        GeneralSettingPage(
+                            state = state,
+                            mainSharedState = mainSharedState,
+                            layoutType = layoutType,
+                            onNavigateBack = ::popSetting,
+                            onEvent = viewModel::sendEvent,
+                            onMainSharedEvent = mainSharedViewModel::sendEvent,
+                        )
+                    },
+                ),
             ) {
                 SettingPage(
                     viewModel = viewModel,
                     mainSharedState = mainSharedState,
                     layoutType = layoutType,
-                    scaffoldNavigator = scaffoldNavigator,
+                    selectedCategory = selectedCategory,
+                    onSelectCategory = ::selectCategory,
+                    onExitSettings = onExitSettings,
                     onMainSharedEvent = mainSharedViewModel::sendEvent,
-                    navigation = component.settingNav,
-                    stackState = settingStackState,
-                    rootNavigation = navigation,
-                    rootStackState = stackState
                 )
             }
-        },
-        detailPane = {
-            AnimatedPane(modifier = Modifier,
-                enterTransition = slideInHorizontally { 350 } + fadeIn(),
-                exitTransition = slideOutHorizontally { 350 } + fadeOut(),
+
+            entry<SettingRoute.General>(
+                metadata = ListDetailSceneStrategy.detailPane(sceneKey = SceneKeys.SETTING),
             ) {
-                Children(
-                    stack = component.settingStack,
-                    animation = predictiveBackAnimation(
-                        backHandler = component.backHandler,
-                        fallbackAnimation = stackAnimation(
-                            fade() + slideWithOffset(
-                                tween(),
-                                Orientation.Horizontal,
-                                300f
-                            )
-                        ),
-                        selector = { backEvent, _, _ -> androidPredictiveBackAnimatable(backEvent) },
-                        onBack = {
-                            component.settingNav.pop()
-                        },
-                    ),
-                ) { child ->
-                    when (val instance = child.instance) {
-                        is SettingComponent.SettingChild.GeneralSetting -> {
-                            GeneralSettingPage(
-                                state = state,
-                                mainSharedState = mainSharedState,
-                                layoutType = layoutType,
-                                scaffoldNavigator = scaffoldNavigator,
-                                onEvent = viewModel::sendEvent,
-                                onMainSharedEvent = mainSharedViewModel::sendEvent
-                            )
-                        }
+                GeneralSettingPage(
+                    state = state,
+                    mainSharedState = mainSharedState,
+                    layoutType = layoutType,
+                    onNavigateBack = ::popSetting,
+                    onEvent = viewModel::sendEvent,
+                    onMainSharedEvent = mainSharedViewModel::sendEvent,
+                )
+            }
 
-                        is SettingComponent.SettingChild.ExtensionSetting -> {
-                            ExtensionSettingPage(
-                                state = state,
-                                mainSharedState = mainSharedState,
-                                layoutType = layoutType,
-                                scaffoldNavigator = scaffoldNavigator,
-                                navigation = component.settingNav,
-                                stackState = settingStackState,
-                                onEvent = viewModel::sendEvent,
-                                onMainSharedEvent = mainSharedViewModel::sendEvent
-                            )
-                        }
+            entry<SettingRoute.Extension>(
+                metadata = ListDetailSceneStrategy.detailPane(sceneKey = SceneKeys.SETTING),
+            ) {
+                ExtensionSettingPage(
+                    state = state,
+                    mainSharedState = mainSharedState,
+                    layoutType = layoutType,
+                    onNavigateBack = ::popSetting,
+                    onNavigateTo = ::pushSubSetting,
+                    onEvent = viewModel::sendEvent,
+                    onMainSharedEvent = mainSharedViewModel::sendEvent,
+                )
+            }
 
-                        is SettingComponent.SettingChild.ExtensionAddSetting -> {
-                            ExtensionAddSettingPage(
-                                state = state,
-                                mainSharedState = mainSharedState,
-                                layoutType = layoutType,
-                                scaffoldNavigator = scaffoldNavigator,
-                                navigation = component.settingNav,
-                                stackState = settingStackState,
-                                onEvent = viewModel::sendEvent,
-                                onMainSharedEvent = mainSharedViewModel::sendEvent
-                            )
-                        }
+            entry<SettingRoute.ExtensionAdd>(
+                metadata = ListDetailSceneStrategy.detailPane(sceneKey = SceneKeys.SETTING),
+            ) {
+                ExtensionAddSettingPage(
+                    state = state,
+                    mainSharedState = mainSharedState,
+                    layoutType = layoutType,
+                    onNavigateBack = ::popSetting,
+                    onEvent = viewModel::sendEvent,
+                    onMainSharedEvent = mainSharedViewModel::sendEvent,
+                )
+            }
 
-                        is SettingComponent.SettingChild.ExtensionConfigSetting -> {
-                            ExtensionConfigSettingPage(
-                                state = state,
-                                mainSharedState = mainSharedState,
-                                layoutType = layoutType,
-                                scaffoldNavigator = scaffoldNavigator,
-                                navigation = component.settingNav,
-                                stackState = settingStackState,
-                                onEvent = viewModel::sendEvent,
-                                onMainSharedEvent = mainSharedViewModel::sendEvent
-                            )
-                        }
+            entry<SettingRoute.ExtensionConfig>(
+                metadata = ListDetailSceneStrategy.detailPane(sceneKey = SceneKeys.SETTING),
+            ) {
+                ExtensionConfigSettingPage(
+                    state = state,
+                    mainSharedState = mainSharedState,
+                    layoutType = layoutType,
+                    onNavigateBack = ::popSetting,
+                    onEvent = viewModel::sendEvent,
+                    onMainSharedEvent = mainSharedViewModel::sendEvent,
+                )
+            }
 
-                        is SettingComponent.SettingChild.LabelSetting -> {
-                            LabelSettingPage(
-                                state = state,
-                                mainSharedState = mainSharedState,
-                                layoutType = layoutType,
-                                scaffoldNavigator = scaffoldNavigator,
-                                navigation = component.settingNav,
-                                stackState = settingStackState,
-                                onEvent = viewModel::sendEvent,
-                                onMainSharedEvent = mainSharedViewModel::sendEvent
-                            )
-                        }
+            entry<SettingRoute.Label>(
+                metadata = ListDetailSceneStrategy.detailPane(sceneKey = SceneKeys.SETTING),
+            ) {
+                LabelSettingPage(
+                    state = state,
+                    mainSharedState = mainSharedState,
+                    layoutType = layoutType,
+                    onNavigateBack = ::popSetting,
+                    onNavigateTo = ::pushSubSetting,
+                    onEvent = viewModel::sendEvent,
+                    onMainSharedEvent = mainSharedViewModel::sendEvent,
+                )
+            }
 
-                        is SettingComponent.SettingChild.LabelDetailSetting -> {
-                            LabelDetailSettingPage(
-                                state = state,
-                                mainSharedState = mainSharedState,
-                                layoutType = layoutType,
-                                scaffoldNavigator = scaffoldNavigator,
-                                navigation = component.settingNav,
-                                stackState = settingStackState,
-                                onEvent = viewModel::sendEvent,
-                                onMainSharedEvent = mainSharedViewModel::sendEvent
-                            )
-                        }
+            entry<SettingRoute.LabelDetail>(
+                metadata = ListDetailSceneStrategy.detailPane(sceneKey = SceneKeys.SETTING),
+            ) {
+                LabelDetailSettingPage(
+                    state = state,
+                    mainSharedState = mainSharedState,
+                    layoutType = layoutType,
+                    onNavigateBack = ::popSetting,
+                    onEvent = viewModel::sendEvent,
+                    onMainSharedEvent = mainSharedViewModel::sendEvent,
+                )
+            }
 
-                        is SettingComponent.SettingChild.AppearanceSetting -> {
-                            AppearanceSettingPage(
-                                state = state,
-                                mainSharedState = mainSharedState,
-                                layoutType = layoutType,
-                                scaffoldNavigator = scaffoldNavigator,
-                                onEvent = viewModel::sendEvent,
-                                onMainSharedEvent = mainSharedViewModel::sendEvent
-                            )
-                        }
+            entry<SettingRoute.Appearance>(
+                metadata = ListDetailSceneStrategy.detailPane(sceneKey = SceneKeys.SETTING),
+            ) {
+                AppearanceSettingPage(
+                    state = state,
+                    mainSharedState = mainSharedState,
+                    layoutType = layoutType,
+                    onNavigateBack = ::popSetting,
+                    onEvent = viewModel::sendEvent,
+                    onMainSharedEvent = mainSharedViewModel::sendEvent,
+                )
+            }
 
-                        is SettingComponent.SettingChild.NotificationSetting -> {
-                            NotificationSettingPage(
-                                state = state,
-                                mainSharedState = mainSharedState,
-                                layoutType = layoutType,
-                                scaffoldNavigator = scaffoldNavigator,
-                                onEvent = viewModel::sendEvent,
-                                onMainSharedEvent = mainSharedViewModel::sendEvent
-                            )
-                        }
+            entry<SettingRoute.Notification>(
+                metadata = ListDetailSceneStrategy.detailPane(sceneKey = SceneKeys.SETTING),
+            ) {
+                NotificationSettingPage(
+                    state = state,
+                    mainSharedState = mainSharedState,
+                    layoutType = layoutType,
+                    onNavigateBack = ::popSetting,
+                    onEvent = viewModel::sendEvent,
+                    onMainSharedEvent = mainSharedViewModel::sendEvent,
+                )
+            }
 
-                        is SettingComponent.SettingChild.StorageSetting -> {
-                            StorageSettingPage(
-                                state = state,
-                                mainSharedState = mainSharedState,
-                                layoutType = layoutType,
-                                scaffoldNavigator = scaffoldNavigator,
-                                onEvent = viewModel::sendEvent,
-                                onMainSharedEvent = mainSharedViewModel::sendEvent
-                            )
-                        }
+            entry<SettingRoute.Storage>(
+                metadata = ListDetailSceneStrategy.detailPane(sceneKey = SceneKeys.SETTING),
+            ) {
+                StorageSettingPage(
+                    state = state,
+                    mainSharedState = mainSharedState,
+                    layoutType = layoutType,
+                    onNavigateBack = ::popSetting,
+                    onEvent = viewModel::sendEvent,
+                    onMainSharedEvent = mainSharedViewModel::sendEvent,
+                )
+            }
 
-                        is SettingComponent.SettingChild.CloudSetting -> {
-                            CloudSettingPage(
-                                state = state,
-                                mainSharedState = mainSharedState,
-                                layoutType = layoutType,
-                                scaffoldNavigator = scaffoldNavigator,
-                                onEvent = viewModel::sendEvent,
-                                onMainSharedEvent = mainSharedViewModel::sendEvent
-                            )
-                        }
+            entry<SettingRoute.Cloud>(
+                metadata = ListDetailSceneStrategy.detailPane(sceneKey = SceneKeys.SETTING),
+            ) {
+                CloudSettingPage(
+                    state = state,
+                    mainSharedState = mainSharedState,
+                    layoutType = layoutType,
+                    onNavigateBack = ::popSetting,
+                    onEvent = viewModel::sendEvent,
+                    onMainSharedEvent = mainSharedViewModel::sendEvent,
+                )
+            }
 
-                        is SettingComponent.SettingChild.ExperimentalSetting -> {
-                            ExperimentalSettingPage(
-                                state = state,
-                                mainSharedState = mainSharedState,
-                                layoutType = layoutType,
-                                scaffoldNavigator = scaffoldNavigator,
-                                onEvent = viewModel::sendEvent,
-                                onMainSharedEvent = mainSharedViewModel::sendEvent
-                            )
-                        }
+            entry<SettingRoute.Experimental>(
+                metadata = ListDetailSceneStrategy.detailPane(sceneKey = SceneKeys.SETTING),
+            ) {
+                ExperimentalSettingPage(
+                    state = state,
+                    mainSharedState = mainSharedState,
+                    layoutType = layoutType,
+                    onNavigateBack = ::popSetting,
+                    onEvent = viewModel::sendEvent,
+                    onMainSharedEvent = mainSharedViewModel::sendEvent,
+                )
+            }
 
-                        is SettingComponent.SettingChild.HelpAndSupportSetting -> {
-                            HelpAndSupportSettingPage(
-                                state = state,
-                                mainSharedState = mainSharedState,
-                                layoutType = layoutType,
-                                scaffoldNavigator = scaffoldNavigator,
-                                navigation = component.settingNav,
-                                stackState = settingStackState,
-                                onEvent = viewModel::sendEvent,
-                                onMainSharedEvent = mainSharedViewModel::sendEvent
-                            )
-                        }
+            entry<SettingRoute.Help>(
+                metadata = ListDetailSceneStrategy.detailPane(sceneKey = SceneKeys.SETTING),
+            ) {
+                HelpAndSupportSettingPage(
+                    state = state,
+                    mainSharedState = mainSharedState,
+                    layoutType = layoutType,
+                    onNavigateBack = ::popSetting,
+                    onNavigateTo = ::pushSubSetting,
+                    onEvent = viewModel::sendEvent,
+                    onMainSharedEvent = mainSharedViewModel::sendEvent,
+                )
+            }
 
-                        is SettingComponent.SettingChild.OpenSourceLicenseSetting -> {
-                            OpenSourceLicenseSettingPage(
-                                state = state,
-                                mainSharedState = mainSharedState,
-                                layoutType = layoutType,
-                                scaffoldNavigator = scaffoldNavigator,
-                                navigation = component.settingNav,
-                                stackState = settingStackState,
-                                onEvent = viewModel::sendEvent,
-                                onMainSharedEvent = mainSharedViewModel::sendEvent
-                            )
-                        }
-                    }
-                }
+            entry<SettingRoute.OpenSourceLicense>(
+                metadata = ListDetailSceneStrategy.detailPane(sceneKey = SceneKeys.SETTING),
+            ) {
+                OpenSourceLicenseSettingPage(
+                    state = state,
+                    mainSharedState = mainSharedState,
+                    layoutType = layoutType,
+                    onNavigateBack = ::popSetting,
+                    onEvent = viewModel::sendEvent,
+                    onMainSharedEvent = mainSharedViewModel::sendEvent,
+                )
             }
         },
     )

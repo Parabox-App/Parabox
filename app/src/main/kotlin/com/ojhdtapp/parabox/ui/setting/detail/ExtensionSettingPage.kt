@@ -1,6 +1,5 @@
 package com.ojhdtapp.parabox.ui.setting.detail
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,7 +19,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.NavigateNext
@@ -31,19 +29,16 @@ import androidx.compose.material.icons.outlined.Extension
 import androidx.compose.material.icons.outlined.Pending
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.RestartAlt
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
-import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -62,21 +57,16 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
 import coil.compose.AsyncImage
-import com.arkivanov.decompose.ExperimentalDecomposeApi
-import com.arkivanov.decompose.router.stack.ChildStack
-import com.arkivanov.decompose.router.stack.StackNavigation
-import com.arkivanov.decompose.router.stack.pushNew
 import com.ojhdtapp.parabox.domain.model.Connection
 import com.ojhdtapp.parabox.domain.model.Extension
+import com.ojhdtapp.parabox.domain.service.extension.SignatureVerifier
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.common.LayoutType
-import com.ojhdtapp.parabox.ui.navigation.DefaultSettingComponent
-import com.ojhdtapp.parabox.ui.navigation.SettingComponent
-import com.ojhdtapp.parabox.ui.setting.Setting
+import com.ojhdtapp.parabox.ui.common.ParaboxAlertDialog
+import com.ojhdtapp.parabox.ui.navigation.SettingRoute
 import com.ojhdtapp.parabox.ui.setting.SettingHeader
 import com.ojhdtapp.parabox.ui.setting.SettingItem
-import com.ojhdtapp.parabox.domain.service.extension.SignatureVerifier
 import com.ojhdtapp.parabox.ui.setting.SettingPageEvent
 import com.ojhdtapp.parabox.ui.setting.SettingPageState
 import com.ojhdtapp.paraboxdevelopmentkit.v2.ParaboxConnectionStatus
@@ -84,20 +74,18 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import me.saket.cascade.CascadeDropdownMenu
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExtensionSettingPage(
     modifier: Modifier = Modifier,
     state: SettingPageState,
     mainSharedState: MainSharedState,
     layoutType: LayoutType,
-    scaffoldNavigator: ThreePaneScaffoldNavigator<Setting>,
-    navigation: StackNavigation<DefaultSettingComponent.SettingConfig>,
-    stackState: ChildStack<*, SettingComponent.SettingChild>,
+    onNavigateBack: () -> Unit,
+    onNavigateTo: (SettingRoute) -> Unit,
     onEvent: (SettingPageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
-    val coroutineScope = rememberCoroutineScope()
     if (layoutType == LayoutType.SPLIT) {
         Surface(
             modifier = Modifier
@@ -125,8 +113,7 @@ fun ExtensionSettingPage(
                     state = state,
                     mainSharedState = mainSharedState,
                     layoutType = layoutType,
-                    navigation = navigation,
-                    stackState = stackState,
+                    onNavigateTo = onNavigateTo,
                     onEvent = onEvent,
                     onMainSharedEvent = onMainSharedEvent,
                 )
@@ -145,11 +132,7 @@ fun ExtensionSettingPage(
                         )
                     },
                     navigationIcon = {
-                        IconButton(onClick = {
-                            coroutineScope.launch {
-                                scaffoldNavigator.navigateBack(BackNavigationBehavior.PopLatest)
-                            }
-                        }) {
+                        IconButton(onClick = onNavigateBack) {
                             Icon(imageVector = Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "back")
                         }
                     },
@@ -161,8 +144,7 @@ fun ExtensionSettingPage(
                 state = state,
                 mainSharedState = mainSharedState,
                 layoutType = layoutType,
-                navigation = navigation,
-                stackState = stackState,
+                onNavigateTo = onNavigateTo,
                 onEvent = onEvent,
                 onMainSharedEvent = onMainSharedEvent
             )
@@ -170,15 +152,13 @@ fun ExtensionSettingPage(
     }
 }
 
-@OptIn(ExperimentalDecomposeApi::class)
 @Composable
 private fun Content(
     modifier: Modifier = Modifier,
     state: SettingPageState,
     mainSharedState: MainSharedState,
     layoutType: LayoutType,
-    navigation: StackNavigation<DefaultSettingComponent.SettingConfig>,
-    stackState: ChildStack<*, SettingComponent.SettingChild>,
+    onNavigateTo: (SettingRoute) -> Unit,
     onEvent: (SettingPageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
@@ -186,7 +166,7 @@ private fun Content(
     var pendingTrustExtension by remember { mutableStateOf<Extension.Untrusted?>(null) }
 
     pendingTrustExtension?.let { untrusted ->
-        AlertDialog(
+        ParaboxAlertDialog(
             onDismissRequest = { pendingTrustExtension = null },
             title = {
                 Text(
@@ -238,7 +218,7 @@ private fun Content(
                             when (it) {
                                 is Extension.Success -> {
                                     onEvent(SettingPageEvent.InitNewConnection(it))
-                                    navigation.pushNew(DefaultSettingComponent.SettingConfig.ExtensionAddSetting)
+                                    onNavigateTo(SettingRoute.ExtensionAdd)
                                 }
                                 is Extension.Untrusted -> {
                                     pendingTrustExtension = it
@@ -382,7 +362,7 @@ private fun Content(
                     }
                 ) {
                     onEvent(SettingPageEvent.EditConnectionConfig(it))
-                    navigation.pushNew(DefaultSettingComponent.SettingConfig.ExtensionConfigSetting)
+                    onNavigateTo(SettingRoute.ExtensionConfig)
                 }
             }
         }

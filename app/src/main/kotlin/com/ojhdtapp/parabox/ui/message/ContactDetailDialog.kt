@@ -51,6 +51,7 @@ import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.common.BlurTransformation
 import com.ojhdtapp.parabox.ui.common.CommonAvatar
 import com.ojhdtapp.parabox.ui.common.CommonAvatarModel
+import com.ojhdtapp.parabox.ui.common.PredictiveBackDialog
 import com.ojhdtapp.parabox.ui.contact.EmptyRelativeChatItem
 import com.ojhdtapp.parabox.ui.contact.RelativeChatItem
 
@@ -62,7 +63,7 @@ fun ContactDetailDialog(
     onEvent: (MainSharedEvent) -> Unit,
 ) {
     if (contactDetailDialogState.contactWithExtensionInfo != null) {
-        BasicAlertDialog(
+        PredictiveBackDialog(
             onDismissRequest = {
                 onEvent(MainSharedEvent.DismissContactDetailDialog)
             },

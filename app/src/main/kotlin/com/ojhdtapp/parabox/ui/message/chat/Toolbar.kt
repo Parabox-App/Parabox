@@ -51,6 +51,7 @@ import androidx.compose.material.icons.outlined.KeyboardVoice
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.Place
+import com.ojhdtapp.parabox.ui.common.ParaboxAlertDialog
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
@@ -171,7 +172,7 @@ fun Toolbar(
             )
         )
     if (state.showLocationPermissionDeniedDialog) {
-        AlertDialog(
+        ParaboxAlertDialog(
             onDismissRequest = {
                 onEvent(MessagePageEvent.ShowLocationPermissionDeniedDialog(false))
             },
@@ -335,7 +336,7 @@ fun Toolbar(
                                                     modifier = Modifier
                                                         .fillMaxSize()
                                                         .graphicsLayer {
-                                                            alpha = carouselItemInfo.size / carouselItemInfo.maxSize
+                                                            alpha = carouselItemDrawInfo.size / carouselItemDrawInfo.maxSize
                                                         },
                                                     horizontalAlignment = Alignment.CenterHorizontally,
                                                     verticalArrangement = Arrangement.Center
@@ -362,7 +363,7 @@ fun Toolbar(
                                                 }
                                             } else {
                                                 Box(modifier = Modifier.graphicsLayer {
-                                                    alpha = carouselItemInfo.size / carouselItemInfo.maxSize
+                                                    alpha = carouselItemDrawInfo.size / carouselItemDrawInfo.maxSize
                                                 }) {
                                                     AsyncImage(
                                                         model = ImageRequest.Builder(

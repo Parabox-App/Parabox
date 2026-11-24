@@ -3,7 +3,6 @@ package com.ojhdtapp.parabox.ui.setting.detail
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -25,7 +24,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.Button
@@ -38,12 +36,12 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -58,37 +56,33 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.arkivanov.decompose.router.stack.ChildStack
-import com.arkivanov.decompose.router.stack.StackNavigation
-import com.arkivanov.decompose.router.stack.pop
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.common.LayoutType
-import com.ojhdtapp.parabox.ui.navigation.DefaultSettingComponent
-import com.ojhdtapp.parabox.ui.navigation.SettingComponent
-import com.ojhdtapp.parabox.ui.setting.Setting
 import com.ojhdtapp.parabox.ui.setting.SettingPageEvent
 import com.ojhdtapp.parabox.ui.setting.SettingPageState
 import com.ojhdtapp.paraboxdevelopmentkit.model.init_actions.ParaboxInitAction
 import com.ojhdtapp.paraboxdevelopmentkit.v2.ParaboxExtensionConstants
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExtensionAddSettingPage(
     modifier: Modifier = Modifier,
     state: SettingPageState,
     mainSharedState: MainSharedState,
     layoutType: LayoutType,
-    scaffoldNavigator: ThreePaneScaffoldNavigator<Setting>,
-    navigation: StackNavigation<DefaultSettingComponent.SettingConfig>,
-    stackState: ChildStack<*, SettingComponent.SettingChild>,
+    onNavigateBack: () -> Unit,
     onEvent: (SettingPageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
-    BackHandler {
-        navigation.pop()
-        onEvent(SettingPageEvent.InitNewExtensionConnectionDone(false))
+    var finishedSuccessfully by remember { mutableStateOf(false) }
+    DisposableEffect(Unit) {
+        onDispose {
+            if (!finishedSuccessfully) {
+                onEvent(SettingPageEvent.InitNewExtensionConnectionDone(false))
+            }
+        }
     }
     if (layoutType == LayoutType.SPLIT) {
         Surface(
@@ -117,9 +111,11 @@ fun ExtensionAddSettingPage(
                     state = state,
                     mainSharedState = mainSharedState,
                     layoutType = layoutType,
-                    scaffoldNavigator = scaffoldNavigator,
-                    navigation = navigation,
-                    stackState = stackState,
+                    onFinish = {
+                        finishedSuccessfully = true
+                        onEvent(SettingPageEvent.InitNewExtensionConnectionDone(true))
+                        onNavigateBack()
+                    },
                     onEvent = onEvent,
                     onMainSharedEvent = onMainSharedEvent,
                 )
@@ -132,16 +128,13 @@ fun ExtensionAddSettingPage(
                     title = {
                         Text(
                             modifier = Modifier.padding(start = 8.dp),
-                            text =  state.initActionState.name ?: "Extension",
+                            text = state.initActionState.name ?: "Extension",
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                     },
                     navigationIcon = {
-                        IconButton(onClick = {
-                            navigation.pop()
-                            onEvent(SettingPageEvent.InitNewExtensionConnectionDone(false))
-                        }) {
+                        IconButton(onClick = onNavigateBack) {
                             Icon(imageVector = Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "back")
                         }
                     },
@@ -153,9 +146,11 @@ fun ExtensionAddSettingPage(
                 state = state,
                 mainSharedState = mainSharedState,
                 layoutType = layoutType,
-                scaffoldNavigator = scaffoldNavigator,
-                navigation = navigation,
-                stackState = stackState,
+                onFinish = {
+                    finishedSuccessfully = true
+                    onEvent(SettingPageEvent.InitNewExtensionConnectionDone(true))
+                    onNavigateBack()
+                },
                 onEvent = onEvent,
                 onMainSharedEvent = onMainSharedEvent
             )
@@ -163,16 +158,13 @@ fun ExtensionAddSettingPage(
     }
 }
 
-@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 private fun Content(
     modifier: Modifier = Modifier,
     state: SettingPageState,
     mainSharedState: MainSharedState,
     layoutType: LayoutType,
-    scaffoldNavigator: ThreePaneScaffoldNavigator<Setting>,
-    navigation: StackNavigation<DefaultSettingComponent.SettingConfig>,
-    stackState: ChildStack<*, SettingComponent.SettingChild>,
+    onFinish: () -> Unit,
     onEvent: (SettingPageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) =
@@ -479,10 +471,7 @@ private fun Content(
                                         }
                                         Spacer(modifier = Modifier.width(8.dp))
                                     }
-                                    Button(onClick = {
-                                        navigation.pop()
-                                        onEvent(SettingPageEvent.InitNewExtensionConnectionDone(true))
-                                    }) {
+                                    Button(onClick = onFinish) {
                                         Text(text = "完成")
                                     }
                                 }

@@ -2,7 +2,6 @@ package com.ojhdtapp.parabox.ui.contact
 
 import android.annotation.SuppressLint
 import android.graphics.drawable.BitmapDrawable
-import androidx.activity.compose.BackHandler
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
@@ -44,10 +43,9 @@ import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -82,15 +80,15 @@ import com.ojhdtapp.parabox.ui.common.SystemUiController
 import com.ojhdtapp.parabox.ui.common.placeholder
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun ContactDetailPage(
     modifier: Modifier = Modifier,
     viewModel: ContactPageViewModel,
-    scaffoldNavigator: ThreePaneScaffoldNavigator<Nothing>,
     mainSharedState: MainSharedState,
     layoutType: LayoutType,
+    onNavigateBack: () -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -105,24 +103,14 @@ fun ContactDetailPage(
         ) {
             Crossfade(targetState = state.contactDetail.contactWithExtensionInfo == null, label = "") {
                 if (it) {
-                    Column(
-                        modifier = modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = "选择联系人",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
+                    ContactDetailPlaceholder(modifier = modifier)
                 } else {
                     ContactDetailPageContent(
                         state = state,
-                        scaffoldNavigator = scaffoldNavigator,
                         systemUiController = systemUiController,
                         mainSharedState = mainSharedState,
                         layoutType = layoutType,
+                        onNavigateBack = onNavigateBack,
                         onMainSharedEvent = onMainSharedEvent
                     )
                 }
@@ -131,25 +119,50 @@ fun ContactDetailPage(
     } else {
         ContactDetailPageContent(
             state = state,
-            scaffoldNavigator = scaffoldNavigator,
             systemUiController = systemUiController,
             mainSharedState = mainSharedState,
             layoutType = layoutType,
+            onNavigateBack = onNavigateBack,
             onMainSharedEvent = onMainSharedEvent
         )
     }
 }
 
-@OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3Api::class)
+@Composable
+fun ContactDetailPlaceholder(
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier
+            .fillMaxSize()
+            .statusBarsPadding(),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                text = "选择联系人",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 private fun ContactDetailPageContent(
     modifier: Modifier = Modifier,
     state: ContactPageState,
-    scaffoldNavigator: ThreePaneScaffoldNavigator<Nothing>,
     systemUiController: SystemUiController,
     mainSharedState: MainSharedState,
     layoutType: LayoutType,
+    onNavigateBack: () -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -172,12 +185,12 @@ private fun ContactDetailPageContent(
             }
         }
     }
-    BackHandler(layoutType == LayoutType.NORMAL) {
-        coroutineScope.launch {
-            scaffoldNavigator.navigateBack()
+    DisposableEffect(layoutType) {
+        onDispose {
+            if (layoutType == LayoutType.NORMAL) {
+                systemUiController.reset()
+            }
         }
-        systemUiController.reset()
-        onMainSharedEvent(MainSharedEvent.ShowNavigationBar(true))
     }
     Scaffold(
         topBar = {
@@ -187,11 +200,8 @@ private fun ContactDetailPageContent(
                     if (layoutType == LayoutType.NORMAL) {
                         IconButton(
                             onClick = {
-                                coroutineScope.launch {
-                                    scaffoldNavigator.navigateBack()
-                                }
                                 systemUiController.reset()
-                                onMainSharedEvent(MainSharedEvent.ShowNavigationBar(true))
+                                onNavigateBack()
                             }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Outlined.ArrowBack,

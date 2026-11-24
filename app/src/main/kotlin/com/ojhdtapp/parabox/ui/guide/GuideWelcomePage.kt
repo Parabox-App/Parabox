@@ -7,12 +7,10 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
-import androidx.compose.material3.windowsizeclass.WindowSizeClass
-import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,21 +22,20 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.app.LocaleManagerCompat
 import androidx.core.os.LocaleListCompat
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
+import androidx.window.core.layout.WindowSizeClass
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.common.NormalPreference
+import com.ojhdtapp.parabox.ui.common.ParaboxAlertDialog
 import java.lang.Math.*
 import kotlin.math.pow
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GuideWelcomePage(
     modifier: Modifier = Modifier,
-    mainNavController: NavController,
     mainSharedViewModel: MainSharedViewModel,
-    sizeClass: WindowSizeClass,
+    sizeClass: WindowSizeClass = currentWindowAdaptiveInfo().windowSizeClass,
 ) {
     val context = LocalContext.current
 
@@ -61,7 +58,7 @@ fun GuideWelcomePage(
     }
 
     if (showSkipGuideDialog) {
-        AlertDialog(
+        ParaboxAlertDialog(
             onDismissRequest = { showSkipGuideDialog = false },
             confirmButton = {
                 TextButton(onClick = {
@@ -98,7 +95,7 @@ fun GuideWelcomePage(
     }
 
     if (showLanguageDialog) {
-        AlertDialog(
+        ParaboxAlertDialog(
             onDismissRequest = { showLanguageDialog = false },
             confirmButton = {},
             text = {
@@ -210,7 +207,7 @@ fun GuideWelcomePage(
                     .padding(horizontal = 32.dp)
                     .widthIn(
                         0.dp,
-                        if (sizeClass.widthSizeClass == WindowWidthSizeClass.Expanded) 480.dp else 3000.dp
+                        if (sizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND)) 480.dp else 3000.dp
                     ),
                 leadingIcon = {
                     Icon(

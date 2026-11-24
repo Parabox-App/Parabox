@@ -87,6 +87,7 @@ fun InfoArea(
     onImageClick: (indexOfSnapshot: Int, elementId: Long) -> Unit,
     onLazyGridEndReached: () -> Unit,
     onShowContactDetail: (contactWithExtensionInfo: ContactWithExtensionInfo) -> Unit,
+    onClose: () -> Unit = { },
     onEvent: (MessagePageEvent) -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -104,7 +105,10 @@ fun InfoArea(
                     },
                     state = rememberTooltipState()
                 ) {
-                    IconButton(onClick = { onEvent(MessagePageEvent.OpenInfoArea(false)) }) {
+                    IconButton(onClick = {
+                        onEvent(MessagePageEvent.OpenInfoArea(false))
+                        onClose()
+                    }) {
                         Icon(imageVector = Icons.Outlined.Edit, contentDescription = "edit")
                     }
                 }
@@ -117,7 +121,10 @@ fun InfoArea(
                     },
                     state = rememberTooltipState()
                 ) {
-                    IconButton(onClick = { onEvent(MessagePageEvent.OpenInfoArea(false)) }) {
+                    IconButton(onClick = {
+                        onEvent(MessagePageEvent.OpenInfoArea(false))
+                        onClose()
+                    }) {
                         Icon(imageVector = Icons.Outlined.Close, contentDescription = "close")
                     }
                 }
