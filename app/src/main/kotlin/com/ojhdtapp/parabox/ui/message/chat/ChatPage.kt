@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui.message.chat
 
+import android.os.Build
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.PredictiveBackHandler
@@ -25,7 +26,6 @@ import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.imeNestedScroll
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.only
@@ -63,6 +63,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
@@ -318,6 +319,17 @@ fun NormalChatPage(
     }
     val imeOccupiesBottom = imeVisible || hasImeInset
     val editState = state.chatDetail.editAreaState
+    val chatId = state.chatDetail.chat?.chatId
+    val editorRequester = remember(chatId) { FocusRequester() }
+    var editorFocused by remember(chatId) { mutableStateOf(false) }
+    val imeScrollModifier = rememberChatImeScrollModifier(
+        enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && chatId != null &&
+            !editState.expanded && editState.mode == EditAreaMode.NORMAL,
+        chatId = chatId,
+        listState = lazyListState,
+        editorRequester = editorRequester,
+        editorFocused = editorFocused,
+    )
     val snackBarHostState = remember { SnackbarHostState() }
     var snackBarJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
     var highlightedMessageUid by remember { mutableStateOf<String?>(null) }
@@ -507,9 +519,7 @@ fun NormalChatPage(
                             Box(modifier = Modifier.weight(1f)) {
                                 SelectionContainer(modifier = Modifier.fillMaxSize()) {
                                     LazyColumn(
-                                        modifier = Modifier.fillMaxSize().then(
-                                            if (editState.expanded) Modifier else Modifier.imeNestedScroll(),
-                                        ),
+                                        modifier = Modifier.fillMaxSize().then(imeScrollModifier),
                                         state = lazyListState,
                                         contentPadding = PaddingValues(horizontal = 16.dp),
                                         reverseLayout = true,
@@ -588,7 +598,9 @@ fun NormalChatPage(
                             EditArea(
                                 modifier = Modifier.background(composerBackground),
                                 compact = compact,
-                                state = state.chatDetail.editAreaState,
+                                editorRequester = editorRequester,
+                                onEditorFocusChanged = { editorFocused = it },
+                                state = editState,
                                 onQuoteReplyClick = { quoteUid ->
                                     jumpToMessageByUid(quoteUid)
                                 },

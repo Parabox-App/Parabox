@@ -38,6 +38,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -49,6 +50,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -199,40 +201,58 @@ private fun FloatingMenuTab(
     val colors = MaterialTheme.colorScheme
     val contentColor = if (selected) colors.onSecondaryContainer else colors.onSurfaceVariant
 
-    Column(
-        modifier = modifier
-            .background(
-                color = if (selected) colors.secondaryContainer else Color.Transparent,
-                shape = CircleShape,
-            )
-            .selectable(selected = selected, enabled = enabled, role = Role.Tab, onClick = onClick)
-            .semantics { contentDescription = title },
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        BadgedBox(badge = {
-            if (unreadCount > 0) {
-                Badge(containerColor = colors.primary, contentColor = colors.onPrimary) {
-                    Text(if (unreadCount > 99) "99+" else unreadCount.toString())
-                }
-            }
-        }) {
-            Icon(imageVector = icon, contentDescription = null, tint = contentColor)
-        }
+    val unreadDescription = if (unreadCount > 0) {
+        "${stringResource(R.string.unread)}: $unreadCount"
+    } else {
+        null
+    }
 
-        if (labelVisibility > 0f) {
-            Box(Modifier.height(labelHeight * labelVisibility).clipToBounds()) {
-                Text(
-                    text = title,
-                    modifier = Modifier
-                        .wrapContentHeight(Alignment.Top, unbounded = true)
-                        .graphicsLayer { alpha = labelVisibility }
-                        .clearAndSetSemantics {},
-                    color = contentColor,
-                    style = MaterialTheme.typography.labelSmall,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+    Box(
+        modifier = modifier.background(
+            color = if (selected) colors.secondaryContainer else Color.Transparent,
+            shape = CircleShape,
+        ),
+    ) {
+        // Clip the interaction layer only, so the unread badge can overhang the tab.
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clip(CircleShape)
+                .selectable(selected = selected, enabled = enabled, role = Role.Tab, onClick = onClick)
+                .semantics {
+                    contentDescription = title
+                    unreadDescription?.let { stateDescription = it }
+                },
+        )
+        Column(
+            modifier = Modifier.matchParentSize().clearAndSetSemantics {},
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            BadgedBox(badge = {
+                if (unreadCount > 0) {
+                    Badge(containerColor = colors.primary, contentColor = colors.onPrimary) {
+                        Text(if (unreadCount > 99) "99+" else unreadCount.toString())
+                    }
+                }
+            }) {
+                Icon(imageVector = icon, contentDescription = null, tint = contentColor)
+            }
+
+            if (labelVisibility > 0f) {
+                Box(Modifier.height(labelHeight * labelVisibility).clipToBounds()) {
+                    Text(
+                        text = title,
+                        modifier = Modifier
+                            .wrapContentHeight(Alignment.Top, unbounded = true)
+                            .graphicsLayer { alpha = labelVisibility }
+                            .clearAndSetSemantics {},
+                        color = contentColor,
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
     }
