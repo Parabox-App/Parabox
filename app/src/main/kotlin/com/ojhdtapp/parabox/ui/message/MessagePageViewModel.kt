@@ -632,9 +632,14 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.SendMemeMessage -> {
+                val shareableUri = if (event.imageUri.scheme == "file") {
+                    event.imageUri.path?.let { path -> fileUtil.getUriForFile(java.io.File(path)) } ?: event.imageUri
+                } else {
+                    event.imageUri
+                }
                 val imageElement = ParaboxImage(
                     fileName = fileUtil.getFileName(event.imageUri),
-                    resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(event.imageUri),
+                    resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(shareableUri),
                 )
                 val sendMessage = buildSendMessageWithElements(listOf(imageElement))
                 if (sendMessage == null) {

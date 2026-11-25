@@ -11,12 +11,14 @@ import android.graphics.PorterDuffXfermode
 import android.graphics.Rect
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Icon
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.content.FileProvider
+import androidx.core.graphics.drawable.toBitmap
 import coil.ImageLoader
 import coil.imageLoader
 import coil.request.ErrorResult
@@ -106,11 +108,13 @@ object ImageUtil {
             val loader = context.imageLoader
             val request = ImageRequest.Builder(context)
                 .data(model)
+                .size(1024)
                 .allowHardware(false)
                 .build()
             val result = loader.execute(request)
             if (result is SuccessResult) {
                 (result.drawable as? BitmapDrawable)?.bitmap
+                    ?: runCatching { result.drawable.toBitmap() }.getOrNull()
             } else {
                 (result as? ErrorResult)?.throwable?.printStackTrace()
                 null
@@ -121,14 +125,35 @@ object ImageUtil {
         }
     }
 
-    fun getImageUriFromBitmapWithCache(context: Context, bm: Bitmap, cacheKey: String? = null): Uri? {
-        if (cacheKey != null && imageBitmap2UriMap.containsKey(cacheKey)) {
-            return imageBitmap2UriMap[cacheKey]
+    suspend fun getVideoFrameBitmap(context: Context, model: Any?): Bitmap? {
+        return try {
+            val handle = ExtensionMediaLoader.openCachedMedia(context, model) ?: return null
+            handle.use {
+                val retriever = MediaMetadataRetriever()
+                try {
+                    retriever.setDataSource(it.file.absolutePath)
+                    retriever.getFrameAtTime(0L, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+                } finally {
+                    runCatching { retriever.release() }
+                }
+            }
+        } catch (e: Exception) {
+            Log.w("parabox", "getVideoFrameBitmap failed: $model", e)
+            null
         }
-        val targetDir = File(context.externalCacheDir, "bm")
+    }
+
+    fun getImageUriFromBitmapWithCache(context: Context, bm: Bitmap, cacheKey: String? = null): Uri? {
+        if (cacheKey != null) {
+            imageBitmap2UriMap[cacheKey]?.let { cached ->
+                grantNotificationUriReadPermissions(context, cached)
+                return cached
+            }
+        }
+        val targetDir = File(context.externalCacheDir ?: context.cacheDir, "bm")
         if (!targetDir.exists()) targetDir.mkdirs()
         targetDir.listFiles()?.sortedByDescending { it.lastModified() }
-            ?.forEachIndexed() { index, file ->
+            ?.forEachIndexed { index, file ->
                 if (index > 20) {
                     file.delete()
                 }
@@ -141,22 +166,35 @@ object ImageUtil {
     }
 
     fun getImageUriFromBitmap(context: Context, bm: Bitmap): Uri? {
-        val targetDir = File(context.externalCacheDir, "bm")
-        if (!targetDir.exists()) targetDir.mkdirs()
-        val tempFile =
-            File(targetDir, buildFileName(FileUtil.DEFAULT_IMAGE_NAME, FileUtil.DEFAULT_IMAGE_EXTENSION))
-        val bytes = ByteArrayOutputStream()
-        bm.compress(Bitmap.CompressFormat.PNG, 100, bytes)
-        val bitmapData = bytes.toByteArray()
-
-        val fileOutPut = FileOutputStream(tempFile).use {
-            it.write(bitmapData)
+        return try {
+            val targetDir = File(context.externalCacheDir ?: context.cacheDir, "bm")
+            if (!targetDir.exists()) targetDir.mkdirs()
+            val tempFile = File(targetDir, buildFileName(FileUtil.DEFAULT_IMAGE_NAME, "png"))
+            FileOutputStream(tempFile).use { out ->
+                bm.compress(Bitmap.CompressFormat.PNG, 95, out)
+            }
+            val uri = FileProvider.getUriForFile(
+                context,
+                BuildConfig.APPLICATION_ID + ".provider",
+                tempFile,
+            )
+            grantNotificationUriReadPermissions(context, uri)
+            uri
+        } catch (e: Exception) {
+            Log.e("parabox", "getImageUriFromBitmap failed", e)
+            null
         }
-        val uri = FileProvider.getUriForFile(
-            context,
-            BuildConfig.APPLICATION_ID + ".provider", tempFile
+    }
+
+    private fun grantNotificationUriReadPermissions(context: Context, uri: Uri) {
+        val packages = listOf(
+            context.packageName,
+            "com.android.systemui",
         )
-        context.grantUriPermission(context.packageName, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        return uri
+        packages.forEach { pkg ->
+            runCatching {
+                context.grantUriPermission(pkg, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+        }
     }
 }

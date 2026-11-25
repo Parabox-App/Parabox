@@ -24,6 +24,9 @@ import com.ojhdtapp.parabox.ui.common.LayoutType
 object AppNavTransitions {
     private const val ENTER_DURATION_MS = 300
     private const val EXIT_DURATION_MS = 250
+    const val MENU_TAB_METADATA_KEY = "menu_tab"
+
+    fun menuTabMetadata(tab: MenuTab): Map<String, Any> = mapOf(MENU_TAB_METADATA_KEY to tab)
 
     /**
      * Standard Material Shared Axis X forward transition.
@@ -42,6 +45,31 @@ object AppNavTransitions {
             fadeIn(animationSpec = tween(ENTER_DURATION_MS))) togetherWith
             (slideOutHorizontally(animationSpec = tween(EXIT_DURATION_MS)) { it / 5 } +
                 fadeOut(animationSpec = tween(EXIT_DURATION_MS)))
+
+    /**
+     * Pure cross-fade transition used for top-level tab switching on medium/expanded screens (tablets+).
+     */
+    fun fadeTransition(): ContentTransform =
+        fadeIn(animationSpec = tween(ENTER_DURATION_MS)) togetherWith
+            fadeOut(animationSpec = tween(EXIT_DURATION_MS))
+
+    /**
+     * Top-level tab transition:
+     * - Compact (phone): directional horizontal slide + fade based on relative tab order.
+     * - Medium/Expanded (tablet or larger): cross-fade only.
+     */
+    fun topLevelTabTransition(
+        initialTab: MenuTab,
+        targetTab: MenuTab,
+        isCompactWidth: Boolean,
+    ): ContentTransform {
+        if (!isCompactWidth) return fadeTransition()
+        return when {
+            targetTab.ordinal > initialTab.ordinal -> forwardTransition()
+            targetTab.ordinal < initialTab.ordinal -> popTransition()
+            else -> fadeTransition()
+        }
+    }
 
     /**
      * Google Material Design 3 Predictive Back transition:

@@ -7,12 +7,20 @@ import android.util.Log
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.ojhdtapp.parabox.core.util.NotificationUtil
+import com.ojhdtapp.parabox.domain.model.Connection
 import com.ojhdtapp.parabox.domain.repository.ConnectionInfoRepository
 import com.ojhdtapp.parabox.domain.repository.MainRepository
+import com.ojhdtapp.parabox.domain.service.extension.ExtensionConnectionSnapshot
 import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
+import com.ojhdtapp.parabox.domain.service.extension.ExtensionMonitorTracker
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -31,6 +39,7 @@ class ExtensionService : LifecycleService() {
     lateinit var connectionInfoRepository: ConnectionInfoRepository
 
     private var bridge: ExtensionServiceBridge? = null
+    private val monitorTracker = ExtensionMonitorTracker()
 
     val isConnected = MutableStateFlow<Boolean>(false)
 
@@ -51,6 +60,7 @@ class ExtensionService : LifecycleService() {
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun onCreate() {
         super.onCreate()
         Log.d("parabox", "extension service connected")
@@ -58,21 +68,42 @@ class ExtensionService : LifecycleService() {
         lifecycle.addObserver(extensionManager)
 
         lifecycleScope.launch {
-            extensionManager.connectionFlow.collectLatest {
-                Log.d("parabox", "extensionFlow=${it}")
-            }
+            extensionManager.connectionFlow
+                .flatMapLatest { connections ->
+                    if (connections.isEmpty()) {
+                        flowOf(emptyList())
+                    } else {
+                        val snapshotFlows = connections.map { connection ->
+                            when (connection) {
+                                is Connection.ConnectionSuccess -> connection.getStatus().map { status ->
+                                    ExtensionConnectionSnapshot.fromSuccess(connection, status)
+                                }
+
+                                is Connection.ConnectionPending -> flowOf(
+                                    ExtensionConnectionSnapshot.fromPending(connection)
+                                )
+
+                                is Connection.ConnectionFail -> flowOf(
+                                    ExtensionConnectionSnapshot.fromFail(connection)
+                                )
+                            }
+                        }
+                        combine(snapshotFlows) { it.toList() }
+                    }
+                }
+                .distinctUntilChanged()
+                .collect { snapshots ->
+                    val update = monitorTracker.onSnapshotsUpdated(snapshots)
+                    isConnected.value = update.summary.activeCount > 0
+                    notificationUtil.updateForegroundServiceNotification(update.summary)
+                    update.clearedAlertConnectionIds.forEach { connectionId ->
+                        notificationUtil.cancelExtensionDisconnectNotification(connectionId)
+                    }
+                    update.disconnectAlerts.forEach { alert ->
+                        notificationUtil.sendExtensionDisconnectNotification(alert)
+                    }
+                }
         }
-//
-//
-//        lifecycleScope.launch(Dispatchers.IO) {
-//            delay(5000)
-//            extensionManager.extensionPkgFlow.value.firstOrNull()?.let {
-//                if (extensionManager.extensionFlow.value.isEmpty()) {
-//                    Log.d("bbb", "add pkgInfo")
-//                    extensionManager.addPendingExtension("test", it, Bundle())
-//                }
-//            }
-//        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

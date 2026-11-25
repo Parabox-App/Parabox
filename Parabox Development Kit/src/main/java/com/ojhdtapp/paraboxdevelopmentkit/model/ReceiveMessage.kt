@@ -13,4 +13,5 @@ data class ReceiveMessage(
     val chat: ParaboxChat,
     val timestamp: Long,
     val uuid: String,
+    val sentByMe: Boolean = false,
 ) : Parcelable

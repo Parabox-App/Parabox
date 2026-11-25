@@ -462,6 +462,7 @@ message ReceiveMessageProto {
   ChatProto chat = 3;
   int64 timestamp = 4;
   string uuid = 5;
+  bool sent_by_me = 6;
 }
 
 message SendMessageProto {

@@ -38,6 +38,10 @@ import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.receiver.MarkAsReadReceiver
 import com.ojhdtapp.parabox.domain.receiver.ReplyReceiver
+import com.ojhdtapp.parabox.domain.service.extension.DisconnectAlert
+import com.ojhdtapp.parabox.domain.service.extension.ExtensionConnectionSnapshot
+import com.ojhdtapp.parabox.domain.service.extension.ExtensionConnectionState
+import com.ojhdtapp.parabox.domain.service.extension.ExtensionMonitorSummary
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.*
@@ -59,6 +63,10 @@ class NotificationUtil @Inject constructor(
 
         const val SERVICE_STATE_CHANNEL_ID = "service_state_channel"
         private const val FOREGROUND_PLUGIN_SERVICE_NOTIFICATION_ID = 999
+
+        const val EXTENSION_DISCONNECT_CHANNEL_ID = "extension_disconnect_channel"
+        private const val EXTENSION_DISCONNECT_NOTIFICATION_BASE_ID = 20000
+        private const val MAX_SERVICE_STATE_INBOX_LINES = 6
 
         const val KEY_TEXT_REPLY = "key_text_reply"
 
@@ -295,15 +303,20 @@ class NotificationUtil @Inject constructor(
                                     it.first.timestamp,
                                     if (it.first.sentByMe) userPerson else it.second
                                 ).apply {
-                                    it.first.contents.filterIsInstance<ParaboxImage>().firstOrNull()?.let {
-                                        val mimetype = "image/"
-                                        val bitmap = ImageUtil.getBitmapWithCoil(context, it.resourceInfo.getModel())
-                                        val imageUri = if (bitmap != null) {
-                                            ImageUtil.getImageUriFromBitmapWithCache(context, bitmap)
-                                        } else {
-                                            Uri.parse("android.resource://${context.packageName}/${R.drawable.image_lost}")
+                                    it.first.contents.filterIsInstance<ParaboxImage>().firstOrNull()?.let { img ->
+                                        val model = img.resourceInfo.getModel()
+                                        val bitmap = when (ExtensionMediaLoader.detectAnimatedMediaKind(img.fileName)) {
+                                            AnimatedMediaKind.IMAGE -> ImageUtil.getBitmapWithCoil(context, model)
+                                            AnimatedMediaKind.LOOPING_VIDEO -> ImageUtil.getVideoFrameBitmap(context, model)
+                                            AnimatedMediaKind.TGS_LOTTIE -> null
                                         }
-                                        setData(mimetype, imageUri)
+                                        val cacheKey = "${it.first.messageId}_${model}"
+                                        val imageUri = bitmap?.let { bm ->
+                                            ImageUtil.getImageUriFromBitmapWithCache(context, bm, cacheKey)
+                                        }
+                                        if (imageUri != null) {
+                                            setData("image/png", imageUri)
+                                        }
                                     }
                                 }
                                 if (it.first.timestamp < m.timestamp) {
@@ -391,32 +404,76 @@ class NotificationUtil @Inject constructor(
         notificationManager.cancel(id)
     }
 
-    fun startForegroundService(service: Service) {
-        val pendingIntent: PendingIntent = Intent(context, MainActivity::class.java).apply {
+    private fun createMainLauncherPendingIntent(): PendingIntent =
+        Intent(context, MainActivity::class.java).apply {
             action = Intent.ACTION_MAIN
             addCategory(Intent.CATEGORY_LAUNCHER)
+            addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }.let {
             PendingIntent.getActivity(
-                context, 0, it,
-                PendingIntent.FLAG_IMMUTABLE
+                context,
+                0,
+                it,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
             )
         }
+
+    private fun ensureServiceStateChannel() {
         createNotificationChannel(
             SERVICE_STATE_CHANNEL_ID,
             context.getString(R.string.notification_service_state_channel_name),
             context.getString(R.string.notification_service_state_channel_des),
-            NotificationManager.IMPORTANCE_MIN
+            NotificationManager.IMPORTANCE_MIN,
         )
-        val notification: Notification =
-            NotificationCompat.Builder(context, SERVICE_STATE_CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_stat_name)
-                .setContentTitle(context.getString(R.string.notification_service_state_title))
-                .setContentIntent(pendingIntent)
-                .setTicker(context.getString(R.string.notification_service_state_ticker))
-                .setCategory(Notification.CATEGORY_SERVICE)
-                .setGroup(GROUP_KEY_INTERNAL)
-                .setOnlyAlertOnce(true)
-                .build()
+    }
+
+    private fun ensureExtensionDisconnectChannel() {
+        createNotificationChannel(
+            EXTENSION_DISCONNECT_CHANNEL_ID,
+            context.getString(R.string.notification_extension_disconnect_channel_name),
+            context.getString(R.string.notification_extension_disconnect_channel_des),
+            NotificationManager.IMPORTANCE_DEFAULT,
+        )
+    }
+
+    private fun buildForegroundServiceNotification(
+        title: String,
+        text: String,
+        detailLines: List<String> = emptyList(),
+        summaryText: String? = null,
+    ): Notification {
+        val builder = NotificationCompat.Builder(context, SERVICE_STATE_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_stat_name)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setContentIntent(createMainLauncherPendingIntent())
+            .setTicker(title)
+            .setCategory(Notification.CATEGORY_SERVICE)
+            .setGroup(GROUP_KEY_INTERNAL)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setSilent(true)
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
+
+        if (detailLines.isNotEmpty()) {
+            val inboxStyle = NotificationCompat.InboxStyle()
+                .setBigContentTitle(title)
+            detailLines.forEach { line -> inboxStyle.addLine(line) }
+            if (!summaryText.isNullOrBlank()) {
+                inboxStyle.setSummaryText(summaryText)
+            }
+            builder.setStyle(inboxStyle)
+        }
+
+        return builder.build()
+    }
+
+    fun startForegroundService(service: Service) {
+        ensureServiceStateChannel()
+        val notification = buildForegroundServiceNotification(
+            title = context.getString(R.string.notification_service_state_title),
+            text = context.getString(R.string.notification_service_state_ticker),
+        )
         try {
             ServiceCompat.startForeground(
                 service,
@@ -424,7 +481,8 @@ class NotificationUtil @Inject constructor(
                 notification,
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     ServiceInfo.FOREGROUND_SERVICE_TYPE_REMOTE_MESSAGING
-                } else 0)
+                } else 0,
+            )
         } catch (e: Exception) {
             e.printStackTrace()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
@@ -433,30 +491,130 @@ class NotificationUtil @Inject constructor(
         }
     }
 
-    fun updateForegroundServiceNotification(title: String, text: String) {
-        val pendingIntent: PendingIntent = Intent(context, MainActivity::class.java).apply {
-            action = Intent.ACTION_MAIN
-            addCategory(Intent.CATEGORY_LAUNCHER)
-        }.let {
-            PendingIntent.getActivity(
-                context, 0, it,
-                PendingIntent.FLAG_IMMUTABLE
-            )
+    fun updateForegroundServiceNotification(summary: ExtensionMonitorSummary) {
+        ensureServiceStateChannel()
+        val title = when {
+            summary.totalCount == 0 ->
+                context.getString(R.string.notification_service_state_title)
+
+            summary.activeCount == summary.totalCount ->
+                context.getString(R.string.notification_service_state_title_all_connected, summary.activeCount)
+
+            else ->
+                context.getString(
+                    R.string.notification_service_state_title_partial_connected,
+                    summary.activeCount,
+                    summary.totalCount,
+                )
         }
-        val notification: Notification =
-            NotificationCompat.Builder(context, SERVICE_STATE_CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_stat_name)
-                .setContentTitle(title)
-//                .setContentText(text)
-                .setCategory(Notification.CATEGORY_SERVICE)
-                .setContentIntent(pendingIntent)
-                .setGroup(GROUP_KEY_INTERNAL)
-                .setTicker(title)
-                .build()
+
+        val contentText = when {
+            summary.totalCount == 0 ->
+                context.getString(R.string.notification_service_state_ticker)
+
+            summary.activeCount == summary.totalCount ->
+                context.getString(R.string.notification_service_state_all_normal)
+
+            else -> buildList {
+                if (summary.activeCount > 0) {
+                    add(context.getString(R.string.notification_service_state_bucket_active, summary.activeCount))
+                }
+                if (summary.connectingCount > 0) {
+                    add(context.getString(R.string.notification_service_state_bucket_connecting, summary.connectingCount))
+                }
+                if (summary.reconnectingCount > 0) {
+                    add(context.getString(R.string.notification_service_state_bucket_reconnecting, summary.reconnectingCount))
+                }
+                if (summary.errorCount > 0) {
+                    add(context.getString(R.string.notification_service_state_bucket_error, summary.errorCount))
+                }
+            }.joinToString(" · ")
+        }
+
+        val detailLines = buildList {
+            summary.items.take(MAX_SERVICE_STATE_INBOX_LINES).forEach { item ->
+                add(formatConnectionStatusLine(item))
+            }
+            val remaining = summary.items.size - MAX_SERVICE_STATE_INBOX_LINES
+            if (remaining > 0) {
+                add(context.getString(R.string.notification_service_state_more_items, remaining))
+            }
+        }
+
+        val notification = buildForegroundServiceNotification(
+            title = title,
+            text = contentText,
+            detailLines = detailLines,
+            summaryText = contentText,
+        )
         notificationManager.notify(
             FOREGROUND_PLUGIN_SERVICE_NOTIFICATION_ID,
-            notification
+            notification,
         )
+    }
+
+    fun sendExtensionDisconnectNotification(alert: DisconnectAlert) {
+        ensureExtensionDisconnectChannel()
+        val displayName = formatConnectionDisplayName(alert.alias, alert.extensionName)
+        val reason = alert.reason.ifBlank {
+            context.getString(R.string.notification_extension_disconnect_unknown_reason)
+        }
+        val title = context.getString(R.string.notification_extension_disconnect_title, displayName)
+        val content = context.getString(R.string.notification_extension_disconnect_reason, reason)
+
+        val notification = NotificationCompat.Builder(context, EXTENSION_DISCONNECT_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_stat_name)
+            .setContentTitle(title)
+            .setContentText(content)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(content))
+            .setContentIntent(createMainLauncherPendingIntent())
+            .setCategory(Notification.CATEGORY_STATUS)
+            .setAutoCancel(true)
+            .setShowWhen(true)
+            .setWhen(System.currentTimeMillis())
+            .build()
+
+        notificationManager.notify(disconnectNotificationId(alert.connectionId), notification)
+    }
+
+    fun cancelExtensionDisconnectNotification(connectionId: Long) {
+        notificationManager.cancel(disconnectNotificationId(connectionId))
+    }
+
+    private fun disconnectNotificationId(connectionId: Long): Int =
+        EXTENSION_DISCONNECT_NOTIFICATION_BASE_ID + (connectionId.toInt() and 0xFFFF)
+
+    private fun formatConnectionDisplayName(alias: String, extensionName: String): String =
+        when {
+            alias.isNotBlank() && extensionName.isNotBlank() && alias != extensionName ->
+                "$alias ($extensionName)"
+            alias.isNotBlank() -> alias
+            else -> extensionName
+        }
+
+    private fun formatConnectionStatusLine(item: ExtensionConnectionSnapshot): String {
+        val displayName = formatConnectionDisplayName(item.alias, item.extensionName)
+        val statusText = when (val state = item.state) {
+            is ExtensionConnectionState.Active ->
+                context.getString(R.string.notification_service_state_status_active)
+
+            is ExtensionConnectionState.Connecting ->
+                context.getString(R.string.notification_service_state_status_connecting)
+
+            is ExtensionConnectionState.Reconnecting -> {
+                val base = context.getString(
+                    R.string.notification_service_state_status_reconnecting_attempt,
+                    state.attempt,
+                )
+                if (state.reason.isNotBlank()) "$base - ${state.reason}" else base
+            }
+
+            is ExtensionConnectionState.Error -> {
+                val base = context.getString(R.string.notification_service_state_status_error)
+                if (state.reason.isNotBlank()) "$base - ${state.reason}" else base
+            }
+        }
+        return "$displayName · $statusText"
     }
 
     @RequiresApi(Build.VERSION_CODES.R)

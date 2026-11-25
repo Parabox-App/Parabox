@@ -39,7 +39,7 @@ sealed interface ParaboxResourceInfo : Parcelable {
         }
         @Parcelize
         @Serializable
-        data class UriLocalInfo(@Contextual val uri: Uri) : ParaboxLocalInfo {
+        data class UriLocalInfo(@Serializable(with = URISerializer::class) val uri: Uri) : ParaboxLocalInfo {
 
             override fun getModel(): Any? {
                 return uri

@@ -30,9 +30,11 @@ import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
 import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
 import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneStrategy
+import androidx.window.core.layout.WindowSizeClass
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -408,6 +410,8 @@ class MainActivity : AppCompatActivity() {
                         entryProvider = entryProvider {
                             entry<RootRoute.Main> {
                                 val currentRoute = menuBackStack.lastOrNull() as? MenuRoute ?: MenuRoute.MessageList
+                                val isCompactWidth = !currentWindowAdaptiveInfo().windowSizeClass
+                                    .isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)
                                 val paneDirective = rememberAppPaneScaffoldDirective()
                                 val layoutType = paneDirective.toLayoutType()
                                 val listDetailStrategy = rememberListDetailSceneStrategy<NavKey>(
@@ -450,8 +454,28 @@ class MainActivity : AppCompatActivity() {
                                             backStack = menuBackStack,
                                             sceneStrategy = listDetailStrategy,
                                             onBack = { popMenuBack() },
-                                            transitionSpec = { AppNavTransitions.forwardTransition() },
-                                            popTransitionSpec = { AppNavTransitions.popTransition() },
+                                            transitionSpec = {
+                                                val initialTab = initialState.entries.lastOrNull()
+                                                    ?.metadata?.get(AppNavTransitions.MENU_TAB_METADATA_KEY) as? MenuTab
+                                                val targetTab = targetState.entries.lastOrNull()
+                                                    ?.metadata?.get(AppNavTransitions.MENU_TAB_METADATA_KEY) as? MenuTab
+                                                if (initialTab != null && targetTab != null && initialTab != targetTab) {
+                                                    AppNavTransitions.topLevelTabTransition(initialTab, targetTab, isCompactWidth)
+                                                } else {
+                                                    AppNavTransitions.forwardTransition()
+                                                }
+                                            },
+                                            popTransitionSpec = {
+                                                val initialTab = initialState.entries.lastOrNull()
+                                                    ?.metadata?.get(AppNavTransitions.MENU_TAB_METADATA_KEY) as? MenuTab
+                                                val targetTab = targetState.entries.lastOrNull()
+                                                    ?.metadata?.get(AppNavTransitions.MENU_TAB_METADATA_KEY) as? MenuTab
+                                                if (initialTab != null && targetTab != null && initialTab != targetTab) {
+                                                    AppNavTransitions.topLevelTabTransition(initialTab, targetTab, isCompactWidth)
+                                                } else {
+                                                    AppNavTransitions.popTransition()
+                                                }
+                                            },
                                             predictivePopTransitionSpec = { swipeEdge -> AppNavTransitions.predictivePopTransition(swipeEdge) },
                                             entryProvider = entryProvider {
                                                 entry<MenuRoute.MessageList>(
@@ -460,7 +484,7 @@ class MainActivity : AppCompatActivity() {
                                                         detailPlaceholder = {
                                                             EmptyChatPage(layoutType = layoutType)
                                                         },
-                                                    ),
+                                                    ) + AppNavTransitions.menuTabMetadata(MenuTab.Message),
                                                 ) {
                                                     MessagePage(
                                                         modifier = Modifier.paneFocusAnchor(),
@@ -474,7 +498,7 @@ class MainActivity : AppCompatActivity() {
                                                 entry<MenuRoute.ChatDetail>(
                                                     metadata = ListDetailSceneStrategy.detailPane(
                                                         sceneKey = SceneKeys.MESSAGE,
-                                                    ),
+                                                    ) + AppNavTransitions.menuTabMetadata(MenuTab.Message),
                                                 ) {
                                                     ChatPage(
                                                         modifier = Modifier.paneFocusAnchor(),
@@ -494,7 +518,7 @@ class MainActivity : AppCompatActivity() {
                                                 entry<MenuRoute.ChatInfo>(
                                                     metadata = ListDetailSceneStrategy.extraPane(
                                                         sceneKey = SceneKeys.MESSAGE,
-                                                    ),
+                                                    ) + AppNavTransitions.menuTabMetadata(MenuTab.Message),
                                                 ) {
                                                     ChatInfoExtraPane(
                                                         modifier = Modifier.paneFocusAnchor(),
@@ -509,7 +533,9 @@ class MainActivity : AppCompatActivity() {
                                                     )
                                                 }
 
-                                                entry<MenuRoute.FileList> {
+                                                entry<MenuRoute.FileList>(
+                                                    metadata = AppNavTransitions.menuTabMetadata(MenuTab.File),
+                                                ) {
                                                     FilePage(modifier = Modifier.fillMaxSize())
                                                 }
 
@@ -519,7 +545,7 @@ class MainActivity : AppCompatActivity() {
                                                         detailPlaceholder = {
                                                             ContactDetailPlaceholder()
                                                         },
-                                                    ),
+                                                    ) + AppNavTransitions.menuTabMetadata(MenuTab.Contact),
                                                 ) {
                                                     ContactPage(
                                                         modifier = Modifier.paneFocusAnchor(),
@@ -534,7 +560,7 @@ class MainActivity : AppCompatActivity() {
                                                 entry<MenuRoute.ContactDetail>(
                                                     metadata = ListDetailSceneStrategy.detailPane(
                                                         sceneKey = SceneKeys.CONTACT,
-                                                    ),
+                                                    ) + AppNavTransitions.menuTabMetadata(MenuTab.Contact),
                                                 ) {
                                                     ContactDetailPage(
                                                         modifier = Modifier.paneFocusAnchor(),

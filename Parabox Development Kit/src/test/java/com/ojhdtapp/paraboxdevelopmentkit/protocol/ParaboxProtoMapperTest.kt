@@ -170,4 +170,26 @@ class ParaboxProtoMapperTest {
         assertEquals(true, ParaboxProtoMapper.toConfigValueProto(true).toDomainValue())
         assertTrue(ParaboxProtoMapper.toConfigValueProto(null).toDomainValue() == null)
     }
+
+    @Test
+    fun roundTripReceiveMessageSentByMeFlag() {
+        val sender = ParaboxContact(ParaboxBasicInfo("Me", ParaboxResourceInfo.ParaboxEmptyInfo), "100")
+        val chat = ParaboxChat(ParaboxBasicInfo("Friend", ParaboxResourceInfo.ParaboxEmptyInfo), ParaboxChat.TYPE_PRIVATE, "200")
+        val outgoing = ReceiveMessage(
+            contents = listOf(ParaboxPlainText("Sent from Telegram Desktop")),
+            sender = sender,
+            chat = chat,
+            timestamp = 1700000123L,
+            uuid = "200:999",
+            sentByMe = true,
+        )
+        val decodedOutgoing = outgoing.toProto().toDomain()
+        assertEquals(outgoing, decodedOutgoing)
+        assertTrue(decodedOutgoing.sentByMe)
+
+        val incoming = outgoing.copy(uuid = "200:1000", sentByMe = false)
+        val decodedIncoming = incoming.toProto().toDomain()
+        assertEquals(incoming, decodedIncoming)
+        assertEquals(false, decodedIncoming.sentByMe)
+    }
 }

@@ -45,27 +45,39 @@ class MainRepositoryImpl @Inject constructor(
         return coroutineScope {
             try {
                 val info = ext.toExtensionInfo()
+                if (msg.uuid.isNotBlank()) {
+                    val existingMessageId = db.messageDao.checkMessage(info.pkg, info.connectionId, msg.uuid)
+                    if (existingMessageId != null && existingMessageId > 0L) {
+                        return@coroutineScope ParaboxResult(ParaboxResult.SUCCESS, ParaboxResult.SUCCESS_MSG)
+                    }
+                }
                 val allowForegroundNotification = context.getDataStoreValue(
                     DataStoreKeys.SETTINGS_ALLOW_FOREGROUND_NOTIFICATION,
                     false
                 )
                 val chatEntity = buildChatEntity(msg, info)
-                val contactEntity = buildContactEntity(msg, info)
                 val chatIdDeferred = async {
                     db.chatDao.checkChat(chatEntity.pkg, info.connectionId, chatEntity.uid)
                         ?: db.chatDao.insertChat(chatEntity)
                 }
                 val contactIdDeferred = async {
-                    db.contactDao.checkContact(contactEntity.pkg, info.connectionId, contactEntity.uid)
-                        ?: db.contactDao.insertContact(contactEntity)
+                    if (msg.sentByMe) {
+                        getOrCreateSelfContactId(info.pkg, info.connectionId)
+                    } else {
+                        val contactEntity = buildContactEntity(msg, info)
+                        db.contactDao.checkContact(contactEntity.pkg, info.connectionId, contactEntity.uid)
+                            ?: db.contactDao.insertContact(contactEntity)
+                    }
                 }
-                // crossRef contact and chat
-                db.contactChatCrossRefDao.insertContactChatCrossRef(
-                    ContactChatCrossRef(
-                        contactIdDeferred.await(),
-                        chatIdDeferred.await()
+                if (!msg.sentByMe) {
+                    // crossRef contact and chat
+                    db.contactChatCrossRefDao.insertContactChatCrossRef(
+                        ContactChatCrossRef(
+                            contactIdDeferred.await(),
+                            chatIdDeferred.await()
+                        )
                     )
-                )
+                }
 
                 val messageEntity =
                     buildMessageEntity(msg, info, contactIdDeferred.await(), chatIdDeferred.await())
@@ -74,7 +86,7 @@ class MainRepositoryImpl @Inject constructor(
                 }
                 Log.d(
                     "parabox",
-                    "chatId:${chatIdDeferred.await()};contactId:${contactIdDeferred.await()};messageId:${messageIdDeferred.await()}"
+                    "chatId:${chatIdDeferred.await()};contactId:${contactIdDeferred.await()};messageId:${messageIdDeferred.await()};sentByMe:${msg.sentByMe}"
                 )
                 db.chatDao.updateLatestMessageId(
                     ChatLatestMessageIdUpdate(
@@ -83,7 +95,7 @@ class MainRepositoryImpl @Inject constructor(
                     )
                 )
 
-                if (contactIdDeferred.await() != -1L) {
+                if (!msg.sentByMe && contactIdDeferred.await() != -1L) {
                     launch(Dispatchers.IO) {
                         val originalContact = db.contactDao.getContactById(contactIdDeferred.await())
                         val needsAvatarRefresh = originalContact == null ||
@@ -133,7 +145,7 @@ class MainRepositoryImpl @Inject constructor(
                             } else {
                                 try {
                                     when (originalChat?.type) {
-                                        ParaboxChat.TYPE_PRIVATE -> ext.getUserBasicInfo(msg.sender.uid)
+                                        ParaboxChat.TYPE_PRIVATE -> ext.getUserBasicInfo(msg.chat.uid.ifBlank { msg.sender.uid })
                                         ParaboxChat.TYPE_GROUP -> ext.getGroupBasicInfo(msg.chat.uid)
                                         else -> null
                                     }
@@ -153,25 +165,39 @@ class MainRepositoryImpl @Inject constructor(
                             }
                         }
                         val originalNum = originalChat?.unreadMessageNum ?: 0
-                        db.chatDao.updateUnreadMessageNum(
-                            ChatUnreadMessagesNumUpdate(
-                                chatId = chatIdDeferred.await(),
-                                unreadMessageNum = originalNum + 1
+                        if (msg.sentByMe) {
+                            if (originalNum > 0) {
+                                db.chatDao.updateUnreadMessageNum(
+                                    ChatUnreadMessagesNumUpdate(
+                                        chatId = chatIdDeferred.await(),
+                                        unreadMessageNum = 0
+                                    )
+                                )
+                            }
+                        } else {
+                            db.chatDao.updateUnreadMessageNum(
+                                ChatUnreadMessagesNumUpdate(
+                                    chatId = chatIdDeferred.await(),
+                                    unreadMessageNum = originalNum + 1
+                                )
                             )
-                        )
+                        }
                     }
                 }
 
-                context.getDataStoreValue(DataStoreKeys.MESSAGE_BADGE_NUM, 0).also {
-                    context.dataStore.edit { preferences ->
-                        preferences[DataStoreKeys.MESSAGE_BADGE_NUM] = it + 1
+                if (!msg.sentByMe) {
+                    context.getDataStoreValue(DataStoreKeys.MESSAGE_BADGE_NUM, 0).also {
+                        context.dataStore.edit { preferences ->
+                            preferences[DataStoreKeys.MESSAGE_BADGE_NUM] = it + 1
+                        }
                     }
+                    notificationUtil.sendNewMessageNotification(
+                        messageIdDeferred.await(),
+                        contactIdDeferred.await(),
+                        chatIdDeferred.await(),
+                        ext.toExtensionInfo()
+                    )
                 }
-                notificationUtil.sendNewMessageNotification(
-                    messageIdDeferred.await(),
-                    contactIdDeferred.await(),
-                    chatIdDeferred.await(),
-                    ext.toExtensionInfo())
                 ParaboxResult(ParaboxResult.SUCCESS, ParaboxResult.SUCCESS_MSG)
             } catch (e: Exception) {
                 ParaboxResult(ParaboxResult.ERROR_UNKNOWN, e.message ?: ParaboxResult.ERROR_UNKNOWN_MSG)

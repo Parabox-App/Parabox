@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.data.local
 
+import android.net.Uri
 import android.os.Bundle
 import android.os.Parcel
 import androidx.room.ProvidedTypeConverter
@@ -19,6 +20,7 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxQuoteReply
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxUnsupported
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxVideo
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
+import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.URISerializer
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromHexString
 import kotlinx.serialization.encodeToHexString
@@ -100,35 +102,38 @@ class Converters(
 
     companion object {
         @OptIn(ExperimentalSerializationApi::class)
-        private val messageProtobuf = ProtoBuf {
-            serializersModule = SerializersModule {
-                polymorphic(ParaboxMessageElement::class) {
-                    subclass(ParaboxAt::class, ParaboxAt.serializer())
-                    subclass(ParaboxAtAll::class, ParaboxAtAll.serializer())
-                    subclass(ParaboxAudio::class, ParaboxAudio.serializer())
-                    subclass(ParaboxVideo::class, ParaboxVideo.serializer())
-                    subclass(ParaboxFile::class, ParaboxFile.serializer())
-                    subclass(ParaboxImage::class, ParaboxImage.serializer())
-                    subclass(ParaboxLocation::class, ParaboxLocation.serializer())
-                    subclass(ParaboxPlainText::class, ParaboxPlainText.serializer())
-                    subclass(ParaboxQuoteReply::class, ParaboxQuoteReply.serializer())
-                    subclass(ParaboxForward::class, ParaboxForward.serializer())
-                    subclass(ParaboxUnsupported::class, ParaboxUnsupported.serializer())
-                }
+        private val sharedSerializersModule = SerializersModule {
+            contextual(Uri::class, URISerializer)
+            polymorphic(ParaboxMessageElement::class) {
+                subclass(ParaboxAt::class, ParaboxAt.serializer())
+                subclass(ParaboxAtAll::class, ParaboxAtAll.serializer())
+                subclass(ParaboxAudio::class, ParaboxAudio.serializer())
+                subclass(ParaboxVideo::class, ParaboxVideo.serializer())
+                subclass(ParaboxFile::class, ParaboxFile.serializer())
+                subclass(ParaboxImage::class, ParaboxImage.serializer())
+                subclass(ParaboxLocation::class, ParaboxLocation.serializer())
+                subclass(ParaboxPlainText::class, ParaboxPlainText.serializer())
+                subclass(ParaboxQuoteReply::class, ParaboxQuoteReply.serializer())
+                subclass(ParaboxForward::class, ParaboxForward.serializer())
+                subclass(ParaboxUnsupported::class, ParaboxUnsupported.serializer())
+            }
+            polymorphic(ParaboxResourceInfo::class) {
+                subclass(ParaboxResourceInfo.ParaboxEmptyInfo::class, ParaboxResourceInfo.ParaboxEmptyInfo.serializer())
+                subclass(ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo::class, ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo.serializer())
+                subclass(ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo::class, ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo.serializer())
+                subclass(ParaboxResourceInfo.ParaboxRemoteInfo.DriveRemoteInfo::class, ParaboxResourceInfo.ParaboxRemoteInfo.DriveRemoteInfo.serializer())
+                subclass(ParaboxResourceInfo.ParaboxSyncedInfo::class, ParaboxResourceInfo.ParaboxSyncedInfo.serializer())
             }
         }
 
         @OptIn(ExperimentalSerializationApi::class)
+        private val messageProtobuf = ProtoBuf {
+            serializersModule = sharedSerializersModule
+        }
+
+        @OptIn(ExperimentalSerializationApi::class)
         private val resourceProtobuf = ProtoBuf {
-            serializersModule = SerializersModule {
-                polymorphic(ParaboxResourceInfo::class) {
-                    subclass(ParaboxResourceInfo.ParaboxEmptyInfo::class, ParaboxResourceInfo.ParaboxEmptyInfo.serializer())
-                    subclass(ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo::class, ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo.serializer())
-                    subclass(ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo::class, ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo.serializer())
-                    subclass(ParaboxResourceInfo.ParaboxRemoteInfo.DriveRemoteInfo::class, ParaboxResourceInfo.ParaboxRemoteInfo.DriveRemoteInfo.serializer())
-                    subclass(ParaboxResourceInfo.ParaboxSyncedInfo::class, ParaboxResourceInfo.ParaboxSyncedInfo.serializer())
-                }
-            }
+            serializersModule = sharedSerializersModule
         }
     }
 }

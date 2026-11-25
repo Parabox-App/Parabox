@@ -41,6 +41,13 @@ interface MessageDao {
     )
     fun getMessageById(messageId: Long): MessageEntity?
 
+    @Query(
+        "SELECT messageId FROM message_entity " +
+                "WHERE pkg = :pkg AND extensionId = :extensionId AND uid = :uid " +
+                "LIMIT 1"
+    )
+    suspend fun checkMessage(pkg: String, extensionId: Long, uid: String): Long?
+
     @Query("DELETE FROM message_entity WHERE messageId = :messageId")
     fun deleteMessageById(messageId: Long): Int
 

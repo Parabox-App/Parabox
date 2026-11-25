@@ -61,6 +61,7 @@ class TdSession(
     private val userCache = ConcurrentHashMap<Long, TdApi.User>()
     private val chatCache = ConcurrentHashMap<Long, TdApi.Chat>()
     private val pendingSends = ConcurrentHashMap<Pair<Long, Long>, CompletableDeferred<SendAck>>()
+    private val locallySentMessageIds = ConcurrentHashMap<Pair<Long, Long>, Long>()
 
     override suspend fun onInitialize(): Boolean {
         if (accountId.isBlank()) {
@@ -128,6 +129,9 @@ class TdSession(
                     }
                     is TdApi.UpdateMessageSendSucceeded -> {
                         val key = update.message.chatId to update.oldMessageId
+                        if (pendingSends.containsKey(key) || isLocallySent(update.message.chatId, update.oldMessageId)) {
+                            recordLocallySent(update.message.chatId, update.message.id)
+                        }
                         pendingSends.computeIfAbsent(key) { CompletableDeferred() }
                             .complete(SendAck.Succeeded(update.message.id))
                     }
@@ -181,10 +185,37 @@ class TdSession(
         }
     }
 
-    private suspend fun handleNewMessage(tdClient: TdClientApi, message: TdApi.Message) {
-        if (message.isOutgoing) return
+    internal suspend fun handleNewMessage(tdClient: TdClientApi, message: TdApi.Message) {
+        if (!shouldSyncUpdateNewMessage(message)) return
         val receiveMessage = buildReceiveMessage(tdClient, message) ?: return
         emitMessage(receiveMessage)
+    }
+
+    internal fun shouldSyncUpdateNewMessage(message: TdApi.Message): Boolean {
+        if (!message.isOutgoing) return true
+        // Local sends enter TDLib with pending/failed sendingState or are tracked in locallySentMessageIds
+        if (message.sendingState != null) return false
+        if (isLocallySent(message.chatId, message.id)) return false
+        return true
+    }
+
+    internal fun recordLocallySent(chatId: Long, messageId: Long) {
+        if (chatId == 0L || messageId == 0L) return
+        val now = System.currentTimeMillis()
+        locallySentMessageIds[chatId to messageId] = now
+        if (locallySentMessageIds.size > LOCAL_SENT_MAX_ENTRIES) {
+            val cutoff = now - LOCAL_SENT_TTL_MS
+            locallySentMessageIds.entries.removeIf { it.value < cutoff }
+        }
+    }
+
+    private fun isLocallySent(chatId: Long, messageId: Long): Boolean {
+        val recordedAt = locallySentMessageIds[chatId to messageId] ?: return false
+        if (System.currentTimeMillis() - recordedAt > LOCAL_SENT_TTL_MS) {
+            locallySentMessageIds.remove(chatId to messageId, recordedAt)
+            return false
+        }
+        return true
     }
 
     internal suspend fun buildReceiveMessage(
@@ -227,6 +258,7 @@ class TdSession(
             ),
             timestamp = message.date.toLong() * 1000L,
             uuid = TdMessageMapper.formatMessageUuid(message.chatId, message.id),
+            sentByMe = message.isOutgoing,
         )
     }
 
@@ -445,6 +477,7 @@ class TdSession(
 
             var lastConfirmedId: Long? = null
             for (queued in queuedMessages) {
+                recordLocallySent(chatId, queued.id)
                 when (val sendingState = queued.sendingState) {
                     null -> {
                         lastConfirmedId = queued.id
@@ -461,6 +494,7 @@ class TdSession(
                         val ack = awaitSendAck(chatId, queued.id)
                         when (ack) {
                             is SendAck.Succeeded -> {
+                                recordLocallySent(chatId, ack.finalMessageId)
                                 lastConfirmedId = ack.finalMessageId
                             }
                             is SendAck.Failed -> {
@@ -766,6 +800,7 @@ class TdSession(
             deferred.complete(SendAck.Failed(-2, "Telegram 会话已关闭"))
         }
         pendingSends.clear()
+        locallySentMessageIds.clear()
     }
 
     private suspend fun getOrFetchUser(tdClient: TdClientApi, userId: Long): TdApi.User? {
@@ -788,5 +823,7 @@ class TdSession(
         private const val STREAM_CHUNK_BYTES = 64 * 1024
         private const val STREAM_DOWNLOAD_TIMEOUT_MS = 20_000L
         private const val QUOTE_FETCH_TIMEOUT_MS = 3_000L
+        private const val LOCAL_SENT_TTL_MS = 5 * 60 * 1000L
+        private const val LOCAL_SENT_MAX_ENTRIES = 512
     }
 }

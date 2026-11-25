@@ -427,6 +427,7 @@ object ParaboxProtoMapper {
         .setChat(chat.toProto())
         .setTimestamp(timestamp)
         .setUuid(uuid)
+        .setSentByMe(sentByMe)
         .build()
 
     fun ReceiveMessageProto.toDomain(): ReceiveMessage = ReceiveMessage(
@@ -435,6 +436,7 @@ object ParaboxProtoMapper {
         chat = chat.toDomain(),
         timestamp = timestamp,
         uuid = uuid,
+        sentByMe = sentByMe,
     )
 
     fun SendMessage.toProto(): SendMessageProto = SendMessageProto.newBuilder()
