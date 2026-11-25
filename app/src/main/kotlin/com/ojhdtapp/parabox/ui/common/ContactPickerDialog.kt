@@ -67,7 +67,7 @@ fun ContactPickerDialog(
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     if (openDialog) {
-        BasicAlertDialog(
+        PredictiveBackDialog(
             onDismissRequest = onDismiss,
             modifier = modifier,
             properties = DialogProperties(

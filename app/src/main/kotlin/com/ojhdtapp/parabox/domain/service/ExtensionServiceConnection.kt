@@ -7,6 +7,7 @@ import android.content.ServiceConnection
 import android.os.IBinder
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 
@@ -28,7 +29,7 @@ class ExtensionServiceConnection(val context: Context) : ServiceConnection, Defa
 
     override fun onCreate(owner: LifecycleOwner) {
         super.onCreate(owner)
-        context.startService(intent)
+        ContextCompat.startForegroundService(context, intent)
     }
 
     override fun onStart(owner: LifecycleOwner) {

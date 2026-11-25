@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.content.FileProvider
 import coil.ImageLoader
+import coil.imageLoader
 import coil.request.ErrorResult
 import coil.request.ImageRequest
 import coil.request.SuccessResult
@@ -102,16 +103,16 @@ object ImageUtil {
     suspend fun getBitmapWithCoil(context: Context, model: Any?) : Bitmap? {
         Log.d("parabox", "getBitmapWithCoil: $model")
         return try {
-            val loader = ImageLoader(context)
+            val loader = context.imageLoader
             val request = ImageRequest.Builder(context)
                 .data(model)
                 .allowHardware(false)
                 .build()
             val result = loader.execute(request)
             if (result is SuccessResult) {
-                (result.drawable as BitmapDrawable).bitmap
+                (result.drawable as? BitmapDrawable)?.bitmap
             } else {
-                (result as ErrorResult).throwable.printStackTrace()
+                (result as? ErrorResult)?.throwable?.printStackTrace()
                 null
             }
         } catch (e: Exception) {

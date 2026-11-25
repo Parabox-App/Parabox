@@ -11,10 +11,9 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.VIBRATE" />
-<!--    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />-->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-
-<!--    <uses-permission-sdk-23 android:name="android.permission.FOREGROUND_SERVICE_REMOTE_MESSAGING" />-->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_REMOTE_MESSAGING" />
 
     <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
@@ -23,7 +22,7 @@
 
     <queries>
         <intent>
-            <action android:name="com.ojhdtapp.parabox.EXTENSION" />
+            <action android:name="com.ojhdtapp.parabox.EXTENSION_SERVICE_V2" />
         </intent>
         <intent>
             <action android:name="android.intent.action.INSERT" />
@@ -99,7 +98,8 @@
             android:allowEmbedded="true"
             android:documentLaunchMode="always"
             android:exported="false"
-            android:resizeableActivity="true">
+            android:resizeableActivity="true"
+            android:windowSoftInputMode="adjustResize">
         </activity>
         <!-- Intent filter to capture authorization code response from the default browser on the device calling back to our app after interactive sign in -->
         <activity

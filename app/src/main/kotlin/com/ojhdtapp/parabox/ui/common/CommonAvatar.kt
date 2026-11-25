@@ -11,7 +11,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
@@ -27,19 +30,28 @@ fun CommonAvatar(
     backgroundColor: Color = MaterialTheme.colorScheme.secondaryContainer,
     textColor: Color = MaterialTheme.colorScheme.onSecondaryContainer
 ){
-    val namePainter = remember {
+    val context = LocalContext.current
+    val namePainter = remember(model.name, backgroundColor, textColor) {
         BitmapPainter(ImageUtil.createNamedAvatarBm(
             backgroundColor = backgroundColor.toArgb(),
             textColor = textColor.toArgb(),
             name = model.name ?: "name"
         ).asImageBitmap())
     }
+    val request = remember(context, model.model) {
+        ImageRequest.Builder(context)
+            .data(model.model)
+            .crossfade(true)
+            .build()
+    }
     AsyncImage(
         modifier = modifier,
-        model = model.model,
+        model = request,
         contentDescription = "avatar",
+        contentScale = ContentScale.Crop,
         placeholder = namePainter,
-        error = namePainter
+        error = namePainter,
+        fallback = namePainter,
     )
 }
 //    SubcomposeAsyncImage(

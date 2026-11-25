@@ -23,7 +23,9 @@ import com.ojhdtapp.parabox.domain.model.ChatWithLatestMessage
 import com.ojhdtapp.parabox.domain.model.Connection
 import com.ojhdtapp.parabox.domain.model.Contact
 import com.ojhdtapp.parabox.domain.model.ContactWithExtensionInfo
+import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
+import com.ojhdtapp.parabox.domain.repository.MainRepository
 import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
 import com.ojhdtapp.parabox.domain.use_case.GetChat
 import com.ojhdtapp.parabox.domain.use_case.GetContact
@@ -34,13 +36,18 @@ import com.ojhdtapp.parabox.ui.message.chat.AudioRecorderState
 import com.ojhdtapp.parabox.ui.message.chat.EditAreaMode
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.model.ChatPageUiModel
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxBasicInfo
+import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
 import com.ojhdtapp.paraboxdevelopmentkit.model.SendMessage
 import com.ojhdtapp.paraboxdevelopmentkit.model.chat.ParaboxChat
+import com.ojhdtapp.paraboxdevelopmentkit.model.contact.ParaboxContact
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAudio
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxFile
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxLocation
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxMessageElement
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxPlainText
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxQuoteReply
+import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxVideo
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -75,7 +82,8 @@ class MessagePageViewModel @Inject constructor(
     val updateChat: UpdateChat,
     val locationUtil: LocationUtil,
     val fileUtil: FileUtil,
-    val extensionManager: ExtensionManager
+    val extensionManager: ExtensionManager,
+    val mainRepository: MainRepository,
 ) : BaseViewModel<MessagePageState, MessagePageEvent, MessagePageEffect>() {
 
     override fun initialState(): MessagePageState {
@@ -286,12 +294,16 @@ class MessagePageViewModel @Inject constructor(
 
 
             is MessagePageEvent.OpenEditArea -> {
+                val edit = state.chatDetail.editAreaState
+                val exitLocation = !event.open && edit.mode == EditAreaMode.LOCATION_PICKER
+                if (exitLocation) cancelLocationCollection()
                 state.copy(
                     chatDetail = state.chatDetail.copy(
-                        editAreaState = state.chatDetail.editAreaState.copy(
-                            expanded = event.open
-                        )
-                    )
+                        editAreaState = edit.copy(
+                            expanded = event.open,
+                            mode = if (exitLocation) EditAreaMode.NORMAL else edit.mode,
+                        ),
+                    ),
                 )
             }
 
@@ -358,13 +370,17 @@ class MessagePageViewModel @Inject constructor(
                 )
             }
 
-            is MessagePageEvent.UpdateToolbarState -> {
+            is MessagePageEvent.ToggleToolbar -> {
+                val edit = state.chatDetail.editAreaState
+                cancelLocationCollection()
                 state.copy(
                     chatDetail = state.chatDetail.copy(
-                        editAreaState = state.chatDetail.editAreaState.copy(
-                            toolbarState = event.state
-                        )
-                    )
+                        editAreaState = edit.copy(
+                            expanded = !edit.expanded || edit.toolbarState != event.toolbar,
+                            toolbarState = event.toolbar,
+                            mode = EditAreaMode.NORMAL,
+                        ),
+                    ),
                 )
             }
 
@@ -559,26 +575,24 @@ class MessagePageViewModel @Inject constructor(
             is MessagePageEvent.SendMessage -> {
                 val sendMessage = buildParaboxSendMessage()
                 if (sendMessage == null) {
-                    sendEffect(MessagePageEffect.ShowSnackBar("发送失败"))
+                    sendEffect(MessagePageEffect.ShowSnackBar("消息内容为空或不可用"))
                     return state
                 }
+                val isLocationMode = state.chatDetail.editAreaState.mode == EditAreaMode.LOCATION_PICKER
                 state.chatDetail.editAreaState.input.edit {
                     delete(0, length)
                 }
-                viewModelScope.launch {
-                    extensionManager.connectionFlow.value.firstOrNull { it.connectionId == uiState.value.chatDetail.chat?.extensionId }?.let {
-                        if (it is Connection.ConnectionSuccess) {
-                            it.realConnection.onSendMessage(sendMessage)
-                        }
-                    }
-                }
+                dispatchSendMessage(sendMessage = sendMessage, existingMessageId = null)
                 state.copy(
                     chatDetail = state.chatDetail.copy(
                         editAreaState = state.chatDetail.editAreaState.copy(
+                            expanded = if (isLocationMode) false else state.chatDetail.editAreaState.expanded,
                             chosenImageList = emptyList(),
                             chosenAtId = null,
                             chosenQuoteReply = null,
                             audioRecorderState = AudioRecorderState.Ready,
+                            recordedAudioFile = null,
+                            recordedAudioDurationMs = 0L,
                             iconShrink = false,
                             mode = state.chatDetail.editAreaState.mode.takeUnless { it == EditAreaMode.LOCATION_PICKER }
                                 ?: EditAreaMode.NORMAL
@@ -588,26 +602,135 @@ class MessagePageViewModel @Inject constructor(
             }
 
             is MessagePageEvent.SendAudioMessage -> {
-                // TODO: send fail notice
-                fileUtil.getUriForFile(event.audioFile)?.let {
-                    ParaboxAudio(resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(it))
+                val uri = fileUtil.getUriForFile(event.audioFile)
+                if (uri == null || !event.audioFile.exists() || event.audioFile.length() <= 0L) {
+                    sendEffect(MessagePageEffect.ShowSnackBar("发送失败：录音文件不可读"))
+                    return state
                 }
-                state
+                val durationSec = ((event.durationMs + 500L) / 1000L).coerceAtLeast(1L)
+                val audioElement = ParaboxAudio(
+                    length = durationSec,
+                    fileName = event.audioFile.name,
+                    fileSize = event.audioFile.length(),
+                    resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(uri),
+                )
+                val sendMessage = buildSendMessageWithElements(listOf(audioElement))
+                if (sendMessage == null) {
+                    sendEffect(MessagePageEffect.ShowSnackBar("发送失败：当前会话无效"))
+                    return state
+                }
+                dispatchSendMessage(sendMessage = sendMessage, existingMessageId = null)
+                state.copy(
+                    chatDetail = state.chatDetail.copy(
+                        editAreaState = state.chatDetail.editAreaState.copy(
+                            audioRecorderState = AudioRecorderState.Ready,
+                            recordedAudioFile = null,
+                            recordedAudioDurationMs = 0L,
+                        )
+                    )
+                )
             }
 
             is MessagePageEvent.SendMemeMessage -> {
-                ParaboxImage(resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(event.imageUri))
+                val imageElement = ParaboxImage(
+                    fileName = fileUtil.getFileName(event.imageUri),
+                    resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(event.imageUri),
+                )
+                val sendMessage = buildSendMessageWithElements(listOf(imageElement))
+                if (sendMessage == null) {
+                    sendEffect(MessagePageEffect.ShowSnackBar("发送失败：当前会话无效"))
+                    return state
+                }
+                dispatchSendMessage(sendMessage = sendMessage, existingMessageId = null)
                 state
             }
 
             is MessagePageEvent.SendFileMessage -> {
-                ParaboxFile(
-                    name = event.name,
-                    extension = event.name,
-                    size = event.size,
-                    lastModifiedTime = System.currentTimeMillis(),
-                    resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(event.fileUri)
+                val ext = event.name.substringAfterLast('.', "")
+                val mimeType = runCatching { context.contentResolver.getType(event.fileUri) }.getOrNull().orEmpty()
+                val element: ParaboxMessageElement = when {
+                    mimeType.startsWith("video/") -> ParaboxVideo(
+                        fileName = event.name.ifBlank { "video.mp4" },
+                        fileSize = event.size,
+                        resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(event.fileUri),
+                    )
+                    mimeType.startsWith("audio/") -> ParaboxAudio(
+                        fileName = event.name.ifBlank { "audio.m4a" },
+                        fileSize = event.size,
+                        resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(event.fileUri),
+                    )
+                    else -> ParaboxFile(
+                        name = event.name.ifBlank { "file" },
+                        extension = ext,
+                        size = event.size,
+                        lastModifiedTime = System.currentTimeMillis(),
+                        resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(event.fileUri),
+                    )
+                }
+                val sendMessage = buildSendMessageWithElements(listOf(element))
+                if (sendMessage == null) {
+                    sendEffect(MessagePageEffect.ShowSnackBar("发送失败：当前会话无效"))
+                    return state
+                }
+                dispatchSendMessage(sendMessage = sendMessage, existingMessageId = null)
+                state
+            }
+
+            is MessagePageEvent.RetrySendMessage -> {
+                val sendMessage = buildSendMessageWithElements(
+                    contents = event.message.contents,
+                    uuid = event.message.uid.ifBlank { UUID.randomUUID().toString() },
                 )
+                if (sendMessage == null) {
+                    sendEffect(MessagePageEffect.ShowSnackBar("重发失败：当前会话无效"))
+                    return state
+                }
+                dispatchSendMessage(
+                    sendMessage = sendMessage,
+                    existingMessageId = event.message.messageId,
+                )
+                state
+            }
+
+            is MessagePageEvent.DeleteFailedMessage -> {
+                viewModelScope.launch {
+                    mainRepository.deleteMessage(event.messageId)
+                }
+                state.copy(
+                    chatDetail = state.chatDetail.copy(
+                        sendingStates = state.chatDetail.sendingStates - event.messageId,
+                    )
+                )
+            }
+
+            is MessagePageEvent.UpdateRecordedAudio -> {
+                state.copy(
+                    chatDetail = state.chatDetail.copy(
+                        editAreaState = state.chatDetail.editAreaState.copy(
+                            recordedAudioFile = event.file,
+                            recordedAudioDurationMs = event.durationMs,
+                        )
+                    )
+                )
+            }
+
+            is MessagePageEvent.UpdateMessageSendStatus -> {
+                val nextMap = state.chatDetail.sendingStates.toMutableMap().apply {
+                    if (event.status == null) {
+                        remove(event.messageId)
+                    } else {
+                        put(event.messageId, event.status)
+                    }
+                }
+                state.copy(
+                    chatDetail = state.chatDetail.copy(
+                        sendingStates = nextMap,
+                    )
+                )
+            }
+
+            is MessagePageEvent.ShowSendErrorNotice -> {
+                sendEffect(MessagePageEffect.ShowSnackBar(event.message))
                 state
             }
 
@@ -791,15 +914,85 @@ class MessagePageViewModel @Inject constructor(
         realTimeChatCollectionJob?.cancel()
     }
 
-    fun buildParaboxSendMessage() : SendMessage? {
-        val contents = buildList<ParaboxMessageElement> {
-            if (uiState.value.chatDetail.editAreaState.input.text.isNotEmpty()) {
-                add(ParaboxPlainText(uiState.value.chatDetail.editAreaState.input.text.toString()))
+    fun buildParaboxSendMessage(): SendMessage? {
+        val editState = uiState.value.chatDetail.editAreaState
+        val contents = when (editState.mode) {
+            EditAreaMode.LOCATION_PICKER -> {
+                val loc = editState.locationPickerState.selectedLocation
+                if (loc.latitude == 0.0 && loc.longitude == 0.0 && !editState.locationPickerState.firstLocationGotten) {
+                    return null
+                }
+                listOf(
+                    ParaboxLocation(
+                        latitude = loc.latitude,
+                        longitude = loc.longitude,
+                        name = editState.locationPickerState.selectedLocationAddress.ifBlank { null },
+                        description = null,
+                    )
+                )
             }
-            uiState.value.chatDetail.editAreaState.chosenImageList.forEach {
-                add(ParaboxImage(resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(it)))
+            EditAreaMode.AUDIO_RECORDER -> {
+                val audioFile = editState.recordedAudioFile ?: return null
+                val uri = fileUtil.getUriForFile(audioFile) ?: return null
+                if (!audioFile.exists() || audioFile.length() <= 0L) return null
+                val durationSec = ((editState.recordedAudioDurationMs + 500L) / 1000L).coerceAtLeast(1L)
+                listOf(
+                    ParaboxAudio(
+                        length = durationSec,
+                        fileName = audioFile.name,
+                        fileSize = audioFile.length(),
+                        resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(uri),
+                    )
+                )
+            }
+            EditAreaMode.NORMAL -> buildList<ParaboxMessageElement> {
+                editState.chosenQuoteReply?.let { quote ->
+                    add(
+                        ParaboxQuoteReply(
+                            sender = ParaboxContact(
+                                basicInfo = ParaboxBasicInfo(
+                                    name = quote.sender.name,
+                                    avatar = quote.sender.avatar,
+                                ),
+                                uid = quote.sender.uid,
+                            ),
+                            timestamp = quote.message.timestamp,
+                            id = quote.message.uid,
+                            messages = quote.message.contents,
+                        )
+                    )
+                }
+                if (editState.input.text.isNotEmpty()) {
+                    add(ParaboxPlainText(editState.input.text.toString()))
+                }
+                editState.chosenImageList.forEach { uri ->
+                    val mimeType = runCatching { context.contentResolver.getType(uri) }.getOrNull().orEmpty()
+                    val fileName = fileUtil.getFileName(uri)
+                    if (mimeType.startsWith("video/")) {
+                        add(
+                            ParaboxVideo(
+                                fileName = fileName ?: "video.mp4",
+                                resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(uri),
+                            )
+                        )
+                    } else {
+                        add(
+                            ParaboxImage(
+                                fileName = fileName,
+                                resourceInfo = ParaboxResourceInfo.ParaboxLocalInfo.UriLocalInfo(uri),
+                            )
+                        )
+                    }
+                }
             }
         }
+        return buildSendMessageWithElements(contents)
+    }
+
+    private fun buildSendMessageWithElements(
+        contents: List<ParaboxMessageElement>,
+        uuid: String = UUID.randomUUID().toString(),
+    ): SendMessage? {
         if (contents.isEmpty()) return null
         return uiState.value.chatDetail.chat?.let { currentChat ->
             SendMessage(
@@ -813,8 +1006,112 @@ class MessagePageViewModel @Inject constructor(
                     uid = currentChat.uid
                 ),
                 timestamp = System.currentTimeMillis(),
-                uuid = UUID.randomUUID().toString()
+                uuid = uuid,
             )
+        }
+    }
+
+    private fun dispatchSendMessage(
+        sendMessage: SendMessage,
+        existingMessageId: Long?,
+    ) {
+        val currentChat = uiState.value.chatDetail.chat ?: run {
+            sendEffect(MessagePageEffect.ShowSnackBar("发送失败：当前会话无效"))
+            return
+        }
+        val extensionId = currentChat.extensionId ?: run {
+            sendEffect(MessagePageEffect.ShowSnackBar("发送失败：当前会话未关联扩展"))
+            return
+        }
+        viewModelScope.launch {
+            val localMessageId = if (existingMessageId != null) {
+                mainRepository.resetMessageForRetry(existingMessageId, sendMessage.timestamp)
+                existingMessageId
+            } else {
+                mainRepository.insertOutgoingMessage(
+                    msg = sendMessage,
+                    pkg = currentChat.pkg,
+                    extensionId = extensionId,
+                    chatId = currentChat.chatId,
+                )
+            }
+
+            if (localMessageId <= 0L) {
+                sendEffect(MessagePageEffect.ShowSnackBar("发送失败：本地消息写入异常"))
+                return@launch
+            }
+
+            sendEvent(
+                MessagePageEvent.UpdateMessageSendStatus(
+                    messageId = localMessageId,
+                    status = MessagePageState.MessageSendStatus.Sending,
+                )
+            )
+
+            val connection = extensionManager.connectionFlow.value
+                .firstOrNull { it.connectionId == currentChat.extensionId }
+
+            val result: ParaboxResult = when (connection) {
+                is Connection.ConnectionSuccess -> {
+                    try {
+                        connection.sendMessage(sendMessage)
+                    } catch (e: Exception) {
+                        Log.e("parabox", "sendMessage threw exception", e)
+                        ParaboxResult(ParaboxResult.ERROR_UNKNOWN, e.message ?: "发送异常")
+                    }
+                }
+                is Connection.ConnectionFail -> {
+                    val detail = connection.reason.ifBlank { "未知原因" }
+                    ParaboxResult(ParaboxResult.ERROR_DISCONNECTED, "扩展连接异常：$detail")
+                }
+                is Connection.ConnectionPending -> {
+                    ParaboxResult(ParaboxResult.ERROR_DISCONNECTED, "扩展正在连接中，请稍后重试")
+                }
+                null -> {
+                    ParaboxResult(ParaboxResult.ERROR_DISCONNECTED, "未找到对应的扩展连接")
+                }
+            }
+
+            if (result.code == ParaboxResult.SUCCESS) {
+                mainRepository.markMessageSendSuccess(localMessageId, result.messageUuid)
+                sendEvent(
+                    MessagePageEvent.UpdateMessageSendStatus(
+                        messageId = localMessageId,
+                        status = MessagePageState.MessageSendStatus.Sent,
+                    )
+                )
+            } else {
+                val reason = result.message.ifBlank { "未知错误 (${result.code})" }
+                sendEvent(
+                    MessagePageEvent.UpdateMessageSendStatus(
+                        messageId = localMessageId,
+                        status = MessagePageState.MessageSendStatus.Failed(reason),
+                    )
+                )
+                val retryMessage = Message(
+                    contents = sendMessage.contents,
+                    contentTypes = 0,
+                    contentString = sendMessage.contents.joinToString(" ") { it.contentToString() },
+                    senderId = 0L,
+                    chatId = currentChat.chatId,
+                    timestamp = sendMessage.timestamp,
+                    sentByMe = true,
+                    verified = false,
+                    pkg = currentChat.pkg,
+                    uid = sendMessage.uuid,
+                    extensionId = extensionId,
+                    messageId = localMessageId,
+                )
+                sendEffect(
+                    MessagePageEffect.ShowSnackBar(
+                        message = "发送失败：$reason",
+                        label = "重试",
+                        callback = {
+                            sendEvent(MessagePageEvent.RetrySendMessage(retryMessage))
+                        },
+                    )
+                )
+            }
         }
     }
 

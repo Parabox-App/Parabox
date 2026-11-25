@@ -46,8 +46,8 @@ import com.ojhdtapp.parabox.core.util.FileUtil
 import com.ojhdtapp.parabox.core.util.optBooleanOrNull
 import com.ojhdtapp.parabox.core.util.optStringOrNull
 import com.ojhdtapp.parabox.domain.built_in.onebot11.util.CompatibilityUtil
-import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnection
-import com.ojhdtapp.paraboxdevelopmentkit.extension.ParaboxConnectionStatus
+import com.ojhdtapp.paraboxdevelopmentkit.v2.ParaboxConnectionStatus
+import com.ojhdtapp.paraboxdevelopmentkit.v2.ParaboxSession
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxBasicInfo
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
 import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
@@ -77,7 +77,11 @@ import org.json.JSONObject
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-class OneBot11Connection : ParaboxConnection() {
+class OneBot11Connection(
+    sessionId: String,
+    extra: JSONObject,
+    hostPackageName: String,
+) : ParaboxSession(sessionId, extra, hostPackageName) {
     private var appWebSocketConnection: OneBot11AppWebSocketConnection? = null
     private var appReverseWebSocketConnection: OneBot11AppReverseWebSocketConnection? = null
     lateinit var compatibilityUtil: CompatibilityUtil
@@ -113,13 +117,13 @@ class OneBot11Connection : ParaboxConnection() {
 //                    port = reversePort,
 //                )
 //                appReverseWebSocketConnection = OneBot11AppReverseWebSocketConnection(appReverseWebSocketConnectionConfiguration)
-        coroutineScope.launch(Dispatchers.IO) {
+        sessionScope.launch(Dispatchers.IO) {
             val job = SupervisorJob()
-            val coroutineScope = CoroutineScope(job + Dispatchers.IO)
+            val wsScope = CoroutineScope(job + Dispatchers.IO)
             appWebSocketConnection = OneBot11AppWebSocketConnection(
                 configuration = appWebSocketConnectionConfiguration,
                 job = job,
-                coroutineContext = coroutineScope.coroutineContext
+                coroutineContext = wsScope.coroutineContext
             ).awaitUtilConnected()
             registerListener()
         }
@@ -131,7 +135,7 @@ class OneBot11Connection : ParaboxConnection() {
         appWebSocketConnection?.close()
         appWebSocketConnection?.incomingChannel?.close()
         appWebSocketConnection = null
-        coroutineScope.launch(Dispatchers.IO) {
+        sessionScope.launch(Dispatchers.IO) {
             onInitialize()
         }
     }
@@ -165,7 +169,7 @@ class OneBot11Connection : ParaboxConnection() {
                                 if (reconnectjob?.isActive == true) {
                                     reconnectjob?.cancel()
                                 }
-                                reconnectjob = coroutineScope.launch(Dispatchers.IO) {
+                                reconnectjob = sessionScope.launch(Dispatchers.IO) {
                                     delay(60000)
                                     reconnect()
                                 }
@@ -180,7 +184,7 @@ class OneBot11Connection : ParaboxConnection() {
                         if (reconnectjob?.isActive == true) {
                             reconnectjob?.cancel()
                         }
-                        reconnectjob = coroutineScope.launch(Dispatchers.IO) {
+                        reconnectjob = sessionScope.launch(Dispatchers.IO) {
                             delay(60000)
                             reconnect()
                         }
@@ -191,7 +195,7 @@ class OneBot11Connection : ParaboxConnection() {
         }
         appWebSocketConnection?.incomingChannel?.registerListenerWithoutQuickOperation(PRIVATE_MESSAGE_EVENT) {
             Log.d(TAG, "receive private message")
-            coroutineScope.launch(Dispatchers.IO) {
+            sessionScope.launch(Dispatchers.IO) {
                 receivePrivateMessage(it)
             }
         }
@@ -222,7 +226,7 @@ class OneBot11Connection : ParaboxConnection() {
             timestamp = data.time,
             uuid = data.messageId.toString()
         )
-        return receiveMessage(obj)
+        return emitMessage(obj)
     }
 
     private suspend fun receiveGroupMessage(data: GroupMessageEventData): ParaboxResult {
@@ -247,11 +251,14 @@ class OneBot11Connection : ParaboxConnection() {
             uuid = data.messageId.toString()
         )
         Log.d(TAG, "receive group message:${obj.contents} at ${obj.timestamp}")
-        return receiveMessage(obj)
+        return emitMessage(obj)
     }
 
 
-    override suspend fun onSendMessage(message: SendMessage) {
+    override suspend fun onSendMessage(message: SendMessage): ParaboxResult {
+        if (message.contents.isEmpty()) {
+            return ParaboxResult(ParaboxResult.ERROR_UNKNOWN, "Empty message")
+        }
         val messageData = if (message.contents.size > 1) {
             ArrayMessageData(
                 data = message.contents.map {
@@ -267,25 +274,29 @@ class OneBot11Connection : ParaboxConnection() {
                 data = message.contents[0].toSegmentData()
             )
         }
-        when (message.chat.type) {
-            ParaboxChat.TYPE_GROUP -> {
-                appWebSocketConnection?.sendGroupMessage(
-                    groupId = message.chat.uid.toLong(),
-                    message = messageData
-                )
+        return try {
+            when (message.chat.type) {
+                ParaboxChat.TYPE_GROUP -> {
+                    appWebSocketConnection?.sendGroupMessage(
+                        groupId = message.chat.uid.toLong(),
+                        message = messageData
+                    )
+                }
+                ParaboxChat.TYPE_PRIVATE -> {
+                    appWebSocketConnection?.sendPrivateMessage(
+                        userId = message.chat.uid.toLong(),
+                        message = messageData
+                    )
+                }
             }
-            ParaboxChat.TYPE_PRIVATE -> {
-                appWebSocketConnection?.sendPrivateMessage(
-                    userId = message.chat.uid.toLong(),
-                    message = messageData
-                )
-            }
-
+            ParaboxResult(ParaboxResult.SUCCESS, ParaboxResult.SUCCESS_MSG)
+        } catch (e: Exception) {
+            ParaboxResult(ParaboxResult.ERROR_UNKNOWN, e.message ?: ParaboxResult.ERROR_UNKNOWN_MSG)
         }
     }
 
-    override suspend fun onRecallMessage() {
-        TODO("Not yet implemented")
+    override suspend fun onRecallMessage(messageUuid: String): ParaboxResult {
+        return ParaboxResult(ParaboxResult.ERROR_UNKNOWN, "Not implemented")
     }
 
     override suspend fun onGetContacts(): List<ParaboxContact> {
@@ -308,7 +319,7 @@ class OneBot11Connection : ParaboxConnection() {
     }
 
     override suspend fun onQueryMessageHistory(uuid: String): List<ReceiveMessage> {
-        TODO("Not yet implemented")
+        return emptyList()
     }
 
     override suspend fun onGetGroupBasicInfo(groupId: String): ParaboxBasicInfo? {
@@ -362,8 +373,10 @@ class OneBot11Connection : ParaboxConnection() {
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
+    override suspend fun onClose() {
+        super.onClose()
+        reconnectjob?.cancel()
+        reconnectjob = null
         appWebSocketConnection?.close()
         appReverseWebSocketConnection?.close()
         appWebSocketConnection = null

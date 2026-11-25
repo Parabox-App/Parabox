@@ -5,7 +5,6 @@ import android.os.Build
 import android.os.LocaleList
 import android.util.Log
 import android.widget.Toast
-import androidx.activity.compose.BackHandler
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -29,11 +28,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.RestartAlt
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -41,14 +38,14 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.clickable
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
-import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -67,47 +64,42 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
 import androidx.core.os.LocaleListCompat
-import com.arkivanov.decompose.router.stack.ChildStack
-import com.arkivanov.decompose.router.stack.StackNavigation
-import com.arkivanov.decompose.router.stack.pop
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.core.util.optBooleanOrNull
 import com.ojhdtapp.parabox.core.util.optStringOrNull
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
-import com.ojhdtapp.parabox.ui.navigation.DefaultSettingComponent
-import com.ojhdtapp.parabox.ui.navigation.SettingComponent
-import com.ojhdtapp.parabox.ui.setting.Setting
+import com.ojhdtapp.parabox.ui.common.LayoutType
+import com.ojhdtapp.parabox.ui.common.ParaboxAlertDialog
+import com.ojhdtapp.parabox.ui.common.PredictiveBackGuardContainer
+import com.ojhdtapp.parabox.ui.common.TextInputDialog
 import com.ojhdtapp.parabox.ui.setting.SettingHeader
 import com.ojhdtapp.parabox.ui.setting.SettingItem
-import com.ojhdtapp.parabox.ui.common.LayoutType
-import com.ojhdtapp.parabox.ui.common.TextInputDialog
 import com.ojhdtapp.parabox.ui.setting.SettingPageEvent
 import com.ojhdtapp.parabox.ui.setting.SettingPageState
 import com.ojhdtapp.parabox.ui.theme.Theme
+import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
 import com.ojhdtapp.paraboxdevelopmentkit.model.config_item.ParaboxConfigItem
 import com.ojhdtapp.paraboxdevelopmentkit.model.init_actions.ParaboxInitActionResult
 import kotlinx.coroutines.launch
 import me.saket.cascade.CascadeDropdownMenu
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExtensionConfigSettingPage(
     modifier: Modifier = Modifier,
     state: SettingPageState,
     mainSharedState: MainSharedState,
     layoutType: LayoutType,
-    scaffoldNavigator: ThreePaneScaffoldNavigator<Setting>,
-    navigation: StackNavigation<DefaultSettingComponent.SettingConfig>,
-    stackState: ChildStack<*, SettingComponent.SettingChild>,
+    onNavigateBack: () -> Unit,
     onEvent: (SettingPageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
     val context = LocalContext.current
     var showConfirmDialogIfModified by remember { mutableStateOf(false) }
     if (showConfirmDialogIfModified) {
-        AlertDialog(
+        ParaboxAlertDialog(
             onDismissRequest = { showConfirmDialogIfModified = false },
             title = {
                 Text(text = "存在未应用的更改")
@@ -119,7 +111,7 @@ fun ExtensionConfigSettingPage(
                 TextButton(onClick = {
                     showConfirmDialogIfModified = false
                     onEvent(SettingPageEvent.SubmitConnectionConfig)
-                    navigation.pop()
+                    onNavigateBack()
                 }) {
                     Text(text = "保存并退出")
                 }
@@ -127,140 +119,128 @@ fun ExtensionConfigSettingPage(
             dismissButton = {
                 TextButton(onClick = {
                     showConfirmDialogIfModified = false
-                    navigation.pop()
+                    onNavigateBack()
                 }) {
                     Text(text = "舍弃更改")
                 }
             },
         )
     }
-    BackHandler {
-        if (state.configState.modified) {
-            showConfirmDialogIfModified = true
-        } else {
-            navigation.pop()
-        }
-    }
-    if (layoutType == LayoutType.SPLIT) {
-        Surface(
-            modifier = Modifier
-                .fillMaxSize()
-                .systemBarsPadding(),
-            color = MaterialTheme.colorScheme.background,
-            shape = RoundedCornerShape(24.dp)
-        ) {
-            Column(
+    PredictiveBackGuardContainer(
+        enabled = state.configState.modified,
+        onIntercepted = { showConfirmDialogIfModified = true },
+    ) {
+        if (layoutType == LayoutType.SPLIT) {
+            Surface(
                 modifier = Modifier
                     .fillMaxSize()
+                    .systemBarsPadding(),
+                color = MaterialTheme.colorScheme.background,
+                shape = RoundedCornerShape(24.dp)
             ) {
-                Row(
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 32.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .fillMaxSize()
                 ) {
-                    IconButton(onClick = {
-                        if (state.configState.modified) {
-                            showConfirmDialogIfModified = true
-                        } else {
-                            navigation.pop()
-                        }
-                    }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                            contentDescription = "back",
-                            tint = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Text(
-                        color = MaterialTheme.colorScheme.onSurface,
-                        text = state.configState.originalConnection?.name ?: "Connection",
-                        style = MaterialTheme.typography.headlineMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Spacer(modifier = Modifier.weight(1f))
-                    Button(
-                        onClick = {
-                            onEvent(SettingPageEvent.SubmitConnectionConfig)
-                            Toast.makeText(context, "更改已应用", Toast.LENGTH_SHORT).show()
-                        }) {
-                        Text(text = "保存")
-                    }
-                }
-                Content(
-                    modifier = Modifier.weight(1f),
-                    state = state,
-                    mainSharedState = mainSharedState,
-                    layoutType = layoutType,
-                    scaffoldNavigator = scaffoldNavigator,
-                    navigation = navigation,
-                    stackState = stackState,
-                    onEvent = onEvent,
-                    onMainSharedEvent = onMainSharedEvent,
-                )
-            }
-        }
-    } else {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = {
-                        Text(
-                            modifier = Modifier.padding(start = 8.dp),
-                            text = state.configState.originalConnection?.name ?: "Connection",
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    },
-                    navigationIcon = {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 32.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         IconButton(onClick = {
                             if (state.configState.modified) {
                                 showConfirmDialogIfModified = true
                             } else {
-                                navigation.pop()
+                                onNavigateBack()
                             }
                         }) {
-                            Icon(imageVector = Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "back")
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                                contentDescription = "back",
+                                tint = MaterialTheme.colorScheme.onBackground
+                            )
                         }
-                    },
-                    actions = {
-                        TextButton(onClick = {
-                            onEvent(SettingPageEvent.SubmitConnectionConfig)
-                            Toast.makeText(context, "更改已应用", Toast.LENGTH_SHORT).show()
-                        }) {
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(
+                            color = MaterialTheme.colorScheme.onSurface,
+                            text = state.configState.originalConnection?.name ?: "Connection",
+                            style = MaterialTheme.typography.headlineMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        Button(
+                            onClick = {
+                                onEvent(SettingPageEvent.SubmitConnectionConfig)
+                                Toast.makeText(context, "更改已应用", Toast.LENGTH_SHORT).show()
+                            }) {
                             Text(text = "保存")
                         }
                     }
+                    Content(
+                        modifier = Modifier.weight(1f),
+                        state = state,
+                        mainSharedState = mainSharedState,
+                        layoutType = layoutType,
+                        onEvent = onEvent,
+                        onMainSharedEvent = onMainSharedEvent,
+                    )
+                }
+            }
+        } else {
+            Scaffold(
+                topBar = {
+                    TopAppBar(
+                        title = {
+                            Text(
+                                modifier = Modifier.padding(start = 8.dp),
+                                text = state.configState.originalConnection?.name ?: "Connection",
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = {
+                                if (state.configState.modified) {
+                                    showConfirmDialogIfModified = true
+                                } else {
+                                    onNavigateBack()
+                                }
+                            }) {
+                                Icon(imageVector = Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "back")
+                            }
+                        },
+                        actions = {
+                            TextButton(onClick = {
+                                onEvent(SettingPageEvent.SubmitConnectionConfig)
+                                Toast.makeText(context, "更改已应用", Toast.LENGTH_SHORT).show()
+                            }) {
+                                Text(text = "保存")
+                            }
+                        }
+                    )
+                }
+            ) { innerPadding ->
+                Content(
+                    modifier = Modifier.padding(innerPadding),
+                    state = state,
+                    mainSharedState = mainSharedState,
+                    layoutType = layoutType,
+                    onEvent = onEvent,
+                    onMainSharedEvent = onMainSharedEvent
                 )
             }
-        ) { innerPadding ->
-            Content(
-                modifier = Modifier.padding(innerPadding),
-                state = state,
-                mainSharedState = mainSharedState,
-                layoutType = layoutType,
-                scaffoldNavigator = scaffoldNavigator,
-                navigation = navigation,
-                stackState = stackState,
-                onEvent = onEvent,
-                onMainSharedEvent = onMainSharedEvent
-            )
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 private fun Content(
     modifier: Modifier = Modifier,
     state: SettingPageState,
     mainSharedState: MainSharedState,
     layoutType: LayoutType,
-    scaffoldNavigator: ThreePaneScaffoldNavigator<Setting>,
-    navigation: StackNavigation<DefaultSettingComponent.SettingConfig>,
-    stackState: ChildStack<*, SettingComponent.SettingChild>,
     onEvent: (SettingPageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
@@ -288,17 +268,18 @@ private fun Content(
                         label = paraboxConfig.label,
                         keyboardType = paraboxConfig.type.toComposeKeyboardType(),
                         errMsg = errMsg,
-                        onConfirm = {
-                            coroutineScope.launch {
-                                val result = paraboxConfig.onResult(it)
-                                if (result is ParaboxInitActionResult.Error) {
-                                    errMsg = result.message
-                                } else {
-                                    errMsg = null
-                                    onEvent(SettingPageEvent.WriteConnectionConfigCache(paraboxConfig, it))
-                                    openDialog = false
+                        onConfirm = { value ->
+                            onEvent(
+                                SettingPageEvent.ValidateConnectionConfigItem(paraboxConfig, value) { result ->
+                                    if (result is ParaboxInitActionResult.Error) {
+                                        errMsg = result.message
+                                    } else {
+                                        errMsg = null
+                                        onEvent(SettingPageEvent.WriteConnectionConfigCache(paraboxConfig, value))
+                                        openDialog = false
+                                    }
                                 }
-                            }
+                            )
                         },
                         onDismiss = {
                             openDialog = false
@@ -339,14 +320,122 @@ private fun Content(
                         checked = !checked
                         onEvent(
                             SettingPageEvent.WriteConnectionConfigCache(
-                                paraboxConfig, !checked
+                                paraboxConfig, checked
                             )
                         )
                     }
                 }
 
                 is ParaboxConfigItem.SelectConfigItem -> {
+                    var openDialog by remember { mutableStateOf(false) }
+                    val currentValue = state.configState.cacheExtra?.optStringOrNull(paraboxConfig.key)
+                        ?: paraboxConfig.defaultValue?.let { paraboxConfig.options.getOrNull(it) }
+                        ?: paraboxConfig.options.firstOrNull().orEmpty()
+                    if (openDialog) {
+                        ParaboxAlertDialog(
+                            onDismissRequest = { openDialog = false },
+                            title = { Text(text = paraboxConfig.title) },
+                            text = {
+                                Column {
+                                    paraboxConfig.options.forEach { option ->
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    onEvent(
+                                                        SettingPageEvent.WriteConnectionConfigCache(
+                                                            paraboxConfig,
+                                                            option,
+                                                        )
+                                                    )
+                                                    openDialog = false
+                                                }
+                                                .padding(vertical = 4.dp),
+                                        ) {
+                                            RadioButton(
+                                                selected = currentValue == option,
+                                                onClick = {
+                                                    onEvent(
+                                                        SettingPageEvent.WriteConnectionConfigCache(
+                                                            paraboxConfig,
+                                                            option,
+                                                        )
+                                                    )
+                                                    openDialog = false
+                                                },
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(text = option)
+                                        }
+                                    }
+                                }
+                            },
+                            confirmButton = {
+                                TextButton(onClick = { openDialog = false }) {
+                                    Text("关闭")
+                                }
+                            },
+                        )
+                    }
+                    SettingItem(
+                        title = paraboxConfig.title,
+                        subTitle = currentValue.ifBlank { paraboxConfig.description },
+                        selected = false,
+                        layoutType = layoutType,
+                    ) {
+                        openDialog = true
+                    }
+                }
 
+                is ParaboxConfigItem.ActionConfigItem -> {
+                    val actionContext = LocalContext.current
+                    var openConfirm by remember { mutableStateOf(false) }
+                    val executeAction = {
+                        onEvent(
+                            SettingPageEvent.ExecuteConnectionConfigAction(paraboxConfig) { res ->
+                                val msg = if (res.code == ParaboxResult.SUCCESS) {
+                                    res.message.ifBlank { "操作成功" }
+                                } else {
+                                    "操作失败：${res.message}"
+                                }
+                                Toast.makeText(actionContext, msg, Toast.LENGTH_SHORT).show()
+                            }
+                        )
+                    }
+                    val confirmModel = paraboxConfig.confirmModel
+                    if (openConfirm && confirmModel != null) {
+                        ParaboxAlertDialog(
+                            onDismissRequest = { openConfirm = false },
+                            title = { Text(text = confirmModel.title) },
+                            text = { Text(text = confirmModel.description) },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    openConfirm = false
+                                    executeAction()
+                                }) {
+                                    Text(text = confirmModel.confirmText)
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { openConfirm = false }) {
+                                    Text(text = confirmModel.cancelText)
+                                }
+                            },
+                        )
+                    }
+                    SettingItem(
+                        title = paraboxConfig.title,
+                        subTitle = paraboxConfig.description,
+                        selected = false,
+                        layoutType = layoutType,
+                    ) {
+                        if (confirmModel != null) {
+                            openConfirm = true
+                        } else {
+                            executeAction()
+                        }
+                    }
                 }
             }
         }

@@ -14,8 +14,8 @@ import com.ojhdtapp.parabox.data.local.entity.ContactWithExtensionInfoEntity
 @Dao
 interface ContactDao {
     @Query("SELECT contactId FROM contact_entity " +
-            "WHERE pkg = :pkg AND uid = :uid LIMIT 1")
-    fun checkContact(pkg: String, uid: String) : Long?
+            "WHERE pkg = :pkg AND connectionId = :connectionId AND uid = :uid LIMIT 1")
+    fun checkContact(pkg: String, connectionId: Long, uid: String) : Long?
 
     @Query("SELECT * FROM contact_entity " +
             "WHERE pkg = :pkg AND uid = :uid LIMIT 1")

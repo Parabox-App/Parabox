@@ -56,6 +56,7 @@ fun NormalChatTopBar(
     shouldDisplayAvatar: Boolean,
     layoutType: LayoutType,
     onNavigateBack: () -> Unit,
+    onToggleInfoArea: () -> Unit = { },
     onEvent: (MessagePageEvent) -> Unit,
 ) {
     val navigationIconPainter = rememberAnimatedVectorPainter(
@@ -116,7 +117,9 @@ fun NormalChatTopBar(
                     contentDescription = "search"
                 )
             }
-            IconButton(onClick = { onEvent(MessagePageEvent.OpenInfoArea(true)) }) {
+            IconButton(onClick = {
+                onToggleInfoArea()
+            }) {
                 if (shouldDisplayAvatar) {
                     CommonAvatar(
                         modifier = Modifier

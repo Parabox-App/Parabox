@@ -2,8 +2,12 @@ package com.ojhdtapp.parabox.ui.message.chat
 
 import android.util.Log
 import android.widget.Toast
-import androidx.activity.compose.BackHandler
+import androidx.activity.BackEventCompat
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
@@ -11,6 +15,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.FavoriteBorder
@@ -25,25 +30,34 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.lerp
 import androidx.compose.ui.window.PopupProperties
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import coil.size.Size
 import com.ojhdtapp.parabox.R
-import com.ojhdtapp.parabox.ui.common.LocalSystemUiController
 import com.ojhdtapp.parabox.ui.common.LayoutType
+import com.ojhdtapp.parabox.ui.common.LocalSystemUiController
+import com.ojhdtapp.parabox.ui.common.PredictiveBackDefaults
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageState
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 import com.origeek.imageViewer.previewer.ImagePreviewer
 import com.origeek.imageViewer.previewer.ImagePreviewerState
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import me.saket.cascade.CascadeDropdownMenu
 
@@ -59,7 +73,48 @@ fun MyImagePreviewer(
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     val systemUiController = LocalSystemUiController.current
-    ImagePreviewer(modifier = modifier.fillMaxSize(),
+    val backProgress = remember { Animatable(0f) }
+    var swipeEdge by remember { mutableIntStateOf(BackEventCompat.EDGE_LEFT) }
+
+    PredictiveBackHandler(enabled = previewerState.canClose) { backEvents ->
+        try {
+            backEvents.collect { event ->
+                swipeEdge = event.swipeEdge
+                backProgress.snapTo(PredictiveBackDefaults.Easing.transform(event.progress))
+            }
+            previewerState.closeTransform()
+            if (layoutType == LayoutType.NORMAL) {
+                systemUiController.reset()
+            }
+            backProgress.snapTo(0f)
+        } catch (e: CancellationException) {
+            backProgress.animateTo(
+                targetValue = 0f,
+                animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+            )
+        }
+    }
+
+    val currentProgress = backProgress.value
+    val direction = if (swipeEdge == BackEventCompat.EDGE_LEFT) 1f else -1f
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .graphicsLayer {
+                if (currentProgress > 0f) {
+                    val scale = lerp(1f, PredictiveBackDefaults.MediaMinScale, currentProgress)
+                    scaleX = scale
+                    scaleY = scale
+                    translationX = direction * 24.dp.toPx() * currentProgress
+                    val cornerPx = lerp(0f, PredictiveBackDefaults.MediaMaxCornerRadius.toPx(), currentProgress)
+                    shape = RoundedCornerShape(cornerPx)
+                    clip = true
+                    alpha = lerp(1f, 0.55f, currentProgress)
+                }
+            },
+    ) {
+        ImagePreviewer(modifier = Modifier.fillMaxSize(),
         state = previewerState,
         imageLoader = { index ->
             if (index < state.imagePreviewerState.imageSnapshotList.size) {
@@ -225,4 +280,5 @@ fun MyImagePreviewer(
         },
         reverseLayout = !state.infoAreaState.expanded
     )
+    }
 }

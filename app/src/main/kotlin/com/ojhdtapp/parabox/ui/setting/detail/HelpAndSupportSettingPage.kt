@@ -2,7 +2,6 @@ package com.ojhdtapp.parabox.ui.setting.detail
 
 import android.app.Activity
 import android.widget.Toast
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,7 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
@@ -28,12 +26,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
-import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,9 +42,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.arkivanov.decompose.router.stack.ChildStack
-import com.arkivanov.decompose.router.stack.StackNavigation
-import com.arkivanov.decompose.router.stack.pushNew
 import com.google.android.play.core.review.ReviewManagerFactory
 import com.guru.fontawesomecomposelib.FaIcon
 import com.guru.fontawesomecomposelib.FaIcons
@@ -62,8 +55,7 @@ import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.common.LayoutType
 import com.ojhdtapp.parabox.ui.common.UnderConstructionPage
-import com.ojhdtapp.parabox.ui.navigation.DefaultSettingComponent
-import com.ojhdtapp.parabox.ui.navigation.SettingComponent
+import com.ojhdtapp.parabox.ui.navigation.SettingRoute
 import com.ojhdtapp.parabox.ui.setting.Setting
 import com.ojhdtapp.parabox.ui.setting.SettingHeader
 import com.ojhdtapp.parabox.ui.setting.SettingItem
@@ -71,20 +63,18 @@ import com.ojhdtapp.parabox.ui.setting.SettingPageEvent
 import com.ojhdtapp.parabox.ui.setting.SettingPageState
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HelpAndSupportSettingPage(
     modifier: Modifier = Modifier,
     state: SettingPageState,
     mainSharedState: MainSharedState,
     layoutType: LayoutType,
-    scaffoldNavigator: ThreePaneScaffoldNavigator<Setting>,
-    navigation: StackNavigation<DefaultSettingComponent.SettingConfig>,
-    stackState: ChildStack<*, SettingComponent.SettingChild>,
+    onNavigateBack: () -> Unit,
+    onNavigateTo: (SettingRoute) -> Unit,
     onEvent: (SettingPageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
-    val coroutineScope = rememberCoroutineScope()
     if (layoutType == LayoutType.SPLIT) {
         Surface(
             modifier = Modifier
@@ -112,8 +102,7 @@ fun HelpAndSupportSettingPage(
                     state = state,
                     mainSharedState = mainSharedState,
                     layoutType = layoutType,
-                    navigation = navigation,
-                    stackState = stackState,
+                    onNavigateTo = onNavigateTo,
                     onEvent = onEvent,
                     onMainSharedEvent = onMainSharedEvent,
                 )
@@ -132,11 +121,7 @@ fun HelpAndSupportSettingPage(
                         )
                     },
                     navigationIcon = {
-                        IconButton(onClick = {
-                            coroutineScope.launch {
-                                scaffoldNavigator.navigateBack(BackNavigationBehavior.PopLatest)
-                            }
-                        }) {
+                        IconButton(onClick = onNavigateBack) {
                             Icon(imageVector = Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "back")
                         }
                     },
@@ -148,8 +133,7 @@ fun HelpAndSupportSettingPage(
                 state = state,
                 mainSharedState = mainSharedState,
                 layoutType = layoutType,
-                navigation = navigation,
-                stackState = stackState,
+                onNavigateTo = onNavigateTo,
                 onEvent = onEvent,
                 onMainSharedEvent = onMainSharedEvent
             )
@@ -163,8 +147,7 @@ private fun Content(
     state: SettingPageState,
     mainSharedState: MainSharedState,
     layoutType: LayoutType,
-    navigation: StackNavigation<DefaultSettingComponent.SettingConfig>,
-    stackState: ChildStack<*, SettingComponent.SettingChild>,
+    onNavigateTo: (SettingRoute) -> Unit,
     onEvent: (SettingPageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) =
@@ -425,7 +408,7 @@ private fun Content(
                     )
                 }
             ) {
-                navigation.pushNew(DefaultSettingComponent.SettingConfig.OpenSourceLicenseSetting)
+                onNavigateTo(SettingRoute.OpenSourceLicense)
             }
         }
     }

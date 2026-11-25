@@ -287,6 +287,9 @@
     <string name="user_interface_monet_subtitle_on">色の適用は壁紙の変化に対応します</string>
     <string name="user_interface_monet_subtitle_off">色設定により壁紙への応答（システムバージョンは Android 12 以上が必要です）</string>
     <string name="user_interface_color">アクセント色</string>
+    <string name="navigation_bar_style">下部ナビゲーションのスタイル</string>
+    <string name="navigation_bar_classic">従来のナビゲーションバー</string>
+    <string name="navigation_bar_floating">フローティングナビゲーションバー</string>
     <string name="color_willow">アスペクター</string>
     <string name="color_purple">藤紫</string>
     <string name="color_sakura">桜花</string>

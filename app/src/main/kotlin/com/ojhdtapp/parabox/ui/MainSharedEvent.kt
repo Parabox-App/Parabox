@@ -27,7 +27,6 @@ sealed interface MainSharedEvent : UiEvent {
     data class OpenDrawer(val open: Boolean, val snap: Boolean = false) : MainSharedEvent
     data class OpenBottomSheet(val open: Boolean, val snap: Boolean = false) : MainSharedEvent
     data object SearchAvatarClicked : MainSharedEvent
-    data class ShowNavigationBar(val show: Boolean) : MainSharedEvent
     data class UpdateSearchDoneChatFilter(val filter: ChatFilter) : MainSharedEvent
     data class UpdateSearchDoneMessageFilter(val filter: MessageFilter) : MainSharedEvent
     data class PickChat(val onDone: (Chat?) -> Unit) : MainSharedEvent

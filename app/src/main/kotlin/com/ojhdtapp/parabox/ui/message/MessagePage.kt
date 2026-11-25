@@ -20,9 +20,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
-import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
-import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -48,6 +45,8 @@ import com.ojhdtapp.parabox.ui.MainSharedViewModel
 import com.ojhdtapp.parabox.ui.RootNavigateTarget
 import com.ojhdtapp.parabox.ui.SettingNavigateTarget
 import com.ojhdtapp.parabox.ui.common.*
+import com.ojhdtapp.parabox.ui.navigation.suite.LocalBottomBarClearance
+import com.ojhdtapp.parabox.ui.navigation.suite.withBottomBarClearance
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -57,15 +56,14 @@ import kotlinx.coroutines.launch
 
 @OptIn(
     ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalAnimationGraphicsApi::class,
-    ExperimentalMaterial3AdaptiveApi::class
 )
 @Composable
 fun MessagePage(
     modifier: Modifier = Modifier,
     viewModel: MessagePageViewModel,
     mainSharedViewModel: MainSharedViewModel,
-    scaffoldNavigator: ThreePaneScaffoldNavigator<Nothing>,
     layoutType: LayoutType,
+    onOpenChat: () -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -90,6 +88,7 @@ fun MessagePage(
             .collectLatest {
                 when (it) {
                     is MessagePageEffect.ShowSnackBar -> {
+                        if (layoutType == LayoutType.SPLIT && state.chatDetail.chat != null) return@collectLatest
                         snackBarJob?.cancel()
                         snackBarJob = launch {
                             delay(4000)
@@ -130,8 +129,7 @@ fun MessagePage(
 
                     is MainSharedEffect.LoadMessage -> {
                         viewModel.sendEvent(MessagePageEvent.LoadMessage(it.chat, it.scrollToMessageId))
-                        scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
-                        mainSharedViewModel.sendEvent(MainSharedEvent.ShowNavigationBar(false))
+                        onOpenChat()
                     }
 
                     else -> {}
@@ -157,8 +155,12 @@ fun MessagePage(
         atEnd = mainSharedState.search.isActive
     )
 
+    val bottomBarClearance = LocalBottomBarClearance.current
     Scaffold(
         modifier = modifier,
+        contentWindowInsets = ScaffoldDefaults.contentWindowInsets.union(
+            WindowInsets.displayCutout.only(WindowInsetsSides.Bottom),
+        ),
         snackbarHost = { SnackbarHost(modifier = Modifier.offset(y = 80.dp), hostState = snackBarHostState) },
         containerColor = Color.Transparent,
         topBar = {
@@ -228,7 +230,11 @@ fun MessagePage(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = horizontalPadding)
-                        .statusBarsPadding()
+                        .windowInsetsPadding(
+                            WindowInsets.statusBars
+                                .union(WindowInsets.displayCutout)
+                                .only(WindowInsetsSides.Top),
+                        )
                         .clearFocusOnKeyboardDismiss(),
                     shape = SearchBarDefaults.dockedShape,
                     colors = SearchBarDefaults.colors(dividerColor = Color.Transparent),
@@ -313,7 +319,9 @@ fun MessagePage(
                     colors = SearchBarDefaults.colors(dividerColor = Color.Transparent),
                     tonalElevation = SearchBarDefaults.TonalElevation,
                     shadowElevation = searchBarShadowElevation,
-                    windowInsets = SearchBarDefaults.windowInsets,
+                    windowInsets = SearchBarDefaults.windowInsets.union(
+                        WindowInsets.displayCutout.only(WindowInsetsSides.Top),
+                    ),
                     content = {
                         SearchContent(
                             layoutType = layoutType,
@@ -324,13 +332,15 @@ fun MessagePage(
                 )
             }
 
-        }) {
+        }) { scaffoldPadding ->
         Column(modifier = Modifier.fillMaxSize()) {
             LazyColumn(
                 modifier = Modifier.fillMaxWidth(),
                 state = listState,
                 verticalArrangement = Arrangement.spacedBy(2.dp),
-                contentPadding = it
+                contentPadding = scaffoldPadding.withBottomBarClearance(
+                    if (chatLazyPagingData.itemCount > 0) bottomBarClearance else 0.dp,
+                ),
             ) {
                 item(
                     contentType = Unit
@@ -373,10 +383,7 @@ fun MessagePage(
                                         chat = item,
                                         onClick = {
                                             viewModel.sendEvent(MessagePageEvent.LoadMessage(item))
-                                            coroutineScope.launch {
-                                                scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
-                                            }
-                                            mainSharedViewModel.sendEvent(MainSharedEvent.ShowNavigationBar(false))
+                                            onOpenChat()
                                         },
                                         onLongClick = {
                                             hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -505,10 +512,7 @@ fun MessagePage(
                                     enableMarqueeEffectOnChatName = mainSharedState.datastore.enableMarqueeEffectOnChatName,
                                     onClick = {
                                         viewModel.sendEvent(MessagePageEvent.LoadMessage(item.chat))
-                                        coroutineScope.launch {
-                                            scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
-                                        }
-                                        mainSharedViewModel.sendEvent(MainSharedEvent.ShowNavigationBar(false))
+                                        onOpenChat()
                                     },
                                     onLongClick = {
                                         isMenuVisible = true
@@ -519,17 +523,13 @@ fun MessagePage(
                         }
                     }
                 }
-                item {
-                    if (chatLazyPagingData.itemCount > 0 &&mainSharedState.showNavigationBar) {
-                        Spacer(modifier = Modifier.height(80.dp))
-                    }
-                }
             }
             if (chatLazyPagingData.itemCount == 0) {
                 EmptyChatNoticeBlock(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f),
+                        .weight(1f)
+                        .padding(bottom = bottomBarClearance),
                     mainSharedState = mainSharedState
                 ) {
                     coroutineScope.launch {

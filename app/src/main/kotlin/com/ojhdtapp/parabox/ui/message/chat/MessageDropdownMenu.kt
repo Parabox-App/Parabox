@@ -28,8 +28,10 @@ import me.saket.cascade.CascadeDropdownMenu
 fun MessageDropdownMenu(
     modifier: Modifier = Modifier,
     message: Message,
+    isVerified: Boolean = message.verified,
     isMenuVisible: Boolean,
     onEvent: (event: MessagePageEvent) -> Unit,
+    onReply: () -> Unit = {},
     onDismiss: () -> Unit,
 ) {
     CascadeDropdownMenu(
@@ -43,20 +45,24 @@ fun MessageDropdownMenu(
         ),
         shape = MaterialTheme.shapes.medium,
     ) {
-        androidx.compose.material3.DropdownMenuItem(
-            text = { Text(text = stringResource(R.string.refresh)) },
-            onClick = {
-                onDismiss()
-            },
-            leadingIcon = {
-                Icon(
-                    Icons.Outlined.Refresh,
-                    contentDescription = null
-                )
-            })
+        if (message.sentByMe && !isVerified) {
+            androidx.compose.material3.DropdownMenuItem(
+                text = { Text(text = stringResource(R.string.refresh)) },
+                onClick = {
+                    onEvent(MessagePageEvent.RetrySendMessage(message))
+                    onDismiss()
+                },
+                leadingIcon = {
+                    Icon(
+                        Icons.Outlined.Refresh,
+                        contentDescription = null
+                    )
+                })
+        }
         androidx.compose.material3.DropdownMenuItem(
             text = { Text(text = stringResource(R.string.reply)) },
             onClick = {
+                onReply()
                 onDismiss()
             },
             leadingIcon = {

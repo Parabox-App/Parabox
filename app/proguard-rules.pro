@@ -327,3 +327,10 @@
 -dontwarn sun.security.x509.X500Name
 -dontwarn sun.security.x509.X509CertImpl
 -dontwarn sun.security.x509.X509CertInfo
+
+# Parabox Extension Protocol v2 (Protobuf Lite & gRPC Binder)
+-keepclassmembers class * extends com.google.protobuf.GeneratedMessageLite {
+    <fields>;
+}
+-keep class com.ojhdtapp.parabox.protocol.v2.** { *; }
+-keep class io.grpc.binder.** { *; }

@@ -24,52 +24,31 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldRole
-import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.arkivanov.decompose.router.stack.ChildStack
-import com.arkivanov.decompose.router.stack.StackNavigation
-import com.arkivanov.decompose.router.stack.bringToFront
-import com.arkivanov.decompose.router.stack.pop
-import com.arkivanov.decompose.router.stack.replaceAll
 import com.ojhdtapp.parabox.R
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.common.LayoutType
-import com.ojhdtapp.parabox.ui.navigation.DefaultRootComponent
-import com.ojhdtapp.parabox.ui.navigation.DefaultSettingComponent
-import com.ojhdtapp.parabox.ui.navigation.RootComponent
-import com.ojhdtapp.parabox.ui.navigation.SettingComponent
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingPage(
     modifier: Modifier = Modifier,
     viewModel: SettingPageViewModel,
     mainSharedState: MainSharedState,
     layoutType: LayoutType,
-    scaffoldNavigator: ThreePaneScaffoldNavigator<Setting>,
-    navigation: StackNavigation<DefaultSettingComponent.SettingConfig>,
-    stackState: ChildStack<*, SettingComponent.SettingChild>,
-    rootNavigation: StackNavigation<DefaultRootComponent.RootConfig>,
-    rootStackState: ChildStack<*, RootComponent.RootChild>,
-    onMainSharedEvent: (MainSharedEvent) -> Unit
+    selectedCategory: Setting,
+    onSelectCategory: (Setting) -> Unit,
+    onExitSettings: () -> Unit,
+    onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
-    val state by viewModel.uiState.collectAsState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -77,8 +56,8 @@ fun SettingPage(
         topBar = {
             MaterialTheme(
                 typography = MaterialTheme.typography.copy(
-                    headlineMedium = MaterialTheme.typography.displaySmall
-                )
+                    headlineMedium = MaterialTheme.typography.displaySmall,
+                ),
             ) {
                 LargeTopAppBar(
                     title = {
@@ -86,26 +65,26 @@ fun SettingPage(
                             modifier = Modifier.padding(start = 8.dp),
                             text = stringResource(R.string.settings),
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
                         )
                     },
                     navigationIcon = {
-                        IconButton(onClick = { rootNavigation.pop() }) {
+                        IconButton(onClick = onExitSettings) {
                             Icon(imageVector = Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "back")
                         }
                     },
                     scrollBehavior = if (layoutType == LayoutType.SPLIT) scrollBehavior else null,
                     colors = TopAppBarDefaults.largeTopAppBarColors(
                         containerColor = if (layoutType != LayoutType.SPLIT) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceContainer,
-                        scrolledContainerColor = if (layoutType != LayoutType.SPLIT) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceContainer
-                    )
+                        scrolledContainerColor = if (layoutType != LayoutType.SPLIT) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceContainer,
+                    ),
                 )
             }
-        }
+        },
     ) { innerPadding ->
         LazyColumn(
             contentPadding = innerPadding,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             item {
                 Spacer(modifier = Modifier.height(if (layoutType == LayoutType.SPLIT) 24.dp else 16.dp))
@@ -116,18 +95,10 @@ fun SettingPage(
                     leadingIcon = {
                         Icon(imageVector = Icons.Outlined.Settings, contentDescription = "general settings", tint = MaterialTheme.colorScheme.onSurface)
                     },
-                    selected = layoutType == LayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.GeneralSetting,
-                    layoutType = layoutType
+                    selected = layoutType == LayoutType.SPLIT && selectedCategory == Setting.GENERAL,
+                    layoutType = layoutType,
                 ) {
-//                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.GENERAL))
-                    navigation.bringToFront(DefaultSettingComponent.SettingConfig.GeneralSetting) {
-                        navigation.replaceAll(DefaultSettingComponent.SettingConfig.GeneralSetting)
-                    }
-                    if (layoutType != LayoutType.SPLIT) {
-                        coroutineScope.launch {
-                            scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.GENERAL)
-                        }
-                    }
+                    onSelectCategory(Setting.GENERAL)
                 }
             }
             item {
@@ -136,18 +107,10 @@ fun SettingPage(
                     leadingIcon = {
                         Icon(imageVector = Icons.Outlined.LibraryAdd, contentDescription = "extension settings", tint = MaterialTheme.colorScheme.onSurface)
                     },
-                    selected = layoutType == LayoutType.SPLIT && (stackState.active.instance is SettingComponent.SettingChild.ExtensionSetting || stackState.active.instance is SettingComponent.SettingChild.ExtensionAddSetting || stackState.active.instance is SettingComponent.SettingChild.ExtensionConfigSetting),
-                    layoutType = layoutType
+                    selected = layoutType == LayoutType.SPLIT && selectedCategory == Setting.ADDONS,
+                    layoutType = layoutType,
                 ) {
-//                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.ADDONS))
-                    navigation.bringToFront(DefaultSettingComponent.SettingConfig.ExtensionSetting) {
-                        navigation.replaceAll(DefaultSettingComponent.SettingConfig.ExtensionSetting)
-                    }
-                    if (layoutType != LayoutType.SPLIT) {
-                        coroutineScope.launch {
-                            scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.ADDONS)
-                        }
-                    }
+                    onSelectCategory(Setting.ADDONS)
                 }
             }
             item {
@@ -156,18 +119,10 @@ fun SettingPage(
                     leadingIcon = {
                         Icon(imageVector = Icons.AutoMirrored.Outlined.Label, contentDescription = "label settings", tint = MaterialTheme.colorScheme.onSurface)
                     },
-                    selected = layoutType == LayoutType.SPLIT && (stackState.active.instance is SettingComponent.SettingChild.LabelSetting || stackState.active.instance is SettingComponent.SettingChild.LabelDetailSetting),
-                    layoutType = layoutType
+                    selected = layoutType == LayoutType.SPLIT && selectedCategory == Setting.LABELS,
+                    layoutType = layoutType,
                 ) {
-//                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.LABELS))
-                    navigation.bringToFront(DefaultSettingComponent.SettingConfig.LabelSetting) {
-                        navigation.replaceAll(DefaultSettingComponent.SettingConfig.LabelSetting)
-                    }
-                    if (layoutType != LayoutType.SPLIT) {
-                        coroutineScope.launch {
-                            scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.LABELS)
-                        }
-                    }
+                    onSelectCategory(Setting.LABELS)
                 }
             }
             item {
@@ -176,18 +131,10 @@ fun SettingPage(
                     leadingIcon = {
                         Icon(imageVector = Icons.Outlined.Palette, contentDescription = "interface settings", tint = MaterialTheme.colorScheme.onSurface)
                     },
-                    selected = layoutType == LayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.AppearanceSetting,
-                    layoutType = layoutType
+                    selected = layoutType == LayoutType.SPLIT && selectedCategory == Setting.APPEARANCE,
+                    layoutType = layoutType,
                 ) {
-//                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.APPEARANCE))
-                    navigation.bringToFront(DefaultSettingComponent.SettingConfig.AppearanceSetting) {
-                        navigation.replaceAll(DefaultSettingComponent.SettingConfig.AppearanceSetting)
-                    }
-                    if (layoutType != LayoutType.SPLIT) {
-                        coroutineScope.launch {
-                            scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.APPEARANCE)
-                        }
-                    }
+                    onSelectCategory(Setting.APPEARANCE)
                 }
             }
             item {
@@ -196,18 +143,10 @@ fun SettingPage(
                     leadingIcon = {
                         Icon(imageVector = Icons.Outlined.EditNotifications, contentDescription = "notification settings", tint = MaterialTheme.colorScheme.onSurface)
                     },
-                    selected = layoutType == LayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.NotificationSetting,
-                    layoutType = layoutType
+                    selected = layoutType == LayoutType.SPLIT && selectedCategory == Setting.NOTIFICATION,
+                    layoutType = layoutType,
                 ) {
-//                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.NOTIFICATION))
-                    navigation.bringToFront(DefaultSettingComponent.SettingConfig.NotificationSetting) {
-                        navigation.replaceAll(DefaultSettingComponent.SettingConfig.NotificationSetting)
-                    }
-                    if (layoutType != LayoutType.SPLIT) {
-                        coroutineScope.launch {
-                            scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.NOTIFICATION)
-                        }
-                    }
+                    onSelectCategory(Setting.NOTIFICATION)
                 }
             }
             item {
@@ -216,18 +155,10 @@ fun SettingPage(
                     leadingIcon = {
                         Icon(imageVector = Icons.Outlined.Storage, contentDescription = "storage settings", tint = MaterialTheme.colorScheme.onSurface)
                     },
-                    selected = layoutType == LayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.StorageSetting,
-                    layoutType = layoutType
+                    selected = layoutType == LayoutType.SPLIT && selectedCategory == Setting.STORAGE,
+                    layoutType = layoutType,
                 ) {
-//                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.STORAGE))
-                    navigation.bringToFront(DefaultSettingComponent.SettingConfig.StorageSetting) {
-                        navigation.replaceAll(DefaultSettingComponent.SettingConfig.StorageSetting)
-                    }
-                    if (layoutType != LayoutType.SPLIT) {
-                        coroutineScope.launch {
-                            scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.STORAGE)
-                        }
-                    }
+                    onSelectCategory(Setting.STORAGE)
                 }
             }
             item {
@@ -236,18 +167,10 @@ fun SettingPage(
                     leadingIcon = {
                         Icon(imageVector = Icons.Outlined.Cloud, contentDescription = "cloud settings", tint = MaterialTheme.colorScheme.onSurface)
                     },
-                    selected = layoutType == LayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.CloudSetting,
-                    layoutType = layoutType
+                    selected = layoutType == LayoutType.SPLIT && selectedCategory == Setting.CLOUD,
+                    layoutType = layoutType,
                 ) {
-//                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.STORAGE))
-                    navigation.bringToFront(DefaultSettingComponent.SettingConfig.CloudSetting) {
-                        navigation.replaceAll(DefaultSettingComponent.SettingConfig.CloudSetting)
-                    }
-                    if (layoutType != LayoutType.SPLIT) {
-                        coroutineScope.launch {
-                            scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.CLOUD)
-                        }
-                    }
+                    onSelectCategory(Setting.CLOUD)
                 }
             }
             item {
@@ -256,18 +179,10 @@ fun SettingPage(
                     leadingIcon = {
                         Icon(imageVector = Icons.Outlined.Science, contentDescription = "experimental settings", tint = MaterialTheme.colorScheme.onSurface)
                     },
-                    selected = layoutType == LayoutType.SPLIT && stackState.active.instance is SettingComponent.SettingChild.ExperimentalSetting,
-                    layoutType = layoutType
+                    selected = layoutType == LayoutType.SPLIT && selectedCategory == Setting.EXPERIMENTAL,
+                    layoutType = layoutType,
                 ) {
-//                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.EXPERIMENTAL))
-                    navigation.bringToFront(DefaultSettingComponent.SettingConfig.ExperimentalSetting) {
-                        navigation.replaceAll(DefaultSettingComponent.SettingConfig.ExperimentalSetting)
-                    }
-                    if (layoutType != LayoutType.SPLIT) {
-                        coroutineScope.launch {
-                            scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.EXPERIMENTAL)
-                        }
-                    }
+                    onSelectCategory(Setting.EXPERIMENTAL)
                 }
             }
             item {
@@ -276,18 +191,10 @@ fun SettingPage(
                     leadingIcon = {
                         Icon(imageVector = Icons.AutoMirrored.Outlined.HelpOutline, contentDescription = "support settings", tint = MaterialTheme.colorScheme.onSurface)
                     },
-                    selected = layoutType == LayoutType.SPLIT && (stackState.active.instance is SettingComponent.SettingChild.HelpAndSupportSetting || stackState.active.instance is SettingComponent.SettingChild.OpenSourceLicenseSetting),
-                    layoutType = layoutType
+                    selected = layoutType == LayoutType.SPLIT && selectedCategory == Setting.HELP,
+                    layoutType = layoutType,
                 ) {
-//                    viewModel.sendEvent(SettingPageEvent.SelectSetting(Setting.HELP))
-                    navigation.bringToFront(DefaultSettingComponent.SettingConfig.HelpAndSupportSetting) {
-                        navigation.replaceAll(DefaultSettingComponent.SettingConfig.HelpAndSupportSetting)
-                    }
-                    if (layoutType != LayoutType.SPLIT) {
-                        coroutineScope.launch {
-                            scaffoldNavigator.navigateTo(ThreePaneScaffoldRole.Primary, Setting.HELP)
-                        }
-                    }
+                    onSelectCategory(Setting.HELP)
                 }
             }
         }

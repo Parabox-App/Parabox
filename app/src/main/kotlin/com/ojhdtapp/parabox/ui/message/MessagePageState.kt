@@ -18,6 +18,7 @@ import com.ojhdtapp.parabox.ui.message.chat.EditAreaMode
 import com.ojhdtapp.parabox.ui.message.chat.ToolbarState
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.model.ChatPageUiModel
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
+import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
 data class MessagePageState(
@@ -28,6 +29,11 @@ data class MessagePageState(
     val selectedChatFilterLists: List<ChatFilter> = listOf(ChatFilter.Normal),
 ): UiState{
 
+    sealed interface MessageSendStatus {
+        data object Sending : MessageSendStatus
+        data object Sent : MessageSendStatus
+        data class Failed(val errorMessage: String) : MessageSendStatus
+    }
 
     data class ChatDetail(
         // the chat that is currently being viewed, but will not follow the latest database update
@@ -38,6 +44,7 @@ data class MessagePageState(
         val editAreaState: EditAreaState = EditAreaState(),
         val infoAreaState: InfoAreaState = InfoAreaState(),
         val atCache: Map<String, Resource<Contact>> = emptyMap(),
+        val sendingStates: Map<Long, MessageSendStatus> = emptyMap(),
     )
 
     data class EditAreaState @OptIn(ExperimentalFoundationApi::class) constructor(
@@ -50,6 +57,8 @@ data class MessagePageState(
         val showVoicePermissionDeniedDialog: Boolean = false,
         val showLocationPermissionDeniedDialog: Boolean = false,
         val audioRecorderState: AudioRecorderState = AudioRecorderState.Ready,
+        val recordedAudioFile: File? = null,
+        val recordedAudioDurationMs: Long = 0L,
         val locationPickerState: LocationPickerState = LocationPickerState(),
         val toolbarState: ToolbarState = ToolbarState.Tools,
         val iconShrink: Boolean = false,

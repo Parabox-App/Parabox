@@ -1,6 +1,5 @@
 package com.ojhdtapp.parabox.ui.setting.detail
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -17,7 +16,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Delete
@@ -29,11 +27,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
-import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -50,42 +46,34 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
-import com.arkivanov.decompose.ExperimentalDecomposeApi
-import com.arkivanov.decompose.router.stack.ChildStack
-import com.arkivanov.decompose.router.stack.StackNavigation
-import com.arkivanov.decompose.router.stack.pushNew
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedState
+import com.ojhdtapp.parabox.ui.common.LayoutType
 import com.ojhdtapp.parabox.ui.common.drag_drop.DraggableItem
 import com.ojhdtapp.parabox.ui.common.drag_drop.rememberDragDropState
 import com.ojhdtapp.parabox.ui.message.NewChatFilterDialog
-import com.ojhdtapp.parabox.ui.navigation.DefaultSettingComponent
-import com.ojhdtapp.parabox.ui.navigation.SettingComponent
-import com.ojhdtapp.parabox.ui.setting.Setting
+import com.ojhdtapp.parabox.ui.navigation.SettingRoute
 import com.ojhdtapp.parabox.ui.setting.SettingHeader
 import com.ojhdtapp.parabox.ui.setting.SettingItem
-import com.ojhdtapp.parabox.ui.common.LayoutType
 import com.ojhdtapp.parabox.ui.setting.SettingPageEvent
 import com.ojhdtapp.parabox.ui.setting.SettingPageState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import me.saket.cascade.CascadeDropdownMenu
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LabelSettingPage(
     modifier: Modifier = Modifier,
     state: SettingPageState,
     mainSharedState: MainSharedState,
     layoutType: LayoutType,
-    scaffoldNavigator: ThreePaneScaffoldNavigator<Setting>,
-    navigation: StackNavigation<DefaultSettingComponent.SettingConfig>,
-    stackState: ChildStack<*, SettingComponent.SettingChild>,
+    onNavigateBack: () -> Unit,
+    onNavigateTo: (SettingRoute) -> Unit,
     onEvent: (SettingPageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
-    val coroutineScope = rememberCoroutineScope()
     if (layoutType == LayoutType.SPLIT) {
         Surface(
             modifier = Modifier
@@ -113,8 +101,7 @@ fun LabelSettingPage(
                     state = state,
                     mainSharedState = mainSharedState,
                     layoutType = layoutType,
-                    navigation = navigation,
-                    stackState = stackState,
+                    onNavigateTo = onNavigateTo,
                     onEvent = onEvent,
                     onMainSharedEvent = onMainSharedEvent,
                 )
@@ -133,11 +120,7 @@ fun LabelSettingPage(
                         )
                     },
                     navigationIcon = {
-                        IconButton(onClick = {
-                            coroutineScope.launch {
-                                scaffoldNavigator.navigateBack(BackNavigationBehavior.PopLatest)
-                            }
-                        }) {
+                        IconButton(onClick = onNavigateBack) {
                             Icon(imageVector = Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "back")
                         }
                     },
@@ -149,8 +132,7 @@ fun LabelSettingPage(
                 state = state,
                 mainSharedState = mainSharedState,
                 layoutType = layoutType,
-                navigation = navigation,
-                stackState = stackState,
+                onNavigateTo = onNavigateTo,
                 onEvent = onEvent,
                 onMainSharedEvent = onMainSharedEvent
             )
@@ -158,15 +140,14 @@ fun LabelSettingPage(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalDecomposeApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun Content(
     modifier: Modifier = Modifier,
     state: SettingPageState,
     mainSharedState: MainSharedState,
     layoutType: LayoutType,
-    navigation: StackNavigation<DefaultSettingComponent.SettingConfig>,
-    stackState: ChildStack<*, SettingComponent.SettingChild>,
+    onNavigateTo: (SettingRoute) -> Unit,
     onEvent: (SettingPageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
@@ -297,7 +278,7 @@ private fun Content(
                 ) {
                     if (item is ChatFilter.Tag) {
                         onEvent(SettingPageEvent.UpdateSelectedTagLabel(item))
-                        navigation.pushNew(DefaultSettingComponent.SettingConfig.LabelDetailSetting)
+                        onNavigateTo(SettingRoute.LabelDetail)
                     }
                 }
             }

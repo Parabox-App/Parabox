@@ -15,15 +15,20 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -37,14 +42,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
-import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -77,19 +80,19 @@ import com.ojhdtapp.parabox.ui.message.chat.PlainContactItem
 import com.ojhdtapp.parabox.ui.message.chat.EmptyPlainContactItem
 import kotlinx.coroutines.launch
 import me.saket.cascade.CascadeDropdownMenu
+import com.ojhdtapp.parabox.ui.navigation.suite.LocalBottomBarClearance
+import com.ojhdtapp.parabox.ui.navigation.suite.withBottomBarClearance
 import my.nanihadesuka.compose.InternalLazyColumnScrollbar
 import my.nanihadesuka.compose.ScrollbarSelectionMode
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationGraphicsApi::class, ExperimentalFoundationApi::class,
-    ExperimentalMaterial3AdaptiveApi::class
-)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationGraphicsApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun ContactPage(
     modifier: Modifier = Modifier,
     viewModel: ContactPageViewModel,
-    scaffoldNavigator: ThreePaneScaffoldNavigator<Nothing>,
     mainSharedState: MainSharedState,
     layoutType: LayoutType,
+    onOpenContactDetail: () -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -115,8 +118,12 @@ fun ContactPage(
     val searchBarShadowElevation by animateDpAsState(
         targetValue = if (shouldHoverSearchBar) 3.dp else 0.dp
     )
+    val bottomBarClearance = LocalBottomBarClearance.current
     Scaffold(
         modifier = modifier,
+        contentWindowInsets = ScaffoldDefaults.contentWindowInsets.union(
+            WindowInsets.displayCutout.only(WindowInsetsSides.Bottom),
+        ),
         snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
         containerColor = Color.Transparent,
         topBar = {
@@ -222,7 +229,11 @@ fun ContactPage(
                     onExpandedChange = { onMainSharedEvent(MainSharedEvent.TriggerSearchBar(it)) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .statusBarsPadding()
+                        .windowInsetsPadding(
+                            WindowInsets.statusBars
+                                .union(WindowInsets.displayCutout)
+                                .only(WindowInsetsSides.Top),
+                        )
                         .padding(horizontal = 2.dp)
                         .clearFocusOnKeyboardDismiss(),
                     shape = SearchBarDefaults.dockedShape,
@@ -344,17 +355,20 @@ fun ContactPage(
                     colors = SearchBarDefaults.colors(dividerColor = Color.Transparent),
                     tonalElevation = SearchBarDefaults.TonalElevation,
                     shadowElevation = searchBarShadowElevation,
-                    windowInsets = SearchBarDefaults.windowInsets,
+                    windowInsets = SearchBarDefaults.windowInsets.union(
+                        WindowInsets.displayCutout.only(WindowInsetsSides.Top),
+                    ),
                     content = {
                         SearchContent(layoutType = layoutType, state = mainSharedState, onEvent = onMainSharedEvent)
                     },
                 )
             }
         }
-    ) {
+    ) { scaffoldPadding ->
+        val contentPadding = scaffoldPadding.withBottomBarClearance(bottomBarClearance)
         Box {
             LazyColumn(
-                contentPadding = it,
+                contentPadding = contentPadding,
                 state = listState,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -385,10 +399,7 @@ fun ContactPage(
                                 extName = item.connectionInfo.alias,
                                 onClick = {
                                     viewModel.sendEvent(ContactPageEvent.LoadContactDetail(item))
-                                    onMainSharedEvent(MainSharedEvent.ShowNavigationBar(false))
-                                    coroutineScope.launch {
-                                        scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
-                                    }
+                                    onOpenContactDetail()
                                 })
                         }
                     }
@@ -416,32 +427,16 @@ fun ContactPage(
                                 extName = item.connectionInfo.alias,
                                 onClick = {
                                     viewModel.sendEvent(ContactPageEvent.LoadContactDetail(item))
-                                    onMainSharedEvent(MainSharedEvent.ShowNavigationBar(false))
-                                    coroutineScope.launch {
-                                        scaffoldNavigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
-                                    }
+                                    onOpenContactDetail()
                                 })
                         }
                     }
                 }
-                item {
-                    if (layoutType == LayoutType.NORMAL) {
-                        Spacer(modifier = Modifier.height(80.dp))
-                    }
-                }
-            }
-            val paddingValues = if (layoutType == LayoutType.SPLIT) {
-                it
-            } else {
-                PaddingValues(
-                    top = it.calculateTopPadding(),
-                    bottom = it.calculateBottomPadding() + 80.dp
-                )
             }
             InternalLazyColumnScrollbar(
                 listState = listState,
 //                modifier = Modifier.padding(top = 144.dp, bottom = 112.dp),
-                modifier = Modifier.padding(paddingValues),
+                modifier = Modifier.padding(contentPadding),
                 selectionMode = ScrollbarSelectionMode.Full,
                 thumbColor = MaterialTheme.colorScheme.secondary,
                 thumbSelectedColor = MaterialTheme.colorScheme.primary,

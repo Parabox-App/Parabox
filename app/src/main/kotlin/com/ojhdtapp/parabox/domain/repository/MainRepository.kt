@@ -5,10 +5,24 @@ import com.ojhdtapp.parabox.domain.model.Connection
 import com.ojhdtapp.parabox.domain.model.RecentQuery
 import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
+import com.ojhdtapp.paraboxdevelopmentkit.model.SendMessage
 import kotlinx.coroutines.flow.Flow
 
 interface MainRepository {
     suspend fun receiveMessage(msg: ReceiveMessage, ext: Connection.ConnectionSuccess): ParaboxResult
+
+    suspend fun insertOutgoingMessage(
+        msg: SendMessage,
+        pkg: String,
+        extensionId: Long,
+        chatId: Long,
+    ): Long
+
+    suspend fun markMessageSendSuccess(messageId: Long, remoteUid: String?)
+
+    suspend fun resetMessageForRetry(messageId: Long, timestamp: Long)
+
+    suspend fun deleteMessage(messageId: Long)
 
     fun getRecentQuery(): Flow<Resource<List<RecentQuery>>>
 

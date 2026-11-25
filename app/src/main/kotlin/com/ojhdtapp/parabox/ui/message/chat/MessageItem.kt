@@ -27,10 +27,14 @@ import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Reply
 import androidx.compose.material.icons.outlined.Checklist
+import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -58,19 +62,26 @@ import androidx.compose.ui.unit.dp
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.toFormattedTime
 import com.ojhdtapp.parabox.domain.model.Contact
+import com.ojhdtapp.parabox.core.util.AnimatedMediaKind
+import com.ojhdtapp.parabox.core.util.ExtensionMediaLoader
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.parabox.domain.model.contains
 import com.ojhdtapp.parabox.ui.common.CommonAvatar
 import com.ojhdtapp.parabox.ui.common.CommonAvatarModel
+import com.ojhdtapp.parabox.ui.common.ParaboxAlertDialog
 import com.ojhdtapp.parabox.ui.message.MessagePageEvent
 import com.ojhdtapp.parabox.ui.message.MessagePageState
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.AudioLayout
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.FileLayout
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.ImageLayout
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.LocationLayout
+import com.ojhdtapp.parabox.ui.message.chat.contents_layout.LoopingVideoLayout
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.MessageContentContainer
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.PlainTextLayout
+import com.ojhdtapp.parabox.ui.message.chat.contents_layout.QuoteReplyLayout
+import com.ojhdtapp.parabox.ui.message.chat.contents_layout.TgsStickerLayout
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.UnsupportedLayout
+import com.ojhdtapp.parabox.ui.message.chat.contents_layout.VideoLayout
 import com.ojhdtapp.parabox.ui.message.chat.contents_layout.model.ChatPageUiModel
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAnnotatedText
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxAt
@@ -101,8 +112,11 @@ fun MessageItem(
     previewerState: ImagePreviewerState,
     isFirst: Boolean = true,
     isLast: Boolean = true,
+    isHighlighted: Boolean = false,
     shouldDisplayTime: Boolean = false,
     onImageClick: (elementId: Long) -> Unit,
+    onQuoteReplyClick: (quoteMessageUid: String) -> Unit = {},
+    resolveQuoteFallback: ((quoteMessageUid: String) -> Pair<String?, String>?)? = null,
     onAvatarClick: () -> Unit,
     onAvatarLongClick: () -> Unit,
     onEvent: (e: MessagePageEvent) -> Unit,
@@ -116,15 +130,69 @@ fun MessageItem(
             state.selectedMessageList.contains(messageWithSender.message.messageId)
         }
     }
+    val isSentByMe = messageWithSender.message.sentByMe
+    val sendStatus = state.sendingStates[messageWithSender.message.messageId]
+    val isVerified = messageWithSender.message.verified || sendStatus is MessagePageState.MessageSendStatus.Sent
+    val showSendingSpinner = isSentByMe && sendStatus is MessagePageState.MessageSendStatus.Sending
+    val failedReason: String? = if (isSentByMe && !isVerified && !showSendingSpinner) {
+        (sendStatus as? MessagePageState.MessageSendStatus.Failed)?.errorMessage ?: "消息未送达，请重试"
+    } else {
+        null
+    }
+    var showFailedDialog by rememberSaveable { mutableStateOf(false) }
+
+    if (showFailedDialog && failedReason != null) {
+        ParaboxAlertDialog(
+            onDismissRequest = { showFailedDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Outlined.ErrorOutline,
+                    contentDescription = "send failed",
+                    tint = MaterialTheme.colorScheme.error,
+                )
+            },
+            title = { Text(text = "消息发送失败") },
+            text = { Text(text = failedReason) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showFailedDialog = false
+                        onEvent(MessagePageEvent.RetrySendMessage(messageWithSender.message))
+                    }
+                ) {
+                    Text(text = "重试")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showFailedDialog = false
+                        onEvent(MessagePageEvent.DeleteFailedMessage(messageWithSender.message.messageId))
+                    }
+                ) {
+                    Text(text = "删除", color = MaterialTheme.colorScheme.error)
+                }
+            },
+        )
+    }
+
     val topStartRadius by animateDpAsState(targetValue = if (isFirst) 24.dp else 3.dp)
     val bottomStartRadius by animateDpAsState(targetValue = if (isLast) 24.dp else 3.dp)
     val backgroundColor by animateColorAsState(
-        targetValue =
-        if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
+        targetValue = when {
+            isHighlighted -> MaterialTheme.colorScheme.tertiaryContainer
+            isSelected -> MaterialTheme.colorScheme.primaryContainer
+            isSentByMe -> MaterialTheme.colorScheme.primaryContainer
+            else -> MaterialTheme.colorScheme.secondaryContainer
+        }
     )
     val textColor by animateColorAsState(
-        targetValue =
-        if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+        targetValue = when {
+            isHighlighted -> MaterialTheme.colorScheme.onTertiaryContainer
+            isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
+            isSentByMe -> MaterialTheme.colorScheme.onPrimaryContainer
+            else -> MaterialTheme.colorScheme.onSecondaryContainer
+        }
     )
     val swipeableActionsState = rememberSwipeableActionsState()
     val reachThreshold by remember {
@@ -197,45 +265,56 @@ fun MessageItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth(),
-            horizontalArrangement = Arrangement.Start
+            horizontalArrangement = if (isSentByMe) Arrangement.End else Arrangement.Start
         ) {
-            if (isFirst) {
-                CommonAvatar(
-                    modifier = Modifier
-                        .size(42.dp)
-                        .clip(CircleShape)
-                        .combinedClickable(
-                            onClick = onAvatarClick,
-                            onLongClick = onAvatarLongClick
-                        ),
-                    model = CommonAvatarModel(
-                        model = messageWithSender.sender.avatar.getModel(),
-                        name = messageWithSender.sender.name
+            if (!isSentByMe) {
+                if (isFirst) {
+                    CommonAvatar(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(CircleShape)
+                            .combinedClickable(
+                                onClick = onAvatarClick,
+                                onLongClick = onAvatarLongClick
+                            ),
+                        model = CommonAvatarModel(
+                            model = messageWithSender.sender.avatar.getModel(),
+                            name = messageWithSender.sender.name
+                        )
                     )
-                )
-            } else {
-                Spacer(modifier = Modifier.width(42.dp))
+                } else {
+                    Spacer(modifier = Modifier.width(42.dp))
+                }
+                Spacer(modifier = Modifier.width(8.dp))
             }
-            Spacer(modifier = Modifier.width(8.dp))
-            Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = if (isSentByMe) Alignment.End else Alignment.Start
+            ) {
                 var isMenuVisible by rememberSaveable { mutableStateOf(false) }
                 DisableSelection {
                     MessageDropdownMenu(
                         message = messageWithSender.message,
+                        isVerified = isVerified,
                         isMenuVisible = isMenuVisible,
                         onEvent = onEvent,
+                        onReply = {
+                            onEvent(MessagePageEvent.ChooseQuoteReply(messageWithSender))
+                        },
                         onDismiss = { isMenuVisible = false })
                 }
-                if (isFirst) {
+                if (isFirst && (!isSentByMe || shouldDisplayTime)) {
                     DisableSelection {
                         Row(verticalAlignment = Alignment.Bottom) {
-                            Text(
-                                text = messageWithSender.sender.name,
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.primary
-                            )
+                            if (!isSentByMe) {
+                                Text(
+                                    text = messageWithSender.sender.name,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
                             if (shouldDisplayTime) {
-                                Spacer(modifier = Modifier.width(8.dp))
+                                if (!isSentByMe) Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = messageWithSender.message.timestamp.toFormattedTime(context),
                                     style = MaterialTheme.typography.labelSmall,
@@ -248,69 +327,113 @@ fun MessageItem(
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                 }
-                Surface(
-                    modifier = Modifier.layout { measurable, constraints ->
-                        val placeable = measurable.measure(
-                            constraints.copy(
-                                maxWidth = constraints.maxWidth - with(density) {
-                                    90.dp.roundToPx()
-                                }.coerceAtLeast(0),
-                            )
-                        )
-                        layout(placeable.width, placeable.height) {
-                            placeable.placeRelative(0, 0)
-                        }
-                    },
-                    shape = RoundedCornerShape(
-                        topStart = topStartRadius,
-                        topEnd = 24.dp,
-                        bottomStart = bottomStartRadius,
-                        bottomEnd = 24.dp
-                    ),
-                    border = BorderStroke(3.dp, backgroundColor),
-                    color = backgroundColor,
-                    onClick = {
-                        if (state.selectedMessageList.isEmpty()) {
-                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                            isMenuVisible = true
-                        } else {
-                            onEvent(MessagePageEvent.AddOrRemoveSelectedMessage(messageWithSender.message))
-                        }
-                    }
+                Row(
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = if (isSentByMe) Arrangement.End else Arrangement.Start,
                 ) {
-                    Column(horizontalAlignment = Alignment.Start) {
-                        LaunchedEffect(Unit) {
-                            messageWithSender.message.contents.filterIsInstance<ParaboxAt>().forEach {
-                                if (!state.atCache.containsKey("${messageWithSender.sender.pkg}${it.target.uid}")) {
-                                    onEvent(
-                                        MessagePageEvent.QueryAtTargetWithCache(
-                                            messageWithSender.sender.pkg,
-                                            it.target.uid
-                                        )
+                    if (isSentByMe) {
+                        when {
+                            showSendingSpinner -> {
+                                CircularProgressIndicator(
+                                    modifier = Modifier
+                                        .padding(end = 8.dp, bottom = 10.dp)
+                                        .size(18.dp),
+                                    strokeWidth = 2.dp,
+                                )
+                            }
+                            failedReason != null -> {
+                                IconButton(
+                                    modifier = Modifier
+                                        .padding(end = 2.dp, bottom = 2.dp)
+                                        .size(32.dp),
+                                    onClick = { showFailedDialog = true },
+                                ) {
+                                    Icon(
+                                        modifier = Modifier.size(20.dp),
+                                        imageVector = Icons.Outlined.ErrorOutline,
+                                        contentDescription = "send error",
+                                        tint = MaterialTheme.colorScheme.error,
                                     )
                                 }
                             }
                         }
-                        val simplifyContent = messageWithSender.message.contents.simplifyText()
-                        MessageContentContainer(shouldBreak = simplifyContent.filterNotNull().map {
-                            it is ParaboxImage || it is ParaboxQuoteReply || it is ParaboxForward || it is ParaboxAudio || it is ParaboxFile
-                        }) {
-                            simplifyContent.forEachIndexed { index, paraboxMessageElement ->
-                                paraboxMessageElement?.toLayout(
-                                    textColor = textColor,
-                                    elementId = messageWithSender.message.contentsId[index],
-                                    pkg = messageWithSender.message.pkg,
-                                    atCache = state.atCache,
-                                    previewerState = previewerState,
-                                    onImageClick = onImageClick,
+                    }
+                    Surface(
+                        modifier = Modifier.layout { measurable, constraints ->
+                            val placeable = measurable.measure(
+                                constraints.copy(
+                                    maxWidth = constraints.maxWidth - with(density) {
+                                        90.dp.roundToPx()
+                                    }.coerceAtLeast(0),
                                 )
+                            )
+                            layout(placeable.width, placeable.height) {
+                                placeable.placeRelative(0, 0)
+                            }
+                        },
+                        shape = if (isSentByMe) {
+                            RoundedCornerShape(
+                                topStart = 24.dp,
+                                topEnd = topStartRadius,
+                                bottomStart = 24.dp,
+                                bottomEnd = bottomStartRadius
+                            )
+                        } else {
+                            RoundedCornerShape(
+                                topStart = topStartRadius,
+                                topEnd = 24.dp,
+                                bottomStart = bottomStartRadius,
+                                bottomEnd = 24.dp
+                            )
+                        },
+                        border = BorderStroke(3.dp, backgroundColor),
+                        color = backgroundColor,
+                        onClick = {
+                            if (state.selectedMessageList.isEmpty()) {
+                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                isMenuVisible = true
+                            } else {
+                                onEvent(MessagePageEvent.AddOrRemoveSelectedMessage(messageWithSender.message))
                             }
                         }
-                        LazyRow(
-                            contentPadding = PaddingValues(horizontal = 12.dp),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
+                    ) {
+                        Column(horizontalAlignment = Alignment.Start) {
+                            LaunchedEffect(Unit) {
+                                messageWithSender.message.contents.filterIsInstance<ParaboxAt>().forEach {
+                                    if (!state.atCache.containsKey("${messageWithSender.sender.pkg}${it.target.uid}")) {
+                                        onEvent(
+                                            MessagePageEvent.QueryAtTargetWithCache(
+                                                messageWithSender.sender.pkg,
+                                                it.target.uid
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                            val simplifyContent = messageWithSender.message.contents.simplifyText()
+                            MessageContentContainer(shouldBreak = simplifyContent.filterNotNull().map {
+                                it is ParaboxImage || it is ParaboxQuoteReply || it is ParaboxForward || it is ParaboxAudio || it is ParaboxFile || it is ParaboxVideo || it is ParaboxLocation
+                            }) {
+                                simplifyContent.forEachIndexed { index, paraboxMessageElement ->
+                                    paraboxMessageElement?.toLayout(
+                                        textColor = textColor,
+                                        isSentByMe = isSentByMe,
+                                        elementId = messageWithSender.message.contentsId[index],
+                                        pkg = messageWithSender.message.pkg,
+                                        atCache = state.atCache,
+                                        previewerState = previewerState,
+                                        onImageClick = onImageClick,
+                                        onQuoteReplyClick = onQuoteReplyClick,
+                                        resolveQuoteFallback = resolveQuoteFallback,
+                                    )
+                                }
+                            }
+                            LazyRow(
+                                contentPadding = PaddingValues(horizontal = 12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
 
+                            }
                         }
                     }
                 }
@@ -340,11 +463,14 @@ fun MessageItemSelf(
 @Composable
 private fun ParaboxMessageElement.toLayout(
     textColor: Color,
+    isSentByMe: Boolean,
     elementId: Long,
     pkg: String,
     previewerState: ImagePreviewerState,
     atCache: Map<String, Resource<Contact>>,
     onImageClick: (elementId: Long) -> Unit,
+    onQuoteReplyClick: (quoteMessageUid: String) -> Unit,
+    resolveQuoteFallback: ((quoteMessageUid: String) -> Pair<String?, String>?)?,
 ) {
     when (this) {
         is ParaboxPlainText -> PlainTextLayout(text = buildAnnotatedString {
@@ -393,21 +519,65 @@ private fun ParaboxMessageElement.toLayout(
         }
 
 
-        is ParaboxImage -> ImageLayout(
-            model = resourceInfo.getModel(),
-            elementId = elementId,
-            previewerState = previewerState,
-            onClick = onImageClick
-        )
+        is ParaboxImage -> when (ExtensionMediaLoader.detectAnimatedMediaKind(fileName)) {
+            AnimatedMediaKind.TGS_LOTTIE -> TgsStickerLayout(
+                model = resourceInfo.getModel(),
+                widthPx = width,
+                heightPx = height,
+            )
+            AnimatedMediaKind.LOOPING_VIDEO -> LoopingVideoLayout(
+                model = resourceInfo.getModel(),
+                widthPx = width,
+                heightPx = height,
+            )
+            AnimatedMediaKind.IMAGE -> ImageLayout(
+                model = resourceInfo.getModel(),
+                elementId = elementId,
+                previewerState = previewerState,
+                onClick = onImageClick
+            )
+        }
 
         is ParaboxAudio -> AudioLayout(
+            elementId = elementId,
             resourceInfo = resourceInfo,
-            length = length,
+            lengthSeconds = length,
+            fileName = fileName,
+            textColor = textColor,
+            isSentByMe = isSentByMe,
         )
-        is ParaboxVideo -> {}
-        is ParaboxFile -> FileLayout()
-        is ParaboxLocation -> LocationLayout()
-        is ParaboxQuoteReply -> {}
+        is ParaboxVideo -> VideoLayout(
+            fileName = fileName,
+            length = length,
+            textColor = textColor,
+        )
+        is ParaboxFile -> FileLayout(
+            fileName = name,
+            fileSize = size,
+            textColor = textColor,
+        )
+        is ParaboxLocation -> LocationLayout(
+            name = name,
+            latitude = latitude,
+            longitude = longitude,
+            textColor = textColor,
+        )
+        is ParaboxQuoteReply -> {
+            val rawSenderName = sender?.basicInfo?.name?.takeIf { it.isNotBlank() }
+            val rawSummary = messages.joinToString(" ") { it.contentToString() }.trim()
+            val quoteId = id?.takeIf { it.isNotBlank() }
+            val fallback = if ((rawSenderName == null || rawSummary.isEmpty()) && quoteId != null) {
+                resolveQuoteFallback?.invoke(quoteId)
+            } else {
+                null
+            }
+            QuoteReplyLayout(
+                senderName = rawSenderName ?: fallback?.first,
+                summary = rawSummary.ifEmpty { fallback?.second.orEmpty() },
+                textColor = textColor,
+                onClick = quoteId?.let { targetUid -> { onQuoteReplyClick(targetUid) } },
+            )
+        }
         is ParaboxForward -> {}
         is ParaboxUnsupported -> UnsupportedLayout()
     }

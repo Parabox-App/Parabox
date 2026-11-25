@@ -4,7 +4,6 @@ import android.app.LocaleManager
 import android.os.Build
 import android.os.LocaleList
 import android.util.Log
-import androidx.activity.compose.BackHandler
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
@@ -23,7 +22,6 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Check
@@ -33,13 +31,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
-import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -70,14 +66,14 @@ import com.ojhdtapp.parabox.ui.theme.Theme
 import kotlinx.coroutines.launch
 import me.saket.cascade.CascadeDropdownMenu
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppearanceSettingPage(
     modifier: Modifier = Modifier,
     state: SettingPageState,
     mainSharedState: MainSharedState,
     layoutType: LayoutType,
-    scaffoldNavigator: ThreePaneScaffoldNavigator<Setting>,
+    onNavigateBack: () -> Unit,
     onEvent: (SettingPageEvent) -> Unit,
     onMainSharedEvent: (MainSharedEvent) -> Unit,
 ) {
@@ -127,11 +123,7 @@ fun AppearanceSettingPage(
                         )
                     },
                     navigationIcon = {
-                        IconButton(onClick = {
-                            coroutineScope.launch {
-                                scaffoldNavigator.navigateBack(BackNavigationBehavior.PopLatest) }
-                            }
-                        ) {
+                        IconButton(onClick = onNavigateBack) {
                             Icon(imageVector = Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "back")
                         }
                     },
@@ -291,6 +283,53 @@ private fun Content(
                     layoutType = layoutType,
                 ) {
                     isMenuVisible = true
+                }
+            }
+        }
+        item {
+            Box {
+                var showNavigationStyleMenu by remember { mutableStateOf(false) }
+                val useFloatingNavigation = mainSharedState.datastore.useFloatingNavigation
+                CascadeDropdownMenu(
+                    expanded = showNavigationStyleMenu,
+                    onDismissRequest = { showNavigationStyleMenu = false },
+                    offset = DpOffset(16.dp, 0.dp),
+                    properties = PopupProperties(focusable = true),
+                    shape = MaterialTheme.shapes.medium,
+                ) {
+                    listOf(
+                        R.string.navigation_bar_classic to false,
+                        R.string.navigation_bar_floating to true,
+                    ).forEach { (label, useFloating) ->
+                        androidx.compose.material3.DropdownMenuItem(
+                            text = { Text(stringResource(label)) },
+                            trailingIcon = {
+                                if (useFloating == useFloatingNavigation) {
+                                    Icon(Icons.Outlined.Check, contentDescription = null)
+                                }
+                            },
+                            onClick = {
+                                onMainSharedEvent(
+                                    MainSharedEvent.UpdateSettingSwitch(
+                                        DataStoreKeys.SETTINGS_USE_FLOATING_NAVIGATION,
+                                        useFloating,
+                                    ),
+                                )
+                                showNavigationStyleMenu = false
+                            },
+                        )
+                    }
+                }
+                SettingItem(
+                    title = stringResource(R.string.navigation_bar_style),
+                    subTitle = stringResource(
+                        if (useFloatingNavigation) R.string.navigation_bar_floating
+                        else R.string.navigation_bar_classic,
+                    ),
+                    selected = false,
+                    layoutType = layoutType,
+                ) {
+                    showNavigationStyleMenu = true
                 }
             }
         }

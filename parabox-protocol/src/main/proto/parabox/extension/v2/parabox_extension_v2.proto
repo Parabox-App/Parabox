@@ -1,0 +1,540 @@
+syntax = "proto3";
+
+package parabox.extension.v2;
+
+option java_multiple_files = true;
+option java_package = "com.ojhdtapp.parabox.protocol.v2";
+option java_outer_classname = "ParaboxExtensionV2Proto";
+
+// ============================================================================
+// Parabox Extension Protocol v2 (PEP v2)
+// Transport-agnostic gRPC service contract for:
+//   - Built-in extensions (gRPC InProcess)
+//   - External Android APK extensions (gRPC Binder)
+//   - Remote / Self-hosted Bridges (gRPC HTTP/2 or WS tunnel, Phase 2)
+// ============================================================================
+service ParaboxExtensionService {
+  // 1. Capability negotiation & static extension metadata
+  rpc GetManifest(GetManifestRequest) returns (ExtensionManifest);
+
+  // 2. Declarative onboarding wizard & connection configuration
+  rpc NextInitStep(InitStepRequest) returns (InitStepResponse);
+  rpc GetConfigSchema(GetConfigSchemaRequest) returns (ConfigSchemaResponse);
+  rpc ValidateConfig(ValidateConfigRequest) returns (ValidationResult);
+  rpc ExecuteConfigAction(ExecuteConfigActionRequest) returns (ActionResult);
+
+  // 3. Long-lived bi-directional session stream (multi-account / multi-instance isolated)
+  rpc OpenSession(stream HostSessionFrame) returns (stream ExtensionSessionFrame);
+
+  // 4. Unary RPC actions & queries
+  rpc SendMessage(SendMessageRequest) returns (ActionResult);
+  rpc RecallMessage(RecallMessageRequest) returns (ActionResult);
+  rpc GetContacts(SessionScopedRequest) returns (ContactListResponse);
+  rpc GetChats(SessionScopedRequest) returns (ChatListResponse);
+  rpc QueryMessageHistory(QueryHistoryRequest) returns (MessageListResponse);
+  rpc GetGroupBasicInfo(BasicInfoRequest) returns (BasicInfoResponse);
+  rpc GetUserBasicInfo(BasicInfoRequest) returns (BasicInfoResponse);
+  rpc QueryForwardNode(ForwardNodeRequest) returns (ForwardNodeResponse);
+
+  // 5. Large media streaming fallback (remote bridges or payloads exceeding URI transfer)
+  rpc StreamResource(ResourceStreamRequest) returns (stream ResourceChunk);
+}
+
+// ============================================================================
+// 1. Manifest & Capabilities
+// ============================================================================
+
+message GetManifestRequest {
+  uint32 host_protocol_version = 1;
+  string host_package_name = 2;
+}
+
+enum ExtensionCapability {
+  CAPABILITY_UNSPECIFIED = 0;
+  CAPABILITY_RECALL_MESSAGE = 1;
+  CAPABILITY_QUERY_HISTORY = 2;
+  CAPABILITY_FORWARD_NODE = 3;
+  CAPABILITY_EXTERNAL_AUTH = 4;
+  CAPABILITY_STREAM_RESOURCE = 5;
+}
+
+message ExtensionDescriptor {
+  string key = 1;
+  string name = 2;
+  string description = 3;
+  bytes icon_png = 4;
+  repeated ExtensionCapability capabilities = 5;
+}
+
+message ExtensionManifest {
+  uint32 protocol_version = 1;
+  string version_name = 2;
+  int64 version_code = 3;
+  repeated ExtensionDescriptor extensions = 4;
+}
+
+// ============================================================================
+// 2. Declarative Onboarding Wizard & Config Schema
+// ============================================================================
+
+enum KeyboardTypeProto {
+  KEYBOARD_TEXT = 0;
+  KEYBOARD_NUMBER = 1;
+  KEYBOARD_EMAIL = 2;
+  KEYBOARD_PASSWORD = 3;
+}
+
+message InitStepProto {
+  string key = 1;
+  string title = 2;
+  string description = 3;
+  string err_msg = 4;
+
+  oneof step_type {
+    InfoStepProto info = 10;
+    TextInputStepProto text_input = 11;
+    SelectStepProto select = 12;
+    TextInputWithImageStepProto text_input_with_image = 13;
+    SwitchStepProto switch_step = 14;
+    ExternalAuthStepProto external_auth = 15;
+  }
+}
+
+message InfoStepProto {}
+
+message TextInputStepProto {
+  string label = 1;
+  KeyboardTypeProto keyboard_type = 2;
+  bool has_default_value = 3;
+  string default_value = 4;
+}
+
+message SelectStepProto {
+  repeated string options = 1;
+  bool has_default_value = 2;
+  int32 default_value = 3;
+}
+
+message TextInputWithImageStepProto {
+  ResourceInfoProto image = 1;
+  string label = 2;
+  KeyboardTypeProto keyboard_type = 3;
+  bool has_default_value = 4;
+  string default_value = 5;
+}
+
+message SwitchStepProto {
+  bool default_value = 1;
+}
+
+message ExternalAuthStepProto {
+  string activity_action = 1;
+  string target_package = 2;
+  string auth_url = 3;
+  string button_label = 4;
+}
+
+message ConfigValueProto {
+  oneof value {
+    string string_value = 1;
+    int32 int_value = 2;
+    bool bool_value = 3;
+    string json_value = 4;
+  }
+}
+
+message InitStepRequest {
+  string wizard_session_id = 1;
+  string extension_key = 2;
+  // -1 indicates initial fetch (no submission yet)
+  int32 current_step_index = 3;
+  string submitted_step_key = 4;
+  ConfigValueProto submitted_value = 5;
+  string accumulated_extra_json = 6;
+}
+
+message InitStepResponse {
+  repeated InitStepProto steps = 1;
+  int32 next_step_index = 2;
+  string validation_error = 3;
+  bool completed = 4;
+  string updated_extra_json = 5;
+}
+
+message GetConfigSchemaRequest {
+  string extension_key = 1;
+  string current_extra_json = 2;
+}
+
+message ConfigItemProto {
+  string key = 1;
+  string title = 2;
+  string description = 3;
+
+  oneof item_type {
+    CategoryConfigProto category = 10;
+    TextInputConfigProto text_input = 11;
+    SelectConfigProto select = 12;
+    SwitchConfigProto switch_item = 13;
+    ActionConfigProto action_item = 14;
+  }
+}
+
+message CategoryConfigProto {}
+
+message TextInputConfigProto {
+  string label = 1;
+  KeyboardTypeProto keyboard_type = 2;
+  bool has_default_value = 3;
+  string default_value = 4;
+}
+
+message SelectConfigProto {
+  repeated string options = 1;
+  bool has_default_value = 2;
+  int32 default_value = 3;
+}
+
+message SwitchConfigProto {
+  bool default_value = 1;
+}
+
+message ActionConfigProto {
+  bool has_confirm = 1;
+  string confirm_title = 2;
+  string confirm_description = 3;
+  string confirm_text = 4;
+  string cancel_text = 5;
+}
+
+message ConfigSchemaResponse {
+  repeated ConfigItemProto items = 1;
+}
+
+message ValidateConfigRequest {
+  string extension_key = 1;
+  string config_key = 2;
+  ConfigValueProto value = 3;
+  string current_extra_json = 4;
+}
+
+message ExecuteConfigActionRequest {
+  string extension_key = 1;
+  string session_id = 2;
+  string action_key = 3;
+  string current_extra_json = 4;
+}
+
+message ValidationResult {
+  bool valid = 1;
+  string error_message = 2;
+}
+
+// ============================================================================
+// 3. Session Bi-directional Streaming
+// ============================================================================
+
+enum ConnectionStateProto {
+  CONNECTION_STATE_PENDING = 0;
+  CONNECTION_STATE_INITIALIZING = 1;
+  CONNECTION_STATE_ACTIVE = 2;
+  CONNECTION_STATE_RECONNECTING = 3;
+  CONNECTION_STATE_ERROR = 4;
+}
+
+enum LifecycleEventProto {
+  LIFECYCLE_UNSPECIFIED = 0;
+  LIFECYCLE_CREATE = 1;
+  LIFECYCLE_START = 2;
+  LIFECYCLE_RESUME = 3;
+  LIFECYCLE_PAUSE = 4;
+  LIFECYCLE_STOP = 5;
+  LIFECYCLE_DESTROY = 6;
+}
+
+message SessionInitFrame {
+  string session_id = 1;
+  string extension_key = 2;
+  string extra_json = 3;
+  string host_package_name = 4;
+}
+
+message HeartbeatFrame {
+  int64 timestamp_ms = 1;
+}
+
+message MessageAckFrame {
+  string ack_id = 1;
+  ActionResult result = 2;
+}
+
+message HostSessionFrame {
+  oneof payload {
+    SessionInitFrame init = 1;
+    HeartbeatFrame ping = 2;
+    LifecycleEventProto lifecycle = 3;
+    MessageAckFrame ack = 4;
+  }
+}
+
+message StatusChangedFrame {
+  ConnectionStateProto state = 1;
+  string message = 2;
+  int32 retry_attempt = 3;
+}
+
+message ReceiveMessageEventFrame {
+  string ack_id = 1;
+  ReceiveMessageProto message = 2;
+}
+
+message RecallMessageEventFrame {
+  string ack_id = 1;
+  string message_uuid = 2;
+}
+
+message ExtensionSessionFrame {
+  oneof payload {
+    StatusChangedFrame status_changed = 1;
+    ReceiveMessageEventFrame receive_message = 2;
+    RecallMessageEventFrame recall_message = 3;
+    HeartbeatFrame pong = 4;
+  }
+}
+
+// ============================================================================
+// 4. Domain Models & Unary RPCs
+// ============================================================================
+
+message ActionResult {
+  int32 code = 1;
+  string message = 2;
+  string message_uuid = 3;
+}
+
+message ResourceInfoProto {
+  oneof resource {
+    EmptyResourceProto empty = 1;
+    UriLocalResourceProto uri_local = 2;
+    UrlRemoteResourceProto url_remote = 3;
+    DriveRemoteResourceProto drive_remote = 4;
+    SyncedResourceProto synced = 5;
+  }
+}
+
+message EmptyResourceProto {}
+
+message UriLocalResourceProto {
+  string uri = 1;
+}
+
+message UrlRemoteResourceProto {
+  string url = 1;
+}
+
+message DriveRemoteResourceProto {
+  string uuid = 1;
+  string cloud_path = 2;
+  int32 drive_type = 3;
+}
+
+message SyncedResourceProto {
+  ResourceInfoProto local = 1;
+  ResourceInfoProto remote = 2;
+}
+
+message BasicInfoProto {
+  bool has_name = 1;
+  string name = 2;
+  ResourceInfoProto avatar = 3;
+}
+
+message ContactProto {
+  BasicInfoProto basic_info = 1;
+  string uid = 2;
+}
+
+message ChatProto {
+  BasicInfoProto basic_info = 1;
+  int32 type = 2;
+  string uid = 3;
+}
+
+message MessageElementProto {
+  oneof element {
+    PlainTextElementProto plain_text = 1;
+    AtElementProto at = 2;
+    AtAllElementProto at_all = 3;
+    ImageElementProto image = 4;
+    AudioElementProto audio = 5;
+    VideoElementProto video = 6;
+    FileElementProto file = 7;
+    LocationElementProto location = 8;
+    QuoteReplyElementProto quote_reply = 9;
+    ForwardElementProto forward = 10;
+    AnnotatedTextElementProto annotated_text = 11;
+    UnsupportedElementProto unsupported = 12;
+  }
+}
+
+message PlainTextElementProto {
+  string text = 1;
+}
+
+message AtElementProto {
+  ContactProto target = 1;
+}
+
+message AtAllElementProto {}
+
+message ImageElementProto {
+  int32 width = 1;
+  int32 height = 2;
+  bool has_file_name = 3;
+  string file_name = 4;
+  ResourceInfoProto resource_info = 5;
+}
+
+message AudioElementProto {
+  int64 length = 1;
+  bool has_file_name = 2;
+  string file_name = 3;
+  int64 file_size = 4;
+  ResourceInfoProto resource_info = 5;
+}
+
+message VideoElementProto {
+  int64 length = 1;
+  bool has_file_name = 2;
+  string file_name = 3;
+  int64 file_size = 4;
+  ResourceInfoProto resource_info = 5;
+}
+
+message FileElementProto {
+  string name = 1;
+  string extension = 2;
+  int64 size = 3;
+  int64 last_modified_time = 4;
+  ResourceInfoProto resource_info = 5;
+}
+
+message LocationElementProto {
+  double latitude = 1;
+  double longitude = 2;
+  bool has_name = 3;
+  string name = 4;
+  bool has_description = 5;
+  string description = 6;
+}
+
+message QuoteReplyElementProto {
+  ContactProto sender = 1;
+  bool has_timestamp = 2;
+  int64 timestamp = 3;
+  bool has_id = 4;
+  string id = 5;
+  repeated MessageElementProto messages = 6;
+}
+
+message ForwardNodeProto {
+  ContactProto sender = 1;
+  bool has_timestamp = 2;
+  int64 timestamp = 3;
+  bool has_id = 4;
+  string id = 5;
+  repeated MessageElementProto messages = 6;
+}
+
+message ForwardElementProto {
+  repeated ForwardNodeProto nodes = 1;
+}
+
+message AnnotatedTextElementProto {
+  repeated MessageElementProto items = 1;
+}
+
+message UnsupportedElementProto {}
+
+message ReceiveMessageProto {
+  repeated MessageElementProto contents = 1;
+  ContactProto sender = 2;
+  ChatProto chat = 3;
+  int64 timestamp = 4;
+  string uuid = 5;
+}
+
+message SendMessageProto {
+  repeated MessageElementProto contents = 1;
+  ChatProto chat = 2;
+  int64 timestamp = 3;
+  string uuid = 4;
+}
+
+message SessionScopedRequest {
+  string session_id = 1;
+}
+
+message SendMessageRequest {
+  string session_id = 1;
+  SendMessageProto message = 2;
+}
+
+message RecallMessageRequest {
+  string session_id = 1;
+  string message_uuid = 2;
+}
+
+message ContactListResponse {
+  repeated ContactProto contacts = 1;
+}
+
+message ChatListResponse {
+  repeated ChatProto chats = 1;
+}
+
+message QueryHistoryRequest {
+  string session_id = 1;
+  string message_uuid = 2;
+}
+
+message MessageListResponse {
+  repeated ReceiveMessageProto messages = 1;
+}
+
+message BasicInfoRequest {
+  string session_id = 1;
+  string target_id = 2;
+}
+
+message BasicInfoResponse {
+  bool found = 1;
+  BasicInfoProto basic_info = 2;
+}
+
+message ForwardNodeRequest {
+  string session_id = 1;
+  string node_id = 2;
+}
+
+message ForwardNodeResponse {
+  bool found = 1;
+  ForwardNodeProto node = 2;
+}
+
+// ============================================================================
+// 5. Media Resource Streaming
+// ============================================================================
+
+message ResourceStreamRequest {
+  string session_id = 1;
+  string resource_id = 2;
+  int64 offset = 3;
+}
+
+message ResourceChunk {
+  bytes data = 1;
+  int64 total_size = 2;
+  string mime_type = 3;
+  bool eof = 4;
+}

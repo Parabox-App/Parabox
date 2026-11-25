@@ -23,9 +23,20 @@ data class Message(
         "${messageId}${it}".toLong()
     }
     override fun equals(other: Any?): Boolean {
-        return if(other is Message){
-            messageId == other.messageId
+        return if (other is Message) {
+            messageId == other.messageId &&
+                verified == other.verified &&
+                uid == other.uid &&
+                timestamp == other.timestamp
         } else super.equals(other)
+    }
+
+    override fun hashCode(): Int {
+        var result = messageId.hashCode()
+        result = 31 * result + verified.hashCode()
+        result = 31 * result + uid.hashCode()
+        result = 31 * result + timestamp.hashCode()
+        return result
     }
 }
 
