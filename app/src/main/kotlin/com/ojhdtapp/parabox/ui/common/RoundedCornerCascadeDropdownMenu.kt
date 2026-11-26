@@ -3,7 +3,6 @@ package com.ojhdtapp.parabox.ui.common
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
@@ -29,7 +28,7 @@ fun RoundedCornerCascadeDropdownMenu(
 ) = MaterialTheme(
     shapes = MaterialTheme.shapes.copy(extraSmall = MaterialTheme.shapes.small),
     colorScheme = MaterialTheme.colorScheme.copy(
-        surface = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+        surface = MaterialTheme.colorScheme.surfaceContainer
     )
 ) {
     CascadeDropdownMenu(

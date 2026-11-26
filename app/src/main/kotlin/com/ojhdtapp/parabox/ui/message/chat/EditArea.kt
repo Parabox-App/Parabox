@@ -307,7 +307,7 @@ fun EditArea(
                         Icon(
                             imageVector = Icons.Outlined.Clear,
                             contentDescription = "clear",
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
                 }
@@ -318,7 +318,7 @@ fun EditArea(
                     .padding(end = 16.dp),
                 contentAlignment = Alignment.CenterEnd
             ) {
-                val inputBackground by animateColorAsState(targetValue = if (state.mode == EditAreaMode.AUDIO_RECORDER) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant)
+                val inputBackground by animateColorAsState(targetValue = if (state.mode == EditAreaMode.AUDIO_RECORDER) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest)
                 Surface(
                     shape = RoundedCornerShape(28.dp),
                     color = inputBackground,

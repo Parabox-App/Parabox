@@ -80,7 +80,7 @@ fun ChatItem(
         }
     )
     val avatarBackgroundColor by animateColorAsState(
-        targetValue = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.primary
+        targetValue = MaterialTheme.colorScheme.primary
     )
     Surface(
         modifier = modifier
@@ -106,6 +106,7 @@ fun ChatItem(
                 modifier = Modifier
                     .clip(CircleShape)
                     .size(48.dp)
+                    .background(avatarBackgroundColor)
                     .clickable {
                         onAvatarClick()
                     },
@@ -125,7 +126,6 @@ fun ChatItem(
                             CommonAvatar(
                                 modifier = Modifier
                                     .clip(CircleShape)
-                                    .background(avatarBackgroundColor)
                                     .fillMaxSize(),
                                 model = CommonAvatarModel(
                                     model = chatWithLatestMessage.chat.avatar.getModel(),
@@ -142,10 +142,20 @@ fun ChatItem(
                     .weight(1f), verticalArrangement = Arrangement.Center
             ) {
                 Text(
+                    modifier = if (enableMarqueeEffectOnChatName) {
+                        Modifier.basicMarquee(iterations = Int.MAX_VALUE)
+                    } else {
+                        Modifier
+                    },
                     text = chatWithLatestMessage.chat.name,
                     style = MaterialTheme.typography.titleMedium,
                     color = textColor,
-                    maxLines = 1
+                    maxLines = 1,
+                    overflow = if (enableMarqueeEffectOnChatName) {
+                        TextOverflow.Clip
+                    } else {
+                        TextOverflow.Ellipsis
+                    },
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
@@ -174,6 +184,7 @@ fun ChatItem(
                     maxLines = 1
                 )
             }
+            Spacer(modifier = Modifier.width(12.dp))
             Column(
                 modifier = Modifier.align(Alignment.Top),
                 horizontalAlignment = Alignment.End,
@@ -188,7 +199,10 @@ fun ChatItem(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 if (chatWithLatestMessage.chat.unreadMessageNum > 0) {
-                    Badge(containerColor = MaterialTheme.colorScheme.primary) { Text(text = "${chatWithLatestMessage.chat.unreadMessageNum}") }
+                    Badge(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ) { Text(text = "${chatWithLatestMessage.chat.unreadMessageNum}") }
                 }
             }
         }
@@ -259,7 +273,8 @@ fun PinnedChatItems(
                     modifier = Modifier
                         .padding(8.dp)
                         .align(Alignment.TopEnd),
-                    containerColor = MaterialTheme.colorScheme.primary
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 ) { Text(text = "${chat.unreadMessageNum}") }
             }
         }
@@ -275,8 +290,8 @@ fun EmptyChatItem(
     Surface(
         modifier = modifier
             .fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 3.dp
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        tonalElevation = 0.dp
     ) {
         Row(
             modifier = Modifier
@@ -288,9 +303,9 @@ fun EmptyChatItem(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.secondary)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                     .placeholder(
-                        true, MaterialTheme.colorScheme.secondaryContainer
+                        true, MaterialTheme.colorScheme.surfaceContainerHigh
                     ),
                 contentAlignment = Alignment.Center
             ) {
@@ -304,7 +319,7 @@ fun EmptyChatItem(
                 Text(
                     modifier = Modifier.placeholder(
                         visible = true,
-                        MaterialTheme.colorScheme.secondaryContainer,
+                        MaterialTheme.colorScheme.surfaceContainerHigh,
                         highlight = PlaceholderHighlight.fade(),
                     ),
                     text = context.getString(R.string.contact_name),
@@ -316,7 +331,7 @@ fun EmptyChatItem(
                 Text(
                     modifier = Modifier.placeholder(
                         visible = true,
-                        MaterialTheme.colorScheme.secondaryContainer,
+                        MaterialTheme.colorScheme.surfaceContainerHigh,
                         highlight = PlaceholderHighlight.fade(),
                     ),
                     text = context.getString(R.string.contact_name),

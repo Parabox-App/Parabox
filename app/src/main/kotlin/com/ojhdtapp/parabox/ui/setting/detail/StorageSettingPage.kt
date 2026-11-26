@@ -82,7 +82,7 @@ fun StorageSettingPage(
             modifier = Modifier
                 .fillMaxSize()
                 .systemBarsPadding(),
-            color = MaterialTheme.colorScheme.background,
+            color = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(24.dp)
         ) {
             Column(
@@ -259,7 +259,7 @@ private fun Content(
                     Icon(
                         imageVector = Icons.Outlined.DeleteSweep,
                         contentDescription = "clean cache",
-                        tint = if (cleaningCache) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface
+                        tint = if (cleaningCache) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f) else MaterialTheme.colorScheme.onSurface
                     )
                 },
                 selected = false, layoutType = layoutType

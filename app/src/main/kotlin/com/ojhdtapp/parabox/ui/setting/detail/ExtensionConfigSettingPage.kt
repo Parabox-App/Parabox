@@ -135,7 +135,7 @@ fun ExtensionConfigSettingPage(
                 modifier = Modifier
                     .fillMaxSize()
                     .systemBarsPadding(),
-                color = MaterialTheme.colorScheme.background,
+                color = MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(24.dp)
             ) {
                 Column(
@@ -158,7 +158,7 @@ fun ExtensionConfigSettingPage(
                             Icon(
                                 imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                                 contentDescription = "back",
-                                tint = MaterialTheme.colorScheme.onBackground
+                                tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
                         Spacer(modifier = Modifier.width(16.dp))

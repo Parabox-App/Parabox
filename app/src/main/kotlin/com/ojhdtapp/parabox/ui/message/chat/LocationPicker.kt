@@ -55,7 +55,7 @@ fun LocationPicker(
     ) {
         Surface(
             shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant
+            color = MaterialTheme.colorScheme.surfaceContainerHighest
         ) {
             GoogleMap(
                 modifier = Modifier.fillMaxSize(),

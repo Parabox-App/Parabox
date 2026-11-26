@@ -53,7 +53,7 @@ fun CloudSettingPage(
             modifier = Modifier
                 .fillMaxSize()
                 .systemBarsPadding(),
-            color = MaterialTheme.colorScheme.background,
+            color = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(24.dp)
         ) {
             Column(

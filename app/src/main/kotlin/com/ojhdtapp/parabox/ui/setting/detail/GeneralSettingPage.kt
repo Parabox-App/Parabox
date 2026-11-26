@@ -61,7 +61,7 @@ fun GeneralSettingPage(
             modifier = Modifier
                 .fillMaxSize()
                 .systemBarsPadding(),
-            color = MaterialTheme.colorScheme.background,
+            color = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(24.dp)
         ) {
             Column(
@@ -135,41 +135,6 @@ private fun Content(
         }
         item {
             SettingItem(
-                title = "滚动名称",
-                subTitle = "在会话名称超出屏幕宽度时滚动展示",
-                selected = false,
-                layoutType = layoutType,
-                trailingIcon = {
-                    Switch(
-                        thumbContent = {
-                            if (mainSharedState.datastore.enableMarqueeEffectOnChatName) {
-                                Icon(
-                                    modifier = Modifier.size(SwitchDefaults.IconSize),
-                                    imageVector = Icons.Outlined.Check,
-                                    contentDescription = "check"
-                                )
-                            }
-                        },
-                        checked = mainSharedState.datastore.enableMarqueeEffectOnChatName,
-                        onCheckedChange = {
-                        onMainSharedEvent(
-                            MainSharedEvent.UpdateSettingSwitch(
-                                DataStoreKeys.SETTINGS_ENABLE_MARQUEE_EFFECT_ON_CHAT_NAME,
-                                it
-                            )
-                        )
-                    })
-                }) {
-                onMainSharedEvent(
-                    MainSharedEvent.UpdateSettingSwitch(
-                        DataStoreKeys.SETTINGS_ENABLE_MARQUEE_EFFECT_ON_CHAT_NAME,
-                        !mainSharedState.datastore.enableMarqueeEffectOnChatName
-                    )
-                )
-            }
-        }
-        item {
-            SettingItem(
                 title = "允许水平滑动",
                 subTitle = "水平滑动会话项来快速完成或归档",
                 selected = false,
@@ -204,72 +169,6 @@ private fun Content(
         }
         item {
             SettingHeader(text = "聊天页")
-        }
-        item {
-            SettingItem(title = "展示头像",
-                subTitle = "在顶栏展示当前会话头像",
-                selected = false,
-                layoutType = layoutType,
-                trailingIcon = {
-                    Switch(
-                        thumbContent = {
-                            if (mainSharedState.datastore.displayAvatarOnTopAppBar) {
-                                Icon(
-                                    modifier = Modifier.size(SwitchDefaults.IconSize),
-                                    imageVector = Icons.Outlined.Check,
-                                    contentDescription = "check"
-                                )
-                            }
-                        },
-                        checked = mainSharedState.datastore.displayAvatarOnTopAppBar, onCheckedChange = {
-                        onMainSharedEvent(
-                            MainSharedEvent.UpdateSettingSwitch(
-                                DataStoreKeys.SETTINGS_DISPLAY_AVATAR_ON_TOP_APPBAR,
-                                it
-                            )
-                        )
-                    })
-                }) {
-                onMainSharedEvent(
-                    MainSharedEvent.UpdateSettingSwitch(
-                        DataStoreKeys.SETTINGS_DISPLAY_AVATAR_ON_TOP_APPBAR,
-                        !mainSharedState.datastore.displayAvatarOnTopAppBar
-                    )
-                )
-            }
-        }
-        item {
-            SettingItem(title = "展示消息接收时间",
-                subTitle = "在每条消息上展示接收时间",
-                selected = false,
-                layoutType = layoutType,
-                trailingIcon = {
-                    Switch(
-                        thumbContent = {
-                            if (mainSharedState.datastore.displayTimeOnEachMsg) {
-                                Icon(
-                                    modifier = Modifier.size(SwitchDefaults.IconSize),
-                                    imageVector = Icons.Outlined.Check,
-                                    contentDescription = "check"
-                                )
-                            }
-                        },
-                        checked = mainSharedState.datastore.displayTimeOnEachMsg, onCheckedChange = {
-                        onMainSharedEvent(
-                            MainSharedEvent.UpdateSettingSwitch(
-                                DataStoreKeys.SETTINGS_DISPLAY_TIME_ON_EACH_MSG,
-                                it
-                            )
-                        )
-                    })
-                }) {
-                onMainSharedEvent(
-                    MainSharedEvent.UpdateSettingSwitch(
-                        DataStoreKeys.SETTINGS_DISPLAY_TIME_ON_EACH_MSG,
-                        !mainSharedState.datastore.displayTimeOnEachMsg
-                    )
-                )
-            }
         }
         item {
             SettingItem(title = "使用回车键发送消息",

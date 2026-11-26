@@ -6,7 +6,7 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.isSystemInDarkTheme
+import com.ojhdtapp.parabox.ui.theme.LocalDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -173,7 +173,7 @@ private fun ContactDetailPageContent(
     }
     var isBackgroundLight by remember { mutableStateOf(true) }
     var navigationIconTint =
-        if (isBackgroundLight xor isSystemInDarkTheme()) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.inverseOnSurface
+        if (isBackgroundLight xor LocalDarkTheme.current) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.inverseOnSurface
     val navigationContentColor by animateColorAsState(targetValue = if (isScrolled) MaterialTheme.colorScheme.onSurface else navigationIconTint)
     LaunchedEffect(isScrolled) {
         if (layoutType == LayoutType.NORMAL) {
@@ -444,7 +444,7 @@ private fun ContactDetailPageContent(
 
 @Composable
 fun EmptyRelativeChatItem(modifier: Modifier = Modifier) {
-    Surface(color = MaterialTheme.colorScheme.surfaceContainerHighest) {
+    Surface(color = MaterialTheme.colorScheme.surfaceContainerLow) {
         Row(
             modifier = modifier.padding(vertical = 16.dp),
             horizontalArrangement = Arrangement.Start,
@@ -454,7 +454,7 @@ fun EmptyRelativeChatItem(modifier: Modifier = Modifier) {
                 modifier = Modifier
                     .clip(CircleShape)
                     .size(24.dp)
-                    .background(MaterialTheme.colorScheme.secondary),
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest),
             )
             Spacer(modifier = Modifier.width(16.dp))
             Text(
@@ -472,7 +472,7 @@ fun EmptyRelativeChatItem(modifier: Modifier = Modifier) {
 fun RelativeChatItem(modifier: Modifier = Modifier, chat: Chat, onClick: () -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         onClick = onClick
     ) {
         Row(
@@ -483,8 +483,9 @@ fun RelativeChatItem(modifier: Modifier = Modifier, chat: Chat, onClick: () -> U
             CommonAvatar(
                 modifier = Modifier
                     .clip(CircleShape)
-                    .size(24.dp)
-                    .background(MaterialTheme.colorScheme.secondary),
+                    .size(24.dp),
+                backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
+                textColor = MaterialTheme.colorScheme.onSecondaryContainer,
                 model = CommonAvatarModel(
                     model = chat.avatar.getModel(),
                     name = chat.name

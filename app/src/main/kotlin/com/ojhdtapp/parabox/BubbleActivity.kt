@@ -87,35 +87,6 @@ class BubbleActivity : AppCompatActivity() {
                     }
                 }
             }
-            LaunchedEffect(mainSharedState.datastore.darkMode) {
-                if (BuildConfig.VERSION_CODE >= Build.VERSION_CODES.S) {
-                    val manager = getSystemService(UI_MODE_SERVICE) as UiModeManager
-                    when (mainSharedState.datastore.darkMode) {
-                        DataStoreKeys.DarkMode.YES -> {
-                            manager.nightMode = UiModeManager.MODE_NIGHT_YES
-                        }
-                        DataStoreKeys.DarkMode.NO -> {
-                            manager.nightMode = UiModeManager.MODE_NIGHT_NO
-                        }
-                        DataStoreKeys.DarkMode.FOLLOW_SYSTEM -> {
-                            manager.nightMode = UiModeManager.MODE_NIGHT_AUTO
-                        }
-                    }
-                } else {
-                    when (mainSharedState.datastore.darkMode) {
-                        DataStoreKeys.DarkMode.YES -> {
-                            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-                        }
-                        DataStoreKeys.DarkMode.NO -> {
-                            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-                        }
-                        DataStoreKeys.DarkMode.FOLLOW_SYSTEM -> {
-                            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
-                        }
-                    }
-                    delegate.applyDayNight()
-                }
-            }
             AppTheme {
                 CompositionLocalProvider(
                     values = arrayOf(

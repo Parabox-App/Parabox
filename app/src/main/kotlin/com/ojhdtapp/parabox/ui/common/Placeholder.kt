@@ -19,11 +19,11 @@ fun Modifier.placeholder(
     showShimmerAnimation: Boolean = true
 ): Modifier = composed {
     val highlight = if (showShimmerAnimation) {
-        PlaceholderHighlight.shimmer(highlightColor = MaterialTheme.colorScheme.onTertiary)
+        PlaceholderHighlight.shimmer(highlightColor = MaterialTheme.colorScheme.surfaceContainerLow)
     } else {
         null
     }
-    val specifiedBackgroundColor = backgroundColor.takeOrElse { Color(0xFFDBD6D1).copy(0.6f) }
+    val specifiedBackgroundColor = backgroundColor.takeOrElse { MaterialTheme.colorScheme.surfaceContainerHighest }
     Modifier.placeholder(
         color = specifiedBackgroundColor,
         visible = isLoading,

@@ -119,6 +119,7 @@ import com.ojhdtapp.parabox.ui.setting.SettingPageWrapperUi
 import com.ojhdtapp.parabox.ui.theme.AppTheme
 import com.ojhdtapp.parabox.ui.theme.FontSize
 import com.ojhdtapp.parabox.ui.theme.LocalFontSize
+import com.ojhdtapp.parabox.ui.theme.isDarkTheme
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxCloudService
 import dagger.hilt.android.AndroidEntryPoint
 import de.raphaelebner.roomdatabasebackup.core.RoomBackup
@@ -193,7 +194,16 @@ class MainActivity : AppCompatActivity() {
         window.decorView.setViewTreeNavigationEventDispatcherOwner(this)
 
         setContent {
-            val darkTheme = isSystemInDarkTheme()
+            val mainSharedViewModel = hiltViewModel<MainSharedViewModel>()
+            val messagePageViewModel = hiltViewModel<MessagePageViewModel>()
+            val filePageViewModel = hiltViewModel<FilePageViewModel>()
+            val contactPageViewModel = hiltViewModel<ContactPageViewModel>()
+            val settingPageViewModel = hiltViewModel<SettingPageViewModel>()
+
+            val mainSharedState by mainSharedViewModel.uiState.collectAsState()
+            val messageState by messagePageViewModel.uiState.collectAsState()
+
+            val darkTheme = mainSharedState.datastore.darkMode.isDarkTheme()
             DisposableEffect(darkTheme) {
                 enableTransparentNavigationBar(
                     statusBarStyle = SystemBarStyle.auto(
@@ -215,34 +225,8 @@ class MainActivity : AppCompatActivity() {
                     navigationBarHeight = systemBarsPadding.calculateBottomPadding(),
                 )
             }
-            val mainSharedViewModel = hiltViewModel<MainSharedViewModel>()
-            val messagePageViewModel = hiltViewModel<MessagePageViewModel>()
-            val filePageViewModel = hiltViewModel<FilePageViewModel>()
-            val contactPageViewModel = hiltViewModel<ContactPageViewModel>()
-            val settingPageViewModel = hiltViewModel<SettingPageViewModel>()
 
-            val mainSharedState by mainSharedViewModel.uiState.collectAsState()
-            val messageState by messagePageViewModel.uiState.collectAsState()
-
-            LaunchedEffect(mainSharedState.datastore.darkMode) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    val manager = getSystemService(Context.UI_MODE_SERVICE) as UiModeManager
-                    when (mainSharedState.datastore.darkMode) {
-                        DataStoreKeys.DarkMode.YES -> manager.nightMode = UiModeManager.MODE_NIGHT_YES
-                        DataStoreKeys.DarkMode.NO -> manager.nightMode = UiModeManager.MODE_NIGHT_NO
-                        DataStoreKeys.DarkMode.FOLLOW_SYSTEM -> manager.nightMode = UiModeManager.MODE_NIGHT_AUTO
-                    }
-                } else {
-                    when (mainSharedState.datastore.darkMode) {
-                        DataStoreKeys.DarkMode.YES -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-                        DataStoreKeys.DarkMode.NO -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-                        DataStoreKeys.DarkMode.FOLLOW_SYSTEM -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
-                    }
-                    delegate.applyDayNight()
-                }
-            }
-
-            AppTheme {
+            AppTheme(useDarkTheme = darkTheme) {
                 CompositionLocalProvider(
                     values = arrayOf(
                         LocalNavigationEventDispatcherOwner provides this,

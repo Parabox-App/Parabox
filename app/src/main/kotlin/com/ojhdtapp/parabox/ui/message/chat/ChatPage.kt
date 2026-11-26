@@ -51,7 +51,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
-import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -420,7 +419,7 @@ fun NormalChatPage(
         transientBackAction?.invoke()
     }
 
-    val composerBackground = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+    val composerBackground = MaterialTheme.colorScheme.surfaceContainer
     Box(
         modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainerLow),
     ) {

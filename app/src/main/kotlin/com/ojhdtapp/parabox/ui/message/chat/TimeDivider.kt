@@ -27,7 +27,7 @@ fun TimeDivider(modifier: Modifier = Modifier, timestamp: Long) {
                 modifier = Modifier
                     .weight(1f)
                     .padding(end = 16.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant
+                color = MaterialTheme.colorScheme.outlineVariant
             )
             Text(
                 text = timestamp.toDescriptiveTime(context),
@@ -38,7 +38,7 @@ fun TimeDivider(modifier: Modifier = Modifier, timestamp: Long) {
                 modifier = Modifier
                     .weight(1f)
                     .padding(start = 16.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant
+                color = MaterialTheme.colorScheme.outlineVariant
             )
         }
     }

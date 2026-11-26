@@ -1,7 +1,10 @@
 package com.ojhdtapp.parabox.ui.theme
 
+import android.app.UiModeManager
+import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -10,6 +13,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
@@ -421,22 +425,56 @@ private val WaterDarkThemeColors = darkColorScheme(
     surfaceContainerLowest = water_theme_dark_surface_container_lowest
 )
 
+val LocalDarkTheme = compositionLocalOf { false }
+
+@Composable
+fun DataStoreKeys.DarkMode.isDarkTheme(): Boolean {
+    val systemDark = isSystemInDarkTheme()
+    return when (this) {
+        DataStoreKeys.DarkMode.YES -> true
+        DataStoreKeys.DarkMode.NO -> false
+        DataStoreKeys.DarkMode.FOLLOW_SYSTEM -> systemDark
+    }
+}
+
+fun applyAppNightMode(context: Context, darkMode: DataStoreKeys.DarkMode) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        val manager = context.getSystemService(Context.UI_MODE_SERVICE) as? UiModeManager
+        manager?.setApplicationNightMode(
+            when (darkMode) {
+                DataStoreKeys.DarkMode.YES -> UiModeManager.MODE_NIGHT_YES
+                DataStoreKeys.DarkMode.NO -> UiModeManager.MODE_NIGHT_NO
+                DataStoreKeys.DarkMode.FOLLOW_SYSTEM -> UiModeManager.MODE_NIGHT_AUTO
+            }
+        )
+    } else {
+        AppCompatDelegate.setDefaultNightMode(
+            when (darkMode) {
+                DataStoreKeys.DarkMode.YES -> AppCompatDelegate.MODE_NIGHT_YES
+                DataStoreKeys.DarkMode.NO -> AppCompatDelegate.MODE_NIGHT_NO
+                DataStoreKeys.DarkMode.FOLLOW_SYSTEM -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+            }
+        )
+    }
+}
+
 @Composable
 fun AppTheme(
-    useDarkTheme: Boolean = isSystemInDarkTheme(),
+    useDarkTheme: Boolean? = null,
     content: @Composable() () -> Unit
 ) {
     val context = LocalContext.current
     val mainSharedViewModel = hiltViewModel<MainSharedViewModel>()
     val mainSharedState by mainSharedViewModel.uiState.collectAsState()
+    val resolvedDarkTheme = useDarkTheme ?: mainSharedState.datastore.darkMode.isDarkTheme()
     val colors = when {
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
                 && mainSharedState.datastore.enableDynamicColor
-                && !useDarkTheme -> dynamicLightColorScheme(LocalContext.current)
+                && !resolvedDarkTheme -> dynamicLightColorScheme(context)
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
                 && mainSharedState.datastore.enableDynamicColor
-                && useDarkTheme -> dynamicDarkColorScheme(LocalContext.current)
-        useDarkTheme -> when (mainSharedState.datastore.theme) {
+                && resolvedDarkTheme -> dynamicDarkColorScheme(context)
+        resolvedDarkTheme -> when (mainSharedState.datastore.theme) {
             Theme.WILLOW -> WillowDarkThemeColors
             Theme.PURPLE -> PurpleDarkThemeColors
             Theme.SAKURA -> SakuraDarkThemeColors
@@ -452,9 +490,11 @@ fun AppTheme(
             Theme.WATER -> WaterLightThemeColors
         }
     }
-    androidx.compose.material3.MaterialTheme(
-        colorScheme = colors,
-        typography = AppTypography,
-        content = content
-    )
+    CompositionLocalProvider(LocalDarkTheme provides resolvedDarkTheme) {
+        androidx.compose.material3.MaterialTheme(
+            colorScheme = colors,
+            typography = AppTypography,
+            content = content
+        )
+    }
 }

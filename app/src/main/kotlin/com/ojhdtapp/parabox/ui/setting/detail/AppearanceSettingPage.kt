@@ -63,6 +63,7 @@ import com.ojhdtapp.parabox.ui.common.LayoutType
 import com.ojhdtapp.parabox.ui.setting.SettingPageEvent
 import com.ojhdtapp.parabox.ui.setting.SettingPageState
 import com.ojhdtapp.parabox.ui.theme.Theme
+import com.ojhdtapp.parabox.ui.theme.applyAppNightMode
 import kotlinx.coroutines.launch
 import me.saket.cascade.CascadeDropdownMenu
 
@@ -83,7 +84,7 @@ fun AppearanceSettingPage(
             modifier = Modifier
                 .fillMaxSize()
                 .systemBarsPadding(),
-            color = MaterialTheme.colorScheme.background,
+            color = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(24.dp)
         ) {
             Column(
@@ -247,6 +248,7 @@ private fun Content(
         }
         item {
             Box {
+                val context = LocalContext.current
                 var isMenuVisible by remember {
                     mutableStateOf(false)
                 }
@@ -271,6 +273,7 @@ private fun Content(
                                         it.ordinal
                                     )
                                 )
+                                applyAppNightMode(context, it)
                                 isMenuVisible = false
                             }
                         )
@@ -403,6 +406,123 @@ private fun Content(
                 ) {
                     isMenuVisible = true
                 }
+            }
+        }
+        item {
+            SettingHeader(text = "消息页")
+        }
+        item {
+            SettingItem(
+                title = "滚动名称",
+                subTitle = "在会话名称超出屏幕宽度时滚动展示",
+                selected = false,
+                layoutType = layoutType,
+                trailingIcon = {
+                    Switch(
+                        thumbContent = {
+                            if (mainSharedState.datastore.enableMarqueeEffectOnChatName) {
+                                Icon(
+                                    modifier = Modifier.size(SwitchDefaults.IconSize),
+                                    imageVector = Icons.Outlined.Check,
+                                    contentDescription = "check"
+                                )
+                            }
+                        },
+                        checked = mainSharedState.datastore.enableMarqueeEffectOnChatName,
+                        onCheckedChange = {
+                            onMainSharedEvent(
+                                MainSharedEvent.UpdateSettingSwitch(
+                                    DataStoreKeys.SETTINGS_ENABLE_MARQUEE_EFFECT_ON_CHAT_NAME,
+                                    it
+                                )
+                            )
+                        }
+                    )
+                }
+            ) {
+                onMainSharedEvent(
+                    MainSharedEvent.UpdateSettingSwitch(
+                        DataStoreKeys.SETTINGS_ENABLE_MARQUEE_EFFECT_ON_CHAT_NAME,
+                        !mainSharedState.datastore.enableMarqueeEffectOnChatName
+                    )
+                )
+            }
+        }
+        item {
+            SettingHeader(text = "聊天页")
+        }
+        item {
+            SettingItem(
+                title = "展示头像",
+                subTitle = "在顶栏展示当前会话头像",
+                selected = false,
+                layoutType = layoutType,
+                trailingIcon = {
+                    Switch(
+                        thumbContent = {
+                            if (mainSharedState.datastore.displayAvatarOnTopAppBar) {
+                                Icon(
+                                    modifier = Modifier.size(SwitchDefaults.IconSize),
+                                    imageVector = Icons.Outlined.Check,
+                                    contentDescription = "check"
+                                )
+                            }
+                        },
+                        checked = mainSharedState.datastore.displayAvatarOnTopAppBar,
+                        onCheckedChange = {
+                            onMainSharedEvent(
+                                MainSharedEvent.UpdateSettingSwitch(
+                                    DataStoreKeys.SETTINGS_DISPLAY_AVATAR_ON_TOP_APPBAR,
+                                    it
+                                )
+                            )
+                        }
+                    )
+                }
+            ) {
+                onMainSharedEvent(
+                    MainSharedEvent.UpdateSettingSwitch(
+                        DataStoreKeys.SETTINGS_DISPLAY_AVATAR_ON_TOP_APPBAR,
+                        !mainSharedState.datastore.displayAvatarOnTopAppBar
+                    )
+                )
+            }
+        }
+        item {
+            SettingItem(
+                title = "展示消息接收时间",
+                subTitle = "在每条消息上展示接收时间",
+                selected = false,
+                layoutType = layoutType,
+                trailingIcon = {
+                    Switch(
+                        thumbContent = {
+                            if (mainSharedState.datastore.displayTimeOnEachMsg) {
+                                Icon(
+                                    modifier = Modifier.size(SwitchDefaults.IconSize),
+                                    imageVector = Icons.Outlined.Check,
+                                    contentDescription = "check"
+                                )
+                            }
+                        },
+                        checked = mainSharedState.datastore.displayTimeOnEachMsg,
+                        onCheckedChange = {
+                            onMainSharedEvent(
+                                MainSharedEvent.UpdateSettingSwitch(
+                                    DataStoreKeys.SETTINGS_DISPLAY_TIME_ON_EACH_MSG,
+                                    it
+                                )
+                            )
+                        }
+                    )
+                }
+            ) {
+                onMainSharedEvent(
+                    MainSharedEvent.UpdateSettingSwitch(
+                        DataStoreKeys.SETTINGS_DISPLAY_TIME_ON_EACH_MSG,
+                        !mainSharedState.datastore.displayTimeOnEachMsg
+                    )
+                )
             }
         }
     }

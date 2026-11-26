@@ -37,8 +37,8 @@ fun SliderPreference(
     enabled: Boolean,
     onValueChange: (Float) -> Unit,
 ) {
-    val titleTextColor by animateColorAsState(targetValue = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline)
-    val subTitleTextColor by animateColorAsState(targetValue = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.outline)
+    val titleTextColor by animateColorAsState(targetValue = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
+    val subTitleTextColor by animateColorAsState(targetValue = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
     Surface {
         Column(
             modifier = modifier.padding(24.dp, 16.dp)
@@ -81,8 +81,8 @@ fun SwitchPreference(
     enabled: Boolean = true,
     horizontalPadding: Dp = 24.dp
 ) {
-    val titleTextColor by animateColorAsState(targetValue = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline)
-    val subTitleTextColor by animateColorAsState(targetValue = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.outline)
+    val titleTextColor by animateColorAsState(targetValue = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
+    val subTitleTextColor by animateColorAsState(targetValue = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
     Surface {
         Row(
             modifier = modifier
@@ -213,7 +213,7 @@ fun NormalPreference(
         targetValue = when {
             warning -> MaterialTheme.colorScheme.error
             selected -> MaterialTheme.colorScheme.onSecondaryContainer
-            !enabled -> MaterialTheme.colorScheme.outline
+            !enabled -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
             else -> MaterialTheme.colorScheme.onSurface
         }
     )
@@ -221,7 +221,7 @@ fun NormalPreference(
         targetValue = when {
             warning -> MaterialTheme.colorScheme.error
             selected -> MaterialTheme.colorScheme.onSecondaryContainer
-            !enabled -> MaterialTheme.colorScheme.outline
+            !enabled -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
             else -> MaterialTheme.colorScheme.onSurfaceVariant
         }
     )
@@ -250,7 +250,7 @@ fun NormalPreference(
                         modifier = Modifier
                             .height(32.dp)
                             .width(1.dp),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                        color = MaterialTheme.colorScheme.outlineVariant
                     )
                 }
             }
@@ -314,7 +314,7 @@ fun NormalPreference(
                         modifier = Modifier
                             .height(32.dp)
                             .width(1.dp),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                        color = MaterialTheme.colorScheme.outlineVariant
                     )
                     Spacer(modifier = Modifier.width(15.dp))
                     trailingIcon()
@@ -337,9 +337,9 @@ fun <T> SimpleMenuPreference(
         mutableStateOf(false)
     }
     val titleColor =
-        if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline
+        if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
     val subTitleColor =
-        if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.outline
+        if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
     Row(
         modifier = modifier
             .clickable {
@@ -388,7 +388,7 @@ fun MainSwitch(
     onCheckedChange: (value: Boolean) -> Unit,
     enabled: Boolean
 ) {
-    val switchColor by animateColorAsState(targetValue = if (checked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface)
+    val switchColor by animateColorAsState(targetValue = if (checked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh)
     Surface(
         modifier = modifier.padding(horizontal = 16.dp),
         color = switchColor,
@@ -396,7 +396,7 @@ fun MainSwitch(
         onClick = {
             if (enabled) onCheckedChange(!checked)
         },
-        tonalElevation = 3.dp
+        tonalElevation = 0.dp
     ) {
         Row(
             modifier = Modifier

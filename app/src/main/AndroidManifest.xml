@@ -77,6 +77,7 @@
 
         <activity
             android:name=".MainActivity"
+            android:configChanges="uiMode"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.Parabox"
@@ -93,6 +94,7 @@
         </activity>
         <activity
             android:name=".BubbleActivity"
+            android:configChanges="uiMode"
             android:label="@string/app_name"
             android:theme="@style/Theme.Parabox"
             android:allowEmbedded="true"

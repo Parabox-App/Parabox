@@ -46,7 +46,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
-import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -278,7 +277,7 @@ fun RecentSearchContent(
                                 .fillMaxWidth()
                                 .placeholder(
                                     visible = state.chat.loadState == LoadState.LOADING,
-                                    color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                                    color = MaterialTheme.colorScheme.surfaceContainerLow,
                                     shape = MaterialTheme.shapes.extraLarge,
                                     highlight = PlaceholderHighlight.fade(),
                                 ),
@@ -339,7 +338,7 @@ fun RecentSearchContent(
                             .padding(start = 16.dp)
                             .placeholder(
                                 isLoading = state.contact.loadState == LoadState.LOADING,
-                                backgroundColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                                backgroundColor = MaterialTheme.colorScheme.surfaceContainerLow,
                                 shape = MaterialTheme.shapes.large,
                             ),
                         avatarModel = it.avatar.getModel(),
@@ -553,7 +552,7 @@ fun TypingSearchContent(
                                 .fillMaxWidth()
                                 .placeholder(
                                     visible = state.chat.loadState == LoadState.LOADING,
-                                    color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                                    color = MaterialTheme.colorScheme.surfaceContainerLow,
                                     shape = MaterialTheme.shapes.extraLarge,
                                     highlight = PlaceholderHighlight.fade(),
                                 ),
@@ -629,7 +628,7 @@ fun TypingSearchContent(
                             .padding(start = 16.dp)
                             .placeholder(
                                 isLoading = state.contact.loadState == LoadState.LOADING,
-                                backgroundColor = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                                backgroundColor = MaterialTheme.colorScheme.surfaceContainerLow,
                                 shape = MaterialTheme.shapes.large,
                             ),
                         avatarModel = it.avatar.getModel(),
@@ -1277,7 +1276,7 @@ fun SearchResultItem(
         modifier = modifier,
         onClick = onClick,
         tonalElevation = 0.dp,
-        color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
+        color = MaterialTheme.colorScheme.surfaceContainerLow
     ) {
         Row(
             modifier = Modifier
@@ -1290,7 +1289,7 @@ fun SearchResultItem(
                     .clip(CircleShape)
                     .size(32.dp)
                     .background(
-                        if (leadingIcon != null) MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+                        if (leadingIcon != null) MaterialTheme.colorScheme.surfaceContainerHigh
                         else MaterialTheme.colorScheme.primaryContainer
                     ),
                 contentAlignment = Alignment.Center
@@ -1337,7 +1336,7 @@ fun EmptySearchResultItem(
     Surface(
         modifier = modifier,
         tonalElevation = 0.dp,
-        color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
+        color = MaterialTheme.colorScheme.surfaceContainerLow
     ) {
         Row(
             modifier = Modifier

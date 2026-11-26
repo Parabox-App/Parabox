@@ -79,7 +79,7 @@ fun NotificationSettingPage(
             modifier = Modifier
                 .fillMaxSize()
                 .systemBarsPadding(),
-            color = MaterialTheme.colorScheme.background,
+            color = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(24.dp)
         ) {
             Column(
@@ -204,7 +204,7 @@ private fun Content(
                     Icon(
                         imageVector = Icons.Outlined.AdminPanelSettings,
                         contentDescription = "channel",
-                        tint = if (notificationPermissionState.status.isGranted) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface
+                        tint = if (notificationPermissionState.status.isGranted) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f) else MaterialTheme.colorScheme.onSurface
                     )
                 }) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
