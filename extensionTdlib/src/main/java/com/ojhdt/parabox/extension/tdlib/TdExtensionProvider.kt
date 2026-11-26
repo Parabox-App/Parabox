@@ -62,6 +62,9 @@ class TdExtensionProvider(
         if (!accumulatedExtra.has(KEY_MAX_DOWNLOAD_MB)) {
             accumulatedExtra.put(KEY_MAX_DOWNLOAD_MB, DEFAULT_MAX_DOWNLOAD_MB.toString())
         }
+        if (!accumulatedExtra.has(KEY_SUPERGROUP_PERIODIC_SYNC)) {
+            accumulatedExtra.put(KEY_SUPERGROUP_PERIODIC_SYNC, true)
+        }
 
         val currentSteps = buildSteps(accumulatedExtra, wizardPasswordHints[wizardSessionId])
         if (currentStepIndex < 0) {
@@ -569,6 +572,13 @@ class TdExtensionProvider(
                 type = ParaboxInitAction.KeyboardType.NUMBER,
                 defaultValue = DEFAULT_MAX_DOWNLOAD_MB.toString(),
             ),
+            ParaboxConfigItem.Category("cat_sync", "消息同步", "调整超级群与频道的增量同步策略"),
+            ParaboxConfigItem.SwitchConfigItem(
+                key = KEY_SUPERGROUP_PERIODIC_SYNC,
+                title = "轮转超级群/频道增量同步",
+                description = "定期低频探测未打开的超级群与频道以减少消息滞后",
+                defaultValue = true,
+            ),
             ParaboxConfigItem.Category("cat_proxy", "网络代理", "修改代理后保存将自动重启当前账号连接"),
             ParaboxConfigItem.SwitchConfigItem(
                 key = TdProxyConfig.KEY_ENABLED,
@@ -722,6 +732,7 @@ class TdExtensionProvider(
         const val KEY_TWO_FA_PASSWORD = "two_fa_password"
         const val KEY_AUTO_DOWNLOAD_MEDIA = "auto_download_media"
         const val KEY_MAX_DOWNLOAD_MB = "max_download_mb"
+        const val KEY_SUPERGROUP_PERIODIC_SYNC = "supergroup_periodic_sync"
         const val DEFAULT_MAX_DOWNLOAD_MB = 20
 
         const val ACTION_CLEAR_CACHE = "clear_cache"

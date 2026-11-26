@@ -23,6 +23,21 @@ class TdClientCoordinator(
     private val activeSessionClients = ConcurrentHashMap<String, TdClientApi>()
     private val activeWizardClients = ConcurrentHashMap<String, Pair<String, TdClientApi>>()
 
+    @Volatile
+    private var lastKnownNetworkType: TdApi.NetworkType? = null
+
+    fun currentNetworkType(): TdApi.NetworkType? = lastKnownNetworkType
+
+    suspend fun broadcastNetworkType(networkType: TdApi.NetworkType) {
+        lastKnownNetworkType = networkType
+        activeSessionClients.values.forEach { client ->
+            runCatching { client.setNetworkType(networkType) }
+        }
+        activeWizardClients.values.forEach { (_, client) ->
+            runCatching { client.setNetworkType(networkType) }
+        }
+    }
+
     private fun lockFor(accountId: String): Mutex =
         accountLocks.computeIfAbsent(accountId) { Mutex() }
 

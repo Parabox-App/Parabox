@@ -47,7 +47,7 @@ class TdSessionStreamResourceTest {
                 is TdApi.DownloadFile -> {
                     downloadedPriorities += function.priority
                 }
-                is TdApi.GetMe -> return TdApi.User().apply {
+                is TdApi.GetMe -> return (onSendFunction(function) as? TdApi.User) ?: TdApi.User().apply {
                     id = 100L
                     firstName = "Me"
                 }
@@ -185,6 +185,35 @@ class TdSessionStreamResourceTest {
             assertArrayEquals(webpBytes, remoteChunks[0].data.toByteArray())
 
             assertEquals(listOf(601, 701), client.deletedFileIds)
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
+    fun getUserBasicInfoWithSelfSentinelReturnsLoggedInProfileAndLazyAvatar() = runBlocking {
+        val client = FakeStreamTdClient("acct-1") { fn ->
+            when (fn) {
+                is TdApi.GetMe -> TdApi.User().apply {
+                    id = 100L
+                    firstName = "Ojhdt"
+                    lastName = "TG"
+                    profilePhoto = TdApi.ProfilePhoto().apply {
+                        small = TdApi.File().apply { id = 888 }
+                    }
+                }
+                else -> TdApi.Ok()
+            }
+        }
+        val (session, scope) = createSession(client)
+        try {
+            assertTrue(session.onInitialize())
+            val selfInfo = session.onGetUserBasicInfo(ParaboxSession.SELF_USER_ID)
+            assertEquals("Ojhdt TG", selfInfo?.name)
+            assertEquals(
+                ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo("parabox-ext://conn-7/avatar/user/100"),
+                selfInfo?.avatar,
+            )
         } finally {
             scope.cancel()
         }

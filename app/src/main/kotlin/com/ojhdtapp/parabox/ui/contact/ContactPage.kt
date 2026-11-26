@@ -74,6 +74,7 @@ import com.ojhdtapp.parabox.ui.MainSharedState
 import com.ojhdtapp.parabox.ui.common.CommonAvatar
 import com.ojhdtapp.parabox.ui.common.CommonAvatarModel
 import com.ojhdtapp.parabox.ui.common.LayoutType
+import com.ojhdtapp.parabox.ui.common.SearchBarAccountAvatarButton
 import com.ojhdtapp.parabox.ui.common.SearchContent
 import com.ojhdtapp.parabox.ui.common.clearFocusOnKeyboardDismiss
 import com.ojhdtapp.parabox.ui.message.chat.PlainContactItem
@@ -204,21 +205,11 @@ fun ContactPage(
                                             }
                                         }
                                         Spacer(modifier = Modifier.width(8.dp))
-                                        IconButton(
+                                        SearchBarAccountAvatarButton(
+                                            mainSharedState = mainSharedState,
+                                            avatarSize = 30.dp,
                                             onClick = { onMainSharedEvent(MainSharedEvent.SearchAvatarClicked) },
-                                        ) {
-                                            CommonAvatar(
-                                                modifier = Modifier
-                                                    .clip(CircleShape)
-                                                    .size(30.dp),
-                                                model = CommonAvatarModel(
-                                                    model = mainSharedState.datastore.localAvatarUri,
-                                                    name = mainSharedState.datastore.localName
-                                                ),
-                                                backgroundColor = MaterialTheme.colorScheme.primary,
-                                                textColor = MaterialTheme.colorScheme.onPrimary
-                                            )
-                                        }
+                                        )
                                     }
                                 }
                             },
@@ -324,21 +315,11 @@ fun ContactPage(
                                             }
                                         }
                                         Spacer(modifier = Modifier.width(8.dp))
-                                        IconButton(
+                                        SearchBarAccountAvatarButton(
+                                            mainSharedState = mainSharedState,
+                                            avatarSize = 30.dp,
                                             onClick = { onMainSharedEvent(MainSharedEvent.SearchAvatarClicked) },
-                                        ) {
-                                            CommonAvatar(
-                                                modifier = Modifier
-                                                    .clip(CircleShape)
-                                                    .size(30.dp),
-                                                model = CommonAvatarModel(
-                                                    model = mainSharedState.datastore.localAvatarUri,
-                                                    name = mainSharedState.datastore.localName
-                                                ),
-                                                backgroundColor = MaterialTheme.colorScheme.primary,
-                                                textColor = MaterialTheme.colorScheme.onPrimary
-                                            )
-                                        }
+                                        )
                                     }
                                 }
                             },

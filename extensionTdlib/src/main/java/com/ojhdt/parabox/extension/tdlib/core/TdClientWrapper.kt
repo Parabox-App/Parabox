@@ -8,13 +8,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
@@ -32,12 +32,15 @@ class TdErrorException(
 
 interface TdClientApi {
     val accountId: String
-    val updates: SharedFlow<TdApi.Object>
+    val updates: Flow<TdApi.Object>
     val authorizationState: StateFlow<TdApi.AuthorizationState?>
     val connectionState: StateFlow<TdApi.ConnectionState?>
 
     suspend fun sendRaw(function: TdApi.Function<*>): TdApi.Object
     suspend fun applyProxy(proxyConfig: TdProxyConfig)
+    suspend fun setNetworkType(networkType: TdApi.NetworkType) {
+        runCatching { sendRaw(TdApi.SetNetworkType(networkType)) }
+    }
     suspend fun closeAndWait(timeoutMs: Long = 5_000L)
 }
 
@@ -96,8 +99,10 @@ class RealTdClientWrapper(
 ) : TdClientApi, Client.ResultHandler, Client.ExceptionHandler {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val _updates = MutableSharedFlow<TdApi.Object>(extraBufferCapacity = 256)
-    override val updates: SharedFlow<TdApi.Object> = _updates.asSharedFlow()
+    // Unbounded channel guarantees zero update loss before TdSession subscribes (startup get_difference)
+    // and during large update bursts, without ever blocking TDLib's native callback thread.
+    private val updateChannel = Channel<TdApi.Object>(Channel.UNLIMITED)
+    override val updates: Flow<TdApi.Object> = updateChannel.receiveAsFlow()
 
     private val _authorizationState = MutableStateFlow<TdApi.AuthorizationState?>(null)
     override val authorizationState: StateFlow<TdApi.AuthorizationState?> = _authorizationState.asStateFlow()
@@ -106,6 +111,7 @@ class RealTdClientWrapper(
     override val connectionState: StateFlow<TdApi.ConnectionState?> = _connectionState.asStateFlow()
 
     private val closed = AtomicBoolean(false)
+    private val tdlibParamsSent = AtomicBoolean(false)
     private val proxyApplied = AtomicBoolean(false)
 
     private val client: Client = Client.create(this, this, this)
@@ -168,6 +174,16 @@ class RealTdClientWrapper(
         }
     }
 
+    override suspend fun setNetworkType(networkType: TdApi.NetworkType) {
+        if (closed.get()) return
+        Log.i(TAG, "[$accountId] Applying TdApi.SetNetworkType(${networkType.javaClass.simpleName})")
+        runCatching {
+            send<TdApi.Ok>(TdApi.SetNetworkType(networkType))
+        }.onFailure { err ->
+            Log.w(TAG, "[$accountId] Failed to set network type ${networkType.javaClass.simpleName}: ${err.message}")
+        }
+    }
+
     override suspend fun closeAndWait(timeoutMs: Long) {
         if (!closed.compareAndSet(false, true)) return
         if (_authorizationState.value !is TdApi.AuthorizationStateClosed) {
@@ -178,6 +194,7 @@ class RealTdClientWrapper(
                 _authorizationState.first { it is TdApi.AuthorizationStateClosed }
             }
         }
+        updateChannel.close()
         scope.cancel()
     }
 
@@ -197,7 +214,7 @@ class RealTdClientWrapper(
                 _connectionState.value = `object`.state
             }
         }
-        _updates.tryEmit(`object`)
+        updateChannel.trySend(`object`)
     }
 
     override fun onException(e: Throwable?) {
@@ -205,7 +222,7 @@ class RealTdClientWrapper(
     }
 
     private fun handleAuthorizationBootstrap(state: TdApi.AuthorizationState) {
-        if (state is TdApi.AuthorizationStateWaitTdlibParameters) {
+        if (state is TdApi.AuthorizationStateWaitTdlibParameters && tdlibParamsSent.compareAndSet(false, true)) {
             val params = TdApi.SetTdlibParameters(
                 false,
                 directories.dbDir.absolutePath,

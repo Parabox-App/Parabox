@@ -4,6 +4,7 @@ import android.net.Uri
 import com.ojhdtapp.parabox.domain.service.extension.transport.ExtensionEndpoint
 import com.ojhdtapp.parabox.domain.service.extension.transport.ExtensionTransport
 import com.ojhdtapp.parabox.protocol.v2.BasicInfoRequest
+import com.ojhdtapp.parabox.protocol.v2.ChatFocusFrame
 import com.ojhdtapp.parabox.protocol.v2.ExtensionSessionFrame
 import com.ojhdtapp.parabox.protocol.v2.ForwardNodeRequest
 import com.ojhdtapp.parabox.protocol.v2.HeartbeatFrame
@@ -18,6 +19,7 @@ import com.ojhdtapp.parabox.protocol.v2.ResourceStreamRequest
 import com.ojhdtapp.parabox.protocol.v2.SendMessageRequest
 import com.ojhdtapp.parabox.protocol.v2.SessionInitFrame
 import com.ojhdtapp.parabox.protocol.v2.SessionScopedRequest
+import com.ojhdtapp.parabox.protocol.v2.SyncChatLatestRequest
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxBasicInfo
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
 import com.ojhdtapp.paraboxdevelopmentkit.model.ReceiveMessage
@@ -59,7 +61,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.min
 
 interface SessionInboundHandler {
-    suspend fun onReceiveMessage(message: ReceiveMessage): ParaboxResult
+    suspend fun onReceiveMessage(message: ReceiveMessage, isBackfill: Boolean = false): ParaboxResult
     suspend fun onRecallMessage(messageUuid: String): ParaboxResult
 }
 
@@ -90,6 +92,9 @@ class ExtensionSessionClient(
 
     @Volatile
     private var activeStreamJob: Job? = null
+
+    @Volatile
+    private var activeFocusedChatUid: String? = null
 
     private val reconnectSignal = Channel<Unit>(Channel.CONFLATED)
 
@@ -159,7 +164,10 @@ class ExtensionSessionClient(
                                         ExtensionSessionFrame.PayloadCase.RECEIVE_MESSAGE -> {
                                             val event = queuedFrame.receiveMessage
                                             val result = try {
-                                                inboundHandler.onReceiveMessage(event.message.toDomain())
+                                                inboundHandler.onReceiveMessage(
+                                                    message = event.message.toDomain(),
+                                                    isBackfill = event.isBackfill,
+                                                )
                                             } catch (e: Exception) {
                                                 ParaboxResult(
                                                     ParaboxResult.ERROR_UNKNOWN,
@@ -212,6 +220,18 @@ class ExtensionSessionClient(
                                             val nextStatus = frame.statusChanged.toDomain()
                                             if (nextStatus is ParaboxConnectionStatus.Active) {
                                                 attempt = 0
+                                                activeFocusedChatUid?.let { focusedUid ->
+                                                    outbound.trySend(
+                                                        HostSessionFrame.newBuilder()
+                                                            .setChatFocus(
+                                                                ChatFocusFrame.newBuilder()
+                                                                    .setChatUid(focusedUid)
+                                                                    .setOpened(true)
+                                                                    .build()
+                                                            )
+                                                            .build()
+                                                    )
+                                                }
                                             }
                                             _status.value = nextStatus
                                         }
@@ -301,6 +321,25 @@ class ExtensionSessionClient(
         )
     }
 
+    fun notifyChatFocus(chatUid: String, opened: Boolean) {
+        if (chatUid.isBlank()) return
+        if (opened) {
+            activeFocusedChatUid = chatUid
+        } else if (activeFocusedChatUid == chatUid) {
+            activeFocusedChatUid = null
+        }
+        activeOutboundChannel?.trySend(
+            HostSessionFrame.newBuilder()
+                .setChatFocus(
+                    ChatFocusFrame.newBuilder()
+                        .setChatUid(chatUid)
+                        .setOpened(opened)
+                        .build()
+                )
+                .build()
+        )
+    }
+
     fun updateLocalStatus(newStatus: ParaboxConnectionStatus) {
         _status.value = newStatus
     }
@@ -366,6 +405,7 @@ class ExtensionSessionClient(
     companion object {
         private const val SEND_MESSAGE_TIMEOUT_SECONDS = 60L
         private const val STREAM_RESOURCE_TIMEOUT_SECONDS = 30L
+        private const val SYNC_CHAT_TIMEOUT_SECONDS = 20L
     }
 
     private fun grantUrisForElements(targetPackage: String, elements: List<ParaboxMessageElement>) {
@@ -429,6 +469,19 @@ class ExtensionSessionClient(
                 QueryHistoryRequest.newBuilder()
                     .setSessionId(sessionId)
                     .setMessageUuid(uuid)
+                    .build()
+            ).messagesList.map { it.toDomain() }
+        }.getOrDefault(emptyList())
+    }
+
+    suspend fun syncChatLatestMessages(chatUid: String, limit: Int = 30): List<ReceiveMessage> {
+        if (chatUid.isBlank()) return emptyList()
+        return runCatching {
+            unaryStub(timeoutSeconds = SYNC_CHAT_TIMEOUT_SECONDS).syncChatLatestMessages(
+                SyncChatLatestRequest.newBuilder()
+                    .setSessionId(sessionId)
+                    .setChatUid(chatUid)
+                    .setLimit(limit.coerceIn(1, 100))
                     .build()
             ).messagesList.map { it.toDomain() }
         }.getOrDefault(emptyList())

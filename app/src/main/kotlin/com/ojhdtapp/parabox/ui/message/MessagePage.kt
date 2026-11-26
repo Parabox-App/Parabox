@@ -1,5 +1,7 @@
 package com.ojhdtapp.parabox.ui.message
 
+import com.ojhdtapp.parabox.ui.common.SearchBarAccountAvatarButton
+
 import androidx.compose.animation.*
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
@@ -205,21 +207,11 @@ fun MessagePage(
                                     enter = fadeIn(),
                                     exit = fadeOut()
                                 ) {
-                                    IconButton(
+                                    SearchBarAccountAvatarButton(
+                                        mainSharedState = mainSharedState,
+                                        avatarSize = 36.dp,
                                         onClick = { mainSharedViewModel.sendEvent(MainSharedEvent.SearchAvatarClicked) },
-                                    ) {
-                                        CommonAvatar(
-                                            modifier = Modifier
-                                                .clip(CircleShape)
-                                                .size(36.dp),
-                                            model = CommonAvatarModel(
-                                                model = mainSharedState.datastore.localAvatarUri,
-                                                name = mainSharedState.datastore.localName,
-                                            ),
-                                            backgroundColor = MaterialTheme.colorScheme.primary,
-                                            textColor = MaterialTheme.colorScheme.onPrimary
-                                        )
-                                    }
+                                    )
                                 }
                             },
                             interactionSource = null,
@@ -289,21 +281,11 @@ fun MessagePage(
                                     enter = fadeIn(),
                                     exit = fadeOut()
                                 ) {
-                                    IconButton(
+                                    SearchBarAccountAvatarButton(
+                                        mainSharedState = mainSharedState,
+                                        avatarSize = 36.dp,
                                         onClick = { mainSharedViewModel.sendEvent(MainSharedEvent.SearchAvatarClicked) },
-                                    ) {
-                                        CommonAvatar(
-                                            modifier = Modifier
-                                                .clip(CircleShape)
-                                                .size(36.dp),
-                                            model = CommonAvatarModel(
-                                                model = mainSharedState.datastore.localAvatarUri,
-                                                name = mainSharedState.datastore.localName,
-                                            ),
-                                            backgroundColor = MaterialTheme.colorScheme.primary,
-                                            textColor = MaterialTheme.colorScheme.onPrimary
-                                        )
-                                    }
+                                    )
                                 }
                             },
                             interactionSource = null,

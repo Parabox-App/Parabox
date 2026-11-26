@@ -409,7 +409,7 @@ private fun Content(
             }
         }
         item {
-            SettingHeader(text = "消息页")
+            SettingHeader(text = "消息列表")
         }
         item {
             SettingItem(
@@ -449,7 +449,7 @@ private fun Content(
             }
         }
         item {
-            SettingHeader(text = "聊天页")
+            SettingHeader(text = "详情页")
         }
         item {
             SettingItem(

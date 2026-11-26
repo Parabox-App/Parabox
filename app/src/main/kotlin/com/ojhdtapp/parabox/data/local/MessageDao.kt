@@ -48,6 +48,20 @@ interface MessageDao {
     )
     suspend fun checkMessage(pkg: String, extensionId: Long, uid: String): Long?
 
+    @Query(
+        "SELECT uid FROM message_entity " +
+                "WHERE pkg = :pkg AND extensionId = :extensionId AND uid IN (:uids)"
+    )
+    suspend fun getExistingUids(pkg: String, extensionId: Long, uids: List<String>): List<String>
+
+    @Query(
+        "SELECT * FROM message_entity " +
+                "WHERE chatId = :chatId " +
+                "ORDER BY timestamp DESC, messageId DESC " +
+                "LIMIT 1"
+    )
+    suspend fun getLatestMessageByChatId(chatId: Long): MessageEntity?
+
     @Query("DELETE FROM message_entity WHERE messageId = :messageId")
     fun deleteMessageById(messageId: Long): Int
 

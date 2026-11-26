@@ -29,6 +29,7 @@ import com.ojhdtapp.parabox.protocol.v2.ResourceChunk
 import com.ojhdtapp.parabox.protocol.v2.ResourceStreamRequest
 import com.ojhdtapp.parabox.protocol.v2.SendMessageRequest
 import com.ojhdtapp.parabox.protocol.v2.SessionScopedRequest
+import com.ojhdtapp.parabox.protocol.v2.SyncChatLatestRequest
 import com.ojhdtapp.parabox.protocol.v2.ValidateConfigRequest
 import com.ojhdtapp.parabox.protocol.v2.ValidationResult
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
@@ -191,7 +192,7 @@ class ParaboxExtensionGrpcEngine(
                         }
                         val sessionScope = CoroutineScope(SupervisorJob() + ioDispatcher + exceptionHandler)
                         val emitter = object : ParaboxSessionEmitter {
-                            override suspend fun emitMessage(message: ReceiveMessage): ParaboxResult {
+                            override suspend fun emitMessage(message: ReceiveMessage, isBackfill: Boolean): ParaboxResult {
                                 val ackId = UUID.randomUUID().toString()
                                 val deferred = CompletableDeferred<ParaboxResult>()
                                 pendingAcks[ackId] = deferred
@@ -200,6 +201,7 @@ class ParaboxExtensionGrpcEngine(
                                         ReceiveMessageEventFrame.newBuilder()
                                             .setAckId(ackId)
                                             .setMessage(message.toProto())
+                                            .setIsBackfill(isBackfill)
                                             .build()
                                     )
                                     .build()
@@ -292,6 +294,16 @@ class ParaboxExtensionGrpcEngine(
                             ?.complete(frame.ack.result.toDomain())
                     }
 
+                    HostSessionFrame.PayloadCase.CHAT_FOCUS -> {
+                        val sid = boundSessionId ?: return@collect
+                        val focus = frame.chatFocus
+                        activeSessions[sid]?.let { holder ->
+                            holder.scope.launch {
+                                runCatching { holder.session.onChatFocusChanged(focus.chatUid, focus.opened) }
+                            }
+                        }
+                    }
+
                     HostSessionFrame.PayloadCase.PAYLOAD_NOT_SET, null -> Unit
                 }
             }
@@ -341,6 +353,17 @@ class ParaboxExtensionGrpcEngine(
     override suspend fun queryMessageHistory(request: QueryHistoryRequest): MessageListResponse {
         val holder = activeSessions[request.sessionId] ?: return MessageListResponse.getDefaultInstance()
         val messages = runCatching { holder.session.onQueryMessageHistory(request.messageUuid) }.getOrDefault(emptyList())
+        return MessageListResponse.newBuilder()
+            .addAllMessages(messages.map { it.toProto() })
+            .build()
+    }
+
+    override suspend fun syncChatLatestMessages(request: SyncChatLatestRequest): MessageListResponse {
+        val holder = activeSessions[request.sessionId] ?: return MessageListResponse.getDefaultInstance()
+        val limit = request.limit.takeIf { it > 0 } ?: 30
+        val messages = runCatching {
+            holder.session.onSyncChatLatestMessages(request.chatUid, limit)
+        }.getOrDefault(emptyList())
         return MessageListResponse.newBuilder()
             .addAllMessages(messages.map { it.toProto() })
             .build()

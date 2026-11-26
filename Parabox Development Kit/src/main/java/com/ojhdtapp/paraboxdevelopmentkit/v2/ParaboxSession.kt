@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.emptyFlow
 import org.json.JSONObject
 
 interface ParaboxSessionEmitter {
-    suspend fun emitMessage(message: ReceiveMessage): ParaboxResult
+    suspend fun emitMessage(message: ReceiveMessage, isBackfill: Boolean = false): ParaboxResult
     suspend fun emitRecall(messageUuid: String): ParaboxResult
     fun emitStatus(status: ParaboxConnectionStatus)
 }
@@ -50,12 +50,12 @@ abstract class ParaboxSession(
         emitter?.emitStatus(newStatus)
     }
 
-    suspend fun emitMessage(message: ReceiveMessage): ParaboxResult {
+    suspend fun emitMessage(message: ReceiveMessage, isBackfill: Boolean = false): ParaboxResult {
         val currentEmitter = emitter ?: return ParaboxResult(
             code = ParaboxResult.ERROR_UNINITIALIZED,
             message = ParaboxResult.ERROR_UNINITIALIZED_MSG,
         )
-        return currentEmitter.emitMessage(message)
+        return currentEmitter.emitMessage(message, isBackfill)
     }
 
     suspend fun emitRecall(messageUuid: String): ParaboxResult {
@@ -80,6 +80,10 @@ abstract class ParaboxSession(
 
     open suspend fun onQueryMessageHistory(uuid: String): List<ReceiveMessage> = emptyList()
 
+    open suspend fun onSyncChatLatestMessages(chatUid: String, limit: Int): List<ReceiveMessage> = emptyList()
+
+    open suspend fun onChatFocusChanged(chatUid: String, opened: Boolean) {}
+
     open suspend fun onGetGroupBasicInfo(groupId: String): ParaboxBasicInfo? = null
 
     open suspend fun onGetUserBasicInfo(userId: String): ParaboxBasicInfo? = null
@@ -91,4 +95,12 @@ abstract class ParaboxSession(
     open suspend fun onLifecycleEvent(event: LifecycleEventProto) {}
 
     open suspend fun onClose() {}
+
+    companion object {
+        /**
+         * Well-known userId sentinel passed to [onGetUserBasicInfo] to query the
+         * currently logged-in account's own display name and avatar.
+         */
+        const val SELF_USER_ID = "__parabox_self__"
+    }
 }

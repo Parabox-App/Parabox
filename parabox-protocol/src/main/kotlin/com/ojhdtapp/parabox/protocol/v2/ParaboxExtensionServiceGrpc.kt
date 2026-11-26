@@ -74,6 +74,9 @@ object ParaboxExtensionServiceGrpc {
     val queryMessageHistoryMethod: MethodDescriptor<QueryHistoryRequest, MessageListResponse> =
         unaryMethod("QueryMessageHistory", QueryHistoryRequest.getDefaultInstance(), MessageListResponse.getDefaultInstance())
 
+    val syncChatLatestMessagesMethod: MethodDescriptor<SyncChatLatestRequest, MessageListResponse> =
+        unaryMethod("SyncChatLatestMessages", SyncChatLatestRequest.getDefaultInstance(), MessageListResponse.getDefaultInstance())
+
     val getGroupBasicInfoMethod: MethodDescriptor<BasicInfoRequest, BasicInfoResponse> =
         unaryMethod("GetGroupBasicInfo", BasicInfoRequest.getDefaultInstance(), BasicInfoResponse.getDefaultInstance())
 
@@ -104,6 +107,7 @@ object ParaboxExtensionServiceGrpc {
         .addMethod(getContactsMethod)
         .addMethod(getChatsMethod)
         .addMethod(queryMessageHistoryMethod)
+        .addMethod(syncChatLatestMessagesMethod)
         .addMethod(getGroupBasicInfoMethod)
         .addMethod(getUserBasicInfoMethod)
         .addMethod(queryForwardNodeMethod)
@@ -201,6 +205,13 @@ object ParaboxExtensionServiceGrpcKt {
             channel, ParaboxExtensionServiceGrpc.queryMessageHistoryMethod, request, callOptions, headers
         )
 
+        suspend fun syncChatLatestMessages(
+            request: SyncChatLatestRequest,
+            headers: Metadata = Metadata(),
+        ): MessageListResponse = ClientCalls.unaryRpc(
+            channel, ParaboxExtensionServiceGrpc.syncChatLatestMessagesMethod, request, callOptions, headers
+        )
+
         suspend fun getGroupBasicInfo(
             request: BasicInfoRequest,
             headers: Metadata = Metadata(),
@@ -266,6 +277,9 @@ object ParaboxExtensionServiceGrpcKt {
 
         open suspend fun queryMessageHistory(request: QueryHistoryRequest): MessageListResponse =
             throw UnsupportedOperationException("Method QueryMessageHistory is unimplemented")
+
+        open suspend fun syncChatLatestMessages(request: SyncChatLatestRequest): MessageListResponse =
+            throw UnsupportedOperationException("Method SyncChatLatestMessages is unimplemented")
 
         open suspend fun getGroupBasicInfo(request: BasicInfoRequest): BasicInfoResponse =
             throw UnsupportedOperationException("Method GetGroupBasicInfo is unimplemented")
@@ -356,6 +370,13 @@ object ParaboxExtensionServiceGrpcKt {
                         context = this.context,
                         descriptor = ParaboxExtensionServiceGrpc.queryMessageHistoryMethod,
                         implementation = ::queryMessageHistory,
+                    )
+                )
+                .addMethod(
+                    ServerCalls.unaryServerMethodDefinition(
+                        context = this.context,
+                        descriptor = ParaboxExtensionServiceGrpc.syncChatLatestMessagesMethod,
+                        implementation = ::syncChatLatestMessages,
                     )
                 )
                 .addMethod(

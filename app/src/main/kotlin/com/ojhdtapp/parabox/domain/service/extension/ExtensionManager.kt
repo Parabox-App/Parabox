@@ -5,10 +5,13 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.coroutineScope
 import com.ojhdtapp.parabox.core.util.Resource
@@ -26,6 +29,7 @@ import com.ojhdtapp.parabox.domain.service.extension.transport.ExtensionTranspor
 import com.ojhdtapp.parabox.protocol.v2.ExecuteConfigActionRequest
 import com.ojhdtapp.parabox.protocol.v2.GetConfigSchemaRequest
 import com.ojhdtapp.parabox.protocol.v2.InitStepRequest
+import com.ojhdtapp.parabox.protocol.v2.LifecycleEventProto
 import com.ojhdtapp.parabox.protocol.v2.ParaboxExtensionServiceGrpcKt
 import com.ojhdtapp.parabox.protocol.v2.ValidateConfigRequest
 import com.ojhdtapp.parabox.ui.setting.SettingPageState
@@ -112,6 +116,14 @@ class ExtensionManager @Inject constructor(
         managerScope.cancel()
         attachedLifecycle = null
         super.onDestroy(owner)
+    }
+
+    fun dispatchHostLifecycle(event: LifecycleEventProto) {
+        _connectionFlow.value
+            .filterIsInstance<Connection.ConnectionSuccess>()
+            .forEach { conn ->
+                conn.sendLifecycleEvent(event)
+            }
     }
 
     fun reloadExtension() {
@@ -405,11 +417,22 @@ class ExtensionManager @Inject constructor(
         }
     }
 
+    private fun safeRemoveLifecycleObserver(observer: LifecycleObserver) {
+        val lifecycle = attachedLifecycle ?: return
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            lifecycle.removeObserver(observer)
+        } else {
+            Handler(Looper.getMainLooper()).post {
+                lifecycle.removeObserver(observer)
+            }
+        }
+    }
+
     fun restartConnection(connectionId: Long, needReloadExtra: Boolean) {
         _connectionFlow.value.find { it.connectionId == connectionId }?.also { conn ->
             when (conn) {
                 is Connection.ConnectionSuccess -> {
-                    attachedLifecycle?.removeObserver(conn)
+                    safeRemoveLifecycleObserver(conn)
                     conn.closeSession()
                     updateConnections(listOf(conn.toPending(needReloadExtra = needReloadExtra)))
                 }
@@ -524,8 +547,12 @@ class ExtensionManager @Inject constructor(
 
         lateinit var connectionSuccess: Connection.ConnectionSuccess
         val inboundHandler = object : SessionInboundHandler {
-            override suspend fun onReceiveMessage(message: ReceiveMessage): ParaboxResult {
-                return mainRepository.receiveMessage(msg = message, ext = connectionSuccess)
+            override suspend fun onReceiveMessage(message: ReceiveMessage, isBackfill: Boolean): ParaboxResult {
+                return mainRepository.receiveMessage(
+                    msg = message,
+                    ext = connectionSuccess,
+                    isBackfill = isBackfill,
+                )
             }
 
             override suspend fun onRecallMessage(messageUuid: String): ParaboxResult {
@@ -591,7 +618,7 @@ class ExtensionManager @Inject constructor(
             .filterIsInstance<Connection.ConnectionSuccess.ExtendConnectionSuccess>()
             .filter { it.pkg == packageName }
             .map { conn ->
-                attachedLifecycle?.removeObserver(conn)
+                safeRemoveLifecycleObserver(conn)
                 conn.closeSession()
                 Connection.ConnectionFail.ExtendConnectionFail(conn.toExtensionInfo(), reason)
             }

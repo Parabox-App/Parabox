@@ -36,6 +36,7 @@ import cn.chuanwise.onebot.lib.v11.getFriendList
 import cn.chuanwise.onebot.lib.v11.getGroupInfo
 import cn.chuanwise.onebot.lib.v11.getGroupList
 import cn.chuanwise.onebot.lib.v11.getMessage
+import cn.chuanwise.onebot.lib.v11.getLoginInfo
 import cn.chuanwise.onebot.lib.v11.getStrangerInfo
 import cn.chuanwise.onebot.lib.v11.registerListener
 import cn.chuanwise.onebot.lib.v11.registerListenerWithoutQuickOperation
@@ -338,18 +339,29 @@ class OneBot11Connection(
     }
 
     override suspend fun onGetUserBasicInfo(userId: String): ParaboxBasicInfo? {
-        return if (appWebSocketConnection?.isConnected == true) {
-            appWebSocketConnection!!.getStrangerInfo(userId.toLong(), false).let {
+        if (appWebSocketConnection?.isConnected != true) return null
+        if (userId == SELF_USER_ID) {
+            return runCatching {
+                val info = appWebSocketConnection!!.getLoginInfo()
+                ParaboxBasicInfo(
+                    name = info.nickname,
+                    avatar = compatibilityUtil.getUserAvatar(info.userId, 100)?.let {
+                        ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo(it)
+                    } ?: ParaboxResourceInfo.ParaboxEmptyInfo
+                )
+            }.getOrNull()
+        }
+        return runCatching {
+            val uid = userId.toLongOrNull() ?: return null
+            appWebSocketConnection!!.getStrangerInfo(uid, false).let {
                 ParaboxBasicInfo(
                     name = it.nickname,
-                    avatar = compatibilityUtil.getUserAvatar(userId.toLong(), 100)?.let {
+                    avatar = compatibilityUtil.getUserAvatar(uid, 100)?.let {
                         ParaboxResourceInfo.ParaboxRemoteInfo.UrlRemoteInfo(it)
                     } ?: ParaboxResourceInfo.ParaboxEmptyInfo
                 )
             }
-        } else {
-            null
-        }
+        }.getOrNull()
     }
 
     override suspend fun onQueryForwardNode(id: String): ParaboxForward.ForwardNode? {

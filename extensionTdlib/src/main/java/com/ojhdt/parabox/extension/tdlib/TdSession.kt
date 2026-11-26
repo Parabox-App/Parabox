@@ -5,11 +5,14 @@ import com.google.protobuf.ByteString
 import com.ojhdt.parabox.extension.tdlib.core.TdAccountMeta
 import com.ojhdt.parabox.extension.tdlib.core.TdClientApi
 import com.ojhdt.parabox.extension.tdlib.core.TdClientCoordinator
+import com.ojhdt.parabox.extension.tdlib.core.TdErrorException
 import com.ojhdt.parabox.extension.tdlib.core.TdProxyConfig
+import com.ojhdt.parabox.extension.tdlib.core.TdSyncStateStore
 import com.ojhdt.parabox.extension.tdlib.core.send
 import com.ojhdt.parabox.extension.tdlib.mapper.TdMediaBridge
 import com.ojhdt.parabox.extension.tdlib.mapper.TdMessageMapper
 import com.ojhdt.parabox.extension.tdlib.mapper.TdResourceUri
+import com.ojhdtapp.parabox.protocol.v2.LifecycleEventProto
 import com.ojhdtapp.parabox.protocol.v2.ResourceChunk
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxBasicInfo
 import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxResult
@@ -22,11 +25,16 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxQuoteReply
 import com.ojhdtapp.paraboxdevelopmentkit.model.res_info.ParaboxResourceInfo
 import com.ojhdtapp.paraboxdevelopmentkit.v2.ParaboxConnectionStatus
 import com.ojhdtapp.paraboxdevelopmentkit.v2.ParaboxSession
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
 import org.drinkless.tdlib.TdApi
 import org.json.JSONObject
@@ -42,6 +50,14 @@ class TdSession(
     private val mediaBridge: TdMediaBridge,
     private val initTimeoutMs: Long = 25_000L,
     private val sendAckTimeoutMs: Long = 50_000L,
+    private val catchUpChatLimit: Int = DEFAULT_CATCH_UP_CHAT_LIMIT,
+    private val catchUpMessagesPerChat: Int = DEFAULT_CATCH_UP_MESSAGES_PER_CHAT,
+    private val catchUpChatThrottleMs: Long = DEFAULT_CATCH_UP_THROTTLE_MS,
+    private val lastMessageFallbackDebounceMs: Long = DEFAULT_LAST_MESSAGE_FALLBACK_DEBOUNCE_MS,
+    private val reconnectCatchUpThresholdMs: Long = DEFAULT_RECONNECT_CATCH_UP_THRESHOLD_MS,
+    private val periodicSyncForegroundIntervalMs: Long = DEFAULT_PERIODIC_SYNC_FOREGROUND_MS,
+    private val periodicSyncBackgroundIntervalMs: Long = DEFAULT_PERIODIC_SYNC_BACKGROUND_MS,
+    private val periodicSyncProbePacingMs: Long = DEFAULT_PERIODIC_SYNC_PROBE_PACING_MS,
 ) : ParaboxSession(sessionId, extra, hostPackageName) {
 
     private sealed interface SendAck {
@@ -51,6 +67,8 @@ class TdSession(
 
     private val accountId: String = extra.optString(TdExtensionProvider.KEY_ACCOUNT_ID)
     private val autoDownloadMedia: Boolean = extra.optBoolean(TdExtensionProvider.KEY_AUTO_DOWNLOAD_MEDIA, true)
+    private val supergroupPeriodicSyncEnabled: Boolean =
+        extra.optBoolean(TdExtensionProvider.KEY_SUPERGROUP_PERIODIC_SYNC, true)
     private val maxDownloadBytes: Long = (extra.optString(TdExtensionProvider.KEY_MAX_DOWNLOAD_MB)
         .toLongOrNull() ?: TdExtensionProvider.DEFAULT_MAX_DOWNLOAD_MB.toLong())
         .coerceIn(1L, 500L) * 1024L * 1024L
@@ -58,10 +76,42 @@ class TdSession(
     @Volatile
     private var client: TdClientApi? = null
 
+    @Volatile
+    private var syncState: TdSyncStateStore? = null
+
     private val userCache = ConcurrentHashMap<Long, TdApi.User>()
     private val chatCache = ConcurrentHashMap<Long, TdApi.Chat>()
     private val pendingSends = ConcurrentHashMap<Pair<Long, Long>, CompletableDeferred<SendAck>>()
     private val locallySentMessageIds = ConcurrentHashMap<Pair<Long, Long>, Long>()
+    private val recentlyEmittedMessageIds = ConcurrentHashMap<Pair<Long, Long>, Long>()
+    private val lastMessageFallbackJobs = ConcurrentHashMap<Long, Job>()
+
+    private val chatFocusMutex = Mutex()
+    private val catchUpMutex = Mutex()
+
+    @Volatile
+    private var activeOpenChatId: Long? = null
+
+    @Volatile
+    private var selfUserId: Long? = null
+
+    @Volatile
+    private var isHostForeground: Boolean = true
+
+    @Volatile
+    private var sessionStartedAtMs: Long = 0L
+
+    @Volatile
+    private var floodWaitUntilMs: Long = 0L
+
+    @Volatile
+    private var lastDisconnectedAtMs: Long = 0L
+
+    @Volatile
+    private var lastCatchUpAtMs: Long = 0L
+
+    private var periodicRotateOffset: Int = 0
+    private var periodicSyncJob: Job? = null
 
     override suspend fun onInitialize(): Boolean {
         if (accountId.isBlank()) {
@@ -94,8 +144,22 @@ class TdSession(
             return false
         }
 
-        // Apply latest proxy config in case user edited proxy settings after initial login
+        syncState = TdSyncStateStore(coordinator.storage.getSyncStateFile(accountId))
+
+        // Apply latest proxy & network type config (skip NetworkTypeNone on init so we don't block startup)
         tdClient.applyProxy(proxyConfig)
+        coordinator.currentNetworkType()
+            ?.takeIf { it !is TdApi.NetworkTypeNone }
+            ?.let { netType ->
+                runCatching { tdClient.setNetworkType(netType) }
+            }
+
+        // Keep TDLib online so Telegram continues pushing live UpdateNewMessage events for
+        // supergroups/channels while Parabox's foreground service maintains the persistent socket
+        // (Parabox does not use FCM push notifications).
+        runCatching {
+            tdClient.send<TdApi.Ok>(TdApi.SetOption("online", TdApi.OptionValueBoolean(true)))
+        }
 
         // Refresh saved metadata for account manager UI
         runCatching { tdClient.send<TdApi.User>(TdApi.GetMe()) }.getOrNull()?.let { me ->
@@ -111,52 +175,83 @@ class TdSession(
             )
         }
 
-        updateStatus(ParaboxConnectionStatus.Active)
+        sessionStartedAtMs = System.currentTimeMillis()
+        Log.i(TAG, "[$accountId] onInitialize ready: sessionId=$sessionId, syncInitialized=${syncState?.isInitialized()}")
         observeTdUpdates(tdClient)
+        updateStatus(ParaboxConnectionStatus.Active)
+        sessionScope.launch {
+            warmUpAndCatchUp(tdClient, reason = "startup")
+            startPeriodicSupergroupSync(tdClient)
+        }
         return true
     }
 
     private fun observeTdUpdates(tdClient: TdClientApi) {
         sessionScope.launch {
-            tdClient.updates.collect { update ->
-                when (update) {
-                    is TdApi.UpdateAuthorizationState -> handleAuthUpdate(update.authorizationState)
-                    is TdApi.UpdateConnectionState -> handleConnectionUpdate(update.state)
-                    is TdApi.UpdateUser -> userCache[update.user.id] = update.user
-                    is TdApi.UpdateNewChat -> chatCache[update.chat.id] = update.chat
-                    is TdApi.UpdateNewMessage -> {
-                        launch { handleNewMessage(tdClient, update.message) }
-                    }
-                    is TdApi.UpdateMessageSendSucceeded -> {
-                        val key = update.message.chatId to update.oldMessageId
-                        if (pendingSends.containsKey(key) || isLocallySent(update.message.chatId, update.oldMessageId)) {
-                            recordLocallySent(update.message.chatId, update.message.id)
-                        }
-                        pendingSends.computeIfAbsent(key) { CompletableDeferred() }
-                            .complete(SendAck.Succeeded(update.message.id))
-                    }
-                    is TdApi.UpdateMessageSendFailed -> {
-                        val key = update.message.chatId to update.oldMessageId
-                        val errCode = update.error?.code ?: -1
-                        val errMsg = update.error?.message.orEmpty()
-                        pendingSends.computeIfAbsent(key) { CompletableDeferred() }
-                            .complete(SendAck.Failed(errCode, errMsg))
-                    }
-                    is TdApi.UpdateDeleteMessages -> {
-                        update.messageIds.forEach { msgId ->
-                            pendingSends[update.chatId to msgId]?.complete(
-                                SendAck.Failed(-1, "消息在发送过程中被 Telegram 丢弃或删除")
-                            )
-                        }
-                        if (update.isPermanent && !update.fromCache) {
-                            launch {
+            Log.i(TAG, "[$accountId] observeTdUpdates started")
+            try {
+                tdClient.updates.collect { update ->
+                    try {
+                        when (update) {
+                            is TdApi.UpdateAuthorizationState -> handleAuthUpdate(update.authorizationState)
+                            is TdApi.UpdateConnectionState -> handleConnectionUpdate(tdClient, update.state)
+                            is TdApi.UpdateUser -> userCache[update.user.id] = update.user
+                            is TdApi.UpdateNewChat -> chatCache[update.chat.id] = update.chat
+                            is TdApi.UpdateChatLastMessage -> handleChatLastMessageUpdate(tdClient, update)
+                            is TdApi.UpdateNewMessage -> {
+                                // Launch on sessionScope (SupervisorJob) so a failure on one message
+                                // can NEVER cancel the parent updates.collect loop.
+                                sessionScope.launch {
+                                    runCatching {
+                                        handleNewMessage(tdClient, update.message)
+                                    }.onFailure { err ->
+                                        Log.e(TAG, "[$accountId] handleNewMessage failed for chat=${update.message.chatId} msg=${update.message.id}", err)
+                                    }
+                                }
+                            }
+                            is TdApi.UpdateMessageSendSucceeded -> {
+                                val key = update.message.chatId to update.oldMessageId
+                                if (pendingSends.containsKey(key) || isLocallySent(update.message.chatId, update.oldMessageId)) {
+                                    recordLocallySent(update.message.chatId, update.message.id)
+                                }
+                                syncState?.advanceWatermark(update.message.chatId, update.message.id, scope = sessionScope)
+                                pendingSends.computeIfAbsent(key) { CompletableDeferred() }
+                                    .complete(SendAck.Succeeded(update.message.id))
+                            }
+                            is TdApi.UpdateMessageSendFailed -> {
+                                val key = update.message.chatId to update.oldMessageId
+                                val errCode = update.error?.code ?: -1
+                                val errMsg = update.error?.message.orEmpty()
+                                pendingSends.computeIfAbsent(key) { CompletableDeferred() }
+                                    .complete(SendAck.Failed(errCode, errMsg))
+                            }
+                            is TdApi.UpdateDeleteMessages -> {
                                 update.messageIds.forEach { msgId ->
-                                    emitRecall(TdMessageMapper.formatMessageUuid(update.chatId, msgId))
+                                    pendingSends[update.chatId to msgId]?.complete(
+                                        SendAck.Failed(-1, "消息在发送过程中被 Telegram 丢弃或删除")
+                                    )
+                                }
+                                if (update.isPermanent && !update.fromCache) {
+                                    sessionScope.launch {
+                                        runCatching {
+                                            update.messageIds.forEach { msgId ->
+                                                emitRecall(TdMessageMapper.formatMessageUuid(update.chatId, msgId))
+                                            }
+                                        }.onFailure { err ->
+                                            Log.w(TAG, "[$accountId] emitRecall failed: ${err.message}")
+                                        }
+                                    }
                                 }
                             }
                         }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Throwable) {
+                        Log.e(TAG, "[$accountId] Error processing TDLib update ${update.javaClass.simpleName}", e)
                     }
                 }
+            } finally {
+                Log.i(TAG, "[$accountId] observeTdUpdates ended")
             }
         }
     }
@@ -173,22 +268,519 @@ class TdSession(
         }
     }
 
-    private fun handleConnectionUpdate(state: TdApi.ConnectionState) {
+    private fun handleConnectionUpdate(tdClient: TdClientApi, state: TdApi.ConnectionState) {
+        Log.i(TAG, "[$accountId] ConnectionState -> ${state.javaClass.simpleName}")
         when (state) {
-            is TdApi.ConnectionStateReady -> updateStatus(ParaboxConnectionStatus.Active)
+            is TdApi.ConnectionStateReady -> {
+                updateStatus(ParaboxConnectionStatus.Active)
+                val disconnectedAt = lastDisconnectedAtMs
+                lastDisconnectedAtMs = 0L
+                val now = System.currentTimeMillis()
+                val focusedChatId = activeOpenChatId
+                if (focusedChatId != null) {
+                    sessionScope.launch {
+                        runCatching { tdClient.send<TdApi.Ok>(TdApi.OpenChat(focusedChatId)) }
+                        val watermark = syncState?.getWatermark(focusedChatId) ?: 0L
+                        if (watermark > 0L) {
+                            catchUpSingleChat(
+                                tdClient = tdClient,
+                                chatId = focusedChatId,
+                                watermark = watermark,
+                                limit = catchUpMessagesPerChat,
+                                emitAsBackfill = false,
+                            )
+                        }
+                    }
+                }
+                if (disconnectedAt > 0L &&
+                    now - disconnectedAt >= reconnectCatchUpThresholdMs &&
+                    now - lastCatchUpAtMs >= CATCH_UP_MIN_INTERVAL_MS
+                ) {
+                    sessionScope.launch {
+                        warmUpAndCatchUp(tdClient, reason = "reconnect")
+                    }
+                }
+            }
             is TdApi.ConnectionStateUpdating,
             is TdApi.ConnectionStateConnecting,
-            is TdApi.ConnectionStateConnectingToProxy -> updateStatus(ParaboxConnectionStatus.Initializing)
+            is TdApi.ConnectionStateConnectingToProxy -> {
+                if (lastDisconnectedAtMs == 0L) {
+                    lastDisconnectedAtMs = System.currentTimeMillis()
+                }
+                updateStatus(ParaboxConnectionStatus.Initializing)
+            }
             is TdApi.ConnectionStateWaitingForNetwork -> {
+                if (lastDisconnectedAtMs == 0L) {
+                    lastDisconnectedAtMs = System.currentTimeMillis()
+                }
                 updateStatus(ParaboxConnectionStatus.Reconnecting(1, "等待网络恢复"))
             }
         }
     }
 
+    private fun handleChatLastMessageUpdate(
+        tdClient: TdClientApi,
+        update: TdApi.UpdateChatLastMessage,
+    ) {
+        chatCache[update.chatId]?.let { cached ->
+            cached.lastMessage = update.lastMessage
+        }
+        val lastMsg = update.lastMessage ?: return
+        if (lastMsg.sendingState != null) return
+        if (isLocallySent(update.chatId, lastMsg.id) || wasRecentlyEmitted(update.chatId, lastMsg.id)) return
+        val store = syncState ?: return
+        if (!store.isInitialized()) return
+        val watermark = store.getWatermark(update.chatId)
+        val lastMsgTsMs = lastMsg.date.toLong() * 1000L
+        if (watermark > 0L) {
+            if (lastMsg.id <= watermark) return
+        } else {
+            // For chats not in the initial top-30 seed, still recover genuinely fresh messages
+            // arriving after this session started rather than silently dropping them.
+            if (lastMsgTsMs < sessionStartedAtMs - NEW_CHAT_GRACE_MS) return
+        }
+
+        // Safety net for Telegram channelDifferenceTooLong (>100 missed channel messages)
+        // where TDLib skips individual UpdateNewMessage events and only fires UpdateChatLastMessage.
+        // Emit as live messages (emitAsBackfill = false) so notifications fire for live channel updates.
+        lastMessageFallbackJobs.remove(update.chatId)?.cancel()
+        lastMessageFallbackJobs[update.chatId] = sessionScope.launch {
+            if (lastMessageFallbackDebounceMs > 0L) {
+                delay(lastMessageFallbackDebounceMs)
+            }
+            val currentWatermark = store.getWatermark(update.chatId)
+            if ((currentWatermark > 0L && lastMsg.id <= currentWatermark) ||
+                isLocallySent(update.chatId, lastMsg.id) ||
+                wasRecentlyEmitted(update.chatId, lastMsg.id)
+            ) {
+                return@launch
+            }
+            val recovered = catchUpSingleChat(
+                tdClient = tdClient,
+                chatId = update.chatId,
+                watermark = currentWatermark,
+                limit = FALLBACK_GAP_LIMIT,
+                minTimestampMs = if (currentWatermark == 0L) sessionStartedAtMs - NEW_CHAT_GRACE_MS else 0L,
+                emitAsBackfill = false,
+            )
+            if (recovered > 0) {
+                Log.i(TAG, "[$accountId] UpdateChatLastMessage fallback recovered $recovered live msgs for chat=${update.chatId}")
+            }
+        }
+    }
+
+    private fun startPeriodicSupergroupSync(tdClient: TdClientApi) {
+        if (!supergroupPeriodicSyncEnabled) {
+            Log.i(TAG, "[$accountId] Periodic supergroup sync disabled by config")
+            return
+        }
+        if (periodicSyncForegroundIntervalMs <= 0L && periodicSyncBackgroundIntervalMs <= 0L) return
+        periodicSyncJob?.cancel()
+        periodicSyncJob = sessionScope.launch {
+            Log.i(
+                TAG,
+                "[$accountId] Periodic supergroup sync started (fg=${periodicSyncForegroundIntervalMs}ms, bg=${periodicSyncBackgroundIntervalMs}ms)"
+            )
+            while (client === tdClient) {
+                val intervalMs = if (isHostForeground) {
+                    periodicSyncForegroundIntervalMs
+                } else {
+                    periodicSyncBackgroundIntervalMs
+                }.coerceAtLeast(1_000L)
+                delay(intervalMs)
+                if (client !== tdClient) break
+                val now = System.currentTimeMillis()
+                if (now < floodWaitUntilMs) {
+                    Log.w(TAG, "[$accountId] Skipping periodic sync due to FloodWait (${(floodWaitUntilMs - now) / 1000}s left)")
+                    continue
+                }
+                if (tdClient.connectionState.value !is TdApi.ConnectionStateReady) continue
+                runCatching {
+                    runPeriodicSupergroupSyncCycle(tdClient)
+                }.onFailure { err ->
+                    if (err is CancellationException) throw err
+                    Log.w(TAG, "[$accountId] Periodic supergroup sync cycle error: ${err.message}")
+                }
+            }
+        }
+    }
+
+    /**
+     * Periodically probes unopened supergroups/channels using a gentle serialized
+     * `OpenChat -> GetChatHistory(limit=5) -> CloseChat` sweep.
+     *
+     * Per TDLib's architecture, Telegram servers withhold real-time `UpdateNewMessage` pushes for
+     * unopened large supergroups/channels. Probing top recent supergroups + a rotating window of
+     * remaining chats ensures timely message delivery & notifications without keeping dozens of
+     * chats permanently open or hitting Telegram FloodWait limits.
+     */
+    internal suspend fun runPeriodicSupergroupSyncCycle(tdClient: TdClientApi): Int {
+        val store = syncState ?: return 0
+        if (!store.isInitialized()) return 0
+
+        val chatsResp = runCatching {
+            tdClient.send<TdApi.Chats>(TdApi.GetChats(TdApi.ChatListMain(), catchUpChatLimit))
+        }.getOrNull() ?: return 0
+
+        val supergroupIds = ArrayList<Long>()
+        for (chatId in chatsResp.chatIds) {
+            if (chatId == activeOpenChatId) continue
+            val chat = getOrFetchChat(tdClient, chatId) ?: continue
+            if (chat.type is TdApi.ChatTypeSupergroup) {
+                supergroupIds.add(chatId)
+            }
+        }
+        if (supergroupIds.isEmpty()) return 0
+
+        // Always probe top 10 most recent supergroups + a rotating slice of up to 10 from the rest
+        val prioritySlice = supergroupIds.take(PERIODIC_PRIORITY_COUNT)
+        val tail = if (supergroupIds.size > PERIODIC_PRIORITY_COUNT) {
+            supergroupIds.drop(PERIODIC_PRIORITY_COUNT)
+        } else {
+            emptyList()
+        }
+        val rotatingSlice = if (tail.isNotEmpty()) {
+            val start = periodicRotateOffset % tail.size
+            periodicRotateOffset = (start + PERIODIC_ROTATING_COUNT) % tail.size
+            List(minOf(PERIODIC_ROTATING_COUNT, tail.size)) { idx ->
+                tail[(start + idx) % tail.size]
+            }
+        } else {
+            emptyList()
+        }
+
+        val targets = prioritySlice + rotatingSlice
+        var totalRecovered = 0
+        for (chatId in targets) {
+            if (client !== tdClient) break
+            if (System.currentTimeMillis() < floodWaitUntilMs) break
+            if (chatId == activeOpenChatId) continue
+
+            val recovered = probeSingleSupergroup(tdClient, chatId, store)
+            totalRecovered += recovered
+            if (periodicSyncProbePacingMs > 0L) {
+                delay(periodicSyncProbePacingMs)
+            }
+        }
+        if (totalRecovered > 0) {
+            Log.i(TAG, "[$accountId] Periodic supergroup sync probed ${targets.size} chats, delivered $totalRecovered new messages")
+        }
+        return totalRecovered
+    }
+
+    private suspend fun probeSingleSupergroup(
+        tdClient: TdClientApi,
+        chatId: Long,
+        store: TdSyncStateStore,
+    ): Int {
+        var openedByProbe = false
+        try {
+            // Only open if the user is not already focusing this chat
+            chatFocusMutex.withLock {
+                if (activeOpenChatId == chatId) return 0
+                tdClient.send<TdApi.Ok>(TdApi.OpenChat(chatId))
+                openedByProbe = true
+            }
+
+            // Trigger server history check (forces fresh messages even when channelDifferenceTooLong)
+            val response = tdClient.send<TdApi.Messages>(
+                TdApi.GetChatHistory(chatId, 0L, 0, PERIODIC_PROBE_FETCH_LIMIT, false)
+            )
+            val batch = response.messages?.filterNotNull().orEmpty()
+            if (batch.isEmpty()) return 0
+
+            val watermark = store.getWatermark(chatId)
+            val newestId = batch.maxOfOrNull { it.id } ?: 0L
+            if (watermark > 0L && newestId <= watermark) {
+                return 0
+            }
+
+            // If we have a known watermark and the entire 5-message probe batch is still newer than
+            // watermark, run a deeper paginated catch-up so no messages in the gap are skipped.
+            val oldestInBatch = batch.minOfOrNull { it.id } ?: 0L
+            if (watermark > 0L && batch.size >= PERIODIC_PROBE_FETCH_LIMIT && oldestInBatch > watermark) {
+                return catchUpSingleChat(
+                    tdClient = tdClient,
+                    chatId = chatId,
+                    watermark = watermark,
+                    limit = catchUpMessagesPerChat,
+                    emitAsBackfill = false,
+                )
+            }
+
+            val cutoffMs = if (watermark == 0L) sessionStartedAtMs - NEW_CHAT_GRACE_MS else 0L
+            val candidates = batch
+                .asSequence()
+                .filter { msg -> watermark == 0L || msg.id > watermark }
+                .filter { msg -> cutoffMs <= 0L || msg.date.toLong() * 1000L >= cutoffMs }
+                .filter { msg -> msg.sendingState == null }
+                .filterNot { msg -> isLocallySent(msg.chatId, msg.id) || wasRecentlyEmitted(msg.chatId, msg.id) }
+                .sortedWith(compareBy<TdApi.Message> { it.date }.thenBy { it.id })
+                .toList()
+
+            if (candidates.isEmpty()) {
+                if (newestId > watermark) {
+                    store.advanceWatermark(chatId, newestId, scope = sessionScope)
+                }
+                return 0
+            }
+
+            var delivered = 0
+            for (msg in candidates) {
+                if (wasRecentlyEmitted(msg.chatId, msg.id)) continue
+                recordEmitted(msg.chatId, msg.id)
+                val receiveMessage = buildReceiveMessage(tdClient, msg) ?: continue
+                val ack = emitMessage(receiveMessage, isBackfill = false)
+                if (ack.code == ParaboxResult.SUCCESS) {
+                    store.advanceWatermark(msg.chatId, msg.id, scope = sessionScope)
+                    delivered += 1
+                } else {
+                    recentlyEmittedMessageIds.remove(msg.chatId to msg.id)
+                    break
+                }
+            }
+            return delivered
+        } catch (e: TdErrorException) {
+            if (e.code == 429) {
+                val retrySec = parseFloodWaitSeconds(e.message)
+                floodWaitUntilMs = System.currentTimeMillis() + (retrySec + 5L) * 1000L
+                Log.w(TAG, "[$accountId] FloodWait 429 during supergroup probe: pausing for ${retrySec + 5}s (${e.message})")
+            } else {
+                Log.d(TAG, "[$accountId] probeSingleSupergroup chat=$chatId error (${e.code}): ${e.message}")
+            }
+            return 0
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.d(TAG, "[$accountId] probeSingleSupergroup chat=$chatId failed: ${e.message}")
+            return 0
+        } finally {
+            if (openedByProbe) {
+                chatFocusMutex.withLock {
+                    // Never close if the user entered this exact chat while the probe was running
+                    if (activeOpenChatId != chatId) {
+                        runCatching { tdClient.send<TdApi.Ok>(TdApi.CloseChat(chatId)) }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun parseFloodWaitSeconds(message: String): Long {
+        val match = FLOOD_WAIT_REGEX.find(message)
+        return match?.groupValues?.getOrNull(1)?.toLongOrNull()?.coerceIn(10L, 600L) ?: 60L
+    }
+
+    internal suspend fun warmUpAndCatchUp(tdClient: TdClientApi, reason: String) {
+        val store = syncState ?: return
+        // Wait for TDLib to reach ConnectionStateReady so LoadChats / GetChat / GetChatHistory
+        // query live Telegram server state instead of stale local cache during ConnectionStateConnecting.
+        if (tdClient.connectionState.value !is TdApi.ConnectionStateReady) {
+            Log.i(TAG, "[$accountId] Catch-up ($reason) waiting for ConnectionStateReady (current=${tdClient.connectionState.value?.javaClass?.simpleName})")
+            val ready = withTimeoutOrNull(CATCH_UP_READY_TIMEOUT_MS) {
+                tdClient.connectionState.first { it is TdApi.ConnectionStateReady }
+            }
+            if (ready == null) {
+                Log.w(TAG, "[$accountId] Catch-up ($reason) timed out waiting for ConnectionStateReady")
+                return
+            }
+        }
+        catchUpMutex.withLock {
+            loadMainChats(tdClient, targetLimit = maxOf(catchUpChatLimit, 50))
+            val chats = runCatching {
+                tdClient.send<TdApi.Chats>(TdApi.GetChats(TdApi.ChatListMain(), catchUpChatLimit))
+            }.getOrNull() ?: return@withLock
+
+            val nowMs = System.currentTimeMillis()
+            if (!store.isInitialized()) {
+                val seeds = LinkedHashMap<Long, Long>()
+                for (chatId in chats.chatIds) {
+                    val chat = fetchFreshChat(tdClient, chatId) ?: continue
+                    val lastId = chat.lastMessage?.id ?: 0L
+                    if (lastId > 0L) {
+                        seeds[chatId] = lastId
+                    }
+                }
+                store.markInitialized(seeds, nowMs = nowMs, scope = sessionScope)
+                lastCatchUpAtMs = nowMs
+                Log.d(TAG, "[$accountId] Seeded initial sync watermarks for ${seeds.size} chats ($reason)")
+                return@withLock
+            }
+
+            val previousActiveMs = store.lastActiveMs()
+            val newChatCutoffMs = (previousActiveMs - NEW_CHAT_GRACE_MS).coerceAtLeast(0L)
+            val emitAsBackfill = reason == "startup"
+            var backfilledCount = 0
+            for (chatId in chats.chatIds) {
+                val chat = fetchFreshChat(tdClient, chatId) ?: continue
+                val lastMsg = chat.lastMessage ?: continue
+                val watermark = store.getWatermark(chatId)
+                val lastMsgTsMs = lastMsg.date.toLong() * 1000L
+
+                if (watermark > 0L) {
+                    if (lastMsg.id <= watermark) continue
+                    backfilledCount += catchUpSingleChat(
+                        tdClient = tdClient,
+                        chatId = chatId,
+                        watermark = watermark,
+                        limit = catchUpMessagesPerChat,
+                        emitAsBackfill = emitAsBackfill,
+                    )
+                } else {
+                    if (previousActiveMs > 0L && lastMsgTsMs >= newChatCutoffMs) {
+                        backfilledCount += catchUpSingleChat(
+                            tdClient = tdClient,
+                            chatId = chatId,
+                            watermark = 0L,
+                            limit = catchUpMessagesPerChat,
+                            minTimestampMs = newChatCutoffMs,
+                            emitAsBackfill = emitAsBackfill,
+                        )
+                    } else if (lastMsg.id > 0L) {
+                        store.advanceWatermark(chatId, lastMsg.id, nowMs = nowMs, scope = sessionScope)
+                    }
+                }
+                if (catchUpChatThrottleMs > 0L) {
+                    delay(catchUpChatThrottleMs)
+                }
+            }
+            store.touchActive(nowMs = nowMs, scope = sessionScope)
+            lastCatchUpAtMs = System.currentTimeMillis()
+            Log.i(TAG, "[$accountId] Catch-up ($reason) checked ${chats.chatIds.size} chats, synced $backfilledCount messages (isBackfill=$emitAsBackfill)")
+        }
+    }
+
+    private suspend fun loadMainChats(tdClient: TdClientApi, targetLimit: Int) {
+        val batchSize = targetLimit.coerceIn(10, 100)
+        repeat(LOAD_CHATS_MAX_ROUNDS) {
+            try {
+                tdClient.send<TdApi.Ok>(TdApi.LoadChats(TdApi.ChatListMain(), batchSize))
+            } catch (e: TdErrorException) {
+                if (e.code == 404) return
+                Log.w(TAG, "[$accountId] LoadChats returned error (${e.code}): ${e.message}")
+                return
+            } catch (e: Exception) {
+                Log.w(TAG, "[$accountId] LoadChats failed: ${e.message}")
+                return
+            }
+        }
+    }
+
+    private suspend fun catchUpSingleChat(
+        tdClient: TdClientApi,
+        chatId: Long,
+        watermark: Long,
+        limit: Int,
+        minTimestampMs: Long = 0L,
+        emitAsBackfill: Boolean = true,
+    ): Int {
+        val store = syncState ?: return 0
+        val history = fetchChatHistoryLoop(
+            tdClient = tdClient,
+            chatId = chatId,
+            fromMessageId = 0L,
+            limit = limit,
+            stopAtMessageId = watermark,
+        )
+        if (history.isEmpty()) return 0
+
+        val candidates = history
+            .asSequence()
+            .filter { msg -> msg.id > watermark }
+            .filter { msg -> minTimestampMs <= 0L || msg.date.toLong() * 1000L >= minTimestampMs }
+            .filter { msg -> msg.sendingState == null }
+            .filterNot { msg -> isLocallySent(msg.chatId, msg.id) || wasRecentlyEmitted(msg.chatId, msg.id) }
+            .sortedWith(compareBy<TdApi.Message> { it.date }.thenBy { it.id })
+            .toList()
+
+        if (candidates.isEmpty()) {
+            val highestId = history.maxOfOrNull { it.id } ?: 0L
+            if (highestId > watermark) {
+                store.advanceWatermark(chatId, highestId, scope = sessionScope)
+            }
+            return 0
+        }
+
+        var synced = 0
+        for (msg in candidates) {
+            val receiveMessage = buildReceiveMessage(tdClient, msg) ?: continue
+            val ack = emitMessage(receiveMessage, isBackfill = emitAsBackfill)
+            if (ack.code == ParaboxResult.SUCCESS) {
+                recordEmitted(msg.chatId, msg.id)
+                store.advanceWatermark(msg.chatId, msg.id, scope = sessionScope)
+                synced += 1
+            } else {
+                Log.w(TAG, "[$accountId] catchUpSingleChat ACK failed for chat=$chatId msg=${msg.id}: code=${ack.code} ${ack.message}")
+                // Stop advancing this chat's watermark if the host rejected or disconnected
+                break
+            }
+        }
+        return synced
+    }
+
+    internal suspend fun fetchChatHistoryLoop(
+        tdClient: TdClientApi,
+        chatId: Long,
+        fromMessageId: Long,
+        limit: Int,
+        stopAtMessageId: Long = 0L,
+        maxRounds: Int = HISTORY_LOOP_MAX_ROUNDS,
+    ): List<TdApi.Message> {
+        val target = limit.coerceIn(1, MAX_SYNC_LATEST_LIMIT)
+        val collected = ArrayList<TdApi.Message>(target)
+        val seenIds = HashSet<Long>(target * 2)
+        var cursorId = fromMessageId
+
+        for (round in 0 until maxRounds) {
+            val remaining = target - collected.size
+            if (remaining <= 0) break
+            val response = runCatching {
+                tdClient.send<TdApi.Messages>(
+                    TdApi.GetChatHistory(chatId, cursorId, 0, remaining, false)
+                )
+            }.getOrNull() ?: break
+
+            val batch = response.messages?.filterNotNull().orEmpty()
+            if (batch.isEmpty()) break
+
+            var reachedStop = false
+            var addedInRound = 0
+            for (msg in batch) {
+                if (stopAtMessageId > 0L && msg.id <= stopAtMessageId) {
+                    reachedStop = true
+                    break
+                }
+                if (seenIds.add(msg.id)) {
+                    collected.add(msg)
+                    addedInRound += 1
+                    if (collected.size >= target) break
+                }
+            }
+            if (reachedStop || collected.size >= target) break
+
+            val nextCursor = batch.last().id
+            if (nextCursor == 0L || nextCursor == cursorId || addedInRound == 0) break
+            cursorId = nextCursor
+        }
+        return collected
+    }
+
     internal suspend fun handleNewMessage(tdClient: TdClientApi, message: TdApi.Message) {
-        if (!shouldSyncUpdateNewMessage(message)) return
+        if (!shouldSyncUpdateNewMessage(message)) {
+            Log.d(TAG, "[$accountId] Skip UpdateNewMessage chat=${message.chatId} msg=${message.id} outgoing=${message.isOutgoing} pending=${message.sendingState != null}")
+            return
+        }
+        if (wasRecentlyEmitted(message.chatId, message.id)) return
+        lastMessageFallbackJobs.remove(message.chatId)?.cancel()
+        recordEmitted(message.chatId, message.id)
         val receiveMessage = buildReceiveMessage(tdClient, message) ?: return
-        emitMessage(receiveMessage)
+        val ack = emitMessage(receiveMessage, isBackfill = false)
+        Log.i(TAG, "[$accountId] UpdateNewMessage emitted chat=${message.chatId} msg=${message.id} outgoing=${message.isOutgoing} ack=${ack.code}")
+        if (ack.code == ParaboxResult.SUCCESS) {
+            syncState?.advanceWatermark(message.chatId, message.id, scope = sessionScope)
+        } else {
+            recentlyEmittedMessageIds.remove(message.chatId to message.id)
+        }
     }
 
     internal fun shouldSyncUpdateNewMessage(message: TdApi.Message): Boolean {
@@ -213,6 +805,25 @@ class TdSession(
         val recordedAt = locallySentMessageIds[chatId to messageId] ?: return false
         if (System.currentTimeMillis() - recordedAt > LOCAL_SENT_TTL_MS) {
             locallySentMessageIds.remove(chatId to messageId, recordedAt)
+            return false
+        }
+        return true
+    }
+
+    private fun recordEmitted(chatId: Long, messageId: Long) {
+        if (chatId == 0L || messageId == 0L) return
+        val now = System.currentTimeMillis()
+        recentlyEmittedMessageIds[chatId to messageId] = now
+        if (recentlyEmittedMessageIds.size > RECENTLY_EMITTED_MAX_ENTRIES) {
+            val cutoff = now - RECENTLY_EMITTED_TTL_MS
+            recentlyEmittedMessageIds.entries.removeIf { it.value < cutoff }
+        }
+    }
+
+    private fun wasRecentlyEmitted(chatId: Long, messageId: Long): Boolean {
+        val recordedAt = recentlyEmittedMessageIds[chatId to messageId] ?: return false
+        if (System.currentTimeMillis() - recordedAt > RECENTLY_EMITTED_TTL_MS) {
+            recentlyEmittedMessageIds.remove(chatId to messageId, recordedAt)
             return false
         }
         return true
@@ -514,7 +1125,10 @@ class TdSession(
                 }
             }
 
-            val finalUuid = lastConfirmedId?.let { TdMessageMapper.formatMessageUuid(chatId, it) }
+            val finalUuid = lastConfirmedId?.let { confirmedId ->
+                syncState?.advanceWatermark(chatId, confirmedId, scope = sessionScope)
+                TdMessageMapper.formatMessageUuid(chatId, confirmedId)
+            }
             ParaboxResult(ParaboxResult.SUCCESS, ParaboxResult.SUCCESS_MSG, messageUuid = finalUuid)
         } catch (e: Exception) {
             Log.e(TAG, "[$accountId] onSendMessage failed", e)
@@ -622,20 +1236,112 @@ class TdSession(
     override suspend fun onQueryMessageHistory(uuid: String): List<ReceiveMessage> {
         val tdClient = client ?: return emptyList()
         val (chatId, fromMsgId) = TdMessageMapper.parseMessageUuid(uuid) ?: return emptyList()
-        val history = runCatching {
-            tdClient.send<TdApi.Messages>(TdApi.GetChatHistory(chatId, fromMsgId, 0, 20, false))
-        }.getOrNull() ?: return emptyList()
-        return history.messages.mapNotNull { msg ->
+        val history = fetchChatHistoryLoop(
+            tdClient = tdClient,
+            chatId = chatId,
+            fromMessageId = fromMsgId,
+            limit = 20,
+        )
+        return history
+            .filter { it.sendingState == null }
+            .mapNotNull { msg -> buildReceiveMessage(tdClient, msg) }
+    }
+
+    override suspend fun onSyncChatLatestMessages(chatUid: String, limit: Int): List<ReceiveMessage> {
+        val tdClient = client ?: return emptyList()
+        val chatId = chatUid.toLongOrNull() ?: return emptyList()
+        val safeLimit = limit.coerceIn(1, MAX_SYNC_LATEST_LIMIT)
+        // Ensure chat metadata is available before fetching history
+        getOrFetchChat(tdClient, chatId)
+        val rawMessages = fetchChatHistoryLoop(
+            tdClient = tdClient,
+            chatId = chatId,
+            fromMessageId = 0L,
+            limit = safeLimit,
+        )
+        if (rawMessages.isEmpty()) return emptyList()
+
+        val sorted = rawMessages
+            .filter { it.sendingState == null }
+            .sortedWith(compareBy<TdApi.Message> { it.date }.thenBy { it.id })
+
+        val mapped = sorted.mapNotNull { msg ->
             buildReceiveMessage(tdClient, msg)
+        }
+        val highestId = sorted.maxOfOrNull { it.id } ?: 0L
+        if (highestId > 0L) {
+            syncState?.advanceWatermark(chatId, highestId, scope = sessionScope)
+        }
+        Log.i(TAG, "[$accountId] onSyncChatLatestMessages chat=$chatId limit=$safeLimit returned=${mapped.size}")
+        return mapped
+    }
+
+    override suspend fun onChatFocusChanged(chatUid: String, opened: Boolean) {
+        val tdClient = client ?: return
+        val chatId = chatUid.toLongOrNull() ?: return
+        chatFocusMutex.withLock {
+            if (opened) {
+                val previous = activeOpenChatId
+                if (previous != null && previous != chatId) {
+                    Log.i(TAG, "[$accountId] CloseChat($previous) before switching to $chatId")
+                    runCatching { tdClient.send<TdApi.Ok>(TdApi.CloseChat(previous)) }
+                }
+                activeOpenChatId = chatId
+                Log.i(TAG, "[$accountId] OpenChat($chatId)")
+                runCatching { tdClient.send<TdApi.Ok>(TdApi.OpenChat(chatId)) }
+            } else if (activeOpenChatId == chatId) {
+                activeOpenChatId = null
+                Log.i(TAG, "[$accountId] CloseChat($chatId)")
+                runCatching { tdClient.send<TdApi.Ok>(TdApi.CloseChat(chatId)) }
+            }
+        }
+    }
+
+    override suspend fun onLifecycleEvent(event: LifecycleEventProto) {
+        val tdClient = client ?: return
+        Log.d(TAG, "[$accountId] onLifecycleEvent: $event")
+        when (event) {
+            LifecycleEventProto.LIFECYCLE_RESUME -> {
+                isHostForeground = true
+                // Keep online=true (do NOT call setNetworkType here as it forces TDLib to tear down
+                // and reopen healthy MTProto sockets on every app resume).
+                runCatching {
+                    tdClient.send<TdApi.Ok>(TdApi.SetOption("online", TdApi.OptionValueBoolean(true)))
+                }
+                activeOpenChatId?.let { openId ->
+                    runCatching { tdClient.send<TdApi.Ok>(TdApi.OpenChat(openId)) }
+                }
+            }
+            LifecycleEventProto.LIFECYCLE_PAUSE,
+            LifecycleEventProto.LIFECYCLE_STOP -> {
+                isHostForeground = false
+                // Do NOT set online=false here: without FCM push notifications, setting online=false
+                // puts TDLib into background/idle mode and suppresses/throttles live updates for
+                // supergroups and channels.
+                syncState?.flushNow()
+            }
+            else -> Unit
         }
     }
 
     override suspend fun onGetUserBasicInfo(userId: String): ParaboxBasicInfo? {
         val tdClient = client ?: return null
-        val uid = userId.toLongOrNull() ?: return null
-        val user = getOrFetchUser(tdClient, uid) ?: return null
+        val user = if (userId == SELF_USER_ID) {
+            val cachedSelfId = selfUserId
+            if (cachedSelfId != null) {
+                getOrFetchUser(tdClient, cachedSelfId)
+            } else {
+                runCatching { tdClient.send<TdApi.User>(TdApi.GetMe()) }.getOrNull()?.also { me ->
+                    selfUserId = me.id
+                    userCache[me.id] = me
+                }
+            }
+        } else {
+            val uid = userId.toLongOrNull() ?: return null
+            getOrFetchUser(tdClient, uid)
+        } ?: return null
         val avatar = if (user.profilePhoto?.small != null) {
-            TdResourceUri.userAvatar(sessionId, uid)
+            TdResourceUri.userAvatar(sessionId, user.id)
         } else {
             ParaboxResourceInfo.ParaboxEmptyInfo
         }
@@ -789,7 +1495,18 @@ class TdSession(
     }
 
     override suspend fun onClose() {
+        periodicSyncJob?.cancel()
+        periodicSyncJob = null
+        lastMessageFallbackJobs.values.forEach { it.cancel() }
+        lastMessageFallbackJobs.clear()
         val active = client
+        val openChat = activeOpenChatId
+        activeOpenChatId = null
+        if (active != null && openChat != null) {
+            runCatching { active.send<TdApi.Ok>(TdApi.CloseChat(openChat)) }
+        }
+        syncState?.flushNow()
+        syncState = null
         client = null
         if (active != null && accountId.isNotBlank()) {
             coordinator.closeSessionClient(accountId, expectedClient = active)
@@ -801,6 +1518,7 @@ class TdSession(
         }
         pendingSends.clear()
         locallySentMessageIds.clear()
+        recentlyEmittedMessageIds.clear()
     }
 
     private suspend fun getOrFetchUser(tdClient: TdClientApi, userId: Long): TdApi.User? {
@@ -812,6 +1530,10 @@ class TdSession(
 
     private suspend fun getOrFetchChat(tdClient: TdClientApi, chatId: Long): TdApi.Chat? {
         chatCache[chatId]?.let { return it }
+        return fetchFreshChat(tdClient, chatId)
+    }
+
+    private suspend fun fetchFreshChat(tdClient: TdClientApi, chatId: Long): TdApi.Chat? {
         return runCatching { tdClient.send<TdApi.Chat>(TdApi.GetChat(chatId)) }.getOrNull()?.also {
             chatCache[chatId] = it
         }
@@ -825,5 +1547,26 @@ class TdSession(
         private const val QUOTE_FETCH_TIMEOUT_MS = 3_000L
         private const val LOCAL_SENT_TTL_MS = 5 * 60 * 1000L
         private const val LOCAL_SENT_MAX_ENTRIES = 512
+        private const val RECENTLY_EMITTED_TTL_MS = 5 * 60 * 1000L
+        private const val RECENTLY_EMITTED_MAX_ENTRIES = 1024
+        private const val DEFAULT_CATCH_UP_CHAT_LIMIT = 30
+        private const val DEFAULT_CATCH_UP_MESSAGES_PER_CHAT = 30
+        private const val DEFAULT_CATCH_UP_THROTTLE_MS = 50L
+        private const val DEFAULT_LAST_MESSAGE_FALLBACK_DEBOUNCE_MS = 1_500L
+        private const val DEFAULT_RECONNECT_CATCH_UP_THRESHOLD_MS = 15_000L
+        private const val CATCH_UP_READY_TIMEOUT_MS = 20_000L
+        private const val CATCH_UP_MIN_INTERVAL_MS = 10_000L
+        private const val NEW_CHAT_GRACE_MS = 60_000L
+        private const val FALLBACK_GAP_LIMIT = 20
+        private const val LOAD_CHATS_MAX_ROUNDS = 3
+        private const val HISTORY_LOOP_MAX_ROUNDS = 6
+        private const val MAX_SYNC_LATEST_LIMIT = 100
+        private const val DEFAULT_PERIODIC_SYNC_FOREGROUND_MS = 25_000L
+        private const val DEFAULT_PERIODIC_SYNC_BACKGROUND_MS = 60_000L
+        private const val DEFAULT_PERIODIC_SYNC_PROBE_PACING_MS = 350L
+        private const val PERIODIC_PRIORITY_COUNT = 10
+        private const val PERIODIC_ROTATING_COUNT = 10
+        private const val PERIODIC_PROBE_FETCH_LIMIT = 5
+        private val FLOOD_WAIT_REGEX = Regex("retry after (\\d+)", RegexOption.IGNORE_CASE)
     }
 }

@@ -296,6 +296,13 @@ sealed interface Connection {
 
         suspend fun queryMessageHistory(uuid: String): List<ReceiveMessage> = sessionClient.queryMessageHistory(uuid)
 
+        suspend fun syncChatLatestMessages(chatUid: String, limit: Int = 30): List<ReceiveMessage> =
+            sessionClient.syncChatLatestMessages(chatUid, limit)
+
+        fun notifyChatFocus(chatUid: String, opened: Boolean) = sessionClient.notifyChatFocus(chatUid, opened)
+
+        fun sendLifecycleEvent(event: LifecycleEventProto) = sessionClient.sendLifecycleEvent(event)
+
         suspend fun getGroupBasicInfo(groupId: String): ParaboxBasicInfo? = sessionClient.getGroupBasicInfo(groupId)
 
         suspend fun getUserBasicInfo(userId: String): ParaboxBasicInfo? = sessionClient.getUserBasicInfo(userId)

@@ -109,7 +109,7 @@ class ExtensionSessionClientTest {
             hostPackageName = "com.ojhdtapp.parabox",
             transport = transport,
             inboundHandler = object : SessionInboundHandler {
-                override suspend fun onReceiveMessage(message: ReceiveMessage): ParaboxResult {
+                override suspend fun onReceiveMessage(message: ReceiveMessage, isBackfill: Boolean): ParaboxResult {
                     receivedMessage.complete(message)
                     return ParaboxResult(ParaboxResult.SUCCESS, ParaboxResult.SUCCESS_MSG)
                 }
@@ -225,7 +225,7 @@ class ExtensionSessionClientTest {
             hostPackageName = "com.ojhdtapp.parabox",
             transport = transport,
             inboundHandler = object : SessionInboundHandler {
-                override suspend fun onReceiveMessage(message: ReceiveMessage) =
+                override suspend fun onReceiveMessage(message: ReceiveMessage, isBackfill: Boolean) =
                     ParaboxResult(ParaboxResult.SUCCESS, ParaboxResult.SUCCESS_MSG)
                 override suspend fun onRecallMessage(messageUuid: String) =
                     ParaboxResult(ParaboxResult.SUCCESS, ParaboxResult.SUCCESS_MSG)
@@ -261,6 +261,127 @@ class ExtensionSessionClientTest {
             assertEquals(ParaboxResult.SUCCESS, res.code)
             assertEquals("tg:100", res.messageUuid)
             assertTrue("Expected session to re-initialize on Uninitialized recovery", initAttempts.get() >= 3)
+        } finally {
+            client.close()
+            transport.shutdownAll()
+            server.shutdownNow()
+        }
+    }
+
+    @Test
+    fun chatFocusSyncLatestAndBackfillFlagRoundTrip() = runBlocking {
+        val serverName = InProcessServerBuilder.generateName()
+        val focusOpened = CompletableDeferred<String>()
+        val focusClosed = CompletableDeferred<String>()
+        val backfillReceived = CompletableDeferred<Pair<ReceiveMessage, Boolean>>()
+
+        val provider = object : ParaboxExtensionProvider {
+            override val descriptor = ParaboxExtensionDescriptor(
+                key = "sync_roundtrip_test",
+                name = "Sync Roundtrip Test",
+            )
+
+            override suspend fun onInitStep(
+                wizardSessionId: String,
+                currentStepIndex: Int,
+                submittedKey: String?,
+                submittedValue: Any?,
+                accumulatedExtra: JSONObject,
+            ): ParaboxInitStepResult = ParaboxInitStepResult(emptyList(), 0, completed = true, updatedExtra = accumulatedExtra)
+
+            override fun createSession(
+                sessionId: String,
+                extra: JSONObject,
+                hostPackageName: String,
+            ): ParaboxSession = object : ParaboxSession(sessionId, extra, hostPackageName) {
+                override suspend fun onInitialize(): Boolean {
+                    updateStatus(ParaboxConnectionStatus.Active)
+                    return true
+                }
+
+                override suspend fun onSendMessage(message: SendMessage): ParaboxResult =
+                    ParaboxResult(ParaboxResult.SUCCESS, ParaboxResult.SUCCESS_MSG)
+
+                override suspend fun onChatFocusChanged(chatUid: String, opened: Boolean) {
+                    if (opened) {
+                        focusOpened.complete(chatUid)
+                        emitMessage(
+                            message = ReceiveMessage(
+                                contents = listOf(ParaboxPlainText("backfilled-msg")),
+                                sender = ParaboxContact(ParaboxBasicInfo("Peer", ParaboxResourceInfo.ParaboxEmptyInfo), "u1"),
+                                chat = ParaboxChat(ParaboxBasicInfo("Chat", ParaboxResourceInfo.ParaboxEmptyInfo), ParaboxChat.TYPE_PRIVATE, chatUid),
+                                timestamp = 1_000L,
+                                uuid = "$chatUid:101",
+                            ),
+                            isBackfill = true,
+                        )
+                    } else {
+                        focusClosed.complete(chatUid)
+                    }
+                }
+
+                override suspend fun onSyncChatLatestMessages(chatUid: String, limit: Int): List<ReceiveMessage> {
+                    return listOf(
+                        ReceiveMessage(
+                            contents = listOf(ParaboxPlainText("latest-1-limit-$limit")),
+                            sender = ParaboxContact(ParaboxBasicInfo("Peer", ParaboxResourceInfo.ParaboxEmptyInfo), "u1"),
+                            chat = ParaboxChat(ParaboxBasicInfo("Chat", ParaboxResourceInfo.ParaboxEmptyInfo), ParaboxChat.TYPE_PRIVATE, chatUid),
+                            timestamp = 2_000L,
+                            uuid = "$chatUid:102",
+                        )
+                    )
+                }
+            }
+        }
+
+        val server = startServer(serverName, provider)
+        val inProcTransport = InProcessExtensionTransport()
+        val transport = object : ExtensionTransport {
+            override fun acquireChannel(endpoint: ExtensionEndpoint): ManagedChannel =
+                inProcTransport.acquireChannel(endpoint as ExtensionEndpoint.InProcess)
+            override fun invalidateChannel(endpoint: ExtensionEndpoint) =
+                inProcTransport.invalidateChannel(endpoint as ExtensionEndpoint.InProcess)
+            override fun invalidatePackage(packageName: String) = Unit
+            override fun shutdownAll() = inProcTransport.shutdownAll()
+        }
+
+        val client = ExtensionSessionClient(
+            sessionId = "conn-sync-1",
+            endpoint = ExtensionEndpoint.InProcess(serverName, "sync_roundtrip_test"),
+            extra = JSONObject(),
+            hostPackageName = "com.ojhdtapp.parabox",
+            transport = transport,
+            inboundHandler = object : SessionInboundHandler {
+                override suspend fun onReceiveMessage(message: ReceiveMessage, isBackfill: Boolean): ParaboxResult {
+                    backfillReceived.complete(message to isBackfill)
+                    return ParaboxResult(ParaboxResult.SUCCESS, ParaboxResult.SUCCESS_MSG)
+                }
+                override suspend fun onRecallMessage(messageUuid: String) =
+                    ParaboxResult(ParaboxResult.SUCCESS, ParaboxResult.SUCCESS_MSG)
+            },
+            ioDispatcher = Dispatchers.IO,
+        )
+
+        try {
+            client.start()
+            withTimeout(5_000) {
+                client.status.first { it is ParaboxConnectionStatus.Active }
+            }
+
+            client.notifyChatFocus("200", opened = true)
+            assertEquals("200", withTimeout(5_000) { focusOpened.await() })
+
+            val (backfillMsg, isBackfill) = withTimeout(5_000) { backfillReceived.await() }
+            assertEquals("200:101", backfillMsg.uuid)
+            assertTrue(isBackfill)
+
+            val latest = client.syncChatLatestMessages("200", limit = 30)
+            assertEquals(1, latest.size)
+            assertEquals("200:102", latest.first().uuid)
+            assertEquals("latest-1-limit-30", (latest.first().contents.first() as ParaboxPlainText).text)
+
+            client.notifyChatFocus("200", opened = false)
+            assertEquals("200", withTimeout(5_000) { focusClosed.await() })
         } finally {
             client.close()
             transport.shutdownAll()

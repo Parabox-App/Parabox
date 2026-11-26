@@ -80,6 +80,8 @@ class NotificationUtil @Inject constructor(
         private const val MAX_SERVICE_STATE_INBOX_LINES = 6
 
         const val KEY_TEXT_REPLY = "key_text_reply"
+        const val EXTRA_CHAT_ID = "extra_chat_id"
+        const val EXTRA_CONNECTION_ID = "extra_connection_id"
 
         const val PLAY_APP_UPDATE_CHANNEL_ID = "play_app_update_channel"
         const val PLAY_APP_UPDATE_NOTIFICATION_ID = 9997
@@ -370,8 +372,10 @@ class NotificationUtil @Inject constructor(
         val replyPendingIntent: PendingIntent =
             PendingIntent.getBroadcast(
                 context,
-                message.messageId.toInt(),
+                chat.chatId.toInt(),
                 Intent(context, ReplyReceiver::class.java).apply {
+                    putExtra(EXTRA_CHAT_ID, chat.chatId)
+                    putExtra(EXTRA_CONNECTION_ID, connectionInfo.connectionId)
                     putExtra("chat", chat)
                 },
                 getPendingIntentFlags(true)
@@ -414,6 +418,7 @@ class NotificationUtil @Inject constructor(
                             )
                             .addRemoteInput(remoteInput)
                             .setAllowGeneratedReplies(true)
+                            .setSemanticAction(Notification.Action.SEMANTIC_ACTION_REPLY)
                             .build(),
                         Notification.Action.Builder(
                             Icon.createWithResource(context, R.drawable.baseline_mark_chat_read_24),
@@ -541,7 +546,145 @@ class NotificationUtil @Inject constructor(
         notificationManager.notify(chat.chatId.toInt(), notificationBuilder.build())
     }
 
+    suspend fun postDirectReplyResultNotification(
+        chatId: Long,
+        messageId: Long,
+        connectionInfo: ConnectionInfo,
+        errorText: String? = null,
+    ) {
+        notifyMutex.withLock {
+            val chat = database.chatDao.getChatByIdWithoutObserve(chatId)?.toChat() ?: return
+            val channelId = "${connectionInfo.pkg}_${connectionInfo.connectionId}_${connectionInfo.alias}"
+            createNotificationChannel(
+                channelId = channelId,
+                channelName = connectionInfo.alias,
+                channelDescription = "来自${connectionInfo.name}扩展，${connectionInfo.alias}连接的消息"
+            )
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+                notificationManager.cancel(chatId.toInt())
+                return
+            }
+
+            val message = database.messageDao.getMessageById(messageId)?.toMessage()
+            val userName = context.getDataStoreValue(DataStoreKeys.USER_NAME, context.getString(R.string.you))
+            val userAvatarModel = context.getDataStoreValue(DataStoreKeys.USER_AVATAR, "")
+            val userIcon = getOrCreateAvatarIcon(
+                cacheKey = "self_${userName}_${userAvatarModel}",
+                model = userAvatarModel.ifBlank { null },
+                name = userName,
+                bgAttr = com.google.android.material.R.attr.colorSecondary,
+                fgAttr = com.google.android.material.R.attr.colorOnSecondary,
+            )
+            val chatIcon = getOrCreateAvatarIcon(
+                cacheKey = "chat_${chat.chatId}_${chat.avatar.getModel()}",
+                model = chat.avatar.getModel(),
+                name = chat.name,
+                bgAttr = com.google.android.material.R.attr.colorPrimary,
+                fgAttr = com.google.android.material.R.attr.colorOnPrimary,
+            )
+            val userPerson = Person.Builder().setName(userName).setIcon(userIcon).build()
+            val chatPerson = Person.Builder().setName(chat.name).setIcon(chatIcon).build()
+
+            val list = tempMessageMap.computeIfAbsent(chat.chatId) { CopyOnWriteArrayList() }
+            if (errorText == null && message != null) {
+                list.add(message to userPerson)
+                while (list.size > 6) {
+                    list.removeAt(0)
+                }
+            }
+
+            val launchUri = "parabox://chat/${chat.chatId}".toUri()
+            val launchPendingIntent = Intent(context, MainActivity::class.java).apply {
+                action = Intent.ACTION_VIEW
+                data = launchUri
+                addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            }.let {
+                PendingIntent.getActivity(
+                    context, 0, it,
+                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                )
+            }
+            val replyPendingIntent = PendingIntent.getBroadcast(
+                context,
+                chat.chatId.toInt(),
+                Intent(context, ReplyReceiver::class.java).apply {
+                    putExtra(EXTRA_CHAT_ID, chat.chatId)
+                    putExtra(EXTRA_CONNECTION_ID, connectionInfo.connectionId)
+                    putExtra("chat", chat)
+                },
+                getPendingIntentFlags(true)
+            )
+            val markAsReadPendingIntent = PendingIntent.getBroadcast(
+                context,
+                chat.chatId.toInt(),
+                Intent(context, MarkAsReadReceiver::class.java).apply {
+                    putExtra("chat", chat)
+                },
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+
+            val style = Notification.MessagingStyle(userPerson).apply {
+                list.forEach { (msg, person) ->
+                    addMessage(
+                        Notification.MessagingStyle.Message(
+                            msg.contentString,
+                            msg.timestamp,
+                            if (msg.sentByMe) userPerson else person,
+                        )
+                    )
+                }
+                if (!errorText.isNullOrBlank()) {
+                    addMessage(
+                        Notification.MessagingStyle.Message(
+                            "发送失败：$errorText",
+                            System.currentTimeMillis(),
+                            userPerson,
+                        )
+                    )
+                }
+                isGroupConversation = true
+                conversationTitle = chat.name
+            }
+
+            val builder = Notification.Builder(context, channelId)
+                .setSmallIcon(R.drawable.ic_stat_name)
+                .setLargeIcon(chatIcon)
+                .setContentTitle(chat.name)
+                .setCategory(Notification.CATEGORY_MESSAGE)
+                .setShortcutId(chat.chatId.toString())
+                .setContentIntent(launchPendingIntent)
+                .addPerson(chatPerson)
+                .setShowWhen(true)
+                .setAutoCancel(true)
+                .setOnlyAlertOnce(true)
+                .setWhen(System.currentTimeMillis())
+                .setGroup(GROUP_KEY_NEW_MESSAGE)
+                .setActions(
+                    Notification.Action.Builder(
+                        Icon.createWithResource(context, R.drawable.baseline_send_24),
+                        context.getString(R.string.reply),
+                        replyPendingIntent,
+                    )
+                        .addRemoteInput(remoteInput)
+                        .setAllowGeneratedReplies(true)
+                        .setSemanticAction(Notification.Action.SEMANTIC_ACTION_REPLY)
+                        .build(),
+                    Notification.Action.Builder(
+                        Icon.createWithResource(context, R.drawable.baseline_mark_chat_read_24),
+                        context.getString(R.string.mark_as_read),
+                        markAsReadPendingIntent,
+                    ).build(),
+                )
+                .setStyle(style)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                builder.setLocusId(LocusId(chat.chatId.toString()))
+            }
+            notificationManager.notify(chat.chatId.toInt(), builder.build())
+        }
+    }
+
     fun clearNotification(id: Int) {
+        tempMessageMap.remove(id.toLong())
         notificationManager.cancel(id)
     }
 

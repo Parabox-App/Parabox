@@ -69,6 +69,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.apache.commons.io.FileUtils
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -85,6 +86,75 @@ class MessagePageViewModel @Inject constructor(
     val extensionManager: ExtensionManager,
     val mainRepository: MainRepository,
 ) : BaseViewModel<MessagePageState, MessagePageEvent, MessagePageEffect>() {
+
+    @Volatile
+    private var activeFocusedChat: Chat? = null
+    private var chatSyncJob: Job? = null
+    private val lastChatSyncAtMs = ConcurrentHashMap<Long, Long>()
+
+    fun onChatFocusEnter(chat: Chat, forceSync: Boolean = false) {
+        val previous = activeFocusedChat
+        if (previous != null && previous.chatId != chat.chatId) {
+            findConnectionSuccess(previous.extensionId)?.notifyChatFocus(previous.uid, opened = false)
+        }
+        activeFocusedChat = chat
+        val connection = findConnectionSuccess(chat.extensionId) ?: return
+        connection.notifyChatFocus(chat.uid, opened = true)
+
+        val now = System.currentTimeMillis()
+        val lastSynced = lastChatSyncAtMs[chat.chatId] ?: 0L
+        if (!forceSync && now - lastSynced < CHAT_ENTRY_SYNC_DEBOUNCE_MS) {
+            return
+        }
+        lastChatSyncAtMs[chat.chatId] = now
+        chatSyncJob?.cancel()
+        chatSyncJob = viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
+                val latest = connection.syncChatLatestMessages(
+                    chatUid = chat.uid,
+                    limit = DEFAULT_CHAT_ENTRY_SYNC_LIMIT,
+                )
+                if (latest.isNotEmpty()) {
+                    mainRepository.syncChatMessages(
+                        messages = latest,
+                        ext = connection,
+                        suppressNotification = true,
+                        incrementUnread = false,
+                    )
+                }
+            }.onFailure { err ->
+                Log.w("parabox", "onChatFocusEnter sync failed for chat ${chat.chatId}: ${err.message}")
+            }
+        }
+    }
+
+    fun onChatFocusExit(chat: Chat) {
+        if (activeFocusedChat?.chatId != chat.chatId) return
+        activeFocusedChat = null
+        chatSyncJob?.cancel()
+        chatSyncJob = null
+        findConnectionSuccess(chat.extensionId)?.notifyChatFocus(chat.uid, opened = false)
+    }
+
+    private fun findConnectionSuccess(extensionId: Long?): Connection.ConnectionSuccess? {
+        if (extensionId == null) return null
+        return extensionManager.connectionFlow.value
+            .firstOrNull { it.connectionId == extensionId } as? Connection.ConnectionSuccess
+    }
+
+    override fun onCleared() {
+        activeFocusedChat?.let { focused ->
+            findConnectionSuccess(focused.extensionId)?.notifyChatFocus(focused.uid, opened = false)
+        }
+        activeFocusedChat = null
+        chatSyncJob?.cancel()
+        super.onCleared()
+    }
+
+    companion object {
+        private const val DEFAULT_CHAT_ENTRY_SYNC_LIMIT = 30
+        private const val CHAT_ENTRY_SYNC_DEBOUNCE_MS = 3_000L
+    }
 
     override fun initialState(): MessagePageState {
         return MessagePageState()

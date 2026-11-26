@@ -32,6 +32,7 @@ service ParaboxExtensionService {
   rpc GetContacts(SessionScopedRequest) returns (ContactListResponse);
   rpc GetChats(SessionScopedRequest) returns (ChatListResponse);
   rpc QueryMessageHistory(QueryHistoryRequest) returns (MessageListResponse);
+  rpc SyncChatLatestMessages(SyncChatLatestRequest) returns (MessageListResponse);
   rpc GetGroupBasicInfo(BasicInfoRequest) returns (BasicInfoResponse);
   rpc GetUserBasicInfo(BasicInfoRequest) returns (BasicInfoResponse);
   rpc QueryForwardNode(ForwardNodeRequest) returns (ForwardNodeResponse);
@@ -268,12 +269,18 @@ message MessageAckFrame {
   ActionResult result = 2;
 }
 
+message ChatFocusFrame {
+  string chat_uid = 1;
+  bool opened = 2;
+}
+
 message HostSessionFrame {
   oneof payload {
     SessionInitFrame init = 1;
     HeartbeatFrame ping = 2;
     LifecycleEventProto lifecycle = 3;
     MessageAckFrame ack = 4;
+    ChatFocusFrame chat_focus = 5;
   }
 }
 
@@ -286,6 +293,7 @@ message StatusChangedFrame {
 message ReceiveMessageEventFrame {
   string ack_id = 1;
   ReceiveMessageProto message = 2;
+  bool is_backfill = 3;
 }
 
 message RecallMessageEventFrame {
@@ -497,6 +505,12 @@ message ChatListResponse {
 message QueryHistoryRequest {
   string session_id = 1;
   string message_uuid = 2;
+}
+
+message SyncChatLatestRequest {
+  string session_id = 1;
+  string chat_uid = 2;
+  int32 limit = 3;
 }
 
 message MessageListResponse {

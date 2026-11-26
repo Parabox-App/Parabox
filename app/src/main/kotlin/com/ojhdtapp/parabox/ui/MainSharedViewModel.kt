@@ -13,7 +13,9 @@ import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.core.util.Resource
 import com.ojhdtapp.parabox.core.util.dataStore
 import com.ojhdtapp.parabox.domain.model.Chat
+import com.ojhdtapp.parabox.domain.model.Connection
 import com.ojhdtapp.parabox.domain.model.Contact
+import com.ojhdtapp.parabox.domain.model.ExternalConnection
 import com.ojhdtapp.parabox.domain.model.filter.ChatFilter
 import com.ojhdtapp.parabox.domain.model.filter.MessageFilter
 import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
@@ -23,6 +25,13 @@ import com.ojhdtapp.parabox.domain.use_case.Query
 import com.ojhdtapp.parabox.ui.base.BaseViewModel
 import com.ojhdtapp.parabox.ui.base.UiEffect
 import com.ojhdtapp.parabox.ui.theme.Theme
+import com.ojhdtapp.paraboxdevelopmentkit.model.ParaboxBasicInfo
+import com.ojhdtapp.paraboxdevelopmentkit.v2.ParaboxConnectionStatus
+import com.ojhdtapp.paraboxdevelopmentkit.v2.ParaboxSession
+import androidx.core.net.toUri
+import java.io.File
+import java.io.FileOutputStream
+import java.util.concurrent.ConcurrentHashMap
 
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -218,9 +227,72 @@ class MainSharedViewModel @Inject constructor(
             }
 
             is MainSharedEvent.SearchAvatarClicked -> {
+                val nextOpen = !state.openMainDialog
+                if (nextOpen) {
+                    refreshConnectionSelfProfiles(force = false)
+                }
                 return state.copy(
-                    openMainDialog = !state.openMainDialog
+                    openMainDialog = nextOpen
                 )
+            }
+
+            is MainSharedEvent.DismissAccountPanel -> {
+                return state.copy(
+                    openMainDialog = false
+                )
+            }
+
+            is MainSharedEvent.RefreshAccountPanel -> {
+                refreshConnectionSelfProfiles(force = true)
+                return state
+            }
+
+            is MainSharedEvent.UpdateAccountPanelConnections -> {
+                return state.copy(
+                    accountPanel = state.accountPanel.copy(
+                        connections = event.connections
+                    )
+                )
+            }
+
+            is MainSharedEvent.SelectAvatarUri -> {
+                editDataStore(DataStoreKeys.USER_AVATAR, event.uriString)
+                return state
+            }
+
+            is MainSharedEvent.ApplyConnectionProfile -> {
+                viewModelScope.launch(Dispatchers.IO) {
+                    context.dataStore.edit { prefs ->
+                        val trimmedName = event.name?.trim().orEmpty()
+                        if (trimmedName.isNotEmpty()) {
+                            prefs[DataStoreKeys.USER_NAME] = trimmedName
+                        }
+                        if (event.avatarUri != null) {
+                            prefs[DataStoreKeys.USER_AVATAR] = event.avatarUri
+                        }
+                    }
+                }
+                return state
+            }
+
+            is MainSharedEvent.PickCustomAvatar -> {
+                viewModelScope.launch(Dispatchers.IO) {
+                    val savedUri = persistCustomAvatar(event.sourceUri)
+                    if (savedUri != null) {
+                        context.dataStore.edit { prefs ->
+                            prefs[DataStoreKeys.USER_AVATAR] = savedUri.toString()
+                        }
+                    }
+                }
+                return state
+            }
+
+            is MainSharedEvent.UpdateLocalName -> {
+                val trimmed = event.name.trim()
+                if (trimmed.isNotEmpty()) {
+                    editDataStore(DataStoreKeys.USER_NAME, trimmed)
+                }
+                return state
             }
 
             is MainSharedEvent.UpdateSearchDoneChatFilter -> {
@@ -836,6 +908,88 @@ class MainSharedViewModel @Inject constructor(
 
     }
 
+    private val selfProfileCache = ConcurrentHashMap<Long, ParaboxBasicInfo>()
+    private val inFlightSelfProfileFetches = ConcurrentHashMap.newKeySet<Long>()
+
+    private fun mapConnectionToAccountItem(conn: Connection): MainSharedState.ConnectionAccountItem {
+        val (statusKind, statusMsg) = when (conn) {
+            is Connection.ConnectionSuccess -> when (val s = conn.getStatus().value) {
+                is ParaboxConnectionStatus.Active -> MainSharedState.ConnectionStatusKind.ACTIVE to "已连接"
+                is ParaboxConnectionStatus.Initializing -> MainSharedState.ConnectionStatusKind.CONNECTING to "初始化中"
+                is ParaboxConnectionStatus.Pending -> MainSharedState.ConnectionStatusKind.CONNECTING to "连接中"
+                is ParaboxConnectionStatus.Reconnecting -> MainSharedState.ConnectionStatusKind.RECONNECTING to
+                    (s.message.ifBlank { "重连中 (#${s.attempt})" })
+                is ParaboxConnectionStatus.Error -> MainSharedState.ConnectionStatusKind.ERROR to
+                    (s.message.ifBlank { "连接异常" })
+            }
+            is Connection.ConnectionPending -> MainSharedState.ConnectionStatusKind.CONNECTING to "连接中"
+            is Connection.ConnectionFail -> MainSharedState.ConnectionStatusKind.ERROR to
+                conn.reason.ifBlank { "连接失败" }
+        }
+        val cached = selfProfileCache[conn.connectionId]
+        val pkg = (conn as? ExternalConnection)?.pkg ?: context.packageName
+        return MainSharedState.ConnectionAccountItem(
+            connectionId = conn.connectionId,
+            alias = conn.alias.ifBlank { conn.name },
+            extensionName = conn.name,
+            pkg = pkg,
+            status = statusKind,
+            statusMessage = statusMsg,
+            accountName = cached?.name?.takeIf { it.isNotBlank() },
+            accountAvatarUri = cached?.avatar?.getModel()?.toString()?.takeIf { it.isNotBlank() },
+            isLoadingAccount = conn.connectionId in inFlightSelfProfileFetches,
+        )
+    }
+
+    private fun publishAccountPanelSnapshot(connections: List<Connection> = extensionManager.connectionFlow.value) {
+        val items = connections.map(::mapConnectionToAccountItem)
+        sendEvent(MainSharedEvent.UpdateAccountPanelConnections(items))
+    }
+
+    private fun refreshConnectionSelfProfiles(force: Boolean) {
+        val connections = extensionManager.connectionFlow.value
+        publishAccountPanelSnapshot(connections)
+        connections.filterIsInstance<Connection.ConnectionSuccess>().forEach { conn ->
+            if (conn.getStatus().value !is ParaboxConnectionStatus.Active) return@forEach
+            if (!force && selfProfileCache.containsKey(conn.connectionId)) return@forEach
+            if (!inFlightSelfProfileFetches.add(conn.connectionId)) return@forEach
+            publishAccountPanelSnapshot()
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    val info = runCatching {
+                        conn.getUserBasicInfo(ParaboxSession.SELF_USER_ID)
+                    }.getOrNull()
+                    if (info != null) {
+                        selfProfileCache[conn.connectionId] = info
+                    }
+                } finally {
+                    inFlightSelfProfileFetches.remove(conn.connectionId)
+                    publishAccountPanelSnapshot()
+                }
+            }
+        }
+    }
+
+    private fun persistCustomAvatar(sourceUri: Uri): Uri? {
+        return runCatching {
+            val profileDir = File(context.filesDir, "profile").apply { mkdirs() }
+            profileDir.listFiles()?.forEach { old -> runCatching { old.delete() } }
+            val destFile = File(profileDir, "user_avatar_${System.currentTimeMillis()}.jpg")
+            context.contentResolver.openInputStream(sourceUri)?.use { input ->
+                FileOutputStream(destFile).use { output ->
+                    input.copyTo(output)
+                }
+            } ?: return null
+            if (destFile.length() <= 0L) {
+                destFile.delete()
+                return null
+            }
+            destFile.toUri()
+        }.onFailure {
+            Log.e("parabox", "Failed to persist custom avatar", it)
+        }.getOrNull()
+    }
+
     private fun <T> editDataStore(key: Preferences.Key<T>, value: T) {
         viewModelScope.launch(Dispatchers.IO) {
             context.dataStore.edit {
@@ -845,6 +999,23 @@ class MainSharedViewModel @Inject constructor(
     }
 
     init {
+        viewModelScope.launch(Dispatchers.IO) {
+            extensionManager.connectionFlow.collectLatest { connections ->
+                val activeIds = connections.map { it.connectionId }.toSet()
+                selfProfileCache.keys.retainAll(activeIds)
+                publishAccountPanelSnapshot(connections)
+                refreshConnectionSelfProfiles(force = false)
+
+                val successConns = connections.filterIsInstance<Connection.ConnectionSuccess>()
+                if (successConns.isNotEmpty()) {
+                    combine(successConns.map { it.getStatus() }) { statuses -> statuses.toList() }
+                        .collectLatest {
+                            publishAccountPanelSnapshot(connections)
+                            refreshConnectionSelfProfiles(force = false)
+                        }
+                }
+            }
+        }
         viewModelScope.launch(Dispatchers.IO) {
             context.dataStore.data.collectLatest {
                 sendEvent(MainSharedEvent.UpdateDataStore(

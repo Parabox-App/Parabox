@@ -17,6 +17,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -44,7 +46,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.flowWithLifecycle
 import androidx.navigation3.runtime.NavKey
@@ -74,6 +78,8 @@ import com.ojhdtapp.parabox.core.util.backup.LocalRoomBackup
 import com.ojhdtapp.parabox.data.local.AppDatabase
 import com.ojhdtapp.parabox.domain.cloud.LocalCloudService
 import com.ojhdtapp.parabox.domain.service.ExtensionServiceConnection
+import com.ojhdtapp.parabox.domain.service.extension.ExtensionManager
+import com.ojhdtapp.parabox.protocol.v2.LifecycleEventProto
 import com.ojhdtapp.parabox.ui.MainSharedEffect
 import com.ojhdtapp.parabox.ui.MainSharedEvent
 import com.ojhdtapp.parabox.ui.MainSharedViewModel
@@ -83,6 +89,8 @@ import com.ojhdtapp.parabox.ui.common.ChatPickerDialog
 import com.ojhdtapp.parabox.ui.common.ContactPickerDialog
 import com.ojhdtapp.parabox.ui.common.DateRangePickerDialog
 import com.ojhdtapp.parabox.ui.common.FixedInsets
+import com.ojhdtapp.parabox.ui.common.AccountStatusPanelOverlay
+import com.ojhdtapp.parabox.ui.common.LocalAccountPanelSharedTransitionScope
 import com.ojhdtapp.parabox.ui.common.LayoutType
 import com.ojhdtapp.parabox.ui.common.LocalFixedInsets
 import com.ojhdtapp.parabox.ui.common.LocalSystemUiController
@@ -143,6 +151,9 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var audioPlayer: AudioPlayer
 
+    @Inject
+    lateinit var extensionManager: ExtensionManager
+
     lateinit var roomBackup: RoomBackup
 
     private lateinit var extensionServiceConnection: ExtensionServiceConnection
@@ -155,6 +166,15 @@ class MainActivity : AppCompatActivity() {
         extensionServiceConnection = ExtensionServiceConnection(baseContext)
         lifecycle.addObserver(extensionServiceConnection)
         lifecycle.addObserver(notificationUtil)
+        lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onResume(owner: LifecycleOwner) {
+                extensionManager.dispatchHostLifecycle(LifecycleEventProto.LIFECYCLE_RESUME)
+            }
+
+            override fun onPause(owner: LifecycleOwner) {
+                extensionManager.dispatchHostLifecycle(LifecycleEventProto.LIFECYCLE_PAUSE)
+            }
+        })
 
         if (DeviceUtil.isMIUI(this)) {
             window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
@@ -418,8 +438,13 @@ class MainActivity : AppCompatActivity() {
                                     onEvent = messagePageViewModel::sendEvent,
                                 )
 
-                                Box(modifier = Modifier.fillMaxSize()) {
-                                    NavigationSuite(
+                                @OptIn(ExperimentalSharedTransitionApi::class)
+                                SharedTransitionLayout(modifier = Modifier.fillMaxSize()) {
+                                    CompositionLocalProvider(
+                                        LocalAccountPanelSharedTransitionScope provides this
+                                    ) {
+                                        Box(modifier = Modifier.fillMaxSize()) {
+                                            NavigationSuite(
                                         mainSharedViewModel = mainSharedViewModel,
                                         currentTab = currentRoute.tab,
                                         isAtTopLevel = currentRoute.isTopLevel,
@@ -559,13 +584,22 @@ class MainActivity : AppCompatActivity() {
                                         )
                                     }
 
-                                    // Fullscreen media previewer with Google-spec predictive back overlay
-                                    MyImagePreviewer(
-                                        previewerState = previewerState,
-                                        state = messageState.chatDetail,
-                                        layoutType = layoutType,
-                                        onEvent = messagePageViewModel::sendEvent,
-                                    )
+                                            // Fullscreen media previewer with Google-spec predictive back overlay
+                                            MyImagePreviewer(
+                                                previewerState = previewerState,
+                                                state = messageState.chatDetail,
+                                                layoutType = layoutType,
+                                                onEvent = messagePageViewModel::sendEvent,
+                                            )
+
+                                            // Material You account & connection status popup panel
+                                            AccountStatusPanelOverlay(
+                                                mainSharedState = mainSharedState,
+                                                onEvent = mainSharedViewModel::sendEvent,
+                                                onOpenExtensionSettings = { openSettings(com.ojhdtapp.parabox.ui.setting.Setting.ADDONS) },
+                                            )
+                                        }
+                                    }
                                 }
                             }
 

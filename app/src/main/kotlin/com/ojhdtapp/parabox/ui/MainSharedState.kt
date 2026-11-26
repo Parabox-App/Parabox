@@ -20,6 +20,7 @@ data class MainSharedState(
     val openDrawer:OpenDrawer = OpenDrawer(),
     val openBottomSheet: OpenBottomSheet = OpenBottomSheet(),
     val openMainDialog: Boolean = false,
+    val accountPanel: AccountPanelState = AccountPanelState(),
     val contactPicker: ContactPicker = ContactPicker(),
     val chatPicker: ChatPicker = ChatPicker(),
     val openDateRangePicker: Boolean = false,
@@ -107,5 +108,29 @@ data class MainSharedState(
         val showBottomSheet: Boolean = false,
         val loadState: LoadState = LoadState.LOADING,
         val data: List<ChangeLog> = emptyList()
+    )
+
+    enum class ConnectionStatusKind {
+        ACTIVE,
+        CONNECTING,
+        RECONNECTING,
+        ERROR,
+        STOPPED,
+    }
+
+    data class ConnectionAccountItem(
+        val connectionId: Long,
+        val alias: String,
+        val extensionName: String,
+        val pkg: String,
+        val status: ConnectionStatusKind,
+        val statusMessage: String = "",
+        val accountName: String? = null,
+        val accountAvatarUri: String? = null,
+        val isLoadingAccount: Boolean = false,
+    )
+
+    data class AccountPanelState(
+        val connections: List<ConnectionAccountItem> = emptyList(),
     )
 }

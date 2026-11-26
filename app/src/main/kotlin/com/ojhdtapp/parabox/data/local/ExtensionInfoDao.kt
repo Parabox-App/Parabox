@@ -24,6 +24,9 @@ interface ExtensionInfoDao {
     @Query("SELECT * FROM connection_info_entity")
     fun getConnectionInfoList() : Flow<List<ConnectionInfoEntity>>
 
+    @Query("SELECT * FROM connection_info_entity WHERE connectionId = :connectionId LIMIT 1")
+    fun getConnectionInfoById(connectionId: Long): ConnectionInfoEntity?
+
     @Update(entity = ConnectionInfoEntity::class)
     fun updateConnectionInfoExtra(obj: ConnectionInfoExtraUpdate): Int
 }

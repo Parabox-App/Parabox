@@ -131,7 +131,7 @@ private fun Content(
 ) =
     LazyColumn(modifier = modifier) {
         item {
-            SettingHeader(text = "消息页")
+            SettingHeader(text = "消息列表")
         }
         item {
             SettingItem(
@@ -168,7 +168,7 @@ private fun Content(
             }
         }
         item {
-            SettingHeader(text = "聊天页")
+            SettingHeader(text = "详情页")
         }
         item {
             SettingItem(title = "使用回车键发送消息",

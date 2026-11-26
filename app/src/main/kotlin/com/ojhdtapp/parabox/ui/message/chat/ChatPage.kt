@@ -52,6 +52,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -68,6 +69,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.flowWithLifecycle
 import androidx.paging.compose.LazyPagingItems
@@ -318,7 +320,30 @@ fun NormalChatPage(
     }
     val imeOccupiesBottom = imeVisible || hasImeInset
     val editState = state.chatDetail.editAreaState
-    val chatId = state.chatDetail.chat?.chatId
+    val currentChat = state.chatDetail.chat
+    val chatId = currentChat?.chatId
+
+    DisposableEffect(chatId, lifecycleOwner) {
+        if (currentChat != null) {
+            viewModel.onChatFocusEnter(currentChat)
+        }
+        var firstResumeSeen = false
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                if (firstResumeSeen && currentChat != null) {
+                    viewModel.onChatFocusEnter(currentChat, forceSync = true)
+                }
+                firstResumeSeen = true
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            if (currentChat != null) {
+                viewModel.onChatFocusExit(currentChat)
+            }
+        }
+    }
     val editorRequester = remember(chatId) { FocusRequester() }
     var editorFocused by remember(chatId) { mutableStateOf(false) }
     val imeScrollModifier = rememberChatImeScrollModifier(

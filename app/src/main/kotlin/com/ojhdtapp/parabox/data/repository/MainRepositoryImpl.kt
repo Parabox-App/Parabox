@@ -67,7 +67,11 @@ class MainRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun receiveMessage(msg: ReceiveMessage, ext: Connection.ConnectionSuccess): ParaboxResult {
+    override suspend fun receiveMessage(
+        msg: ReceiveMessage,
+        ext: Connection.ConnectionSuccess,
+        isBackfill: Boolean,
+    ): ParaboxResult {
         return withContext(Dispatchers.IO) {
             try {
                 val info = ext.toExtensionInfo()
@@ -112,13 +116,17 @@ class MainRepositoryImpl @Inject constructor(
                     resolvedMessageId = db.messageDao.insertMessage(messageEntity)
 
                     if (resolvedChatId != -1L) {
-                        db.chatDao.updateLatestMessageId(
-                            ChatLatestMessageIdUpdate(
-                                chatId = resolvedChatId,
-                                latestMessageId = resolvedMessageId,
-                            )
-                        )
                         val originalChat = db.chatDao.getChatByIdWithoutObserve(resolvedChatId)
+                        val latestMessage = db.messageDao.getLatestMessageByChatId(resolvedChatId)
+                        val targetLatestId = latestMessage?.messageId ?: resolvedMessageId
+                        if (targetLatestId > 0L && originalChat?.latestMessageId != targetLatestId) {
+                            db.chatDao.updateLatestMessageId(
+                                ChatLatestMessageIdUpdate(
+                                    chatId = resolvedChatId,
+                                    latestMessageId = targetLatestId,
+                                )
+                            )
+                        }
                         originalChatName = originalChat?.name
                         originalChatAvatar = originalChat?.avatar ?: ParaboxResourceInfo.ParaboxEmptyInfo
                         originalChatType = originalChat?.type ?: msg.chat.type
@@ -141,7 +149,7 @@ class MainRepositoryImpl @Inject constructor(
 
                         val originalNum = originalChat?.unreadMessageNum ?: 0
                         if (msg.sentByMe) {
-                            if (originalNum > 0) {
+                            if (!isBackfill && originalNum > 0) {
                                 db.chatDao.updateUnreadMessageNum(
                                     ChatUnreadMessagesNumUpdate(
                                         chatId = resolvedChatId,
@@ -230,18 +238,253 @@ class MainRepositoryImpl @Inject constructor(
 
                 if (!msg.sentByMe) {
                     scheduleBadgeIncrement()
-                    notificationUtil.enqueueNewMessageNotification(
-                        messageId = resolvedMessageId,
-                        contactId = resolvedContactId,
-                        chatId = resolvedChatId,
-                        connectionInfo = info,
-                    )
+                    if (!isBackfill) {
+                        Log.d("parabox", "receiveMessage notify uuid=${msg.uuid} chatId=$resolvedChatId msgId=$resolvedMessageId")
+                        notificationUtil.enqueueNewMessageNotification(
+                            messageId = resolvedMessageId,
+                            contactId = resolvedContactId,
+                            chatId = resolvedChatId,
+                            connectionInfo = info,
+                        )
+                    } else {
+                        Log.d("parabox", "receiveMessage silent-backfill uuid=${msg.uuid} chatId=$resolvedChatId msgId=$resolvedMessageId")
+                    }
                 }
                 ParaboxResult(ParaboxResult.SUCCESS, ParaboxResult.SUCCESS_MSG)
             } catch (e: Exception) {
                 Log.e("parabox", "receiveMessage failed", e)
                 ParaboxResult(ParaboxResult.ERROR_UNKNOWN, e.message ?: ParaboxResult.ERROR_UNKNOWN_MSG)
             }
+        }
+    }
+
+    override suspend fun syncChatMessages(
+        messages: List<ReceiveMessage>,
+        ext: Connection.ConnectionSuccess,
+        suppressNotification: Boolean,
+        incrementUnread: Boolean,
+    ): Int = withContext(Dispatchers.IO) {
+        if (messages.isEmpty()) return@withContext 0
+        try {
+            val info = ext.toExtensionInfo()
+            val sorted = messages.sortedBy { it.timestamp }
+
+            // Deduplicate both within this batch and against Room in chunked queries
+            val existingUids = HashSet<String>()
+            val candidateUids = sorted.mapNotNull { it.uuid.takeIf(String::isNotBlank) }.distinct()
+            candidateUids.chunked(UID_QUERY_CHUNK_SIZE).forEach { chunk ->
+                existingUids.addAll(db.messageDao.getExistingUids(info.pkg, info.connectionId, chunk))
+            }
+
+            val seenInBatch = HashSet<String>()
+            val toInsert = sorted.filter { msg ->
+                val uid = msg.uuid
+                if (uid.isBlank()) {
+                    true
+                } else {
+                    uid !in existingUids && seenInBatch.add(uid)
+                }
+            }
+            if (toInsert.isEmpty()) return@withContext 0
+
+            val insertedForNotify = ArrayList<Triple<Long, Long, Long>>()
+            val contactsToRefresh = LinkedHashMap<Long, Triple<String, String?, ParaboxResourceInfo>>()
+            val chatsToRefresh = LinkedHashMap<Long, Triple<Pair<Int, String>, String?, ParaboxResourceInfo>>()
+            var insertedCount = 0
+
+            db.withTransaction {
+                val touchedChatIds = LinkedHashSet<Long>()
+                val unreadDeltaByChat = LinkedHashMap<Long, Int>()
+                var cachedSelfContactId: Long? = null
+
+                for (msg in toInsert) {
+                    if (msg.uuid.isNotBlank()) {
+                        val exists = db.messageDao.checkMessage(info.pkg, info.connectionId, msg.uuid)
+                        if (exists != null && exists > 0L) continue
+                    }
+
+                    val chatEntity = buildChatEntity(msg, info)
+                    val resolvedChatId = db.chatDao.checkChat(chatEntity.pkg, info.connectionId, chatEntity.uid)
+                        ?: db.chatDao.insertChat(chatEntity)
+
+                    val resolvedContactId = if (msg.sentByMe) {
+                        cachedSelfContactId ?: getOrCreateSelfContactId(info.pkg, info.connectionId).also {
+                            cachedSelfContactId = it
+                        }
+                    } else {
+                        val contactEntity = buildContactEntity(msg, info)
+                        db.contactDao.checkContact(contactEntity.pkg, info.connectionId, contactEntity.uid)
+                            ?: db.contactDao.insertContact(contactEntity)
+                    }
+
+                    if (!msg.sentByMe && resolvedContactId != -1L && resolvedChatId != -1L) {
+                        db.contactChatCrossRefDao.insertContactChatCrossRef(
+                            ContactChatCrossRef(resolvedContactId, resolvedChatId)
+                        )
+                    }
+
+                    val messageEntity = buildMessageEntity(msg, info, resolvedContactId, resolvedChatId)
+                    val resolvedMessageId = db.messageDao.insertMessage(messageEntity)
+                    if (resolvedMessageId <= 0L) continue
+
+                    insertedCount += 1
+                    if (resolvedChatId != -1L) {
+                        touchedChatIds.add(resolvedChatId)
+                        if (incrementUnread && !msg.sentByMe) {
+                            unreadDeltaByChat[resolvedChatId] = (unreadDeltaByChat[resolvedChatId] ?: 0) + 1
+                        }
+                        if (!suppressNotification && !msg.sentByMe) {
+                            insertedForNotify.add(Triple(resolvedMessageId, resolvedContactId, resolvedChatId))
+                        }
+
+                        val originalChat = db.chatDao.getChatByIdWithoutObserve(resolvedChatId)
+                        val chatAvatarNeedsRefresh = originalChat == null ||
+                            originalChat.avatar is ParaboxResourceInfo.ParaboxEmptyInfo ||
+                            ExtensionResourceUri.isExpiredTdlibFileProviderUri(originalChat.avatar)
+                        val incomingChatAvatar = msg.chat.basicInfo.avatar
+                            .takeIf { it !is ParaboxResourceInfo.ParaboxEmptyInfo }
+                        if (chatAvatarNeedsRefresh && incomingChatAvatar != null && originalChat?.name?.isNotEmpty() == true) {
+                            db.chatDao.updateBasicInfo(
+                                ChatBasicInfoUpdate(
+                                    chatId = resolvedChatId,
+                                    name = originalChat.name,
+                                    avatar = incomingChatAvatar,
+                                )
+                            )
+                        } else if (originalChat?.name?.isNotEmpty() != true || chatAvatarNeedsRefresh) {
+                            val chatType = originalChat?.type ?: msg.chat.type
+                            val lookupId = if (chatType == ParaboxChat.TYPE_PRIVATE) {
+                                msg.chat.uid.ifBlank { msg.sender.uid }
+                            } else {
+                                msg.chat.uid
+                            }
+                            chatsToRefresh[resolvedChatId] = Triple(
+                                chatType to lookupId,
+                                originalChat?.name,
+                                originalChat?.avatar ?: ParaboxResourceInfo.ParaboxEmptyInfo,
+                            )
+                        }
+                    }
+
+                    if (!msg.sentByMe && resolvedContactId != -1L) {
+                        val originalContact = db.contactDao.getContactById(resolvedContactId)
+                        val contactAvatarNeedsRefresh = originalContact == null ||
+                            originalContact.avatar is ParaboxResourceInfo.ParaboxEmptyInfo ||
+                            ExtensionResourceUri.isExpiredTdlibFileProviderUri(originalContact.avatar)
+                        val incomingContactAvatar = msg.sender.basicInfo.avatar
+                            .takeIf { it !is ParaboxResourceInfo.ParaboxEmptyInfo }
+                        if (contactAvatarNeedsRefresh && incomingContactAvatar != null && originalContact?.name?.isNotEmpty() == true) {
+                            db.contactDao.updateBasicInfo(
+                                ContactBasicInfoUpdate(
+                                    contactId = resolvedContactId,
+                                    name = originalContact.name,
+                                    avatar = incomingContactAvatar,
+                                )
+                            )
+                        } else if (originalContact?.name?.isNotEmpty() != true || contactAvatarNeedsRefresh) {
+                            contactsToRefresh[resolvedContactId] = Triple(
+                                msg.sender.uid,
+                                originalContact?.name,
+                                originalContact?.avatar ?: ParaboxResourceInfo.ParaboxEmptyInfo,
+                            )
+                        }
+                    }
+                }
+
+                for (chatId in touchedChatIds) {
+                    val originalChat = db.chatDao.getChatByIdWithoutObserve(chatId)
+                    val latestMessage = db.messageDao.getLatestMessageByChatId(chatId)
+                    if (latestMessage != null && originalChat?.latestMessageId != latestMessage.messageId) {
+                        db.chatDao.updateLatestMessageId(
+                            ChatLatestMessageIdUpdate(
+                                chatId = chatId,
+                                latestMessageId = latestMessage.messageId,
+                            )
+                        )
+                    }
+                    val delta = unreadDeltaByChat[chatId] ?: 0
+                    if (delta > 0) {
+                        db.chatDao.updateUnreadMessageNum(
+                            ChatUnreadMessagesNumUpdate(
+                                chatId = chatId,
+                                unreadMessageNum = (originalChat?.unreadMessageNum ?: 0) + delta,
+                            )
+                        )
+                    }
+                }
+            }
+
+            contactsToRefresh.forEach { (contactId, meta) ->
+                val (uid, origName, origAvatar) = meta
+                if (inFlightContactRefresh.add(contactId)) {
+                    backgroundScope.launch {
+                        try {
+                            val basicInfo = runCatching { ext.getUserBasicInfo(uid) }.getOrNull()
+                            if (basicInfo != null) {
+                                db.contactDao.updateBasicInfo(
+                                    ContactBasicInfoUpdate(
+                                        contactId = contactId,
+                                        name = basicInfo.name ?: origName,
+                                        avatar = basicInfo.avatar.takeIf { it !is ParaboxResourceInfo.ParaboxEmptyInfo }
+                                            ?: origAvatar,
+                                    )
+                                )
+                            }
+                        } finally {
+                            inFlightContactRefresh.remove(contactId)
+                        }
+                    }
+                }
+            }
+
+            chatsToRefresh.forEach { (chatId, meta) ->
+                val (typeAndId, origName, origAvatar) = meta
+                val (chatType, targetUid) = typeAndId
+                if (inFlightChatRefresh.add(chatId)) {
+                    backgroundScope.launch {
+                        try {
+                            val basicInfo = runCatching {
+                                when (chatType) {
+                                    ParaboxChat.TYPE_PRIVATE -> ext.getUserBasicInfo(targetUid)
+                                    ParaboxChat.TYPE_GROUP -> ext.getGroupBasicInfo(targetUid)
+                                    else -> null
+                                }
+                            }.getOrNull()
+                            if (basicInfo != null) {
+                                db.chatDao.updateBasicInfo(
+                                    ChatBasicInfoUpdate(
+                                        chatId = chatId,
+                                        name = basicInfo.name ?: origName,
+                                        avatar = basicInfo.avatar.takeIf { it !is ParaboxResourceInfo.ParaboxEmptyInfo }
+                                            ?: origAvatar,
+                                    )
+                                )
+                            }
+                        } finally {
+                            inFlightChatRefresh.remove(chatId)
+                        }
+                    }
+                }
+            }
+
+            if (incrementUnread && insertedCount > 0) {
+                scheduleBadgeIncrement()
+            }
+            if (!suppressNotification) {
+                insertedForNotify.forEach { (msgId, contactId, chatId) ->
+                    notificationUtil.enqueueNewMessageNotification(
+                        messageId = msgId,
+                        contactId = contactId,
+                        chatId = chatId,
+                        connectionInfo = info,
+                    )
+                }
+            }
+
+            insertedCount
+        } catch (e: Exception) {
+            Log.e("parabox", "syncChatMessages failed", e)
+            0
         }
     }
 
@@ -326,6 +569,7 @@ class MainRepositoryImpl @Inject constructor(
     companion object {
         private const val SELF_CONTACT_UID = "__parabox_self__"
         private const val BADGE_FLUSH_DEBOUNCE_MS = 500L
+        private const val UID_QUERY_CHUNK_SIZE = 500
     }
 
     override fun getRecentQuery(): Flow<Resource<List<RecentQuery>>> {

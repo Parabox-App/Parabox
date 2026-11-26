@@ -54,6 +54,9 @@ class TdAccountStorage(
         return TdAccountDirectories(rootDir = root, dbDir = db, filesDir = files, metaFile = meta)
     }
 
+    fun getSyncStateFile(accountId: String): File =
+        File(getDirectories(accountId).rootDir, TdSyncStateStore.FILE_NAME)
+
     fun saveMeta(meta: TdAccountMeta) {
         val dirs = getDirectories(meta.accountId)
         runCatching {

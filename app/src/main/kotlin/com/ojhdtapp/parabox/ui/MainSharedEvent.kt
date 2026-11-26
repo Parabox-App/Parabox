@@ -1,5 +1,6 @@
 package com.ojhdtapp.parabox.ui
 
+import android.net.Uri
 import androidx.datastore.preferences.core.Preferences
 import com.ojhdtapp.parabox.core.util.LoadState
 import com.ojhdtapp.parabox.domain.model.ChangeLog
@@ -27,6 +28,13 @@ sealed interface MainSharedEvent : UiEvent {
     data class OpenDrawer(val open: Boolean, val snap: Boolean = false) : MainSharedEvent
     data class OpenBottomSheet(val open: Boolean, val snap: Boolean = false) : MainSharedEvent
     data object SearchAvatarClicked : MainSharedEvent
+    data object DismissAccountPanel : MainSharedEvent
+    data object RefreshAccountPanel : MainSharedEvent
+    data class UpdateAccountPanelConnections(val connections: List<MainSharedState.ConnectionAccountItem>) : MainSharedEvent
+    data class SelectAvatarUri(val uriString: String) : MainSharedEvent
+    data class ApplyConnectionProfile(val name: String?, val avatarUri: String?) : MainSharedEvent
+    data class PickCustomAvatar(val sourceUri: Uri) : MainSharedEvent
+    data class UpdateLocalName(val name: String) : MainSharedEvent
     data class UpdateSearchDoneChatFilter(val filter: ChatFilter) : MainSharedEvent
     data class UpdateSearchDoneMessageFilter(val filter: MessageFilter) : MainSharedEvent
     data class PickChat(val onDone: (Chat?) -> Unit) : MainSharedEvent

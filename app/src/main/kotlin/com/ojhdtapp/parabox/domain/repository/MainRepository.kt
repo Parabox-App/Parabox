@@ -9,7 +9,18 @@ import com.ojhdtapp.paraboxdevelopmentkit.model.SendMessage
 import kotlinx.coroutines.flow.Flow
 
 interface MainRepository {
-    suspend fun receiveMessage(msg: ReceiveMessage, ext: Connection.ConnectionSuccess): ParaboxResult
+    suspend fun receiveMessage(
+        msg: ReceiveMessage,
+        ext: Connection.ConnectionSuccess,
+        isBackfill: Boolean = false,
+    ): ParaboxResult
+
+    suspend fun syncChatMessages(
+        messages: List<ReceiveMessage>,
+        ext: Connection.ConnectionSuccess,
+        suppressNotification: Boolean = true,
+        incrementUnread: Boolean = false,
+    ): Int
 
     suspend fun insertOutgoingMessage(
         msg: SendMessage,
