@@ -58,4 +58,36 @@ class ChatImeGestureTest {
         assertNull(gesture.finish(imeVisible = true))
         assertNull(gesture.finish(imeVisible = false))
     }
+
+    @Test
+    fun nativeOpenDetectedMidGestureFocusesWhenShownAndIgnoresSnapBack() {
+        val gesture = ChatImeGesture(48f)
+        // Started slightly above latest, then imeNestedScroll pulled IME up in onPostScroll/onPostFling.
+        gesture.drag(-20f, atLatest = false, imeVisible = false, editorFocused = false)
+        gesture.observeNativeOpen()
+        assertEquals(ChatImeFocusAction.Focus, gesture.finish(imeVisible = true))
+
+        gesture.cancel()
+        gesture.observeNativeOpen()
+        assertNull(gesture.finish(imeVisible = false))
+    }
+
+    @Test
+    fun imePositionTreatsShownWithoutTargetAsShownFallback() {
+        val openWithoutTarget = ImePosition(shown = true, bottom = 840, target = 0)
+        assertEquals(true, openWithoutTarget.shownWithoutTarget)
+        assertEquals(false, openWithoutTarget.fullyShown)
+        assertEquals(ChatImeSettleState.Shown, openWithoutTarget.fallbackSettleState())
+
+        val openWithTarget = ImePosition(shown = true, bottom = 840, target = 840)
+        assertEquals(true, openWithTarget.fullyShown)
+        assertEquals(ChatImeSettleState.Shown, openWithTarget.fallbackSettleState())
+
+        val snappingBack = ImePosition(shown = false, bottom = 200, target = 0)
+        assertEquals(ChatImeSettleState.Unsettled, snappingBack.fallbackSettleState())
+
+        val hidden = ImePosition(shown = false, bottom = 0, target = 0)
+        assertEquals(true, hidden.fullyHidden)
+        assertEquals(ChatImeSettleState.Hidden, hidden.fallbackSettleState())
+    }
 }

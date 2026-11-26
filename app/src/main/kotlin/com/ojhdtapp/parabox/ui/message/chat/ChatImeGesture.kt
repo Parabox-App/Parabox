@@ -26,13 +26,18 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.abs
 
 internal enum class ChatImeFocusAction { Focus, Clear, OpenFallback }
+
+internal enum class ChatImeSettleState { Shown, Hidden, Unsettled }
 
 internal class ChatImeGesture(private val fallbackDistance: Float) {
     private enum class Direction { Open, Close }
@@ -44,6 +49,7 @@ internal class ChatImeGesture(private val fallbackDistance: Float) {
 
     val isActive: Boolean get() = direction != null
     val isOpening: Boolean get() = direction == Direction.Open
+    val hasObservedOpeningInsets: Boolean get() = sawOpeningInsets
 
     fun drag(deltaY: Float, atLatest: Boolean, imeVisible: Boolean, editorFocused: Boolean) {
         if (!isActive) {
@@ -54,6 +60,14 @@ internal class ChatImeGesture(private val fallbackDistance: Float) {
             }
         }
         if (isOpening) openingDistance = (openingDistance - deltaY).coerceAtLeast(0f)
+    }
+
+    fun observeNativeOpen() {
+        if (!isActive) {
+            direction = Direction.Open
+            openingDistance = 0f
+        }
+        if (isOpening) sawOpeningInsets = true
     }
 
     fun observeOpeningInsets(occupiesBottom: Boolean) {
@@ -83,12 +97,20 @@ internal class ChatImeGesture(private val fallbackDistance: Float) {
     }
 }
 
-private data class ImePosition(val shown: Boolean, val bottom: Int, val target: Int) {
+internal data class ImePosition(val shown: Boolean, val bottom: Int, val target: Int) {
+    val occupiesBottom: Boolean get() = shown || bottom > 0
     val fullyHidden: Boolean get() = !shown && bottom == 0 && target == 0
-    val fullyShown: Boolean get() = shown && bottom > 0 && bottom == target
+    val fullyShown: Boolean get() = shown && bottom > 0 && target > 0 && bottom == target
+    val shownWithoutTarget: Boolean get() = shown && bottom > 0 && target == 0
+
+    fun fallbackSettleState(): ChatImeSettleState = when {
+        shown && bottom > 0 -> ChatImeSettleState.Shown
+        fullyHidden -> ChatImeSettleState.Hidden
+        else -> ChatImeSettleState.Unsettled
+    }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalCoroutinesApi::class)
 @Composable
 internal fun rememberChatImeScrollModifier(
     enabled: Boolean,
@@ -111,10 +133,12 @@ internal fun rememberChatImeScrollModifier(
         val gesture = ChatImeGesture(with(density) { 48.dp.toPx() })
         object : NestedScrollConnection {
             private var settleJob: Job? = null
+            private var imeVisibleBeforeScroll = false
+            private var imeVisibleBeforeFling = false
 
             fun position() = ImePosition(imeVisible.value, ime.getBottom(density), target.getBottom(density))
 
-            fun recordInsets(bottom: Int) = gesture.observeOpeningInsets(bottom > 0)
+            fun recordInsets(position: ImePosition) = gesture.observeOpeningInsets(position.occupiesBottom)
 
             fun recordFocus(editorHasFocus: Boolean) = gesture.observeEditorFocus(editorHasFocus)
 
@@ -124,46 +148,126 @@ internal fun rememberChatImeScrollModifier(
                 gesture.cancel()
             }
 
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                if (source != NestedScrollSource.UserInput || abs(available.y) <= abs(available.x)) {
-                    return Offset.Zero
+            private suspend fun awaitImeSettle(opening: Boolean): ChatImeSettleState {
+                val current = position()
+                recordInsets(current)
+                if (opening && !gesture.hasObservedOpeningInsets) {
+                    val tookOver = withTimeoutOrNull(250L) {
+                        snapshotFlow { position() }.first {
+                            recordInsets(it)
+                            it.occupiesBottom
+                        }
+                    }
+                    if (tookOver == null) {
+                        val ended = position()
+                        recordInsets(ended)
+                        return ended.fallbackSettleState()
+                    }
                 }
-                if (settleJob != null) cancel()
+                val timeoutMs = if (opening) 600L else 400L
+                val settled = withTimeoutOrNull(timeoutMs) {
+                    snapshotFlow { position() }
+                        .transformLatest { pos ->
+                            recordInsets(pos)
+                            when {
+                                opening && pos.fullyShown -> emit(ChatImeSettleState.Shown)
+                                pos.fullyHidden -> emit(ChatImeSettleState.Hidden)
+                                opening && pos.shownWithoutTarget -> {
+                                    delay(120L)
+                                    emit(ChatImeSettleState.Shown)
+                                }
+                            }
+                        }
+                        .first()
+                }
+                if (settled != null) return settled
+                val ended = position()
+                recordInsets(ended)
+                return ended.fallbackSettleState()
+            }
+
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (source != NestedScrollSource.UserInput) return Offset.Zero
                 val position = position()
+                imeVisibleBeforeScroll = position.occupiesBottom
+                if (abs(available.y) <= abs(available.x)) return Offset.Zero
+                if (settleJob != null) {
+                    settleJob?.cancel()
+                    settleJob = null
+                    if (!(gesture.isOpening && available.y < 0f)) {
+                        gesture.cancel()
+                    }
+                }
                 gesture.drag(
                     deltaY = available.y,
                     atLatest = !listState.canScrollBackward,
-                    imeVisible = position.shown || position.bottom > 0,
+                    imeVisible = imeVisibleBeforeScroll,
                     editorFocused = focused.value,
                 )
-                recordInsets(position.bottom)
+                recordInsets(position)
                 return Offset.Zero
+            }
+
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource,
+            ): Offset {
+                if (source != NestedScrollSource.UserInput) return Offset.Zero
+                val after = position()
+                if (!gesture.isActive && !imeVisibleBeforeScroll) {
+                    val upwardDelta = when {
+                        available.y < 0f -> available.y
+                        consumed.y < 0f -> consumed.y
+                        else -> 0f
+                    }
+                    if (upwardDelta < 0f) {
+                        when {
+                            after.occupiesBottom -> gesture.observeNativeOpen()
+                            !listState.canScrollBackward && available.y < 0f -> gesture.drag(
+                                deltaY = available.y,
+                                atLatest = true,
+                                imeVisible = false,
+                                editorFocused = focused.value,
+                            )
+                        }
+                    }
+                }
+                recordInsets(after)
+                return Offset.Zero
+            }
+
+            override suspend fun onPreFling(available: Velocity): Velocity {
+                imeVisibleBeforeFling = position().occupiesBottom
+                return Velocity.Zero
             }
 
             // As the outer connection, this runs after imeNestedScroll settles its fling.
             override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
+                val afterFling = position()
+                if (!gesture.isActive && !imeVisibleBeforeFling &&
+                    (consumed.y < 0f || available.y < 0f) && afterFling.occupiesBottom
+                ) {
+                    gesture.observeNativeOpen()
+                }
                 if (gesture.isActive && settleJob == null) {
                     settleJob = scope.launch {
                         val opening = gesture.isOpening
-                        val ended = withTimeoutOrNull(250L) {
-                            snapshotFlow { position() }.first {
-                                recordInsets(it.bottom)
-                                if (opening) it.fullyShown else it.fullyHidden
-                            }
-                        } ?: position()
-                        recordInsets(ended.bottom)
-                        val action = when {
-                            ended.fullyShown -> gesture.finish(imeVisible = true)
-                            ended.fullyHidden -> gesture.finish(imeVisible = false)
-                            else -> null
+                        val settled = awaitImeSettle(opening)
+                        val action = when (settled) {
+                            ChatImeSettleState.Shown -> gesture.finish(imeVisible = true)
+                            ChatImeSettleState.Hidden -> gesture.finish(imeVisible = false)
+                            ChatImeSettleState.Unsettled -> null
                         }
                         gesture.cancel()
                         settleJob = null
                         when (action) {
-                            ChatImeFocusAction.Focus -> if (!focused.value) editorRequester.requestFocus() else Unit
+                            ChatImeFocusAction.Focus -> if (!focused.value) {
+                                runCatching { editorRequester.requestFocus() }
+                            }
                             ChatImeFocusAction.OpenFallback -> {
                                 if (focused.value) keyboard?.show()
-                                else editorRequester.requestFocus()
+                                else runCatching { editorRequester.requestFocus() }
                             }
                             ChatImeFocusAction.Clear -> if (focused.value) focusManager.clearFocus()
                             null -> Unit
@@ -175,7 +279,7 @@ internal fun rememberChatImeScrollModifier(
         }
     }
     LaunchedEffect(observer) {
-        snapshotFlow { observer.position().bottom }.collect(observer::recordInsets)
+        snapshotFlow { observer.position() }.collect(observer::recordInsets)
     }
     LaunchedEffect(observer) {
         snapshotFlow { focused.value }.collect(observer::recordFocus)
