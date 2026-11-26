@@ -102,13 +102,13 @@ object ImageUtil {
         return isLight
     }
 
-    suspend fun getBitmapWithCoil(context: Context, model: Any?) : Bitmap? {
-        Log.d("parabox", "getBitmapWithCoil: $model")
+    suspend fun getBitmapWithCoil(context: Context, model: Any?, maxSizePx: Int = 1024): Bitmap? {
+        if (model == null || (model is String && model.isBlank())) return null
         return try {
             val loader = context.imageLoader
             val request = ImageRequest.Builder(context)
                 .data(model)
-                .size(1024)
+                .size(maxSizePx)
                 .allowHardware(false)
                 .build()
             val result = loader.execute(request)
@@ -116,12 +116,17 @@ object ImageUtil {
                 (result.drawable as? BitmapDrawable)?.bitmap
                     ?: runCatching { result.drawable.toBitmap() }.getOrNull()
             } else {
-                (result as? ErrorResult)?.throwable?.printStackTrace()
                 null
             }
         } catch (e: Exception) {
             e.printStackTrace()
             null
+        }
+    }
+
+    fun getCachedImageUri(context: Context, cacheKey: String): Uri? {
+        return imageBitmap2UriMap[cacheKey]?.also { cached ->
+            grantNotificationUriReadPermissions(context, cached)
         }
     }
 

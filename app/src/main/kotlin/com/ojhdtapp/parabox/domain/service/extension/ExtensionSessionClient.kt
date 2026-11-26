@@ -152,6 +152,59 @@ class ExtensionSessionClient(
                                 null
                             }
 
+                            val inboundEventQueue = Channel<ExtensionSessionFrame>(Channel.UNLIMITED)
+                            val inboundWorkerJob = launch {
+                                for (queuedFrame in inboundEventQueue) {
+                                    when (queuedFrame.payloadCase) {
+                                        ExtensionSessionFrame.PayloadCase.RECEIVE_MESSAGE -> {
+                                            val event = queuedFrame.receiveMessage
+                                            val result = try {
+                                                inboundHandler.onReceiveMessage(event.message.toDomain())
+                                            } catch (e: Exception) {
+                                                ParaboxResult(
+                                                    ParaboxResult.ERROR_UNKNOWN,
+                                                    e.message ?: ParaboxResult.ERROR_UNKNOWN_MSG,
+                                                )
+                                            }
+                                            outbound.trySend(
+                                                HostSessionFrame.newBuilder()
+                                                    .setAck(
+                                                        MessageAckFrame.newBuilder()
+                                                            .setAckId(event.ackId)
+                                                            .setResult(result.toProto())
+                                                            .build()
+                                                    )
+                                                    .build()
+                                            )
+                                        }
+
+                                        ExtensionSessionFrame.PayloadCase.RECALL_MESSAGE -> {
+                                            val event = queuedFrame.recallMessage
+                                            val result = try {
+                                                inboundHandler.onRecallMessage(event.messageUuid)
+                                            } catch (e: Exception) {
+                                                ParaboxResult(
+                                                    ParaboxResult.ERROR_UNKNOWN,
+                                                    e.message ?: ParaboxResult.ERROR_UNKNOWN_MSG,
+                                                )
+                                            }
+                                            outbound.trySend(
+                                                HostSessionFrame.newBuilder()
+                                                    .setAck(
+                                                        MessageAckFrame.newBuilder()
+                                                            .setAckId(event.ackId)
+                                                            .setResult(result.toProto())
+                                                            .build()
+                                                    )
+                                                    .build()
+                                            )
+                                        }
+
+                                        else -> Unit
+                                    }
+                                }
+                            }
+
                             try {
                                 stub.openSession(outbound.consumeAsFlow()).collect { frame ->
                                     when (frame.payloadCase) {
@@ -163,52 +216,9 @@ class ExtensionSessionClient(
                                             _status.value = nextStatus
                                         }
 
-                                        ExtensionSessionFrame.PayloadCase.RECEIVE_MESSAGE -> {
-                                            val event = frame.receiveMessage
-                                            launch {
-                                                val result = try {
-                                                    inboundHandler.onReceiveMessage(event.message.toDomain())
-                                                } catch (e: Exception) {
-                                                    ParaboxResult(
-                                                        ParaboxResult.ERROR_UNKNOWN,
-                                                        e.message ?: ParaboxResult.ERROR_UNKNOWN_MSG,
-                                                    )
-                                                }
-                                                outbound.trySend(
-                                                    HostSessionFrame.newBuilder()
-                                                        .setAck(
-                                                            MessageAckFrame.newBuilder()
-                                                                .setAckId(event.ackId)
-                                                                .setResult(result.toProto())
-                                                                .build()
-                                                        )
-                                                        .build()
-                                                )
-                                            }
-                                        }
-
+                                        ExtensionSessionFrame.PayloadCase.RECEIVE_MESSAGE,
                                         ExtensionSessionFrame.PayloadCase.RECALL_MESSAGE -> {
-                                            val event = frame.recallMessage
-                                            launch {
-                                                val result = try {
-                                                    inboundHandler.onRecallMessage(event.messageUuid)
-                                                } catch (e: Exception) {
-                                                    ParaboxResult(
-                                                        ParaboxResult.ERROR_UNKNOWN,
-                                                        e.message ?: ParaboxResult.ERROR_UNKNOWN_MSG,
-                                                    )
-                                                }
-                                                outbound.trySend(
-                                                    HostSessionFrame.newBuilder()
-                                                        .setAck(
-                                                            MessageAckFrame.newBuilder()
-                                                                .setAckId(event.ackId)
-                                                                .setResult(result.toProto())
-                                                                .build()
-                                                        )
-                                                        .build()
-                                                )
-                                            }
+                                            inboundEventQueue.trySend(frame)
                                         }
 
                                         ExtensionSessionFrame.PayloadCase.PONG -> {
@@ -220,6 +230,8 @@ class ExtensionSessionClient(
                                     }
                                 }
                             } finally {
+                                inboundEventQueue.close()
+                                inboundWorkerJob.cancel()
                                 heartbeatJob?.cancel()
                             }
                         }

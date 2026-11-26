@@ -21,6 +21,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.util.Log
+import android.util.LruCache
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
@@ -44,8 +45,18 @@ import com.ojhdtapp.parabox.domain.service.extension.ExtensionConnectionState
 import com.ojhdtapp.parabox.domain.service.extension.ExtensionMonitorSummary
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxImage
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicLong
 import javax.inject.Inject
 
 
@@ -72,7 +83,28 @@ class NotificationUtil @Inject constructor(
 
         const val PLAY_APP_UPDATE_CHANNEL_ID = "play_app_update_channel"
         const val PLAY_APP_UPDATE_NOTIFICATION_ID = 9997
+
+        private const val AVATAR_ICON_SIZE_PX = 192
+        private const val NOTIFICATION_DEBOUNCE_MS = 400L
+        private const val SHORTCUT_MIN_INTERVAL_MS = 30_000L
     }
+
+    private data class PendingNotificationEntry(
+        val messageId: Long,
+        val contactId: Long,
+        val connectionInfo: ConnectionInfo,
+    )
+
+    private val notificationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val notifyMutex = Mutex()
+    private val pendingEntriesByChat = ConcurrentHashMap<Long, CopyOnWriteArrayList<PendingNotificationEntry>>()
+    private val pendingJobsByChat = ConcurrentHashMap<Long, Job>()
+    private val avatarIconCache = LruCache<String, Icon>(32)
+    private val lastShortcutUpdateMs = AtomicLong(0L)
+    @Volatile
+    private var lastShortcutChatIds: List<Long> = emptyList()
+    @Volatile
+    private var shortcutUpdateJob: Job? = null
 
     private var isForeground = false
 
@@ -131,23 +163,60 @@ class NotificationUtil @Inject constructor(
         }
     }
 
+    private suspend fun getOrCreateAvatarIcon(
+        cacheKey: String,
+        model: Any?,
+        name: String?,
+        bgAttr: Int,
+        fgAttr: Int,
+    ): Icon {
+        avatarIconCache.get(cacheKey)?.let { return it }
+        val bitmap = ImageUtil.getBitmapWithCoil(context, model, maxSizePx = AVATAR_ICON_SIZE_PX)
+            ?: ImageUtil.createNamedAvatarBm(
+                backgroundColor = context.getThemeColor(bgAttr),
+                textColor = context.getThemeColor(fgAttr),
+                name = name ?: "name",
+            )
+        val icon = Icon.createWithAdaptiveBitmap(bitmap.getCircledBitmap())
+        if (model != null && !(model is String && model.isBlank())) {
+            avatarIconCache.put(cacheKey, icon)
+        }
+        return icon
+    }
+
+    fun scheduleShortcutUpdate() {
+        val now = System.currentTimeMillis()
+        if (now - lastShortcutUpdateMs.get() < SHORTCUT_MIN_INTERVAL_MS) return
+        if (shortcutUpdateJob?.isActive == true) return
+        shortcutUpdateJob = notificationScope.launch {
+            delay(1_500L)
+            runCatching { updateShortcuts() }
+        }
+    }
+
     suspend fun updateShortcuts() {
         val maxCount = shortcutManager.maxShortcutCountPerActivity
-        var chatList = database.chatDao.getChatWithLimit(maxCount)
+        val chatList = database.chatDao.getChatWithLimit(maxCount).map { it.toChat() }
+        val chatIds = chatList.map { it.chatId }
+        val now = System.currentTimeMillis()
+        if (chatIds == lastShortcutChatIds && now - lastShortcutUpdateMs.get() < SHORTCUT_MIN_INTERVAL_MS) {
+            return
+        }
+        lastShortcutUpdateMs.set(now)
+        lastShortcutChatIds = chatIds
         val shortcutList =
             chatList.map { chat ->
-                val avatarBitmap = ImageUtil.getBitmapWithCoil(context, chat.avatar.getModel())
-                    ?: ImageUtil.createNamedAvatarBm(
-                        backgroundColor = context.getThemeColor(com.google.android.material.R.attr.colorSecondary),
-                        textColor = context.getThemeColor(com.google.android.material.R.attr.colorOnSecondary),
-                        name = chat.name ?: "name"
-                    )
-                val icon = Icon.createWithAdaptiveBitmap(avatarBitmap.getCircledBitmap())
-                Log.d("shortcut", "shortcut id b:${chat.chatId}")
+                val icon = getOrCreateAvatarIcon(
+                    cacheKey = "chat_${chat.chatId}_${chat.avatar.getModel()}",
+                    model = chat.avatar.getModel(),
+                    name = chat.name,
+                    bgAttr = com.google.android.material.R.attr.colorSecondary,
+                    fgAttr = com.google.android.material.R.attr.colorOnSecondary,
+                )
                 val builder = ShortcutInfo.Builder(context, chat.chatId.toString())
                     .setActivity(ComponentName(context, MainActivity::class.java))
-                    .setShortLabel(chat.name ?: "name")
-                    .setLongLabel(chat.name ?: "name")
+                    .setShortLabel(chat.name)
+                    .setLongLabel(chat.name)
                     .setIcon(icon)
                     .setCategories(setOf("com.ojhdtapp.parabox.bubbles.category.TEXT_SHARE_TARGET"))
                     .setIntent(Intent(context, MainActivity::class.java).apply {
@@ -159,17 +228,88 @@ class NotificationUtil @Inject constructor(
                         .setLongLived(true)
                         .setPerson(
                             Person.Builder()
-                                .setName(chat.name ?: "name")
+                                .setName(chat.name)
                                 .setIcon(icon)
                                 .build()
                         )
                 }
                 builder.build()
             }
-        shortcutManager.dynamicShortcuts = shortcutList
+        runCatching {
+            shortcutManager.dynamicShortcuts = shortcutList
+        }.onFailure {
+            Log.w("parabox", "updateShortcuts failed", it)
+        }
+    }
+
+    /**
+     * Coalesces bursts of incoming messages per chat (e.g. during startup catch-up) so that
+     * only one notification & bitmap pass runs per burst instead of one per message.
+     */
+    fun enqueueNewMessageNotification(
+        messageId: Long,
+        contactId: Long,
+        chatId: Long,
+        connectionInfo: ConnectionInfo,
+    ) {
+        if (messageId <= 0L || chatId <= 0L) return
+        val list = pendingEntriesByChat.computeIfAbsent(chatId) { CopyOnWriteArrayList() }
+        list.add(PendingNotificationEntry(messageId, contactId, connectionInfo))
+        while (list.size > 6) {
+            list.removeAt(0)
+        }
+        pendingJobsByChat[chatId]?.cancel()
+        pendingJobsByChat[chatId] = notificationScope.launch {
+            delay(NOTIFICATION_DEBOUNCE_MS)
+            val drained = pendingEntriesByChat.remove(chatId) ?: return@launch
+            if (drained.isEmpty()) return@launch
+            notifyMutex.withLock {
+                // Append intermediate messages to tempMessageMap without decoding bitmaps until the final post
+                val last = drained.last()
+                if (drained.size > 1 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    val existing = tempMessageMap.computeIfAbsent(chatId) { CopyOnWriteArrayList() }
+                    for (i in 0 until drained.size - 1) {
+                        val entry = drained[i]
+                        val msg = database.messageDao.getMessageById(entry.messageId)?.toMessage() ?: continue
+                        val sender = database.contactDao.getContactById(entry.contactId)?.toContact() ?: continue
+                        val senderIcon = getOrCreateAvatarIcon(
+                            cacheKey = "contact_${sender.contactId}_${sender.avatar.getModel()}",
+                            model = sender.avatar.getModel(),
+                            name = sender.name,
+                            bgAttr = com.google.android.material.R.attr.colorPrimary,
+                            fgAttr = com.google.android.material.R.attr.colorOnPrimary,
+                        )
+                        val senderPerson = Person.Builder().setName(sender.name).setIcon(senderIcon).build()
+                        existing.add(msg to senderPerson)
+                        while (existing.size > 6) {
+                            existing.removeAt(0)
+                        }
+                    }
+                }
+                sendNewMessageNotificationInternal(
+                    messageId = last.messageId,
+                    contactId = last.contactId,
+                    chatId = chatId,
+                    connectionInfo = last.connectionInfo,
+                    fromChat = false,
+                )
+            }
+        }
     }
 
     suspend fun sendNewMessageNotification(
+        messageId: Long,
+        contactId: Long,
+        chatId: Long,
+        connectionInfo: ConnectionInfo,
+        fromChat: Boolean = false,
+    ) {
+        notifyMutex.withLock {
+            sendNewMessageNotificationInternal(messageId, contactId, chatId, connectionInfo, fromChat)
+        }
+    }
+
+    private suspend fun sendNewMessageNotificationInternal(
         messageId: Long,
         contactId: Long,
         chatId: Long,
@@ -185,38 +325,37 @@ class NotificationUtil @Inject constructor(
             channelName = connectionInfo.alias,
             channelDescription = "来自${connectionInfo.name}扩展，${connectionInfo.alias}连接的消息"
         )
-        Log.d("parabox", "sendNotification at channel:${channelId}")
         if (!context.getDataStoreValue(DataStoreKeys.SETTINGS_ALLOW_FOREGROUND_NOTIFICATION, false) && isForeground) {
             return
         }
-        updateShortcuts()
+        scheduleShortcutUpdate()
         val launchUri = "parabox://chat/${chat.chatId}".toUri()
 
         val userName = context.getDataStoreValue(DataStoreKeys.USER_NAME, context.getString(R.string.you))
         val userAvatarModel = context.getDataStoreValue(DataStoreKeys.USER_AVATAR, "")
-        val userAvatarBitmap = ImageUtil.getBitmapWithCoil(context, userAvatarModel)
-            ?: ImageUtil.createNamedAvatarBm(
-                backgroundColor = context.getThemeColor(com.google.android.material.R.attr.colorSecondary),
-                textColor = context.getThemeColor(com.google.android.material.R.attr.colorOnSecondary),
-                name = userName
-            )
-        val userIcon = Icon.createWithAdaptiveBitmap(userAvatarBitmap.getCircledBitmap())
+        val userIcon = getOrCreateAvatarIcon(
+            cacheKey = "self_${userName}_${userAvatarModel}",
+            model = userAvatarModel.ifBlank { null },
+            name = userName,
+            bgAttr = com.google.android.material.R.attr.colorSecondary,
+            fgAttr = com.google.android.material.R.attr.colorOnSecondary,
+        )
 
-        val senderAvatarBitmap = ImageUtil.getBitmapWithCoil(context, contact.avatar.getModel())
-            ?: ImageUtil.createNamedAvatarBm(
-                backgroundColor = context.getThemeColor(com.google.android.material.R.attr.colorPrimary),
-                textColor = context.getThemeColor(com.google.android.material.R.attr.colorOnPrimary),
-                name = contact.name
-            )
-        val senderIcon = Icon.createWithAdaptiveBitmap(senderAvatarBitmap.getCircledBitmap())
+        val senderIcon = getOrCreateAvatarIcon(
+            cacheKey = "contact_${contact.contactId}_${contact.avatar.getModel()}",
+            model = contact.avatar.getModel(),
+            name = contact.name,
+            bgAttr = com.google.android.material.R.attr.colorPrimary,
+            fgAttr = com.google.android.material.R.attr.colorOnPrimary,
+        )
 
-        val chatAvatarBitmap = ImageUtil.getBitmapWithCoil(context, chat.avatar.getModel())
-            ?: ImageUtil.createNamedAvatarBm(
-                backgroundColor = context.getThemeColor(com.google.android.material.R.attr.colorPrimary),
-                textColor = context.getThemeColor(com.google.android.material.R.attr.colorOnPrimary),
-                name = chat.name
-            )
-        val chatIcon = Icon.createWithAdaptiveBitmap(chatAvatarBitmap.getCircledBitmap())
+        val chatIcon = getOrCreateAvatarIcon(
+            cacheKey = "chat_${chat.chatId}_${chat.avatar.getModel()}",
+            model = chat.avatar.getModel(),
+            name = chat.name,
+            bgAttr = com.google.android.material.R.attr.colorPrimary,
+            fgAttr = com.google.android.material.R.attr.colorOnPrimary,
+        )
         val launchPendingIntent: PendingIntent =
             Intent(context, MainActivity::class.java).apply {
                 action = Intent.ACTION_VIEW
@@ -305,14 +444,16 @@ class NotificationUtil @Inject constructor(
                                 ).apply {
                                     it.first.contents.filterIsInstance<ParaboxImage>().firstOrNull()?.let { img ->
                                         val model = img.resourceInfo.getModel()
-                                        val bitmap = when (ExtensionMediaLoader.detectAnimatedMediaKind(img.fileName)) {
-                                            AnimatedMediaKind.IMAGE -> ImageUtil.getBitmapWithCoil(context, model)
-                                            AnimatedMediaKind.LOOPING_VIDEO -> ImageUtil.getVideoFrameBitmap(context, model)
-                                            AnimatedMediaKind.TGS_LOTTIE -> null
-                                        }
                                         val cacheKey = "${it.first.messageId}_${model}"
-                                        val imageUri = bitmap?.let { bm ->
-                                            ImageUtil.getImageUriFromBitmapWithCache(context, bm, cacheKey)
+                                        val imageUri = ImageUtil.getCachedImageUri(context, cacheKey) ?: run {
+                                            val bitmap = when (ExtensionMediaLoader.detectAnimatedMediaKind(img.fileName)) {
+                                                AnimatedMediaKind.IMAGE -> ImageUtil.getBitmapWithCoil(context, model, maxSizePx = 768)
+                                                AnimatedMediaKind.LOOPING_VIDEO -> ImageUtil.getVideoFrameBitmap(context, model)
+                                                AnimatedMediaKind.TGS_LOTTIE -> null
+                                            }
+                                            bitmap?.let { bm ->
+                                                ImageUtil.getImageUriFromBitmapWithCache(context, bm, cacheKey)
+                                            }
                                         }
                                         if (imageUri != null) {
                                             setData("image/png", imageUri)
