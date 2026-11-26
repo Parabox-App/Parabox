@@ -14,4 +14,5 @@ interface MessageRepository {
     fun getMessageById(messageId: Long): Flow<Resource<Message>>
     fun getMessageWithLimit(limit: Int): Flow<Resource<List<QueryMessage>>>
     fun queryMessageWithLimit(query: String, limit: Int): Flow<Resource<List<QueryMessage>>>
+    suspend fun getOldestMessageByChatIds(chatIdList: List<Long>): Message?
 }

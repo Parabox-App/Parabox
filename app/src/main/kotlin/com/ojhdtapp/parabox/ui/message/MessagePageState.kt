@@ -45,6 +45,7 @@ data class MessagePageState(
         val infoAreaState: InfoAreaState = InfoAreaState(),
         val atCache: Map<String, Resource<Contact>> = emptyMap(),
         val sendingStates: Map<Long, MessageSendStatus> = emptyMap(),
+        val historySyncState: com.ojhdtapp.parabox.ui.message.chat.HistorySyncStatus = com.ojhdtapp.parabox.ui.message.chat.HistorySyncStatus.IDLE,
     )
 
     data class EditAreaState @OptIn(ExperimentalFoundationApi::class) constructor(

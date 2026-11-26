@@ -59,6 +59,10 @@ sealed interface MessagePageEvent : UiEvent {
         val messageId: Long,
         val status: MessagePageState.MessageSendStatus?,
     ): MessagePageEvent
+    data class UpdateHistorySyncState(
+        val chatId: Long,
+        val status: com.ojhdtapp.parabox.ui.message.chat.HistorySyncStatus,
+    ): MessagePageEvent
     data class ShowSendErrorNotice(val message: String): MessagePageEvent
     data class AddOrRemoveSelectedMessage(val msg: Message) : MessagePageEvent
     data object ClearSelectedMessage : MessagePageEvent

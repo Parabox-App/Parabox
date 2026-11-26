@@ -91,6 +91,8 @@ class MessagePageViewModel @Inject constructor(
     private var activeFocusedChat: Chat? = null
     private var chatSyncJob: Job? = null
     private val lastChatSyncAtMs = ConcurrentHashMap<Long, Long>()
+    private val historySyncController = com.ojhdtapp.parabox.ui.message.chat.ChatHistorySyncController()
+    private val historySyncJobs = ConcurrentHashMap<Long, Job>()
 
     fun onChatFocusEnter(chat: Chat, forceSync: Boolean = false) {
         val previous = activeFocusedChat
@@ -134,6 +136,108 @@ class MessagePageViewModel @Inject constructor(
         chatSyncJob?.cancel()
         chatSyncJob = null
         findConnectionSuccess(chat.extensionId)?.notifyChatFocus(chat.uid, opened = false)
+    }
+
+    fun loadOlderHistory(chat: Chat, forceRetry: Boolean = false) {
+        val connection = findConnectionSuccess(chat.extensionId) ?: return
+        val chatIds = buildList {
+            add(chat.chatId)
+            addAll(chat.subChatIds)
+        }.distinct()
+        historySyncJobs[chat.chatId]?.takeIf { it.isActive }?.let { return }
+        historySyncJobs[chat.chatId] = viewModelScope.launch(Dispatchers.IO) {
+            val oldest = runCatching { getMessage.oldestByChatIds(chatIds) }.getOrNull() ?: return@launch
+            if (oldest.uid.isBlank()) return@launch
+            val allowed = historySyncController.tryBegin(
+                chatId = chat.chatId,
+                trigger = com.ojhdtapp.parabox.ui.message.chat.HistorySyncTrigger.BOUNDARY,
+                anchorUid = oldest.uid,
+                anchorTimestamp = oldest.timestamp,
+                forceRetry = forceRetry,
+            )
+            if (!allowed) return@launch
+            sendEvent(
+                MessagePageEvent.UpdateHistorySyncState(
+                    chatId = chat.chatId,
+                    status = com.ojhdtapp.parabox.ui.message.chat.HistorySyncStatus.LOADING,
+                )
+            )
+            runCatching {
+                val fetched = connection.queryMessageHistory(oldest.uid)
+                val inserted = if (fetched.isNotEmpty()) {
+                    mainRepository.syncChatMessages(
+                        messages = fetched,
+                        ext = connection,
+                        suppressNotification = true,
+                        incrementUnread = false,
+                    )
+                } else {
+                    0
+                }
+                val newOldest = runCatching { getMessage.oldestByChatIds(chatIds) }.getOrNull()
+                val nextStatus = historySyncController.onSuccess(
+                    chatId = chat.chatId,
+                    trigger = com.ojhdtapp.parabox.ui.message.chat.HistorySyncTrigger.BOUNDARY,
+                    anchorUid = oldest.uid,
+                    anchorTimestamp = oldest.timestamp,
+                    returnedCount = fetched.size,
+                    insertedCount = inserted,
+                    minReturnedTimestamp = fetched.minOfOrNull { it.timestamp },
+                    newOldestUid = newOldest?.uid,
+                )
+                sendEvent(MessagePageEvent.UpdateHistorySyncState(chat.chatId, nextStatus))
+            }.onFailure { err ->
+                Log.w("parabox", "loadOlderHistory failed for chat ${chat.chatId}: ${err.message}")
+                val nextStatus = historySyncController.onFailure(
+                    chatId = chat.chatId,
+                    trigger = com.ojhdtapp.parabox.ui.message.chat.HistorySyncTrigger.BOUNDARY,
+                )
+                sendEvent(MessagePageEvent.UpdateHistorySyncState(chat.chatId, nextStatus))
+            }
+        }
+    }
+
+    fun healHistoryGapAt(chat: Chat, anchorUid: String, anchorTimestamp: Long) {
+        if (anchorUid.isBlank()) return
+        val connection = findConnectionSuccess(chat.extensionId) ?: return
+        val allowed = historySyncController.tryBegin(
+            chatId = chat.chatId,
+            trigger = com.ojhdtapp.parabox.ui.message.chat.HistorySyncTrigger.GAP_HEAL,
+            anchorUid = anchorUid,
+            anchorTimestamp = anchorTimestamp,
+        )
+        if (!allowed) return
+        historySyncJobs[chat.chatId] = viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
+                val fetched = connection.queryMessageHistory(anchorUid)
+                val inserted = if (fetched.isNotEmpty()) {
+                    mainRepository.syncChatMessages(
+                        messages = fetched,
+                        ext = connection,
+                        suppressNotification = true,
+                        incrementUnread = false,
+                    )
+                } else {
+                    0
+                }
+                historySyncController.onSuccess(
+                    chatId = chat.chatId,
+                    trigger = com.ojhdtapp.parabox.ui.message.chat.HistorySyncTrigger.GAP_HEAL,
+                    anchorUid = anchorUid,
+                    anchorTimestamp = anchorTimestamp,
+                    returnedCount = fetched.size,
+                    insertedCount = inserted,
+                    minReturnedTimestamp = fetched.minOfOrNull { it.timestamp },
+                    newOldestUid = null,
+                )
+            }.onFailure { err ->
+                Log.w("parabox", "healHistoryGapAt failed for chat ${chat.chatId}: ${err.message}")
+                historySyncController.onFailure(
+                    chatId = chat.chatId,
+                    trigger = com.ojhdtapp.parabox.ui.message.chat.HistorySyncTrigger.GAP_HEAL,
+                )
+            }
+        }
     }
 
     private fun findConnectionSuccess(extensionId: Long?): Connection.ConnectionSuccess? {
@@ -357,7 +461,17 @@ class MessagePageViewModel @Inject constructor(
                         chat = event.chat,
                         editAreaState = MessagePageState.EditAreaState(
                             memeList = refreshMemeList()
-                        )
+                        ),
+                        historySyncState = historySyncController.getStatus(event.chat.chatId),
+                    )
+                )
+            }
+
+            is MessagePageEvent.UpdateHistorySyncState -> {
+                if (state.chatDetail.chat?.chatId != event.chatId) return state
+                return state.copy(
+                    chatDetail = state.chatDetail.copy(
+                        historySyncState = event.status,
                     )
                 )
             }

@@ -24,6 +24,9 @@ interface MessageDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertMessage(message: MessageEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertMessages(messages: List<MessageEntity>): List<Long>
+
     @RawQuery(observedEntities = [MessageEntity::class, ContactEntity::class])
     fun getMessagePagingSource(query: SupportSQLiteQuery): PagingSource<Int, MessageWithSenderEntity>
 
@@ -61,6 +64,14 @@ interface MessageDao {
                 "LIMIT 1"
     )
     suspend fun getLatestMessageByChatId(chatId: Long): MessageEntity?
+
+    @Query(
+        "SELECT * FROM message_entity " +
+                "WHERE chatId IN (:chatIdList) AND uid != '' " +
+                "ORDER BY timestamp ASC, messageId ASC " +
+                "LIMIT 1"
+    )
+    suspend fun getOldestMessageByChatIds(chatIdList: List<Long>): MessageEntity?
 
     @Query("DELETE FROM message_entity WHERE messageId = :messageId")
     fun deleteMessageById(messageId: Long): Int

@@ -122,4 +122,8 @@ class MessageRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun getOldestMessageByChatIds(chatIdList: List<Long>): Message? {
+        if (chatIdList.isEmpty()) return null
+        return db.messageDao.getOldestMessageByChatIds(chatIdList)?.toMessage()
+    }
 }

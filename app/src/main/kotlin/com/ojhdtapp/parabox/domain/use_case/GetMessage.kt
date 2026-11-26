@@ -49,4 +49,8 @@ class GetMessage @Inject constructor(
     fun byId(messageId: Long): Flow<Resource<Message>> {
         return repository.getMessageById(messageId)
     }
+
+    suspend fun oldestByChatIds(chatIdList: List<Long>): Message? {
+        return repository.getOldestMessageByChatIds(chatIdList)
+    }
 }

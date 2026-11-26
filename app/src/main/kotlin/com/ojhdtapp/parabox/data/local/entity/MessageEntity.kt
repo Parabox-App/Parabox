@@ -2,11 +2,18 @@ package com.ojhdtapp.parabox.data.local.entity
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.ojhdtapp.parabox.domain.model.Message
 import com.ojhdtapp.paraboxdevelopmentkit.model.message.ParaboxMessageElement
 
-@Entity(tableName = "message_entity")
+@Entity(
+    tableName = "message_entity",
+    indices = [
+        Index(value = ["chatId", "timestamp"]),
+        Index(value = ["pkg", "extensionId", "uid"]),
+    ],
+)
 data class MessageEntity(
     val contents: List<ParaboxMessageElement>,
     val contentTypes: Int,

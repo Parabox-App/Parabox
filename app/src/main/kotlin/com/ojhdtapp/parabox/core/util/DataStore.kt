@@ -35,6 +35,7 @@ object DataStoreKeys {
     val SETTINGS_DISPLAY_TIME_ON_EACH_MSG = booleanPreferencesKey("settings_display_time_on_each_msg")
     val SETTINGS_ENABLE_INNER_BROWSER = booleanPreferencesKey("settings_enable_inner_browser")
     val SETTINGS_SEND_VIA_ENTER = booleanPreferencesKey("settings_send_via_enter")
+    val SETTINGS_ENABLE_HISTORY_GAP_HEAL = booleanPreferencesKey("settings_enable_history_gap_heal")
 
 
     val SETTINGS_WORKING_MODE = intPreferencesKey("settings_working_mode")

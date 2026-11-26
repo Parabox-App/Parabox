@@ -1037,6 +1037,7 @@ class MainSharedViewModel @Inject constructor(
                         displayTimeOnEachMsg = it[DataStoreKeys.SETTINGS_DISPLAY_TIME_ON_EACH_MSG] ?: false,
                         enableInnerBrowser = it[DataStoreKeys.SETTINGS_ENABLE_INNER_BROWSER] ?: true,
                         sendViaEnter = it[DataStoreKeys.SETTINGS_SEND_VIA_ENTER] ?: false,
+                        enableHistoryGapHeal = it[DataStoreKeys.SETTINGS_ENABLE_HISTORY_GAP_HEAL] ?: true,
                         enableDynamicColor = it[DataStoreKeys.SETTINGS_ENABLE_DYNAMIC_COLOR] ?: true,
                         useFloatingNavigation = it[DataStoreKeys.SETTINGS_USE_FLOATING_NAVIGATION] ?: true,
                         enableForegroundNotification = it[DataStoreKeys.SETTINGS_ALLOW_FOREGROUND_NOTIFICATION]

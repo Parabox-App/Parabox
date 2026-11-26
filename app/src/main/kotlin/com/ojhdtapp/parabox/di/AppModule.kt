@@ -60,6 +60,7 @@ object AppModule {
             app, AppDatabase::class.java,
             "main_db"
         )
+            .addMigrations(AppDatabase.MIGRATION_1_2)
             .addTypeConverter(Converters(GsonParser()))
             .build()
 

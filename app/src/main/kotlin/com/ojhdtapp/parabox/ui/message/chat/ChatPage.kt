@@ -13,6 +13,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -31,6 +32,7 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.union
@@ -42,6 +44,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowDownward
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -51,6 +54,8 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -60,6 +65,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -294,10 +301,111 @@ fun NormalChatPage(
         }
     }
 
-    LaunchedEffect(messageLazyPagingItems.itemCount) {
-        if (lazyListState.firstVisibleItemIndex == 1 && lazyListState.firstVisibleItemScrollOffset < 100) {
-            delay(50)
-            lazyListState.animateScrollToItem(0)
+    val density = LocalDensity.current
+    val currentChat = state.chatDetail.chat
+    val chatId = currentChat?.chatId
+    val atLatestOffsetThresholdPx = remember(density) { with(density) { 24.dp.roundToPx() } }
+
+    LaunchedEffect(chatId, lazyListState, atLatestOffsetThresholdPx) {
+        val tracker = ChatLatestScrollTracker(atLatestOffsetThresholdPx)
+        var isUserDragging = false
+        var autoScrollJob: kotlinx.coroutines.Job? = null
+
+        launch {
+            lazyListState.interactionSource.interactions.collect { interaction ->
+                when (interaction) {
+                    is DragInteraction.Start -> {
+                        isUserDragging = true
+                        autoScrollJob?.cancel()
+                    }
+
+                    is DragInteraction.Stop,
+                    is DragInteraction.Cancel,
+                    -> {
+                        isUserDragging = false
+                    }
+                }
+            }
+        }
+
+        snapshotFlow {
+            val firstItem = messageLazyPagingItems.itemSnapshotList.firstOrNull()
+            ChatScrollObservation(
+                latestItemId = firstItem?.id,
+                latestSentByMe = (firstItem as? ChatPageUiModel.MessageWithSender)?.message?.sentByMe == true,
+                firstVisibleItemIndex = lazyListState.firstVisibleItemIndex,
+                firstVisibleItemScrollOffset = lazyListState.firstVisibleItemScrollOffset,
+                isUserDragging = isUserDragging,
+                isAutoScrolling = autoScrollJob?.isActive == true,
+            )
+        }.collect { observation ->
+            if (tracker.onObservation(observation)) {
+                autoScrollJob?.cancel()
+                autoScrollJob = launch {
+                    withFrameNanos {}
+                    if (lazyListState.firstVisibleItemIndex > 0 || lazyListState.firstVisibleItemScrollOffset > 0) {
+                        lazyListState.animateScrollToItem(0)
+                    }
+                }
+            }
+        }
+    }
+
+    // Trigger A: fetch older remote history immediately when local Room pages are exhausted
+    LaunchedEffect(chatId, lazyListState) {
+        val chat = currentChat ?: return@LaunchedEffect
+        snapshotFlow {
+            val totalItems = messageLazyPagingItems.itemCount
+            val lastVisibleIndex = lazyListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+            val localAppendEnded = messageLazyPagingItems.loadState.append.endOfPaginationReached
+            localAppendEnded && totalItems > 0 && lastVisibleIndex >= totalItems - 8
+        }.collect { shouldFetchBoundary ->
+            if (shouldFetchBoundary) {
+                viewModel.loadOlderHistory(chat)
+            }
+        }
+    }
+
+    // Trigger B: optional sliding-window gap healing while scrolling up through history
+    val enableHistoryGapHeal = mainSharedState.datastore.enableHistoryGapHeal
+    LaunchedEffect(chatId, lazyListState, enableHistoryGapHeal) {
+        val chat = currentChat ?: return@LaunchedEffect
+        if (!enableHistoryGapHeal) return@LaunchedEffect
+        var lastHealedIndex = 0
+        var settleJob: kotlinx.coroutines.Job? = null
+
+        fun triggerGapHealAt(visibleTailIndex: Int) {
+            val snapshot = messageLazyPagingItems.itemSnapshotList
+            var idx = visibleTailIndex.coerceAtMost(snapshot.lastIndex)
+            while (idx >= 0) {
+                val entry = snapshot[idx]
+                if (entry is ChatPageUiModel.MessageWithSender && entry.message.uid.isNotBlank()) {
+                    viewModel.healHistoryGapAt(chat, entry.message.uid, entry.message.timestamp)
+                    return
+                }
+                idx -= 1
+            }
+        }
+
+        snapshotFlow {
+            val lastVisibleIndex = lazyListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+            Triple(lastVisibleIndex, lazyListState.isScrollInProgress, messageLazyPagingItems.itemCount)
+        }.collect { (lastVisibleIndex, isScrolling, totalItems) ->
+            if (totalItems <= 0 || lastVisibleIndex <= 0) return@collect
+            if (lastVisibleIndex - lastHealedIndex >= 15) {
+                settleJob?.cancel()
+                lastHealedIndex = lastVisibleIndex
+                triggerGapHealAt(lastVisibleIndex)
+            } else if (!isScrolling) {
+                settleJob?.cancel()
+                settleJob = launch {
+                    delay(300L)
+                    lastHealedIndex = lastVisibleIndex
+                    triggerGapHealAt(lastVisibleIndex)
+                }
+            } else {
+                settleJob?.cancel()
+            }
         }
     }
 
@@ -313,15 +421,12 @@ fun NormalChatPage(
     }
 
     val imeInsets = WindowInsets.ime
-    val density = LocalDensity.current
     val imeVisible = WindowInsets.isImeVisible
     val hasImeInset by remember(imeInsets, density) {
         derivedStateOf { imeInsets.getBottom(density) > 0 }
     }
     val imeOccupiesBottom = imeVisible || hasImeInset
     val editState = state.chatDetail.editAreaState
-    val currentChat = state.chatDetail.chat
-    val chatId = currentChat?.chatId
 
     DisposableEffect(chatId, lifecycleOwner) {
         if (currentChat != null) {
@@ -597,6 +702,48 @@ fun NormalChatPage(
 
                                                 else -> Unit
                                             }
+                                        }
+                                        when (state.chatDetail.historySyncState) {
+                                            HistorySyncStatus.LOADING -> {
+                                                item(key = "history_sync_loading") {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .padding(vertical = 12.dp),
+                                                        contentAlignment = Alignment.Center,
+                                                    ) {
+                                                        CircularProgressIndicator(
+                                                            modifier = Modifier.size(20.dp),
+                                                            strokeWidth = 2.dp,
+                                                        )
+                                                    }
+                                                }
+                                            }
+
+                                            HistorySyncStatus.ERROR -> {
+                                                item(key = "history_sync_error") {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .padding(vertical = 8.dp),
+                                                        contentAlignment = Alignment.Center,
+                                                    ) {
+                                                        TextButton(
+                                                            onClick = {
+                                                                currentChat?.let { chat ->
+                                                                    viewModel.loadOlderHistory(chat, forceRetry = true)
+                                                                }
+                                                            }
+                                                        ) {
+                                                            Text(text = "历史消息加载失败，点击重试")
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            HistorySyncStatus.IDLE,
+                                            HistorySyncStatus.END_REACHED,
+                                            -> Unit
                                         }
                                     }
                                 }

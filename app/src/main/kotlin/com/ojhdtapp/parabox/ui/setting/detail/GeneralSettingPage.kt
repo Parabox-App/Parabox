@@ -203,6 +203,43 @@ private fun Content(
             }
         }
         item {
+            SettingItem(
+                title = "浏览历史时自动补全漏消息",
+                subTitle = "向上滑动浏览聊天记录时，后台检查并补齐缺失的历史消息",
+                selected = false,
+                layoutType = layoutType,
+                trailingIcon = {
+                    Switch(
+                        thumbContent = {
+                            if (mainSharedState.datastore.enableHistoryGapHeal) {
+                                Icon(
+                                    modifier = Modifier.size(SwitchDefaults.IconSize),
+                                    imageVector = Icons.Outlined.Check,
+                                    contentDescription = "check"
+                                )
+                            }
+                        },
+                        checked = mainSharedState.datastore.enableHistoryGapHeal,
+                        onCheckedChange = {
+                            onMainSharedEvent(
+                                MainSharedEvent.UpdateSettingSwitch(
+                                    DataStoreKeys.SETTINGS_ENABLE_HISTORY_GAP_HEAL,
+                                    it
+                                )
+                            )
+                        }
+                    )
+                }
+            ) {
+                onMainSharedEvent(
+                    MainSharedEvent.UpdateSettingSwitch(
+                        DataStoreKeys.SETTINGS_ENABLE_HISTORY_GAP_HEAL,
+                        !mainSharedState.datastore.enableHistoryGapHeal
+                    )
+                )
+            }
+        }
+        item {
             SettingHeader(text = "全局")
         }
         item {

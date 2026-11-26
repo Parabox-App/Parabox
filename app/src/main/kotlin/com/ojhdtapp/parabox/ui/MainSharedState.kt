@@ -39,6 +39,7 @@ data class MainSharedState(
         val displayTimeOnEachMsg: Boolean = false,
         val enableInnerBrowser: Boolean = true,
         val sendViaEnter: Boolean = false,
+        val enableHistoryGapHeal: Boolean = true,
         val enableDynamicColor: Boolean = true,
         val useFloatingNavigation: Boolean = true,
         val enableForegroundNotification: Boolean = false,
