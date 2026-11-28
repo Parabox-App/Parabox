@@ -78,11 +78,14 @@ class ExtensionSessionClient(
     private val maxBackoffMs: Long = 30_000L,
     private val rpcTimeoutSeconds: Long = 15L,
     private val heartbeatIntervalMs: Long = 25_000L,
+    private val backgroundHeartbeatIntervalMs: Long = 0L,
     private val heartbeatTimeoutMs: Long = 10_000L,
     private val recoverTimeoutMs: Long = 10_000L,
 ) {
     private val _status = MutableStateFlow<ParaboxConnectionStatus>(ParaboxConnectionStatus.Pending)
     val status: StateFlow<ParaboxConnectionStatus> = _status.asStateFlow()
+
+    private val hostForegroundFlow = MutableStateFlow(true)
 
     private val clientScope = CoroutineScope(SupervisorJob() + ioDispatcher)
     private var streamSupervisorJob: Job? = null
@@ -131,10 +134,33 @@ class ExtensionSessionClient(
 
                     coroutineScope {
                         val streamJob = launch {
-                            val heartbeatJob = if (heartbeatIntervalMs > 0L) {
+                            val heartbeatJob = if (heartbeatIntervalMs > 0L || backgroundHeartbeatIntervalMs > 0L) {
                                 launch {
                                     while (isActive) {
-                                        delay(heartbeatIntervalMs)
+                                        val isForeground = hostForegroundFlow.value
+                                        val intervalMs = if (isForeground) {
+                                            heartbeatIntervalMs
+                                        } else {
+                                            backgroundHeartbeatIntervalMs
+                                        }
+                                        if (intervalMs <= 0L) {
+                                            if (!isForeground) {
+                                                hostForegroundFlow.first { it }
+                                                continue
+                                            } else {
+                                                break
+                                            }
+                                        }
+                                        val switchedToBackground = if (isForeground && backgroundHeartbeatIntervalMs <= 0L) {
+                                            withTimeoutOrNull(intervalMs) {
+                                                hostForegroundFlow.first { !it }
+                                                true
+                                            } == true
+                                        } else {
+                                            delay(intervalMs)
+                                            false
+                                        }
+                                        if (switchedToBackground) continue
                                         val sent = outbound.trySend(
                                             HostSessionFrame.newBuilder()
                                                 .setPing(
@@ -309,6 +335,13 @@ class ExtensionSessionClient(
     private class ForceReconnectException : CancellationException("Force reconnect requested")
 
     fun sendLifecycleEvent(event: LifecycleEventProto) {
+        when (event) {
+            LifecycleEventProto.LIFECYCLE_RESUME -> hostForegroundFlow.value = true
+            LifecycleEventProto.LIFECYCLE_PAUSE,
+            LifecycleEventProto.LIFECYCLE_STOP,
+            -> hostForegroundFlow.value = false
+            else -> Unit
+        }
         if (event == LifecycleEventProto.LIFECYCLE_RESUME &&
             (_status.value is ParaboxConnectionStatus.Reconnecting || _status.value is ParaboxConnectionStatus.Error)
         ) {

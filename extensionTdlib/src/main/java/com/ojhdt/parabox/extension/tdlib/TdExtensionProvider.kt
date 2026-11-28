@@ -576,7 +576,7 @@ class TdExtensionProvider(
             ParaboxConfigItem.SwitchConfigItem(
                 key = KEY_SUPERGROUP_PERIODIC_SYNC,
                 title = "轮转超级群/频道增量同步",
-                description = "定期低频探测未打开的超级群与频道以减少消息滞后",
+                description = "前台运行时定期低频探测未打开的超级群与频道（后台自动暂停以降低耗电）",
                 defaultValue = true,
             ),
             ParaboxConfigItem.Category("cat_proxy", "网络代理", "修改代理后保存将自动重启当前账号连接"),

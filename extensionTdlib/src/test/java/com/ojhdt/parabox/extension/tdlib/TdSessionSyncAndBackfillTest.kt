@@ -386,7 +386,7 @@ class TdSessionSyncAndBackfillTest {
     }
 
     @Test
-    fun chatFocusLifecycleCallsOpenCloseAndKeepsOnlineTrueOnPause() = runBlocking {
+    fun chatFocusLifecycleCallsOpenCloseAndTogglesOnlineOnPauseResume() = runBlocking {
         val client = ChannelBackedFakeTdClient { fn ->
             when (fn) {
                 is TdApi.LoadChats -> throw TdErrorException(404, "Not Found")
@@ -423,7 +423,11 @@ class TdSessionSyncAndBackfillTest {
                 .filterIsInstance<TdApi.SetOption>()
                 .filter { it.name == "online" }
                 .map { (it.value as TdApi.OptionValueBoolean).value }
-            assertTrue("Expected online=true on init/resume", onlineOps.isNotEmpty() && onlineOps.all { it })
+            assertEquals(
+                "Expected online=true on init/resume and online=false on pause",
+                listOf(true, true, false),
+                onlineOps,
+            )
         } finally {
             session.onClose()
             scope.cancel()

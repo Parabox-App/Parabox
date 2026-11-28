@@ -30,6 +30,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
@@ -97,6 +98,9 @@ class TdSession(
 
     @Volatile
     private var isHostForeground: Boolean = true
+    private val hostForegroundFlow = MutableStateFlow(true)
+    @Volatile
+    private var lastBackgroundedAtMs: Long = 0L
 
     @Volatile
     private var sessionStartedAtMs: Long = 0L
@@ -386,8 +390,25 @@ class TdSession(
                     periodicSyncForegroundIntervalMs
                 } else {
                     periodicSyncBackgroundIntervalMs
-                }.coerceAtLeast(1_000L)
-                delay(intervalMs)
+                }
+                if (intervalMs <= 0L) {
+                    if (!isHostForeground) {
+                        hostForegroundFlow.first { it }
+                        continue
+                    } else {
+                        break
+                    }
+                }
+                val switchedToBackground = if (isHostForeground && periodicSyncBackgroundIntervalMs <= 0L) {
+                    withTimeoutOrNull(intervalMs.coerceAtLeast(1_000L)) {
+                        hostForegroundFlow.first { !it }
+                        true
+                    } == true
+                } else {
+                    delay(intervalMs.coerceAtLeast(1_000L))
+                    false
+                }
+                if (switchedToBackground) continue
                 if (client !== tdClient) break
                 val now = System.currentTimeMillis()
                 if (now < floodWaitUntilMs) {
@@ -1302,22 +1323,40 @@ class TdSession(
         Log.d(TAG, "[$accountId] onLifecycleEvent: $event")
         when (event) {
             LifecycleEventProto.LIFECYCLE_RESUME -> {
+                val bgDurationMs = if (!isHostForeground && lastBackgroundedAtMs > 0L) {
+                    System.currentTimeMillis() - lastBackgroundedAtMs
+                } else {
+                    0L
+                }
                 isHostForeground = true
-                // Keep online=true (do NOT call setNetworkType here as it forces TDLib to tear down
-                // and reopen healthy MTProto sockets on every app resume).
+                hostForegroundFlow.value = true
+                lastBackgroundedAtMs = 0L
+                // Keep existing healthy MTProto sockets (do NOT call setNetworkType here).
                 runCatching {
                     tdClient.send<TdApi.Ok>(TdApi.SetOption("online", TdApi.OptionValueBoolean(true)))
                 }
                 activeOpenChatId?.let { openId ->
                     runCatching { tdClient.send<TdApi.Ok>(TdApi.OpenChat(openId)) }
                 }
+                val now = System.currentTimeMillis()
+                if (bgDurationMs >= FOREGROUND_RESUME_CATCH_UP_THRESHOLD_MS &&
+                    now - lastCatchUpAtMs >= CATCH_UP_MIN_INTERVAL_MS
+                ) {
+                    sessionScope.launch {
+                        warmUpAndCatchUp(tdClient, reason = "foreground_resume")
+                    }
+                }
             }
             LifecycleEventProto.LIFECYCLE_PAUSE,
             LifecycleEventProto.LIFECYCLE_STOP -> {
+                if (isHostForeground) {
+                    lastBackgroundedAtMs = System.currentTimeMillis()
+                }
                 isHostForeground = false
-                // Do NOT set online=false here: without FCM push notifications, setting online=false
-                // puts TDLib into background/idle mode and suppresses/throttles live updates for
-                // supergroups and channels.
+                hostForegroundFlow.value = false
+                runCatching {
+                    tdClient.send<TdApi.Ok>(TdApi.SetOption("online", TdApi.OptionValueBoolean(false)))
+                }
                 syncState?.flushNow()
             }
             else -> Unit
@@ -1561,8 +1600,9 @@ class TdSession(
         private const val LOAD_CHATS_MAX_ROUNDS = 3
         private const val HISTORY_LOOP_MAX_ROUNDS = 6
         private const val MAX_SYNC_LATEST_LIMIT = 100
-        private const val DEFAULT_PERIODIC_SYNC_FOREGROUND_MS = 25_000L
-        private const val DEFAULT_PERIODIC_SYNC_BACKGROUND_MS = 60_000L
+        private const val DEFAULT_PERIODIC_SYNC_FOREGROUND_MS = 45_000L
+        private const val DEFAULT_PERIODIC_SYNC_BACKGROUND_MS = 0L
+        private const val FOREGROUND_RESUME_CATCH_UP_THRESHOLD_MS = 60_000L
         private const val DEFAULT_PERIODIC_SYNC_PROBE_PACING_MS = 350L
         private const val PERIODIC_PRIORITY_COUNT = 10
         private const val PERIODIC_ROTATING_COUNT = 10
